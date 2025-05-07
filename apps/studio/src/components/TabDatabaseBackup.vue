@@ -102,7 +102,7 @@
       />
     </div>
     <div class="expand" />
-    <status-bar>
+    <status-bar :active="active">
       <div class="statusbar-info col flex expand">
         <span
           class="statusbar-item"

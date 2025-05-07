@@ -32,24 +32,37 @@
         </div>
       </div>
       <sql-text-editor
-        v-model="unsavedText"
-        v-bind.sync="editor"
+        :value="unsavedText"
+        :height="editor.height"
+        :read-only="editor.readOnly"
         :focus="focusingElement === 'text-editor'"
-        @update:focus="updateTextEditorFocus"
         :markers="editorMarkers"
-        :connection-type="connectionType"
-        :extra-keybindings="keybindings"
+        :formatter-dialect="formatterDialect"
+        :identifier-dialect="identifierDialect"
+        :keybindings="keybindings"
         :vim-config="vimConfig"
-        @initialized="handleEditorInitialized"
+        :line-wrapping="wrapText"
+        :keymap="userKeymap"
+        :vim-keymaps="vimKeymaps"
+        :entities="entities"
+        :columns-getter="columnsGetter"
+        :default-schema="defaultSchema"
+        :mode="dialectData.textEditorMode"
+        :clipboard="$native.clipboard"
+        :replace-extensions="replaceExtensions"
+        @bks-initialized="handleEditorInitialized"
+        @bks-value-change="unsavedText = $event.value"
+        @bks-blur="onTextEditorBlur?.()"
+        @bks-query-selection-change="handleQuerySelectionChange"
       />
       <span class="expand" />
-      <div class="toolbar text-right">
+      <div
+        class="toolbar text-right"
+        ref="toolbar"
+      >
         <div class="editor-help expand" />
         <div class="expand" />
-        <div
-          class="actions btn-group"
-          ref="actions"
-        >
+        <div class="actions btn-group">
           <x-button
             v-if="showDryRun"
             class="btn btn-flat btn-small dry-run-btn"
@@ -79,11 +92,13 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
+              :disabled="running"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
+              :disabled="this.tab.isRunning || running"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -147,6 +162,7 @@
         :result="result"
         :query="query"
         :tab="tab"
+        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
         class="message"
@@ -189,7 +205,9 @@
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
+        @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
 
@@ -320,12 +338,11 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import { splitQueries, isTextSelected } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
-  import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
+  import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -335,6 +352,12 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
+  import { TableOrView } from "@/lib/db/models";
+  import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
+  import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
+  import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
+  import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
+  import { monokai } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -342,7 +365,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -372,7 +395,6 @@
         tableHeight: 0,
         savePrompt: false,
         lastWord: null,
-        marker: null,
         queryParameterValues: {},
         queryForExecution: null,
         executeTime: 0,
@@ -382,6 +404,8 @@
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
+        wrapText: false,
+        vimKeymaps: [],
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -392,6 +416,9 @@
          */
         focusElement: 'none',
         focusingElement: 'none',
+
+        individualQueries: [],
+        currentlySelectedQuery: null,
       }
     },
     computed: {
@@ -433,6 +460,7 @@
           'mariadb': 'mysql',
           'tidb': 'mysql',
           'redshift': 'psql',
+          'mongodb': 'psql'
         }
         return mappings[this.connectionType] || 'generic'
       },
@@ -466,43 +494,6 @@
       result() {
         return this.results[this.selectedResult]
       },
-      individualQueries() {
-        if (!this.unsavedText) return []
-        return splitQueries(this.unsavedText, this.identifyDialect)
-      },
-      currentlySelectedQueryIndex() {
-        const queries = this.individualQueries
-        for (let i = 0; i < queries.length; i++) {
-          // Find a query in between anchor and head cursors
-          if (this.editor.cursorIndex !== this.editor.cursorIndexAnchor) {
-            const isSelected = isTextSelected(queries[i].start, queries[i].end, this.editor.cursorIndexAnchor, this.editor.cursorIndex)
-            if (isSelected) return i
-          }
-          // Otherwise, find a query that sits before the cursor
-          else if (this.editor.cursorIndex <= queries[i].end + 1) return i
-        }
-        return null
-      },
-      currentlySelectedQuery() {
-        if (this.currentlySelectedQueryIndex === null) return null
-        return this.individualQueries[this.currentlySelectedQueryIndex]
-      },
-      currentQueryPosition() {
-        if(!this.editor.initialized || !this.currentlySelectedQuery || !this.individualQueries) {
-          return null
-        }
-        const qi = this.currentlySelectedQueryIndex
-        const previousQuery = qi === 0 ? null : this.individualQueries[qi - 1]
-        // adding 1 to account for semicolon
-        const start = previousQuery ? previousQuery.end + 1: 0
-        const end = this.currentlySelectedQuery.end
-
-        return {
-          from: start,
-          to: end + 1
-        }
-
-      },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
@@ -520,12 +511,12 @@
       },
       keymap() {
         if (!this.active) return {}
-        const result = {}
-        result[this.ctrlOrCmd('`')] = this.switchPaneFocus.bind(this)
-        result[this.ctrlOrCmd('l')] = this.selectEditor
-        result[this.ctrlOrCmd('i')] = this.submitQueryToFile
-        result[this.ctrlOrCmdShift('i')] = this.submitCurrentQueryToFile
-        return result
+        return this.$vHotkeyKeymap({
+          'queryEditor.switchPaneFocus': this.switchPaneFocus,
+          'queryEditor.selectEditor': this.selectEditor,
+          'queryEditor.submitQueryToFile': this.submitQueryToFile,
+          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+        })
       },
       queryParameterPlaceholders() {
         let params = this.individualQueries.flatMap((qs) => qs.parameters)
@@ -599,12 +590,31 @@
       },
       editorMarkers() {
         const markers = []
-        if (this.marker) markers.push(this.marker)
         if (this.errorMarker) markers.push(this.errorMarker)
         return markers
       },
       showResultTable() {
         return this.rowCount > 0
+      },
+      entities() {
+        return this.tables.map((t: TableOrView) => ({ schema: t.schema, name: t.name }))
+      },
+      queryDialect() {
+        return this.dialectData.queryDialectOverride ?? this.connectionType;
+      },
+      formatterDialect() {
+        return FormatterDialect(dialectFor(this.queryDialect))
+      },
+      identifierDialect() {
+        return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      replaceExtensions() {
+        return (extensions) => {
+          return [
+            ...extensions,
+            monokai,
+          ]
+        }
       },
     },
     watch: {
@@ -656,24 +666,6 @@
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
-      currentQueryPosition() {
-        this.marker = null
-
-        if(!this.individualQueries || this.individualQueries.length < 2) {
-          return;
-        }
-
-        if (!this.currentQueryPosition) {
-          return
-        }
-        const { from, to } = this.currentQueryPosition
-
-        const editorText = this.unsavedText
-        // const lines = editorText.split(/\n/)
-
-        const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
-        this.marker = { from: markStart, to: markEnd, type: 'highlight' } as EditorMarker
-      },
       async focusElement(element, oldElement) {
         if (oldElement === 'text-editor' && element !== 'text-editor') {
           await this.blurTextEditor()
@@ -713,39 +705,47 @@
       initialize() {
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
-        this.initializeQueries()
         this.query.title = this.activeTab.title
-
-        this.tab.unsavedChanges = this.unsavedChanges
 
         if (this.split) {
           this.split.destroy();
           this.split = null;
         }
 
-        this.$nextTick(() => {
-          this.split = Split(this.splitElements, {
-            elementStyle: (_dimension, size) => ({
-                'flex-basis': `calc(${size}%)`,
-            }),
-            sizes: [50,50],
-            gutterSize: 8,
-            direction: 'vertical',
-            onDragEnd: () => {
-              this.$nextTick(() => {
-                this.tableHeight = this.$refs.bottomPanel.clientHeight
-                this.updateEditorHeight()
-              })
-            }
-          })
+        this.initializeQueries()
+        this.tab.unsavedChanges = this.unsavedChanges
 
-          this.$nextTick(() => {
-            this.tableHeight = this.$refs.bottomPanel.clientHeight
-            this.updateEditorHeight()
-          })
+        this.split = Split(this.splitElements, {
+          elementStyle: (_dimension, size) => ({
+            'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [50,50],
+          gutterSize: 8,
+          direction: 'vertical',
+          onDragEnd: () => {
+            this.$nextTick(() => {
+              this.tableHeight = this.$refs.bottomPanel.clientHeight
+              this.updateEditorHeight()
+            })
+          }
+        })
+
+        // Making sure split.js is initialized
+        this.$nextTick(() => {
+          this.tableHeight = this.$refs.bottomPanel.clientHeight
+          this.updateEditorHeight()
         })
       },
-      handleEditorInitialized() {
+      handleEditorInitialized(detail) {
+        this.editor.initialized = true
+
+        detail.codemirror.on("cursorActivity", (cm) => {
+          this.editor.selection = cm.getSelection()
+          this.editor.cursorIndex = cm.getDoc().indexFromPos(cm.getCursor())
+        });
+
+        registerQueryMagic(() => this.defaultSchema, () => this.tables, detail.codemirror)
+
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights
         this.$nextTick(() => {
@@ -795,7 +795,7 @@
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
-        height -= this.$refs.actions.clientHeight
+        height -= this.$refs.toolbar.clientHeight
         this.editor.height = height
       },
       triggerSave() {
@@ -861,6 +861,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
+        if(this.running) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
           this.submitQuery(this.currentlySelectedQuery.text)
@@ -870,6 +871,7 @@
         }
       },
       async submitTabQuery() {
+        if(this.running) return;
         const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
@@ -880,6 +882,12 @@
       },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+
+        //Cancel existing query before starting a new one
+        if(this.running && this.runningQuery){
+          await this.cancelQuery();
+        }
+
         this.tab.isRunning = true
         this.running = true
         this.error = null
@@ -924,8 +932,8 @@
 
             // TODO (matthew): remove truncation logic somewhere sensible
             totalRows += result.rowCount
-            if (result.rowCount > this.$config.maxResults) {
-              result.rows = _.take(result.rows, this.$config.maxResults)
+            if (result.rowCount > this.$bksConfig.ui.queryEditor.maxResults) {
+              result.rows = _.take(result.rows, this.$bksConfig.ui.queryEditor.maxResults)
               result.truncated = true
               result.totalRowCount = result.rowCount
             }
@@ -936,6 +944,7 @@
             } else {
               result.tableName = "mytable"
             }
+            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
 
@@ -983,11 +992,6 @@
           this.close()
         }
       },
-      updateTextEditorFocus(focused: boolean) {
-        if (!focused) {
-          this.onTextEditorBlur?.()
-        }
-      },
       async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
         if (target) {
           this.focusElement = target
@@ -1021,9 +1025,35 @@
           this.focusingElement = 'none'
         })
       },
+      async columnsGetter(tableName: string) {
+        let table = this.tables.find(
+          (t: TableOrView) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+        );
+
+        if (!table) {
+          return null;
+        }
+
+        // Only refresh columns if we don't have them cached.
+        if (!table.columns?.length) {
+          await this.$store.dispatch("updateTableColumns", table);
+          table = this.tables.find(
+            (t: TableOrView) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+          );
+        }
+
+        return table?.columns.map((c) => c.columnName);
+      },
+      handleQuerySelectionChange({ queries, selectedQuery }) {
+        this.individualQueries = queries;
+        this.currentlySelectedQuery = selectedQuery;
+      },
     },
     async mounted() {
-      if (this.shouldInitialize) this.initialize()
+      if (this.shouldInitialize) {
+        await this.$nextTick()
+        this.initialize()
+      }
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()
@@ -1034,6 +1064,8 @@
         await this.$nextTick()
         this.focusElement = 'text-editor'
       }
+
+      this.vimKeymaps = await getVimKeymapsFromVimrc()
     },
     beforeDestroy() {
       if(this.split) {

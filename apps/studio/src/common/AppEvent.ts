@@ -12,7 +12,9 @@ export enum AppEvent {
   disconnect = 'dc',
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',
-  toggleSidebar = 'ts',
+  togglePrimarySidebar = 'ts',
+  toggleSecondarySidebar = 'toggleSecondarySidebar',
+  selectSecondarySidebarTab = 'selectSecondarySidebarTab',
   beginExport = 'be',
   beginImport = 'beginImport',
   createTable = 'new_table',
@@ -26,6 +28,8 @@ export enum AppEvent {
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
   promptSqlFilesImport = 'q_files_import',
+  openCreateCollectionModal = 'create_collection_modal',
+  openAddFieldModal = 'add_field_modal',
   enterLicense = 'enter_license',
   hideEntity = 'hideEntity',
   hideSchema = 'hideSchema',
@@ -54,6 +58,15 @@ export enum AppEvent {
   switchLicenseState = 'switchLicenseState',
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
+  updateJsonViewerSidebar = 'updateJsonViewerSidebar',
+  jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
+  jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
+  /** A tab is about to be switched. First argument is the tab. */
+  switchingTab = 'switchingTab',
+  /** A tab has been switched. First argument is the tab. */
+  switchedTab = 'switchedTab',
+  /** A tab is about to be closed. First argument is the tab. */
+  closingTab = 'closingTab',
 }
 
 export interface RootBinding {

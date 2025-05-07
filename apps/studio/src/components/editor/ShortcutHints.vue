@@ -63,7 +63,7 @@
         class="shortcut"
         v-else
       >
-        <span>Ctrl</span><span>Shift</span><span>N</span>
+        <span>Ctrl</span><span>⇧</span><span>N</span>
       </div>
     </div>
     <div class="shortcut-item">
@@ -79,6 +79,21 @@
         v-else
       >
         <span>Ctrl</span><span>T</span>
+      </div>
+    </div>
+    <div class="shortcut-item">
+      <div>Reopen Closed Tabs</div>
+      <div
+        class="shortcut"
+        v-if="$config.isMac"
+      >
+        <span>⌘</span><span>⇧</span><span>T</span>
+      </div>
+      <div 
+        class="shortcut"
+        v-else
+      >
+        <span>Ctrl</span><span>⇧</span><span>T</span>
       </div>
     </div>
     <div class="shortcut-item">
@@ -111,7 +126,7 @@
         <span>Ctrl</span><span>F</span>
       </div>
     </div>
-    <div class="shortcut-item">
+    <div v-if="!isMongo" class="shortcut-item">
       <div>Find and Replace</div>
       <div
         class="shortcut"
@@ -130,6 +145,7 @@
 </template>
 <script type="text/javascript">
   export default {
+    props: ['isMongo'],
     data() {
       return {
 

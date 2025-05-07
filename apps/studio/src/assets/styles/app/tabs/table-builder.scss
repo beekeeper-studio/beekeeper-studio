@@ -90,8 +90,7 @@
     // Field Rows
     .tabulator-row {
       margin: $row-gutter 0;
-      &.tabulator-row-even,
-      &:nth-child(odd){
+      &.tabulator-row-even {
         background: rgba($theme-base, 0.05)!important;
         --row-bg-color: #{rgba($theme-base, 0.05)};
       }

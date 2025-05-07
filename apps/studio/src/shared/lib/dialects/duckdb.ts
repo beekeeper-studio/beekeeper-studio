@@ -29,6 +29,7 @@ export const DuckDBData: DialectData = {
   wrapIdentifier: defaultWrapIdentifier,
   usesOffsetPagination: true,
   requireDataset: false,
+  disallowedSortColumns: ['blob'],
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
@@ -37,7 +38,9 @@ export const DuckDBData: DialectData = {
   },
   textEditorMode: "text/x-sql",
   disabledFeatures: {
+    shell: true,
     triggers: true,
+    compositeKeys: true,
     multipleDatabases: true,
     alter: {
       multiStatement: true,

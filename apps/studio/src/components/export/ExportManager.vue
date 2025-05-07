@@ -25,7 +25,6 @@ import { TableFilter, TableOrView } from '../../lib/db/models'
 import ExportNotification from './ExportNotification.vue'
 import ExportModal from './ExportModal.vue'
 import { ExportProgress, ExportStatus, StartExportOptions } from '../../lib/export/models'
-import globals from '@/common/globals'
 
 interface ExportTriggerOptions {
   table?: TableOrView,
@@ -67,14 +66,16 @@ export default Vue.extend({
         const status = await this.$util.send('export/status', { id: exp.id });
 
         if (status == ExportStatus.Error) {
-          const error = this.$util.send('export/error', { id: exp.id });
-          const error_notice = this.$noty.error(`Export of ${exportName} failed: ${error}`, {
+          const error = await this.$util.send('export/error', { id: exp.id });
+        // Error handling for export failure
+        let errorMessage = "An unexpected error occurred during export.";
+        const error_notice = this.$noty.error(`Export of ${exportName} failed: ${errorMessage}`, {
             buttons: [
               Noty.button('Close', "btn btn-primary", () => {
                 error_notice.close()
               })
             ]
-          }).setTimeout(globals.errorNoticeTimeout)
+          }).setTimeout(this.$bksConfig.ui.export.errorNoticeTimeout)
           return
         }
         if (status !== ExportStatus.Completed) return;
@@ -87,7 +88,7 @@ export default Vue.extend({
           ]
         })
       } catch (e) {
-        this.$noty.error(`Failed to export: ${e?.message ?? e}`, {
+        this.$noty.error(`Failed to export: ${e?.message || "Unexpected error"}`, {
         })
       }
     },

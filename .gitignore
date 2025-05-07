@@ -3,6 +3,7 @@
 .cache/
 .vscode/
 ./data/
+.local
 node_modules/
 dist/
 site/

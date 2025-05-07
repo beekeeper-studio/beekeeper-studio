@@ -18,7 +18,8 @@ export default class {
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
-    this.forward(AppEvent.toggleSidebar)
+    this.forward(AppEvent.togglePrimarySidebar)
+    this.forward(AppEvent.toggleSecondarySidebar)
     this.forward(AppEvent.quickSearch)
     this.forward(AppEvent.enterLicense)
     this.forward(AppEvent.backupDatabase);
