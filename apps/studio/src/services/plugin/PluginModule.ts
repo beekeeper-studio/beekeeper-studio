@@ -1,3 +1,7 @@
+/**
+ * A vuex module used for managing plugins inside the application.
+ */
+
 import _ from "lodash";
 import { Module } from "vuex";
 import { State as RootState } from "../index";

@@ -1,14 +1,18 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
-import { SidebarTab } from "@/store/modules/PluginModule";
+import { SidebarTab } from "../PluginModule";
 import { QueryTab, TabType } from "@/store/models";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
 /**
- * Service that provides a clean interface to the plugin Vuex module
+ * Service that provides an interface to the plugin Vuex module
  */
 export default class PluginStoreService {
   constructor(private store: Store<RootState>) {}
+
+  getTheme(): "dark" | "light" {
+    return this.store.getters["settings/lightOrDarkTheme"];
+  }
 
   addSidebarTab(tab: SidebarTab): void {
     this.store.dispatch("plugins/addSidebarTab", tab);
