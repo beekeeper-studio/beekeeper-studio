@@ -250,8 +250,9 @@ export interface FieldDescriptor {
 }
 
 export interface NgQueryResult {
-  fields: FieldDescriptor[];
-  rows: any[];
+  output?: any;
+  fields?: FieldDescriptor[];
+  rows?: any[];
   rowCount?: number;
   affectedRows?: number;
   command?: any;

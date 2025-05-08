@@ -78,6 +78,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <sql-anywhere-form
+                  v-else-if="config.connectionType === 'sqlanywhere' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
@@ -156,6 +161,7 @@ import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
 import MongoDbForm from './connection/MongoDBForm.vue'
 import DuckDbForm from './connection/DuckDBForm.vue'
+import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -177,7 +183,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm,
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm, SqlAnywhereForm,
     ContentPlaceholderHeading,
   },
 
@@ -203,6 +209,9 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapGetters(['isUltimate']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
+    ...mapGetters({
+      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
+    }),
     communityConnectionTypes() {
       return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
     },
@@ -384,6 +393,15 @@ export default Vue.extend({
       this.connectionError = null
       try {
         this.connecting = true
+        // If this is an existing used connection that doesn't have an associated saved connection
+        // we need to see if changes have been made to the config
+        if (this.config.connectionId === null && this.config.id) {
+          const oldConfig = this.usedConfigs.find((c) => c.id === this.config.id);
+          if (!_.isEqual(this.config, oldConfig)) {
+            this.config.id = null;
+          }
+        }
+
         await this.$store.dispatch('connect', this.config)
       } catch (ex) {
         this.connectionError = ex
@@ -433,6 +451,13 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
+
+        // This feels wrong but it works. It's undefined on savedConnections
+        if (this.config.connectionId === null) {
+          this.config.connectionId = id;
+          await this.$store.dispatch('data/usedconnections/save', this.config);
+        }
+
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed
         const connection = this.connections.find((c) => c.id === id)

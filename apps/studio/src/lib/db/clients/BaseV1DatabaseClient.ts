@@ -21,8 +21,9 @@ export abstract class BaseV1DatabaseClient<RawResultType extends BaseQueryResult
     return null;
   }
 
-  async createDatabase(_databaseName: string, _charset: string, _collation: string): Promise<void> {
+  async createDatabase(_databaseName: string, _charset: string, _collation: string): Promise<string> {
     log.error("V1 Drivers do not support creating databases")
+    return '';
   }
 
   async createDatabaseSQL(): Promise<string> {
@@ -107,11 +108,6 @@ export abstract class BaseV1DatabaseClient<RawResultType extends BaseQueryResult
   async applyChangesSql(_changes: TableChanges): Promise<string> {
     log.error("V1 Drivers do not support applying changes");
     return '';
-  }
-
-  async applyChanges(_changes: TableChanges): Promise<TableUpdateResult[]> {
-    log.error("V1 Drivers do not support applying changes");
-    return [];
   }
 
   async setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {

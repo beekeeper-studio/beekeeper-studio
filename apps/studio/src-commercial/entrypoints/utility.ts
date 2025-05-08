@@ -13,6 +13,7 @@ import { GeneratorHandlers } from '@/handlers/generatorHandlers';
 import { Handlers } from '../backend/handlers/handlers';
 import { newState, removeState, state } from '@/handlers/handlerState';
 import { QueryHandlers } from '@/handlers/queryHandlers';
+import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
@@ -50,6 +51,7 @@ export const handlers: Handlers = {
   ...EnumHandlers,
   ...TempHandlers,
   ...LicenseHandlers,
+  ...TabHistoryHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 

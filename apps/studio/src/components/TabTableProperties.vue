@@ -134,6 +134,7 @@ import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import TablePartitionsVue from './tableinfo/TablePartitions.vue'
+import TableSchemaValidationVue from './tableinfo/TableSchemaValidation.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import { AppEvent } from '@/common/AppEvent'
@@ -199,6 +200,15 @@ export default {
           needsPartitions: true,
           component: TablePartitionsVue,
           dirty: false
+        },
+        {
+          id: 'schema-validation',
+          name: 'Schema Validation',
+          tableOnly: true,
+          mongoOnly: true,
+          needsProperties: false,
+          component: TableSchemaValidationVue,
+          dirty: false
         }
       ],
       activePill: 'schema', // the only tab that is always there.
@@ -219,7 +229,7 @@ export default {
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
-    ...mapGetters(['dialectData']),
+    ...mapGetters(['dialectData', 'dialect']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -262,7 +272,11 @@ export default {
           (this.supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
-        if(p.tableOnly) {
+        if (p.mongoOnly && this.dialect !== 'mongodb') {
+          return false
+        }
+        
+        if (p.tableOnly) {
           return isTable
         }
         return true

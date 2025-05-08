@@ -39,6 +39,10 @@ module.exports = {
       to: 'demo.db'
     },
     {
+      from: './extra_resources/production_pub.pem',
+      to: 'production_pub.pem'
+    },
+    {
       from: 'build/launcher-script.sh',
       to: 'launcher-script.sh'
     },
@@ -49,7 +53,12 @@ module.exports = {
     {
       from: './public',
       to: 'public'
-    }
+    },
+    {
+      from: ".",
+      to: ".",
+      filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
+    },
   ],
   fileAssociations: [
     {

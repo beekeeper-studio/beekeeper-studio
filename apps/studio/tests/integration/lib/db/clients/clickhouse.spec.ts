@@ -126,6 +126,34 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       ])
     })
 
+    // Generated columns showing as NULL when browsing but returning values
+    // when selected directly.
+    // https://github.com/beekeeper-studio/beekeeper-studio/issues/2982
+    it("should query table with generated columns", async () => {
+      await util.knex.schema.raw(`
+        CREATE TABLE ch_generated_column
+        (
+            MinimumLevel UInt8, Cost UInt16, ProductValueMultiplier Float32,
+            CostPerProductValueMultiplier Float32 MATERIALIZED Cost / ProductValueMultiplier -- This is the generated (materialized) column
+        )
+        ENGINE = MergeTree()
+        ORDER BY MinimumLevel;
+      `)
+      await util.knex.schema.raw(`
+        INSERT INTO ch_generated_column (MinimumLevel, Cost, ProductValueMultiplier)
+        VALUES (1, 7, 1);
+      `)
+      const { result } = await util.connection.selectTop('ch_generated_column', 0, 10, [], [])
+      expect(result).toStrictEqual([
+        {
+          Cost: 7,
+          CostPerProductValueMultiplier: 7,
+          MinimumLevel: 1,
+          ProductValueMultiplier: 1,
+        }
+      ])
+    })
+
     describe("Formats in select queries", () => {
       it("queries with default format", async () => {
         const sql = "SELECT 'a' AS first, 2 AS second";

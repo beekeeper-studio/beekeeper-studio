@@ -1,30 +1,50 @@
 <template>
   <!-- Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu -->
-  <div class="BksContextMenu-list-wrapper">
+  <div class="BksUiKit BksContextMenu-container">
     <ul
-      class="BksContextMenu-list vue-simple-context-menu"
+      class="BksContextMenu-list"
       ref="menu"
+      role="menu"
     >
       <li
         v-for="(option, index) in options"
         :key="index"
         @click="optionClicked(option, index, $event)"
-        class="BksContextMenu-item vue-simple-context-menu__item"
-        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : ''), option.disabled ? 'disabled' : '']"
+        class="BksContextMenu-item"
+        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
         ref="item"
+        role="menuitem"
       >
-        <span v-html="option.name" />
-        <span>
-          <span
-            class="shortcut"
-            v-if="option.shortcut"
-            v-text="option.shortcut"
-          />
-          <i
-            class="material-icons menu-icon"
-            v-if="option.icon"
-          >{{ option.icon }}</i>
-        </span>
+        <div
+          v-if="typeof checkedOptions[option.id] === 'boolean'"
+          class="BksContextMenu-item-icon-container BksContextMenu-item-checkbox-icon"
+          :class="{ 'BksContextMenu-item-checked': checkedOptions[option.id] }"
+        >
+          <i class="material-icons">
+            {{ checkedOptions[option.id] ? 'check_box' : 'check_box_outline_blank' }}
+          </i>
+        </div>
+        <div
+          v-if="typeof option.label === 'object'"
+          v-html="option.label.html"
+          class="BksContextMenu-item-label"
+        />
+        <div
+          v-else
+          v-text="option.label"
+          class="BksContextMenu-item-label"
+        />
+        <div
+          v-if="option.shortcut"
+          class="BksContextMenu-item-shortcut"
+          v-text="shortcut(option.shortcut)"
+        />
+        <div
+          v-if="option.items?.length > 0"
+          class="BksContextMenu-item-icon-container BksContextMenu-item-submenu-icon"
+        >
+          <i class="material-icons">keyboard_arrow_right</i>
+        </div>
       </li>
     </ul>
     <context-menu v-if="showSubItemsIndex !== -1" :options="options[showSubItemsIndex].items" :item="item" :event="event" :parentMenu="$refs.item[showSubItemsIndex]" @close="$emit('close')" />
@@ -32,7 +52,8 @@
 </template>
 
 <script lang="ts">
-import { MenuItem } from './menu'
+import { BaseMenuItem } from './menu'
+import { formatDisplayKeybinding } from "../..//utils/formatDisplayKeybinding";
 import Vue from 'vue'
 
 export default Vue.extend({
@@ -44,6 +65,7 @@ export default Vue.extend({
       menuHeight: null,
       menuOpen: false,
       showSubItemsIndex: -1,
+      checkedOptions: {},
     }
   },
 
@@ -57,7 +79,7 @@ export default Vue.extend({
     }
   },
   methods: {
-    showMenu(event) {
+    async showMenu(event) {
 
       const menu = this.$refs.menu
       if (!menu) {
@@ -67,6 +89,7 @@ export default Vue.extend({
       if (!this.menuWidth || !this.menuHeight) {
         menu.style.visibility = "hidden"
         menu.style.display = "block"
+        await this.$nextTick()
         this.menuWidth = menu.offsetWidth
         this.menuHeight = menu.offsetHeight
         menu.removeAttribute("style")
@@ -75,7 +98,14 @@ export default Vue.extend({
       const { left, top } = this.calculatePosition(event)
       menu.style.left = left + 'px';
       menu.style.top = top + 'px';
-      menu.classList.add('vue-simple-context-menu--active')
+      menu.classList.add('BksContextMenu-active')
+
+      this.options.forEach((option) => {
+        if (typeof option.checked === 'boolean') {
+          this.$set(this.checkedOptions, option.id, option.checked)
+        }
+      })
+
       this.menuOpen = true
     },
     calculatePosition(event: MouseEvent): { left: number, top: number } {
@@ -120,21 +150,25 @@ export default Vue.extend({
       this.$emit('close')
       let element = this.$refs.ul
       if (element) {
-        element.classList.remove('vue-simple-context-menu--active');
+        element.classList.remove('BksContextMenu-active');
       }
     },
     onClickOutside() {
       this.hideContextMenu()
     },
-    optionClicked(option: MenuItem, idx: number, event: any) {
+    optionClicked(option: BaseMenuItem, idx: number, event: any) {
       if (option.items?.length > 0 && this.showSubItemsIndex === idx) {
         return
       }
+      if (typeof this.checkedOptions[option.id] !== 'undefined') {
+        const checked = !this.checkedOptions[option.id]
+        this.checkedOptions[option.id] = checked
+      }
       if (option.disabled) return;
-      option.handler?.({ item: this.item, option, event })
+      option.handler?.(event, this.item, option)
       if (option.items?.length > 0) {
         this.showSubItemsIndex = idx
-      } else {
+      } else if (!option.keepOpen) {
         this.hideContextMenu()
       }
     },
@@ -142,6 +176,9 @@ export default Vue.extend({
       if (event.keyCode === 27) {
         this.hideContextMenu();
       }
+    },
+    shortcut(shortcut: string | string[]) {
+      return formatDisplayKeybinding(shortcut)
     },
   },
   mounted() {

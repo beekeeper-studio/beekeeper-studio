@@ -1,5 +1,6 @@
 @use "variables" as *;
 @use "mixins" as *;
+@use "sass:color";
 
 .BksUiKit {
   // Global
@@ -70,7 +71,7 @@
   }
   ::-webkit-scrollbar-track-piece {
     background-color: transparent;
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y;
   }
   ::-webkit-scrollbar-thumb {
     background: mix($theme-base, $theme-bg, 20%);
@@ -89,14 +90,11 @@
 
   .a-icon {
     display: flex;
-    text-decoration: none !important;
+    text-decoration: none;
     align-items: center;
   }
   .btn {
     @include btn;
-  }
-  x-buttons > x-button[menu].btn {
-    border-left: 1px solid rgba(black, 0.35);
   }
   .btn-primary {
     background: $theme-base;
@@ -142,7 +140,7 @@
     background: $brand-info;
     color: rgba(black, 0.87);
     &:hover, &:focus {
-      background: lighten($brand-info, 8%);
+      background: color.adjust($brand-info, $lightness: 8%);
       color: rgba(black, 0.87);
     }
   }
@@ -160,13 +158,6 @@
   }
   .btn-small {
     @include btn-small;
-  }
-  x-buttons {
-    border-radius: 6px;
-    overflow: hidden;
-    > x-button.btn-small {
-      border-radius: 0;
-    }
   }
   .btn-block {
     display: flex;
@@ -202,7 +193,7 @@
         color: rgba(black, 0.87);
       }
       &:hover, &:focus {
-        background: darken($theme-primary, 8%);
+        background: color.adjust($theme-primary, $lightness: -8%);
         .material-icons {
           color: rgba(black, 0.87);
         }
@@ -212,7 +203,7 @@
   .btn-group {
     margin-left: -0.25rem;
     margin-right: -0.25rem;
-    >.btn, > x-buttons, > x-button {
+    >.btn {
       margin-left: 0.25rem;
       margin-right: 0.25rem;
     }
@@ -222,18 +213,18 @@
   .btn[disabled="disabled"] {
     $btn-disabled-opacity:      0.25;
 
-    opacity: $btn-disabled-opacity!important;
+    opacity: $btn-disabled-opacity;
     &:hover, &:focus {
-      opacity: $btn-disabled-opacity!important;
+      opacity: $btn-disabled-opacity;
     }
     &.btn-primary {
       &:hover, &:focus {
-        background: $theme-base!important;
+        background: $theme-base;
       }
     }
     &.btn-flat {
       &:hover, &:focus {
-       background: transparent!important;
+       background: transparent;
       }
     }
   }
@@ -273,9 +264,9 @@
     }
     input {
       &[disabled="disabled"], &[disabled="disabled"]:hover, &[disabled="disabled"]:focus {
-        color: $text-lighter!important;
-        cursor: not-allowed!important;
-        border-style: dotted!important;
+        color: $text-lighter;
+        cursor: not-allowed;
+        border-style: dotted;
       }
     }
     label {
@@ -354,10 +345,10 @@
   select {
     -webkit-appearance: none;
     appearance: none;
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent ;
     padding: 0 0.75rem;
     option {
-      background: lighten($theme-bg, 3%);
+      background: color.adjust($theme-bg, $lightness: 3%);
       color: $text;
       &:checked,
       &:hover {
@@ -365,8 +356,8 @@
         box-shadow: 0 0 10px 100px $brand-info inset;
       }
       &:disabled, &:disabled:hover, &:disabled:focus {
-        background: transparent!important;
-        color: $text-lighter!important;
+        background: transparent;
+        color: $text-lighter;
       }
     }
   }
@@ -464,7 +455,7 @@
     transition: background 0.2s ease-in-out;
     cursor: pointer;
     &:checked{
-      background: darken($theme-primary, 10%);
+      background: color.adjust($theme-primary, $lightness: -10%);
       color: rgba(black, 0.87);
       box-shadow: none;
     }
@@ -482,7 +473,7 @@
       font-family: $font-family;
       color: $theme-base;
       background: rgba($theme-base, 0.035);
-      font-size: 11px!important;
+      font-size: 11px;
       line-height: $input-height;
       height: $input-height + 1px;
       padding: 0 $gutter-w;
@@ -501,20 +492,20 @@
   }
 
   .text-primary {
-    color: $brand-primary!important;
+    color: $brand-primary;
   }
 
   .text-success {
-    color: $brand-success!important;
+    color: $brand-success;
   }
   .text-info {
-    color: $brand-info!important;
+    color: $brand-info;
   }
   .text-danger {
-    color: lighten($brand-danger, 5%)!important;
+    color: color.adjust($brand-danger, $lightness: 5%);
   }
   .text-warning {
-    color: $brand-warning!important;
+    color: $brand-warning;
   }
   .text-light {
     color: $text-light;
@@ -560,9 +551,9 @@
     display: block;
     padding: 0.5rem 1rem;
   }
-  .material-icons.item-icon {
+  .item-icon {
     font-size: 12px;
-    color: darken($theme-primary, 15%);
+    color: color.adjust($theme-primary, $lightness: -15%);
     &.schema-icon {
       color: $text-lighter;
     }
@@ -618,7 +609,7 @@
       z-index: 20;
     }
     &.gutter-horizontal {
-      width: 0!important;
+      width: 0;
       cursor: ew-resize;
       &:after {
         height: 100%;
@@ -629,7 +620,7 @@
     }
     &.gutter-vertical {
       cursor: ns-resize;
-      height: 0!important;
+      height: 0;
       &:after {
         height: 8px;
         width: 100%;
@@ -665,7 +656,7 @@
     justify-content: flex-end;
   }
   .card {
-    background: lighten($theme-bg, 6%);
+    background: color.adjust($theme-bg, $lightness: 6%);
     @include card-shadow;
   }
   .card-flat {
@@ -783,16 +774,16 @@
     }
   }
   .alert-danger {
-    color: lighten($brand-danger, 5%);
+    color: color.adjust($brand-danger, $lightness: 5%);
   }
   .alert-warning {
-    color: lighten($brand-warning, 5%);
+    color: color.adjust($brand-warning, $lightness: 5%);
   }
   .alert-info {
-    color: lighten($brand-info, 5%);
+    color: color.adjust($brand-info, $lightness: 5%);
   }
   .alert-success {
-    color: lighten($brand-success, 5%);
+    color: color.adjust($brand-success, $lightness: 5%);
   }
 
   // Dropdown

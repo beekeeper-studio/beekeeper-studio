@@ -16,6 +16,7 @@ import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
+import _ from 'lodash';
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
 
@@ -186,7 +187,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       fromColumn: row.from_column,
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
-      onDelete: row.delete_rule
+      onDelete: row.delete_rule,
+      isComposite: false
     }));
   }  
 

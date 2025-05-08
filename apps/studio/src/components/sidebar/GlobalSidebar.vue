@@ -2,7 +2,7 @@
   <div class="global-items">
     <a
       href=""
-      @click.prevent="click('tables')"
+      @click.prevent="$emit('select', 'tables')"
       class="nav-item selectable"
       :class="{ active: activeItem === 'tables'}"
       title="Database"
@@ -11,7 +11,7 @@
     </a>
     <a
       href=""
-      @click.prevent="click('queries')"
+      @click.prevent="$emit('select', 'queries')"
       class="nav-item selectable"
       :class="{ active: activeItem === 'queries'}"
       title="Saved Queries"
@@ -20,7 +20,7 @@
     </a>
     <a
       href=""
-      @click.prevent="click('history')"
+      @click.prevent="$emit('select', 'history')"
       class="nav-item selectable"
       :class="{ active: activeItem === 'history'}"
       title="Run History"
@@ -37,16 +37,5 @@
   export default {
     props: ['activeItem'],
     components: { CoreAccountButton },
-    computed: {
-    },
-    methods: {
-      click(item) {
-        if( this.activeItem === item ){
-          this.$emit('toggleSidebar')
-        } else {
-          this.$emit('selected', item)
-        }
-      }
-    }
   }
 </script>

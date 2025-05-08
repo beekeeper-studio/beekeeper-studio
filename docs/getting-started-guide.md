@@ -40,8 +40,8 @@ A quick and easy way to explore Beekeeper Studio's functionality is with the `Sa
 
     These topics will help you get started with the most commonly used features of Beekeeper Studio
 
-    - [Connecting to a database](./user_guide/connecting/first-page.md)
-    - [Write some SQL](./user_guide/using-the-sql-editor.md)
+    - [Connecting to a database](./user_guide/connecting/connecting.md)
+    - [Write some SQL](./user_guide/sql_editor/editor.md)
     - [Browse and edit table data](./user_guide/editing-data.md)
     - [Create & modify tables](./user_guide/modify-tables.md)
 

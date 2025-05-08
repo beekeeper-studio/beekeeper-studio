@@ -1,6 +1,7 @@
 ---
 title: MongoDB
 summary: "MongoDB support is currently in early alpha"
+icon: simple/mongodb
 ---
 
 Check back frequently as we are making continual updates to our MongoDB support.

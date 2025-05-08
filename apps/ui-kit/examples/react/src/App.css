@@ -4,7 +4,7 @@
   padding: 2rem;
 }
 
-#root > :first-child,
+#root> :first-child,
 h1,
 h2 {
   text-align: center;
@@ -16,9 +16,11 @@ h2 {
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -27,6 +29,7 @@ h2 {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -46,11 +49,11 @@ h2 {
   border-style: dashed;
 }
 
-@media (prefers-color-scheme: dark) {
-  .card {
-    background-color: rgb(255 255 255);
-  }
+.card {
+  background-color: rgb(255 255 255);
 }
+
 .read-the-docs {
   color: #888;
 }
+

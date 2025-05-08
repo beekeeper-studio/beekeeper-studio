@@ -25,7 +25,7 @@
         <ul>
           <li
             class="menu-item"
-            :class="{'has-children': !!item.submenu, ...hoverClass(item)}"
+            :class="{'has-children': !!item.submenu, ...hoverClass(item), 'disabled-app-menu': isMenuItemDisabled(item.id)}"
             v-for="(item, idx) in (menu.submenu || [])"
             :key="item.id || idx"
           >
@@ -78,7 +78,7 @@
 import _ from 'lodash'
 import ClientMenuActionHandler from '../../lib/menu/ClientMenuActionHandler'
 import MenuBuilder from '../../common/menus/MenuBuilder'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 
 export default {
@@ -100,7 +100,19 @@ export default {
         "ArrowRight": this.moveRight,
         "Escape": this.closeMenu,
         "Enter": this.clickHovered
-      }
+      },
+      connectionMenuItems:[
+          "new-query-menu", 
+          "go-to", 
+          "disconnect", 
+          "import-sql-files", 
+          "close-tab", 
+          "menu-toggle-sidebar", 
+          "menu-secondary-sidebar",
+          "backup-database", 
+          "restore-database", 
+          "export-tables"
+      ]
     }
   },
   computed: {
@@ -120,7 +132,8 @@ export default {
     menuElements() {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
     },
-    ...mapGetters({'settings': 'settings/settings'})
+    ...mapGetters({'settings': 'settings/settings'}),
+    ...mapState(['connected'])
   },
   watch: {
     settings: {
@@ -142,6 +155,9 @@ export default {
     }
   },
   methods: {
+    isMenuItemDisabled(itemId){
+      return this.connectionMenuItems.includes(itemId) && !this.connected;
+    },
     getNext(array, item) {
       const selectedIndex = item ? _.indexOf(array, item) : -1
       const newIndex = selectedIndex >= array.length -1 ? 0 : selectedIndex + 1

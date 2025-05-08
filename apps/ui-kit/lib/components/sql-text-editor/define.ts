@@ -1,3 +1,1 @@
-import { SqlTextEditor } from ".";
-
-window.customElements.define("bks-sql-text-editor", SqlTextEditor);
+export * from "./v2/define";

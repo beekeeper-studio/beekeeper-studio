@@ -2,6 +2,7 @@
 title: Importing Data (csv, json, etc)
 summary: "Take your data, and import it into Beekeeper Studio using our easy point-and-click interface"
 old_url: "https://docs.beekeeperstudio.io/docs/importing-data-csv-json-etc"
+icon: material/import
 ---
 
 ## Supported Import Formats

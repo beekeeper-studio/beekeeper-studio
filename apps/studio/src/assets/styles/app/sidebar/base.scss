@@ -1,4 +1,6 @@
+@use 'json-viewer-sidebar.scss';
 @import 'sidebar';
+@import 'secondary-sidebar';
 @import 'global';
 @import 'connection';
 @import 'table-list';

@@ -1,3 +1,4 @@
+@use "sass:color";
 // SOLARIZED COLORS
 $sbase03:    #002b36;
 $sbase02:    #073642;
@@ -20,7 +21,7 @@ $sgreen:     #859900;
 $insertedGreen: #5ff3c0;
 $removedRed: #FC8A87;
 
-$bksyellow: darken(#fad83b, 10%);
+$bksyellow: color.adjust(#fad83b, $lightness: -10%);
 
 @mixin rebase($rebase03,$rebase02,$rebase01,$rebase00,$rebase0,$rebase1,$rebase2,$rebase3)
 {
@@ -89,5 +90,5 @@ $statusbar-bg:              rgba($theme-base, 0.1);
 // $statusbar-bg:             rgba($theme-primary, 0.4);
 $statusbar-text:            $text-dark;
 
-$grouped-tables-base: lighten($theme-bg, 2%);
-$grouped-tables-light: lighten($grouped-tables-base, 2%);
+$grouped-tables-base: color.adjust($theme-bg, $lightness: 2%);
+$grouped-tables-light: color.adjust($grouped-tables-base, $lightness: 2%);

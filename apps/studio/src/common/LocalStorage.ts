@@ -4,8 +4,9 @@ export const SmartLocalStorage = {
   addItem(key:string, value:any): void{
     localStorage.setItem(key, JSON.stringify(value))
   },
-  getItem(key:string): any{
+  getItem(key:string, defaultVal: any = null): any{
     const value = localStorage.getItem(key)
+    if (value === null) return defaultVal
     return value
   },
   getJSON(key: string, fallback?: any): any {

@@ -1,49 +1,59 @@
 import { useEffect, useMemo, useState } from "react";
-import { getTables } from "./data";
+import { getEntities } from "./data";
 import BksTable from "./BksTable";
+import BksTextEditor from "./BksTextEditor";
 import BksSqlTextEditor from "./BksSqlTextEditor";
-import BksTableList from "./BksTableList";
+import BksEntityList from "./BksEntityList";
 import BksDataEditor from "./BksDataEditor";
 
 export default function Components() {
-  const [tables, setTables] = useState([]);
+  const [entities, setEntities] = useState([]);
   const [selectedTableIdx, setSelectedTableIdx] = useState(0);
 
   useEffect(() => {
-    setTables(getTables());
+    const entities = getEntities()
+    setEntities(entities);
   }, []);
 
   const columns = useMemo(
-    () => tables[selectedTableIdx]?.columns || [],
-    [tables, selectedTableIdx]
+    () => entities[selectedTableIdx]?.columns || [],
+    [entities, selectedTableIdx]
   );
 
   const data = useMemo(
-    () => tables[selectedTableIdx]?.data || [],
-    [tables, selectedTableIdx]
+    () => entities[selectedTableIdx]?.data || [],
+    [entities, selectedTableIdx]
   );
 
-  function handleSelectTable(idx) {
+  function handleSelectEntity(idx) {
     setSelectedTableIdx(idx);
   }
 
   return (
     <>
+      <h2>Text Editor</h2>
+      <div className="card">
+        <BksTextEditor />
+      </div>
       <h2>Sql Text Editor</h2>
       <div className="card">
-        <BksSqlTextEditor tables={tables} />
+        <BksSqlTextEditor entities={entities} />
       </div>
       <h2>Table</h2>
       <div className="card">
         <BksTable columns={columns} data={data} />
       </div>
-      <h2>Table List</h2>
+      <h2>Entity List</h2>
       <div className="card">
-        <BksTableList tables={tables} onSelectTable={handleSelectTable} />
+        <BksEntityList entities={entities} onSelectEntity={handleSelectEntity} />
       </div>
       <h2>Data Editor</h2>
       <div className="card">
-        <BksDataEditor tables={tables} />
+        <BksDataEditor entities={entities} />
+      </div>
+      <h2>CSS Customization</h2>
+      <div className="card custom-theme">
+        <BksDataEditor entities={entities} />
       </div>
     </>
   );

@@ -3,7 +3,7 @@ import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 
-type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table'
+type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
@@ -23,6 +23,8 @@ export interface TransportOpenTab extends Transport {
   connectionId: number,
   workspaceId?: number,
   filters?: string,
+  lastActive?: Date|null,
+  deletedAt?: Date|null 
   isRunning: boolean, // not on the actual model, but used in frontend
 }
 

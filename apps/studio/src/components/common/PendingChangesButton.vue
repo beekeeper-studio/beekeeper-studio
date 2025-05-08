@@ -11,6 +11,7 @@
       <span>{{ labelApply || 'Apply' }}</span>
     </x-button>
     <x-button
+      v-if="dialect !== 'mongodb'"
       class="btn btn-primary"
       menu
       style="margin:0"
@@ -36,23 +37,25 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import { mapGetters } from 'vuex'
 
 export default Vue.extend({
-    name: 'PendingChangesButton',
-    props: {
-        submitApply: Function,
-        submitSql: Function,
-        labelApply: String,
-        labelSql: String,
-    },
-    computed: {
-        hotkeys() {
-            const result = {}
-            result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-            result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-            return result
-        }
+  name: 'PendingChangesButton',
+  props: {
+    submitApply: Function,
+    submitSql: Function,
+    labelApply: String,
+    labelSql: String,
+  },
+  computed: {
+    ...mapGetters(['dialect']),
+    hotkeys() {
+      return this.$vHotkeyKeymap({
+        'general.save': this.submitApply.bind(this),
+        'general.openInSqlEditor': this.submitSql.bind(this),
+      })
     }
+  }
 })
 </script>
 

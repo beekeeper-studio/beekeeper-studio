@@ -19,7 +19,7 @@ function v(strings: TemplateStringsArray) {
 
 function expectStatus() {
   return expect(
-    LicenseKey.getLicenseStatus().then((s) => _.omit(s, ["license"]))
+    LicenseKey.getLicenseStatus().then((s) => _.omit(s, ["license", "fromFile", "filePath"]))
   ).resolves;
 }
 
@@ -67,6 +67,11 @@ describe("License", () => {
     expect(isVersionLessThanOrEqual(v`1.2.1`, v`1.2.3`)).toBe(true);
     expect(isVersionLessThanOrEqual(v`1.2.3`, v`1.0.0`)).toBe(false);
     expect(isVersionLessThanOrEqual(v`1.3.2`, v`1.2.3`)).toBe(false);
+
+    expect(isVersionLessThanOrEqual(v`1.99.99`, v`2.2.3`)).toBe(true);
+    expect(isVersionLessThanOrEqual(v`1.1.99`, v`1.2.3`)).toBe(true);
+    expect(isVersionLessThanOrEqual(v`1.1.99-beta.1`, v`1.1.99-beta.2`)).toBe(true);
+    expect(isVersionLessThanOrEqual(v`1.1.99`, v`1.2.0-beta.1`)).toBe(true);
   });
 
   describe("License status", () => {
@@ -162,6 +167,15 @@ describe("License", () => {
         edition: "community",
         condition: ["Expired support date", "App version not allowed"],
       });
+    })
+
+    // Regression tests for version comparison
+    it("Should properly compare versions", async () => {
+      expect(isVersionLessThanOrEqual(parseVersion("v2.4.6"), parseVersion("v5.7.2"))).toBeTruthy();
+      expect(isVersionLessThanOrEqual(parseVersion("v2.5.1-beta.4"), parseVersion("v5.0.0"))).toBeTruthy();
+      expect(isVersionLessThanOrEqual(parseVersion("v6.3.7"), parseVersion("v4.2.1"))).not.toBeTruthy;
+      expect(isVersionLessThanOrEqual(parseVersion("v3.1.3-beta.4"), parseVersion("v1.8.1"))).not.toBeTruthy();
+      expect(isVersionLessThanOrEqual(parseVersion("v5.0.0"), parseVersion("v5.0.0"))).toBeTruthy();
     })
   });
 });

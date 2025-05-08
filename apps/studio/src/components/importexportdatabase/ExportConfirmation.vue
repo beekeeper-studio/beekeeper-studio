@@ -95,6 +95,11 @@ import { TransportExport } from '@/common/transport/TransportExport';
       exportsAllDone() {
         if (this.exportsAllDone && !this.modalShown) {
           this.modalShown = true;
+          // Check for preventAutoShowSuccessModal property
+          if (this.stepperProps.preventAutoShowSuccessModal) {
+            return; // Don't show any modals if preventAutoShowSuccessModal is true
+          }
+          
           if (this.exports.some((e) => e.status === 'aborted' || e.status === 'error')) {
             this.$modal.show(this.stepperProps.failModalName)
           } else {

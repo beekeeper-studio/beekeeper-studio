@@ -29,12 +29,13 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
-import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
-import { LicenseModule } from './modules/LicenseModule'
-import { UserEnumsModule } from './modules/UserEnumsModule'
 import { BackupModule } from './modules/backup/BackupModule'
+import { CredentialsModule, WSWithClient } from './modules/CredentialsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
+import { LicenseModule } from './modules/LicenseModule'
+import { SidebarModule } from './modules/SidebarModule'
+import { UserEnumsModule } from './modules/UserEnumsModule'
 
 
 const log = RawLog.scope('store/index')
@@ -72,8 +73,6 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
-  openDetailView: boolean
-  tableTableSplitSizes: number[]
 }
 
 Vue.use(Vuex)
@@ -94,7 +93,8 @@ const store = new Vuex.Store<State>({
     pinnedConnections: PinConnectionModule,
     multiTableExports: MultiTableExportStoreModule,
     imports: ImportStoreModule,
-    backups: BackupModule
+    backups: BackupModule,
+    sidebar: SidebarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -128,8 +128,6 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
-    openDetailView: SmartLocalStorage.getBool('openDetailView', true),
-    tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
   },
 
   getters: {
@@ -223,7 +221,7 @@ const store = new Vuex.Store<State>({
       return getters.schemas.length > 1
     },
     connectionColor(state) {
-      return state.usedConfig ? state.usedConfig.labelColor : 'default'
+      return state.usedConfig?.labelColor ?? 'default'
     },
     schemas(state) {
       if (state.tables.find((t) => !!t.schema)) {
@@ -249,9 +247,6 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
-    },
-    openDetailView(state) {
-      return state.openDetailView
     },
   },
   mutations: {
@@ -387,12 +382,6 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
-    openDetailView(state, value: boolean) {
-      state.openDetailView = value
-    },
-    tableTableSplitSizes(state, value: number[]) {
-      state.tableTableSplitSizes = value
-    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -418,6 +407,9 @@ const store = new Vuex.Store<State>({
         const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
       }
+      if (context.getters.isCommunity) {
+        title += ' - Free Version'
+      }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
     },
@@ -440,6 +432,8 @@ const store = new Vuex.Store<State>({
           context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
         }
 
+        window.main.enableConnectionMenuItems();
+
         context.commit('defaultSchema', defaultSchema);
         context.commit('connectionType', config.connectionType);
         context.commit('connected', true);
@@ -453,6 +447,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
 
+        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
       } else {
         throw "No username provided"
       }
@@ -465,6 +460,9 @@ const store = new Vuex.Store<State>({
     async disconnect(context) {
       const server = context.state.server
       server?.disconnect()
+
+      window.main.disableConnectionMenuItems();
+
       context.commit('clearConnection')
       context.commit('newConnection', null)
       context.dispatch('updateWindowTitle')
@@ -504,6 +502,7 @@ const store = new Vuex.Store<State>({
     },
     async updateDatabaseList(context) {
       const databaseList = await context.state.connection.listDatabases();
+      log.info("databaseList: ", databaseList)
       context.commit('databaseList', databaseList)
     },
     async updateTables(context) {
@@ -602,18 +601,6 @@ const store = new Vuex.Store<State>({
       SmartLocalStorage.setBool(flag, value)
       context.commit(flag, value)
       return value
-    },
-    toggleOpenDetailView(context, value?: boolean) {
-      if (typeof value === 'undefined') {
-        value = !context.state.openDetailView
-      }
-      SmartLocalStorage.setBool('openDetailView', value)
-      context.commit('openDetailView', value)
-      return value
-    },
-    setTableTableSplitSizes(context, value: number[]) {
-      SmartLocalStorage.addItem('tableTableSplitSizes', value)
-      context.commit('tableTableSplitSizes', value)
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })

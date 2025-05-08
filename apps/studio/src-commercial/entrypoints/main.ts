@@ -2,7 +2,6 @@
 import log from '@bksLogger'
 import * as electron from 'electron'
 import { app, ipcMain, protocol } from 'electron'
-import { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as fs from 'fs'
 import _ from 'lodash'
 import path from 'path'
@@ -16,6 +15,7 @@ import MenuHandler from '@/background/NativeMenuBuilder'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import Connection from '@/common/appdb/Connection'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
+import bksConfig from '@/common/bksConfig'
 import platformInfo from '@/common/platform_info'
 import Migration from '@/migration/index'
 
@@ -24,7 +24,7 @@ import { manageUpdates } from '@/background/update_manager'
 import { AppEvent } from '@/common/AppEvent'
 import { uuidv4 } from '@/lib/uuid'
 import { UtilProcMessage } from '@/types'
-import installExtension from 'electron-devtools-installer'
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as sms from 'source-map-support'
 import { setupThemeContentHandlers } from '../../src/background/theme-handlers'
 import { initializeThemeService } from '../../src/background/theme-service'
@@ -33,14 +33,13 @@ if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
 
-
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
   }
 }
 
-let utilityProcess: Electron.UtilityProcess
+let utilityProcess: electron.UtilityProcess
 let newWindows: number[] = [];
 
 async function createUtilityProcess() {
@@ -49,7 +48,8 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    bksPlatformInfo: JSON.stringify(platformInfo)
+    bksPlatformInfo: JSON.stringify(platformInfo),
+    bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -178,6 +178,10 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('platformInfo', () => {
   return platformInfo;
+})
+
+ipcMain.handle('bksConfigSource', () => {
+  return bksConfig.source;
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {

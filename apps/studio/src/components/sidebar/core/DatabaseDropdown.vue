@@ -144,7 +144,8 @@
         }
       },
       selectedDatabase() {
-        if (this.selectedDatabase != this.currentDatabase && this.dbs.includes(this.selectedDatabase)) {
+        // mongodb doesn't actually create the db until a collection has been added
+        if (this.selectedDatabase != this.currentDatabase && (this.dbs.includes(this.selectedDatabase) || this.connectionType === 'mongodb')) {
           this.$emit('databaseSelected', this.selectedDatabase)
         }
       }

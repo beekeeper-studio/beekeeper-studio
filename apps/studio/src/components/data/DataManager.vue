@@ -6,7 +6,6 @@ import _ from 'lodash'
 import {DataModules} from '@/store/DataModules'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
-import globals from '@/common/globals'
 
 
 export default Vue.extend({
@@ -16,7 +15,7 @@ export default Vue.extend({
   mounted() {
     this.mountAndRefresh()
     this.$store.commit('storeInitialized', true)
-    this.interval = setInterval(this.poll, globals.dataCheckInterval)
+    this.interval = setInterval(this.poll, this.$bksConfig.general.dataSyncInterval)
   },
   beforeDestroy() {
     if (this.interval) clearInterval(this.interval);

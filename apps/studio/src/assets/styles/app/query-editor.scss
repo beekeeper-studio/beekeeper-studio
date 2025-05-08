@@ -1,3 +1,4 @@
+@use "sass:color";
 .query-editor {
   position: relative;
   display: flex;
@@ -100,7 +101,7 @@
       padding-top: $gutter-h * 0.5;
       padding-bottom: $gutter-h * 0.5;
       padding-left: ($gutter-h * 1.5);
-      background: lighten($query-editor-bg, 1%);
+      background: color.adjust($query-editor-bg, $lightness: 1%);
     }
     .result-table {
       display: flex;
@@ -130,8 +131,11 @@
 
   }
 
-  .CodeMirror {
-    padding-bottom: 0.25rem;
+  .BksSqlTextEditor {
+    min-height: 0;
+    .CodeMirror {
+      padding-bottom: 0.25rem;
+    }
   }
 
   .CodeMirror-linenumbers {

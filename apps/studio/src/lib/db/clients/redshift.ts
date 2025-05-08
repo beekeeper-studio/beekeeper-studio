@@ -1,4 +1,3 @@
-import globals from "@/common/globals";
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
@@ -6,6 +5,7 @@ import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableP
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
+import BksConfig from "@/common/bksConfig";
 import { TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
@@ -166,6 +166,8 @@ export class RedshiftClient extends PostgresClient {
 
     const data = await this.driverExecuteSingle(sql, { params });
 
+    // For now, treat all keys as non-composite until we can properly test with Redshift
+    // TODO: Implement proper composite key detection for Redshift
     return data.rows.map((row) => ({
       toTable: row.to_table,
       toSchema: row.to_schema,
@@ -175,7 +177,8 @@ export class RedshiftClient extends PostgresClient {
       fromColumn: row.from_column,
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
-      onDelete: row.delete_rule
+      onDelete: row.delete_rule,
+      isComposite: false
     }));
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
@@ -254,8 +257,8 @@ export class RedshiftClient extends PostgresClient {
       password: passwordResolver || server.config.password || undefined,
       database: database.database,
       max: 5, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: globals.psqlTimeout,
-      idleTimeoutMillis: globals.psqlIdleTimeout,
+      connectionTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
+      idleTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
     };
 
     return this.configurePool(config, server, tempUser);

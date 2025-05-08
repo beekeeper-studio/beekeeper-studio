@@ -449,6 +449,64 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         }
       ])
     })
+    
+    it("should filter foreign keys by schema when calling getTableKeys", async () => {
+      // Create two schemas with the same table name in each
+      await util.knex.raw(`
+        CREATE SCHEMA schema_test_1;
+        CREATE SCHEMA schema_test_2;
+        
+        -- Create parent tables in both schemas
+        CREATE TABLE schema_test_1.parent (
+          id INTEGER PRIMARY KEY,
+          name VARCHAR(100)
+        );
+        
+        CREATE TABLE schema_test_2.parent (
+          id INTEGER PRIMARY KEY,
+          name VARCHAR(100)
+        );
+        
+        -- Create child tables with the same name in both schemas
+        CREATE TABLE schema_test_1.child (
+          id INTEGER PRIMARY KEY,
+          parent_id INTEGER,
+          description VARCHAR(100),
+          FOREIGN KEY (parent_id) REFERENCES schema_test_1.parent(id)
+        );
+        
+        CREATE TABLE schema_test_2.child (
+          id INTEGER PRIMARY KEY,
+          parent_id INTEGER,
+          description VARCHAR(100),
+          FOREIGN KEY (parent_id) REFERENCES schema_test_2.parent(id)
+        );
+      `);
+      
+      // Get foreign keys from schema_test_1
+      const keys1 = await util.connection.getTableKeys('child', 'schema_test_1');
+      
+      // Get foreign keys from schema_test_2
+      const keys2 = await util.connection.getTableKeys('child', 'schema_test_2');
+      
+      // Verify foreign keys from schema_test_1 refer to the correct parent table
+      expect(keys1.length).toBe(1);
+      expect(keys1[0].fromSchema).toBe('schema_test_1');
+      expect(keys1[0].fromTable).toBe('child');
+      expect(keys1[0].toSchema).toBe('schema_test_1');
+      expect(keys1[0].toTable).toBe('parent');
+      
+      // Verify foreign keys from schema_test_2 refer to the correct parent table
+      expect(keys2.length).toBe(1);
+      expect(keys2[0].fromSchema).toBe('schema_test_2');
+      expect(keys2[0].fromTable).toBe('child');
+      expect(keys2[0].toSchema).toBe('schema_test_2');
+      expect(keys2[0].toTable).toBe('parent');
+      
+      // Verify no cross-schema references (schema_test_1.child shouldn't reference schema_test_2.parent)
+      expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
+      expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
+    })
 
     it("should be able to define array column correctly", async () => {
       const arrayTable = await util.connection.listTableColumns('witharrays');

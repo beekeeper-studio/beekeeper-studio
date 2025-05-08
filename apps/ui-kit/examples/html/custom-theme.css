@@ -1,0 +1,61 @@
+.custom-theme .BksSqlTextEditor {
+  --bks-text-editor-bg-color: #00ff00;
+  --bks-text-editor-fg-color: #ff0000;
+  --bks-text-editor-keyword-fg-color: #ff00ff;
+  --bks-text-editor-string-fg-color: #00ffff;
+  --bks-text-editor-number-fg-color: #ffff00;
+  --bks-text-editor-comment-fg-color: #ff8800;
+  --bks-text-editor-variable-fg-color: #8800ff;
+  --bks-text-editor-property-fg-color: #ff0088;
+  --bks-text-editor-bracket-fg-color: #88ff00;
+  --bks-text-editor-selected-bg-color: rgba(255, 0, 0, 0.5);
+
+  padding: 10px;
+  font-family: "Comic Sans MS", cursive;
+  border: 3px dashed #ff00ff;
+}
+
+.custom-theme .BksTable {
+  --bks-table-bg-color: #ffff00;
+  --bks-table-fg-color: #0000ff;
+  --bks-table-header-bg-color: #ff8800;
+  --bks-table-header-bg-color-selected: #ff00ff;
+  --bks-table-header-bg-color-highlight: #00ffff;
+  --bks-table-header-fg-color: #0000ff;
+  --bks-table-header-fg-color-selected: #ffff00;
+  --bks-table-header-fg-color-highlight: #ff0000;
+
+  --bks-table-header-border-color: #ff00ff;
+  --bks-table-header-col-bg-color: #ff8800;
+  --bks-table-header-col-border-color: #ff0000;
+  --bks-table-row-odd-bg-color: #ff88ff;
+  --bks-table-cell-fg-color: #0000ff;
+  --bks-table-cell-bg-color-hover: #00ff00;
+  --bks-table-cell-bg-color-selected: #ff00ff;
+  --bks-table-sorter-fg-color-active: #00ffff;
+  --bks-table-sorter-fg-color-inactive: #888800;
+  --bks-table-range-border-color: #ff0088;
+
+  --bks-table-tooltip-bg-color: #ff00ff;
+  --bks-table-tooltip-fg-color: #00ff00;
+}
+
+.custom-theme .BksTable .tabulator-header .tabulator-col.primary-key:before {
+  color: #ff0088;
+}
+
+.custom-theme .BksEntityList {
+  background-color: #0000ff;
+  color: #ffff00;
+  border: 3px solid #00ff00;
+}
+
+.custom-theme .BksEntityList .item-icon {
+  color: #ff00ff;
+}
+
+.custom-theme .BksDataEditor-run button {
+  background-color: #ff00ff;
+  color: #00ff00;
+  border: 2px dashed #ffff00;
+}

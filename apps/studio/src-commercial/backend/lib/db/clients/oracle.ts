@@ -15,6 +15,8 @@ import {
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
+  Routine,
+  RoutineType,
   SchemaFilterOptions,
   StreamResults,
   TableChanges,
@@ -128,35 +130,66 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   }
 
   // took this approach because Typescript wasn't liking the base function could be a null value or a function
-  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}, primaryKeys: string[]): string {
-    const [PK] = primaryKeys
-    const columnsWithoutPK = _.without(Object.keys(data[0]), PK)
+  createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}[], primaryKeys: string[]): string {
+    const [PK] = primaryKeys;
+    const columnsWithoutPK = _.without(Object.keys(data[0]), PK);
+    
+    // Use D.wrapIdentifier for proper identifier wrapping
+    const wrappedPK = D.wrapIdentifier(PK);
+    const wrappedSchema = D.wrapIdentifier(schema);
+    const wrappedTable = D.wrapIdentifier(tableName);
+    
+    const wrappedColumns = columnsWithoutPK.map(col => D.wrapIdentifier(col));
+    
     const insertSQL = () => `
-      INSERT ("${PK}", ${columnsWithoutPK.map(cpk => `"${cpk}"`).join(', ')})
-      VALUES (source."${PK}", ${columnsWithoutPK.map(cpk => `source."${cpk}"`).join(', ')})
-    `
-    const updateSet = () => `${columnsWithoutPK.map(cpk => `target."${cpk}" = source."${cpk}"`).join(', ')}`
-    const formatValue = (val) => _.isString(val) ? `'${val}'` : val
-    const usingSQLStatement = data.map( (val, idx) => {
-      if (idx === 0) {
-        return `SELECT ${formatValue(val[PK])} AS "${PK}", ${columnsWithoutPK.map(col => `${formatValue(val[col])} AS "${col}"`).join(', ')} FROM dual`
+      INSERT (${wrappedPK}, ${wrappedColumns.join(', ')})
+      VALUES (source.${wrappedPK}, ${columnsWithoutPK.map(cpk => `source.${D.wrapIdentifier(cpk)}`).join(', ')})
+    `;
+    
+    const updateSet = () => `${columnsWithoutPK.map(cpk => 
+      `target.${D.wrapIdentifier(cpk)} = source.${D.wrapIdentifier(cpk)}`
+    ).join(', ')}`;
+    
+    // Use D.escapeString for proper string value escaping
+    const formatValue = (val: any): string => {
+      if (val === null || val === undefined) {
+        return 'NULL';
       }
-      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => `${formatValue(val[col])}`).join(', ')} FROM dual`
-    })
-    .join(' UNION ALL ')
+      if (_.isNumber(val) || _.isBoolean(val)) {
+        return String(val);
+      }
+      if (_.isString(val)) {
+        return D.escapeString(val, true);
+      }
+      if (val instanceof Date) {
+        return `TO_DATE('${val.toISOString().slice(0, 19).replace('T', ' ')}', 'YYYY-MM-DD HH24:MI:SS')`;
+      }
+      return D.escapeString(String(val), true);
+    };
+    
+    const usingSQLStatement = data.map((val, idx) => {
+      if (idx === 0) {
+        return `SELECT ${formatValue(val[PK])} AS ${wrappedPK}, ${columnsWithoutPK.map(col => 
+          `${formatValue(val[col])} AS ${D.wrapIdentifier(col)}`
+        ).join(', ')} FROM dual`;
+      }
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => 
+        formatValue(val[col])
+      ).join(', ')} FROM dual`;
+    }).join(' UNION ALL ');
 
     return `
-      MERGE INTO "${schema}"."${tableName}" target
+      MERGE INTO ${wrappedSchema}.${wrappedTable} target
       USING (
         ${usingSQLStatement}
       ) source
-      ON (target."${PK}" = source."${PK}")
+      ON (target.${wrappedPK} = source.${wrappedPK})
       WHEN MATCHED THEN
         UPDATE SET
           ${updateSet()}
       WHEN NOT MATCHED THEN
         ${insertSQL()};
-    `
+    `;
   }
 
   async createDatabaseSQL() {
@@ -343,14 +376,90 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     transactions: true
   });
 
-  // TODO: implement
-  async listRoutines(_filter?: FilterOptions) {
-    return []
+  // List Oracle stored procedures, functions, and packages
+  async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
+    try {
+      // Query to get procedures, functions, and packages
+      const query = `
+        SELECT 
+          OBJECT_NAME,
+          OBJECT_TYPE,
+          OWNER AS SCHEMA_NAME,
+          STATUS,
+          CREATED,
+          LAST_DDL_TIME,
+          OBJECT_ID
+        FROM ALL_OBJECTS
+        WHERE OBJECT_TYPE IN ('PROCEDURE', 'FUNCTION', 'PACKAGE')
+        ${filter?.schema ? `AND OWNER = ${D.escapeString(filter.schema.toUpperCase(), true)}` : ''}
+        ORDER BY OBJECT_TYPE, OBJECT_NAME
+      `;
+      
+      const results = await this.driverExecuteSimple(query);
+      
+      // Map to the Routine interface expected by the application
+      return results.map(row => {
+        // Convert Oracle object type to our RoutineType
+        const routineType: RoutineType = 
+          row.OBJECT_TYPE === 'FUNCTION' ? 'function' : 
+          row.OBJECT_TYPE === 'PROCEDURE' ? 'procedure' : 
+          'procedure'; // Default for packages etc.
+        
+        return {
+          id: String(row.OBJECT_ID),
+          name: row.OBJECT_NAME,
+          schema: row.SCHEMA_NAME,
+          type: routineType,
+          returnType: routineType === 'function' ? 'UNKNOWN' : '',
+          entityType: 'routine'
+        };
+      });
+    } catch (error) {
+      log.error('Error listing routines:', error);
+      return [];
+    }
   }
-  // TODO: fix implementation
+  // Oracle doesn't have the concept of multiple databases in the same way as other RDBMS
+  // Instead, it uses services (service names) to connect to different database instances
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const current = await this.getCurrentDatabase()
-    return [current]
+    try {
+      // First, get the current database name
+      const current = await this.getCurrentDatabase();
+      
+      // Then, query v$database to get additional information
+      const dbQuery = `
+        SELECT NAME, OPEN_MODE, DATABASE_ROLE 
+        FROM v$database
+      `;
+      
+      // Also query available PDBs (Pluggable Databases) if this is a container database
+      const pdbQuery = `
+        SELECT NAME, OPEN_MODE, RESTRICTED 
+        FROM v$pdbs
+        WHERE OPEN_MODE = ${D.escapeString('READ WRITE', true)}
+      `;
+      
+      // Execute both queries
+      let databases = [current];
+      
+      try {
+        // Try to get additional PDBs, but this may fail if we don't have permissions
+        const pdbResults = await this.driverExecuteSimple(pdbQuery);
+        if (pdbResults && pdbResults.length > 0) {
+          const pdbNames = pdbResults.map(row => row.NAME);
+          databases = databases.concat(pdbNames);
+        }
+      } catch (error) {
+        // Ignore errors if we don't have permission to view PDBs
+        log.debug('Unable to query PDBs, listing only current database', error);
+      }
+      
+      return [...new Set(databases)]; // Return unique list
+    } catch (error) {
+      log.error('Error listing databases:', error);
+      // Fall back to default implementation if there's an error
+      return [this.database?.database || 'oracle'];
+    }
   }
 
   // this can just return [] always
@@ -427,6 +536,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       a.table_name,
       a.column_name,
       a.constraint_name,
+      a.position,
       c.owner,
       c.delete_rule,
        -- referenced
@@ -434,7 +544,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       c_pk.table_name as R_TABLE_NAME,
       c_pk.constraint_name as R_PK,
       c_pk.owner as R_OWNER,
-      r_a.COLUMN_NAME as R_COLUMN
+      r_a.COLUMN_NAME as R_COLUMN,
+      r_a.position as R_POSITION
   -- constraint columns
   FROM all_cons_columns a
   -- constraint info for those columns
@@ -450,19 +561,51 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   AND c_pk.constraint_type = 'P'
    AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
    ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+  ORDER BY 
+    a.constraint_name,
+    a.position
     `
     const response = await this.driverExecuteSimple(sql)
-    return response.map((row) => ({
-      fromTable: row.TABLE_NAME,
-      fromSchema: row.OWNER,
-      fromColumn: row.COLUMN_NAME,
-
-      toTable: row.R_TABLE_NAME,
-      toColumn: row.R_COLUMN,
-      toSchema: row.R_OWNER,
-      constraintName: row.CONSTRAINT_NAME,
-      onDelete: row.DELETE_RULE
-    }))
+    
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
+    
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+      
+      // Sort key parts by position to ensure correct column order
+      const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
+      
+      // If there's only one part, return a simple key (backward compatibility)
+      if (sortedKeyParts.length === 1) {
+        const row = sortedKeyParts[0];
+        return {
+          constraintName: row.CONSTRAINT_NAME,
+          toTable: row.R_TABLE_NAME,
+          toSchema: row.R_OWNER,
+          toColumn: row.R_COLUMN,
+          fromTable: row.TABLE_NAME,
+          fromSchema: row.OWNER,
+          fromColumn: row.COLUMN_NAME,
+          onDelete: row.DELETE_RULE,
+          isComposite: false
+        };
+      } 
+      
+      // If there are multiple parts, it's a composite key
+      const firstPart = sortedKeyParts[0];
+      return {
+        constraintName: firstPart.CONSTRAINT_NAME,
+        toTable: firstPart.R_TABLE_NAME,
+        toSchema: firstPart.R_OWNER,
+        toColumn: _.uniq(sortedKeyParts.map(p => p.R_COLUMN)),
+        fromTable: firstPart.TABLE_NAME,
+        fromSchema: firstPart.OWNER,
+        fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
+        onDelete: firstPart.DELETE_RULE,
+        isComposite: true
+      };
+    })
   }
 
 
@@ -758,11 +901,12 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       cancel: (async () => {
         canceling = true
         if (connection) {
-          await connection.break()
           try {
-            await connection?.close()
+            await connection.break()
+            await connection.close()
           } catch(err) {
-            // do nothing
+            // Log the error but continue with cancellation
+            console.error("Error during query cancellation:", err);
           }
         }
         else cancelable.cancel()

@@ -32,6 +32,7 @@ export const MysqlData: DialectData = {
   editorFriendlyIdentifier: (s) => s,
   escapeString: defaultEscapeString,
   requireDataset: false,
+  disallowedSortColumns: ['json', 'blob', 'varbinary', 'geometry'],
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   },
@@ -41,6 +42,7 @@ export const MysqlData: DialectData = {
   },
   textEditorMode: "text/x-mysql",
   disabledFeatures: {
+    shell: true,
     alter: {
       multiStatement: true,
       renameSchema: true,
