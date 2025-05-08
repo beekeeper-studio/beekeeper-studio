@@ -42,4 +42,5 @@ export interface IMenuActionHandler {
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  manageCustomThemes: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }

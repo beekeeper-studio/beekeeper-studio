@@ -1,11 +1,10 @@
 'use strict'
-import * as fs from 'fs'
-import path from 'path'
-import { app, protocol } from 'electron'
-import * as electron from 'electron'
-import { ipcMain } from 'electron'
-import _ from 'lodash'
 import log from '@bksLogger'
+import * as electron from 'electron'
+import { app, ipcMain, protocol } from 'electron'
+import * as fs from 'fs'
+import _ from 'lodash'
+import path from 'path'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
@@ -13,20 +12,22 @@ log.info("initializing background")
 
 
 import MenuHandler from '@/background/NativeMenuBuilder'
-import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
-import Connection from '@/common/appdb/Connection'
-import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
-import platformInfo from '@/common/platform_info'
+import Connection from '@/common/appdb/Connection'
+import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import bksConfig from '@/common/bksConfig'
+import platformInfo from '@/common/platform_info'
+import Migration from '@/migration/index'
 
-import { AppEvent } from '@/common/AppEvent'
-import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
-import { uuidv4 } from '@/lib/uuid';
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
-import { UtilProcMessage } from '@/types'
+import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder'
 import { manageUpdates } from '@/background/update_manager'
+import { AppEvent } from '@/common/AppEvent'
+import { uuidv4 } from '@/lib/uuid'
+import { UtilProcMessage } from '@/types'
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as sms from 'source-map-support'
+import { setupThemeContentHandlers } from '../../src/background/theme-handlers'
+import { initializeThemeService } from '../../src/background/theme-service'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -38,7 +39,7 @@ function initUserDirectory(d: string) {
   }
 }
 
-let utilityProcess: Electron.UtilityProcess
+let utilityProcess: electron.UtilityProcess
 let newWindows: number[] = [];
 
 async function createUtilityProcess() {
@@ -113,8 +114,8 @@ let settings: IGroupedUserSettings
 let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
-protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{ scheme: 'plugin', privileges: { secure: true, standard: true } }])
 let initialized = false
 
 async function initBasics() {
@@ -149,6 +150,12 @@ async function initBasics() {
   log.debug("setting up the menu")
   menuHandler = new MenuHandler(electron, settings)
   menuHandler.initialize()
+
+  // Initialize theme service and set up theme handlers
+  log.debug("initializing theme service")
+  await initializeThemeService()
+  setupThemeContentHandlers()
+
   log.debug("Building the window")
   log.debug("managing updates")
   manageUpdates(settings.useBeta.valueAsBool)
@@ -201,9 +208,9 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
 
-      installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
-        .then((name) => console.log(`Added Extension:  ${name}`))
-        .catch((err) => console.log('An error occurred: ', err));
+    installExtension(VUEJS_DEVTOOLS)
+      .then((name) => console.log(`Added Extension: ${name}`))
+      .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because
     // we can't connect to bigquery-emulator on localhost.
     // See: https://github.com/electron/electron/issues/23664
@@ -231,7 +238,7 @@ app.on('ready', async () => {
 
 })
 
-function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
+function createAndSendPorts(filter: boolean, utilDied = false) {
   getActiveWindows().forEach((w) => {
     if (!filter || newWindows.includes(w.winId)) {
       const { port1, port2 } = new electron.MessageChannelMain();
@@ -317,7 +324,7 @@ if (isDevelopment) {
     fs.watchFile(rendererTrigger, (current, previous) => {
       if (current.mtime !== previous.mtime)
         console.log("reloading webcontents")
-        getActiveWindows().forEach((w) => w.webContents.reload())
+      getActiveWindows().forEach((w) => w.webContents.reload())
     })
   } else {
     console.log('not watching for restart trigger, file does not exist')

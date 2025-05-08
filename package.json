@@ -31,8 +31,13 @@
     "postpack": "pinst --enable"
   },
   "devDependencies": {
+    "@electron/remote": "^2.1.2",
+    "@types/lodash": "^4.17.16",
+    "@types/node": "^22.15.17",
+    "electron-devtools-installer": "^4.0.0",
     "husky": "8.0.3",
-    "pinst": "^3.0.0"
+    "pinst": "^3.0.0",
+    "source-map-support": "^0.5.21"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

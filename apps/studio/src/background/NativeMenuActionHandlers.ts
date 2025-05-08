@@ -1,14 +1,15 @@
+import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
+import { DevLicenseState } from '@/lib/license'
+import { app, shell } from 'electron'
+import { autoUpdater } from "electron-updater"
 import _ from 'lodash'
-import {AppEvent} from '../common/AppEvent'
-import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
-import { app , shell } from 'electron'
-import platformInfo from '../common/platform_info'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { autoUpdater } from "electron-updater"
-import { DevLicenseState } from '@/lib/license';
+import { AppEvent } from '../common/AppEvent'
+import platformInfo from '../common/platform_info'
+import { applyThemeToWindow } from './theme-handlers'
 import { setAllowBeta } from './update_manager'
+import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -18,7 +19,7 @@ function getIcon() {
 }
 
 export default class NativeMenuActionHandlers implements IMenuActionHandler {
-  constructor(private settings: IGroupedUserSettings) {}
+  constructor(private settings: IGroupedUserSettings) { }
 
   quit(): void {
     app.quit()
@@ -102,7 +103,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively
   // Having said that, it can accept openoptions too and do it's thing
-  newWindow = (options: Electron.MenuItem|OpenOptions = {}): void => {
+  newWindow = (options: Electron.MenuItem | OpenOptions = {}): void => {
     // typescript isn't happy that url doesn't exist on MenuItem, which shouldn't matter because we're checking to see if it exists, but TS gonna TS.
     if ((options as any)?.url) {
       return buildWindow(this.settings, <OpenOptions>options)
@@ -129,23 +130,50 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
-    await this.settings.theme.save()
-    getActiveWindows().forEach( window => {
-      window.send(AppEvent.settingsChanged)
-    })
+    try {
+      const label = _.isString(menuItem) ? menuItem : menuItem.label
+      const themeId = label.toLowerCase().replaceAll(" ", "-")
+
+      console.log(`Switching to theme: ${themeId}`);
+
+      // Save the theme setting
+      this.settings.theme.userValue = themeId
+      await this.settings.theme.save()
+
+      console.log(`Theme setting saved: ${themeId}`);
+
+      // Apply the theme to all windows
+      const windows = getActiveWindows()
+      console.log(`Applying theme to ${windows.length} windows`);
+
+      // Apply to each window one by one
+      for (const window of windows) {
+        try {
+          // Apply the theme CSS directly
+          await applyThemeToWindow(window as any, themeId)
+
+          // Also notify the renderer process about the settings change
+          window.send(AppEvent.settingsChanged)
+        } catch (error) {
+          console.error(`Error applying theme ${themeId} to window:`, error)
+        }
+      }
+
+      console.log(`Theme switch completed: ${themeId}`);
+    } catch (error) {
+      console.error(`Error switching theme:`, error);
+    }
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
 
-  togglePrimarySidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
+  togglePrimarySidebar = async (_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.togglePrimarySidebar)
   }
 
-  toggleSecondarySidebar = async(_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
+  toggleSecondarySidebar = async (_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.toggleSecondarySidebar)
   }
 
@@ -176,7 +204,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   toggleMinimalMode = async (): Promise<void> => {
     this.settings.minimalMode.value = !this.settings.minimalMode.value
     await this.settings.minimalMode.save()
-    getActiveWindows().forEach( window => {
+    getActiveWindows().forEach(window => {
       window.send(AppEvent.settingsChanged)
     })
   }
@@ -190,10 +218,48 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     const beta = label.toLowerCase() == 'beta';
     this.settings.useBeta.userValue = beta;
     await this.settings.useBeta.save()
-    getActiveWindows().forEach( window => {
+    getActiveWindows().forEach(window => {
       window.send(AppEvent.settingsChanged)
     })
     setAllowBeta(this.settings.useBeta.value as boolean);
     autoUpdater.checkForUpdates();
+  }
+
+  manageCustomThemes(_menuItem: Electron.MenuItem, win: ElectronWindow): void {
+    console.log('manageCustomThemes called');
+
+    if (win) {
+      // First try the standard IPC approach
+      win.webContents.send(AppEvent.showThemeManager);
+
+      // As a fallback, try to execute JavaScript directly
+      win.webContents.executeJavaScript(`
+        console.log('Executing direct JavaScript to show theme manager');
+        
+        // Try multiple approaches to ensure the modal is shown
+        
+        // 1. Try the global method
+        if (typeof window.showThemeManagerModal === 'function') {
+          window.showThemeManagerModal();
+        }
+        
+        // 2. Try to emit to Vue root
+        if (window.$root && typeof window.$root.$emit === 'function') {
+          window.$root.$emit('show-theme-manager');
+        }
+        
+        // 3. Dispatch a DOM event
+        window.dispatchEvent(new CustomEvent('${AppEvent.showThemeManager}'));
+      `).catch(err => console.error('Error executing JavaScript:', err));
+    } else {
+      console.log('No window provided');
+      // Try to get all active windows
+      const windows = getActiveWindows();
+      if (windows && windows.length > 0) {
+        windows.forEach((window) => {
+          window.webContents.send(AppEvent.showThemeManager);
+        });
+      }
+    }
   }
 }

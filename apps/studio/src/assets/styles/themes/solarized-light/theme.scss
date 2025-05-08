@@ -37,9 +37,6 @@ $editor-statusbar:         $theme-base;
   background: $theme-bg;
   color: $text;
 }
-.material-icons {
-  // font-weight: 600;
-}
 select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   option {

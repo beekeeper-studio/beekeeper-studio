@@ -1,10 +1,11 @@
-
-import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, setValue } from '../../../common/transport/TransportUserSetting'
-import _ from 'lodash'
-import Vue from 'vue'
-import { Module } from 'vuex'
 import config from "@/config";
+import _ from 'lodash';
+import Vue from 'vue';
+import { Module } from 'vuex';
+import { IGroupedUserSettings, TransportUserSetting, UserSettingValueType, setValue } from '../../../common/transport/TransportUserSetting';
 
+// Define the keymap types
+type KeymapType = "default" | "vim";
 
 interface State {
   settings: IGroupedUserSettings,
@@ -15,6 +16,8 @@ interface State {
 const M = {
   ADD: 'addSetting',
   REPLACEALL: 'replaceSettings',
+  SET_THEME: 'SET_THEME',
+  SET_THEME_PREVIEW: 'SET_THEME_PREVIEW',
 }
 
 const SettingStoreModule: Module<State, any> = {
@@ -37,6 +40,57 @@ const SettingStoreModule: Module<State, any> = {
     setInitialized(state) {
       state.initialized = true;
     },
+    SET_THEME(state, themeId: string) {
+      setValue(state.settings.theme, themeId as any);
+
+      // Apply the theme class to the document body
+      document.body.className = `theme-${themeId}`;
+
+      // Apply the theme CSS via IPC if available
+      if (window.electron && window.electron.ipcRenderer) {
+        console.log(`Applying theme CSS for ${themeId} via IPC`);
+        // Use type assertion to bypass TypeScript checking
+        (window.electron.ipcRenderer as any).send('themes/apply', { name: themeId });
+      }
+    },
+    SET_THEME_PREVIEW(_state, payload) {
+      let themeId;
+      let css;
+
+      // Handle both string and object payloads
+      if (typeof payload === 'string') {
+        themeId = payload;
+      } else {
+        themeId = payload.themeId;
+        css = payload.css;
+      }
+
+      console.log(`Setting theme preview: ${themeId}`);
+
+      // This updates the UI without saving to settings
+      document.body.className = `theme-${themeId}`;
+
+      if (css) {
+        // Apply the CSS directly
+        const style = document.createElement('style');
+        style.id = `theme-css-${themeId}`;
+        style.textContent = css;
+
+        // Remove any existing theme styles
+        document.querySelectorAll('style[id^="theme-css-"]').forEach(existingStyle => {
+          existingStyle.remove();
+        });
+
+        // Add the new style
+        document.head.appendChild(style);
+      }
+
+      // If we're in an electron environment, notify the main process
+      if (window.electron && window.electron.ipcRenderer) {
+        // Use type assertion to bypass TypeScript checking
+        (window.electron.ipcRenderer as any).send('themes/preview', { name: themeId });
+      }
+    },
     SET_PRIVACY_MODE(state, value: boolean) {
       state.privacyMode = value;
     }
@@ -46,18 +100,26 @@ const SettingStoreModule: Module<State, any> = {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
       context.commit(M.REPLACEALL, settings);
       context.commit('setInitialized');
+
+      // Apply the theme from settings when the app starts
+      const themeValue = context.getters.themeValue;
+      if (themeValue) {
+        console.log(`Initializing with theme: ${themeValue}`);
+        // Apply the theme to the UI
+        document.body.className = `theme-${themeValue}`;
+      }
     },
     async saveSetting(context, setting: TransportUserSetting) {
       await Vue.prototype.$util.send('appdb/setting/save', { obj: setting })
       context.commit(M.ADD, setting)
     },
     async save(context, { key, value }) {
-      if (!key || !value) return;
-    
+      if (!key) return;
+
       if (key === 'privacyMode') {
         const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
         setting.key = key;
-    
+
         if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
         setValue(setting, value);
         const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
@@ -89,11 +151,11 @@ const SettingStoreModule: Module<State, any> = {
       return theme;
     },
     /** The keymap type to be used in text editor */
-    userKeymap(state) {
+    userKeymap(state): KeymapType {
       const value = state.settings.keymap?.value as string;
-      return value && config.defaults.keymapTypes.map((k) => k.value).includes(value)
-        ? value
-        : "default";
+      return value && config.defaults.keymapTypes.map((k) => k.value).includes(value as any)
+        ? (value as KeymapType)
+        : "default" as KeymapType;
     },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'

@@ -1,20 +1,21 @@
-import { contextBridge, ipcRenderer } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
-import path from 'path';
-import fs from 'fs';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
+import { execSync } from 'child_process';
+import { contextBridge, ipcRenderer } from 'electron';
+import 'electron-log/preload';
+import fs from 'fs';
 import { homedir } from 'os';
+import path from 'path';
+import pluralize from 'pluralize';
 import tls, { SecureVersion } from 'tls';
 import username from 'username';
-import { execSync } from 'child_process';
-import 'electron-log/preload';
-import pluralize from 'pluralize';
 
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const electron = require('@electron/remote');
 
 const testMode = process.env.TEST_MODE ? true : false;
-let userDirectory =  testMode ? './tmp' : electron?.app.getPath("userData")
+let userDirectory = testMode ? './tmp' : electron?.app.getPath("userData")
 if (process.env.PORTABLE_EXECUTABLE_DIR) {
   userDirectory = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
 }
@@ -85,7 +86,7 @@ export const api = {
   readVimrc(pathToVimrc?: string): string[] {
     const vimrcPath = path.join(pathToVimrc ?? userDirectory, ".beekeeper.vimrc");
     if (fileExistsSync(vimrcPath)) {
-      const data = fs.readFileSync(vimrcPath, { encoding: 'utf-8', flag: 'r'});
+      const data = fs.readFileSync(vimrcPath, { encoding: 'utf-8', flag: 'r' });
       const dataSplit = data.split("\n");
       return dataSplit;
     }

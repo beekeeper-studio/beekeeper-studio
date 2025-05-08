@@ -1,5 +1,5 @@
-import Vue from "vue"
 import rawLog from '@bksLogger'
+import Vue from "vue"
 
 const log = rawLog.scope('AppEvent')
 
@@ -58,6 +58,8 @@ export enum AppEvent {
   switchLicenseState = 'switchLicenseState',
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
+  /** Triggered to show the theme manager modal */
+  showThemeManager = 'show-theme-manager',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
@@ -76,7 +78,7 @@ export interface RootBinding {
 
 
 export const AppEventMixin = Vue.extend({
-  methods:  {
+  methods: {
     registerHandlers(bindings: RootBinding[]) {
       bindings.forEach(({ event, handler }) => {
         this.$root.$on(event, handler)
