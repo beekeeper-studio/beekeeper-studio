@@ -94,9 +94,16 @@
         "globalSidebarActiveItem",
       ]),
       keymap() {
-        return this.$vHotkeyKeymap({
+        const result = this.$vHotkeyKeymap({
           'general.openQuickSearch': this.showQuickSearch
-        })
+        });
+        if (this.$config.isMac) {
+          result['alt+s'] = (event) => {
+            event.preventDefault();
+            this.toggleSidebar();
+          };
+        }
+        return result;
       },
       splitElements() {
         return [
