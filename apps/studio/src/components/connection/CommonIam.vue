@@ -39,7 +39,7 @@
           v-model="config.redshiftOptions.awsProfile"
         >
       </div>
-      <template v-show="isKeyAuth" >
+      <div v-show="isKeyAuth" >
         <div class="form-group">
           <label for="Access Key ID">
             Access Key ID
@@ -60,7 +60,7 @@
             v-model="config.redshiftOptions.secretAccessKey"
           >
         </div>
-      </template>
+      </div>
       <div class="form-group">
         <label for="AWS Region">
           AWS Region
@@ -71,7 +71,7 @@
           v-model="config.redshiftOptions.awsRegion"
         >
       </div>
-      <template v-show="isRedshift">
+      <div v-show="isRedshift">
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
           <input
@@ -96,14 +96,14 @@
             v-model="config.redshiftOptions.tokenDurationSeconds"
           >
         </div>
-      </template>
+      </div>
     </div>
   </div>
 </template>
 <script>
 
 export default {
-  props: ['config'],
+  props: ['config', 'authType'],
   data() {
     return {
       iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
@@ -115,12 +115,10 @@ export default {
       return this.config.connectionType === 'redshift'
     },
     isKeyAuth() {
-      const { redshiftOptions } = this.config
-      return redshiftOptions?.authType && redshiftOptions.authType.includes('key')
+      return this.authType === 'iam_key';
     },
     isProfileAuth() {
-      const { redshiftOptions } = this.config
-      return redshiftOptions?.authType && redshiftOptions.authType.includes('file')
+      return this.authType === 'iam_file';
     }
   },
   methods: {
