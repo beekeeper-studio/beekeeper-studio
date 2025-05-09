@@ -55,10 +55,17 @@ module.exports = {
       to: 'public'
     },
     {
-      from: ".",
-      to: ".",
-      filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
+      from: "./user.config.ini",
+      to: "user.config.ini"
     },
+    {
+      from: "./system.config.ini",
+      to: "system.config.ini"
+    },
+    {
+      from: "./default.config.ini",
+      to: "default.config.ini"
+    }
   ],
   fileAssociations: [
     {
