@@ -87,7 +87,7 @@ export class UtilityConnection {
     }
   }
 
-  public async send(handlerName: string, args: any): Promise<any> {
+  public async send(handlerName: string, args?: any): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       const id = uuidv4();
 
