@@ -435,12 +435,12 @@ const store = new Vuex.Store<State>({
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
+        config = await context.dispatch('data/usedconnections/recordUsed', config)
         context.commit('newConnection', config)
 
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
 
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id }) 
