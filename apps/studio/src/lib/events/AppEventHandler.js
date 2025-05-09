@@ -16,6 +16,7 @@ export default class {
     window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
+    this.forward(AppEvent.settingsChanged)
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.togglePrimarySidebar)
@@ -31,9 +32,9 @@ export default class {
   }
 
   forward(event) {
-    const emit = () => {
+    const emit = (_event, ...args) => {
       log.debug("Received from electron, forwarding to app", event)
-      this.vueApp.$emit(event)
+      this.vueApp.$emit(event, ...args)
     }
     window.main.on(event, emit.bind(this))
   }

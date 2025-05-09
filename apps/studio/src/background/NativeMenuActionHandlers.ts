@@ -133,7 +133,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
     await this.settings.theme.save()
     getActiveWindows().forEach( window => {
-      window.send(AppEvent.settingsChanged)
+      window.send(AppEvent.settingsChanged, 'theme')
     })
   }
 

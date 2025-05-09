@@ -2,15 +2,17 @@
   <div class="sidebar-view">
     <iframe
       :src="iframeSrc"
-      sandbox="allow-scripts allow-same-origin"
+      sandbox="allow-scripts allow-same-origin allow-forms"
       ref="iframe"
+      @load="handleIframeLoad"
     ></iframe>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
-import { PluginRequestData } from "@/services/plugin/types";
+import { PluginNotificationData } from "@/services/plugin/types";
+import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
   name: "SidebarView",
@@ -38,31 +40,33 @@ export default Vue.extend({
       // Append timestamp as query parameter to force refresh
       return `${this.baseUrl}?t=${this.timestamp}`;
     },
+    rootBindings() {
+      return [
+        {
+          event: AppEvent.settingsChanged,
+          handler: this.handleSettingsChanged,
+        },
+      ];
+    },
   },
   mounted() {
-    // Add event listener for messages from iframe
-    window.addEventListener("message", this.handleIframeMessage);
+    this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
-    // Clean up event listener
-    window.removeEventListener("message", this.handleIframeMessage);
+    this.unregisterHandlers(this.rootBindings);
   },
   methods: {
-    async handleIframeMessage(event: MessageEvent<PluginRequestData>) {
-      // Get the iframe element
-      const iframe = this.$refs.iframe;
-
-      // Check if the message is from our iframe
-      if (iframe && event.source === iframe.contentWindow) {
-        const response = await this.$plugin.handleRequestFromSandbox(
-          this.pluginId,
-          event.data
-        );
-        iframe.contentWindow.postMessage(response, "*");
+    handleSettingsChanged(key) {
+      if (key === "theme") {
+        const data: PluginNotificationData = { name: "themeChanged" }
+        this.$plugin.notify(this.pluginId, data);
       }
     },
     refreshIframe() {
       this.timestamp = Date.now();
+    },
+    handleIframeLoad() {
+      this.$plugin.registerIframe(this.pluginId, this.$refs.iframe);
     },
   },
 });

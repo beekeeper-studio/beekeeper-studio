@@ -20,6 +20,8 @@ export interface Manifest extends CommonPluginInfo {
       }[];
     };
   };
+  /** The path to the plugin's root directory. This is helpful when you use a bundler to build the project to a `dist/` directory for example. */
+  pluginEntryDir?: string;
   settings: {
     id: string;
     name: string;
@@ -49,14 +51,4 @@ export interface Release {
   sourceArchiveUrl: string;
 }
 
-export interface PluginRequestData {
-  id: string;
-  name: "getTables" | "getColumns" | "getConnectionInfo" | "getActiveTab" | "updateQueryText";
-  args?: any;
-}
-
-export interface PluginResponseData {
-  id: string;
-  result?: any;
-  error?: Error;
-}
+export * from "./commTypes";
