@@ -13,9 +13,15 @@ Connecting to Azure Entra ID is straightforward once you're familiar with Azure'
 
 ## Authentication Methods
 
+![Azure Authentication Methods](../../assets/images/entraid-connections.png)
+
 ### 1. Azure CLI Authentication (MySQL, PostgreSQL, MS SQL)
 
 Uses your local Azure CLI session to retrieve an access token.
+
+![Azure EntraId CLI](../../assets/images/azure-entra-cli.png)
+
+[Install Azure CLI From Microsoft](https://learn.microsoft.com/en-us/cli/azure/?view=azure-cli-latest)
 
 **Steps:**
 1. Open your terminal and log in:
@@ -36,6 +42,8 @@ Uses your local Azure CLI session to retrieve an access token.
 
 Uses your Microsoft Entra credentials via a browser for a streamlined sign-in experience.
 
+![Azure EntraId SSO](../../assets/images/azure-entra-sso.png)
+
 **Steps:**
 1. Select **Azure AD SSO** as the authentication method.
 2. Enter:
@@ -50,6 +58,8 @@ Uses your Microsoft Entra credentials via a browser for a streamlined sign-in ex
 ### 3. Service Principal Authentication (MS SQL Only)
 
 Best suited for automated services or non-interactive applications.
+
+![Azure EntraId Principal](../../assets/images/azure-entra-principal.png)
 
 **Steps:**
 1. [Create a Service Principal](https://learn.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal)

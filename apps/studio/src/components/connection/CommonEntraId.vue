@@ -9,7 +9,7 @@
     <div
       class="form-group col"
     >
-      <div class="form-group">
+      <div v-show="showCli" class="form-group">
         <label for="msiEndpoint">AZ Tool <i
           class="material-icons"
           style="padding-left: 0.25rem"
@@ -161,6 +161,9 @@ export default {
     },
     showMsiEndpoint() {
       return [AzureAuthType.MSIVM].includes(this.authType)
+    },
+    showCli() {
+      return [AzureAuthType.CLI].includes(this.authType)
     },
     hasAccessTokenCache() {
       return Boolean(this.accountName)
