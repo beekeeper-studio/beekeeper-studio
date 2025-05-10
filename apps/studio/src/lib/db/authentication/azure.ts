@@ -1,12 +1,17 @@
 import * as msal from '@azure/msal-node';
-import axios, { AxiosResponse } from 'axios';
-import { wait } from '@shared/lib/wait';
+import axios, {AxiosResponse} from 'axios';
+import {wait} from '@shared/lib/wait';
 import rawLog from '@bksLogger';
-import { TokenCache } from '@/common/appdb/models/token_cache';
+import {TokenCache} from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
-import { AzureAuthType } from '../types';
+import {AzureAuthOptions, AzureAuthType} from '../types';
+import {exec} from 'child_process'
+import {getEntraOptions} from "@/lib/db/clients/utils";
+import {IDbConnectionServer} from "@/lib/db/backendTypes";
+import { promisify } from "util";
 
 const log = rawLog.scope('auth/azure');
+const execAsync = promisify(exec);
 
 type CloudTokenResponse = {
   cloud_token: CloudToken,
@@ -46,6 +51,7 @@ export interface AuthOptions {
   tenantId?: string,
   msiEndpoint?: string,
   clientSecret?: string
+  cliPath?: string,
   signal?: AbortSignal
 }
 
@@ -88,6 +94,17 @@ export class AzureAuthService {
     this.pca = new msal.PublicClientApplication(clientConfig);
   }
 
+  public async configDB(server: IDbConnectionServer, config: any){
+    await this.init(server.config.authId)
+
+    const options = getEntraOptions(server, { signal: 0 })
+
+    const authentication = await this.auth(server.config.azureAuthOptions.azureAuthType, options);
+    config.password = authentication.options.token
+    config.ssl = {}
+    return config;
+  }
+
   public async auth(authType: AzureAuthType, options: AuthOptions): Promise<AuthConfig> {
     this.signal = options.signal;
     switch (authType) {
@@ -99,6 +116,8 @@ export class AzureAuthService {
         return this.msiVM(options);
       case AzureAuthType.ServicePrincipalSecret:
         return this.servicePrincipal(options);
+      case AzureAuthType.CLI:
+        return await this.getAzureCLIToken(options);
       case AzureAuthType.Default:
       default:
         return this.default();
@@ -153,17 +172,43 @@ export class AzureAuthService {
     }
   }
 
+  private async getAzureCLIToken(options: AzureAuthOptions): Promise<AuthConfig> {
+    if(!options?.cliPath){
+      throw new Error('AZ command not specified')
+    }
+
+    const command = `${options?.cliPath} account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
+
+    try {
+      const { stdout } = await execAsync(command, { encoding: 'utf8' });
+      const tokenData = JSON.parse(stdout);
+
+      return {
+        type: 'azure-active-directory-default',
+        options: {
+          token: tokenData.accessToken,
+        }
+      };
+    } catch (error) {
+      log.error("Error getting token:", error);
+      if (error.stderr) {
+        log.error(`StdErr: ${error.stderr}`);
+      }
+      throw error;
+    }
+  }
+
   private async accessToken(): Promise<AuthConfig> {
     const refreshToken = await this.tryRefresh();
     if (refreshToken) {
       return refreshToken;
     }
     log.debug('Getting beekeeper cloud token');
-    const res = await axios.post('https://app.beekeeperstudio.io/api/cloud_tokens') as Response;
+    const res = await axios.post(globals.azureCloudTokenUrl) as Response;
 
     const beekeeperCloudToken = res.data?.cloud_token;
     const authCodeUrlParams = {
-      scopes: ['https://database.windows.net/.default', 'offline_access'],
+      scopes: globals.azureCloudScopes,
       redirectUri: beekeeperCloudToken.fulfillment_url,
       state: beekeeperCloudToken.id,
       prompt: 'consent'
@@ -186,7 +231,7 @@ export class AzureAuthService {
     if (code) {
       const tokenRequest = {
         code: code,
-        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        scopes: globals.azureCloudScopes,
         redirectUri: beekeeperCloudToken.fulfillment_url,
         state: beekeeperCloudToken.id
       };
@@ -225,7 +270,7 @@ export class AzureAuthService {
     try {
       refreshTokenResponse = await this.pca.acquireTokenSilent({
         account: account,
-        scopes: ['https://database.windows.net/.default', 'offline_access'],
+        scopes: globals.azureCloudScopes,
         forceRefresh: true
       });
     } catch {

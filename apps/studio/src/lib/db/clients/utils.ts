@@ -11,6 +11,9 @@ import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
+import {AuthOptions} from "@/lib/db/authentication/azure";
+import platformInfo from "@/common/platform_info";
+import {spawn} from "child_process";
 
 const log = logRaw.scope('db/util')
 
@@ -39,6 +42,34 @@ export function joinQueries(queries) {
   return results.join("")
 }
 
+export async function whichTool({ toolName }: { toolName: string }) {
+  const command = `${platformInfo.isWindows ? 'where' : 'which'}`
+
+  return new Promise<string>((resolve, reject) => {
+    const proc = spawn(command, [toolName], { shell: true });
+
+    proc.stdout.on('data', (chunk) => {
+      if (chunk) {
+        const path: string = chunk.toString().trim();
+        resolve(path);
+      }
+    });
+
+    proc.stderr.on('data', (chunk) => {
+      reject(chunk.toString());
+    })
+
+    proc.on('error', (err) => {
+      reject(err);
+    })
+
+    proc.on('close', (code) => {
+      if (code != 0) {
+        reject('ERROR: Command exited with errors');
+      }
+    })
+  })
+}
 
 export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   if (!filter) return null
@@ -88,6 +119,17 @@ function wrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
+export function getEntraOptions(server, extra): AuthOptions {
+  return {
+    password: server.config?.password,
+    userName: server.config?.user,
+    tenantId: server.config?.azureAuthOptions.tenantId,
+    clientSecret: server.config?.azureAuthOptions.clientSecret,
+    msiEndpoint: server.config?.azureAuthOptions.msiEndpoint,
+    cliPath: server.config?.azureAuthOptions.cliPath,
+    ...extra
+  };
+}
 
 export function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = ""
