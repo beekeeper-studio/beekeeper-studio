@@ -34,10 +34,10 @@
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
-        <!-- TODO (@day): when we have SQL queries for mongo, add an action dropdown here for shell/query tab -->
         <x-button
           class="add-tab-dropdown"
           menu
+          v-if="supportsShell"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
@@ -147,6 +147,7 @@
           :tab="tab"
           :schema="tab.schemaName"
           :table="tab.tableName"
+          :active="activeTab.id === tab.id"
           :connection="connection"
           @close="close"
         />
@@ -372,6 +373,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         entityType: this.dbEntityType
       }
     },
+    supportsShell() {
+      return !this.dialectData.disabledFeatures?.shell;
+    },
     titleCaseAction() {
       return _.capitalize(this.dbAction)
     },
@@ -444,8 +448,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
         result['meta+shift+t'] = this.reopenLastClosedTab
-        result['shift+meta+['] = this.previousTab
-        result['shift+meta+]'] = this.nextTab
       }
 
       return result
@@ -990,6 +992,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         this.closingTab = null
         if (!confirmed) return
       }
+
+      this.trigger(AppEvent.closingTab, tab)
 
       if (this.activeTab === tab) {
         if (tab === this.lastTab) {

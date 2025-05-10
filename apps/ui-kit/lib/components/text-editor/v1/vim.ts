@@ -30,7 +30,7 @@ export function setKeybindings(codeMirrorVimInstance: any, mappings: IMapping[])
   }
 }
 
-type Clipboard = {
+export type Clipboard = {
   writeText(text: string, notify?: boolean): void
   readText(): string
 }

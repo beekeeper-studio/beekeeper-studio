@@ -33,6 +33,7 @@ export const BigQueryData: DialectData = {
     sqlCreate: true,
     dropTable: true,
     indexes: true,
+    compositeKeys: true,
     constraints: {
       onUpdate: true,
       onDelete: true

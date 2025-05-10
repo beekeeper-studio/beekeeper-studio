@@ -3336,10 +3336,10 @@
   dependencies:
     playwright "1.50.1"
 
-"@queryleaf/lib@^0.2.2":
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/@queryleaf/lib/-/lib-0.2.2.tgz#87200730afb8aa6a0ae785e7b739622372a89e94"
-  integrity sha512-HwIQ/2Zeyj+loXc0k8i7Js/PXyNHVseJdXCH6/d5EHoEqHnPHvqEMeYYCI1s7ocYe+1YIgKxg76LWpoLOPsK1g==
+"@queryleaf/lib@^0.2.3":
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/@queryleaf/lib/-/lib-0.2.3.tgz#5c06c7cc9b98c91feff8f56c4fa900d265da0e5c"
+  integrity sha512-Ir3Ne9O/rZbsOd/nN0wQvcUmjA8JLYTI7zUz2tJlHVJZWVPTmLraDTdD7JgZMvxflIbyPORG7M4d88AR2lrtxg==
   dependencies:
     debug "^4.4.0"
     node-sql-parser "^4.11.0"
@@ -13484,10 +13484,10 @@ vite-plugin-vue2@^2.0.3:
   optionalDependencies:
     fsevents "~2.3.3"
 
-vite@~5.4.15:
-  version "5.4.15"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.15.tgz#2941547f10ebb4bf9b0fa0da863c06711eb7e5e5"
-  integrity sha512-6ANcZRivqL/4WtwPGTKNaosuNJr5tWiftOC7liM7G9+rMb8+oeJeyzymDu4rTN93seySBmbjSfsS3Vzr19KNtA==
+vite@~5.4.19:
+  version "5.4.19"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.19.tgz#20efd060410044b3ed555049418a5e7d1998f959"
+  integrity sha512-qO3aKv3HoQC8QKiNSTuUM1l9o/XX3+c+VTgLHbJWHZGeTPVAg2XwazI9UWzoxjIJCGCV2zU60uqMzjeLZuULqA==
   dependencies:
     esbuild "^0.21.3"
     postcss "^8.4.43"
