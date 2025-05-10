@@ -39,6 +39,9 @@
               >
                 {{ lang.label }}
               </option>
+              <option value="datetime">
+                Date/DateTime
+              </option>
             </select>
 
             <x-button
@@ -78,7 +81,11 @@
             @keydown="$event.key === 'Tab' && $event.stopPropagation()"
             @keyup="$event.key === 'Tab' && $event.stopPropagation()"
           >
+            <div v-if="languageName === 'datetime'">
+              {[ content ]}
+            </div>
             <text-editor
+              v-else
               v-model="content"
               :mode="language.editorMode"
               :line-wrapping="wrapText"
@@ -162,6 +169,7 @@ import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
 import TextEditor from '@/components/common/texteditor/TextEditor.vue'
+import DateTimeEditor from '@/components/common/texteditor/DateTimeEditor.vue'
 import { typedArrayToString } from "@/common/utils";
 
 export default Vue.extend({

@@ -12,7 +12,7 @@ export interface LanguageData {
   minify: (beautified: string) => string;
   name: string;
   label: string;
-  editorMode: CodeMirror.EditorConfiguration['mode'];
+  editorMode: CodeMirror.EditorConfiguration['mode'] | null;
   wrapTextByDefault?: boolean;
   noMinify?: boolean;
   noBeautify?: boolean
@@ -24,6 +24,17 @@ export const TextLanguage: LanguageData = {
   editorMode: {
     name: 'text'
   },
+  isValid: () => true,
+  beautify: (v) => v,
+  minify: (v) => v,
+  wrapTextByDefault: true,
+  noMinify: true,
+  noBeautify: true
+}
+export const DateLanguage: LanguageData = {
+  name: 'datetime',
+  label: "Date/DateTime",
+  editorMode: null,
   isValid: () => true,
   beautify: (v) => v,
   minify: (v) => v,
@@ -118,6 +129,7 @@ export const Languages: LanguageData[] = [
       return removeHtmlComments(value).replace(/>\s*</g, "><");
     },
   },
+  DateLanguage
 ];
 
 export function getLanguageByContent(content: string): LanguageData | undefined {
