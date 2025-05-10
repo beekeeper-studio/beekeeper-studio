@@ -556,67 +556,83 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
-      SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
-        rc.unique_constraint_schema AS to_schema,
+      SELECT 
         tc.constraint_name,
+        kcu.column_name,
+        kcu.table_schema AS from_schema,
+        kcu.table_name AS from_table,
+        kcu2.column_name AS to_column,
+        kcu2.table_name AS to_table,
+        rc.unique_constraint_schema AS to_schema,
         rc.update_rule,
         rc.delete_rule,
-        (
-          SELECT STRING_AGG(kcu2.column_name, ',' ORDER BY kcu2.ordinal_position)
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name
-        ) AS to_column,
-        (
-          SELECT kcu2.table_name
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name LIMIT 1
-        ) AS to_table
-      FROM
-        information_schema.key_column_usage AS kcu
-        JOIN
-        information_schema.table_constraints AS tc
-      ON
-        tc.constraint_name = kcu.constraint_name
-        JOIN
-        information_schema.referential_constraints AS rc
-        ON
-        rc.constraint_name = kcu.constraint_name
+        kcu.ordinal_position
+      FROM 
+        information_schema.table_constraints AS tc 
+        JOIN information_schema.key_column_usage AS kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.referential_constraints AS rc
+          ON rc.constraint_name = tc.constraint_name
+          AND rc.constraint_schema = tc.table_schema
+        JOIN information_schema.key_column_usage AS kcu2
+          ON kcu2.constraint_name = rc.unique_constraint_name
+          AND kcu.ordinal_position = kcu2.ordinal_position
+          AND kcu2.constraint_schema = rc.unique_constraint_schema
       WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema NOT LIKE 'pg_%' AND
-        kcu.table_schema = $2 AND
-        kcu.table_name = $1
-      GROUP BY
-        kcu.constraint_schema,
-        kcu.table_name,
-        rc.unique_constraint_schema,
-        rc.unique_constraint_name,
+        tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = $1
+        AND tc.table_name = $2
+      ORDER BY
         tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule;
+        kcu.ordinal_position;
     `;
 
     const params = [
-      table,
       schema,
+      table,
     ];
 
-    const data = await this.driverExecuteSingle(sql, { params });
-
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule
-    }));
+    const { rows } = await this.driverExecuteSingle(sql, { params });
+    
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+    
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+      
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.constraint_name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.column_name,
+          onUpdate: row.update_rule,
+          onDelete: row.delete_rule,
+          isComposite: false
+        };
+      } 
+      
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.constraint_name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.column_name),
+        onUpdate: firstPart.update_rule,
+        onDelete: firstPart.delete_rule,
+        isComposite: true
+      };
+    });
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
