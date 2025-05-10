@@ -16,6 +16,19 @@ export function escapeHtml(text: string): string | null {
   return text.replace(/[&<>"']/g, function (m) { return htmlMap[m]; });
 }
 
+
+interface KeyData {
+  isComposite: boolean;
+  [key: string]: any;
+}
+
+export interface FormatterParams {
+  fk: KeyData[] | false;
+  fkOnClick: false | ((_e: Event, cell: { [key: string]: any }) => void);
+  isPK: boolean;
+  binaryEncoding: string; // or boolean, depending on actual type
+}
+
 export interface YesNoParams {
   allowEmpty?: boolean
   falseEmpty?: boolean
@@ -32,6 +45,8 @@ export default {
     let cellValue = value.toString();
     if (_.isTypedArray(value)) {
       cellValue = typedArrayToString(value, binaryEncoding)
+    } else if (_.isTypedArray(value?.buffer)) { // HACK: mongodb sends buffer this way
+      cellValue = typedArrayToString(value.buffer, binaryEncoding)
     } else if (_.isArray(value) || _.isObject(value)) {
       cellValue = JSON.stringify(value)
     }

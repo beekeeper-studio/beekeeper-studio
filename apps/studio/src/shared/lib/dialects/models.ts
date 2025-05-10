@@ -105,6 +105,7 @@ export interface DialectData {
   requireDataset?: boolean,
   disallowedSortColumns?: string[],
   disabledFeatures?: {
+    rawFilters?: boolean
     shell?: boolean
     queryEditor?: boolean
     informationSchema?: {
@@ -166,6 +167,7 @@ export interface DialectData {
     initialSort?: boolean
     multipleDatabase?: boolean
     sqlCreate?: boolean
+    compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
   },
   notices?: {
@@ -317,12 +319,13 @@ export type DialectConfig = {
 
 
 export interface TableKey {
+  isComposite: boolean;
   toTable: string;
   toSchema: string;
-  toColumn: string;
+  toColumn: string | string[];
   fromTable: string;
   fromSchema: string;
-  fromColumn: string;
+  fromColumn: string | string[];
   constraintName?: string;
   onUpdate?: string;
   onDelete?: string;
