@@ -16,6 +16,19 @@ export function escapeHtml(text: string): string | null {
   return text.replace(/[&<>"']/g, function (m) { return htmlMap[m]; });
 }
 
+
+interface KeyData {
+  isComposite: boolean;
+  [key: string]: any;
+}
+
+export interface FormatterParams {
+  fk: KeyData[] | false;
+  fkOnClick: false | ((_e: Event, cell: { [key: string]: any }) => void);
+  isPK: boolean;
+  binaryEncoding: string; // or boolean, depending on actual type
+}
+
 export interface YesNoParams {
   allowEmpty?: boolean
   falseEmpty?: boolean

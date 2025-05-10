@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Mutators } from './jsonFriendlyMutators'
-import helpers, { escapeHtml } from './tabulator'
+import helpers, { escapeHtml, TabulatorFormatterParams } from './tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
 
@@ -45,10 +45,21 @@ export default {
       return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
     },
     cellTooltip(_event, cell: CellComponent) {
-      const binaryEncoding = cell.getColumn().getDefinition().formatterParams.binaryEncoding
+      const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams || {}
+      const binaryEncoding = params.binaryEncoding
       let cellValue = cell.getValue()
       if (cellValue instanceof Uint8Array) {
         cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
+      } else if (
+        !params?.fk &&
+        !params?.isPK &&
+        _.isInteger(Number(cellValue))
+      ) {
+        try {
+          cellValue += ` (${new Date(Number(cellValue)).toISOString()} in unixtime)`
+        } catch (e) {
+          console.error(`${cellValue} cannot be converted to a date`)
+        }
       }
       const nullValue = emptyResult(cellValue)
       return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
@@ -92,19 +103,7 @@ export default {
             fkLink.onclick = (e) => params.fkOnClick(cell.getValue(), cell.getField(), cell);
           })
         }
-      } else if (
-          params?.isPK != null &&
-          !params.isPK &&
-          !classNames.includes('binary-type') &&
-          _.isInteger(Number(cellValue))
-        ) {
-        try {
-          tooltip = `${new Date(Number(cellValue)).toISOString()} in unixtime`
-          result = buildFormatterWithTooltip(cellValue, tooltip)
-        } catch (e) {
-          console.error(`${cellValue} cannot be converted to a date`)
-        }
-    }
+      }
 
       cell.getElement().classList.add(...classNames)
 
