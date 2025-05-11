@@ -1069,6 +1069,15 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return opMap[type] || null;
   }
 
+  private convertValueForFilter(value: any) {
+    if (ObjectId.isValid(value)) {
+      return new ObjectId(value);
+    } else if (value === 'true' || value === 'false') {
+      return value === 'true';
+    }
+    return value;
+  }
+
   private convertFilters(filters: TableFilter[]) {
 
     let result = null;
@@ -1084,7 +1093,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         if (!_.isArray(filter.value)) {
           log.warn(`Value for "in" must be an array: ${JSON.stringify(filter)}`);
         }
-        condition = { [filter.field]: { [mongoOp]: filter.value }};
+        const value = filter.value.map((v) => this.convertValueForFilter(v));
+        condition = { [filter.field]: { [mongoOp]: value }};
       } else if (filter.type === "like" && _.isString(filter.value)) {
         const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
         condition = {
@@ -1098,7 +1108,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           [filter.field]: { [mongoOp]: null }
         };
       } else {
-        condition = { [filter.field]: { [mongoOp]: filter.value }};
+        condition = { [filter.field]: { [mongoOp]: this.convertValueForFilter(filter.value) }};
       }
 
       if (index === 0) {
@@ -1112,6 +1122,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       }
 
     });
+
+    log.info('FILTER: ', result)
 
     return result;
   }
