@@ -397,6 +397,7 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
 
 let resolvedPw: string | undefined;
 let tokenExpiryTime: number | null = null;
+let redshiftOptionsCheck: RedshiftOptions | null = null
 
 export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, server: any, port: number): Promise<string> {
   if(!redshiftOptions?.iamAuthenticationEnabled){
@@ -405,7 +406,8 @@ export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, ser
 
   const now = Date.now();
 
-  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime) { // Refresh 2 minutes before expiry
+  if (redshiftOptionsCheck != redshiftOptions || (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime)) { // Refresh 2 minutes before expiry
+    redshiftOptionsCheck = redshiftOptions
     log.info("Refreshing IAM token...");
     resolvedPw = await getIAMPassword(
       redshiftOptions,
