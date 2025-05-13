@@ -94,6 +94,14 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5433:5432
+  trino:
+    image: trinodb/trino:latest
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./dev/docker_trino/catalog:/etc/trino/catalog
+    depends_on:
+      - psql
   psql:
     image: postgres:9.6
     environment:
