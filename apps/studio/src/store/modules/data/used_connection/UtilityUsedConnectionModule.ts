@@ -34,8 +34,10 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
         lastUsedConnection.updatedAt = new Date();
         await context.dispatch('save', lastUsedConnection);
       } else {
-        await context.dispatch('save', config);
+        const id = await context.dispatch('save', config);
+        config = context.state.items.find((item) => item.id === id);
       }
+      return config;
     },
     async load(context) {
       context.commit("error", null);

@@ -11,6 +11,7 @@ import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
+import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
 const log = logRaw.scope('db/util')
 
@@ -356,7 +357,9 @@ export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): P
 }
 
 export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
-  const {awsProfile, awsRegion: region, accessKeyId, secretAccessKey} = redshiftOptions
+  const {awsProfile, accessKeyId, secretAccessKey} = redshiftOptions
+  let {awsRegion: region} = redshiftOptions
+
   let credentials: {
     profile?: string,
     accessKeyId?: string,
@@ -365,8 +368,17 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
     profile: awsProfile || "default"
   }
 
+  if (!region) {
+    const { configFile } = await loadSharedConfigFiles();
+    region = configFile[awsProfile || "default"]?.region;
+    if (!region) {
+      throw new Error(`Region not found in profile "${awsProfile}" and no region explicitly provided.`);
+    }
+  }
+
   if(accessKeyId && secretAccessKey) {
     credentials = {
+      profile: awsProfile || "default",
       accessKeyId,
       secretAccessKey
     }
@@ -375,8 +387,8 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
   const nodeProviderChainCredentials = fromIni(credentials);
   const signer = new Signer({
     credentials: nodeProviderChainCredentials,
-    region,
     hostname,
+    region,
     port,
     username,
   });

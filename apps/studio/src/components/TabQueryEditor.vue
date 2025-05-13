@@ -501,7 +501,7 @@
         return !isEmpty(this.unsavedText)
       },
       hasTitle() {
-        return this.query.title && this.query.title.replace(/\s+/, '').length > 0
+        return this.query?.title && this.query.title.replace(/\s+/, '').length > 0
       },
       splitElements() {
         return [
@@ -705,7 +705,7 @@
       initialize() {
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
-        this.query.title = this.activeTab.title
+        this.query.title = this.activeTab?.title
 
         if (this.split) {
           this.split.destroy();
