@@ -2,7 +2,7 @@ import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
-import { existsSync, readFileSync, copyFileSync } from "fs";
+import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
 import { parseIni } from "../../../src/config/helpers";
 import {
   BksConfigProvider,
@@ -95,7 +95,12 @@ function copyBundledConfig(file: ConfigFileName, dest: string) {
       `Bundled config file not found: ${src}. This should not happen. Please report an issue.`
     );
   }
-  copyFileSync(src, dest);
+  try {
+    accessSync(dest, constants.W_OK);
+    copyFileSync(src, dest);
+  } catch (err) {
+    log.warn(`Skipping copy of ${file}. Permission denied or dest not writable:`, err.message);
+  }
 }
 
 function readConfig(filePath: string) {
@@ -186,9 +191,14 @@ export function mainBksConfig(): BksConfig {
 
   const defaultConfig: IBksConfig = loadConfig("default.config.ini");
   const systemConfig: Partial<IBksConfig> = loadConfig("system.config.ini");
-  const userConfig: Partial<IBksConfig> = loadConfig(
-    platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini"
-  );
+  let userConfig: Partial<IBksConfig> = {};
+  try {
+    userConfig = loadConfig(
+      platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini"
+    );
+  } catch (e) {
+    log.warn(`Failed loading user config. Ignoring.`, e);
+  }
 
   const warnings = collectConfigWarnings(
     defaultConfig,
