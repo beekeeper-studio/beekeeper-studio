@@ -732,10 +732,10 @@ export default Vue.extend({
           if (keyDatas?.length > 0) {
             keyDatas.forEach(keyData => {
               // For composite foreign keys, show all related columns
-              const displayTarget = keyData.isComposite ? 
+              const displayTarget = keyData.isComposite ?
                 `${keyData.toTable} (${keyData.toColumn.join(', ')})` :
                 `${keyData.toTable} (${keyData.toColumn})`;
-              
+
               menu.push({
                 label: createMenuItem(`Go to ${displayTarget}`),
                 action: (_e, cell) => this.fkClick(keyData, cell)
@@ -1335,7 +1335,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
