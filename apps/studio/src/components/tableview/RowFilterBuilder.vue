@@ -68,6 +68,7 @@
               type="button"
               @click.stop="toggleFilterMode"
               title="Toggle Filter Type"
+              :disabled="!canRawFilter"
             >
               <i class="material-icons">code</i>
             </button>
@@ -228,6 +229,9 @@ export default Vue.extend({
     externalFilters() {
       return this.reactiveFilters;
     },
+    canRawFilter() {
+      return !this.dialectData?.disabledFeatures?.rawFilters;
+    }
   },
   methods: {
     singleFilterChanged(index, filter) {
