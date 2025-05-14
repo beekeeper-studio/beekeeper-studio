@@ -333,7 +333,14 @@
              const ws = XLSX.utils.aoa_to_sheet(values);
              const wb = XLSX.utils.book_new();
 
-             XLSX.utils.book_append_sheet(wb, ws, title);
+             // sheet title cannot be more than 31 characters and sheet title cannot be 'history'
+             // source: https://support.microsoft.com/en-us/office/rename-a-worksheet-3f1f7148-ee83-404d-8ef0-9ff99fbad1f9
+             let sheetTitle = title.slice(0,31);
+             if (title.toLowerCase() === "history") {
+              sheetTitle = "history-sheet";
+             }
+
+             XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
              const excel = XLSX.write(wb, { type: 'buffer' });
              setFileContents(excel);
           }
