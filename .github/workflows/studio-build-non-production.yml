@@ -111,6 +111,15 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
+      - name: Build flatpak
+        run: "yarn run electron:buiuld --publish never --linux flatpak"
+        if: startsWith(matrix.os, 'ubuntu')
+        env:
+          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
+          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+          USE_SYSTEM_FPM: true
+
       - name: Cleanup artifacts
         if: "!startsWith(matrix.os, 'windows')"
         run: |
