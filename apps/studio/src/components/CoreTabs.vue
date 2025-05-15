@@ -1095,7 +1095,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.addTab(tab)
 
     },
-    createQueryFromItem(item) {
+    async createQueryFromItem(item) {
+      if (item.id && item.excerpt && !item.text) {
+        item = await this.$store.dispatch('data/usedQueries/findOne', item.id);
+      }
       this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
     },
     copyName(item) {

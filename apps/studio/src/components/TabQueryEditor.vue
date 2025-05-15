@@ -401,6 +401,7 @@
         originalText: "",
         initialized: false,
         blankQuery: blankFavoriteQuery(),
+        fullSavedQuery: null,
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
@@ -441,7 +442,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return findQuery(this.tab, this.savedQueries ?? []) ?? this.blankQuery
+        return this.fullSavedQuery ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
@@ -1050,6 +1051,10 @@
       },
     },
     async mounted() {
+      if (this.tab.queryId) {
+        this.fullSavedQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+      }
+      
       if (this.shouldInitialize) {
         await this.$nextTick()
         this.initialize()
