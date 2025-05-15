@@ -35,6 +35,7 @@
     <workspace-rename-modal />
     <import-queries-modal />
     <import-connections-modal />
+    <plugin-manager-modal />
     <confirmation-modal-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
@@ -77,6 +78,7 @@ import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
+import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 
 import rawLog from '@bksLogger'
 
@@ -90,7 +92,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
-    ConfigurationWarningModal,
+    PluginManagerModal, ConfigurationWarningModal,
   },
   data() {
     return {

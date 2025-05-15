@@ -377,7 +377,6 @@
         runningCount: 1,
         runningType: 'all queries',
         selectedResult: 0,
-        unsavedText: editorDefault,
         editor: {
           height: 100,
           selection: null,
@@ -616,6 +615,14 @@
           ]
         }
       },
+      unsavedText: {
+        get() {
+          return this.tab.unsavedQueryText ?? editorDefault
+        },
+        set(value: string) {
+          this.tab.unsavedQueryText = value
+        },
+      }
     },
     watch: {
       error() {

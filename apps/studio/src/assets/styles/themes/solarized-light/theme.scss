@@ -483,7 +483,7 @@ x-buttons {
   }
 }
 
-.BksTextEditor {
+& {
   --bks-text-editor-string-fg-color: #{$brand-success};
   --bks-text-editor-number-fg-color: #{$brand-warning};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
@@ -493,13 +493,13 @@ x-buttons {
   --bks-text-editor-cursor-bg-color: #{$text-dark};
   --bks-text-editor-bracket-fg-color: #{$text};
 
-  font-weight: 500;
-}
-
-.BksTextEditor-hints {
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+}
+
+.BksTextEditor {
+  font-weight: 500;
 }
 
 // Noty

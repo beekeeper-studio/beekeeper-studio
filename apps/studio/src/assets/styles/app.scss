@@ -21,6 +21,7 @@ body.theme-system {
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/dark/theme.scss';
+    @import './themes/scssvars-to-cssprops.scss';
   }
 
   @media (prefers-color-scheme: light) {
@@ -30,6 +31,7 @@ body.theme-system {
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/light/theme.scss';
+    @import './themes/scssvars-to-cssprops.scss';
   }
 }
 
@@ -40,6 +42,7 @@ body.theme-dark {
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/dark/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }
 
 body.theme-light {
@@ -49,6 +52,7 @@ body.theme-light {
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }
 
 body.theme-solarized-dark {
@@ -58,6 +62,7 @@ body.theme-solarized-dark {
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/solarized-dark/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }
 
 
@@ -69,4 +74,5 @@ body.theme-solarized {
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/solarized-light/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }
