@@ -21,11 +21,18 @@ export default class PluginRepositoryService {
         repo,
       }
     );
-    
+    const manifest = await this.fetchJson(owner, repo, "manifest.json");
+
+    const asset = response.data.assets.find((asset) => asset.name === `${manifest.id}-${manifest.version}.zip`)
+    if (!asset) {
+      throw new Error(`No asset found matching ${manifest.id}-${manifest.version}.zip in the latest release`)
+    }
+
     // Get the source code archive URL (either tarball or zipball)
     return {
-      version: response.data.tag_name,
-      sourceArchiveUrl: response.data.tarball_url || response.data.zipball_url,
+      version: manifest.version,
+      // FIXME rename this, it's not source
+      sourceArchiveUrl: asset.browser_download_url,
     };
   }
 

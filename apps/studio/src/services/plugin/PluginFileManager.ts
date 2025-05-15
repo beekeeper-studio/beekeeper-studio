@@ -73,18 +73,7 @@ async function download(options: DownloaderConfig & { signal?: AbortSignal }) {
  */
 async function extractArchive(archivePath: string, extractDir: string): Promise<void> {
   try {
-    if (path.extname(archivePath) === '.zip') {
-      // Use extract-zip for zip archives (Windows)
-      await extract(archivePath, { dir: extractDir });
-    } else {
-      // Use tar for tar.gz archives (Mac/Linux)
-      await tar.extract({
-        file: archivePath,
-        cwd: extractDir,
-        // Strip the top-level directory (GitHub archives have a single directory at the top)
-        strip: 1,
-      });
-    }
+    await extract(archivePath, { dir: extractDir });
   } catch (error) {
     log.error(`Error extracting archive: ${error.message}`);
     throw new Error(`Failed to extract plugin archive: ${error.message}`);
@@ -124,6 +113,9 @@ export default class PluginFileManager {
         directory: tmpDirectory,
         signal: options.signal,
         fileName: ARCHIVE_TMP_FILENAME,
+        headers: {
+          "User-Agent": "Beekeeper Studio",
+        },
       });
 
       // Extract the archive to the temp directory
