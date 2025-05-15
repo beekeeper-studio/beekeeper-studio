@@ -2,34 +2,6 @@ import { TabType } from "@/store/models";
 
 export type ThemeType = "dark" | "light";
 
-export interface ThemePalette {
-  themeBg: string;
-  themeBase: string;
-  themePrimary: string;
-  themeSecondary: string;
-
-  textDark: string;
-  text: string;
-  textLight: string;
-  textLighter: string;
-  textHint: string;
-  textDisabled: string;
-
-  brandInfo: string;
-  brandSuccess: string;
-  brandWarning: string;
-  brandDanger: string;
-  brandDefault: string;
-  brandPurple: string;
-  brandPink: string;
-
-  borderColor: string;
-  linkColor: string;
-  placeholder: string;
-  selection: string;
-  inputHighlight: string;
-}
-
 interface BaseRequest {
   id: string;
 }

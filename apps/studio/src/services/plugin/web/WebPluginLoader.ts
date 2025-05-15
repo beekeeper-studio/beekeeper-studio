@@ -84,36 +84,120 @@ export default class WebPluginLoader {
             this.pluginStore.getActiveTab() as GetActiveTabResponse;
           break;
         case "getTheme":
-          const styles = window.getComputedStyle(document.body);
-          const palette: ThemePalette = {
-            themeBg: styles.getPropertyValue("--theme-bg"),
-            themeBase: styles.getPropertyValue("--theme-base"),
-            themePrimary: styles.getPropertyValue("--theme-primary"),
-            themeSecondary: styles.getPropertyValue("--theme-secondary"),
+          const cssProps = [
+            "--theme-bg",
+            "--theme-base",
+            "--theme-primary",
+            "--theme-secondary",
 
-            textDark: styles.getPropertyValue("--text-dark"),
-            text: styles.getPropertyValue("--text"),
-            textLight: styles.getPropertyValue("--text-light"),
-            textLighter: styles.getPropertyValue("--text-lighter"),
-            textHint: styles.getPropertyValue("--text-hint"),
-            textDisabled: styles.getPropertyValue("--text-disabled"),
+            "--text-dark",
+            "--text",
+            "--text-light",
+            "--text-lighter",
+            "--text-hint",
+            "--text-disabled",
 
-            brandInfo: styles.getPropertyValue("--brand-info"),
-            brandSuccess: styles.getPropertyValue("--brand-success"),
-            brandWarning: styles.getPropertyValue("--brand-warning"),
-            brandDanger: styles.getPropertyValue("--brand-danger"),
-            brandDefault: styles.getPropertyValue("--brand-default"),
-            brandPurple: styles.getPropertyValue("--brand-purple"),
-            brandPink: styles.getPropertyValue("--brand-pink"),
+            "--brand-info",
+            "--brand-success",
+            "--brand-warning",
+            "--brand-danger",
+            "--brand-default",
+            "--brand-purple",
+            "--brand-pink",
 
-            borderColor: styles.getPropertyValue("--border-color"),
-            linkColor: styles.getPropertyValue("--link-color"),
-            placeholder: styles.getPropertyValue("--placeholder"),
-            selection: styles.getPropertyValue("--selection"),
-            inputHighlight: styles.getPropertyValue("--input-highlight"),
-          };
-          const cssString = Object.keys(palette)
-            .map((key) => `--${_.kebabCase(key)}: ${palette[key]};`)
+            "--border-color",
+            "--link-color",
+            "--placeholder",
+            "--selection",
+            "--input-highlight",
+
+            // BksTextEditor
+            "--bks-text-editor-activeline-bg-color",
+            "--bks-text-editor-activeline-gutter-bg-color",
+            "--bks-text-editor-atom-fg-color",
+            "--bks-text-editor-bg-color",
+            "--bks-text-editor-bracket-fg-color",
+            "--bks-text-editor-builtin-fg-color",
+            "--bks-text-editor-comment-attribute-fg-color",
+            "--bks-text-editor-comment-def-fg-color",
+            "--bks-text-editor-comment-fg-color",
+            "--bks-text-editor-comment-tag-fg-color",
+            "--bks-text-editor-comment-type-fg-color",
+            "--bks-text-editor-cursor-bg-color",
+            "--bks-text-editor-def-fg-color",
+            "--bks-text-editor-error-bg-color",
+            "--bks-text-editor-error-fg-color",
+            "--bks-text-editor-fg-color",
+            "--bks-text-editor-gutter-bg-color",
+            "--bks-text-editor-guttermarker-fg-color",
+            "--bks-text-editor-guttermarker-subtle-fg-color",
+            "--bks-text-editor-header-fg-color",
+            "--bks-text-editor-keyword-fg-color",
+            "--bks-text-editor-linenumber-fg-color",
+            "--bks-text-editor-link-fg-color",
+            "--bks-text-editor-matchingbracket-fg-color",
+            "--bks-text-editor-matchingbracket-bg-color",
+            "--bks-text-editor-number-fg-color",
+            "--bks-text-editor-property-fg-color",
+            "--bks-text-editor-selected-bg-color",
+            "--bks-text-editor-string-fg-color",
+            "--bks-text-editor-tag-fg-color",
+            "--bks-text-editor-variable-2-fg-color",
+            "--bks-text-editor-variable-3-fg-color",
+            "--bks-text-editor-variable-fg-color",
+            "--bks-text-editor-namespace-fg-color",
+            "--bks-text-editor-type-fg-color",
+            "--bks-text-editor-class-fg-color",
+            "--bks-text-editor-enum-fg-color",
+            "--bks-text-editor-interface-fg-color",
+            "--bks-text-editor-struct-fg-color",
+            "--bks-text-editor-typeParameter-fg-color",
+            "--bks-text-editor-parameter-fg-color",
+            "--bks-text-editor-enumMember-fg-color",
+            "--bks-text-editor-decorator-fg-color",
+            "--bks-text-editor-event-fg-color",
+            "--bks-text-editor-function-fg-color",
+            "--bks-text-editor-method-fg-color",
+            "--bks-text-editor-macro-fg-color",
+            "--bks-text-editor-label-fg-color",
+            "--bks-text-editor-regexp-fg-color",
+            "--bks-text-editor-operator-fg-color",
+            "--bks-text-editor-definition-fg-color",
+            "--bks-text-editor-variableName-fg-color",
+            "--bks-text-editor-bool-fg-color",
+            "--bks-text-editor-null-fg-color",
+            "--bks-text-editor-className-fg-color",
+            "--bks-text-editor-propertyName-fg-color",
+            "--bks-text-editor-punctuation-fg-color",
+            "--bks-text-editor-meta-fg-color",
+            "--bks-text-editor-typeName-fg-color",
+            "--bks-text-editor-labelName-fg-color",
+            "--bks-text-editor-attributeName-fg-color",
+            "--bks-text-editor-attributeValue-fg-color",
+            "--bks-text-editor-heading-fg-color",
+            "--bks-text-editor-url-fg-color",
+            "--bks-text-editor-processingInstruction-fg-color",
+            "--bks-text-editor-special-string-fg-color",
+
+            // BksTextEditor context menu
+            "--bks-text-editor-context-menu-bg-color",
+            "--bks-text-editor-context-menu-fg-color",
+            "--bks-text-editor-context-menu-item-bg-color-active",
+            "--bks-text-editor-context-menu-item-fg-color-active",
+            "--bks-text-editor-context-menu-item-bg-color-hover",
+          ];
+
+          const styles = getComputedStyle(document.body);
+          /** Key = css property, value = css value */
+          const palette: Record<string, string> = {};
+
+          for (const name of cssProps) {
+            const camelKey = _.camelCase(name);
+            palette[camelKey] = styles.getPropertyValue(name).trim();
+          }
+
+          const cssString = cssProps
+            .map((cssProp) => `${cssProp}: ${palette[_.camelCase(cssProp)]};`)
             .join("");
           response.result = {
             type: this.pluginStore.getThemeType(),
