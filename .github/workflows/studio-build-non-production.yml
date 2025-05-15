@@ -112,7 +112,7 @@ jobs:
           USE_SYSTEM_FPM: true
 
       - name: Build flatpak
-        run: "yarn run electron:buiuld --publish never --linux flatpak"
+        run: "yarn run electron:build --publish never --linux flatpak"
         if: startsWith(matrix.os, 'ubuntu')
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
