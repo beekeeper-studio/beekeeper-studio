@@ -312,3 +312,13 @@ export function removeUnsortableColumnsFromSortBy(sortParms: { field: string; di
       return acc
     }, [])
 }
+
+export function toRegexSafe(input: string) {
+  const match = input.match(/^\/(.+)\/([a-z]*)$/);
+  if (!match) return null;
+  try {
+    return new RegExp(match[1], match[2]);
+  } catch (e) {
+    return null;
+  }
+}
