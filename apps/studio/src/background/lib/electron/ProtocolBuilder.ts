@@ -88,9 +88,17 @@ export const ProtocolBuilder = {
           return
         }
 
+        const headers = {}
+        if (platformInfo.isDevelopment) {
+          headers['Cache-Control'] = 'no-cache'
+          headers['Pragma'] = 'no-cache'
+          headers['Expires'] = '0'
+        }
+
         respond({
           mimeType: mimeTypeOf(pathName),
           data,
+          headers,
         })
       })
     });

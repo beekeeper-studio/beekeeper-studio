@@ -1,10 +1,11 @@
 <template>
   <div class="sidebar-view">
     <iframe
-      :src="iframeSrc"
+      :src="baseUrl"
       sandbox="allow-scripts allow-same-origin allow-forms"
       ref="iframe"
       @load="handleIframeLoad"
+      @error="handleError"
     ></iframe>
   </div>
 </template>
@@ -36,10 +37,6 @@ export default Vue.extend({
     baseUrl() {
       return `plugin://${this.pluginId}/${this.entryUrl}`;
     },
-    iframeSrc() {
-      // Append timestamp as query parameter to force refresh
-      return `${this.baseUrl}?t=${this.timestamp}`;
-    },
     rootBindings() {
       return [
         {
@@ -68,6 +65,9 @@ export default Vue.extend({
     handleIframeLoad() {
       this.$plugin.registerIframe(this.pluginId, this.$refs.iframe);
     },
+    handleError(e) {
+      console.error(`${this.pluginId} iframe error`, e);
+    }
   },
 });
 </script>

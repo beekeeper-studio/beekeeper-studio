@@ -47,12 +47,16 @@ export default class WebPluginLoader {
     });
   }
 
-  private handleMessage(event: MessageEvent<PluginRequestData>) {
+  private handleMessage(event: MessageEvent) {
     if (!this.iframe) return;
 
     // Check if the message is from our iframe
     if (event.source === this.iframe.contentWindow) {
-      this.handleIframeRequest(event.data);
+      this.handleIframeRequest({
+        id: event.data.id,
+        name: event.data.name,
+        args: event.data.args[0],
+      });
     }
   }
 
