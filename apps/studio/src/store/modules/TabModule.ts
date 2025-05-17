@@ -92,7 +92,7 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
-      context.commit('remove', context.state.tabs)
+      context.dispatch('remove', context.state.tabs)
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
