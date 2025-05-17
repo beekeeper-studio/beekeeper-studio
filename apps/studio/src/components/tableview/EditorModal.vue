@@ -39,9 +39,6 @@
               >
                 {{ lang.label }}
               </option>
-              <option value="datetime">
-                Date/DateTime
-              </option>
             </select>
 
             <x-button
@@ -81,8 +78,14 @@
             @keydown="$event.key === 'Tab' && $event.stopPropagation()"
             @keyup="$event.key === 'Tab' && $event.stopPropagation()"
           >
-            <div v-if="languageName === 'datetime'">
-              {[ content ]}
+            <div
+              v-if="languageName === 'datetime'"
+              :style="{ height: '200px' }"
+            >
+              <date-time-editor
+                :cell="eventParams?.cell"
+                v-model="content"
+              />
             </div>
             <text-editor
               v-else
@@ -92,7 +95,7 @@
               :height="editorHeight"
               :focus="editorFocus"
               @focus="editorFocus = $event"
-              :readOnly="isReadOnly"
+              :read-only="isReadOnly"
             />
           </div>
         </div>
@@ -189,7 +192,7 @@ export default Vue.extend({
       isReadOnly: false
     }
   },
-  components: { TextEditor },
+  components: { TextEditor, DateTimeEditor },
   computed: {
     ...mapGetters({ 'settings': 'settings/settings' }),
     modalName() {
@@ -260,11 +263,13 @@ export default Vue.extend({
       this.$nextTick(this.resizeHeightToFitContent)
     },
     async onBeforeClose() {
+      if (this.languageName === 'datetime') return
       // Hack: keep the modal height as it was before.
       this.$refs.editorContainer.style.height = this.$refs.editorContainer.offsetHeight + 'px'
       this.editorFocus = false
     },
     resizeHeightToFitContent() {
+      if (this.languageName === 'datetime') return
       const wrapperEl = this.$refs.editorContainer.querySelector('.CodeMirror')
       const wrapperStyle = window.getComputedStyle(wrapperEl)
 
