@@ -1,6 +1,6 @@
 @use "sass:color";
-
-@import '../extends';
+@use "../variables" as *;
+@use "../extends" as *;
 
 .dropdown {
   position: relative;
@@ -30,7 +30,8 @@
     flex: 0 1 100%;
     padding: $gutter-h $gutter-w;
     transition: background 0.15s ease-in-out;
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       background: rgba($theme-base, 0.06);
     }
   }

@@ -1,6 +1,7 @@
-@import '../solarized-light/theme.scss';
+@use "sass:color";
+@use "../solarized-light/theme.scss";
+@use "../_variables" as *;
 
 .tabulator-table .tabulator-row .tabulator-cell.edited {
   color: $theme-bg;
 }
-

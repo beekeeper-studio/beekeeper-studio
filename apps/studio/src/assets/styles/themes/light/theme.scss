@@ -1,34 +1,33 @@
 @use "sass:color";
-@import "codemirror/theme/xq-light";
+@use "codemirror/theme/xq-light";
 
 // Global
-$badge-bg:                 rgba($theme-base, 0.1);
+$badge-bg: rgba($theme-base, 0.1);
 
 // Sidebar
-$sidebar-list-icons:       $theme-primary;
+$sidebar-list-icons: $theme-primary;
 
 // Editor
-$tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 color.adjust($theme-bg, $lightness: -4%);
-$codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
+$tabs-heading: rgba($theme-base, 0.08);
+$tab-link: color.adjust($theme-bg, $lightness: -4%);
+$codemirror-hint-bg: color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
-$row-highlight:            color.adjust($query-editor-bg, $lightness: -3%);
+$row-highlight: color.adjust($query-editor-bg, $lightness: -3%);
 $row-handle-selected: color.adjust($query-editor-bg, $lightness: -10%);
-$row-add:                  #5ff3c0;
-$row-delete:               #FC8A87;
-$row-error:                #F9B8B7;
+$row-add: #5ff3c0;
+$row-delete: #fc8a87;
+$row-error: #f9b8b7;
 
-$cell-edited:              #EDDFA1;
-$cell-error:               $row-error;
-$cell-success:             $row-add;
+$cell-edited: #eddfa1;
+$cell-error: $row-error;
+$cell-success: $row-add;
 
 // Statusbar
-$editor-statusbar:         rgba($theme-base, 0.035);
+$editor-statusbar: rgba($theme-base, 0.035);
 
 @mixin cell-shadow {
-  box-shadow: inset 1px 0 rgba(white, 0.4),
-              inset 0 -1px rgba(white, 0.4);
+  box-shadow: inset 1px 0 rgba(white, 0.4), inset 0 -1px rgba(white, 0.4);
 }
 
 // Base Styles
@@ -41,7 +40,8 @@ $editor-statusbar:         rgba($theme-base, 0.035);
   font-weight: 600;
 }
 select {
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>")
+    no-repeat scroll 98% 60% transparent !important;
   option {
     &:hover {
       color: white;
@@ -52,9 +52,11 @@ select {
       color: inherit;
       font-weight: bold;
     }
-    &:disabled, &:disabled:hover, &:disabled:focus {
-      background: transparent!important;
-      color: $text-lighter!important;
+    &:disabled,
+    &:disabled:hover,
+    &:disabled:focus {
+      background: transparent !important;
+      color: $text-lighter !important;
     }
   }
 }
@@ -77,14 +79,15 @@ x-buttons {
 .btn {
   box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
 }
-.btn-link, .btn-fab {
+.btn-link,
+.btn-fab {
   box-shadow: none;
 }
 .btn-flat {
   background: rgba($theme-base, 0.08);
 }
 .text-primary {
-  color: $theme-primary!important;
+  color: $theme-primary !important;
 }
 .list-group {
   .list-item-btn {
@@ -108,7 +111,7 @@ x-buttons {
   }
 }
 .text-danger {
-  color: $brand-danger!important;
+  color: $brand-danger !important;
 }
 .connection-main {
   .card-flat {
@@ -157,21 +160,20 @@ x-buttons {
     .filter-actions {
       x-button {
         &.btn-fab {
-        margin-right: 2px;
-        line-height: 22px;
-        height: 22px;
-        width: 22px;
-        min-width: 22px;
-        border-radius: 22px;
-        border: 0;
-        &.active {
-          background: rgba($theme-base, 0.1);
-          .material-icons {
-            color: $brand-info;
+          margin-right: 2px;
+          line-height: 22px;
+          height: 22px;
+          width: 22px;
+          min-width: 22px;
+          border-radius: 22px;
+          border: 0;
+          &.active {
+            background: rgba($theme-base, 0.1);
+            .material-icons {
+              color: $brand-info;
+            }
           }
         }
-      }
-
       }
     }
   }
@@ -182,7 +184,9 @@ x-buttons {
           background: rgba($theme-base, 0.38);
         }
       }
-      &:hover, &.active, &.active:hover {
+      &:hover,
+      &.active,
+      &.active:hover {
         &:before {
           width: 2px;
         }
@@ -217,8 +221,8 @@ x-buttons {
         .tab-action {
           background: linear-gradient(
             90deg,
-            rgba($query-editor-bg,0) 0%,
-            rgba($query-editor-bg,1) 20%
+            rgba($query-editor-bg, 0) 0%,
+            rgba($query-editor-bg, 1) 20%
           );
         }
       }
@@ -230,8 +234,8 @@ x-buttons {
       border-radius: 0 6px 0 0;
       background: linear-gradient(
         90deg,
-        rgba($tab-link,0) 0%,
-        rgba($tab-link,1) 20%
+        rgba($tab-link, 0) 0%,
+        rgba($tab-link, 1) 20%
       );
     }
     .tab-close {
@@ -253,18 +257,18 @@ x-buttons {
       &.tabulator-row-even {
         &.inserted,
         &.inserted:hover {
-          background: $row-add!important;
+          background: $row-add !important;
           --row-bg-color: #{$row-add};
           --row-hover-bg-color: rgba($theme-base, 0.05);
         }
         &.deleted,
         &.deleted:hover {
-          background: $row-delete!important;
+          background: $row-delete !important;
           --row-bg-color: #{$row-delete};
           --row-hover-bg-color: #{$row-delete};
         }
         &.edit-error {
-          background: $row-error!important;
+          background: $row-error !important;
           --row-bg-color: #{$row-error};
         }
       }
@@ -310,16 +314,13 @@ x-buttons {
       }
     }
   }
-
 }
 .tabulator {
-
   .tabulator-loader {
     .tabulator-loader-msg {
       &.tabulator-loading {
         background-color: white;
       }
-
     }
   }
 
@@ -347,13 +348,12 @@ x-buttons {
       --row-bg-color: #{rgba($theme-base, 0.06)};
     }
     &.inserted {
-      background: $row-add!important;
+      background: $row-add !important;
       --row-bg-color: #{$row-add};
     }
   }
 }
 .table-builder {
-
   .table-builder-header {
     .form-group {
       label {
@@ -366,7 +366,6 @@ x-buttons {
 // Schema Builder
 // ----------------------------------
 .schema-builder {
-
   // Schema Header
   .schema-header {
     .table-title {
@@ -403,8 +402,8 @@ x-buttons {
             &[type="checkbox"]:active,
             &[type="checkbox"]:checked,
             &[type="checkbox"]:checked:active {
-              background: rgba($theme-base, 0.5)!important;
-              color: $theme-bg!important;
+              background: rgba($theme-base, 0.5) !important;
+              color: $theme-bg !important;
             }
           }
         }
@@ -414,7 +413,7 @@ x-buttons {
             &[type="checkbox"]:checked,
             &[type="checkbox"]:checked:active {
               &:after {
-                color: white!important;
+                color: white !important;
               }
             }
           }
@@ -426,7 +425,7 @@ x-buttons {
           &:checked,
           &:checked:active {
             &:after {
-              color: $theme-base!important;
+              color: $theme-base !important;
             }
           }
         }
@@ -438,18 +437,18 @@ x-buttons {
           }
           &.editable {
             input[type="checkbox"] {
-              box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2)!important;
-              cursor: pointer!important;
+              box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2) !important;
+              cursor: pointer !important;
               &:active,
               &:checked,
               &:checked:active {
-                background: $theme-base!important;
+                background: $theme-base !important;
                 &:after {
-                  color: $theme-bg!important;
+                  color: $theme-bg !important;
                 }
               }
               &:focus {
-                box-shadow: inset 0 0 0 2px $theme-base!important;
+                box-shadow: inset 0 0 0 2px $theme-base !important;
               }
             }
           }
@@ -492,16 +491,15 @@ x-buttons {
   }
   .tabulator-row {
     &.tabulator-moving {
-      background: color.adjust($theme-bg, $lightness: 15%)!important;
+      background: color.adjust($theme-bg, $lightness: 15%) !important;
     }
   }
 }
 
-
 // CodeMirror
 // ----------------------------------
 .CodeMirror-hints {
-  background: color.adjust($theme-bg, $lightness: -5%)!important;
+  background: color.adjust($theme-bg, $lightness: -5%) !important;
   li {
     &.CodeMirror-hint-active {
       background: $brand-info;
@@ -522,7 +520,6 @@ x-buttons {
     }
   }
 }
-
 
 .cm-s-monokai {
   font-weight: 500;

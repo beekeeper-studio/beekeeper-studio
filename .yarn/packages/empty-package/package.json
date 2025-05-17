@@ -1,14 +1,6 @@
 {
   "name": "empty-package",
   "version": "1.0.0",
-  "description": "Empty package",
-  "main": "index.js",
-  "module": "index.mjs",
-  "exports": {
-    "require": "./index.js",
-    "default": "./index.js",
-    "node": "./index.js",
-    "import": "./index.mjs"
-  },
-  "license": "MIT"
+  "description": "Empty package to use as a replacement for native modules on unsupported platforms",
+  "main": "index.js"
 }

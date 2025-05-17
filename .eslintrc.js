@@ -1,20 +1,26 @@
 module.exports = {
-  "root": true,
-  "env": {
-    "node": true,
-    // activate “es2020” globals to fix 'BigInt' is not defined
+  root: true,
+  env: {
+    node: true,
+    // activate "es2020" globals to fix 'BigInt' is not defined
     // https://futurestud.io/tutorials/eslint-how-to-fix-bigint-is-not-defined
-    "es2020": true,
+    es2020: true,
   },
-  "ignorePatterns": ["node_modules", "dist", "apps/**/tsconfig.json", "*.png", "*.scss"],
-  "plugins": ["@typescript-eslint"],
-  "extends": [
+  ignorePatterns: [
+    "node_modules",
+    "dist",
+    "apps/**/tsconfig.json",
+    "*.png",
+    "*.scss",
+  ],
+  plugins: ["@typescript-eslint"],
+  extends: [
     "eslint:recommended",
     "plugin:vue/essential",
     "plugin:vue/strongly-recommended",
     "plugin:@typescript-eslint/recommended",
   ],
-  "rules": {
+  rules: {
     "no-console": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/ban-ts-comment": "off",
@@ -25,23 +31,25 @@ module.exports = {
     "vue/require-prop-types": "off",
     "vue/require-default-prop": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
-    "vue/max-attributes-per-line": "off"
+    "vue/max-attributes-per-line": "off",
+    "vue/singleline-html-element-content-newline": "off",
+    "vue/html-self-closing": "off",
+    "vue/html-indent": "off",
+    "vue/html-closing-bracket-newline": "off",
   },
-  "parser": "vue-eslint-parser",
-  "parserOptions": {
-    "parser": "@typescript-eslint/parser",
-    "ecmaFeatures": {
-      "legacyDecorators": true
-    }
+  parser: "vue-eslint-parser",
+  parserOptions: {
+    parser: "@typescript-eslint/parser",
+    ecmaFeatures: {
+      legacyDecorators: true,
+    },
   },
-  "overrides": [
+  overrides: [
     {
-      "files": [
-        "apps/**/tests/**/*.{j,t}s?(x)"
-      ],
-      "env": {
-        "jest": true
-      }
-    }
-  ]
-}
+      files: ["apps/**/tests/**/*.{j,t}s?(x)"],
+      env: {
+        jest: true,
+      },
+    },
+  ],
+};

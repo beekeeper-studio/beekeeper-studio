@@ -1,28 +1,25 @@
 <template>
-  <div
-    class="spinner"
-    :style="{ '--size': `${size}px`}"
-  >
+  <div class="spinner" :style="{ '--size': `${size}px` }">
     <div />
     <div />
     <div />
-  </div>	
+  </div>
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import Vue from "vue";
 export default Vue.extend({
-	props: {
+  props: {
     size: {
       type: Number,
-      default: 15
-    }
-  }
-})
+      default: 15,
+    },
+  },
+});
 </script>
 
 <style lang="scss" scoped>
-@import '../../../shared/assets/styles/_variables';
+@use "../../../shared/assets/styles/variables" as *;
 
 .spinner {
   display: inline-block;
@@ -69,5 +66,4 @@ export default Vue.extend({
     transform: rotate(360deg);
   }
 }
-
 </style>

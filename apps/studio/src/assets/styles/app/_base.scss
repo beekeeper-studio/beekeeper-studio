@@ -1,13 +1,15 @@
 // Fonts
-$material-icons-font-path: 'material-icons/iconfont/';
-$font-family:        'Roboto';
-$font-family-mono:   'Source Code Pro';
-$base-font-size:      0.875rem; // ~14px
+$material-icons-font-path: "material-icons/iconfont/";
+$font-family: "Roboto";
+$font-family-mono: "Source Code Pro";
+$base-font-size: 0.875rem; // ~14px
 
-@import 'material-icons/iconfont/material-icons.scss';
-@import "./vendor/custom-icons.scss";
+@use "material-icons/iconfont/material-icons.scss";
+@use "./vendor/custom-icons.scss";
 
-*, *:after, *:before {
+*,
+*:after,
+*:before {
   box-sizing: border-box;
 }
 :root {
@@ -16,6 +18,7 @@ $base-font-size:      0.875rem; // ~14px
   -webkit-font-smoothing: antialiased;
   font-weight: normal;
   -webkit-user-select: none;
+  user-select: none;
 }
 body {
   font-size: 1rem;

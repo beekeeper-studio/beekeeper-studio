@@ -1,7 +1,20 @@
-import sqlanywhere from 'sqlanywhere';
-import { promisify } from 'util';
+// Use optional import to handle platforms where sqlanywhere might not be available
+let sqlanywhere: any;
+try {
+  sqlanywhere = require('sqlanywhere');
+} catch (error) {
+  console.warn('SqlAnywhere module not available for this platform:', error.message);
+  // Provide a mock implementation for platforms where the module isn't available
+  sqlanywhere = {
+    createConnection: () => {
+      throw new Error('SqlAnywhere not supported on this platform');
+    }
+  };
+}
+
 import rawLog from '@bksLogger';
 import _ from 'lodash';
+import { promisify } from 'util';
 
 const log = rawLog.scope('SqlAnywherePool');
 
@@ -79,6 +92,12 @@ export class SqlAnywherePool {
   }
 
   async connect(): Promise<SqlAnywhereConn> {
+    // Check for platform compatibility
+    if (process.platform === 'darwin' && process.arch === 'arm64') {
+      log.warn('SQLAnywhere connections are not supported on Mac ARM64 architecture');
+      throw new Error('SQLAnywhere not supported on Mac ARM64');
+    }
+
     // try to reuse an available connection
     for (const p of this.pool) {
       if (!this.inUse.has(p)) {
@@ -90,12 +109,17 @@ export class SqlAnywherePool {
 
     // create new connection if under max
     if (this.pool.length < this.maxSize) {
-      const pConn = new SqlAnywhereConn(this.config, this);
-      await pConn.connect();
-      log.info('Acquiring new connection', pConn.connectionId);
-      this.pool.push(pConn);
-      this.inUse.add(pConn);
-      return pConn;
+      try {
+        const pConn = new SqlAnywhereConn(this.config, this);
+        await pConn.connect();
+        log.info('Acquiring new connection', pConn.connectionId);
+        this.pool.push(pConn);
+        this.inUse.add(pConn);
+        return pConn;
+      } catch (error) {
+        log.error('Error creating SQLAnywhere connection:', error);
+        throw error;
+      }
     }
 
     // wait for a connection to be released

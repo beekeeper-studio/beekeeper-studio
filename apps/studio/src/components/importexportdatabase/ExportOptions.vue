@@ -1,13 +1,9 @@
 <template>
   <div class="small-wrap">
-    <form
-      class="card-flat padding"
-    >
+    <form class="card-flat padding">
       <div class="page-content">
         <div class="flex flex-between">
-          <h3 class="card-title">
-            File Options
-          </h3>
+          <h3 class="card-title">File Options</h3>
         </div>
         <div class="export-form">
           <div class="alert alert-info">
@@ -15,17 +11,13 @@
           </div>
           <div class="flex">
             <div class="file-name form-group expand">
-              <label for="fileName">File name format
-                <i
-                  class="material-icons"
-                  v-tooltip="fileFormatTooltip"
-                >help_outlined</i>
+              <label for="fileName"
+                >File name format
+                <i class="material-icons" v-tooltip="fileFormatTooltip"
+                  >help_outlined</i
+                >
               </label>
-              <input
-                type="text"
-                spellcheck="false"
-                v-model="fileName"
-              >
+              <input type="text" spellcheck="false" v-model="fileName" />
             </div>
             <div class="format form-group">
               <label for="exportFormat">Format</label>
@@ -35,12 +27,7 @@
                 v-model="selectedExportFormat"
                 id="multi-export-format-select"
               >
-                <option
-                  disabled
-                  value="null"
-                >
-                  Select a format...
-                </option>
+                <option disabled value="null">Select a format...</option>
                 <option
                   :key="f.value"
                   v-for="f in exportFormats"
@@ -71,9 +58,7 @@
         <div class="export-form">
           <!-- Advanced Options -->
           <div class="flex flex-between">
-            <h3 class="card-title">
-              Advanced Export Options
-            </h3>
+            <h3 class="card-title">Advanced Export Options</h3>
           </div>
           <div class="advanced-options open">
             <component
@@ -82,7 +67,9 @@
             />
             <div class="modal-form export-form export-advanced-options">
               <div class="form-group row">
-                <label title="How many records to read at once from the cursor">Chunk size</label>
+                <label title="How many records to read at once from the cursor"
+                  >Chunk size</label
+                >
                 <input
                   v-model="options.chunkSize"
                   type="number"
@@ -90,20 +77,17 @@
                   ref="paramInput"
                   min="10"
                   step="10"
-                >
+                />
               </div>
               <div class="form-group row">
-                <label
-                  for="deleteOnAbort"
-                  class="checkbox-group"
-                >
+                <label for="deleteOnAbort" class="checkbox-group">
                   <input
                     v-model="options.deleteOnAbort"
                     id="deleteOnAbort"
                     type="checkbox"
                     name="deleteOnAbort"
                     class="form-control"
-                  >
+                  />
                   <span>Delete file on abort/error</span>
                 </label>
               </div>
@@ -116,13 +100,18 @@
 </template>
 
 <script>
-import pluralize from 'pluralize'
-import dateFormat from 'dateformat'
-import { mapGetters, mapMutations, mapState } from "vuex"
-import rawlog from '@bksLogger'
-import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "../export/forms"
-import FilePicker from '../common/form/FilePicker.vue'
-const log = rawlog.scope('export/multi-export-manager')
+import rawlog from "@bksLogger";
+import dateFormat from "dateformat";
+import pluralize from "pluralize";
+import { mapGetters, mapState } from "vuex";
+import FilePicker from "../common/form/FilePicker.vue";
+import {
+  ExportFormCSV,
+  ExportFormJSON,
+  ExportFormJsonLine,
+  ExportFormSQL,
+} from "../export/forms";
+const log = rawlog.scope("export/multi-export-manager");
 
 const exportFormats = [
   {
@@ -136,16 +125,16 @@ const exportFormats = [
     component: ExportFormJSON,
   },
   {
-    name: 'JSON Lines',
-    key: 'jsonl',
-    component: ExportFormJsonLine
+    name: "JSON Lines",
+    key: "jsonl",
+    component: ExportFormJsonLine,
   },
   {
     name: "SQL",
     key: "sql",
     component: ExportFormSQL,
   },
-]
+];
 
 export default {
   components: { FilePicker },
@@ -156,44 +145,51 @@ export default {
       options: { chunkSize: 100, deleteOnAbort: true, includeFilter: true },
       outputOptions: {},
       fileDirectory: null,
-      fileName: dateFormat(new Date(), 'yyyy-mm-dd_HHMMss')
+      fileName: dateFormat(new Date(), "yyyy-mm-dd_HHMMss"),
     };
   },
   computed: {
-    ...mapGetters(['dialectData']),
-    ...mapGetters('multiTableExports', ['isSelectTableComplete']),
-    ...mapState('multiTableExports', ['exportSchema', 'tablesToExport']),
+    ...mapGetters(["dialectData"]),
+    ...mapGetters("multiTableExports", ["isSelectTableComplete"]),
+    ...mapState("multiTableExports", ["exportSchema", "tablesToExport"]),
     exportFormats() {
-      return exportFormats.filter((format) =>
-        !this.dialectData.disabledFeatures?.export?.[format.key]
-      )
+      return exportFormats.filter(
+        (format) => !this.dialectData.disabledFeatures?.export?.[format.key]
+      );
     },
     filesToBeExported() {
-      return `${pluralize('files', this.tablesToExport.length, true)} will be created, one for each table exported`
+      return `${pluralize(
+        "files",
+        this.tablesToExport.length,
+        true
+      )} will be created, one for each table exported`;
     },
-    optionalFileName () {
-      if (this.fileName) return `_${this.fileName}`
-      return ''
+    optionalFileName() {
+      if (this.fileName) return `_${this.fileName}`;
+      return "";
     },
-    filenameSchema () {
-      const schema = this.exportSchema ? `${this.exportSchema}_` : ''
-      return `${schema}{{table name}}`
+    filenameSchema() {
+      const schema = this.exportSchema ? `${this.exportSchema}_` : "";
+      return `${schema}{{table name}}`;
     },
     filePath() {
-      return this.fileDirectory || null
+      return this.fileDirectory || null;
     },
     dialogOptions() {
-      const result = { buttonLabel: 'Choose Directory', properties: [ 'openDirectory', 'createDirectory'] }
-      return result
+      const result = {
+        buttonLabel: "Choose Directory",
+        properties: ["openDirectory", "createDirectory"],
+      };
+      return result;
     },
     defaultPath() {
-      let previous = localStorage.getItem('export/directory')
-      if (previous === 'undefined' || previous === 'null') previous = null
-      return previous || this.$config.downloadsDirectory
+      let previous = localStorage.getItem("export/directory");
+      if (previous === "undefined" || previous === "null") previous = null;
+      return previous || this.$config.downloadsDirectory;
     },
     fileFormatTooltip() {
-      return `Format of Export File Names is ${this.filenameSchema}${this.optionalFileName}.${this.selectedExportFormat.key}`
-    }
+      return `Format of Export File Names is ${this.filenameSchema}${this.optionalFileName}.${this.selectedExportFormat.key}`;
+    },
   },
   methods: {
     onNext() {
@@ -209,23 +205,23 @@ export default {
         options: this.options,
         fileNameOptions: this.fileName,
         outputOptions: this.outputOptions,
-        exporter: this.selectedExportFormat.key
-      }
-      localStorage.setItem('export/directory', this.fileDirectory)
-      this.$store.commit('multiTableExports/updateOptions', payload)
+        exporter: this.selectedExportFormat.key,
+      };
+      localStorage.setItem("export/directory", this.fileDirectory);
+      this.$store.commit("multiTableExports/updateOptions", payload);
     },
     canContinue() {
-      return this.isSelectTableComplete && Boolean(this.fileName)
-    }
+      return this.isSelectTableComplete && Boolean(this.fileName);
+    },
   },
   mounted() {
-    this.fileDirectory = this.defaultPath
+    this.fileDirectory = this.defaultPath;
   },
 };
 </script>
 
-<style lang="scss" scoped>
-@import '../../assets/styles/app/_variables';
+<style scoped lang="scss">
+@use "../../assets/styles/app/variables" as *;
 
 form {
   width: 90%;

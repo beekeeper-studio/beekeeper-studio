@@ -1,3 +1,6 @@
+@use "sass:color";
+@use "../app/_variables" as *;
+
 .dropzone {
   position: fixed;
   inset: 0;
@@ -21,4 +24,3 @@
     font-size: 2rem;
   }
 }
-

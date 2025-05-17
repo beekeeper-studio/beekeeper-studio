@@ -1,8 +1,11 @@
-@import "./text-editor-plugins/partial-read-only.scss";
+@use "sass:color";
+@use "../app/_variables" as *;
+@use "./text-editor-plugins/partial-read-only.scss";
 
 .text-editor {
   &.remove-json-root-brackets .CodeMirror-code {
-    & > div:first-child, & > div:last-child {
+    & > div:first-child,
+    & > div:last-child {
       display: none;
     }
   }

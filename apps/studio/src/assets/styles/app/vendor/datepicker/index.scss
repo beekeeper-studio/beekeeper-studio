@@ -1,4 +1,7 @@
-$namespace: 'bkdates'; // change the 'mx' to 'xmx'. then <date-picker prefix-class="xmx" />
+@use "sass:color";
+@use "../../../_variables" as *;
+
+$namespace: "bkdates"; // change the 'mx' to 'xmx'. then <date-picker prefix-class="xmx" />
 
 $default-color: $theme-bg;
 $primary-color: $theme-base;
@@ -8,11 +11,11 @@ $time-active-color: #181818;
 $time-active-background-color: $theme-primary;
 $today-color: $theme-secondary;
 
-@import './var.scss';
-@import './icon.scss';
-@import './btn.scss';
-@import './scrollbar.scss';
-@import './animation.scss';
+@use "./var.scss";
+@use "./icon.scss";
+@use "./btn.scss";
+@use "./scrollbar.scss";
+@use "./animation.scss";
 
 .#{$namespace}-datepicker {
   position: relative;
@@ -181,7 +184,7 @@ $today-color: $theme-secondary;
 .#{$namespace}-calendar-decade-separator {
   margin: 0 2px;
   &:after {
-    content: '~';
+    content: "~";
   }
 }
 
@@ -326,7 +329,7 @@ $today-color: $theme-secondary;
     padding: 0;
     list-style: none;
     &::after {
-      content: '';
+      content: "";
       display: block;
       height: 32 * 6px;
     }

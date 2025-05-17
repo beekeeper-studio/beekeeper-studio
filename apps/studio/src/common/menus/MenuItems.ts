@@ -3,6 +3,36 @@ import { DevLicenseState } from '@/lib/license';
 import { IPlatformInfo } from '../IPlatformInfo';
 import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
+// Helper function to generate theme menu items
+// keep for potential future use if submenu is needed
+/*
+function generateThemeMenuItems(actionHandler: IMenuActionHandler, currentTheme: any) {
+  // Get themes from the store
+  const allThemes = store.getters['themes/allThemes'] || [];
+
+  // Convert currentTheme to string if needed
+  const currentThemeStr = currentTheme?.toString() || '';
+
+  // Generate menu items for each theme
+  const themeMenuItems = allThemes.map((theme: Theme) => ({
+    type: 'radio',
+    label: theme.name,
+    click: actionHandler.switchTheme,
+    checked: currentThemeStr === theme.id
+  }));
+
+  // Add separator and "Manage Custom Themes" option
+  return [
+    ...themeMenuItems,
+    { type: 'separator' },
+    {
+      id: 'manage-custom-themes',
+      label: 'Manage Custom Themes...',
+      click: actionHandler.manageCustomThemes
+    }
+  ];
+}
+*/
 
 export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings, platformInfo: IPlatformInfo) {
   return {
@@ -102,7 +132,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Check for Software Updates',
       click: actionHandler.checkForUpdates
     },
-    opendocs : {
+    opendocs: {
       id: 'opendocs',
       label: 'Documentation',
       click: actionHandler.opendocs
@@ -178,28 +208,28 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'menu-secondary-sidebar',
       label: 'Toggle Secondary Sidebar',
       // accelerator: "Alt+S",
-      click: actionHandler.toggleSecondarySidebar,  
+      click: actionHandler.toggleSecondarySidebar,
       enabled: false,
     },
     themeToggle: {
       id: "theme-toggle-menu",
-      label: "Theme",
+      label: "Select Theme",
       submenu: [
         {
           type: 'radio',
-          label: "System",
+          label: 'System',
           click: actionHandler.switchTheme,
           checked: settings?.theme?.value === 'system'
         },
         {
-          type: "radio",
-          label: "Light",
+          type: 'radio',
+          label: 'Light',
           click: actionHandler.switchTheme,
           checked: settings?.theme?.value === 'light'
         },
         {
           type: 'radio',
-          label: "Dark",
+          label: 'Dark',
           click: actionHandler.switchTheme,
           checked: settings?.theme?.value === 'dark'
         },
@@ -214,6 +244,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           label: 'Solarized Dark',
           click: actionHandler.switchTheme,
           checked: settings?.theme?.value === 'solarized-dark'
+        },
+        { type: 'separator' },
+        {
+          label: 'Find Additional Themes...',
+          click: actionHandler.manageCustomThemes
         }
       ]
     },

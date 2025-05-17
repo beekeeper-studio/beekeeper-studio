@@ -1,4 +1,6 @@
 @use "sass:color";
+@use "../app/_variables" as *;
+@use "../app/_mixins" as *;
 // Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
 
 .vue-simple-context-menu {
@@ -36,22 +38,23 @@
     background: color.adjust(rgba($theme-base, 0.05), $lightness: -25%);
   }
   i {
-    height: 24px!important;
-    line-height: 24px!important;
+    height: 24px !important;
+    line-height: 24px !important;
     width: 24px;
     opacity: 0.6;
-    margin-right: $gutter-h!important;
+    margin-right: $gutter-h !important;
   }
   .shortcut {
     padding-left: 5px;
     color: color.adjust($text-dark, $lightness: -30%);
   }
-  i.material-icons.menu-icon   {
-    margin-right:0!important;
+  i.material-icons.menu-icon {
+    margin-right: 0 !important;
     margin-left: 0.4rem;
   }
 }
-.vue-simple-context-menu__divider, hr {
+.vue-simple-context-menu__divider,
+hr {
   min-height: 0;
   width: 100%;
   height: 1px;
@@ -60,7 +63,8 @@
   background: transparent;
   border: 0;
   pointer-events: none;
-  + hr, &:last-child {
+  + hr,
+  &:last-child {
     display: none;
   }
 }
@@ -73,12 +77,14 @@
 
 // ------ Theme Customization ------
 
-.BksContextMenu-list, .vue-simple-context-menu {
+.BksContextMenu-list,
+.vue-simple-context-menu {
   background: color.adjust($theme-bg, $lightness: 5%);
   color: $text;
 }
 
-.BksContextMenu-item, .vue-simple-context-menu__item {
+.BksContextMenu-item,
+.vue-simple-context-menu__item {
   color: $text-dark;
   &.disabled {
     opacity: 0.5;
@@ -93,6 +99,8 @@
   opacity: 0.5;
 }
 
-.BksContextMenu-item-divider, .vue-simple-context-menu__divider, hr {
+.BksContextMenu-item-divider,
+.vue-simple-context-menu__divider,
+hr {
   border-top: 1px solid $border-color;
 }

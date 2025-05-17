@@ -1,8 +1,9 @@
 @use "sass:color";
-
+@use "../app/_variables" as *;
+@use "../app/_mixins" as *;
 
 .quicksearch {
-  $input-height:       2.6rem;
+  $input-height: 2.6rem;
 
   position: fixed;
   top: 0;
@@ -102,7 +103,7 @@
       }
       .shortcut-item {
         color: $text-lighter;
-        .shortcut > span{
+        .shortcut > span {
           color: $text-dark;
         }
       }
@@ -128,7 +129,8 @@
     &:hover {
       background: rgba($theme-base, 0.05);
     }
-    &.selected, &.selected:hover {
+    &.selected,
+    &.selected:hover {
       background: rgba($theme-base, 0.1);
       color: $text-dark;
     }
