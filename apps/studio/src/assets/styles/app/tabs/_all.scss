@@ -1,4 +1,5 @@
-@import 'table-properties.scss';
-@import 'tabletable.scss';
-@import 'table-builder.scss';
-@import 'tab-with-table.scss';
+@use "sass:color";
+@use "table-properties.scss";
+@use "tabletable.scss";
+@use "table-builder.scss";
+@use "tab-with-table.scss";

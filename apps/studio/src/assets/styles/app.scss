@@ -1,72 +1,27 @@
+@use "./app/normalize";
+@use "./app/variables" as *;
+@use "./app/flex-grid";
+@use "./app/base";
+@use "./app/mixins" as *;
+@use "./components/all";
+@use "./vendor.scss";
+@use "./app/_all.scss";
+
+@use "./themes/dark/variables.scss" as *;
+@use "./themes/dark/theme.scss";
+@use "./themes/light/variables.scss" as *;
+@use "./themes/light/theme.scss";
+@use "./themes/solarized-dark/variables.scss" as *;
+@use "./themes/solarized-dark/theme.scss";
+@use "./themes/solarized-light/variables.scss" as *;
+@use "./themes/solarized-light/theme.scss";
+
 @import "@beekeeperstudio/ui-kit/style.css";
-@import "codemirror/lib/codemirror";
-@import "codemirror/addon/hint/show-hint";
-@import "noty/lib/noty";
-@import "tabulator-tables/dist/css/tabulator_midnight";
-@import "codemirror/theme/monokai";
-@import "codemirror/addon/merge/merge";
-@import "codemirror/addon/search/matchesonscrollbar";
-@import "vue-select/dist/vue-select";
-
-@import './app/normalize';
-@import './app/variables';
-@import './app/flex-grid';
-@import './app/base';
-
-
-body.theme-system {
-  @media (prefers-color-scheme: dark) {
-    @import './app/mixins';
-    @import './components/all';
-    @import './vendor.scss';
-    @import './app/_all.scss';
-    @import './themes/dark/theme.scss';
-  }
-
-  @media (prefers-color-scheme: light) {
-    @import './themes/light/variables.scss';
-    @import './app/mixins';
-    @import './components/all';
-    @import './vendor.scss';
-    @import './app/_all.scss';
-    @import './themes/light/theme.scss';
-  }
-}
-
-body.theme-dark {
-  @import './themes/dark/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/dark/theme.scss';
-}
-
-body.theme-light {
-  @import './themes/light/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/light/theme.scss';
-}
-
-body.theme-solarized-dark {
-  @import './themes/solarized-dark/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/solarized-dark/theme.scss';
-}
-
-
-
-body.theme-solarized {
-  @import './themes/solarized-light/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/solarized-light/theme.scss';
-}
+@import "codemirror/lib/codemirror.css";
+@import "codemirror/addon/hint/show-hint.css";
+@import "noty/lib/noty.css";
+@import "tabulator-tables/dist/css/tabulator_midnight.css";
+@import "codemirror/theme/monokai.css";
+@import "codemirror/addon/merge/merge.css";
+@import "codemirror/addon/search/matchesonscrollbar.css";
+@import "vue-select/dist/vue-select.css";

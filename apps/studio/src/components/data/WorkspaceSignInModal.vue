@@ -1,25 +1,19 @@
 <template>
-  <modal
-    name="workspace"
-    class="vue-dialog beekeeper-modal"
-    @opened="focus"
-  >
+  <modal name="workspace" class="vue-dialog beekeeper-modal" @opened="focus">
     <form @submit.prevent="login">
       <div class="dialog-content">
-        <div
-          v-if="lockEmail"
-          class="dialoc-c-title"
-        >
-          Reauthenticate {{ email ? email : '' }}
+        <div v-if="lockEmail" class="dialoc-c-title">
+          Reauthenticate {{ email ? email : "" }}
         </div>
-        <div
-          v-else
-          class="dialog-c-title"
-        >
-          Team workspace account sign-in <a
-            v-tooltip="'Store connections and queries in the cloud, share with colleagues. Click to learn more.'"
+        <div v-else class="dialog-c-title">
+          Team workspace account sign-in
+          <a
+            v-tooltip="
+              'Store connections and queries in the cloud, share with colleagues. Click to learn more.'
+            "
             href="https://beekeeperstudio.io/workspaces"
-          ><i class="material-icons">help_outlined</i></a>
+            ><i class="material-icons">help_outlined</i></a
+          >
         </div>
         <error-alert :error="error" />
         <div class="form-group">
@@ -30,7 +24,7 @@
             :disabled="lockEmail"
             v-model="email"
             placeholder="e.g. matthew@example.com"
-          >
+          />
         </div>
         <div class="form-group">
           <label for="password">Password</label>
@@ -39,7 +33,7 @@
             ref="password"
             v-model="password"
             placeholder="Shh..."
-          >
+          />
         </div>
       </div>
       <div class="vue-dialog-buttons flex-between">
@@ -47,37 +41,39 @@
           <a
             href="https://app.beekeeperstudio.io/users/sign_up"
             class="small text-muted"
-          >Create Account</a>
+            >Create Account</a
+          >
           <a
             href="https://app.beekeeperstudio.io/users/sign_in"
             class="small text-muted"
-          >Forgot Password</a>
+            >Forgot Password</a
+          >
         </span>
         <span class="right">
           <button
             class="btn btn-flat"
             type="button"
             @click.prevent="$modal.hide('workspace')"
-          >Cancel</button>
-          <button
-            class="btn btn-primary"
-            :disabled="loading"
-            type="submit"
-          >{{ loading ? '...' : 'Submit' }}</button>
+          >
+            Cancel
+          </button>
+          <button class="btn btn-primary" :disabled="loading" type="submit">
+            {{ loading ? "..." : "Submit" }}
+          </button>
         </span>
       </div>
     </form>
   </modal>
 </template>
-<script lang="ts">
 
-import { AppEvent } from '@/common/AppEvent'
-import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import Vue from 'vue'
+<script lang="ts">
+import { AppEvent } from "@/common/AppEvent";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import Vue from "vue";
 export default Vue.extend({
   components: { ErrorAlert },
   mounted() {
-    this.registerHandlers(this.rootBindings)
+    this.registerHandlers(this.rootBindings);
   },
   data() {
     return {
@@ -85,47 +81,47 @@ export default Vue.extend({
       email: null,
       password: null,
       error: null,
-      lockEmail: false
-    }
+      lockEmail: false,
+    };
   },
   computed: {
     rootBindings() {
       return [
         {
           event: AppEvent.promptLogin,
-          handler: this.openModal
-        }
-      ]
+          handler: this.openModal,
+        },
+      ];
     },
-    $modal: function() {
-      return (this as any).$modal;
-    }
   },
   methods: {
     openModal(email?: string) {
-      console.log("open modal with ", email)
-      this.email = email ? email : null
-      this.lockEmail = !!email
-      this.error = null
-      this.password = null
-      this.$modal.show('workspace')
+      console.log("open modal with ", email);
+      this.email = email ? email : null;
+      this.lockEmail = !!email;
+      this.error = null;
+      this.password = null;
+      this.$modal.show("workspace");
     },
     focus() {
-      const element = this.lockEmail ? this.$refs.password : this.$refs.email
-      element.focus()
+      const element = this.lockEmail ? this.$refs.password : this.$refs.email;
+      element.focus();
     },
     async login() {
       try {
-        this.error = null
-        this.loading = true
-        await this.$store.dispatch('credentials/login', { email: this.email, password: this.password })
-        this.$modal.hide('workspace')
-      } catch(ex) {
-        this.error = ex
+        this.error = null;
+        this.loading = true;
+        await this.$store.dispatch("credentials/login", {
+          email: this.email,
+          password: this.password,
+        });
+        this.$modal.hide("workspace");
+      } catch (ex) {
+        this.error = ex;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
-    }
-  }
-})
+    },
+  },
+});
 </script>

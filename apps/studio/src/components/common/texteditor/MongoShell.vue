@@ -1,55 +1,48 @@
 <template>
-  <textarea
-    name="shell"
-    class="editor"
-    ref="shell"
-    id=""
-    cols="30"
-    rows="10"
-  />
+  <textarea name="shell" class="editor" ref="shell" id="" cols="30" rows="10" />
 </template>
 
 <script lang="ts">
-import "@/plugins/CMMongoMode";
-import "codemirror/addon/comment/comment";
-import "codemirror/addon/dialog/dialog";
-import "codemirror/addon/search/search";
-import "codemirror/addon/search/jump-to-line";
-import "codemirror/addon/scroll/annotatescrollbar";
-import "codemirror/addon/search/matchesonscrollbar";
-import "codemirror/addon/search/matchesonscrollbar.css";
-import "codemirror/addon/search/searchcursor";
-import "codemirror/addon/fold/foldgutter";
-import "codemirror/addon/fold/foldcode";
-import "codemirror/addon/fold/brace-fold";
-import "codemirror/addon/fold/foldgutter.css";
-import "@/plugins/CMMongoHint";
-import "@/vendor/show-hint";
+import { AppEvent } from "@/common/AppEvent";
+import { keymapTypes } from "@/lib/db/types";
 import "@/lib/editor/CodeMirrorDefinitions";
-import "codemirror/addon/merge/merge";
-import CodeMirror from 'codemirror';
+import { plugins } from "@/lib/editor/utils";
 import {
-  setKeybindingsFromVimrc,
   applyConfig,
   Register,
+  setKeybindingsFromVimrc,
 } from "@/lib/editor/vim";
-import { keymapTypes } from "@/lib/db/types";
-import { mapGetters, mapState } from 'vuex';
-import { plugins } from "@/lib/editor/utils";
-import { AppEvent } from '@/common/AppEvent';
-import AnsiToHtml from 'ansi-to-html';
+import "@/plugins/CMMongoHint";
+import "@/plugins/CMMongoMode";
+import "@/vendor/show-hint";
+import AnsiToHtml from "ansi-to-html";
+import CodeMirror from "codemirror";
+import "codemirror/addon/comment/comment";
+import "codemirror/addon/dialog/dialog";
+import "codemirror/addon/fold/brace-fold";
+import "codemirror/addon/fold/foldcode";
+import "codemirror/addon/fold/foldgutter";
+import "codemirror/addon/fold/foldgutter.css";
+import "codemirror/addon/merge/merge";
+import "codemirror/addon/scroll/annotatescrollbar";
+import "codemirror/addon/search/jump-to-line";
+import "codemirror/addon/search/matchesonscrollbar";
+import "codemirror/addon/search/matchesonscrollbar.css";
+import "codemirror/addon/search/search";
+import "codemirror/addon/search/searchcursor";
+import { mapGetters, mapState } from "vuex";
 
 const ansiToHtml = new AnsiToHtml();
 
 interface InitializeOptions {
-  userKeymap?: typeof keymapTypes[number]['value']
+  userKeymap?: (typeof keymapTypes)[number]["value"];
 }
 
 export default {
   props: [
     "focus",
     "output",
-    "vimConfig" // not sure if we need this
+    "vimConfig", // not sure if we need this
   ],
   data() {
     return {
@@ -59,12 +52,12 @@ export default {
       historyIndex: -1,
       promptLine: 0, // where current prompt starts
       wasShellFocused: false,
-      firstInitialization: true
-    }
+      firstInitialization: true,
+    };
   },
   computed: {
-    ...mapGetters({ 'userKeymap': 'settings/userKeymap' }),
-    ...mapState(['connection']),
+    ...mapGetters({ userKeymap: "settings/userKeymap" }),
+    ...mapState(["connection"]),
     prompt() {
       const maxLength = 30;
       if (this.promptSymbol.length <= maxLength) return this.promptSymbol;
@@ -73,16 +66,18 @@ export default {
       const endLength = maxLength - 3 - startLength;
 
       const start = this.promptSymbol.substring(0, startLength);
-      const end = this.promptSymbol.substring(this.promptSymbol.length - endLength);
+      const end = this.promptSymbol.substring(
+        this.promptSymbol.length - endLength
+      );
 
-      return `${start}...${end}`
+      return `${start}...${end}`;
     },
     hintOptions() {
       return {
         promptLine: this.promptLine,
         promptSymbol: this.prompt,
-        connection: this.connection
-      }
+        connection: this.connection,
+      };
     },
     hint() {
       // @ts-expect-error not fully typed
@@ -93,32 +88,38 @@ export default {
     },
     rootBindings() {
       return [
-        { event: AppEvent.switchUserKeymap, handler: this.handleSwitchUserKeymap },
-      ]
+        {
+          event: AppEvent.switchUserKeymap,
+          handler: this.handleSwitchUserKeymap,
+        },
+      ];
     },
   },
   watch: {
     hintOptions() {
-      this.shell?.setOption('hintOptions', this.hintOptions);
+      this.shell?.setOption("hintOptions", this.hintOptions);
     },
     output(value) {
       const doc = this.shell.getDoc();
       const lastLineNum = this.shell.lastLine();
       let output = value.output;
 
-      if (typeof output === 'string' && /\x1b\[[0-9;]*m/.test(output)) {
+      if (typeof output === "string" && /\x1b\[[0-9;]*m/.test(output)) {
         const html = ansiToHtml.toHtml(output);
 
-        const el = document.createElement('pre');
-        el.className = 'ansi-output';
+        const el = document.createElement("pre");
+        el.className = "ansi-output";
         el.innerHTML = html;
 
         this.shell.addLineWidget(lastLineNum, el, { above: false });
-      } else if (typeof output === 'object') {
+      } else if (typeof output === "object") {
         try {
           const formattedOutput = JSON.stringify(output, null, 2);
-          
-          doc.replaceRange(`\n${formattedOutput}`, { line: lastLineNum + 1, ch: 0 });
+
+          doc.replaceRange(`\n${formattedOutput}`, {
+            line: lastLineNum + 1,
+            ch: 0,
+          });
         } catch (err) {
           // Fallback to basic string version if anything goes wrong
           const output = JSON.stringify(value.output);
@@ -132,7 +133,7 @@ export default {
       this.connection.getShellPrompt().then((v) => {
         this.promptSymbol = v;
         this.resetPrompt();
-      })
+      });
     },
     async focus() {
       if (!this.shell) return;
@@ -143,7 +144,7 @@ export default {
       } else {
         this.shell.display.input.blur();
       }
-    }
+    },
   },
   methods: {
     focusShell() {
@@ -154,7 +155,10 @@ export default {
     },
     handleBlur() {
       const activeElement = document.activeElement;
-      if (activeElement.tagName === "TEXTAREA" || activeElement.className === "tabulator-tableholder") {
+      if (
+        activeElement.tagName === "TEXTAREA" ||
+        activeElement.className === "tabulator-tableholder"
+      ) {
         this.wasShellFocused = true;
       }
     },
@@ -188,27 +192,27 @@ export default {
         extraKeys: {
           "Ctrl-Space": "autocomplete",
           "Shift-Tab": "indentLess",
-          [this.cmCtrlOrCmd("F")]: "findPersistent"
+          [this.cmCtrlOrCmd("F")]: "findPersistent",
         },
         // @ts-expect-error not fully typed
         options: {
           closeOnBlur: false,
         },
-        mode: 'mongo',
+        mode: "mongo",
         hint: this.hint,
         hintOptions: this.hintOptions,
         keyMap: options.userKeymap,
         // Add folding capability with custom indicators
         // @ts-expect-error not fully typed
         foldGutter: {
-        // @ts-expect-error not fully typed
+          // @ts-expect-error not fully typed
           rangeFinder: CodeMirror.fold.brace, // Use brace folding
           gutter: "CodeMirror-foldgutter",
           indicatorOpen: indicatorOpen,
           indicatorFolded: indicatorFolded,
         },
         // @ts-expect-error not fully typed
-        gutters: [ { className: "CodeMirror-foldgutter", style: "width: 18px"}],
+        gutters: [{ className: "CodeMirror-foldgutter", style: "width: 18px" }],
       });
 
       cm.getWrapperElement().classList.add("text-editor");
@@ -217,12 +221,19 @@ export default {
 
       cm.on("beforeChange", (_cm, change) => {
         // Prevent editing before current prompt
-        if (change.from.line < this.promptLine || (change.from.line === this.promptLine && change.from.ch < this.prompt.length)) {
+        if (
+          change.from.line < this.promptLine ||
+          (change.from.line === this.promptLine &&
+            change.from.ch < this.prompt.length)
+        ) {
           // Update the change to type in the prompt, and move the cursor there
-          change.update({ line: this.shell.lastLine(), ch: Infinity }, { line: this.shell.lastLine(), ch: Infinity });
+          change.update(
+            { line: this.shell.lastLine(), ch: Infinity },
+            { line: this.shell.lastLine(), ch: Infinity }
+          );
           this.shell.setCursor({ line: this.shell.lastLine(), ch: Infinity });
         }
-      })
+      });
 
       cm.on("keydown", (_cm, event) => {
         if (event.key === "Enter") {
@@ -243,7 +254,7 @@ export default {
             this.navigateHistory(1);
           }
         }
-      })
+      });
 
       const cmEl = this.$refs.shell.parentNode.querySelector(".CodeMirror");
       if (options.userKeymap === "vim") {
@@ -284,12 +295,17 @@ export default {
 
       this.$nextTick(() => {
         this.$emit("initialized");
-      })
+      });
     },
     async executeCommand() {
       const doc = this.shell.getDoc();
       const lastLineNum = this.shell.lastLine();
-      const userCommand = doc.getRange({ line: this.promptLine, ch: this.prompt.length }, { line: lastLineNum, ch: Infinity }).trim();
+      const userCommand = doc
+        .getRange(
+          { line: this.promptLine, ch: this.prompt.length },
+          { line: lastLineNum, ch: Infinity }
+        )
+        .trim();
 
       if (!userCommand) return;
 
@@ -299,21 +315,27 @@ export default {
       if (userCommand === "clear") {
         this.firstInitialization = true;
         this.initialize({ userKeymap: this.userKeymap });
-        this.$emit('clear');
+        this.$emit("clear");
         return;
       }
 
-      this.$emit('submitCommand', userCommand)
+      this.$emit("submitCommand", userCommand);
     },
     resetPrompt() {
       const doc = this.shell.getDoc();
-      doc.replaceRange(`\n${this.prompt}`, { line: this.shell.lineCount(), ch: 0 });
+      doc.replaceRange(`\n${this.prompt}`, {
+        line: this.shell.lineCount(),
+        ch: 0,
+      });
 
       this.promptLine = this.shell.lastLine();
       this.shell.setCursor({ line: this.promptLine, ch: this.prompt.length });
 
       this.$nextTick(() => {
-        setTimeout(() => this.shell.scrollTo(null, this.shell.getScrollInfo().height), 10);
+        setTimeout(
+          () => this.shell.scrollTo(null, this.shell.getScrollInfo().height),
+          10
+        );
       });
     },
     navigateHistory(direction) {
@@ -323,11 +345,19 @@ export default {
       this.historyIndex += direction;
       if (this.historyIndex < 0) this.historyIndex = 0;
       if (this.historyIndex >= this.commandHistory.length) {
-        doc.replaceRange('', { line: this.promptLine, ch: this.prompt.length }, { line: this.shell.lastLine(), ch: Infinity });
+        doc.replaceRange(
+          "",
+          { line: this.promptLine, ch: this.prompt.length },
+          { line: this.shell.lastLine(), ch: Infinity }
+        );
         return;
       }
 
-      doc.replaceRange(this.commandHistory[this.historyIndex], { line: this.promptLine, ch: this.prompt.length }, { line: this.shell.lastLine(), ch: Infinity });
+      doc.replaceRange(
+        this.commandHistory[this.historyIndex],
+        { line: this.promptLine, ch: this.prompt.length },
+        { line: this.shell.lastLine(), ch: Infinity }
+      );
     },
     handleSwitchUserKeymap(value) {
       this.initialize({ userKeymap: value });
@@ -343,23 +373,23 @@ export default {
       this.shell.focus();
     }
 
-    window.addEventListener('focus', this.focusShell);
-    window.addEventListener('blur', this.handleBlur);
+    window.addEventListener("focus", this.focusShell);
+    window.addEventListener("blur", this.handleBlur);
     this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
-    window.removeEventListener('focus', this.focusShell);
-    window.removeEventListener('blur', this.handleBlur);
+    window.removeEventListener("focus", this.focusShell);
+    window.removeEventListener("blur", this.handleBlur);
     this.destroyShell();
     this.unregisterHandlers(this.rootBindings);
-  }
-}
+  },
+};
 </script>
 
 <style lang="scss">
-@use 'sass:color';
-@import '../../../assets/styles/app/_variables';
- 
+@use "sass:color";
+@use "../../../assets/styles/app/_variables" as *;
+
 .cm-s-monokai .cm-prompt {
   color: $theme-primary;
   font-weight: bold;
@@ -378,5 +408,4 @@ export default {
   padding: 4px;
   margin: 0;
 }
-
 </style>

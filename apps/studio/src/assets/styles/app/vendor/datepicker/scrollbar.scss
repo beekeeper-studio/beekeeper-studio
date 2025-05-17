@@ -1,4 +1,4 @@
-@import './var.scss';
+@use "./var.scss" as *;
 
 .#{$namespace}-scrollbar {
   height: 100%;

@@ -208,13 +208,49 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'menu-secondary-sidebar',
       label: 'Toggle Secondary Sidebar',
       // accelerator: "Alt+S",
-      click: actionHandler.toggleSecondarySidebar,  
+      click: actionHandler.toggleSecondarySidebar,
       enabled: false,
     },
     themeToggle: {
       id: "theme-toggle-menu",
       label: "Select Theme",
-      click: actionHandler.manageCustomThemes
+      submenu: [
+        {
+          type: 'radio',
+          label: 'System',
+          click: actionHandler.switchTheme,
+          checked: settings?.theme?.value === 'system'
+        },
+        {
+          type: 'radio',
+          label: 'Light',
+          click: actionHandler.switchTheme,
+          checked: settings?.theme?.value === 'light'
+        },
+        {
+          type: 'radio',
+          label: 'Dark',
+          click: actionHandler.switchTheme,
+          checked: settings?.theme?.value === 'dark'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized',
+          click: actionHandler.switchTheme,
+          checked: settings?.theme?.value === 'solarized'
+        },
+        {
+          type: 'radio',
+          label: 'Solarized Dark',
+          click: actionHandler.switchTheme,
+          checked: settings?.theme?.value === 'solarized-dark'
+        },
+        { type: 'separator' },
+        {
+          label: 'Find Additional Themes...',
+          click: actionHandler.manageCustomThemes
+        }
+      ]
     },
     enterLicense: {
       id: 'enter-license',

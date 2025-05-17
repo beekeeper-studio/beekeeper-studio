@@ -17,31 +17,25 @@
                   {{ section.header }}
                 </h3>
               </div>
-              <div
-                v-for="(control, index) of section.controls"
-                :key="index"
-              >
+              <div v-for="(control, index) of section.controls" :key="index">
                 <div v-if="control.show === undefined || control.show(config)">
                   <div
                     v-if="control.controlType === 'select'"
                     class="form-group"
                   >
-                    <label :for="control.settingName">{{ control.settingDesc + (control.required ? '*' : '') }}</label>
+                    <label :for="control.settingName">{{
+                      control.settingDesc + (control.required ? "*" : "")
+                    }}</label>
                     <div class="input-group">
                       <select
                         :name="control.settingName"
                         class="form-control custom-select"
-                        :class="{ 'selected': !!config[control.settingName] }"
+                        :class="{ selected: !!config[control.settingName] }"
                         :id="control.settingName"
                         @change="onChange(control)"
                         v-model="config[control.settingName]"
                       >
-                        <option
-                          disabled
-                          selected
-                          hidden
-                          value="null"
-                        >
+                        <option disabled selected hidden value="null">
                           {{ control.placeholder }}
                         </option>
                         <option
@@ -52,16 +46,13 @@
                           {{ o.name }}
                         </option>
                       </select>
-                      <div
-                        v-if="!control.required"
-                        class="input-group-append"
-                      >
+                      <div v-if="!control.required" class="input-group-append">
                         <a
                           class="btn btn-flat"
                           @click="clearControl(control.settingName)"
-                        > <i
-                          class="material-icons"
-                        >clear</i> </a>
+                        >
+                          <i class="material-icons">clear</i>
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -69,10 +60,7 @@
                     v-else-if="control.controlType === 'checkbox'"
                     class="form-group"
                   >
-                    <label
-                      :for="control.settingName"
-                      class="checkbox-group"
-                    >
+                    <label :for="control.settingName" class="checkbox-group">
                       <input
                         type="checkbox"
                         :name="control.settingName"
@@ -80,15 +68,19 @@
                         :id="control.settingName"
                         @change="onChange(control)"
                         v-model="config[control.settingName]"
-                      >
-                      <span>{{ control.settingDesc + (control.required ? '*' : '') }}</span>
+                      />
+                      <span>{{
+                        control.settingDesc + (control.required ? "*" : "")
+                      }}</span>
                     </label>
                   </div>
                   <div
                     v-else-if="control.controlType === 'filepicker'"
                     class="form-group"
                   >
-                    <label :for="control.settingName">{{ control.settingDesc + (control.required ? '*' : '') }}</label>
+                    <label :for="control.settingName">{{
+                      control.settingDesc + (control.required ? "*" : "")
+                    }}</label>
                     <file-picker
                       v-model="config[control.settingName]"
                       @input="onChange(control)"
@@ -101,7 +93,9 @@
                       >
                         <div
                           class="input-group-append"
-                          v-for="(action, aIndex) in control.actions.filter((a) => !a.show || a.show(config))"
+                          v-for="(action, aIndex) in control.actions.filter(
+                            (a) => !a.show || a.show(config)
+                          )"
                           :key="aIndex"
                         >
                           <a
@@ -114,8 +108,11 @@
                             <i
                               class="material-icons btn-icon"
                               v-if="action.icon"
-                            >{{ callIfFunction(action.icon) }}</i>
-                            <span v-if="action.value">{{ callIfFunction(action.value) }}</span>
+                              >{{ callIfFunction(action.icon) }}</i
+                            >
+                            <span v-if="action.value">{{
+                              callIfFunction(action.value)
+                            }}</span>
                           </a>
                         </div>
                       </template>
@@ -125,7 +122,9 @@
                     v-else-if="control.controlType === 'input'"
                     class="form-group"
                   >
-                    <label :for="control.settingName">{{ control.settingDesc + (control.required ? '*' : '') }}</label>
+                    <label :for="control.settingName">{{
+                      control.settingDesc + (control.required ? "*" : "")
+                    }}</label>
                     <div class="input-group">
                       <input
                         type="text"
@@ -133,17 +132,14 @@
                         :id="control.settingName"
                         @change="onChange(control)"
                         v-model="config[control.settingName]"
-                      >
-                      <div
-                        class="input-group-append"
-                        v-if="!control.required"
-                      >
+                      />
+                      <div class="input-group-append" v-if="!control.required">
                         <a
                           class="btn btn-flat"
                           @click="clearControl(control.settingName)"
-                        > <i
-                          class="material-icons"
-                        >clear</i> </a>
+                        >
+                          <i class="material-icons">clear</i>
+                        </a>
                       </div>
                       <div
                         class="input-group-append"
@@ -157,11 +153,12 @@
                           :disabled="callIfFunction(action.disabled)"
                           @click="handleAction(action.onClick, control)"
                         >
-                          <i
-                            class="material-icons"
-                            v-if="action.icon"
-                          >{{ callIfFunction(action.icon) }}</i>
-                          <span v-if="action.value">{{ callIfFunction(action.value) }}</span>
+                          <i class="material-icons" v-if="action.icon">{{
+                            callIfFunction(action.icon)
+                          }}</i>
+                          <span v-if="action.value">{{
+                            callIfFunction(action.value)
+                          }}</span>
                         </a>
                       </div>
                     </div>
@@ -170,7 +167,9 @@
                     v-else-if="control.controlType === 'textarea'"
                     class="form-group"
                   >
-                    <label :for="control.settingName">{{ control.settingDesc + (control.required ? '*' : '') }}</label>
+                    <label :for="control.settingName">{{
+                      control.settingDesc + (control.required ? "*" : "")
+                    }}</label>
                     <textarea
                       :name="control.settingName"
                       cols="30"
@@ -184,7 +183,7 @@
                     v-else-if="control.controlType === 'header'"
                     class="form-group"
                   >
-                    <hr>
+                    <hr />
                     <h3>{{ control.settingDesc }}</h3>
                   </div>
                   <div
@@ -199,7 +198,8 @@
                             class="info-link"
                             v-if="control.infoLink"
                             :href="control.infoLink"
-                          >{{ control.infoLinkText }}</a>
+                            >{{ control.infoLinkText }}</a
+                          >
                         </div>
                       </div>
                     </div>
@@ -215,11 +215,11 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import { mapGetters, mapState } from 'vuex';
-import FilePicker from '@/components/common/form/FilePicker.vue'
-import { CommandSettingControl, CommandSettingSection } from '@/lib/db/models';
-import _ from 'lodash';
+import FilePicker from "@/components/common/form/FilePicker.vue";
+import { CommandSettingControl, CommandSettingSection } from "@/lib/db/models";
+import _ from "lodash";
+import Vue from "vue";
+import { mapGetters, mapState } from "vuex";
 
 export default Vue.extend({
   props: [],
@@ -228,23 +228,25 @@ export default Vue.extend({
   },
   data() {
     return {
-      sections: [] as Array<CommandSettingSection>
-    }
+      sections: [] as Array<CommandSettingSection>,
+    };
   },
-  watch: {
-  },
+  watch: {},
   computed: {
-    ...mapGetters('backups', {
-      'supportedFeatures': 'supportedFeatures',
-      'config': 'settingsConfig'
+    ...mapGetters("backups", {
+      supportedFeatures: "supportedFeatures",
+      config: "settingsConfig",
     }),
-    ...mapState(['database']),
+    ...mapState(["database"]),
     filePickerOptions() {
-      return { buttonLabel: 'Choose Directory', properties: ['openDirectory', 'createDirectory'] };
+      return {
+        buttonLabel: "Choose Directory",
+        properties: ["openDirectory", "createDirectory"],
+      };
     },
     controls() {
       return _.flatten(this.sections.map((x) => x.controls));
-    }
+    },
   },
   methods: {
     // Some control properties can be just a static value, or a function taking a config and returning a value
@@ -257,14 +259,20 @@ export default Vue.extend({
       }
     },
     async onNext() {
-      await this.$store.commit('backups/updateConfig', this.config);
-      await this.$store.commit('backups/setDatabase', this.database);
+      await this.$store.commit("backups/updateConfig", this.config);
+      await this.$store.commit("backups/setDatabase", this.database);
     },
     canContinue() {
       let cont = true;
-      const required = this.controls.filter((c: CommandSettingControl) => c.required && (!c.show || c.show(this.config)));
+      const required = this.controls.filter(
+        (c: CommandSettingControl) =>
+          c.required && (!c.show || c.show(this.config))
+      );
       required.forEach((c: CommandSettingControl) => {
-        cont = cont && !!this.config[c.settingName] && (!c.valid || c.valid(this.config))
+        cont =
+          cont &&
+          !!this.config[c.settingName] &&
+          (!c.valid || c.valid(this.config));
       });
       return cont;
     },
@@ -275,34 +283,40 @@ export default Vue.extend({
       // Force settings that have a show method to be redrawn.
       const needsUpdate: [CommandSettingSection, number][] = this.sections
         .map((s, i) => [s, i])
-        .filter((s) => s[0].show != undefined || s[0].controls.some((c) => c.show != undefined));
+        .filter(
+          (s) =>
+            s[0].show != undefined ||
+            s[0].controls.some((c) => c.show != undefined)
+        );
       needsUpdate.forEach((value) => {
         Vue.set(this.sections, value[1], { ...value[0] });
       });
 
       // We only emit a change event when the field that was changed is required.
-      if (control?.required)
-        this.$emit('change');
+      if (control?.required) this.$emit("change");
     },
     clearControl(settingName: string) {
       this.config[settingName] = null;
       this.onChange();
     },
-    async handleAction(actionOnClick: any, control: CommandSettingControl): Promise<void> {
+    async handleAction(
+      actionOnClick: any,
+      control: CommandSettingControl
+    ): Promise<void> {
       if (!actionOnClick) return;
       await actionOnClick(this.config);
 
       this.onChange(control);
-    }
+    },
   },
   mounted() {
-    this.sections = this.$store.getters['backups/settingsSections'];
-  }
-})
+    this.sections = this.$store.getters["backups/settingsSections"];
+  },
+});
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/styles/app/_variables';
+@use "../../assets/styles/app/_variables" as *;
 
 .alert.info-alert {
   display: flex;

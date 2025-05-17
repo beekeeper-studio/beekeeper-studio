@@ -53,6 +53,11 @@ async function createUtilityProcess() {
     bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
+  // For Mac ARM64, we need special handling of native modules
+  if (process.platform === 'darwin' && process.arch === 'arm64') {
+    process.env.NODE_SKIP_PLATFORM_CHECK = "1";
+  }
+
   utilityProcess = electron.utilityProcess.fork(
     path.join(__dirname, 'utility.js'),
     [],
@@ -70,6 +75,13 @@ async function createUtilityProcess() {
     if (code) {
       log.info('Utility process died, restarting')
       utilityProcess = null;
+
+      // If we're on Mac ARM64, we need to take special measures to handle native modules
+      if (process.platform === 'darwin' && process.arch === 'arm64') {
+        log.warn('Mac ARM64 detected: SQLAnywhere and other native modules might not be fully supported');
+        process.env.BKS_SKIP_UNSUPPORTED_MODULES = "1"; // Signal to skip problematic modules
+      }
+
       await createUtilityProcess();
       createAndSendPorts(false, true);
     }
@@ -221,6 +233,24 @@ app.on('ready', async () => {
     app.commandLine.appendSwitch('disable-web-security');
     app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
 
+  } else {
+    // In production mode, enable security features
+    // Set security defaults
+    app.on('web-contents-created', (_, contents) => {
+      // Security best practices from Electron
+      contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+
+      // Prevent navigation
+      contents.on('will-navigate', (event, _url) => {
+        if (!isDevelopment) event.preventDefault();
+      });
+
+      // Block execution of potentially unsafe scripts
+      contents.session.setPermissionRequestHandler((_, permission, callback) => {
+        const securePermissions = ['clipboard-read', 'media', 'display-capture'];
+        callback(securePermissions.includes(permission));
+      });
+    });
   }
 
   // this gets positional arguments

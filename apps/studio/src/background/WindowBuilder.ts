@@ -1,11 +1,10 @@
+import rawLog from '@bksLogger'
+import electron, { BrowserWindow, Rectangle } from 'electron'
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, Rectangle } from "electron"
-import electron from 'electron'
-import platformInfo from '../common/platform_info'
-import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import rawLog from '@bksLogger'
 import querystring from 'query-string'
+import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
+import platformInfo from '../common/platform_info'
 
 
 // eslint-disable-next-line
@@ -54,6 +53,8 @@ class BeekeeperWindow {
         contextIsolation: true,
         spellcheck: false,
         sandbox: false,
+        webSecurity: true,
+        allowRunningInsecureContent: false
       },
       icon: getIcon()
     })
@@ -84,7 +85,7 @@ class BeekeeperWindow {
     })
 
     this.win.webContents.setWindowOpenHandler(({ url }) => {
-      if (url === this.appUrl){
+      if (url === this.appUrl) {
         return {
           action: 'allow'
         }
@@ -94,7 +95,7 @@ class BeekeeperWindow {
     })
 
     this.win.webContents.on('ipc-message', (e, channel, ...args) => {
-      if(channel === 'setWindowTitle') {
+      if (channel === 'setWindowTitle') {
         this.win.setTitle(args[0])
         e.preventDefault()
       }
@@ -118,7 +119,7 @@ class BeekeeperWindow {
 
     this.initialize()
       .then(() => log.debug("initialize finished"))
-      .catch((ex) => log.error("INITIALIZE ERROR", ex)  )
+      .catch((ex) => log.error("INITIALIZE ERROR", ex))
   }
 
   private async initialize() {
@@ -126,20 +127,35 @@ class BeekeeperWindow {
     try {
       // log.debug("installing vue devtools")
       // installExtension({
-          // id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
-          // electron: '>=1.2.1'
+      // id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
+      // electron: '>=1.2.1'
       // })
       // log.debug("devtools loaded", name)
     } catch (e) {
       log.error('devtools failed to install:', e.toString())
     }
 
+    // Set Content-Security-Policy before loading the URL
+    this.win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      // In development, we need to allow eval for Vue hot-reloading
+      const scriptSrc = platformInfo.isDevelopment
+        ? "'self' 'unsafe-inline' 'unsafe-eval'"
+        : "'self'";
+
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [
+            `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://* wss://*; worker-src 'self' blob:; media-src 'self' blob:; frame-src 'self'`
+          ]
+        }
+      });
+    });
+
     await this.win.loadURL(this.appUrl)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
       this.win.webContents.openDevTools()
     }
-
-
   }
 
   private getWindowPosition(settings: IGroupedUserSettings) {
@@ -195,18 +211,18 @@ class BeekeeperWindow {
 
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
-    this.win.on('resize',windowMoveResizeListener)
+    this.win.on('resize', windowMoveResizeListener)
     this.win.on('move', windowMoveResizeListener)
   }
 
-  windowMoveResizeListener(){
+  windowMoveResizeListener() {
     const bounds = this.win.getNormalBounds()
     this.settings.windowPosition.value = bounds
     this.settings.windowPosition.save().then(_.noop).catch(log.error)
   }
 
   finishLoadListener() {
-    if(!this.reloaded) {
+    if (!this.reloaded) {
       this.win?.webContents.reload()
     }
     this.reloaded = true

@@ -1,18 +1,21 @@
+import { joinFilters } from '@/common/utils';
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from '@/lib/db/clients/BasicDatabaseClient';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, BksField, TableInsert, TableUpdate, TableDelete } from '@/lib/db/models';
+import { buildDeleteQueries, buildInsertQuery, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from '@/lib/db/clients/utils';
+import { BksField, CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate } from '@/lib/db/models';
 import { DatabaseElement, IDbConnectionDatabase } from '@/lib/db/types';
+import { SqlAnywhereData } from '@/shared/lib/dialects/anywhere';
 import { TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
+import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
 import rawLog from '@bksLogger';
 import knexlib from 'knex';
-import { identify } from 'sql-query-identifier';
-import { buildDeleteQueries, buildInsertQuery, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from '@/lib/db/clients/utils';
-import { SqlAnywhereData } from '@/shared/lib/dialects/anywhere';
-import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
 import _ from 'lodash';
-import { joinFilters } from '@/common/utils';
-import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
+import { identify } from 'sql-query-identifier';
+import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
+
+// Check if running on unsupported platform (Mac ARM64)
+const isMacArm = process.platform === 'darwin' && process.arch === 'arm64';
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
@@ -52,18 +55,32 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    this.dbConfig = this.configDatabase(this.server, this.database);
-    this.pool = new SqlAnywherePool(this.dbConfig);
+    // Handle unsupported platforms gracefully
+    if (isMacArm) {
+      log.warn('SQLAnywhere is not supported on Mac ARM64 architecture');
+      this.version = { version: 'Unavailable (unsupported platform)' };
+      return;
+    }
 
-    // test connection and get version
-    const conn = await this.pool.connect();
-    const version = await conn.query(`SELECT PROPERTY('ProductVersion') AS version`)
-    this.version = version[0];
-    await conn.release();
+    try {
+      this.dbConfig = this.configDatabase(this.server, this.database);
+      this.pool = new SqlAnywherePool(this.dbConfig);
+
+      // test connection and get version
+      const conn = await this.pool.connect();
+      const version = await conn.query(`SELECT PROPERTY('ProductVersion') AS version`)
+      this.version = version[0];
+      await conn.release();
+    } catch (error) {
+      log.error('Error connecting to SQLAnywhere:', error);
+      this.version = { version: 'Unavailable' };
+    }
   }
 
   async disconnect(): Promise<void> {
-    await this.pool.disconnect();
+    if (this.pool) {
+      await this.pool.disconnect();
+    }
 
     await super.disconnect();
   }
@@ -219,7 +236,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const { rows } = await this.driverExecuteSingle(sql);
     const paramsResult = await this.driverExecuteSingle(paramsSQL);
     const grouped = _.groupBy(paramsResult.rows, 'specific_name');
-    
+
     return rows.map((row) => {
       const params = grouped[row.id] || [];
       return {
@@ -334,31 +351,31 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       AND u.user_name = ${D.escapeString(schema, true)}
       ORDER BY tr.trigger_id
     `;
-    
+
     const { rows } = await this.driverExecuteSingle(sql);
-    
+
     if (!rows || rows.length === 0) return [];
-    
+
     return rows.map(row => {
       // Determine the manipulation type (INSERT, UPDATE, DELETE, UPDATE OF columns) from the event
       let manipulation = '';
-      switch(row.event) {
+      switch (row.event) {
         case 'I': manipulation = 'INSERT'; break;
         case 'U': manipulation = 'UPDATE'; break;
         case 'D': manipulation = 'DELETE'; break;
         case 'C': manipulation = 'UPDATE OF COLUMNS'; break;
-        default: manipulation = row.event || ''; 
+        default: manipulation = row.event || '';
       }
-      
+
       // Determine the timing (BEFORE, AFTER, INSTEAD OF)
       let timing = 'BEFORE';
-      switch(row.timing) {
+      switch (row.timing) {
         case 'A': timing = 'AFTER'; break;
         case 'B': timing = 'BEFORE'; break;
         case 'I': timing = 'INSTEAD OF'; break;
         default: timing = 'BEFORE';
       }
-      
+
       return {
         name: row.name,
         timing: timing,
@@ -370,7 +387,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       };
     });
   }
-  
+
   async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
     schema = schema || await this.defaultSchema();
     const sql = `
@@ -394,9 +411,9 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     `;
 
     const { rows } = await this.driverExecuteSingle(sql);
-    
+
     if (!rows || rows.length === 0) return [];
-    
+
     return rows.map(row => {
       // Parse the column information from colnames string
       // The format is typically "column1 ASC, column2 DESC, ..."
@@ -408,7 +425,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
           order: orderType || 'ASC'
         };
       });
-      
+
       return {
         id: row.id,
         name: row.name,
@@ -421,7 +438,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     });
   }
 
-  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
+  async listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
     const sql = `
       SELECT 
         user_name AS schema_name
@@ -429,7 +446,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       WHERE user_name NOT IN ('SYS', 'rs_systabgroup')
       ORDER BY user_name
     `;
-    
+
     const { rows } = await this.driverExecuteSingle(sql);
     return rows.map(row => row.schema_name);
   }
@@ -447,7 +464,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       WHERE t_for.table_name = ${D.escapeString(table, true)}
       AND u_for.user_name = ${D.escapeString(schema, true)}
     `;
-    
+
     const { rows } = await this.driverExecuteSingle(sql);
     return rows.map(row => row.referenced_table);
   }
@@ -483,16 +500,16 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     `;
 
     const { rows } = await this.driverExecuteSingle(sql);
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'name');
-    
+
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // Sort key parts by sequence to ensure correct column order
       const sortedKeyParts = _.sortBy(keyParts, 'sequence');
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (sortedKeyParts.length === 1) {
         const row = sortedKeyParts[0];
@@ -508,8 +525,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
           onDelete: row.on_delete,
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = sortedKeyParts[0];
       return {
@@ -525,20 +542,36 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         isComposite: true
       };
     });
-    
+
     log.debug("tableKeys result", result);
     return result;
   }
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {
+    // Handle platforms where SQLAnywhere isn't available
+    if (isMacArm) {
+      return {
+        execute: async (): Promise<NgQueryResult[]> => {
+          log.warn('SQLAnywhere is not supported on Mac ARM64 architecture');
+          return [{
+            command: 'UNSUPPORTED',
+            rows: [],
+            fields: [],
+            rowCount: 0,
+            affectedRows: 0
+          }];
+        },
+        async cancel() {
+          // No-op for unsupported platforms
+        }
+      };
+    }
+
     const conn = await this.pool.connect();
 
     return {
-      execute: async(): Promise<NgQueryResult[]> => {
+      execute: async (): Promise<NgQueryResult[]> => {
         try {
-          return await this.executeQuery(queryText, { connection: conn })
-        } catch (err) {
-          // need to figure out what is thrown when canceled
-          throw err;
+          return await this.executeQuery(queryText, { connection: conn });
         } finally {
           await conn.release();
         }
@@ -600,11 +633,11 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const triggers = await this.listTableTriggers(table, schema);
     const indexes = await this.listTableIndexes(table, schema);
     const relations = await this.getTableKeys(table, schema);
-    
+
     // Get table size using sa_table_page_usage procedure
     let size = 0;
     let indexSize = 0;
-    
+
     try {
       const sizeQuery = `
         SELECT 
@@ -613,7 +646,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         FROM sa_table_page_usage()
         WHERE TableName = ${D.escapeString(table, true)}
       `;
-      
+
       const sizeResult = await this.driverExecuteSingle(sizeQuery);
       if (sizeResult.rows && sizeResult.rows.length > 0) {
         size = Number(sizeResult.rows[0].size) || 0;
@@ -660,7 +693,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
   async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
     log.debug('finding primary keys for', table, schema);
-    
+
     schema = schema || 'dbo';
     const sql = `
       SELECT 
@@ -674,7 +707,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       AND c.pkey = 'Y'
       ORDER BY c.column_id
     `;
-    
+
     const { rows } = await this.driverExecuteSingle(sql);
     if (!rows || rows.length === 0) return [];
 
@@ -721,7 +754,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   async createDatabase(databaseName: string, charset?: string, collation?: string): Promise<string> {
     // Create the database
     const sql = await this.createDatabaseSQL(databaseName, charset, collation);
-    
+
     try {
       await this.driverExecuteSingle(sql);
       return databaseName;
@@ -733,30 +766,30 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
   async createDatabaseSQL(databaseName?: string, charset?: string, collation?: string): Promise<string> {
     databaseName = databaseName || 'newdatabase';
-    
+
     // Build the database file path - SQL Anywhere requires a file path
     // We'll create it in the user's home directory as a default
     const dbFilePath = `~/sql_anywhere/${databaseName}.db`;
-    
+
     // Build the SQL command
     let sql = `CREATE DATABASE '${dbFilePath}'`;
-    
+
     // Add character set if specified
     if (charset) {
       sql += ` CHAR SET '${charset}'`;
     }
-    
+
     // Add collation if specified
     if (collation) {
       sql += ` NCHAR COLLATION '${collation}'`;
     }
-    
+
     return sql;
   }
 
   async getTableCreateScript(table: string, schema?: string): Promise<string> {
     // Use multiple simpler queries instead of a single complex one
-    
+
     // Get table info
     const tableInfoSql = `
       SELECT 
@@ -768,16 +801,16 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       WHERE t.table_name = ${D.escapeString(table, true)}
         AND u.user_name = ${D.escapeString(schema, true)}
     `;
-    
+
     const tableInfo = await this.driverExecuteSingle(tableInfoSql);
     if (!tableInfo.rows || tableInfo.rows.length === 0) {
       return '';
     }
-    
+
     const userName = tableInfo.rows[0].user_name;
     const tableName = tableInfo.rows[0].table_name;
     const tableId = tableInfo.rows[0].table_id;
-    
+
     // Get column info
     const columnsSql = `
       SELECT 
@@ -794,10 +827,10 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       WHERE c.table_id = ${tableId}
       ORDER BY c.column_id ASC
     `;
-    
+
     const columnsResult = await this.driverExecuteSingle(columnsSql);
     const columns = columnsResult.rows;
-    
+
     // Get foreign keys
     const fkSql = `
       SELECT 
@@ -815,22 +848,22 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       WHERE fk.foreign_table_id = ${tableId}
         AND ic_for.sequence = ic_pri.sequence
     `;
-    
+
     const fkResult = await this.driverExecuteSingle(fkSql);
     const foreignKeys = fkResult.rows;
-    
+
     // Build the CREATE TABLE statement
-    
+
     // Start with the table name
     let createSql = `CREATE TABLE ${userName}.${tableName} (\n`;
-    
+
     // Add column definitions
     const columnDefs = columns.map(c => {
-      let dataType = c.domain_name.toLowerCase();
-      
+      const dataType = c.domain_name.toLowerCase();
+
       // Start with column name
       let def = `  ${c.column_name} `;
-      
+
       // Handle data types correctly based on SQL Anywhere syntax
       switch (dataType) {
         case 'char':
@@ -840,7 +873,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
           // Character/binary types need width
           def += `${dataType}(${c.width})`;
           break;
-          
+
         case 'numeric':
         case 'decimal':
           // These types can have precision and scale
@@ -850,7 +883,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
             def += dataType;
           }
           break;
-          
+
         case 'long varchar':
         case 'text':
         case 'long binary':
@@ -858,42 +891,42 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
           // These types don't take parameters
           def += dataType;
           break;
-          
+
         default:
           // For int, bigint, smallint, tinyint, bit, etc. - no parameters
           def += dataType;
       }
-      
+
       // Add nullability
       def += c.nulls === 'N' ? ' NOT NULL' : ' NULL';
-      
+
       // Add default if exists
       if (c.default !== null) {
         def += ` DEFAULT ${c.default}`;
       }
-      
+
       return def;
     });
-    
+
     createSql += columnDefs.join(',\n');
-    
+
     // Add primary key if any
     const pkColumns = columns.filter(c => c.pkey === 'Y').map(c => c.column_name);
     if (pkColumns.length > 0) {
       createSql += ',\n  PRIMARY KEY (' + pkColumns.join(', ') + ')';
     }
-    
+
     // Add foreign keys if any
     if (foreignKeys.length > 0) {
-      const fkDefs = foreignKeys.map(fk => 
+      const fkDefs = foreignKeys.map(fk =>
         `  FOREIGN KEY (${fk.foreign_column}) REFERENCES ${fk.primary_schema}.${fk.primary_table}(${fk.primary_column})`
       );
       createSql += ',\n' + fkDefs.join(',\n');
     }
-    
+
     // Close the statement
     createSql += '\n);';
-    
+
     return createSql;
   }
   async getViewCreateScript(view: string, schema?: string): Promise<string[]> {
@@ -1038,7 +1071,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     `;
 
     const countResults = await this.driverExecuteSingle(countQuery);
-    const rowWithTotal = countResults.rows.find((row) => row.total );
+    const rowWithTotal = countResults.rows.find((row) => row.total);
     const totalRecords = rowWithTotal ? rowWithTotal.total : 0;
     return totalRecords
   }
@@ -1082,12 +1115,12 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     schema = schema ?? await this.defaultSchema();
     const columns = await this.listTableColumns(table, schema);
     const rowCount = await this.getTableLength(table, schema);
-    
+
     const conn = await this.pool.connect();
-    
+
     // Import SqlAnywhereCursor
     const { SqlAnywhereCursor } = await import('./anywhere/SqlAnywhereCursor');
-    
+
     return {
       totalRows: Number(rowCount),
       columns,
@@ -1101,7 +1134,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     };
   }
 
-  queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+  queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
     throw new Error('Method not implemented.');
   }
 
@@ -1134,7 +1167,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const runQuery = async (connection: SqlAnywhereConn) => {
       const queries = this.identifyCommands(q);
       const results: SQLAnywhereResult[] = [];
-      for (let query of queries) {
+      for (const query of queries) {
         log.info('EXECUTING QUERY: ', query.text);
         const result = await connection.query(query.text, autoCommit);
         log.info('RECEIVED RESULT: ', result);
@@ -1190,7 +1223,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
     let orderByString = "ORDER BY (SELECT NULL)"
     if (orderBy && orderBy.length > 0) {
-      orderByString = "ORDER BY " + (orderBy.map((item: {field: any, dir: any}) => {
+      orderByString = "ORDER BY " + (orderBy.map((item: { field: any, dir: any }) => {
         if (_.isObject(item)) {
           return `${this.wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
         } else {

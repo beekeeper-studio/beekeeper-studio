@@ -1,15 +1,9 @@
-import { ipcMain, WebContents } from 'electron';
+import { WebContents } from 'electron';
 import { XMLParser } from 'fast-xml-parser';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
-import { getThemeByName, registerCustomTheme, removeCustomTheme } from './theme-service';
 
-// Track windows that have themes applied
-const windowThemes: Record<number, string> = {};
-const themeKeys: Record<string, string> = {};
-
-// For Node.js environment
 const readFile = util.promisify(fs.readFile);
 
 export interface ThemeColors {
@@ -17,7 +11,6 @@ export interface ThemeColors {
   foreground: string;
   string: string;
   keyword: string;
-  // Add more color mappings as needed
 }
 
 export interface ParsedTheme {
@@ -63,225 +56,19 @@ export interface TextMateTheme {
   }>;
 }
 
-export function setupThemeContentHandlers() {
-  // Apply a theme to a window
-  ipcMain.handle('themes/apply', async (event, { name }) => {
-    try {
-      console.log(`IPC: Applying theme ${name} to window ${event.sender.id}`);
-      const webContents = event.sender;
-      const winId = webContents.id;
-
-      // Get theme directly from the service
-      const themeData = await getThemeByName(name);
-
-      if (!themeData) {
-        console.error(`IPC: Theme not found: ${name}`);
-        return { success: false, error: 'Theme not found' };
-      }
-
-      console.log(`IPC: Got theme data for ${name}, CSS length: ${themeData.css.length}`);
-
-      // Apply the CSS to the renderer
-      const cssKey = await applyThemeCSS(webContents, name, themeData.css);
-
-      if (!cssKey) {
-        console.error(`IPC: Failed to apply CSS for theme ${name}`);
-        return { success: false, error: 'Failed to apply CSS' };
-      }
-
-      // Remember which theme is applied to this window
-      windowThemes[winId] = name;
-
-      console.log(`IPC: Successfully applied theme ${name} to window ${winId}`);
-      return { success: true };
-    } catch (error) {
-      console.error('IPC: Error applying theme:', error);
-      return { success: false, error: error.message };
-    }
-  });
-
-  // Remove the active theme
-  ipcMain.handle('themes/removeActive', async (event) => {
-    try {
-      const webContents = event.sender;
-      const winId = webContents.id;
-
-      if (windowThemes[winId]) {
-        await removeThemeCSS(webContents, windowThemes[winId]);
-        delete windowThemes[winId];
-      }
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error removing theme:', error);
-      throw error;
-    }
-  });
-
-  // Register a custom theme
-  ipcMain.handle('theme/register', async (_event, { buffer, fileName }) => {
-    try {
-      // Parse the theme
-      const parsedTheme = parseThemeBuffer(buffer, fileName);
-
-      // Register the theme with the theme service
-      await registerCustomTheme(parsedTheme.id, parsedTheme.css);
-
-      return {
-        success: true,
-        themeId: parsedTheme.id,
-        theme: {
-          id: parsedTheme.id,
-          name: parsedTheme.name,
-          type: parsedTheme.type,
-          colors: parsedTheme.colors
-        }
-      };
-    } catch (error) {
-      console.error('Error registering theme:', error);
-      return { success: false, error: error.message };
-    }
-  });
-
-  // Remove a custom theme
-  ipcMain.handle('theme/remove', async (event, { themeId }) => {
-    try {
-      // Remove the theme from the theme service
-      await removeCustomTheme(themeId);
-
-      // Remove the theme from all windows that use it
-      const webContents = event.sender;
-      const winId = webContents.id;
-
-      if (windowThemes[winId] === themeId) {
-        await removeThemeCSS(webContents, themeId);
-        delete windowThemes[winId];
-      }
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error removing theme:', error);
-      return { success: false, error: error.message };
-    }
-  });
-
-  // Add a new handler for getting theme CSS
-  ipcMain.handle('themes/getCSS', async (_event, { name }) => {
-    try {
-      console.log(`IPC: Getting CSS for theme ${name}`);
-
-      // Get theme directly from the service
-      const themeData = await getThemeByName(name);
-
-      if (!themeData) {
-        console.error(`IPC: Theme not found: ${name}`);
-        return { success: false, error: 'Theme not found' };
-      }
-
-      return {
-        success: true,
-        css: themeData.css,
-        theme: {
-          name: themeData.name,
-          type: themeData.type
-        }
-      };
-    } catch (error) {
-      console.error('IPC: Error getting theme CSS:', error);
-      return { success: false, error: error.message };
-    }
-  });
-
-  // Add a handler for uploading .tmTheme files
-  ipcMain.handle('themes/uploadTmTheme', async (_event, { content, fileName }) => {
-    try {
-      console.log(`IPC: Uploading .tmTheme file: ${fileName}`);
-
-      // Parse the theme
-      const parsedTheme = parseTextMateTheme(content);
-
-      // Register the theme with the theme service
-      await registerCustomTheme(parsedTheme.id, parsedTheme.css);
-
-      return {
-        success: true,
-        theme: {
-          id: parsedTheme.id,
-          name: parsedTheme.name,
-          type: parsedTheme.type,
-          colors: parsedTheme.colors
-        }
-      };
-    } catch (error) {
-      console.error('IPC: Error uploading .tmTheme file:', error);
-      return { success: false, error: error.message };
-    }
-  });
-}
-
-// Apply theme CSS to a window
 async function applyThemeCSS(
   webContents: WebContents,
   themeName: string,
   css: string
 ) {
   try {
-    console.log(`Applying CSS for theme ${themeName} to window ${webContents.id}`);
-
-    // First remove any existing theme
-    if (windowThemes[webContents.id]) {
-      await removeThemeCSS(webContents, windowThemes[webContents.id]);
-    }
-
-    // Make sure we have valid CSS
-    if (!css || css.trim() === '') {
-      console.error(`Empty CSS for theme ${themeName}`);
-      return null;
-    }
-
-    // Inject the CSS
-    const key = await webContents.insertCSS(css, { cssOrigin: 'user' });
-    console.log(`CSS injected for theme ${themeName} with key ${key.substring(0, 10)}...`);
-
-    // Store the key for later removal
-    themeKeys[`${webContents.id}_${themeName}`] = key;
-
-    // Also set the theme class directly via JavaScript
-    await webContents.executeJavaScript(`
-      // Set the theme class on the body
-      document.body.className = document.body.className
-        .replace(/theme-[a-zA-Z0-9-_]+/g, '')
-        .trim() + ' theme-${themeName}';
-      
-      // Dispatch a custom event to notify the app that the theme has changed
-      document.dispatchEvent(new CustomEvent('theme-changed', { 
-        detail: { theme: '${themeName}' } 
-      }));
-      
-      console.log('Theme class set to: theme-${themeName}');
-    `);
-
-    return key;
+    const cssKey = `theme-${themeName}`;
+    // Insert or replace CSS
+    await webContents.insertCSS(css, { cssOrigin: 'user' });
+    return cssKey;
   } catch (error) {
-    console.error(`Error applying CSS for theme ${themeName}:`, error);
+    console.error('Error applying theme CSS:', error);
     return null;
-  }
-}
-
-// Remove theme CSS from a window
-async function removeThemeCSS(webContents: WebContents, themeName: string) {
-  try {
-    const key = themeKeys[`${webContents.id}_${themeName}`];
-
-    if (key) {
-      // Remove the CSS
-      await webContents.removeInsertedCSS(key);
-
-      // Remove the stored key
-      delete themeKeys[`${webContents.id}_${themeName}`];
-    }
-  } catch (error) {
-    console.error('Error removing theme CSS:', error);
   }
 }
 
@@ -526,3 +313,9 @@ export function parseThemeBuffer(buffer: ArrayBuffer, fileName: string): ParsedT
       throw new Error(`Unsupported theme file format: ${ext}`);
   }
 }
+
+// Export the theme utilities that need to be available to main process
+export {
+  applyThemeCSS
+};
+

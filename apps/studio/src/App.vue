@@ -134,13 +134,13 @@ export default Vue.extend({
     themeValue: {
       handler(newTheme) {
         if (typeof newTheme === "string") {
-          this.applyThemeCSS(newTheme);
+          this.$root.$emit("theme-preview-changed", { themeId: newTheme });
         } else if (newTheme && newTheme.themeId) {
-          this.applyThemeCSS(
-            newTheme.themeId,
-            newTheme.css,
-            newTheme.baseTheme
-          );
+          this.$root.$emit("theme-preview-changed", {
+            themeId: newTheme.themeId,
+            css: newTheme.css,
+            baseTheme: newTheme.baseTheme,
+          });
         }
       },
       immediate: true,
@@ -173,17 +173,7 @@ export default Vue.extend({
         globals.licenseCheckInterval
       );
       await this.$store.dispatch("settings/initializeSettings");
-      if (this.themeValue) {
-        if (typeof this.themeValue === "string") {
-          this.applyThemeCSS(this.themeValue);
-        } else if (this.themeValue.themeId) {
-          this.applyThemeCSS(
-            this.themeValue.themeId,
-            this.themeValue.css,
-            this.themeValue.baseTheme
-          );
-        }
-      }
+
       const query = querystring.parse(window.location.search, {
         parseBooleans: true,
       });
@@ -195,17 +185,6 @@ export default Vue.extend({
         window.main.isReady();
         setTimeout(() => {
           this.appLoaded = true;
-          if (this.themeValue) {
-            if (typeof this.themeValue === "string") {
-              this.applyThemeCSS(this.themeValue);
-            } else if (this.themeValue.themeId) {
-              this.applyThemeCSS(
-                this.themeValue.themeId,
-                this.themeValue.css,
-                this.themeValue.baseTheme
-              );
-            }
-          }
         }, 1000);
       });
       if (this.url) {
@@ -222,27 +201,6 @@ export default Vue.extend({
     }
   },
   methods: {
-    applyThemeCSS(themeId, cssContent, baseTheme) {
-      document.body.className = `theme-${themeId}`;
-      if (window.electron && window.electron.ipcRenderer) {
-        window.electron.ipcRenderer.invoke("themes/apply", {
-          name: themeId,
-          css: cssContent,
-          baseTheme,
-        });
-      }
-      if (cssContent) {
-        const style = document.createElement("style");
-        style.id = `theme-css-${themeId}`;
-        style.textContent = cssContent;
-        document
-          .querySelectorAll('style[id^="theme-css-"]')
-          .forEach((existingStyle) => {
-            existingStyle.remove();
-          });
-        document.head.appendChild(style);
-      }
-    },
     notifyFreeTrial() {
       Noty.closeAll("trial");
       if (this.isTrial && this.isUltimate) {

@@ -5,17 +5,19 @@
         <div class="dialog-content">
           <div class="dialog-c-title">
             Add Field
-            <a
-              class="close-btn btn btn-fab"
-              href="#"
-              @click.prevent="close"
-            >
+            <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
               <i class="material-icons">clear</i>
             </a>
-          </div >
+          </div>
           <div class="form-group">
             <label for="field-name">Field Name</label>
-            <input type="text" id="field-name" name="field-name" ref="fieldInput" v-model="fieldName">
+            <input
+              type="text"
+              id="field-name"
+              name="field-name"
+              ref="fieldInput"
+              v-model="fieldName"
+            />
           </div>
           <div class="form-group">
             <label for="type-hint">Type Hint</label>
@@ -24,7 +26,7 @@
                 :title="'Type Hint: ' + typeHint"
                 v-model="typeHint"
                 :options="columnTypes"
-                :components="{OpenIndicator}"
+                :components="{ OpenIndicator }"
                 placeholder="Select a type hint..."
                 class="dropdown-search"
               />
@@ -40,11 +42,7 @@
           >
             Cancel
           </button>
-          <button
-            class="btn btn-primary"
-            type="submit"
-            :disabled="!canSubmit"
-          >
+          <button class="btn btn-primary" type="submit" :disabled="!canSubmit">
             Add
           </button>
         </div>
@@ -54,10 +52,10 @@
 </template>
 
 <script lang="ts">
-import { AppEvent } from '@/common/AppEvent'
-import vSelect from 'vue-select'
-import Vue from 'vue'
-import { mapGetters } from 'vuex'
+import { AppEvent } from "@/common/AppEvent";
+import Vue from "vue";
+import vSelect from "vue-select";
+import { mapGetters } from "vuex";
 
 export default Vue.extend({
   components: {
@@ -65,25 +63,30 @@ export default Vue.extend({
   },
   data() {
     return {
-      modalName: 'add-field-modal',
+      modalName: "add-field-modal",
       fieldName: "",
       typeHint: "",
       OpenIndicator: {
-        render: createElement => createElement('i', {class: {'material-icons': true}}, 'arrow_drop_down')
-      }
-    }
+        render: (createElement) =>
+          createElement(
+            "i",
+            { class: { "material-icons": true } },
+            "arrow_drop_down"
+          ),
+      },
+    };
   },
   computed: {
-    ...mapGetters(['dialectData']),
+    ...mapGetters(["dialectData"]),
     columnTypes() {
       return this.dialectData.columnTypes.map((t) => t.pretty);
     },
     rootBindings() {
-      return [{ event: AppEvent.openAddFieldModal, handler: this.open }]
+      return [{ event: AppEvent.openAddFieldModal, handler: this.open }];
     },
     canSubmit() {
       return this.fieldName.length > 0 && this.typeHint.length > 0;
-    }
+    },
   },
   methods: {
     open() {
@@ -97,19 +100,23 @@ export default Vue.extend({
     async submit() {
       if (!this.canSubmit) return;
 
-      this.$emit('done', { fieldName: this.fieldName, typeHint: this.typeHint});
+      this.$emit("done", {
+        fieldName: this.fieldName,
+        typeHint: this.typeHint,
+      });
       this.$noty.success(`${this.fieldName} added`);
       this.close();
-    }
+    },
   },
   mounted() {
-    this.registerHandlers(this.rootBindings)
-  }
-})
+    this.registerHandlers(this.rootBindings);
+  },
+});
 </script>
 
 <style lang="scss">
-@import '../../../shared/assets/styles/_variables';
+@use "sass:color";
+@use "../../../shared/assets/styles/_variables" as *;
 .data-select-wrap {
   display: flex;
   align-items: center;

@@ -1,7 +1,7 @@
-
-// Ultimate imports go here!
-@import './tabs/database-backup.scss';
-@import './tabs/import-file.scss';
-@import './tabs/import-export.scss';
-@import './tabs/import-table.scss';
-@import './modals/create-workspace.scss';
+@use "sass:color";
+@use "../_variables" as *;
+@use "./tabs/database-backup.scss";
+@use "./tabs/import-file.scss";
+@use "./tabs/import-export.scss";
+@use "./tabs/import-table.scss";
+@use "./modals/create-workspace.scss";

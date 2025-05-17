@@ -69,6 +69,7 @@ export enum AppEvent {
   closingTab = 'closingTab',
   /** Triggered to show the theme manager modal */
   showThemeManager = 'show-theme-manager',
+  toggleSidebar = 'toggleSidebar',
 }
 
 export interface RootBinding {

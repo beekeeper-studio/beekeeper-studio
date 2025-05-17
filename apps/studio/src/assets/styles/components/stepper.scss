@@ -1,4 +1,5 @@
 @use "sass:color";
+@use "../app/_variables" as *;
 // Original Copyright https://github.com/PygmySlowLoris/vue-stepper
 
 .stepper-box {
@@ -8,7 +9,7 @@
   overflow-y: scroll;
   padding-bottom: 1rem;
   .top {
-    z-index:1000;
+    z-index: 1000;
     top: 0;
     position: sticky;
     display: flex;
@@ -39,8 +40,7 @@
         font-weight: 500;
         padding: $gutter-w ($gutter-w * 1.25);
         color: $text-light;
-        transition: color 0.2s ease-in-out,
-                    box-shadow 0.2s ease-in-out;
+        transition: color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         &:hover:not(.deactivated):not(.active) {
           color: $text-dark;
         }
@@ -76,7 +76,7 @@
 }
 
 .stepper-button {
-  padding: .5rem 1rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -86,7 +86,10 @@
   border: none;
   &.next {
     &.deactivated {
-      background-color: color.adjust($theme-primary, $lightness: -20%) !important;
+      background-color: color.adjust(
+        $theme-primary,
+        $lightness: -20%
+      ) !important;
       cursor: not-allowed !important;
     }
   }
@@ -109,4 +112,3 @@
     display: flex;
   }
 }
-

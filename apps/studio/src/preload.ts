@@ -25,20 +25,8 @@ contextBridge.exposeInMainWorld(
 
 // Set up a direct listener for the theme manager event
 ipcRenderer.on(AppEvent.showThemeManager, () => {
-  console.log('Received showThemeManager event in preload');
-
-  // Try multiple approaches to ensure the event is handled
-
-  // 1. Dispatch a DOM event
-  window.dispatchEvent(new CustomEvent(AppEvent.showThemeManager));
-
-  // 2. Call the global method if it exists
-  if (typeof window.showThemeManagerModal === 'function') {
-    window.showThemeManagerModal();
-  }
-
-  // 3. Try to emit to Vue root if available
+  // Emit to Vue root if available
   if (window.$root && typeof window.$root.$emit === 'function') {
-    window.$root.$emit('show-theme-manager');
+    window.$root.$emit(AppEvent.showThemeManager);
   }
 }); 
