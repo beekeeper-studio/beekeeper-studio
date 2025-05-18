@@ -6,7 +6,8 @@
           v-for="tab in tabs"
           :key="tab.id"
           :selected="secondaryActiveTabId === tab.id"
-          @click="handleTabClick(tab)"
+          @click="handleTabClick($event, tab)"
+          @click.right="handleTabRightClick($event, tab)"
         >
           <x-label>{{ tab.name }}</x-label>
         </x-tab>
@@ -31,6 +32,7 @@
           :key="tab.id"
           :plugin-id="tab.id"
           :entry-url="tab.entry"
+          :reload="reloaders[tab.id]"
         />
       </template>
     </div>
@@ -53,19 +55,44 @@ interface SidebarTab {
 export default Vue.extend({
   name: "SecondarySidebar",
   components: { JsonViewerSidebar, SidebarView },
+  data() {
+    return {
+      reloaders: {},
+    };
+  },
   computed: {
     ...mapState("sidebar", ["secondaryActiveTabId", "secondarySidebarOpen"]),
     ...mapGetters("sidebar", ["tabs"]),
     rootBindings() {
       return [
-        { event: AppEvent.selectSecondarySidebarTab, handler: this.setSecondaryActiveTabId },
+        {
+          event: AppEvent.selectSecondarySidebarTab,
+          handler: this.setSecondaryActiveTabId,
+        },
       ];
     },
   },
   methods: {
     ...mapActions("sidebar", ["setSecondaryActiveTabId"]),
-    handleTabClick(tab: SidebarTab) {
+    handleTabClick(event, tab: SidebarTab) {
       this.setSecondaryActiveTabId(tab.id);
+    },
+    handleTabRightClick(event, tab: SidebarTab) {
+      if (!window.platformInfo.isDevelopment) {
+        return
+      }
+
+      this.$bks.openMenu({
+        event,
+        options: [
+          {
+            name: "[DEV] Reload View",
+            handler: () => {
+              this.$set(this.reloaders, tab.id, Date.now());
+            },
+          },
+        ],
+      });
     },
   },
   mounted() {

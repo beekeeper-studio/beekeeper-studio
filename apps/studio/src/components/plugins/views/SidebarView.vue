@@ -31,6 +31,7 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    reload: null,
   },
   data() {
     return {
@@ -41,7 +42,7 @@ export default Vue.extend({
   },
   computed: {
     baseUrl() {
-      return `plugin://${this.pluginId}/${this.entryUrl}`;
+      return `plugin://${this.pluginId}/${this.entryUrl}?timestamp=${this.timestamp}`;
     },
     rootBindings() {
       return [
@@ -50,6 +51,11 @@ export default Vue.extend({
           handler: this.handleSettingsChanged,
         },
       ];
+    },
+  },
+  watch: {
+    reload() {
+      this.timestamp = Date.now();
     },
   },
   mounted() {
@@ -64,9 +70,6 @@ export default Vue.extend({
         const data: PluginNotificationData = { name: "themeChanged" }
         this.$plugin.notify(this.pluginId, data);
       }
-    },
-    refreshIframe() {
-      this.timestamp = Date.now();
     },
     handleIframeLoad() {
       this.loaded = true;
