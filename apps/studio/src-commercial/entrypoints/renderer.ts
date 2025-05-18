@@ -176,7 +176,9 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
         getAllEntries: webPluginManager.getAllEntries.bind(webPluginManager),
         getEnabledPlugins: webPluginManager.getEnabledPlugins.bind(webPluginManager),
         getRepositoryInfo: webPluginManager.getRepositoryInfo.bind(webPluginManager),
+        checkForUpdates: webPluginManager.checkForUpdates.bind(webPluginManager),
         install: webPluginManager.install.bind(webPluginManager),
+        update: webPluginManager.update.bind(webPluginManager),
         uninstall: webPluginManager.uninstall.bind(webPluginManager),
       };
       if (window.platformInfo.isDevelopment) {

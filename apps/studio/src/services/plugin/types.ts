@@ -42,8 +42,8 @@ export interface PluginRegistryEntry extends CommonPluginInfo {
 export interface PluginRepositoryInfo {
   /** Markdown representation of the plugin's README */
   readme: string;
-  /** Plugin manifest */
   latestRelease: Release;
+  manifest: Manifest;
 }
 
 export interface Release {

@@ -14,32 +14,48 @@
         <div class="description">
           {{ plugin.description }}
         </div>
-        <div class="author">{{ plugin.author }}</div>
+        <div class="author">{{ plugin.author.name }}</div>
       </div>
-      <x-button
-        @click.stop
-        class="menu-btn btn btn-fab"
-        v-if="plugin.installed"
-      >
-        <i class="material-icons">more_vert</i>
-        <x-menu>
-          <x-menuitem>
-            <x-label @click.prevent="$emit('uninstall', plugin)">
-              Uninstall
-            </x-label>
-          </x-menuitem>
-        </x-menu>
-      </x-button>
-      <x-button
-        v-else
-        class="btn btn-flat"
-        :disabled="plugin.installing"
-        @click.prevent.stop="$emit('install', plugin)"
-      >
-        <x-label>
-          {{ plugin.installing ? "Installing..." : "Install" }}
-        </x-label>
-      </x-button>
+      <div class="actions">
+        <x-button
+          v-if="plugin.installed && plugin.updateAvailable"
+          class="btn btn-flat"
+          :disabled="plugin.installing"
+          @click.prevent.stop="$emit('update', plugin)"
+        >
+          <x-label>
+            {{ plugin.installing ? "Updating..." : "Update" }}
+          </x-label>
+        </x-button>
+        <x-button
+          v-if="!plugin.installed"
+          class="btn btn-flat"
+          :disabled="plugin.installing"
+          @click.prevent.stop="$emit('install', plugin)"
+        >
+          <x-label>
+            {{ plugin.installing ? "Installing..." : "Install" }}
+          </x-label>
+        </x-button>
+        <x-button
+          @click.stop
+          class="menu-btn btn btn-fab"
+          v-if="plugin.installed"
+        >
+          <i class="material-icons">more_vert</i>
+          <x-menu>
+            <x-menuitem @click.prevent="handleItemClick($event, plugin)">
+              <x-label>View</x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="$emit('checkForUpdates', plugin)" :disabled="plugin.checkingForUpdates">
+              <x-label>Check for updates</x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="$emit('uninstall', plugin)">
+              <x-label> Uninstall </x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
+      </div>
     </li>
   </ul>
 </template>

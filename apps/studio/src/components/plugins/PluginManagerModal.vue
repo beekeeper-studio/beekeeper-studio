@@ -18,7 +18,9 @@
               :plugins="plugins"
               @install="install"
               @uninstall="uninstall"
+              @update="update"
               @item-click="openPluginPage"
+              @checkForUpdates="checkForUpdates"
             />
           </div>
           <plugin-page
@@ -27,6 +29,8 @@
             :markdown="selectedPluginReadme"
             @install="install(selectedPlugin)"
             @uninstall="uninstall(selectedPlugin)"
+            @update="update(selectedPlugin)"
+            @checkForUpdates="checkForUpdates(selectedPlugin)"
           />
         </div>
       </div>
@@ -51,12 +55,14 @@ export default Vue.extend({
     return {
       modalName: "plugin-manager-modal",
       plugins: [],
-      selectedPlugin: null,
+      selectedPluginIdx: -1,
       selectedPluginReadme: null,
+      selectedPluginRemoteManifest: null,
     };
   },
-  mounted() {
+  async mounted() {
     this.registerHandlers(this.rootBindings);
+    this.plugins = await this.buildPluginListData();
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
@@ -64,6 +70,9 @@ export default Vue.extend({
   computed: {
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
+    },
+    selectedPlugin() {
+      return this.plugins[this.selectedPluginIdx];
     },
   },
   methods: {
@@ -83,8 +92,47 @@ export default Vue.extend({
         state.installing = false;
       }
     },
+    async update(plugin: CommonPluginInfo) {
+      const state = this.plugins.find(
+        (p: CommonPluginInfo) => p.id === plugin.id
+      );
+
+      try {
+        state.installing = true;
+        await this.$plugin.update(plugin);
+        state.updateAvailable = false;
+      } catch (e) {
+        log.error(e);
+        this.$noty.error(`Failed to update plugin: ${e.message}`);
+      } finally {
+        state.installing = false;
+      }
+    },
+    async checkForUpdates(plugin: CommonPluginInfo) {
+      const idx = this.plugins.findIndex(
+        (p: CommonPluginInfo) => p.id === plugin.id
+      );
+
+      try {
+        this.$set(this.plugins, idx, {
+          ...this.plugins[idx],
+          checkingForUpdates: true,
+        });
+        this.$set(this.plugins, idx, {
+          ...this.plugins[idx],
+          updateAvailable: await this.$plugin.checkForUpdates(plugin),
+        })
+      } catch (e) {
+        log.error(e);
+        this.$noty.error(`Failed to check for update: ${e.message}`);
+      } finally {
+        this.$set(this.plugins, idx, {
+          ...this.plugins[idx],
+          checkingForUpdates: false,
+        });
+      }
+    },
     async uninstall(plugin: CommonPluginInfo) {
-      console.log('hello???', plugin)
       if (!(await this.$confirm("Are you sure you want to uninstall?"))) {
         return;
       }
@@ -102,38 +150,34 @@ export default Vue.extend({
       }
     },
     async openPluginPage(plugin: CommonPluginInfo) {
-      this.selectedPlugin = plugin
-
-      const entries = await this.$plugin.getAllEntries();
-      const entry = entries.find((entry) => entry.id === plugin.id);
-
-      if (!entry) {
-        this.selectedPluginReadme =
-          "We could not find the readme for this plugin. :(";
-      } else {
-        const info = await this.$plugin.getRepositoryInfo(plugin);
-        this.selectedPluginReadme = info.readme;
-      }
+      this.selectedPluginIdx = this.plugins.findIndex(
+        (p: CommonPluginInfo) => p.id === plugin.id
+      );
+      const info = await this.$plugin.getRepositoryInfo(plugin);
+      this.selectedPluginReadme = info.readme;
+      this.selectedPluginRemoteManifest = info.manifest;
     },
     async buildPluginListData() {
       const entries = await this.$plugin.getAllEntries();
       const installedPlugins = await this.$plugin.getEnabledPlugins();
-      installedPlugins.forEach((manifest) => {
+      for (const manifest of installedPlugins) {
         const entry = entries.find((entry) => entry.id === manifest.id);
-        if (entry) {
-          entry.installed = true;
-          entry.installing = false;
-          entry.enabled = true;
+
+        if (!entry) {
+          // This is a plugin that is installed but not found in registry / github.
+          manifest.push(structuredClone(entry));
         } else {
-          // This is a plugin that is installed but not found in registry.
-          const newEntry = structuredClone(manifest);
-          newEntry.installed = true;
-          newEntry.installing = false;
-          newEntry.enabled = true;
-          entries.push(newEntry);
+          manifest.repo = entry.repo;
+          manifest.updateAvailable = await this.$plugin.checkForUpdates(entry);
         }
-      });
-      return entries;
+
+        manifest.installed = true;
+        manifest.installing = false;
+        manifest.enabled = true;
+        manifest.checkingForUpdates = null;
+      }
+
+      return installedPlugins;
     },
     async open() {
       this.$modal.show(this.modalName);

@@ -1,7 +1,12 @@
 import _ from "lodash";
 import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
-import { CommonPluginInfo, Manifest, PluginRegistryEntry, PluginRepositoryInfo } from "./types";
+import {
+  CommonPluginInfo,
+  Manifest,
+  PluginRegistryEntry,
+  PluginRepositoryInfo,
+} from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 
@@ -35,7 +40,9 @@ export default class PluginManager {
     return await this.registry.getEntries();
   }
 
-  async getRepositoryInfo(entry: PluginRegistryEntry): Promise<PluginRepositoryInfo> {
+  async getRepositoryInfo(
+    entry: PluginRegistryEntry
+  ): Promise<PluginRepositoryInfo> {
     return await this.registry.getRepositoryInfo(entry);
   }
 
@@ -61,9 +68,7 @@ export default class PluginManager {
     return manifest;
   }
 
-  async updatePlugin(
-    entry: PluginRegistryEntry
-  ): Promise<PluginRepositoryInfo> {
+  async updatePlugin(entry: PluginRegistryEntry): Promise<void> {
     if (!this.installedPlugins.find((manifest) => manifest.id === entry.id)) {
       throw new Error(`Plugin "${entry.id}" is not installed.`);
     }
@@ -73,9 +78,14 @@ export default class PluginManager {
     const info = await this.registry.getRepositoryInfo(entry, { reload: true });
     await this.fileManager.update(entry, info.latestRelease);
 
-    log.debug(`Plugin "${entry.id}" updated!`);
+    const installedPluginIdx = this.installedPlugins.findIndex(
+      (manifest) => manifest.id === entry.id
+    );
+    this.installedPlugins[installedPluginIdx] = this.fileManager.getManifest(
+      entry.id
+    );
 
-    return info;
+    log.debug(`Plugin "${entry.id}" updated!`);
   }
 
   async uninstallPlugin(manifest: Manifest): Promise<void> {
@@ -93,7 +103,8 @@ export default class PluginManager {
     log.debug(`Plugin "${manifest.id}" uninstalled!`);
   }
 
-  async checkForUpdate(plugin: PluginRegistryEntry): Promise<boolean> {
+  /** if returns true, a new version is available */
+  async checkForUpdates(plugin: PluginRegistryEntry): Promise<boolean> {
     const installedPlugin = this.installedPlugins.find(
       (manifest) => manifest.id === plugin.id
     );
@@ -101,7 +112,9 @@ export default class PluginManager {
       throw new Error(`Plugin ${plugin.id} not found in registry.`);
     }
 
-    const head = await this.registry.getRepositoryInfo(plugin, { reload: true });
+    const head = await this.registry.getRepositoryInfo(plugin, {
+      reload: true,
+    });
     return head.latestRelease.version > installedPlugin.version;
   }
 

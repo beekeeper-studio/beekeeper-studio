@@ -1,6 +1,7 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
 import {
+  CommonPluginInfo,
   Manifest,
   PluginNotificationData,
   PluginRegistryEntry,
@@ -60,6 +61,12 @@ export default class WebPluginManager {
     });
   }
 
+  async checkForUpdates(plugin: PluginRegistryEntry) {
+    return await this.utilityConnection.send("plugin/checkForUpdates", {
+      plugin,
+    });
+  }
+
   private async loadPlugin(manifest: Manifest) {
     if (this.loaders.has(manifest.id)) {
       log.warn(`Plugin "${manifest.id}" already loaded. Skipping...`);
@@ -84,6 +91,13 @@ export default class WebPluginManager {
     return manifest;
   }
 
+  async update(entry: PluginRegistryEntry) {
+    await this.utilityConnection.send("plugin/update", {
+      entry,
+    });
+    await this.reloadPlugin(entry);
+  }
+
   async uninstall(manifest: Manifest) {
     await this.utilityConnection.send("plugin/uninstall", { manifest });
     const loader = this.loaders.get(manifest.id);
@@ -94,10 +108,10 @@ export default class WebPluginManager {
     this.loaders.delete(manifest.id);
   }
 
-  async reloadPlugin(manifest: Manifest) {
-    const loader = this.loaders.get(manifest.id);
+  async reloadPlugin(plugin: CommonPluginInfo) {
+    const loader = this.loaders.get(plugin.id);
     if (!loader) {
-      throw new Error("Plugin not found: " + manifest.id);
+      throw new Error("Plugin not found: " + plugin.id);
     }
     await loader.unload();
     await loader.load();

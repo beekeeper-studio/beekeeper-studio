@@ -5,7 +5,9 @@ interface IPluginHandlers {
   "plugin/entries": () => Promise<PluginRegistryEntry[]>
   "plugin/repositoryInfo": ({ entry }: { entry: PluginRegistryEntry }) => Promise<PluginRepositoryInfo>
   "plugin/install": ({ entry }: { entry: PluginRegistryEntry }) => Promise<Manifest>
+  "plugin/update": ({ entry }: { entry: PluginRegistryEntry }) => Promise<void>
   "plugin/uninstall": ({ manifest }: { manifest: Manifest }) => Promise<void>
+  "plugin/checkForUpdates": ({ plugin }: { plugin: PluginRegistryEntry }) => Promise<boolean>
 
   "plugin/getAsset": ({ manifest, path }: { manifest: Manifest, path: string }) => Promise<string>
 }
@@ -23,8 +25,14 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
   "plugin/install": async ({ entry }) => {
     return await pluginManager.installPlugin(entry);
   },
+  "plugin/update": async ({ entry }) => {
+    return await pluginManager.updatePlugin(entry);
+  },
   "plugin/uninstall": async ({ manifest }) => {
     return await pluginManager.uninstallPlugin(manifest);
+  },
+  "plugin/checkForUpdates": async ({ plugin }) => {
+    return await pluginManager.checkForUpdates(plugin);
   },
 
   "plugin/getAsset": async ({ manifest, path }) => {

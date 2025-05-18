@@ -21,7 +21,7 @@ export default class PluginRepositoryService {
         repo,
       }
     );
-    const manifest = await this.fetchJson(owner, repo, "manifest.json");
+    const manifest = await this.fetchManifest(owner, repo);
 
     const asset = response.data.assets.find((asset) => asset.name === `${manifest.id}-${manifest.version}.zip`)
     if (!asset) {
@@ -44,10 +44,15 @@ export default class PluginRepositoryService {
     );
   }
 
+  async fetchManifest(owner: string, repo: string) {
+    return await this.fetchJson(owner, repo, "manifest.json");
+  }
+
   async fetchEntryInfo(owner: string, repo: string) {
     const latestRelease = await this.fetchLatestRelease(owner, repo);
     const readme = await this.fetchReadme(owner, repo);
-    return { latestRelease, readme };
+    const manifest = await this.fetchManifest(owner, repo);
+    return { latestRelease, readme, manifest };
   }
 
   private async fetchReadme(owner: string, repo: string) {

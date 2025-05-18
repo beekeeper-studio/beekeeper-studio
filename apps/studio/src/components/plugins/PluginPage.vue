@@ -2,33 +2,57 @@
   <div class="plugin-page-container">
     <div class="header">
       <div class="title">
-        {{ plugin.name }}
+        {{ plugin.name }} <span class="version">{{ plugin.version }}</span>
       </div>
-      <div class="author">
-        {{ plugin.author }}
+      <div>
+        By <a :href="plugin.author.url">{{ plugin.author.name }}</a>
       </div>
+      <a :href="`https://github.com/${plugin.repo}`">
+        <span class="flex">
+          <i class="material-icons">link</i>
+          <span>&nbsp;</span>
+          <span>{{ plugin.repo }}</span>
+        </span>
+      </a>
       <div class="description">
         {{ plugin.description }}
       </div>
       <div class="actions">
         <template v-if="plugin.installed">
           <!-- TODO we dont support disabling yet -->
+          <!-- <x-button -->
+          <!--   v-if="plugin.enabled" -->
+          <!--   @click.prevent="$emit('disable')" -->
+          <!--   disabled -->
+          <!--   class="btn btn-primary" -->
+          <!-- > -->
+          <!--   <x-label>Disable</x-label> -->
+          <!-- </x-button> -->
+          <!-- <x-button -->
+          <!--   v-else -->
+          <!--   @click.prevent="$emit('enable')" -->
+          <!--   class="btn btn-primary" -->
+          <!-- > -->
+          <!--   <x-label>Enable</x-label> -->
+          <!-- </x-button> -->
           <x-button
-            v-if="plugin.enabled"
-            @click.prevent="$emit('disable')"
-            disabled
+            v-if="plugin.updateAvailable"
+            @click.prevent="$emit('update')"
             class="btn btn-primary"
           >
-            <x-label>Disable</x-label>
+            <x-label>{{
+              plugin.installing ? "Updating..." : "Update"
+            }}</x-label>
           </x-button>
           <x-button
             v-else
-            @click.prevent="$emit('enable')"
-            class="btn btn-primary"
+            @click.prevent="$emit('checkForUpdates')"
+            class="btn btn-flat"
+            :disabled="plugin.checkingForUpdates"
           >
-            <x-label>Enable</x-label>
+            <x-label>Check for Updates</x-label>
           </x-button>
-          <x-button @click.prevent="$emit('uninstall')" class="btn btn-primary">
+          <x-button @click.prevent="$emit('uninstall')" class="btn btn-flat">
             <x-label>Uninstall</x-label>
           </x-button>
         </template>
@@ -38,8 +62,19 @@
           class="btn btn-primary"
           :disabled="plugin.installing"
         >
-          <x-label>{{ plugin.installing ? "Installing..." : "Install" }}</x-label>
+          <x-label>{{
+            plugin.installing ? "Installing..." : "Install"
+          }}</x-label>
         </x-button>
+      </div>
+      <div class="update-indicator">
+        <template
+          v-if="
+            !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
+          "
+        >
+          {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
+        </template>
       </div>
     </div>
     <div class="markdown-content">
