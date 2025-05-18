@@ -1,6 +1,7 @@
 <template>
   <div class="sidebar-view">
     <iframe
+      v-if="visible || loaded"
       :src="baseUrl"
       sandbox="allow-scripts allow-same-origin allow-forms"
       ref="iframe"
@@ -18,6 +19,10 @@ import { AppEvent } from "@/common/AppEvent";
 export default Vue.extend({
   name: "SidebarView",
   props: {
+    visible: {
+      type: Boolean,
+      default: true,
+    },
     pluginId: {
       type: String,
       required: true,
@@ -29,6 +34,7 @@ export default Vue.extend({
   },
   data() {
     return {
+      loaded: false,
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
     };
@@ -63,6 +69,7 @@ export default Vue.extend({
       this.timestamp = Date.now();
     },
     handleIframeLoad() {
+      this.loaded = true;
       this.$plugin.registerIframe(this.pluginId, this.$refs.iframe);
     },
     handleError(e) {

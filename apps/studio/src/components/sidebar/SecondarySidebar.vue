@@ -19,12 +19,15 @@
     </div>
     <div class="sidebar-body" ref="body">
       <template v-for="tab in tabs">
-        <json-viewer-sidebar
-          v-if="tab.id === 'json-viewer' && secondaryActiveTabId === 'json-viewer'"
-          :key="tab.id"
-        />
+        <template v-if="tab.id === 'json-viewer'">
+          <json-viewer-sidebar
+            v-show="secondaryActiveTabId === 'json-viewer'"
+            :key="tab.id"
+          />
+        </template>
         <sidebar-view
-          v-else-if="secondaryActiveTabId === tab.id"
+          v-else
+          :visible="secondaryActiveTabId === tab.id"
           :key="tab.id"
           :plugin-id="tab.id"
           :entry-url="tab.entry"
