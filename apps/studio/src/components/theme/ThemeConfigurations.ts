@@ -13,66 +13,6 @@ export interface Theme {
 
 export const defaultThemes: Theme[] = [
   {
-    id: 'system',
-    name: 'System',
-    description: 'Use system theme preference',
-    colors: {
-      background: '#252525',
-      foreground: '#ffffff',
-      string: '#a5d6ff',
-      keyword: '#ff7b72'
-    },
-    isBuiltIn: true
-  },
-  {
-    id: 'light',
-    name: 'Light',
-    description: 'Light theme for Beekeeper Studio',
-    colors: {
-      background: '#ffffff',
-      foreground: '#333333',
-      string: '#0000ff',
-      keyword: '#ff0000'
-    },
-    isBuiltIn: true
-  },
-  {
-    id: 'dark',
-    name: 'Dark',
-    description: 'Dark theme for Beekeeper Studio',
-    colors: {
-      background: '#252525',
-      foreground: '#ffffff',
-      string: '#a5d6ff',
-      keyword: '#ff7b72'
-    },
-    isBuiltIn: true
-  },
-  {
-    id: 'solarized',
-    name: 'Solarized',
-    description: 'Solarized theme for Beekeeper Studio',
-    colors: {
-      background: '#fdf6e3',
-      foreground: '#657b83',
-      string: '#2aa198',
-      keyword: '#cb4b16'
-    },
-    isBuiltIn: true
-  },
-  {
-    id: 'solarized-dark',
-    name: 'Solarized Dark',
-    description: 'Solarized Dark theme for Beekeeper Studio',
-    colors: {
-      background: '#002b36',
-      foreground: '#839496',
-      string: '#2aa198',
-      keyword: '#cb4b16'
-    },
-    isBuiltIn: true
-  },
-  {
     id: 'github-dark',
     name: 'GitHub Dark',
     description: 'GitHub dark theme for Beekeeper Studio',

@@ -4,8 +4,8 @@ $font-family: "Roboto";
 $font-family-mono: "Source Code Pro";
 $base-font-size: 0.875rem; // ~14px
 
+@use "./vendor/custom-icons.scss";
 @import "material-icons/iconfont/material-icons.scss";
-@import "./vendor/custom-icons.scss";
 
 *,
 *:after,

@@ -228,6 +228,7 @@ export default {
       selectedFile: null,
       uploadError: null,
       importing: false,
+      searchQuery: "",
     };
   },
   computed: {
@@ -238,12 +239,28 @@ export default {
       themeValue: "settings/themeValue",
     }),
     filteredThemes() {
+      let filtered = [];
+
       if (this.activeTab === "popular") {
-        return this.themes.filter((theme) => !theme.custom);
+        filtered = this.themes.filter((theme) => !theme.custom);
       } else if (this.activeTab === "custom") {
-        return this.themes.filter((theme) => theme.custom);
+        filtered = this.themes.filter((theme) => theme.custom);
+      } else {
+        filtered = this.themes;
       }
-      return this.themes;
+
+      // apply search filter if search is active
+      if (this.searchQuery) {
+        const query = this.searchQuery.toLowerCase();
+        filtered = filtered.filter(
+          (theme) =>
+            theme.name.toLowerCase().includes(query) ||
+            (theme.description &&
+              theme.description.toLowerCase().includes(query))
+        );
+      }
+
+      return filtered;
     },
   },
   async mounted() {
@@ -289,10 +306,10 @@ export default {
     show() {
       this.isVisible = true;
 
-      // Reload themes as a safety measure
+      // reload themes as a safety measure
       this.loadThemes();
 
-      // Check if we need to reapply the current theme
+      // check if we need to reapply the current theme
       this.reloadCurrentTheme();
     },
     close() {
@@ -305,16 +322,16 @@ export default {
         this.loading = true;
         this.error = null;
 
-        // Import theme configurations
+        // import theme configurations
         const { defaultThemes } = await import(
           "@/components/theme/ThemeConfigurations.ts"
         );
         console.log("Loaded theme configurations:", defaultThemes.length);
 
-        // Initialize themes with default themes
+        // initialize themes with default themes
         this.themes = defaultThemes.map((theme) => ({
           ...theme,
-          // Ensure theme has proper CSS variables
+          // ensure theme has proper CSS variables
           cssVars: {
             background: theme.colors.background,
             foreground: theme.colors.foreground,
@@ -322,33 +339,15 @@ export default {
             keyword: theme.colors.keyword,
           },
         }));
-        console.log(
-          "Initialized themes array with",
-          this.themes.length,
-          "themes"
-        );
 
-        // Get current theme from localStorage
+        // get current theme from localStorage
         const activeThemeId = localStorage.getItem("activeTheme") || "dark";
         console.log("Current active theme ID:", activeThemeId);
 
-        // Set selected theme
+        // set selected theme
         this.selectedTheme =
           this.themes.find((t) => t.id === activeThemeId) || this.themes[0];
         console.log("Selected theme:", this.selectedTheme.name);
-
-        // Filter themes for current tab
-        this.updateFilteredThemes();
-
-        // Log themes by category
-        console.log(
-          "Popular themes:",
-          this.themes.filter((t) => t.isBuiltIn).length
-        );
-        console.log(
-          "Custom themes:",
-          this.themes.filter((t) => !t.isBuiltIn).length
-        );
 
         this.loading = false;
       } catch (error) {
@@ -359,43 +358,14 @@ export default {
         this.loading = false;
       }
     },
-
-    // Update filtered themes based on active tab
-    updateFilteredThemes() {
-      if (this.activeTab === "popular") {
-        // Filter to built-in themes
-        this.filteredThemes = this.themes.filter((t) => t.isBuiltIn === true);
-      } else if (this.activeTab === "custom") {
-        // Filter to custom themes
-        this.filteredThemes = this.themes.filter((t) => t.isBuiltIn !== true);
-      } else {
-        // Show all themes if on a different tab
-        this.filteredThemes = this.themes;
-      }
-
-      // Apply search filter if search is active
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase();
-        this.filteredThemes = this.filteredThemes.filter(
-          (theme) =>
-            theme.name.toLowerCase().includes(query) ||
-            theme.description.toLowerCase().includes(query)
-        );
-      }
-
-      console.log(
-        `Filtered to ${this.filteredThemes.length} themes for tab "${this.activeTab}"`
-      );
-    },
-
     getDefaultColorsForTheme(themeIdOrObject) {
-      // Extract the theme ID from theme object or use directly if it's a string
+      // extract the theme ID from theme object or use directly if it's a string
       const themeId =
         typeof themeIdOrObject === "object" && themeIdOrObject !== null
           ? themeIdOrObject.id
           : themeIdOrObject;
 
-      // If we can't determine the theme ID, return safe defaults
+      // if we can't determine the theme ID, return safe defaults
       if (!themeId) {
         return {
           background: "#252525",
@@ -405,16 +375,16 @@ export default {
         };
       }
 
-      // Find the theme in our themes list
+      // find the theme in our themes list
       const theme = this.themes.find((t) => t.id === themeId);
       if (theme && theme.colors) {
         return theme.colors;
       }
 
-      // Provide default colors based on theme ID/name
+      // provide default colors based on theme ID/name
       const themeIdStr = String(themeId).toLowerCase();
 
-      // Dark themes detection
+      // dark themes detection
       const isDark =
         themeIdStr.includes("dark") ||
         [
@@ -442,7 +412,7 @@ export default {
         ].includes(themeIdStr);
 
       if (isDark) {
-        // Check specific dark themes
+        // check specific dark themes
         if (themeIdStr === "dracula") {
           return {
             background: "#282a36",
@@ -521,47 +491,239 @@ export default {
         };
       }
     },
+    // clean up theme-related elements that interfere with theme application
+    cleanupThemeResiduals() {
+      try {
+        console.log("Cleaning up theme residuals...");
+
+        // remove all theme-related style elementsToClean
+        document
+          .querySelectorAll('style[id*="theme"], style[id*="beekeeper"]')
+          .forEach((el) => {
+            console.log(`Removing style element: ${el.id}`);
+            el.parentNode.removeChild(el);
+          });
+
+        // remove all inline theme styles from body and html elements
+        const elementsToClean = [document.documentElement, document.body];
+        const themeProps = [
+          "--theme-active",
+          "--theme-bg",
+          "--theme-base",
+          "--theme-string",
+          "--theme-keyword",
+          "--theme-primary",
+          "--theme-secondary",
+          "--border-color",
+          "--sidebar-bg",
+        ];
+
+        elementsToClean.forEach((el) => {
+          // remove all theme-related classes
+          el.className = el.className
+            .replace(/theme-[a-zA-Z0-9-_]+/g, "")
+            .trim();
+
+          // remove all theme-related inline styles
+          themeProps.forEach((prop) => {
+            el.style.removeProperty(prop);
+          });
+        });
+
+        // find all elements with theme classes and remove them
+        document.querySelectorAll('[class*="theme-"]').forEach((el) => {
+          el.className = el.className
+            .replace(/theme-[a-zA-Z0-9-_]+/g, "")
+            .trim();
+        });
+
+        // reset key UI elements
+        const keyElements = [
+          ".sidebar-wrapper",
+          ".toolbar",
+          ".connection-main",
+          "header",
+          ".main-content",
+        ];
+
+        keyElements.forEach((selector) => {
+          const el = document.querySelector(selector);
+          if (el) {
+            // clear inline styles that might be theme-related
+            el.removeAttribute("style");
+          }
+        });
+
+        console.log("Theme residuals cleanup completed");
+      } catch (error) {
+        console.error("Error cleaning up theme residuals:", error);
+      }
+    },
     async applyTheme(theme) {
       try {
         console.log("Applying theme with ID:", theme.id);
         this.loading = true;
 
-        // Set a loading message
+        // set a loading message
         this.error = null;
         this.statusMessage = `Applying ${theme.name} theme...`;
 
-        // Apply theme locally first for immediate feedback
+        // Store the theme in localStorage first
         this.selectedTheme = theme;
         localStorage.setItem("activeTheme", theme.id);
 
-        // Get theme colors
+        // thorough cleanup of existing theme elements
+        document
+          .querySelectorAll('style[id*="theme"], style[id*="beekeeper"]')
+          .forEach((el) => {
+            el.parentNode.removeChild(el);
+          });
+
+        // remove all theme classes from all elements
+        document.querySelectorAll('[class*="theme-"]').forEach((el) => {
+          el.className = el.className
+            .replace(/theme-[a-zA-Z0-9-_]+/g, "")
+            .trim();
+        });
+
+        // clear all theme-related CSS variables from root elements
+        const themeVariables = [
+          "--theme-active",
+          "--theme-bg",
+          "--theme-base",
+          "--theme-string",
+          "--theme-keyword",
+          "--theme-primary",
+          "--theme-secondary",
+          "--border-color",
+          "--sidebar-bg",
+        ];
+
+        [document.documentElement, document.body].forEach((el) => {
+          themeVariables.forEach((variable) => {
+            el.style.removeProperty(variable);
+          });
+        });
+
+        // get the new theme's colors
         const colors = theme.colors || this.getDefaultColorsForTheme(theme);
-        document.body.style.setProperty("--theme-active", theme.id);
 
-        // Apply directly to DOM for immediate visual feedback
-        this.applyThemeDirectly(theme.id, colors);
+        // apply the theme class to root elements
+        document.documentElement.classList.add(`theme-${theme.id}`);
+        document.body.classList.add(`theme-${theme.id}`);
 
-        // Try IPC call if available (in Electron context)
-        if (window.electron?.ipcRenderer) {
-          try {
-            await window.electron.ipcRenderer.invoke("themes/apply", {
-              name: theme.id,
-            });
-            console.log("Applied theme CSS directly:", theme.id);
-          } catch (err) {
-            console.error("Error applying theme via IPC:", err);
-            // Continue anyway as we've applied theme directly to DOM
+        // apply the theme to all sections of the UI
+        // first, apply CSS variables to documentElement and body
+        Object.entries(colors).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(key, value, "important");
+          document.body.style.setProperty(key, value, "important");
+        });
+
+        // use dynamic CSS with high specificity to ensure complete application
+        const styleElement = document.createElement("style");
+        styleElement.id = "beekeeper-theme-override";
+
+        let cssContent = `
+          /* Global theme variables */
+          :root, html, body, #app, [class*="theme-"] {
+        `;
+
+        // add theme variable with !important to override any existing styles
+        Object.entries(colors).forEach(([key, value]) => {
+          cssContent += `    ${key}: ${value} !important;\n`;
+        });
+
+        // add high-specificity selectors for key UI components
+        cssContent += `
           }
+          
+          /* Ensure body background and text colors */
+          body, #app, .theme-${theme.id}, [class*="theme-${theme.id}"] {
+            background-color: ${colors["--theme-bg"]} !important;
+            color: ${colors["--theme-base"]} !important;
+          }
+          
+          /* Main content area */
+          .connection-main, #main, main, .main-content {
+            background-color: ${colors["--theme-bg"]} !important;
+            color: ${colors["--theme-base"]} !important;
+          }
+          
+          /* Sidebar */
+          .sidebar-wrapper, .sidebar, aside, nav.sidebar,
+          .database-connection-panel, .connection-selector, .saved-connection-list {
+            background-color: ${colors["--sidebar-bg"]} !important;
+            color: ${colors["--theme-base"]} !important;
+          }
+          
+          /* Header/toolbar */
+          header, .header, .app-header, .toolbar, nav:not(.sidebar),
+          .titlebar, .connection-header {
+            background-color: ${colors["--theme-bg"]} !important;
+            color: ${colors["--theme-base"]} !important;
+          }
+          
+          /* Dropdowns, modals, and popups */
+          .dropdown-content, .modal, .dialog, .popover, .context-menu {
+            background-color: ${colors["--theme-bg"]} !important;
+            color: ${colors["--theme-base"]} !important;
+          }
+        `;
+
+        styleElement.textContent = cssContent;
+        document.head.appendChild(styleElement);
+
+        // force a refresh of all UI elements
+        try {
+          await initializeTheme();
+          console.log("Theme initialized via ThemeInitializer");
+        } catch (err) {
+          console.error("Error initializing theme via ThemeInitializer:", err);
         }
 
-        // Update UI state
+        // force a redraw of key UI elements to ensure all styles are applied
+        const elementsToRefresh = [
+          ".sidebar-wrapper",
+          ".toolbar",
+          ".connection-main",
+          "header",
+          ".app-header",
+          "nav",
+          ".main-content",
+          ".database-connection-panel",
+          "#app",
+        ];
+
+        // force a complete refresh by temporarily hiding and showing elements
+        elementsToRefresh.forEach((selector) => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach((el) => {
+            if (el) {
+              // force a reflow by accessing offsetHeight
+              const forceReflow = el.offsetHeight;
+              el.style.display = "none";
+
+              // use a setTimeout to ensure the browser repaints
+              setTimeout(() => {
+                el.style.display = "";
+                // force another reflow
+                const secondReflow = el.offsetHeight;
+              }, 10);
+            }
+          });
+        });
+
+        // notify the application of the theme change
+        this.$root.$emit("theme-changed", theme.id);
+
+        // update UI state
         this.error = null;
         this.statusMessage = `Applied ${theme.name} theme successfully`;
 
-        // Automatically close after successful application
+        // automatically close after successful application
         setTimeout(() => {
           this.close();
-        }, 1500);
+        }, 100);
       } catch (error) {
         console.error("Error applying theme:", error);
         this.error = `Failed to apply theme: ${
@@ -571,32 +733,66 @@ export default {
         this.loading = false;
       }
     },
-    // Apply theme directly to DOM for immediate visual feedback
+    // apply theme directly to DOM for immediate visual feedback
     applyThemeDirectly(themeId, colors) {
       try {
         console.log("Applying theme CSS directly:", themeId, colors);
 
-        // Set theme class on body
-        document.body.className =
-          document.body.className.replace(/theme-[a-zA-Z0-9-_]+/g, "").trim() +
-          ` theme-${themeId}`;
-
-        // Also apply to document element for CSS variable inheritance
-        document.documentElement.className =
-          document.documentElement.className
+        // remove ALL theme classes from document
+        const allElements = document.querySelectorAll(
+          '.theme-dark, .theme-light, [class*="theme-"]'
+        );
+        allElements.forEach((el) => {
+          // Remove any classes that start with theme-
+          el.className = el.className
             .replace(/theme-[a-zA-Z0-9-_]+/g, "")
-            .trim() + ` theme-${themeId}`;
+            .trim();
+        });
 
-        // Get CSS variables from theme
+        // set theme class on body
+        document.body.className =
+          document.body.className.trim() + ` theme-${themeId}`;
+
+        // also apply to document element for CSS variable inheritance
+        document.documentElement.className =
+          document.documentElement.className.trim() + ` theme-${themeId}`;
+
+        // add theme class to app root if it exists
+        const appElement = document.getElementById("app");
+        if (appElement) {
+          appElement.className =
+            appElement.className.replace(/theme-[a-zA-Z0-9-_]+/g, "").trim() +
+            ` theme-${themeId}`;
+        }
+
+        // get CSS variables from theme
         const cssVars = this.getColorsForTheme(themeId);
 
-        // Apply CSS variables to root and body
+        // reset any previously set variables on root and body
+        const allCssVars = [
+          "--theme-active",
+          "--theme-bg",
+          "--theme-base",
+          "--theme-string",
+          "--theme-keyword",
+          "--theme-primary",
+          "--theme-secondary",
+          "--border-color",
+          "--sidebar-bg",
+        ];
+
+        allCssVars.forEach((varName) => {
+          document.documentElement.style.removeProperty(varName);
+          document.body.style.removeProperty(varName);
+        });
+
+        // apply CSS variables to root and body
         Object.entries(cssVars).forEach(([key, value]) => {
           document.documentElement.style.setProperty(key, value);
           document.body.style.setProperty(key, value);
         });
 
-        // Create/update a style tag to ensure theme colors are applied with !important
+        // create/update a style tag to ensure colors applied with !important
         this.applyThemeWithHighPriority(themeId, cssVars);
 
         return true;
@@ -605,9 +801,9 @@ export default {
         return false;
       }
     },
-    // Apply theme with high priority using a style tag
+    // apply theme with high priority using a style tag
     applyThemeWithHighPriority(themeId, variables) {
-      // Create a style element specifically for theme variables
+      // create a style element specifically for theme variables
       let styleElement = document.getElementById(
         "beekeeper-theme-manager-vars"
       );
@@ -618,13 +814,13 @@ export default {
         document.head.appendChild(styleElement);
       }
 
-      // Build CSS content with !important flag for priority
+      // build CSS content with !important flag for priority
       let cssContent = `
         /* Theme variables for ${themeId} */
         :root {
       `;
 
-      // Add each variable with !important
+      // add each variable with !important
       Object.entries(variables).forEach(([key, value]) => {
         cssContent += `      ${key}: ${value} !important;\n`;
       });
@@ -636,7 +832,7 @@ export default {
         body {
       `;
 
-      // Apply to body as well
+      // apply to body as well
       Object.entries(variables).forEach(([key, value]) => {
         cssContent += `      ${key}: ${value} !important;\n`;
       });
@@ -646,43 +842,88 @@ export default {
         
         /* Ensure proper theme class is set */
         html, body {
-          color-scheme: ${themeId.includes("light") ? "light" : "dark"};
+          color-scheme: ${
+            themeId.includes("light") ? "light" : "dark"
+          } !important;
         }
         
         /* Ensure proper theme background and text colors */
-        .theme-${themeId} {
+        .theme-${themeId}, body.theme-${themeId}, #app, #app-container {
           background-color: ${variables["--theme-bg"]} !important;
           color: ${variables["--theme-base"]} !important;
         }
         
-        /* Apply to connection interface specifically */
-        .theme-${themeId} .connection-main {
+        /* Apply to specific application areas */
+        .theme-${themeId} .connection-main,
+        body.theme-${themeId} .connection-main {
           background-color: ${variables["--theme-bg"]} !important;
         }
         
-        .theme-${themeId} .sidebar-wrapper {
+        /* Navbar/header styling */
+        .theme-${themeId} .connection-header,
+        .theme-${themeId} header,
+        .theme-${themeId} .titlebar,
+        .theme-${themeId} .toolbar,
+        .theme-${themeId} nav,
+        .theme-${themeId} .app-header {
+          background-color: ${variables["--theme-bg"]} !important;
+          color: ${variables["--theme-base"]} !important;
+        }
+        
+        /* Sidebar styling - these are explicit for maximum specificity */
+        .theme-${themeId} .sidebar-wrapper,
+        .theme-${themeId} .sidebar,
+        .theme-${themeId} aside,
+        body.theme-${themeId} .sidebar-wrapper,
+        body.theme-${themeId} .sidebar,
+        body.theme-${themeId} aside {
           background-color: ${variables["--sidebar-bg"]} !important;
+          color: ${variables["--theme-base"]} !important;
+        }
+        
+        /* Database connection panel styling */
+        .theme-${themeId} .database-connection-panel,
+        .theme-${themeId} .connection-selector,
+        .theme-${themeId} .saved-connection-list {
+          background-color: ${variables["--sidebar-bg"]} !important;
+          color: ${variables["--theme-base"]} !important;
+        }
+
+        /* Make sure all popups and dialogs get theme colors */
+        .theme-${themeId} .modal, 
+        .theme-${themeId} .dropdown-content,
+        .theme-${themeId} .context-menu {
+          background-color: ${variables["--theme-bg"]} !important;
+          color: ${variables["--theme-base"]} !important;
         }
       `;
 
-      // Set the style element content
+      // set the style element content
       styleElement.textContent = cssContent;
 
       console.log(`Applied theme variables with high priority for ${themeId}`);
     },
-    // Get color variables for a theme
+    // get color variables for a theme
     getColorsForTheme(themeId) {
       console.log("Getting colors for theme:", themeId);
 
-      // CSS variables mapping
+      // CSS variables mapping - defaults that will be overridden
       let colors = {
         "--theme-active": themeId,
+        "--theme-bg": "#252525",
+        "--theme-base": "#ffffff",
+        "--theme-string": "#a5d6ff",
+        "--theme-keyword": "#ff7b72",
+        "--theme-primary": "#ff7b72",
+        "--theme-secondary": "#4ad0ff",
+        "--border-color": "rgba(255, 255, 255, 0.1)",
+        "--sidebar-bg": "#1e1e1e",
       };
 
-      // Find the theme in our list
+      // find the theme in our list
       const theme = this.themes.find((t) => t.id === themeId);
       if (theme && theme.colors) {
-        // Convert theme colors to CSS variables
+        // convert theme colors to CSS variables
         const { background, foreground, string, keyword } = theme.colors;
         colors = {
           ...colors,
@@ -699,58 +940,114 @@ export default {
         return colors;
       }
 
-      // Add theme-specific colors for known themes
-      if (
-        [
-          "dark",
-          "github-dark",
-          "dracula",
-          "monokai",
-          "ayu-mirage",
-          "gruvbox",
-          "shades-of-purple",
-          "city-lights",
-          "panda-syntax",
-          "catppuccin-mocha",
-          "tokyo-night",
-          "nord",
-          "one-dark-pro",
-          "palenight",
-          "material-theme",
-          "night-owl",
-        ].includes(themeId)
-      ) {
-        console.log(
-          "Using predefined color variables from ThemeInitializer for:",
-          themeId
-        );
-        // For known dark themes, we'll use the theme variables defined in ThemeInitializer
-        // We won't set any variables here, letting ThemeInitializer handle it
-        return { "--theme-active": themeId };
-      } else if (
-        [
-          "light",
-          "solarized",
-          "solarized-light",
-          "github-theme",
-          "nord-light",
-        ].includes(themeId)
-      ) {
-        console.log(
-          "Using predefined color variables from ThemeInitializer for:",
-          themeId
-        );
-        // For known light themes, we'll use the theme variables defined in ThemeInitializer
-        return { "--theme-active": themeId };
+      // Standard built-in themes - must match ThemeInitializer.ts
+      switch (themeId) {
+        case "dark":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#252525",
+            "--theme-base": "#ffffff",
+            "--theme-string": "#a5d6ff",
+            "--theme-keyword": "#ff7b72",
+            "--theme-primary": "#ff7b72",
+            "--theme-secondary": "#4ad0ff",
+            "--border-color": "rgba(255, 255, 255, 0.1)",
+            "--sidebar-bg": "#1e1e1e",
+          };
+        case "light":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#ffffff",
+            "--theme-base": "#333333",
+            "--theme-string": "#0000ff",
+            "--theme-keyword": "#ff0000",
+            "--theme-primary": "#ff0000",
+            "--theme-secondary": "#0066cc",
+            "--border-color": "rgba(0, 0, 0, 0.1)",
+            "--sidebar-bg": "#f5f5f5",
+          };
+        case "solarized":
+        case "solarized-light":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#fdf6e3",
+            "--theme-base": "#657b83",
+            "--theme-string": "#2aa198",
+            "--theme-keyword": "#cb4b16",
+            "--theme-primary": "#cb4b16",
+            "--theme-secondary": "#b58900",
+            "--border-color": "rgba(101, 123, 131, 0.1)",
+            "--sidebar-bg": "#eee8d5",
+          };
+        case "solarized-dark":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#002b36",
+            "--theme-base": "#839496",
+            "--theme-string": "#2aa198",
+            "--theme-keyword": "#cb4b16",
+            "--theme-primary": "#cb4b16",
+            "--theme-secondary": "#b58900",
+            "--border-color": "rgba(147, 161, 161, 0.1)",
+            "--sidebar-bg": "#073642",
+          };
+        case "github-dark":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#0d1117",
+            "--theme-base": "#c9d1d9",
+            "--theme-string": "#a5d6ff",
+            "--theme-keyword": "#ff7b72",
+            "--theme-primary": "#ff7b72",
+            "--theme-secondary": "#79c0ff",
+            "--border-color": "rgba(201, 209, 217, 0.1)",
+            "--sidebar-bg": "#010409",
+          };
+        case "monokai":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#272822",
+            "--theme-base": "#f8f8f2",
+            "--theme-string": "#e6db74",
+            "--theme-keyword": "#f92672",
+            "--theme-primary": "#f92672",
+            "--theme-secondary": "#66d9ef",
+            "--border-color": "rgba(248, 248, 242, 0.1)",
+            "--sidebar-bg": "#1e1f1c",
+          };
+        case "dracula":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#282a36",
+            "--theme-base": "#f8f8f2",
+            "--theme-string": "#f1fa8c",
+            "--theme-keyword": "#ff79c6",
+            "--theme-primary": "#ff79c6",
+            "--theme-secondary": "#8be9fd",
+            "--border-color": "rgba(248, 248, 242, 0.1)",
+            "--sidebar-bg": "#21222c",
+          };
+        case "nord":
+          return {
+            "--theme-active": themeId,
+            "--theme-bg": "#2e3440",
+            "--theme-base": "#d8dee9",
+            "--theme-string": "#a3be8c",
+            "--theme-keyword": "#81a1c1",
+            "--theme-primary": "#81a1c1",
+            "--theme-secondary": "#88c0d0",
+            "--border-color": "rgba(216, 222, 233, 0.1)",
+            "--sidebar-bg": "#242933",
+          };
       }
 
-      // Fallback to default values based on theme name pattern
+      // fallback to default values based on theme name pattern
       if (
         themeId.includes("dark") ||
         themeId.includes("black") ||
         themeId.includes("night")
       ) {
-        // Dark theme colors
+        // dark theme colors
         colors = {
           ...colors,
           "--theme-bg": "#1e1e1e",
@@ -768,7 +1065,7 @@ export default {
         themeId.includes("white") ||
         themeId.includes("day")
       ) {
-        // Light theme colors
+        // light theme colors
         colors = {
           ...colors,
           "--theme-bg": "#ffffff",
@@ -782,7 +1079,7 @@ export default {
         };
         console.log("Using light theme fallback colors for:", themeId);
       } else {
-        // Neutral theme colors (fallback)
+        // neutral theme colors (fallback)
         colors = {
           ...colors,
           "--theme-bg": "#252525",
@@ -799,15 +1096,15 @@ export default {
 
       return colors;
     },
-    // Utility: Convert color to RGB
+    // utility: convert color to RGB
     colorToRgb(hex) {
-      // Handle empty or invalid hex
+      // handle empty or invalid hex
       if (!hex || typeof hex !== "string") return "255, 255, 255";
 
-      // Remove # if present
+      // remove # if present
       hex = hex.replace("#", "");
 
-      // Handle shorthand hex (#RGB)
+      // handle shorthand hex (#RGB)
       if (hex.length === 3) {
         hex = hex
           .split("")
@@ -815,13 +1112,13 @@ export default {
           .join("");
       }
 
-      // Parse the hex color
+      // parse the hex color
       try {
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
 
-        // Return RGB values if valid
+        // return RGB values if valid
         if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
           return `${r}, ${g}, ${b}`;
         }
@@ -829,19 +1126,19 @@ export default {
         console.error("Error parsing color:", e);
       }
 
-      // Fallback to white
+      // fallback to white
       return "255, 255, 255";
     },
-    // Utility: Darken a color by a percentage
+    // utility: darken a color by a percentage
     darken(hex, percent) {
-      // Handle empty or invalid hex
+      // handle empty or invalid hex
       if (!hex || typeof hex !== "string") return "#1e1e1e";
 
       try {
-        // Remove # if present
+        // remove # if present
         hex = hex.replace("#", "");
 
-        // Handle shorthand hex (#RGB)
+        // handle shorthand hex (#RGB)
         if (hex.length === 3) {
           hex = hex
             .split("")
@@ -849,23 +1146,23 @@ export default {
             .join("");
         }
 
-        // Parse the hex color
+        // parse the hex color
         let r = parseInt(hex.substring(0, 2), 16);
         let g = parseInt(hex.substring(2, 4), 16);
         let b = parseInt(hex.substring(4, 6), 16);
 
-        // Darken by reducing each component by the percentage
+        // darken by reducing each component by the percentage
         r = Math.max(0, Math.floor((r * (100 - percent)) / 100));
         g = Math.max(0, Math.floor((g * (100 - percent)) / 100));
         b = Math.max(0, Math.floor((b * (100 - percent)) / 100));
 
-        // Convert back to hex
+        // convert back to hex
         return `#${r.toString(16).padStart(2, "0")}${g
           .toString(16)
           .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
       } catch (e) {
         console.error("Error darkening color:", e);
-        return "#1e1e1e"; // Fallback to dark color
+        return "#1e1e1e"; // fallback to dark color
       }
     },
     async previewTheme(theme) {
@@ -1056,19 +1353,19 @@ export default {
         this.importing = false;
       }
     },
-    // Reload the current theme from localStorage or default
+    // reload the current theme from localStorage or default
     reloadCurrentTheme() {
       try {
-        // Get stored theme or default to 'dark'
+        // get stored theme or default to 'dark'
         const storedThemeId =
           localStorage.getItem("activeTheme") || this.themeValue || "dark";
 
-        // Get the theme object from our loaded themes
+        // get the theme object from our loaded themes
         const storedTheme = this.themes.find(
           (t) => String(t.id) === String(storedThemeId)
         );
 
-        // If we found the theme, make it active
+        // if we found the theme, make it active
         if (storedTheme) {
           this.selectedTheme = storedTheme;
           this.activeTheme = storedThemeId;
@@ -1085,12 +1382,12 @@ export default {
 </script>
 
 <style lang="scss">
-/* Completely reset theme cards to avoid style inheritance */
+/* completely reset theme cards to avoid style inheritance */
 .theme-card {
-  /* Reset all inherited styles */
+  /* reset all inherited styles */
   all: initial;
 
-  /* Basic styling */
+  /* basic styling */
   display: block;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;

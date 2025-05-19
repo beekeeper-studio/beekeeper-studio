@@ -95,9 +95,8 @@ export default {
     async loadThemes() {
       this.loading = true;
       try {
-        // Load themes from Vuex store
+        // load themes from the vuex store
         const builtInThemes = this.$store.getters["themes/allThemes"];
-        console.log("Loaded themes from store:", builtInThemes);
         this.themes = builtInThemes;
         this.loading = false;
       } catch (err) {
@@ -108,14 +107,13 @@ export default {
     },
     async previewTheme(themeId) {
       try {
-        console.log(`Previewing theme: ${themeId}`);
         this.previewingTheme = themeId;
 
-        // Find the theme
+        // find the theme
         const theme = this.themes.find((t) => t.id === themeId);
         if (!theme) return;
 
-        // Emit event for theme preview
+        // emit event for theme preview
         this.$root.$emit("theme-preview-changed", { themeId });
 
         this.$noty.success(`Previewing theme: ${theme.name}`);
@@ -126,23 +124,22 @@ export default {
     },
     async applyTheme(themeId) {
       try {
-        console.log(`Applying theme: ${themeId}`);
         this.activeTheme = themeId;
 
-        // Update Vuex store
+        // update the vuex store
         await this.$store.dispatch("settings/update", {
           key: "theme",
           value: themeId,
         });
 
-        // Use the utility process to apply the theme
+        // use the utility process to apply the theme
         const result = await this.$util.send("themes/apply", { name: themeId });
 
         if (!result.success) {
           throw new Error(result.error || "Failed to apply theme");
         }
 
-        // Save the theme setting
+        // save the theme setting
         await this.$util.send("appdb/setting/save", {
           key: "theme",
           value: themeId,
@@ -157,14 +154,14 @@ export default {
     },
     async removeTheme(themeId) {
       try {
-        // Use the utility process to remove the theme
+        // use the utility process to remove the theme
         const result = await this.$util.send("themes/remove", { themeId });
 
         if (!result.success) {
           throw new Error(result.error || "Failed to remove theme");
         }
 
-        // Refresh theme list
+        // refresh the theme list
         await this.loadThemes();
         this.$noty.success("Theme removed successfully");
       } catch (err) {
@@ -179,17 +176,16 @@ export default {
     async processFiles(files) {
       for (const file of files) {
         try {
-          // Get the file path
           const filePath = file.path;
 
-          // Use the utility process to import the theme
+          // use the utility process to import the theme
           const result = await this.$util.send("themes/import", { filePath });
 
           if (!result.success) {
             throw new Error(result.error || "Failed to import theme");
           }
 
-          // Refresh theme list
+          // refresh the theme list
           await this.loadThemes();
           this.$noty.success(
             `Theme ${result.theme.name} imported successfully`
