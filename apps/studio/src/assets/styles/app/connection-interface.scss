@@ -1,4 +1,8 @@
+@use "./vendor/_shared_imports" as *;
 @use "sass:color";
+@use "./_variables" as *;
+@use "./_mixins" as *;
+
 .interface.connection-interface {
   padding-top: 0;
 }
@@ -15,7 +19,6 @@
     line-height: 2;
   }
 }
-
 
 // Connection Body
 // --------------------------------
@@ -45,7 +48,7 @@
       position: relative;
       padding-top: 2.5rem;
       &::before {
-        content: '';
+        content: "";
         position: absolute;
         inset: 0 0 auto;
         height: 1rem;
@@ -70,7 +73,6 @@
   .text-connect {
     padding-top: 0.25rem;
   }
-
 
   label {
     .material-icons.has-tooltip {
@@ -203,4 +205,3 @@
   right: 12px;
   bottom: 5px;
 }
-

@@ -1,3 +1,4 @@
+@use "./vendor/_shared_imports" as *;
 @use "sass:color";
 .query-editor {
   position: relative;
@@ -23,7 +24,8 @@
       border-bottom: solid 1px $brand-danger;
     }
   }
-  .top-panel, .bottom-panel {
+  .top-panel,
+  .bottom-panel {
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -64,7 +66,6 @@
     }
   }
 
-
   .toolbar {
     display: flex;
     align-items: center;
@@ -86,7 +87,6 @@
         font-size: 18px;
       }
     }
-   
   }
   .top-panel {
     .toolbar {
@@ -128,7 +128,6 @@
       max-width: 70%;
       margin: 0 auto;
     }
-
   }
 
   .BksSqlTextEditor {
@@ -155,7 +154,7 @@
   .dry-run-btn {
     gap: 0.35rem;
 
-    input[type=checkbox] {
+    input[type="checkbox"] {
       margin: 0;
     }
   }
@@ -195,10 +194,8 @@
     box-shadow: inset 0 0 0 1px rgba($theme-base, 0.05);
     color: $text;
     margin: 0 ($gutter-h * 0.35);
-    transition: color 0.15s ease-in-out,
-                background-color 0.15s ease-in-out,
-                border-color 0.15s ease-in-out,
-                box-shadow 0.15s ease-in-out;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+      border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   }
 }
 

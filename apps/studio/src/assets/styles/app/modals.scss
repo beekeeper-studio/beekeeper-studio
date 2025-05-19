@@ -1,7 +1,6 @@
-
+@use "./vendor/_shared_imports" as *;
 
 .beekeeper-modal {
-
   .dialog-c-title {
     &.has-icon {
       display: flex;
@@ -62,7 +61,9 @@
     }
   }
 
-  &.confirmation-modal, &.sql-files-import-modal, &.wait-sso-modal {
+  &.confirmation-modal,
+  &.sql-files-import-modal,
+  &.wait-sso-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;

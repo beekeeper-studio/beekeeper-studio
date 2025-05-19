@@ -1,17 +1,17 @@
 @font-face {
-  font-family: 'bk-icons';
-  src:
-    url('@/assets/fonts/beekeeper/bk-icons.ttf') format('truetype'),
-    url('@/assets/fonts/beekeeper/bk-icons.woff') format('woff'),
-    url('@/assets/fonts/beekeeper/bk-icons.svg') format('svg');
+  font-family: "bk-icons";
+  src: url("@/assets/fonts/beekeeper/bk-icons.ttf") format("truetype"),
+    url("@/assets/fonts/beekeeper/bk-icons.woff") format("woff"),
+    url("@/assets/fonts/beekeeper/bk-icons.svg") format("svg");
   font-weight: normal;
   font-style: normal;
   font-display: block;
 }
 
-[class^="bk-"], [class*=" bk-"] {
+[class^="bk-"],
+[class*=" bk-"] {
   /* use !important to prevent issues with browser extensions that change fonts */
-  font-family: 'bk-icons' !important;
+  font-family: "bk-icons" !important;
   speak: none;
   font-style: normal;
   font-weight: normal;

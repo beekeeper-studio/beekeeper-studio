@@ -1,3 +1,4 @@
+@use "../vendor/_shared_imports" as *;
 
 .tabletable {
   padding-bottom: 0;
@@ -20,46 +21,44 @@
         }
         &:hover {
           span.material-icons {
-            color: $theme-primary
+            color: $theme-primary;
           }
         }
       }
     }
 
     .tabulator-table {
-          .tabulator-cell.select-row-col {
-            border-radius: 0;
-            padding-left: 0;
-            padding-right: 0;
-            text-align: center;
-            font-size: 0.8em;
-            // color: $text-lighter;
-            background: $query-editor-bg;
-            color: $text-lighter;
-            border: 0;
-            box-shadow: inset -1px 0px $border-color;
-            .row-handle {
-              display: none;
-              font-size: 0.8rem;
-              line-height: inherit;
-            }
-            &:hover {
-              background: $row-handle-hover;
-              .row-handle {
-                display: inline-block;
-              }
-            }
+      .tabulator-cell.select-row-col {
+        border-radius: 0;
+        padding-left: 0;
+        padding-right: 0;
+        text-align: center;
+        font-size: 0.8em;
+        // color: $text-lighter;
+        background: $query-editor-bg;
+        color: $text-lighter;
+        border: 0;
+        box-shadow: inset -1px 0px $border-color;
+        .row-handle {
+          display: none;
+          font-size: 0.8rem;
+          line-height: inherit;
+        }
+        &:hover {
+          background: $row-handle-hover;
+          .row-handle {
+            display: inline-block;
           }
+        }
+      }
 
-          .tabulator-row.tabulator-selectable.tabulator-selected {
-            .select-row-col {
-              background: $row-handle-selected !important;
-              font-weight: bolder;
-            }
-          }
-
+      .tabulator-row.tabulator-selectable.tabulator-selected {
+        .select-row-col {
+          background: $row-handle-selected !important;
+          font-weight: bolder;
+        }
+      }
     }
-
   }
 
   .statusbar-item.hidden-column-count {

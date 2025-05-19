@@ -1,3 +1,5 @@
+@use "../vendor/_shared_imports" as *;
+
 .import {
   .import-section-wrapper {
     @include small-wrap;
@@ -12,24 +14,24 @@
   }
 
   form {
-    margin-top:2rem;
+    margin-top: 2rem;
     .options-wrapper {
       display: block;
       justify-content: space-between;
-      margin-top: .5rem;
+      margin-top: 0.5rem;
       fieldset {
         margin-top: 1rem;
         padding: 0;
         border: none;
         label {
-          margin-top:0.5rem;
+          margin-top: 0.5rem;
         }
       }
     }
   }
 }
 .import-cta-button-wrapper {
-  margin-top:2rem;
+  margin-top: 2rem;
   display: flex;
   justify-content: space-between;
   .close-tab-btn {
@@ -37,7 +39,7 @@
   }
 }
 
-.import-progress{
+.import-progress {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -55,11 +57,11 @@
     color: $brand-success;
     margin-bottom: 2rem;
     padding: 2rem;
-    background-color: rgba($brand-success, .1);
+    background-color: rgba($brand-success, 0.1);
     border-radius: 9999px;
     &.error {
       color: $brand-danger;
-      background-color: rgba($brand-danger, .1);
+      background-color: rgba($brand-danger, 0.1);
     }
   }
 }

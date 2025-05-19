@@ -5,16 +5,16 @@
 @use "./app/mixins" as *;
 @use "./components/all";
 @use "./vendor.scss";
-@use "./app/_all.scss";
+@use "./app/_all.scss" as app_all;
 
-@use "./themes/dark/variables.scss" as *;
-@use "./themes/dark/theme.scss";
-@use "./themes/light/variables.scss" as *;
-@use "./themes/light/theme.scss";
-@use "./themes/solarized-dark/variables.scss" as *;
-@use "./themes/solarized-dark/theme.scss";
-@use "./themes/solarized-light/variables.scss" as *;
-@use "./themes/solarized-light/theme.scss";
+@use "./themes/dark/variables.scss" as dark_vars;
+@use "./themes/dark/theme.scss" as dark_theme;
+@use "./themes/light/variables.scss" as light_vars;
+@use "./themes/light/theme.scss" as light_theme;
+@use "./themes/solarized-dark/variables.scss" as solarized_dark_vars;
+@use "./themes/solarized-dark/theme.scss" as solarized_dark_theme;
+@use "./themes/solarized-light/variables.scss" as solarized_light_vars;
+@use "./themes/solarized-light/theme.scss" as solarized_light_theme;
 
 @import "@beekeeperstudio/ui-kit/style.css";
 @import "codemirror/lib/codemirror.css";

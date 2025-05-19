@@ -1,3 +1,6 @@
+@use "./_variables" as *;
+@use "./vendor/_shared_imports" as *;
+
 // Responsive Variables
 // ------------------------
 $screen-xs: 600px;
@@ -8,7 +11,11 @@ $gutter: 1rem;
 
 // Wrappers
 // -------------------------
-.form-wrap, .small-wrap, .center-wrap, .big-wrap, .mini-wrap {
+.form-wrap,
+.small-wrap,
+.center-wrap,
+.big-wrap,
+.mini-wrap {
   width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -68,7 +75,7 @@ $gutter: 1rem;
 .row {
   margin: 0;
   flex-wrap: wrap;
-  >.col {
+  > .col {
     display: inline-block;
     flex: 100%;
     > .form-group {
@@ -80,7 +87,7 @@ $gutter: 1rem;
     width: initial !important; // split.js class overlap fix
     margin-left: calc(-1 * $gutter / 2);
     margin-right: calc(-1 * $gutter / 2);
-    >.col {
+    > .col {
       padding-left: calc($gutter / 2);
       padding-right: calc($gutter / 2);
       margin-top: calc($gutter / 2);

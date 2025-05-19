@@ -1,8 +1,11 @@
+@use "./vendor/_shared_imports" as *;
 @use "sass:color";
+@use "./_variables" as *;
+@use "./_mixins" as *;
 
 .flyout-nav {
   .disabled-app-menu {
-    pointer-events:none;
+    pointer-events: none;
     opacity: 0.5;
   }
   ul {
@@ -51,13 +54,13 @@
           left: $gutter-h;
         }
       }
-      input[type='checkbox'] {
+      input[type="checkbox"] {
         display: none;
       }
-      input[type='checkbox']:checked+.label {
+      input[type="checkbox"]:checked + .label {
         &:before {
-          font-family: 'Material Icons';
-          content: '\e5ca';
+          font-family: "Material Icons";
+          content: "\e5ca";
           position: absolute;
           top: 0;
           left: $gutter-h * 0.5;
@@ -71,8 +74,8 @@
     &.has-children > a {
       margin-right: 2.5rem;
       &:after {
-        font-family: 'Material Icons';
-        content: '\e315';
+        font-family: "Material Icons";
+        content: "\e315";
         text-align: right;
         position: absolute;
         right: 0;
@@ -106,7 +109,6 @@
     }
   }
 
-
   // First Level Menu
   // ---------------------------------
   > .menu-bar {
@@ -122,7 +124,6 @@
     min-width: 0;
     border-radius: 0;
     .top-menu-item {
-
       > a {
         > .label {
           display: inline-flex;

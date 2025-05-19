@@ -1,3 +1,4 @@
+@use "../vendor/_shared_imports" as *;
 
 .table-builder {
   display: flex;
@@ -53,15 +54,13 @@
 // Tabulator Styling
 // -----------------------------
 .table-builder {
-
-  $row-height:             38px;
-  $cell-font-size:         13px;
-  $cell-padding:           0.8rem;
-  $row-gutter:             3px;
-  $btn-fab-size:           28px;
+  $row-height: 38px;
+  $cell-font-size: 13px;
+  $cell-padding: 0.8rem;
+  $row-gutter: 3px;
+  $btn-fab-size: 28px;
 
   .table-builder-wrap {
-
     // Schema Header
     .schema-header {
       .btn-fab {
@@ -91,7 +90,7 @@
     .tabulator-row {
       margin: $row-gutter 0;
       &.tabulator-row-even {
-        background: rgba($theme-base, 0.05)!important;
+        background: rgba($theme-base, 0.05) !important;
         --row-bg-color: #{rgba($theme-base, 0.05)};
       }
       .tabulator-cell {
@@ -100,24 +99,26 @@
         line-height: $row-height;
         padding: 0 $cell-padding;
         font-size: $cell-font-size;
-        pre, input:not([type="checkbox"]) {
+        pre,
+        input:not([type="checkbox"]) {
           font-size: $cell-font-size;
           line-height: $row-height;
           min-height: $row-height;
         }
         &[type="search"] {
           line-height: $row-height;
-          padding-bottom: 1px!important;
+          padding-bottom: 1px !important;
         }
         .nullible-input {
-          padding-right: 18px!important;
+          padding-right: 18px !important;
         }
         &.tabulator-editing {
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height;
-          padding: 0!important;
-          pre, input:not([type="checkbox"]) {
+          padding: 0 !important;
+          pre,
+          input:not([type="checkbox"]) {
             padding: 0 $cell-padding;
           }
         }
@@ -139,7 +140,8 @@
           height: $row-height;
         }
 
-        input, textarea {
+        input,
+        textarea {
           height: $row-height;
         }
       }

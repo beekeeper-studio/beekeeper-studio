@@ -1,6 +1,5 @@
 @use "sass:color";
-@use "../app/_variables" as *;
-@use "../app/_mixins" as *;
+@use "../app/vendor/_shared_imports" as *;
 // Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
 
 .vue-simple-context-menu {

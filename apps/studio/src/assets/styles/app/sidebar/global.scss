@@ -1,3 +1,5 @@
+@use "../vendor/_shared_imports" as *;
+
 .interface-wrap {
   .global-items {
     display: flex;
@@ -39,11 +41,10 @@
           &:hover {
             background: transparent;
           }
-
         }
       }
     }
-    
+
     // Items with an Active state
     .nav-item.selectable {
       &:before {
@@ -55,7 +56,7 @@
           color: rgba($theme-base, 0.38);
         }
         &:before {
-          content: '';
+          content: "";
           position: absolute;
           left: 0;
           width: 1px;
@@ -66,12 +67,13 @@
           opacity: 1;
         }
       }
-      &.active, &.active:hover {
+      &.active,
+      &.active:hover {
         .avatar {
           color: $text-dark;
         }
         &:before {
-          content: '';
+          content: "";
           position: absolute;
           left: 0;
           width: 1px;
@@ -90,7 +92,7 @@
       }
     }
     .nav-item {
-      $nav-item-size:     34px;
+      $nav-item-size: 34px;
 
       display: flex;
       align-items: center;
@@ -103,7 +105,7 @@
       &.active {
         color: $text-dark;
       }
-      > span {  
+      > span {
         height: $nav-item-size;
         width: $nav-item-size;
         border-radius: $nav-item-size;
@@ -124,7 +126,7 @@
     }
     .add-workspace-button {
       .v--modal-box {
-        height: auto!important;
+        height: auto !important;
       }
       .nav-item {
         .avatar {
@@ -151,7 +153,7 @@
       font-size: 18px;
     }
     .badge {
-      $badge-size:     14px;
+      $badge-size: 14px;
 
       position: absolute;
       display: flex;

@@ -1,0 +1,5 @@
+@use "../app/variables" as *;
+@use "../app/mixins" as *;
+
+// This file provides shared imports and variables for all component files
+// It's imported by _all.scss to avoid repeating these imports in each component

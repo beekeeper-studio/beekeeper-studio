@@ -1,3 +1,4 @@
+@use "../vendor/_shared_imports" as *;
 @use "sass:color";
 .backup-stepper-wrapper {
   max-height: 90vh;
@@ -79,7 +80,6 @@
           }
         }
       }
-
     }
 
     .form-group {
@@ -173,7 +173,6 @@
   }
 }
 
-
 .not-supported {
   height: 100%;
   flex-direction: column;
@@ -212,11 +211,9 @@
         width: 2rem;
         height: 2rem;
         color: $theme-bg;
-        font-size: 20px
+        font-size: 20px;
       }
     }
-
-
 
     .primary-action {
       margin-top: 1rem;

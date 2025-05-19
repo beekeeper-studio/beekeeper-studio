@@ -1,7 +1,12 @@
+@use "./variables.scss" as variables;
 @use "sass:color";
 @use "../solarized-light/theme.scss";
-@use "../_variables" as *;
+@use "../../app/_variables.scss" as *;
 
 .tabulator-table .tabulator-row .tabulator-cell.edited {
   color: $theme-bg;
+}
+
+.BksTextEditor {
+  --bks-text-editor-string-fg-color: #{$brand-success};
 }

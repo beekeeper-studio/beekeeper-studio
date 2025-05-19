@@ -1,53 +1,52 @@
 @use "sass:color";
-$material-icons-font-path: 'material-icons/iconfont/';
 
-$theme-bg:               #181818;
-$theme-base:             #fff;
-$theme-primary:          #fad83b;
-$theme-secondary:        #4ad0ff;
+$theme-bg: #181818;
+$theme-base: #fff;
+$theme-primary: #fad83b;
+$theme-secondary: #4ad0ff;
 
 // Colors
 // -----------------------------
-$text-dark:                 rgba($theme-base, 0.87);
-$text:                      rgba($theme-base, 0.67);
-$text-light:                rgba($theme-base, 0.57);
-$text-lighter:              rgba($theme-base, 0.37);
-$text-hint:                 rgba($theme-base, 0.37);
-$text-disabled:             rgba($theme-base, 0.37);
+$text-dark: rgba($theme-base, 0.87);
+$text: rgba($theme-base, 0.67);
+$text-light: rgba($theme-base, 0.57);
+$text-lighter: rgba($theme-base, 0.37);
+$text-hint: rgba($theme-base, 0.37);
+$text-disabled: rgba($theme-base, 0.37);
 
-$brand-info:                $theme-secondary;
-$brand-success:             #15db95;
-$brand-warning:             #ff8d21;
-$brand-danger:              #ff5d59;
-$brand-default:             rgba($theme-base, 0.57);
-$brand-purple:              #9858ff;
-$brand-pink:                #ff78f7;
-$brand-primary:             $theme-primary;
-$brand-secondary:           $theme-secondary;
+$brand-info: $theme-secondary;
+$brand-success: #15db95;
+$brand-warning: #ff8d21;
+$brand-danger: #ff5d59;
+$brand-default: rgba($theme-base, 0.57);
+$brand-purple: #9858ff;
+$brand-pink: #ff78f7;
+$brand-primary: $theme-primary;
+$brand-secondary: $theme-secondary;
 
 // App
-$border-color:              rgba($theme-base, 0.1);
-$link-color:                $text-dark;
-$placeholder:               $text-hint;
-$selection:                 rgba($theme-primary, 0.2);
-$input-highlight:           rgba($theme-base, 0.27);
+$border-color: rgba($theme-base, 0.1);
+$link-color: $text-dark;
+$placeholder: $text-hint;
+$selection: rgba($theme-primary, 0.2);
+$input-highlight: rgba($theme-base, 0.27);
 
-$db-select-text:            white;
-$query-editor-bg:           color.adjust($theme-bg, $lightness: -6%);
+$db-select-text: white;
+$query-editor-bg: color.adjust($theme-bg, $lightness: -6%);
 
-$row-handle-selected:       color.adjust($query-editor-bg, $lightness: 5%);
-$row-handle-hover:          color.adjust($query-editor-bg, $lightness: 5%);
+$row-handle-selected: color.adjust($query-editor-bg, $lightness: 5%);
+$row-handle-hover: color.adjust($query-editor-bg, $lightness: 5%);
 
-$titlebar-bg:               transparent;
-$global-sidebar-bg:         transparent;
-$sidebar-bg:                color.adjust($theme-bg, $lightness: -3%);
-$sidebar-heading-bg:        $theme-bg;
-$tabs-bg:                   transparent;
-$statusbar-bg:              rgba($theme-base, 0.1);
+$titlebar-bg: transparent;
+$global-sidebar-bg: transparent;
+$sidebar-bg: color.adjust($theme-bg, $lightness: -3%);
+$sidebar-heading-bg: $theme-bg;
+$tabs-bg: transparent;
+$statusbar-bg: rgba($theme-base, 0.1);
 // $statusbar-bg:             rgba($theme-primary, 0.4);
 
-$statusbar-text:            black;
-$statusbar-text-default:    white;
+$statusbar-text: black;
+$statusbar-text-default: white;
 
 $row-handle: rgb(22 22 22);
 

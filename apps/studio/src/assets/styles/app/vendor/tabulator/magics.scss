@@ -1,4 +1,4 @@
-
+@use "../_shared_imports" as *;
 
 .tabulator-row {
   .tabulator-cell {
@@ -20,11 +20,10 @@
     .bks-progress-container {
       padding: 0;
       .bks-progress {
-        height: 75%!important;
+        height: 75% !important;
         vertical-align: middle;
-        background-color: $brand-success!important;
+        background-color: $brand-success !important;
       }
-
     }
   }
 }

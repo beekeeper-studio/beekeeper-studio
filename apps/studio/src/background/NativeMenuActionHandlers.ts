@@ -233,37 +233,16 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     console.log('manageCustomThemes called');
 
     if (win) {
-      // First try the standard IPC approach
       win.webContents.send(AppEvent.showThemeManager);
 
-      // As a fallback, try to execute JavaScript directly
       win.webContents.executeJavaScript(`
-        console.log('Executing direct JavaScript to show theme manager');
-        
-        // Try multiple approaches to ensure the modal is shown
-        
-        // 1. Try the global method
         if (typeof window.showThemeManagerModal === 'function') {
+          console.log('Calling showThemeManagerModal directly');
           window.showThemeManagerModal();
+        } else {
+          console.log('showThemeManagerModal function not found');
         }
-        
-        // 2. Try to emit to Vue root
-        if (window.$root && typeof window.$root.$emit === 'function') {
-          window.$root.$emit('show-theme-manager');
-        }
-        
-        // 3. Dispatch a DOM event
-        window.dispatchEvent(new CustomEvent('${AppEvent.showThemeManager}'));
       `).catch(err => console.error('Error executing JavaScript:', err));
-    } else {
-      console.log('No window provided');
-      // Try to get all active windows
-      const windows = getActiveWindows();
-      if (windows && windows.length > 0) {
-        windows.forEach((window) => {
-          window.webContents.send(AppEvent.showThemeManager);
-        });
-      }
     }
   }
 }

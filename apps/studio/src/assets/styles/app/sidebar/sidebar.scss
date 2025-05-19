@@ -1,11 +1,12 @@
+@use "../vendor/_shared_imports" as *;
 .sidebar {
   flex: 0 1 100%;
   max-height: 100%;
   min-width: 300px;
   overflow: hidden;
   &.hide {
-    flex-basis: 44px!important;
-    min-width: 44px!important;
+    flex-basis: 44px !important;
+    min-width: 44px !important;
   }
   .sidebar-wrap {
     flex: 1 1 100%;
@@ -80,7 +81,8 @@
     }
 
     #tab-tables {
-      .table-list, .list-group {
+      .table-list,
+      .list-group {
         padding-left: 0.3rem;
       }
     }
@@ -168,11 +170,13 @@
         cursor: pointer;
         --trigger-effect: none;
         &:before {
-          display: none!important;
+          display: none !important;
         }
-        &:hover, &:focus {
+        &:hover,
+        &:focus {
           box-shadow: none;
-          .material-icons, .material-icons-outlined {
+          .material-icons,
+          .material-icons-outlined {
             color: $text-dark;
           }
         }
@@ -190,7 +194,6 @@
               color: $theme-primary;
             }
           }
-
         }
       }
       x-menu {
@@ -207,7 +210,8 @@
           display: none;
         }
       }
-      .material-icons, .material-icons-outlined {
+      .material-icons,
+      .material-icons-outlined {
         font-size: 14px;
         line-height: 26px;
         width: 14px;
@@ -246,7 +250,7 @@
 // List Group
 // ------------------------------
 .list-heading {
-  $list-heading-height:    1.8rem;
+  $list-heading-height: 1.8rem;
 
   display: flex;
   align-items: center;
@@ -288,7 +292,8 @@
     & .create-table {
       visibility: visible;
     }
-    .material-icons, .material-icons-outlined {
+    .material-icons,
+    .material-icons-outlined {
       font-size: 16px;
       color: $text-light;
       &:hover {
@@ -306,7 +311,7 @@
   height: 0;
   overflow: auto;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch!important;
+  -webkit-overflow-scrolling: touch !important;
   padding-left: $gutter-w - 0.4rem;
   padding-bottom: 0.6rem;
   &.list-body-empty {
@@ -319,7 +324,7 @@
   padding: 0;
   flex: 1 1 auto;
   height: 100%;
-  &:hover{
+  &:hover {
     .list-heading .actions > * {
       visibility: visible;
     }
@@ -345,7 +350,8 @@
   .btn-wrap {
     padding: $gutter-w;
   }
-  a, .sub-item {
+  a,
+  .sub-item {
     display: flex;
     align-items: center;
     flex: 0 1 100%;
@@ -366,7 +372,8 @@
     width: -webkit-fill-available;
     border-radius: 4px;
 
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       background: rgba($theme-base, 0.035);
       .actions {
         display: flex;
@@ -435,7 +442,7 @@
             color: $theme-primary;
           }
           i.material-icons {
-            display:none;
+            display: none;
           }
 
           &:hover {
@@ -484,12 +491,12 @@
       padding: 0;
     }
     &:before {
-      content: '';
+      content: "";
       position: absolute;
       top: 0;
       bottom: 0;
       left: 9px;
-      border-left: 1px solid rgba($theme-base,0.08);
+      border-left: 1px solid rgba($theme-base, 0.08);
     }
     .title {
       flex-grow: 1;
@@ -528,7 +535,8 @@
       background: transparent;
     }
     .dropdown-icon {
-      &:hover, &:focus {
+      &:hover,
+      &:focus {
         color: $text-dark;
       }
     }
@@ -557,7 +565,6 @@
       display: flex;
     }
   }
-
 }
 
 // Folder Group
@@ -571,7 +578,7 @@
       border-radius: 4px;
       color: rgba($theme-base, 0.77);
       .btn-fab {
-        display: inline-flex!important;
+        display: inline-flex !important;
         margin-right: $gutter-h * 0.5;
       }
       &:hover {
@@ -595,12 +602,12 @@
     .list-item {
       padding-left: $gutter-h * 0.5;
       &:before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         bottom: 0;
         left: 9px;
-        border-left: 1px solid rgba($theme-base,0.08);
+        border-left: 1px solid rgba($theme-base, 0.08);
       }
 
       .sub-items {
@@ -616,5 +623,4 @@
       }
     }
   }
-
 }

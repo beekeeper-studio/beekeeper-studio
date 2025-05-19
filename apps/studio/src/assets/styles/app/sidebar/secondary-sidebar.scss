@@ -1,3 +1,5 @@
+@use "../vendor/_shared_imports" as *;
+
 .secondary-sidebar {
   display: flex;
   flex-direction: column;

@@ -4,8 +4,8 @@ $font-family: "Roboto";
 $font-family-mono: "Source Code Pro";
 $base-font-size: 0.875rem; // ~14px
 
-@use "material-icons/iconfont/material-icons.scss";
-@use "./vendor/custom-icons.scss";
+@import "material-icons/iconfont/material-icons.scss";
+@import "./vendor/custom-icons.scss";
 
 *,
 *:after,
@@ -14,7 +14,8 @@ $base-font-size: 0.875rem; // ~14px
 }
 :root {
   font-size: $base-font-size;
-  font-family: $font-family, Helvetica, Arial, sans-serif;
+  font-family: $font-family, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-weight: normal;
   -webkit-user-select: none;
@@ -22,7 +23,51 @@ $base-font-size: 0.875rem; // ~14px
 }
 body {
   font-size: 1rem;
+  font-family: $font-family, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif;
 }
+
+// Force material icons to render properly
 .material-icons {
   transform: rotate(0.03deg);
+}
+
+/* Force-apply theme styles to critical UI elements */
+.beekeeper-studio-wrapper {
+  background-color: var(--theme-bg, #252525) !important;
+  color: var(--theme-base, #ffffff) !important;
+}
+
+.sidebar-wrapper {
+  background-color: var(--theme-bg, #252525) !important;
+}
+
+/* Theme-specific overrides for common components */
+.theme-dark,
+.theme-light,
+[class^="theme-"] {
+  background-color: var(--theme-bg) !important;
+  color: var(--theme-base) !important;
+
+  .btn-primary {
+    background-color: var(--theme-primary) !important;
+    color: #fff !important;
+  }
+
+  .sidebar {
+    background-color: var(--sidebar-bg, var(--theme-bg)) !important;
+    color: var(--sidebar-fg, var(--theme-base)) !important;
+  }
+
+  .list-item {
+    border-color: var(--border-color, rgba(255, 255, 255, 0.1)) !important;
+  }
+
+  input,
+  select,
+  textarea {
+    background-color: var(--editor-bg, var(--theme-bg)) !important;
+    color: var(--editor-fg, var(--theme-base)) !important;
+    border-color: var(--border-color, rgba(255, 255, 255, 0.1)) !important;
+  }
 }

@@ -1,6 +1,7 @@
 @use "sass:color";
 @use "codemirror/theme/solarized.css";
-@use "../_variables" as *;
+@use "./variables.scss" as variables;
+@use "../../app/_variables.scss" as *;
 
 // Global
 $badge-bg: rgba($theme-base, 0.1);
@@ -10,13 +11,13 @@ $sidebar-list-icons: $theme-primary;
 
 // Editor
 $tabs-heading: rgba($theme-base, 0.08);
-$tab-link: $sbase4;
+$tab-link: variables.$sbase4;
 $codemirror-hint-bg: color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
 $row-highlight: color.adjust($query-editor-bg, $lightness: -3%);
-$row-add: $insertedGreen;
-$row-delete: $removedRed;
+$row-add: variables.$insertedGreen;
+$row-delete: variables.$removedRed;
 $row-error: #f9b8b7;
 
 $cell-edited: #eddfa1;
@@ -32,9 +33,9 @@ $editor-statusbar: $theme-base;
 
 // Base Styles
 // -----------------------------------------
-& {
-  background: $theme-bg;
-  color: $text;
+body {
+  background: variables.$theme-bg;
+  color: variables.$text;
 }
 select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>")
@@ -88,7 +89,7 @@ x-buttons {
 }
 .list-group {
   .list-item-btn {
-    color: $sbase01;
+    color: variables.$sbase01;
     .actions {
       i {
         color: $text-light;
@@ -238,7 +239,7 @@ x-buttons {
     }
     .tab-close {
       .material-icons {
-        color: $sbase1;
+        color: variables.$sbase1;
         &.close {
           color: $text-dark;
         }
@@ -534,19 +535,19 @@ x-switch {
 
 // Default Statusbar -- Invert text color
 .statusbar {
-  color: $sbase02;
+  color: variables.$sbase02;
 
   .statusbar-item {
     &.error {
-      color: $sbase02;
+      color: variables.$sbase02;
       .material-icons {
-        color: $sbase02;
+        color: variables.$sbase02;
       }
     }
   }
 
   .connection-button > .btn {
-    color: $sbase4;
+    color: variables.$sbase4;
     .connection-type {
       color: inherit;
     }
@@ -554,24 +555,24 @@ x-switch {
 
   .btn {
     &.btn-flat {
-      color: $sbase03;
+      color: variables.$sbase03;
     }
   }
 
   .tabulator-paginator > div {
     input[type="number"] {
-      color: $sbase03 !important;
-      border-color: rgba($sbase03, 0.2);
+      color: variables.$sbase03 !important;
+      border-color: rgba(variables.$sbase03, 0.2);
       &:hover,
       &:focus {
-        border-color: rgba($sbase03, 0.25);
+        border-color: rgba(variables.$sbase03, 0.25);
       }
     }
     a {
       .material-icons {
-        color: rgba($sbase03, 0.68);
+        color: rgba(variables.$sbase03, 0.68);
         &:hover {
-          color: $sbase03;
+          color: variables.$sbase03;
         }
       }
     }
@@ -691,6 +692,6 @@ x-switch {
 
 .global-status-bar {
   .connection-button:not(.default) {
-    color: $sbase4;
+    color: variables.$sbase4;
   }
 }

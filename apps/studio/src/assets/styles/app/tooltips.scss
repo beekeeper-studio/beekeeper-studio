@@ -1,3 +1,5 @@
+@use "./vendor/_shared_imports" as *;
+
 .bks-tooltip-wrapper {
   position: relative;
 
@@ -29,7 +31,8 @@
     font-weight: normal;
     font-size: 0.9rem;
 
-    &, a {
+    &,
+    a {
       display: inline;
       color: #eee;
       line-height: 1.35rem;
@@ -42,11 +45,11 @@
     // acting as a "bridge" so the tooltip stays visible when the cursor is
     // in between the target element and the tooltip
     &::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        width: 100%;
-        height: $gap;
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: $gap;
     }
 
     &.bks-tooltip-top-center {

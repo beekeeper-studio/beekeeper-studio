@@ -1,6 +1,5 @@
 @use "sass:color";
-@use "../app/_variables" as *;
-@use "../app/_mixins" as *;
+@use "../app/vendor/_shared_imports" as *;
 
 .quicksearch {
   $input-height: 2.6rem;

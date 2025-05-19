@@ -1,15 +1,16 @@
+@use "./variables.scss" as variables;
+@use "../../app/_variables.scss" as *;
 @use "sass:color";
 
 $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
 
-& {
+body {
   background: $theme-bg;
   color: $text;
 }
 
 // Default Statusbar -- Invert text color
 .statusbar {
-
   &.default {
     color: $text;
     .statusbar-item {
@@ -59,7 +60,6 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
           }
         }
       }
-
     }
 
     .select-wrap {
@@ -69,7 +69,8 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
       }
       select {
         color: $statusbar-text-default;
-        background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255,0.87'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+        background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255,0.87'><polygon points='0,0 8,0 4,4'/></svg>")
+          no-repeat scroll 98% 60% transparent !important;
       }
     }
 
@@ -78,10 +79,12 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
       background: $statusbar-text-default;
       > .btn {
         color: $statusbar-text;
-        &:hover, &:hover[expanded] {
+        &:hover,
+        &:hover[expanded] {
           background: rgba($statusbar-text-default, 0.25);
         }
-        &[menu], &[menu]:hover {
+        &[menu],
+        &[menu]:hover {
           border-left: 1px solid rgba($statusbar-text, 0.35);
         }
         .material-icons {
@@ -101,9 +104,10 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
     // New Pagination
     .tabulator-paginator > div {
       input[type="number"] {
-        color: $statusbar-text-default!important;
+        color: $statusbar-text-default !important;
         border-color: rgba($statusbar-text-default, 0.2);
-        &:hover, &:focus {
+        &:hover,
+        &:focus {
           border-color: rgba($statusbar-text-default, 0.25);
         }
       }
@@ -136,9 +140,15 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
 }
 
 .BksTextEditor-hints {
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
+  --bks-text-editor-context-menu-bg-color: #{color.adjust(
+      $theme-bg,
+      $lightness: 5%
+    )};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-item-bg-color-active: #{color.adjust($theme-secondary, $lightness: -25%)};
+  --bks-text-editor-context-menu-item-bg-color-active: #{color.adjust(
+      $theme-secondary,
+      $lightness: -25%
+    )};
   --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
 }

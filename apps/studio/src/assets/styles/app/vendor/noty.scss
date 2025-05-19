@@ -1,4 +1,5 @@
 @use "sass:color";
+@use "./_shared_imports" as *;
 
 // Note: Mint is the default Noty theme
 // '~noty/themes/mint.scss';
@@ -26,7 +27,7 @@
   right: $gutter-h;
 }
 .noty_progressbar {
-  display: none!important;
+  display: none !important;
 }
 .noty_close_button {
   top: $gutter-h;

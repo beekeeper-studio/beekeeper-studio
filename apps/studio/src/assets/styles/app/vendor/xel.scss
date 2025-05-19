@@ -1,4 +1,5 @@
 @use "sass:color";
+@use "./_shared_imports" as *;
 /*
  * @copyright
  *   © 2016-2017 Jarosław Foksa
@@ -6,7 +7,7 @@
  *   Theme based on Material Design guidelines.
  */
 
- body {
+body {
   // width: 100%;
   // height: 100%;
   // margin: 0;
@@ -23,12 +24,18 @@
   --text-color: $text;
 
   --transition-fn1: cubic-bezier(0.4, 0, 0.2, 1);
-  --elevation-1: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
-  --elevation-1a: 0px 2px 1px -1px rgba(0, 0, 0, 0.1), 0px 1px 1px 0px rgba(0, 0, 0, 0.05), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
-  --elevation-2: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
-  --elevation-5: 0px 3px 5px -1px rgba(0, 0, 0, 0.2), 0px 5px 8px 0px rgba(0, 0, 0, 0.14), 0px 1px 14px 0px rgba(0, 0, 0, 0.12);
-  --elevation-16: 0px 8px 10px -5px rgba(0, 0, 0, 0.2), 0px 16px 24px 2px rgba(0, 0, 0, 0.14), 0px 6px 30px 5px rgba(0, 0, 0, 0.12);
-  --elevation-24: 0px 11px 15px -7px rgba(0, 0, 0, 0.2), 0px 24px 38px 3px rgba(0, 0, 0, 0.14), 0px 9px 46px 8px rgba(0, 0, 0, 0.12);
+  --elevation-1: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  --elevation-1a: 0px 2px 1px -1px rgba(0, 0, 0, 0.1),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.05), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  --elevation-2: 0px 3px 1px -2px rgba(0, 0, 0, 0.2),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+  --elevation-5: 0px 3px 5px -1px rgba(0, 0, 0, 0.2),
+    0px 5px 8px 0px rgba(0, 0, 0, 0.14), 0px 1px 14px 0px rgba(0, 0, 0, 0.12);
+  --elevation-16: 0px 8px 10px -5px rgba(0, 0, 0, 0.2),
+    0px 16px 24px 2px rgba(0, 0, 0, 0.14), 0px 6px 30px 5px rgba(0, 0, 0, 0.12);
+  --elevation-24: 0px 11px 15px -7px rgba(0, 0, 0, 0.2),
+    0px 24px 38px 3px rgba(0, 0, 0, 0.14), 0px 9px 46px 8px rgba(0, 0, 0, 0.12);
 }
 // h2 {
 //   box-sizing: border-box;
@@ -281,9 +288,9 @@ x-card {
  */
 
 x-accordion {
-  --arrow-color:rgba(0, 0, 0, 0.38);
-  --focused-arrow-background:rgba(0, 0, 0, 0.08);
-  --trigger-effect:ripple;
+  --arrow-color: rgba(0, 0, 0, 0.38);
+  --focused-arrow-background: rgba(0, 0, 0, 0.08);
+  --trigger-effect: ripple;
 
   > {
     header {
@@ -351,12 +358,12 @@ x-stepper {
   height: 100%;
   background: white;
   color: rgba(0, 0, 0, 0.8);
-  --button-border-left:1px solid rgba(0, 0, 0, 0.1);
-  --pressed-button-background:rgba(0, 0, 0, 0.4);
-  --increment-arrow-width:15px;
-  --increment-arrow-height:15px;
-  --decrement-arrow-width:15px;
-  --decrement-arrow-height:15px;
+  --button-border-left: 1px solid rgba(0, 0, 0, 0.1);
+  --pressed-button-background: rgba(0, 0, 0, 0.4);
+  --increment-arrow-width: 15px;
+  --increment-arrow-height: 15px;
+  --decrement-arrow-width: 15px;
+  --decrement-arrow-height: 15px;
 }
 
 /*****************************************************************************************************************/
@@ -389,8 +396,7 @@ x-button {
   border-radius: $btn-border-radius;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s ease-in-out,
-              color 0.15s ease-in-out,;
+  transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
   --trigger-effect: ripple;
   &:focus::before {
     position: absolute;
@@ -421,7 +427,8 @@ x-button {
     background: $theme-primary;
     color: rgba(black, 0.87);
     transition: background 0.15s ease-in-out;
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       // background: rgba($theme-base, 0.44);
       background: color.adjust($theme-primary, $lightness: 8%);
       color: rgba(black, 0.87);
@@ -458,7 +465,7 @@ x-buttons {
     margin: 0;
     &[menu] {
       border-left: 1px solid rgba($theme-bg, 0.35);
-      padding: 0!important;
+      padding: 0 !important;
       min-width: 0;
       &:hover {
         border-left: 1px solid rgba($theme-bg, 0.35);
@@ -471,7 +478,7 @@ x-buttons {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
     }
-    &:last-of-type{
+    &:last-of-type {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
     }
@@ -507,7 +514,8 @@ x-button {
       background: transparent;
       border-radius: 40px;
     }
-    &[expanded], &[toggled] {
+    &[expanded],
+    &[toggled] {
       color: var(--secondary-color);
     }
     &:focus::before {
@@ -579,19 +587,21 @@ x-tab {
   max-width: 264px;
   min-height: 52px;
   color: rgba(255, 255, 255, 0.7);
-  --trigger-effect:ripple;
-  --menu-position:over;
+  --trigger-effect: ripple;
+  --menu-position: over;
   --arrow-width: 10px;
   --arrow-height: 6px;
-  --arrow-margin:0 0 1px 5px;
-  --arrow-d:path("M 0.736 20.365 L 49.999 87.922 L 99.264 20.365 Z");
+  --arrow-margin: 0 0 1px 5px;
+  --arrow-d: path("M 0.736 20.365 L 49.999 87.922 L 99.264 20.365 Z");
 
-  &[selected], &:focus {
+  &[selected],
+  &:focus {
     color: white;
   }
 
   > {
-    x-icon, x-box > x-icon {
+    x-icon,
+    x-box > x-icon {
       color: inherit;
       width: 24px;
       min-width: 24px;
@@ -659,7 +669,7 @@ x-tabs {
 
       &[selected] {
         color: var(--primary-color);
-        --selection-indicator-background:var(--primary-color);
+        --selection-indicator-background: var(--primary-color);
       }
     }
   }
@@ -673,10 +683,11 @@ x-tabs {
       flex: 0;
       flex-flow: column;
       color: rgba(255, 255, 255, 0.75);
-      --ripple-type:bounded;
-      --selection-indicator-height:0;
+      --ripple-type: bounded;
+      --selection-indicator-height: 0;
 
-      &:focus, &[selected] {
+      &:focus,
+      &[selected] {
         color: white;
       }
     }
@@ -710,13 +721,15 @@ x-doctabs {
   background: var(--primary-color);
   color: white;
   height: 46px;
-  --open-button-path-d:path("M 80 11 L 20 12 C 15 12 12 15 12 20 L 12 80 C 12 85 15 88 20 88 L 80 88 C 85 88 88 85 88 80 L 88 20 C 88 15 85 12 80 12 Z M 71 54 L 54 54 L 54 71 L 46 71 L 46 54 L 29 54 L 29 46 L 46 46 L 46 29 L 54 29 L 54 46 L 71 46 L 71 54 Z");
+  --open-button-path-d: path(
+    "M 80 11 L 20 12 C 15 12 12 15 12 20 L 12 80 C 12 85 15 88 20 88 L 80 88 C 85 88 88 85 88 80 L 88 20 C 88 15 85 12 80 12 Z M 71 54 L 54 54 L 54 71 L 46 71 L 46 54 L 29 54 L 29 46 L 46 46 L 46 29 L 54 29 L 54 46 L 71 46 L 71 54 Z"
+  );
 }
 
 x-doctab {
   font-size: 14px;
   font-weight: 500;
-  --ripple-type:bounded;
+  --ripple-type: bounded;
 
   img {
     margin-right: 8px;
@@ -742,7 +755,8 @@ x-doctab {
     opacity: 0.75;
   }
 
-  &[selected] > *, &:focus > * {
+  &[selected] > *,
+  &:focus > * {
     opacity: 1;
   }
 
@@ -780,7 +794,8 @@ x-menu {
     background: transparent;
     border-top: 1px solid $border-color;
     border: 0;
-    + hr, &:last-child {
+    + hr,
+    &:last-child {
       display: none;
     }
   }
@@ -799,7 +814,8 @@ x-menuitem {
   color: $text-dark;
   cursor: pointer;
   // --trigger-effect: ripple;
-  &:focus, &[expanded] {
+  &:focus,
+  &[expanded] {
     background: rgba($theme-base, 0.05);
   }
   img {
@@ -810,14 +826,14 @@ x-menuitem {
     opacity: 0.6;
   }
   .material-icons {
-    height: 24px!important;
-    line-height: 24px!important;
+    height: 24px !important;
+    line-height: 24px !important;
     width: 24px;
     opacity: 0.6;
-    margin-right: $gutter-h!important;
+    margin-right: $gutter-h !important;
     &.menu-icon {
       margin-left: auto;
-      margin-right: 0!important;
+      margin-right: 0 !important;
       opacity: 0.5;
     }
   }
@@ -839,7 +855,10 @@ x-menuitem {
     margin-left: auto;
     opacity: 0.5;
   }
-  img + x-label, x-swatch + x-label, x-icon + x-label, x-label + x-shortcut {
+  img + x-label,
+  x-swatch + x-label,
+  x-icon + x-label,
+  x-label + x-shortcut {
     margin-left: 12px;
   }
   &[togglable] {
@@ -865,7 +884,8 @@ x-menubar {
     padding: 0 $gutter-w;
     height: 100%;
     min-height: 0;
-    &:focus, &[expanded] {
+    &:focus,
+    &[expanded] {
       color: $text-dark;
     }
   }
@@ -885,7 +905,7 @@ x-popover {
   font-size: 15px;
   font-weight: 400;
   text-transform: none;
-  --open-transition:100 transform var(--transition-fn1);
+  --open-transition: 100 transform var(--transition-fn1);
 
   > main {
     width: 100%;
@@ -960,7 +980,7 @@ x-checkbox {
 }
 @media (pointer: coarse) {
   x-checkbox {
-    --ripple-type:unbounded;
+    --ripple-type: unbounded;
   }
 }
 
@@ -975,7 +995,7 @@ x-radio {
   height: 18px;
   color: var(--primary-color);
   border: 3px solid currentColor;
-  --dot-color:currentColor;
+  --dot-color: currentColor;
 
   &[disabled] {
     color: #525252;
@@ -1018,19 +1038,19 @@ x-switch {
   transition: filter 0.2s var(--transition-fn1);
   cursor: pointer;
   filter: saturate(0%);
-  --ripple-type:none;
+  --ripple-type: none;
   &[toggled] {
     filter: none;
   }
   &[skin="big"] {
     width: 40px;
-    --thumb-size:22px;
-    --track-height:80%;
+    --thumb-size: 22px;
+    --track-height: 80%;
   }
 }
 @media (pointer: coarse) {
   x-switch {
-    --ripple-type:unbounded;
+    --ripple-type: unbounded;
   }
 }
 
@@ -1053,7 +1073,9 @@ x-select {
   --arrow-min-width: 10px;
   --arrow-height: 6px;
   --arrow-margin: 0 3px 0 15px;
-  --arrow-d:path("M 24.85 63.241 L 51.609 98.098 L 78.367 63.241 Z M 78.367 35.581 L 51.609 0.724 L 24.85 35.581 Z");
+  --arrow-d: path(
+    "M 24.85 63.241 L 51.609 98.098 L 78.367 63.241 Z M 78.367 35.581 L 51.609 0.724 L 24.85 35.581 Z"
+  );
 
   &:focus {
     border-bottom-color: var(--primary-color);
@@ -1083,16 +1105,16 @@ x-input {
   border: 1px solid #c1c1c1;
   outline: none;
   font-size: 13px;
-  --selection-color:white;
-  --selection-background:var(--primary-color);
-  --inner-padding:0px 7px;
+  --selection-color: white;
+  --selection-background: var(--primary-color);
+  --inner-padding: 0px 7px;
 
   &[readonly] {
     color: rgba(0, 0, 0, 0.75);
   }
 
   &[error] {
-    --selection-background:#d50000;
+    --selection-background: #d50000;
 
     &::before {
       top: 37px;
@@ -1173,7 +1195,7 @@ x-input {
     border-left: none;
     border-right: none;
     border-top: none;
-    --inner-padding:0;
+    --inner-padding: 0;
 
     + x-input[skin="flat"] {
       margin-top: 28px;
@@ -1206,7 +1228,8 @@ x-input {
       transition-timing-function: var(--transition-fn1);
     }
 
-    &:not([empty]) > x-label, &:focus > x-label {
+    &:not([empty]) > x-label,
+    &:focus > x-label {
       top: calc(50% - 18px);
       color: var(--primary-color);
       font-size: 12px;
@@ -1214,7 +1237,8 @@ x-input {
     }
 
     &[error] {
-      &:not([empty]) > x-label, > x-label {
+      &:not([empty]) > x-label,
+      > x-label {
         color: #d50000;
       }
     }
@@ -1256,7 +1280,7 @@ x-dateselect {
   border: 1px solid #c1c1c1;
   outline: none;
   font-size: 13px;
-  --inner-padding:0px 7px;
+  --inner-padding: 0px 7px;
 
   &[error]::before {
     top: 37px;
@@ -1309,7 +1333,8 @@ x-dateselect {
     content: "*";
   }
 
-  &:active > x-label, &:focus > x-label {
+  &:active > x-label,
+  &:focus > x-label {
     display: none;
   }
 
@@ -1319,7 +1344,7 @@ x-dateselect {
     border-left: none;
     border-right: none;
     border-top: none;
-    --inner-padding:0;
+    --inner-padding: 0;
 
     + x-dateselect[skin="flat"] {
       margin-top: 28px;
@@ -1333,7 +1358,8 @@ x-dateselect {
       transition-timing-function: var(--transition-fn1);
     }
 
-    &:not([empty]) > x-label, &:focus > x-label {
+    &:not([empty]) > x-label,
+    &:focus > x-label {
       display: block;
       top: calc(50% - 18px);
       color: var(--primary-color);
@@ -1348,7 +1374,8 @@ x-dateselect {
 
   &[skin="flat"] {
     &[error] {
-      &:not([empty]) > x-label, > x-label {
+      &:not([empty]) > x-label,
+      > x-label {
         color: #d50000;
       }
     }
@@ -1383,12 +1410,12 @@ x-numberinput {
   height: 34px;
   max-width: 160px;
   outline: none;
-  --inner-padding:0px 7px;
-  --selection-color:white;
-  --selection-background:var(--primary-color);
+  --inner-padding: 0px 7px;
+  --selection-color: white;
+  --selection-background: var(--primary-color);
 
   &[error] {
-    --selection-background:#d50000;
+    --selection-background: #d50000;
   }
 
   &::after {
@@ -1459,11 +1486,11 @@ x-taginput {
   font-size: 13px;
   border: 1px solid #c1c1c1;
   outline: none;
-  --selection-color:white;
-  --selection-background:var(--primary-color);
+  --selection-color: white;
+  --selection-background: var(--primary-color);
 
   &[error] {
-    --selection-background:#d50000;
+    --selection-background: #d50000;
   }
 
   > x-label {
@@ -1509,9 +1536,9 @@ x-textarea {
   font-size: 13px;
   border: 1px solid #c1c1c1;
   outline: none;
-  --selection-color:white;
-  --selection-background:var(--primary-color);
-  --inner-padding:3px 6px;
+  --selection-color: white;
+  --selection-background: var(--primary-color);
+  --inner-padding: 3px 6px;
 
   &::after {
     content: "";
@@ -1565,7 +1592,7 @@ x-textarea {
     min-height: 0;
     max-height: none;
     padding: 0;
-    --inner-padding:9px 0px 5px;
+    --inner-padding: 9px 0px 5px;
 
     > x-label {
       display: block;
@@ -1577,7 +1604,8 @@ x-textarea {
       transition-timing-function: var(--transition-fn1);
     }
 
-    &:not([empty]) > x-label, &:focus > x-label {
+    &:not([empty]) > x-label,
+    &:focus > x-label {
       top: -12px;
       font-size: 12px;
       color: var(--primary-color);
@@ -1585,7 +1613,8 @@ x-textarea {
     }
 
     &[error] {
-      &:not([empty]) > x-label, > x-label {
+      &:not([empty]) > x-label,
+      > x-label {
         color: #d50000;
       }
     }
@@ -1609,35 +1638,37 @@ x-textarea {
  */
 
 x-slider {
-  --thumb-width:16px;
-  --thumb-height:16px;
-  --thumb-color:var(--primary-color);
-  --thumb-border-width:0px;
-  --track-height:3px;
-  --track-color:#B9B9B9;
-  --track-tint-color:var(--primary-color);
-  --focus-ring-color:var(--primary-color);
-  --focus-ring-opacity:0.2;
-  --focus-ring-width:20px;
+  --thumb-width: 16px;
+  --thumb-height: 16px;
+  --thumb-color: var(--primary-color);
+  --thumb-border-width: 0px;
+  --track-height: 3px;
+  --track-color: #b9b9b9;
+  --track-tint-color: var(--primary-color);
+  --focus-ring-color: var(--primary-color);
+  --focus-ring-opacity: 0.2;
+  --focus-ring-width: 20px;
 
   &[value="0"] {
-    --thumb-color:#B9B9B9;
-    --focus-ring-color:#B9B9B9;
-    --focus-ring-opacity:0.3;
+    --thumb-color: #b9b9b9;
+    --focus-ring-color: #b9b9b9;
+    --focus-ring-opacity: 0.3;
   }
 
   &:active {
-    --thumb-transform:scale(1.4);
+    --thumb-transform: scale(1.4);
   }
 }
 
 x-box {
-  x-icon + x-slider, x-slider + x-icon {
+  x-icon + x-slider,
+  x-slider + x-icon {
     margin-left: 10px;
   }
 
   &[vertical] {
-    x-icon + x-slider, x-slider + x-icon {
+    x-icon + x-slider,
+    x-slider + x-icon {
       margin-left: 0;
     }
   }

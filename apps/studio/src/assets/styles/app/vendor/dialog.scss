@@ -1,21 +1,22 @@
 /* taken from https://codemirror.net/5/addon/dialog/dialog.css */
+@use "./_shared_imports" as *;
 
 $dialog-font-size: 12px;
 
 .CodeMirror-dialog {
   position: absolute;
-  left: 0; right: 0;
+  left: 0;
+  right: 0;
   background: inherit;
   z-index: 15;
-  padding: .1em .8em;
+  padding: 0.1em 0.8em;
   overflow: hidden;
   color: inherit;
   font-size: $dialog-font-size;
-
 }
 
 .CodeMirror-dialog-top {
-  border-bottom: 1px solid rgba($theme-base, .33);
+  border-bottom: 1px solid rgba($theme-base, 0.33);
   padding-bottom: 5px;
   padding-top: 5px;
   top: 0;
@@ -26,7 +27,7 @@ $dialog-font-size: 12px;
 }
 
 .CodeMirror-dialog-bottom {
-  border-top: 1px solid rgba($theme-base, .33);
+  border-top: 1px solid rgba($theme-base, 0.33);
   bottom: 0;
   padding-top: 5px;
   display: flex;
@@ -39,7 +40,7 @@ $dialog-font-size: 12px;
   flex-direction: row;
   align-items: center;
   font-family: $font-family;
-  color: $text-light
+  color: $text-light;
 }
 
 .CodeMirror-dialog input {

@@ -1,0 +1,8 @@
+// This file forwards variables and mixins to make them available to vendor files
+@forward "../_variables";
+@forward "../_mixins";
+
+// Include font variables that are defined in _base.scss
+$font-family: "Roboto";
+$font-family-mono: "Source Code Pro";
+$base-font-size: 0.875rem;

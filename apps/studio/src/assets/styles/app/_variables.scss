@@ -1,90 +1,155 @@
 @use "sass:color";
 // Theme
 // -----------------------------
-$theme-bg:               #181818!default;
-$theme-base:             #fff!default;
-$theme-primary:          #fad83b!default;
-$theme-secondary:        #4ad0ff!default;
+$theme-bg: #181818 !default;
+$theme-base: #fff !default;
+$theme-primary: #fad83b !default;
+$theme-secondary: #4ad0ff !default;
 
 // Colors
 // -----------------------------
-$text-dark:                 rgba($theme-base, 0.87)!default;
-$text:                      rgba($theme-base, 0.67)!default;
-$text-light:                rgba($theme-base, 0.57)!default;
-$text-lighter:              rgba($theme-base, 0.37)!default;
-$text-hint:                 rgba($theme-base, 0.37)!default;
-$text-disabled:             rgba($theme-base, 0.37)!default;
+$text-dark: rgba($theme-base, 0.87) !default;
+$text: rgba($theme-base, 0.67) !default;
+$text-light: rgba($theme-base, 0.57) !default;
+$text-lighter: rgba($theme-base, 0.37) !default;
+$text-hint: rgba($theme-base, 0.37) !default;
+$text-disabled: rgba($theme-base, 0.37) !default;
 
-$brand-info:                $theme-secondary!default;
-$brand-success:             #15db95!default;
-$brand-warning:             #ff8d21!default;
-$brand-danger:              #ff5d59!default;
-$brand-default:             rgba($theme-base, 0.57)!default;
-$brand-purple:              #9858ff!default;
-$brand-pink:                #ff78f7!default;
-$brand-primary:             $theme-primary!default;
-$brand-secondary:           $theme-secondary!default;
+$brand-info: $theme-secondary !default;
+$brand-success: #15db95 !default;
+$brand-warning: #ff8d21 !default;
+$brand-danger: #ff5d59 !default;
+$brand-default: rgba($theme-base, 0.57) !default;
+$brand-purple: #9858ff !default;
+$brand-pink: #ff78f7 !default;
+$brand-primary: $theme-primary !default;
+$brand-secondary: $theme-secondary !default;
 
 // App
-$border-color:              rgba($theme-base, 0.1)!default;
-$link-color:                $text-dark!default;
-$placeholder:               $text-hint!default;
-$selection:                 rgba($theme-primary, 0.2)!default;
-$input-highlight:           rgba($theme-base, 0.27)!default;
+$border-color: rgba($theme-base, 0.1) !default;
+$link-color: $text-dark !default;
+$placeholder: $text-hint !default;
+$selection: rgba($theme-primary, 0.2) !default;
+$input-highlight: rgba($theme-base, 0.27) !default;
 
-$db-select-text:            white!default;
-$query-editor-bg:           color.adjust($theme-bg, $lightness: -6%)!default;
+$db-select-text: white !default;
+$query-editor-bg: color.adjust($theme-bg, $lightness: -6%) !default;
 
-$row-handle-selected:       color.adjust($query-editor-bg, $lightness: 5%);
-$row-handle-hover:          color.adjust($query-editor-bg, $lightness: 5%);
+$row-handle-selected: color.adjust($query-editor-bg, $lightness: 5%);
+$row-handle-hover: color.adjust($query-editor-bg, $lightness: 5%);
 
-$titlebar-bg:               transparent!default;
-$global-sidebar-bg:         transparent!default;
-$sidebar-bg:                color.adjust($theme-bg, $lightness: -3%)!default;
-$sidebar-heading-bg:        $theme-bg!default;
-$tabs-bg:                   transparent!default;
-$statusbar-bg:              rgba($theme-base, 0.1)!default;
+$titlebar-bg: transparent !default;
+$global-sidebar-bg: transparent !default;
+$sidebar-bg: color.adjust($theme-bg, $lightness: -3%) !default;
+$sidebar-heading-bg: $theme-bg !default;
+$tabs-bg: transparent !default;
+$statusbar-bg: rgba($theme-base, 0.1) !default;
 // $statusbar-bg:             rgba($theme-primary, 0.4);
 
-$statusbar-text:            black!default;
-$statusbar-text-default:    white!default;
+$statusbar-text: black !default;
+$statusbar-text-default: white !default;
 
+$titlebar-actions-height: 30px;
 
 // Layout
 // ------------------------------
 
 // Buttons
-$btn-border-radius:         8px;
-$btn-border-radius-small:   6px;
+$btn-border-radius: 8px;
+$btn-border-radius-small: 6px;
 
 // Inputs
-$input-padding-h:           0;
-$input-height:              26px;
-$input-padding-w:           0.75rem;
-$input-radius:              4px;
+$input-padding-h: 0;
+$input-height: 26px;
+$input-padding-w: 0.75rem;
+$input-radius: 4px;
 
 // Padding
-$gutter-w:                  0.8rem;
-$gutter-h:                  0.4rem;
+$gutter-w: 0.8rem;
+$gutter-h: 0.4rem;
 
 // Sidebar
-$sidebar-w:                 400px;
-$sidebar-min-w:             300px;
-$sidebar-max-w:             90%;
-$sidebar-icon-w:            1.4rem;
+$sidebar-w: 400px;
+$sidebar-min-w: 300px;
+$sidebar-max-w: 90%;
+$sidebar-icon-w: 1.4rem;
 
 // Query Editor
-$tab-height:                2.4rem;
-$tab-padding-w:             1rem;
+$tab-height: 2.4rem;
+$tab-padding-w: 1rem;
 
 // Statusbar
-$statusbar-height:          2.6rem;
-
-
-
+$statusbar-height: 2.6rem;
 
 // text
-$font-family: 'Roboto, sans-serif';
+$font-family: "Roboto, sans-serif";
 
 $grouped-tables-base: color.adjust($theme-bg, $lightness: 2%);
 $grouped-tables-light: color.adjust($grouped-tables-base, $lightness: 2%);
+
+// Datepicker-specific variables
+$namespace: "mx" !default;
+$default-color: #73879c !default;
+$popup-z-index: 2001 !default;
+$calendar-active-color: $default-color !default;
+$calendar-active-background-color: $theme-primary !default;
+$calendar-hover-color: $default-color !default;
+$calendar-hover-background-color: color.mix(
+  #fff,
+  $calendar-active-background-color,
+  95%
+) !default;
+$calendar-in-range-color: $default-color !default;
+$calendar-in-range-background-color: color.mix(
+  #fff,
+  $calendar-active-background-color,
+  85%
+) !default;
+$time-active-color: $default-color !default;
+$time-active-background-color: $default-color !default;
+$time-hover-color: $default-color !default;
+$time-hover-background-color: color.mix(
+  #fff,
+  $calendar-active-background-color,
+  95%
+) !default;
+$today-color: color.mix(#fff, $theme-primary, 10%) !default;
+$input-border-color: #ccc !default;
+$input-color: #555 !default;
+$input-hover-border-color: #409aff !default;
+$disabled-color: #ccc !default;
+$disabled-background-color: #f3f3f3 !default;
+$input-border-radius: 4px !default;
+$sidebar-margin-left: 100px !default;
+
+// Core theme variables - initial fallback values
+:root,
+body {
+  // Default theme variables if no theme is selected
+  --theme-bg: #252525;
+  --theme-base: #ffffff;
+  --theme-string: #a5d6ff;
+  --theme-keyword: #ff7b72;
+
+  // UI colors based on defaults
+  --theme-primary: var(--theme-keyword, #ff7b72);
+  --theme-secondary: #4ad0ff;
+  --theme-error: #f44336;
+  --theme-warning: #ff9800;
+  --theme-success: #4caf50;
+
+  // Standard UI mappings
+  --text-color: var(--theme-base, #ffffff);
+  --background-color: var(--theme-bg, #252525);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --accent-color: var(--theme-primary, #ff7b72);
+}
+
+// Apply theme colors directly to body
+body {
+  background-color: var(--theme-bg, #252525);
+  color: var(--theme-base, #ffffff);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Add existing variable definitions below

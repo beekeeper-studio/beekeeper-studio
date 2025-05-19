@@ -1,5 +1,5 @@
 @use "sass:color";
-@use "../../app/_variables" as *;
+@use "../app/vendor/_shared_imports" as *;
 
 .json-viewer {
   --header-title-height: 2rem;

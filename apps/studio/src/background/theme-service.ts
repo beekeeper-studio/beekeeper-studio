@@ -2,7 +2,7 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
-import { Theme } from '../store/modules/settings/ThemeStore';
+import { Theme } from '../components/theme/ThemeConfigurations';
 
 // For Node.js environment
 // const readFile = util.promisify(fs.readFile);
@@ -45,7 +45,7 @@ function generateThemeCSS(theme: Theme): string {
   try {
     const css = `
 /* Theme: ${theme.name} */
-.theme-${id} {
+:root.theme-${id}, body.theme-${id} {
   /* Basic colors */
   --theme-bg: ${colors.background};
   --theme-base: ${colors.foreground};
@@ -74,6 +74,22 @@ function generateThemeCSS(theme: Theme): string {
   --table-row-fg: ${colors.foreground};
   --table-row-alt-bg: ${adjustColor(colors.background, 5)};
   --table-border: ${adjustColor(colors.background, 15)};
+  
+  /* Standard UI variables */
+  --text-color: ${colors.foreground};
+  --text-light-color: ${adjustColor(colors.foreground, -20)};
+  --text-dark-color: ${colors.foreground};
+  --background-color: ${colors.background};
+  --border-color: ${adjustColor(colors.background, 15)};
+  --accent-color: ${colors.keyword};
+  --button-color: ${colors.keyword};
+  --link-color: ${colors.string};
+}
+
+/* Core theme styles for body */
+.theme-${id} {
+  background-color: ${colors.background} !important;
+  color: ${colors.foreground} !important;
 }
 
 /* Additional theme-specific rules */
@@ -82,6 +98,7 @@ function generateThemeCSS(theme: Theme): string {
   color: ${colors.foreground};
 }
 
+/* Fix for tabulator dark theme on light tables */
 .theme-${id} .tabulator-table .tabulator-row .tabulator-cell.edited {
   color: ${colors.background};
 }
@@ -102,6 +119,14 @@ function generateThemeCSS(theme: Theme): string {
 .theme-${id} .editor {
   background-color: var(--editor-bg);
   color: var(--editor-fg);
+}
+
+/* Text editor theme */
+.theme-${id} .BksTextEditor {
+  --bks-text-editor-bg-color: ${colors.background};
+  --bks-text-editor-fg-color: ${colors.foreground};
+  --bks-text-editor-string-fg-color: ${colors.string};
+  --bks-text-editor-keyword-fg-color: ${colors.keyword};
 }
 `;
     console.log(`DEBUG: Successfully generated CSS for theme: ${theme.id}`);

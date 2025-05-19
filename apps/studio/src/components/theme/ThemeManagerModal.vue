@@ -59,16 +59,27 @@ export default {
     async loadThemes() {
       this.loading = true;
       try {
-        // Load themes from server or local storage
-        this.themes = []; // Replace with actual theme loading
+        // Load themes from Vuex store
+        const builtInThemes = this.$store.getters["themes/allThemes"];
+        console.log("Loaded themes from store:", builtInThemes);
+        this.themes = builtInThemes;
         this.loading = false;
       } catch (err) {
+        console.error("Error loading themes:", err);
         this.error = err.message;
         this.loading = false;
       }
     },
     async applyTheme(name) {
       try {
+        console.log(`Applying theme: ${name}`);
+
+        // Update Vuex store
+        await this.$store.dispatch("settings/update", {
+          key: "theme",
+          value: name,
+        });
+
         // Use the utility process to apply the theme
         const result = await this.$util.send("themes/apply", { name });
 
@@ -76,8 +87,15 @@ export default {
           throw new Error(result.error || "Failed to apply theme");
         }
 
+        // Save the theme setting
+        await this.$util.send("appdb/setting/save", {
+          key: "theme",
+          value: name,
+        });
+
         this.$toasted.show(`Theme ${name} applied successfully`);
       } catch (err) {
+        console.error("Error applying theme:", err);
         this.$toasted.error(`Error applying theme: ${err.message}`);
       }
     },
@@ -149,16 +167,20 @@ export default {
 
   .theme-list {
     margin-bottom: 30px;
+    max-height: 400px;
+    overflow-y: auto;
 
     .theme-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 10px 15px;
-      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 5px;
+      border: 1px solid var(--border-color, #ddd);
+      border-radius: 4px;
 
       &:last-child {
-        border-bottom: none;
+        margin-bottom: 0;
       }
 
       .theme-name {
@@ -174,7 +196,7 @@ export default {
   }
 
   .theme-upload {
-    background-color: var(--background-color);
+    background-color: var(--background-color, #f5f5f5);
     padding: 20px;
     border-radius: 8px;
 
@@ -183,7 +205,7 @@ export default {
     }
 
     .dropzone {
-      border: 2px dashed var(--border-color);
+      border: 2px dashed var(--border-color, #ddd);
       border-radius: 4px;
       padding: 30px;
       text-align: center;

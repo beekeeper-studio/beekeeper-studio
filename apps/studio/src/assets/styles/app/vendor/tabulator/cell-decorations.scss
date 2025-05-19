@@ -1,3 +1,5 @@
+@use "../_shared_imports" as *;
+
 .tabulator-cell {
   &.binary-type > pre {
     text-decoration-line: underline;

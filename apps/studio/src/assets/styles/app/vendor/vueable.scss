@@ -1,6 +1,5 @@
 @use "sass:color";
-@use "../variables" as *;
-@use "../extends" as *;
+@use "./_shared_imports" as *;
 
 .dropdown {
   position: relative;

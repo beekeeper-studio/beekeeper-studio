@@ -1,17 +1,16 @@
 @use "sass:color";
-@use "../../../_variables" as *;
+@use "../_shared_imports" as *;
 
 $namespace: "bkdates"; // change the 'mx' to 'xmx'. then <date-picker prefix-class="xmx" />
 
 $default-color: $theme-bg;
-$primary-color: $theme-base;
+$primary-color: $theme-primary;
 $calendar-active-color: $text-dark;
 $calendar-active-background-color: $theme-primary;
 $time-active-color: #181818;
 $time-active-background-color: $theme-primary;
 $today-color: $theme-secondary;
 
-@use "./var.scss";
 @use "./icon.scss";
 @use "./btn.scss";
 @use "./scrollbar.scss";

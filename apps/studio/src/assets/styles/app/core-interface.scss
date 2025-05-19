@@ -1,4 +1,5 @@
-
+@use "./vendor/_shared_imports" as *;
+@use "./_variables" as *;
 
 // App Layout
 // -----------------------------
@@ -35,7 +36,8 @@
     // min-width: $sidebar-min-w;
     max-width: $sidebar-max-w;
   }
-  .primary-sidebar, .secondary-sidebar {
+  .primary-sidebar,
+  .secondary-sidebar {
     min-width: auto;
     flex: none;
     max-width: none;

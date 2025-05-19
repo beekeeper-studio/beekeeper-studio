@@ -1,9 +1,10 @@
+@use "../vendor/_shared_imports" as *;
 
 // Connection Sidebar
 // --------------------------------
 .connection-sidebar {
   .list-body {
-    height: fit-content
+    height: fit-content;
   }
   .sidebar-wrap {
     flex-grow: 1;
@@ -37,13 +38,17 @@
       }
       .list-body {
         &:after {
-          content: '';
+          content: "";
           position: absolute;
           bottom: 0;
           left: 0;
           right: 0;
           height: 18px;
-          background: linear-gradient(0deg, rgba($theme-bg, 1) 0%, rgba($theme-bg, 0) 100%);
+          background: linear-gradient(
+            0deg,
+            rgba($theme-bg, 1) 0%,
+            rgba($theme-bg, 0) 100%
+          );
         }
       }
     }

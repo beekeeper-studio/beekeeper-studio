@@ -1,9 +1,9 @@
+@use "sass:color";
+@use "../_shared_imports" as *;
+
 .connection-upsell-content {
   margin-top: 1.64rem;
   font-size: 0.9rem;
-  .intro {
-
-  }
   .content {
     display: flex;
     flex-direction: column;

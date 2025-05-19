@@ -1,4 +1,4 @@
-@import './var.scss';
+@use "../_shared_imports" as *;
 
 .#{$namespace}-zoom-in-down-enter-active,
 .#{$namespace}-zoom-in-down-leave-active {

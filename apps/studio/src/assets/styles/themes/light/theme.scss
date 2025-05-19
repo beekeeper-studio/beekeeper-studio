@@ -1,3 +1,5 @@
+@use "./variables.scss" as variables;
+@use "../../app/_variables.scss" as *;
 @use "sass:color";
 @use "codemirror/theme/xq-light";
 
@@ -32,7 +34,7 @@ $editor-statusbar: rgba($theme-base, 0.035);
 
 // Base Styles
 // -----------------------------------------
-& {
+body {
   background: $theme-bg;
   color: $text;
 }
@@ -581,4 +583,5 @@ x-switch {
 
 .BksTextEditor {
   font-weight: 500;
+  --bks-text-editor-string-fg-color: #{$brand-success};
 }

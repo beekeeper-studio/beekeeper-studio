@@ -1,3 +1,5 @@
+@use "./vendor/_shared_imports" as *;
+
 .export-modal {
   form {
     overflow-y: auto;
@@ -12,14 +14,11 @@
 
   .dialog-c-title {
     .dialog-c-link {
-        margin-left: $gutter-w;
-        font-size: 0.8rem;
-        color:$theme-primary;
-        text-decoration: underline;
-        &:hover {
-
-        }
-      }
+      margin-left: $gutter-w;
+      font-size: 0.8rem;
+      color: $theme-primary;
+      text-decoration: underline;
+    }
   }
   .dialog-c-subtitle {
     .material-icons {
@@ -82,4 +81,3 @@
     margin-bottom: $gutter-w;
   }
 }
-

@@ -1,5 +1,5 @@
 @use "sass:color";
-@use "../_variables" as *;
+@use "./_variables" as *;
 @use "./tabs/database-backup.scss";
 @use "./tabs/import-file.scss";
 @use "./tabs/import-export.scss";

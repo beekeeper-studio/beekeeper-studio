@@ -1,3 +1,4 @@
+@use "./vendor/_shared_imports" as *;
 @use "sass:color";
 
 .core-tabs {
@@ -10,7 +11,8 @@
     margin-right: 0.8rem;
   }
 
-  .tab-content, .tab-pane {
+  .tab-content,
+  .tab-pane {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -92,13 +94,16 @@
           background: $query-editor-bg;
         }
         .tab-action {
-          background: linear-gradient(-90deg, rgba($query-editor-bg, 100%) 80%, rgba($query-editor-bg, 0) 100%);
+          background: linear-gradient(
+            -90deg,
+            rgba($query-editor-bg, 100%) 80%,
+            rgba($query-editor-bg, 0) 100%
+          );
         }
         .tab-close {
           .close {
             display: inline-block;
           }
-
         }
       }
       &:hover {
@@ -127,7 +132,7 @@
       &:before {
         display: block;
         content: attr(title);
-        font-weight: 600!important;
+        font-weight: 600 !important;
         height: 0;
         overflow: hidden;
         visibility: hidden;
@@ -137,7 +142,7 @@
         color: $text-lighter;
         font-size: 95%;
         font-style: italic;
-        font-weight: normal!important;
+        font-weight: normal !important;
       }
     }
     .item-icon {
@@ -158,7 +163,11 @@
       justify-content: center;
       height: 100%;
       min-width: 28px;
-      background: linear-gradient(-90deg, rgba(color.adjust($theme-bg, $lightness: 3%), 100%) 80%, rgba(color.adjust($theme-bg, $lightness: 3%), 0) 100%);
+      background: linear-gradient(
+        -90deg,
+        rgba(color.adjust($theme-bg, $lightness: 3%), 100%) 80%,
+        rgba(color.adjust($theme-bg, $lightness: 3%), 0) 100%
+      );
     }
     .tab-close {
       position: absolute;
@@ -216,7 +225,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    line-height: 2rem ;
+    line-height: 2rem;
     background-color: rgba($theme-base, 0.1);
     padding-left: 7px;
     padding-right: 7px;
@@ -228,7 +237,6 @@
       font-size: 12px;
       padding: 0;
       min-width: 0;
-
     }
   }
 }
@@ -248,7 +256,8 @@
     right: 0;
   }
   .btn-fab {
-    .material-icons, .material-icons-outlined {
+    .material-icons,
+    .material-icons-outlined {
       font-size: 16px;
     }
   }
@@ -302,7 +311,8 @@
         // background: lighten($text-dark, 10%);
         background: color.adjust($theme-primary, $lightness: 10%);
       }
-      .material-icons, .material-icons-outlined {
+      .material-icons,
+      .material-icons-outlined {
         color: rgba(black, 0.87);
         font-weight: bold;
       }
@@ -367,7 +377,9 @@
     pointer-events: none;
     color: rgba($theme-base, 0.5);
     transform: scaleX(1.2) translateX(0.07rem);
-    & > i { font-size: 1rem; }
+    & > i {
+      font-size: 1rem;
+    }
   }
   form {
     position: relative;
@@ -376,8 +388,12 @@
     max-height: 202px;
     &.resizable {
       resize: vertical;
-      &::-webkit-resizer { background-color: transparent; }
-      & ~ .filter-drag-icon { visibility: visible; }
+      &::-webkit-resizer {
+        background-color: transparent;
+      }
+      & ~ .filter-drag-icon {
+        visibility: visible;
+      }
     }
     &.filter-outside-viewport {
       .filter-add-apply {
@@ -395,7 +411,8 @@
         display: inline-flex;
       }
     }
-    .filter-add-apply > *, .ghost-add-apply {
+    .filter-add-apply > *,
+    .ghost-add-apply {
       display: flex;
       gap: 0.4rem;
       flex-wrap: nowrap;
@@ -405,7 +422,9 @@
       display: none;
       visibility: hidden;
     }
-    .left-section, .middle-section, .right-section {
+    .left-section,
+    .middle-section,
+    .right-section {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
@@ -414,7 +433,7 @@
       padding-left: 0.45rem;
       padding-right: 0.25rem;
     }
-    .multiple-filter  {
+    .multiple-filter {
       flex-grow: 1;
       & > * {
         display: flex;
@@ -424,7 +443,9 @@
         }
       }
     }
-    .op-filter, .add-filter > button, .remove-filter {
+    .op-filter,
+    .add-filter > button,
+    .remove-filter {
       font-family: inherit;
       font-weight: 700;
       font-size: 0.75rem;
@@ -437,7 +458,6 @@
 }
 
 .filter-modal {
-
   .modal-form {
     margin-top: 0.25rem;
   }
@@ -513,7 +533,7 @@
   }
 
   .all-label {
-    font-style: italic
+    font-style: italic;
   }
 
   .no-matching-results,

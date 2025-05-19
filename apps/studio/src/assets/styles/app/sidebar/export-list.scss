@@ -1,3 +1,5 @@
+@use "../vendor/_shared_imports" as *;
+
 .sidebar-exports {
   position: relative;
   .sidebar-list {
@@ -14,7 +16,7 @@
   }
   .list-item {
     border-bottom: 1px solid $theme-bg;
-    
+
     .badge {
       min-width: fit-content;
     }

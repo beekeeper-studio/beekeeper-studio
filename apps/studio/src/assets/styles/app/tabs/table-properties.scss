@@ -1,13 +1,20 @@
+@use "../vendor/_shared_imports" as *;
 @use "sass:color";
 
-$row-highlight:          color.adjust($query-editor-bg, $lightness: 1%);
-$row-add:                #104633;
-$row-delete:             #8A3937;
-$row-error:              #38201F;
+$row-height: 38px;
+$cell-font-size: 13px;
+$cell-padding: 0.8rem;
+$row-gutter: 3px;
+$btn-fab-size: 28px;
 
-$cell-edited:            #50492A;
-$cell-error:             $row-error;
-$cell-success:           $row-add;
+$row-highlight: color.adjust($query-editor-bg, $lightness: 1%);
+$row-add: #104633;
+$row-delete: #8a3937;
+$row-error: #38201f;
+
+$cell-edited: #50492a;
+$cell-error: $row-error;
+$cell-success: $row-add;
 
 // Table Info
 .table-properties {
@@ -83,8 +90,7 @@ $cell-success:           $row-add;
       font-weight: 500;
       padding: $gutter-w ($gutter-w * 1.25);
       color: $text-light;
-      transition: color 0.2s ease-in-out, 
-                  box-shadow 0.2s ease-in-out;
+      transition: color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
       &:hover {
         color: $text-dark;
         box-shadow: inset 0 -2px rgba($theme-base, 0.2);
@@ -96,8 +102,7 @@ $cell-success:           $row-add;
     }
   }
 
-
-  // Table Info 
+  // Table Info
   // --------------------------------
   // Table Info Header
   .table-info {
@@ -146,7 +151,13 @@ $cell-success:           $row-add;
       }
     }
     .table-description-wrap {
-      h1, h2, h3, h4, h5, h5, p {
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h5,
+      p {
         margin: 0 0 $gutter-h;
       }
     }
@@ -160,7 +171,7 @@ $cell-success:           $row-add;
         resize: vertical;
       }
       span.markdown {
-        content: 'markdown';
+        content: "markdown";
         font-size: 10px;
         color: $text-lighter;
         display: inline-block;
@@ -195,9 +206,10 @@ $cell-success:           $row-add;
         color: $text-light;
         min-width: 110px;
       }
-      select, textarea {
+      select,
+      textarea {
         min-width: 200px;
-        width: 100%!important;
+        width: 100% !important;
       }
       select {
         max-width: 220px;
@@ -211,7 +223,7 @@ $cell-success:           $row-add;
   .table-schema {
     .tabulator-table {
       .yesno-icon {
-        float:right;
+        float: right;
       }
 
       .tabulator-cell:not(.tabulator-editable) {
@@ -232,19 +244,10 @@ $cell-success:           $row-add;
   }
 }
 
-
 // Tabulator Styling
 // ------------------------------
 .table-properties {
-
-  $row-height:             38px;
-  $cell-font-size:         13px;
-  $cell-padding:           0.8rem;
-  $row-gutter:             3px;
-  $btn-fab-size:           28px;
-
   .table-properties-wrap {
-
     // Schema Header
     .schema-header {
       .btn-fab {
@@ -275,7 +278,7 @@ $cell-success:           $row-add;
       margin: $row-gutter 0;
       &.tabulator-row-even {
         --row-bg-color: #{rgba($theme-base, 0.05)};
-        background: rgba($theme-base, 0.05)!important;
+        background: rgba($theme-base, 0.05) !important;
       }
       .tabulator-cell {
         min-height: $row-height;
@@ -283,7 +286,8 @@ $cell-success:           $row-add;
         line-height: $row-height;
         padding: 0 $cell-padding;
         font-size: $cell-font-size;
-        pre, input:not([type="checkbox"]) {
+        pre,
+        input:not([type="checkbox"]) {
           font-size: $cell-font-size;
           line-height: $row-height;
           min-height: $row-height;
@@ -292,22 +296,23 @@ $cell-success:           $row-add;
           border: 0;
           &[type="search"] {
             line-height: $row-height;
-            padding-bottom: 1px!important;
+            padding-bottom: 1px !important;
           }
         }
         .nullible-input {
-          padding-right: 18px!important;
+          padding-right: 18px !important;
         }
         &.tabulator-editing {
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height;
-          padding: 0!important;
+          padding: 0 !important;
           // Make checkboxes behave correctly
           .tabulator-bks-checkbox {
             padding: calc($cell-padding / 2);
           }
-          pre, input:not([type="checkbox"]) {
+          pre,
+          input:not([type="checkbox"]) {
             padding: 0 $cell-padding;
           }
         }
@@ -326,8 +331,8 @@ $cell-success:           $row-add;
         .tabulator-bks-checkbox {
           &.read-only {
             input[type="checkbox"] {
-              background: transparent!important;
-              box-shadow: none!important;
+              background: transparent !important;
+              box-shadow: none !important;
               &:after {
                 color: $theme-base;
                 font-size: 20px;
@@ -361,7 +366,8 @@ $cell-success:           $row-add;
           height: $row-height;
         }
 
-        input, textarea {
+        input,
+        textarea {
           height: $row-height;
         }
       }
@@ -384,7 +390,6 @@ $cell-success:           $row-add;
 // -------------------------------------
 .tabulator-table {
   .tabulator-row {
-
     div.dynamic-action:after {
       line-height: $row-height;
       cursor: pointer;
@@ -393,7 +398,7 @@ $cell-success:           $row-add;
       bottom: 0;
       right: 0;
       left: 0;
-      font-family: 'Material Icons';
+      font-family: "Material Icons";
       color: $text-lighter;
       content: "close";
       transition: color 0.2s ease-in-out;
@@ -403,16 +408,17 @@ $cell-success:           $row-add;
     &.tabulator-row-even {
       &.inserted {
         --row-bg-color: #{$row-add};
-        background-color: $row-add!important;
+        background-color: $row-add !important;
       }
       &.deleted {
         --row-bg-color: #{$row-delete};
-        background-color: $row-delete!important;
+        background-color: $row-delete !important;
         div.dynamic-action::after {
           content: "undo";
         }
       }
-      &.inserted, &.deleted {
+      &.inserted,
+      &.deleted {
         .tabulator-cell {
           cursor: pointer;
           &.edited {
@@ -427,14 +433,15 @@ $cell-success:           $row-add;
     .tabulator-cell {
       &.no-edit-highlight {
         &.edited {
-          box-shadow: none!important;
+          box-shadow: none !important;
         }
       }
     }
   }
 }
 
-.tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
   background-color: rgba($theme-base, 0.035);
 }
-

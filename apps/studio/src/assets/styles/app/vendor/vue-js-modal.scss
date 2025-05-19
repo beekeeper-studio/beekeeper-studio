@@ -1,4 +1,5 @@
 @use "sass:color";
+@use "./_shared_imports" as *;
 
 .vue-modal-resizer {
   display: block;
@@ -15,7 +16,7 @@
 .vue-modal-resizer::after {
   display: block;
   position: absolute;
-  content: '';
+  content: "";
   background: transparent;
   left: 0;
   top: 0;
@@ -83,12 +84,12 @@
   text-align: left !important;
   border-radius: 8px !important;
   padding: 0 !important;
-  width: 100%!important;
-  top: initial!important;
-  left: initial!important;
+  width: 100% !important;
+  top: initial !important;
+  left: initial !important;
   min-width: 380px;
   max-width: 600px;
-  height: auto!important;
+  height: auto !important;
   min-height: 120px;
   max-height: 80vh;
   @include card-shadow;
@@ -190,7 +191,6 @@
 // .vue-dialog .dialog-c-text {
 // }
 
-
 // Buttons
 // ---------------------------------
 .vue-dialog .vue-dialog-buttons {
@@ -204,29 +204,30 @@
   padding-right: $gutter-w;
   margin-right: -0.25rem;
   a {
-   line-height: 26px;
-   margin-left: 0.25rem;
-   margin-right: 0.25rem;
+    line-height: 26px;
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
 
-   &:hover {
-     text-decoration: underline;
-   }
-   &.small {
-     font-size: 0.8rem;
-   }
+    &:hover {
+      text-decoration: underline;
+    }
+    &.small {
+      font-size: 0.8rem;
+    }
   }
-  :not(x-buttons) .btn, x-buttons {
+  :not(x-buttons) .btn,
+  x-buttons {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }
 
   .left {
-    a, .btn {
-        margin-left: 0;
-        margin-right: 0.5rem;
+    a,
+    .btn {
+      margin-left: 0;
+      margin-right: 0.5rem;
     }
   }
-
 }
 .vue-dialog .vue-dialog-buttons-none {
   width: 100%;

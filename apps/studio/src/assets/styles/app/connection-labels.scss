@@ -1,16 +1,19 @@
+@use "./vendor/_shared_imports" as *;
 @use "sass:list";
+@use "./_variables" as *;
+
 $color-defaults: (
-  red:          $brand-danger,
-  orange:       $brand-warning,
-  yellow:       $brand-primary,
-  green:        $brand-success,
-  blue:         $brand-info,
-  purple:       $brand-purple,
-  pink:         $brand-pink,
+  red: $brand-danger,
+  orange: $brand-warning,
+  yellow: $brand-primary,
+  green: $brand-success,
+  blue: $brand-info,
+  purple: $brand-purple,
+  pink: $brand-pink,
 );
 
 @each $key, $val in $color-defaults {
-  .connection-label-color-#{'#{$key}'} {
+  .connection-label-color-#{"#{$key}"} {
     --connection-label-color: #{list.nth($val, 1)};
   }
 }
@@ -26,7 +29,7 @@ $color-defaults: (
   background-color: rgba($theme-base, 0.08);
 
   @each $key, $val in $color-defaults {
-    &.connection-label-color-#{'#{$key}'} {
+    &.connection-label-color-#{"#{$key}"} {
       background-color: list.nth($val, 1);
       &:checked {
         background-color: list.nth($val, 1);
@@ -36,7 +39,7 @@ $color-defaults: (
 }
 .connection-button {
   @each $key, $val in $color-defaults {
-    &.#{'#{$key}'} {
+    &.#{"#{$key}"} {
       background-color: rgba(list.nth($val, 1), 1);
     }
   }
@@ -44,20 +47,21 @@ $color-defaults: (
 
 .statusbar {
   @each $key, $val in $color-defaults {
-    &.#{'#{$key}'} {
+    &.#{"#{$key}"} {
       background-color: rgba(list.nth($val, 1), 0.85);
     }
   }
   &.query-meta {
     @each $key, $val in $color-defaults {
-      &.#{'#{$key}'} {
+      &.#{"#{$key}"} {
         background-color: rgba(list.nth($val, 1), 0.85);
       }
     }
   }
-  &.editing, &.failure {
+  &.editing,
+  &.failure {
     @each $key, $val in $color-defaults {
-      &.#{'#{$key}'} {
+      &.#{"#{$key}"} {
         background-color: rgba(list.nth($val, 1), 0.8);
       }
     }

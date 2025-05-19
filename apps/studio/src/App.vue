@@ -68,6 +68,10 @@ import { AppEvent } from "./common/AppEvent";
 import globals from "./common/globals";
 import NotificationManager from "./components/NotificationManager.vue";
 import ThemeManagerModal from "./components/settings/ThemeManagerModal.vue";
+import {
+  initializeTheme,
+  setupThemeChangeListener,
+} from "./components/theme/ThemeInitializer";
 import EnterLicenseModal from "./components/ultimate/EnterLicenseModal.vue";
 import UpgradeRequiredModal from "./components/upsell/UpgradeRequiredModal.vue";
 
@@ -132,10 +136,16 @@ export default Vue.extend({
       log.info("database changed", this.database);
     },
     themeValue: {
-      handler(newTheme) {
+      async handler(newTheme) {
         if (typeof newTheme === "string") {
+          localStorage.setItem("activeTheme", newTheme);
+
+          const appliedTheme = await initializeTheme();
+
           this.$root.$emit("theme-preview-changed", { themeId: newTheme });
         } else if (newTheme && newTheme.themeId) {
+          localStorage.setItem("activeTheme", newTheme.themeId);
+
           this.$root.$emit("theme-preview-changed", {
             themeId: newTheme.themeId,
             css: newTheme.css,
@@ -162,6 +172,10 @@ export default Vue.extend({
   },
   async mounted() {
     try {
+      const activeTheme = await initializeTheme();
+
+      setupThemeChangeListener();
+
       this.notifyFreeTrial();
       this.interval = setInterval(
         this.notifyFreeTrial,

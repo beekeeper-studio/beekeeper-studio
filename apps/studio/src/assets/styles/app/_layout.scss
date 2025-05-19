@@ -1,3 +1,4 @@
+@use "./vendor/_shared_imports" as *;
 @use "sass:color";
 // Global
 // ------------------------------------
@@ -8,11 +9,13 @@ a {
   text-decoration: none;
   outline: none;
   cursor: pointer;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     color: $link-color;
     text-decoration: none;
   }
-  &.disabled, &.disabled:hover {
+  &.disabled,
+  &.disabled:hover {
     cursor: initial;
     opacity: 0.25;
   }
@@ -67,7 +70,8 @@ hr {
 }
 ::-webkit-scrollbar-track-piece {
   background-color: transparent;
-  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=);
+  background-repeat: repeat-y !important;
 }
 ::-webkit-scrollbar-thumb {
   background: color.mix($theme-base, $theme-bg, 20%);
@@ -79,7 +83,6 @@ hr {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
-
 
 // Buttons
 // ---------------------------------------
@@ -99,7 +102,8 @@ x-buttons > x-button[menu].btn {
   background: $theme-base;
   color: rgba($theme-bg, 0.87);
   transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: rgba($theme-base, 0.87);
     color: $theme-bg;
   }
@@ -108,7 +112,8 @@ x-buttons > x-button[menu].btn {
 .btn-brand {
   color: #181818;
   background: $theme-primary;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: $theme-primary;
     color: #000;
   }
@@ -121,7 +126,8 @@ x-buttons > x-button[menu].btn {
   color: $theme-base;
   background: transparent;
   box-shadow: none;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: rgba($theme-base, 0.06);
   }
 }
@@ -138,7 +144,8 @@ x-buttons > x-button[menu].btn {
 .btn-info {
   background: $brand-info;
   color: rgba(black, 0.87);
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: color.adjust($brand-info, $lightness: 8%);
     color: rgba(black, 0.87);
   }
@@ -171,7 +178,7 @@ x-buttons {
   width: 100%;
 }
 .btn-fab {
-  $fab-size:   26px;
+  $fab-size: 26px;
 
   height: $fab-size;
   min-width: $fab-size;
@@ -186,10 +193,12 @@ x-buttons {
   @include noselect;
   @include layout-center;
   transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     background: rgba($theme-base, 0.1);
   }
-  .material-icons, .material-icons-outlined {
+  .material-icons,
+  .material-icons-outlined {
     font-size: 20px;
     color: $text-dark;
   }
@@ -198,7 +207,8 @@ x-buttons {
     .material-icons {
       color: rgba(black, 0.87);
     }
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       background: color.adjust($theme-primary, $lightness: -8%);
       .material-icons {
         color: rgba(black, 0.87);
@@ -209,7 +219,9 @@ x-buttons {
 .btn-group {
   margin-left: -0.25rem;
   margin-right: -0.25rem;
-  >.btn, > x-buttons, > x-button {
+  > .btn,
+  > x-buttons,
+  > x-button {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }
@@ -217,20 +229,23 @@ x-buttons {
 
 // Disabled Buttons
 .btn[disabled="disabled"] {
-  $btn-disabled-opacity:      0.25;
+  $btn-disabled-opacity: 0.25;
 
-  opacity: $btn-disabled-opacity!important;
-  &:hover, &:focus {
-    opacity: $btn-disabled-opacity!important;
+  opacity: $btn-disabled-opacity !important;
+  &:hover,
+  &:focus {
+    opacity: $btn-disabled-opacity !important;
   }
   &.btn-primary {
-    &:hover, &:focus {
-      background: $theme-base!important;
+    &:hover,
+    &:focus {
+      background: $theme-base !important;
     }
   }
   &.btn-flat {
-    &:hover, &:focus {
-     background: transparent!important;
+    &:hover,
+    &:focus {
+      background: transparent !important;
     }
   }
 }
@@ -269,10 +284,12 @@ x-buttons {
     }
   }
   input {
-    &[disabled="disabled"], &[disabled="disabled"]:hover, &[disabled="disabled"]:focus {
-      color: $text-lighter!important;
-      cursor: not-allowed!important;
-      border-style: dotted!important;
+    &[disabled="disabled"],
+    &[disabled="disabled"]:hover,
+    &[disabled="disabled"]:focus {
+      color: $text-lighter !important;
+      cursor: not-allowed !important;
+      border-style: dotted !important;
     }
   }
   label {
@@ -305,7 +322,10 @@ label {
   }
 }
 
-input, select, textarea, .bk-form-input {
+input,
+select,
+textarea,
+.bk-form-input {
   @include form-control;
   &:focus {
     border-color: $input-highlight;
@@ -351,7 +371,8 @@ input, select, textarea, .bk-form-input {
 select {
   -webkit-appearance: none;
   appearance: none;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>")
+    no-repeat scroll 98% 60% transparent !important;
   padding: 0 0.75rem;
   option {
     background: color.adjust($theme-bg, $lightness: 3%);
@@ -361,9 +382,11 @@ select {
       color: white;
       box-shadow: 0 0 10px 100px $brand-info inset;
     }
-    &:disabled, &:disabled:hover, &:disabled:focus {
-      background: transparent!important;
-      color: $text-lighter!important;
+    &:disabled,
+    &:disabled:hover,
+    &:disabled:focus {
+      background: transparent !important;
+      color: $text-lighter !important;
     }
   }
 }
@@ -400,22 +423,23 @@ select {
   }
 }
 input[type="checkbox"] {
-  $checkbox-size:     18px;
+  $checkbox-size: 18px;
 
   position: relative;
   display: inline-flex;
-	-webkit-appearance: none;
-	background-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: transparent;
   outline: 2px solid rgba($theme-base, 0.2);
   outline-offset: -2px;
   height: $checkbox-size;
   line-height: $checkbox-size;
   width: $checkbox-size;
-	padding: 0;
+  padding: 0;
   border: 0;
   margin-top: -1px;
   margin-right: ($gutter-w * 0.8);
-	border-radius: 5px;
+  border-radius: 5px;
   transition: background 0.2s ease-in-out;
   cursor: pointer;
   &:active,
@@ -427,8 +451,8 @@ input[type="checkbox"] {
     outline: none;
   }
   &:checked:after {
-    font-family: 'Material Icons';
-    content: '\e5ca';
+    font-family: "Material Icons";
+    content: "\e5ca";
     font-size: $checkbox-size;
     font-weight: bold;
     position: absolute;
@@ -443,11 +467,12 @@ input[type="checkbox"] {
 // Radio
 // ---------------------------------
 input[type="radio"] {
-  $radio-size:     16px;
+  $radio-size: 16px;
 
   position: relative;
   display: inline-flex;
   -webkit-appearance: none;
+  appearance: none;
   background-color: transparent;
   box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
   height: $radio-size;
@@ -460,7 +485,7 @@ input[type="radio"] {
   border-radius: 5px;
   transition: background 0.2s ease-in-out;
   cursor: pointer;
-  &:checked{
+  &:checked {
     background: color.adjust($theme-primary, $lightness: -10%);
     color: rgba(black, 0.87);
     box-shadow: none;
@@ -469,7 +494,7 @@ input[type="radio"] {
 
 // Input File
 // ---------------------------------
-input[type=file] {
+input[type="file"] {
   padding-left: $gutter-h;
   font-size: 12px;
   outline: none;
@@ -479,7 +504,7 @@ input[type=file] {
     font-family: $font-family, Helvetica, Arial, sans-serif;
     color: $theme-base;
     background: rgba($theme-base, 0.035);
-    font-size: 11px!important;
+    font-size: 11px !important;
     line-height: $input-height;
     height: $input-height + 1px;
     padding: 0 $gutter-w;
@@ -491,27 +516,28 @@ input[type=file] {
     box-shadow: inset -1px 0 rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
     cursor: pointer;
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       background: rgba($theme-base, 0.08);
     }
   }
 }
 
 .text-primary {
-  color: $brand-primary!important;
+  color: $brand-primary !important;
 }
 
 .text-success {
-  color: $brand-success!important;
+  color: $brand-success !important;
 }
 .text-info {
-  color: $brand-info!important;
+  color: $brand-info !important;
 }
 .text-danger {
-  color: color.adjust($brand-danger, $lightness: 5%)!important;
+  color: color.adjust($brand-danger, $lightness: 5%) !important;
 }
 .text-warning {
-  color: $brand-warning!important;
+  color: $brand-warning !important;
 }
 .text-light {
   color: $text-light;
@@ -615,7 +641,7 @@ input[type=file] {
     z-index: 20;
   }
   &.gutter-horizontal {
-    width: 0!important;
+    width: 0 !important;
     cursor: ew-resize;
     &:after {
       height: 100%;
@@ -626,7 +652,7 @@ input[type=file] {
   }
   &.gutter-vertical {
     cursor: ns-resize;
-    height: 0!important;
+    height: 0 !important;
     &:after {
       height: 8px;
       width: 100%;
@@ -641,10 +667,10 @@ input[type=file] {
   }
 }
 
-
 // Cards
 // ---------------------------------------
-.card, .card-flat {
+.card,
+.card-flat {
   border-radius: 8px;
   overflow: hidden;
   &.padding {
@@ -666,8 +692,8 @@ input[type=file] {
   @include card-shadow;
 }
 .card-flat {
-    background: $theme-bg;
-    box-shadow: none;
+  background: $theme-bg;
+  box-shadow: none;
 }
 .card-title {
   color: $text-dark;
@@ -676,15 +702,13 @@ input[type=file] {
   margin-bottom: 1.25rem;
 }
 .card-shadow {
-  box-shadow: 0 0 0 1px rgba(black ,0.06),
-              0 1px 3px 0 rgba(black ,0.12),
-              0 2px 1px -1px rgba(black ,0.08);
+  box-shadow: 0 0 0 1px rgba(black, 0.06), 0 1px 3px 0 rgba(black, 0.12),
+    0 2px 1px -1px rgba(black, 0.08);
   transition: box-shadow 0.28s ease-in-out;
 }
 .card-shadow-hover {
-  box-shadow: 0 0 0 1px rgba(black ,0.06),
-              0 1px 2px rgba(black ,0.08),
-              0 6px 15px rgba(black ,0.12);
+  box-shadow: 0 0 0 1px rgba(black, 0.06), 0 1px 2px rgba(black, 0.08),
+    0 6px 15px rgba(black, 0.12);
 }
 
 // Badge
@@ -702,15 +726,14 @@ input[type=file] {
   background: rgba($theme-base, 0.2);
   color: $theme-base;
   margin: 0 ($gutter-h * 0.75);
-  transition: color 0.15s ease-in-out,
-              background-color 0.15s ease-in-out,
-              border-color 0.15s ease-in-out,
-              box-shadow 0.15s ease-in-out;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   &.badge-info {
     background: $brand-info;
     color: rgba(black, 0.87);
   }
-  &.badge-error, &.badge-danger {
+  &.badge-error,
+  &.badge-danger {
     background: $brand-danger;
     color: rgba(black, 0.87);
   }
@@ -815,10 +838,10 @@ input[type=file] {
   --vs-dropdown-option--active-bg: #{$input-highlight};
   --vs-dropdown-option--active-color: #{$theme-base};
 
-  .vs__clear{
+  .vs__clear {
     display: none;
   }
-  .vs__dropdown-toggle{
+  .vs__dropdown-toggle {
     border: unset;
     padding: 0;
     background: unset;
@@ -833,7 +856,7 @@ input[type=file] {
     overflow: hidden;
   }
   .vs__actions {
-    padding: 0
+    padding: 0;
   }
   input {
     border: unset;

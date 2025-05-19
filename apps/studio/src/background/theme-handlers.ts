@@ -194,18 +194,34 @@ async function applyThemeCSS(
         .replace(/theme-[a-zA-Z0-9-_]+/g, '')
         .trim() + ' theme-${themeName}';
       
-      // Apply some direct styles to ensure the theme is applied
-      document.body.style.backgroundColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--theme-bg').trim() || '${themeName === 'light' ? '#ffffff' : '#1e1e1e'}';
-      document.body.style.color = getComputedStyle(document.documentElement)
-        .getPropertyValue('--theme-base').trim() || '${themeName === 'light' ? '#333333' : '#d4d4d4'}';
+      // This forces a CSS variable refresh
+      document.body.style.setProperty('--theme-active', '${themeName}');
+      
+      // Apply direct basic styles to debug
+      const computedStyle = getComputedStyle(document.documentElement);
+      
+      let bgColor = computedStyle.getPropertyValue('--theme-bg').trim();
+      let textColor = computedStyle.getPropertyValue('--theme-base').trim();
+      
+      // Fallback values
+      if (!bgColor) bgColor = '${themeName === 'light' ? '#ffffff' : '#1e1e1e'}';
+      if (!textColor) textColor = '${themeName === 'light' ? '#333333' : '#d4d4d4'}';
+      
+      console.log('Applying theme colors:', bgColor, textColor);
+      
+      // Force the body to use these colors
+      document.body.style.background = bgColor;
+      document.body.style.color = textColor;
       
       // Dispatch a custom event to notify the app that the theme has changed
       document.dispatchEvent(new CustomEvent('theme-changed', { 
         detail: { theme: '${themeName}' } 
       }));
       
+      // Log theme application
       console.log('Theme class and styles set to: theme-${themeName}');
+      console.log('Body styles:', document.body.style.background, document.body.style.color);
+      console.log('Body classes:', document.body.className);
     `);
 
     return key;

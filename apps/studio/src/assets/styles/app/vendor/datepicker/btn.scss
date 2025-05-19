@@ -1,4 +1,4 @@
-@import './var.scss';
+@use "../_shared_imports" as *;
 
 .#{$namespace}-btn {
   box-sizing: border-box;
@@ -15,8 +15,8 @@
   color: $theme-secondary;
   white-space: nowrap;
   &:hover {
-    border-color: $primary-color;
-    color: $primary-color;
+    border-color: $theme-primary;
+    color: $theme-primary;
   }
   &:disabled,
   &.disabled {

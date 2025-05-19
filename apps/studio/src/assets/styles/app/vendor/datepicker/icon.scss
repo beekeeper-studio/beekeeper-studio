@@ -1,4 +1,4 @@
-@import './var.scss';
+@use "../_shared_imports" as *;
 
 .#{$namespace}-icon-left:before,
 .#{$namespace}-icon-right:before,
@@ -6,7 +6,7 @@
 .#{$namespace}-icon-double-right:before,
 .#{$namespace}-icon-double-left:after,
 .#{$namespace}-icon-double-right:after {
-  content: '';
+  content: "";
   position: relative;
   top: -1px;
   display: inline-block;

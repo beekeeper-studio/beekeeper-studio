@@ -4,27 +4,27 @@
       class="vue-dialog beekeeper-modal upgrade-modal"
       name="upgrade-modal"
       height="auto"
-      @opened="$refs.learnMore.focus()"
+      @opened="onModalOpened"
     >
-      <div
-        class="dialog-content"
-        v-kbd-trap="true"
-      >
+      <div class="dialog-content" v-kbd-trap="true">
         <h3 class="dialog-c-title has-icon">
-          <i class="material-icons">stars</i> <span>Upgrade Beekeeper Studio</span>
+          <i class="material-icons">stars</i>
+          <span>Upgrade Beekeeper Studio</span>
         </h3>
 
         <a
           class="close-btn btn btn-fab"
           href="#"
           @click.prevent="$modal.hide('upgrade-modal')"
+          ref="closeButton"
         >
           <i class="material-icons">clear</i>
         </a>
         <div class="checkbox-wrapper">
           <!-- <p class="text-muted">This feature is not included in the Community Edition. Please upgrade the app to continue.</p> -->
           <p class="text-muted">
-            <strong v-if="message">{{ message }}.</strong> Upgrade to get exclusive features:
+            <strong v-if="message">{{ message }}.</strong> Upgrade to get
+            exclusive features:
           </p>
           <div class="row">
             <div class="col s6">
@@ -57,31 +57,38 @@
   </portal>
 </template>
 <script lang="ts">
-import { AppEvent } from '@/common/AppEvent'
-import Vue from 'vue'
-import UpsellButtons from '../upsell/common/UpsellButtons.vue';
+import { AppEvent } from "@/common/AppEvent";
+import Vue from "vue";
+import UpsellButtons from "../upsell/common/UpsellButtons.vue";
 
 export default Vue.extend({
-  components: { UpsellButtons},
+  components: { UpsellButtons },
   data() {
     return {
-      message: null
-    }
+      message: null,
+    };
   },
   methods: {
     showModal(message) {
       if (this.$store.getters.isCommunity) {
-        this.message = message
-        this.$modal.show('upgrade-modal')
+        this.message = message;
+        this.$modal.show("upgrade-modal");
       }
-    }
+    },
+    onModalOpened() {
+      // Focus the close button or wait until $refs are available
+      this.$nextTick(() => {
+        if (this.$refs.closeButton) {
+          this.$refs.closeButton.focus();
+        }
+      });
+    },
   },
   mounted() {
-    this.$root.$on(AppEvent.upgradeModal, this.showModal)
+    this.$root.$on(AppEvent.upgradeModal, this.showModal);
   },
   beforeDestroy() {
-    this.$root.$off(AppEvent.upgradeModal, this.showModal)
-  }
-
-})
+    this.$root.$off(AppEvent.upgradeModal, this.showModal);
+  },
+});
 </script>

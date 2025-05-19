@@ -87,8 +87,15 @@ process.on('uncaughtException', (error) => {
   log.error(error);
 });
 
-process.parentPort.on('message', async ({ data, ports }) => {
-  const { type, sId } = data;
+process.parentPort.on('message', async (message) => {
+  const { data = {}, ports = [] } = message || {};
+  const { type, sId } = data || {};
+
+  if (!type) {
+    log.error('INVALID MESSAGE RECEIVED FROM MAIN PROCESS: Missing type');
+    return;
+  }
+
   switch (type) {
     case 'init':
       if (ports && ports.length > 0) {
@@ -100,11 +107,15 @@ process.parentPort.on('message', async ({ data, ports }) => {
       break;
     case 'close':
       log.info('REMOVING STATE FOR: ', sId);
-      state(sId).port.close();
-      removeState(sId);
+      if (sId && state(sId) && state(sId).port) {
+        state(sId).port.close();
+        removeState(sId);
+      } else {
+        log.warn('ATTEMPTED TO CLOSE STATE THAT DOES NOT EXIST:', sId);
+      }
       break;
     default:
-      log.error('UNRECOGNIZED MESSAGE TYPE RECEIVED FROM MAIN PROCESS');
+      log.error('UNRECOGNIZED MESSAGE TYPE RECEIVED FROM MAIN PROCESS:', type);
   }
 })
 
@@ -114,6 +125,11 @@ async function runHandler(id: string, name: string, args: any) {
     id,
     type: 'reply',
   };
+
+  if (!args || typeof args !== 'object') {
+    args = { sId: null };
+    log.error('INVALID ARGS RECEIVED FOR HANDLER:', name, id);
+  }
 
   if (handlers[name]) {
     return handlers[name](args)
@@ -128,7 +144,11 @@ async function runHandler(id: string, name: string, args: any) {
       })
       .finally(() => {
         try {
-          state(args.sId).port.postMessage(replyArgs);
+          if (args.sId && state(args.sId) && state(args.sId).port) {
+            state(args.sId).port.postMessage(replyArgs);
+          } else {
+            log.error('CANNOT SEND MESSAGE: Invalid state or port for sId:', args.sId);
+          }
         } catch (e) {
           log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
         }
@@ -138,7 +158,11 @@ async function runHandler(id: string, name: string, args: any) {
     replyArgs.error = `Invalid handler name: ${name}`;
 
     try {
-      state(args.sId).port.postMessage(replyArgs);
+      if (args.sId && state(args.sId) && state(args.sId).port) {
+        state(args.sId).port.postMessage(replyArgs);
+      } else {
+        log.error('CANNOT SEND ERROR MESSAGE: Invalid state or port for sId:', args.sId);
+      }
     } catch (e) {
       log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
     }
@@ -146,14 +170,36 @@ async function runHandler(id: string, name: string, args: any) {
 }
 
 async function initState(sId: string, port: MessagePortMain) {
-  newState(sId);
+  if (!sId || !port) {
+    log.error('CANNOT INITIALIZE STATE: Missing sId or port');
+    return;
+  }
 
+  newState(sId);
   state(sId).port = port;
 
-  state(sId).port.on('message', ({ data }) => {
-    const { id, name, args } = data;
-    runHandler(id, name, args);
-  })
+  state(sId).port.on('message', (message) => {
+    try {
+      const { data } = message || {};
+
+      if (!data) {
+        log.error('RECEIVED INVALID MESSAGE: Missing data');
+        return;
+      }
+
+      const { id, name, args } = data;
+
+      if (!id || !name) {
+        log.error('RECEIVED INVALID MESSAGE: Missing id or name', id, name);
+        return;
+      }
+
+      const argsWithSid = { ...(args || {}), sId };
+      runHandler(id, name, argsWithSid);
+    } catch (e) {
+      log.error('ERROR PROCESSING MESSAGE:', e);
+    }
+  });
 
   state(sId).port.start();
 }

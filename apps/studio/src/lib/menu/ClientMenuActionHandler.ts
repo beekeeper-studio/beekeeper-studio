@@ -18,7 +18,8 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   }
 
   manageCustomThemes() {
-    // TODO: implement
+    log.debug("Showing theme manager");
+    send('manageCustomThemes');
   }
   upgradeModal = () => send('upgradeModal')
 

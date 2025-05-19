@@ -1,5 +1,5 @@
 @use "sass:color";
-@use "../app/_variables" as *;
+@use "../app/vendor/_shared_imports" as *;
 @use "./text-editor-plugins/partial-read-only.scss";
 
 .text-editor {

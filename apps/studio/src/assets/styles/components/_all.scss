@@ -1,3 +1,6 @@
+// With SASS module system, each file needs to import its own dependencies
+// This file just gathers all component imports in one place
+
 @use "content-placeholders.scss";
 @use "context-menu.scss";
 @use "quicksearch.scss";

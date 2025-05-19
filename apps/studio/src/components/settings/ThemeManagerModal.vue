@@ -210,7 +210,6 @@
                   </div>
                 </div>
 
-                <!-- Add theme upload button -->
                 <div class="theme-card add-theme">
                   <div class="upload-area" @click="triggerFileInput">
                     <input
@@ -275,9 +274,69 @@
 
 <script>
 import { AppEvent } from "@/common/AppEvent";
-import { baseThemes } from "@/components/theme/ThemeConfigurations";
+import { defaultThemes } from "@/components/theme/ThemeConfigurations";
+import { initializeTheme } from "@/components/theme/ThemeInitializer";
 import { mapGetters, mapState } from "vuex";
 import "./theme-manager-modal.scss";
+
+function getThemeVariables(themeName) {
+  const baseVariables = {
+    "--theme-active": themeName,
+  };
+
+  switch (themeName) {
+    case "dark":
+      return {
+        ...baseVariables,
+        "--theme-bg": "#252525",
+        "--theme-base": "#ffffff",
+        "--theme-string": "#a5d6ff",
+        "--theme-keyword": "#ff7b72",
+        "--theme-primary": "#ff7b72",
+        "--theme-secondary": "#4ad0ff",
+        "--border-color": "rgba(255, 255, 255, 0.1)",
+        "--sidebar-bg": "#1e1e1e",
+      };
+    case "light":
+      return {
+        ...baseVariables,
+        "--theme-bg": "#f5f5f5",
+        "--theme-base": "#24292e",
+        "--theme-string": "#032f62",
+        "--theme-keyword": "#d73a49",
+        "--theme-primary": "#d73a49",
+        "--theme-secondary": "#032f62",
+        "--border-color": "rgba(0, 0, 0, 0.1)",
+        "--sidebar-bg": "#ececec",
+      };
+    case "solarized-dark":
+      return {
+        ...baseVariables,
+        "--theme-bg": "#002b36",
+        "--theme-base": "#93a1a1",
+        "--theme-string": "#2aa198",
+        "--theme-keyword": "#cb4b16",
+        "--theme-primary": "#cb4b16",
+        "--theme-secondary": "#b58900",
+        "--border-color": "rgba(147, 161, 161, 0.1)",
+        "--sidebar-bg": "#073642",
+      };
+    case "solarized-light":
+      return {
+        ...baseVariables,
+        "--theme-bg": "#fdf6e3",
+        "--theme-base": "#657b83",
+        "--theme-string": "#2aa198",
+        "--theme-keyword": "#cb4b16",
+        "--theme-primary": "#cb4b16",
+        "--theme-secondary": "#b58900",
+        "--border-color": "rgba(101, 123, 131, 0.1)",
+        "--sidebar-bg": "#eee8d5",
+      };
+    default:
+      return baseVariables;
+  }
+}
 
 export default {
   name: "ThemeManagerModal",
@@ -288,6 +347,7 @@ export default {
       loading: true,
       error: null,
       selectedTheme: null,
+      allThemes: [],
       popularThemes: [],
       customThemes: [],
       selectedFile: null,
@@ -302,7 +362,6 @@ export default {
     }),
     ...mapGetters({
       themeValue: "settings/themeValue",
-      allThemes: "themes/allThemes",
     }),
     filteredThemes() {
       if (this.activeTab === "popular") {
@@ -316,123 +375,184 @@ export default {
     },
   },
   mounted() {
-    this.loadThemes().then(() => {
-      this.selectedTheme =
-        this.allThemes.find((theme) => theme.id === this.themeValue) ||
-        this.allThemes[0];
-    });
-
+    this.loadThemes();
     this.registerHandlers([
       { event: AppEvent.showThemeManager, handler: this.show },
     ]);
+
+    window.showThemeManagerModal = this.show;
   },
   beforeDestroy() {
     this.unregisterHandlers([
       { event: AppEvent.showThemeManager, handler: this.show },
     ]);
+
+    if (window.showThemeManagerModal === this.show) {
+      window.showThemeManagerModal = undefined;
+    }
   },
   methods: {
     show() {
       this.isVisible = true;
-      this.fetchPopularThemes();
     },
     close() {
       this.isVisible = false;
       this.resetUploadState();
       this.$emit("close");
     },
-    async fetchPopularThemes() {
+    async loadThemes() {
       this.loading = true;
-      this.error = null;
-
       try {
-        const themes = this.allThemes || [];
+        this.allThemes = [...defaultThemes];
 
-        this.popularThemes = themes.map((theme) => ({
-          ...theme,
-          isActive: theme.id === this.themeValue,
-        }));
+        try {
+          const fetchedThemes = await this.$store.dispatch(
+            "themes/fetchThemes"
+          );
+          if (fetchedThemes && fetchedThemes.length) {
+            const existingThemeIds = new Set(
+              this.allThemes.map((theme) => theme.id)
+            );
+            const uniqueCustomThemes = fetchedThemes.filter(
+              (theme) => !existingThemeIds.has(theme.id)
+            );
+
+            this.allThemes = [...this.allThemes, ...uniqueCustomThemes];
+          }
+        } catch (err) {
+          console.warn("No custom themes found:", err);
+        }
+
+        const currentThemeId = this.themeValue || "dark";
+
+        this.allThemes.forEach((theme) => {
+          theme.isActive = theme.id === currentThemeId;
+        });
+
+        this.selectedTheme =
+          this.allThemes.find((theme) => theme.id === currentThemeId) ||
+          this.allThemes[0];
+
+        this.popularThemes = this.allThemes.filter(
+          (theme) => theme.isBuiltIn !== false
+        );
+
+        this.loading = false;
       } catch (err) {
-        console.error("Error fetching themes:", err);
-        this.error = "Failed to load themes. Please try again.";
-      } finally {
+        console.error("Error loading themes:", err);
+        this.error = `Failed to load themes: ${err.message}`;
         this.loading = false;
       }
     },
     async applyTheme(theme) {
       try {
-        const result = await this.$util.send("themes/apply", {
-          name: theme.id,
+        this.selectedTheme = theme;
+        this.previewedThemeId = theme.id;
+
+        localStorage.setItem("activeTheme", theme.id);
+
+        this.$store.commit("settings/SET_THEME", theme.id);
+
+        const themeVariables = getThemeVariables(theme.id);
+        Object.entries(themeVariables).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(key, value);
+          document.body.style.setProperty(key, value);
         });
 
-        if (result.success) {
-          this.$store.dispatch("settings/save", {
-            key: "theme",
-            value: theme.id,
-          });
+        document.body.className =
+          document.body.className.replace(/theme-[a-zA-Z0-9-_]+/g, "").trim() +
+          ` theme-${theme.id}`;
 
-          this.selectedTheme = theme;
-          this.previewedThemeId = null;
+        document.documentElement.className =
+          document.documentElement.className
+            .replace(/theme-[a-zA-Z0-9-_]+/g, "")
+            .trim() + ` theme-${theme.id}`;
 
-          this.allThemes.forEach((t) => {
-            t.isActive = t.id === theme.id;
-          });
+        const connectionMain = document.querySelector(".connection-main");
+        if (connectionMain) {
+          const isDarkTheme = [
+            "dark",
+            "solarized-dark",
+            "panda-syntax",
+            "min-dark",
+            "eva-dark",
+          ].includes(theme.id);
 
-          this.$noty.success(`Theme "${theme.name}" applied successfully`);
-          this.$emit("close");
-        } else {
-          throw new Error(result.error);
+          connectionMain.style.backgroundColor = themeVariables["--theme-bg"];
+
+          const sidebar = document.querySelector(".sidebar-wrapper");
+          if (sidebar) {
+            sidebar.style.backgroundColor = themeVariables["--sidebar-bg"];
+          }
         }
+
+        await initializeTheme();
+
+        if (this.styleTag) {
+          document.head.removeChild(this.styleTag);
+          this.styleTag = null;
+        }
+
+        this.close();
+
+        this.$noty.success(`Theme "${theme.name}" applied successfully`);
       } catch (error) {
         console.error("Error applying theme:", error);
-        this.$noty.error(`Failed to apply theme: ${error.message}`);
+        this.error = `Could not apply theme: ${error.message}`;
       }
     },
     async previewTheme(theme) {
       try {
-        const result = await this.$util.send("themes/getCSS", {
-          name: theme.id,
+        this.previewedThemeId = theme.id;
+
+        localStorage.setItem("activeTheme", theme.id);
+
+        this.$store.commit("settings/SET_THEME_PREVIEW", theme.id);
+
+        const themeVariables = getThemeVariables(theme.id);
+        Object.entries(themeVariables).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(key, value);
+          document.body.style.setProperty(key, value);
         });
 
-        if (result.success) {
-          this.previewedThemeId = theme.id;
-          this.$root.$emit("theme-preview-changed", {
-            themeId: theme.id,
-            css: result.css,
-            baseTheme: baseThemes.includes(theme.id) ? undefined : "dark",
-          });
-          this.$noty.success(`Previewing theme: ${theme.name}`);
-        } else {
-          throw new Error(result.error);
+        document.body.className =
+          document.body.className.replace(/theme-[a-zA-Z0-9-_]+/g, "").trim() +
+          ` theme-${theme.id}`;
+
+        document.documentElement.className =
+          document.documentElement.className
+            .replace(/theme-[a-zA-Z0-9-_]+/g, "")
+            .trim() + ` theme-${theme.id}`;
+
+        const connectionMain = document.querySelector(".connection-main");
+        if (connectionMain) {
+          const isDarkTheme = [
+            "dark",
+            "solarized-dark",
+            "panda-syntax",
+            "min-dark",
+            "eva-dark",
+          ].includes(theme.id);
+
+          connectionMain.style.backgroundColor = themeVariables["--theme-bg"];
+
+          const sidebar = document.querySelector(".sidebar-wrapper");
+          if (sidebar) {
+            sidebar.style.backgroundColor = themeVariables["--sidebar-bg"];
+          }
         }
+
+        await initializeTheme();
+
+        this.$root.$emit("theme-preview-changed", {
+          themeId: theme.id,
+          css: null,
+        });
+
+        this.$noty.success(`Previewing theme: ${theme.name}`);
       } catch (error) {
         console.error("Error previewing theme:", error);
-        this.$noty.error(`Failed to preview theme: ${error.message}`);
-      }
-    },
-    async loadThemes() {
-      this.loading = true;
-      this.error = null;
-
-      try {
-        await this.$store.dispatch("themes/fetchThemes");
-        const currentThemeId = this.themeValue;
-        this.selectedTheme =
-          this.allThemes.find((theme) => theme.id === currentThemeId) ||
-          this.allThemes[0];
-        this.popularThemes = this.allThemes.filter(
-          (theme) => theme.isBuiltIn && theme.isPopular
-        );
-        this.customThemes = this.allThemes.filter((theme) => !theme.isBuiltIn);
-
-        this.allThemes.forEach((theme) => {
-          theme.isActive = theme.id === currentThemeId;
-        });
-      } catch (error) {
-        console.error("Error loading themes:", error);
-        this.error = "Failed to load themes. Please try again.";
-      } finally {
-        this.loading = false;
+        this.error = `Could not preview theme: ${error.message}`;
       }
     },
     resetUploadState() {
@@ -456,19 +576,15 @@ export default {
       });
     },
     hexToRgb(hex) {
-      // Remove the hash if it exists
       hex = hex.replace(/^#/, "");
 
-      // Parse the hex values
       const bigint = parseInt(hex, 16);
       const r = (bigint >> 16) & 255;
       const g = (bigint >> 8) & 255;
       const b = bigint & 255;
 
-      // Return the RGB values as a string
       return `${r}, ${g}, ${b}`;
     },
-    // Removed applyFallbackThemeStyles - now handled by ThemeService
     adjustColor(color, amount) {
       let usePound = false;
 
@@ -561,16 +677,10 @@ export default {
 
         this.$store.dispatch("themes/addCustomTheme", newTheme);
 
-        console.log(
-          `Imported ${
-            fileExtension === ".json" ? "VSCode" : "SublimeText"
-          } theme: ${themeName}`
-        );
-
         this.$noty.success(`Theme "${themeName}" imported successfully!`);
         this.resetUploadState();
 
-        this.fetchPopularThemes();
+        this.loadThemes();
       } catch (err) {
         console.error("Error importing theme:", err);
         this.uploadError =
