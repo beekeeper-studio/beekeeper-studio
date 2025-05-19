@@ -4,7 +4,40 @@
 export async function initializeTheme() {
   try {
     // Get active theme from localStorage or default to 'dark'
-    let activeTheme = localStorage.getItem('activeTheme') || 'dark';
+    let activeTheme = localStorage.getItem('activeTheme');
+
+    console.log('[ThemeInitializer] Theme from localStorage:', activeTheme);
+
+    // If no theme in localStorage, try to fetch from store (if it's available)
+    if (!activeTheme) {
+      try {
+        if (typeof window !== 'undefined' &&
+          // @ts-ignore - Accessing potential global Vue app
+          window.$store &&
+          // @ts-ignore
+          window.$store.getters &&
+          // @ts-ignore
+          window.$store.getters['settings/themeValue']) {
+          // @ts-ignore
+          activeTheme = window.$store.getters['settings/themeValue'];
+          console.log('[ThemeInitializer] Theme from settings store:', activeTheme);
+
+          // Save to localStorage for future consistency
+          localStorage.setItem('activeTheme', activeTheme);
+        }
+      } catch (err) {
+        console.log('[ThemeInitializer] Could not access store:', err);
+      }
+    }
+
+    // Default to dark if nothing found
+    if (!activeTheme) {
+      activeTheme = 'dark';
+      console.log('[ThemeInitializer] Using default theme:', activeTheme);
+
+      // Save default to localStorage
+      localStorage.setItem('activeTheme', activeTheme);
+    }
 
     console.log('[ThemeInitializer] Initializing theme:', activeTheme);
 
@@ -38,7 +71,7 @@ export async function initializeTheme() {
       document.body.style.setProperty(key, value);
     });
 
-    // Ensure the theme variables are applied with !important to override any conflicting styles
+    // make sure theme vars are applied with !important to override any conflicting styles
     applyThemeWithPriority(activeTheme, themeVariables);
 
     // Ensure the theme variables are applied
@@ -50,8 +83,20 @@ export async function initializeTheme() {
         // Request theme application
         await (window.electron.ipcRenderer as any).invoke('themes/apply', { name: activeTheme });
         console.log('[ThemeInitializer] Theme applied via IPC');
+
+        // Also trigger a menu rebuild to update the menu checkmarks
+        // Add a small delay to ensure the theme is fully applied first
+        console.log('[ThemeInitializer] Requesting menu rebuild');
+        setTimeout(async () => {
+          try {
+            await (window.electron.ipcRenderer as any).invoke('app/rebuildMenu', { theme: activeTheme });
+            console.log('[ThemeInitializer] Menu rebuilt');
+          } catch (menuErr) {
+            console.error('[ThemeInitializer] Error rebuilding menu:', menuErr);
+          }
+        }, 100);
       } catch (err) {
-        console.error('[ThemeInitializer] Error applying theme via IPC:', err);
+        console.error('[ThemeInitializer] Error with IPC operations:', err);
       }
     }
 

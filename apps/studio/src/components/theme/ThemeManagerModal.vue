@@ -125,6 +125,17 @@ export default {
     async applyTheme(themeId) {
       try {
         this.activeTheme = themeId;
+        console.log(`Applying theme: ${themeId}`);
+
+        // Find the theme object
+        const theme = this.themes.find((t) => t.id === themeId);
+        if (!theme) {
+          throw new Error(`Theme ${themeId} not found`);
+        }
+
+        // Store in localStorage first for direct access by any process
+        localStorage.setItem("activeTheme", themeId);
+        console.log(`Theme saved to localStorage: ${themeId}`);
 
         // update the vuex store
         await this.$store.dispatch("settings/update", {
@@ -132,20 +143,41 @@ export default {
           value: themeId,
         });
 
-        // use the utility process to apply the theme
-        const result = await this.$util.send("themes/apply", { name: themeId });
+        // Create a full theme data object for the event
+        const themeData = {
+          id: themeId,
+          name: theme.name,
+          colors: theme.colors || {},
+          description: theme.description || "",
+          type: theme.type || "custom",
+        };
 
-        if (!result.success) {
-          throw new Error(result.error || "Failed to apply theme");
+        // Send the theme:update event to the main process
+        if (window.electron && window.electron.ipcRenderer) {
+          console.log("[ThemeManagerModal] Sending theme:update IPC event");
+          window.electron.ipcRenderer.send("theme:update", themeData);
+
+          // Force a menu rebuild after a short delay to ensure changes are applied
+          setTimeout(async () => {
+            console.log(
+              "[ThemeManagerModal] Explicitly requesting menu rebuild to reflect theme change"
+            );
+            try {
+              // Use an explicit IPC call to rebuild the menu with the current theme
+              const rebuildResult = await this.$util.send("app/rebuildMenu", {
+                theme: themeId,
+                forceRefresh: true,
+              });
+              console.log(
+                "[ThemeManagerModal] Menu rebuild result:",
+                rebuildResult
+              );
+            } catch (err) {
+              console.error("[ThemeManagerModal] Menu rebuild error:", err);
+            }
+          }, 100);
         }
 
-        // save the theme setting
-        await this.$util.send("appdb/setting/save", {
-          key: "theme",
-          value: themeId,
-        });
-
-        const theme = this.themes.find((t) => t.id === themeId);
         this.$noty.success(`Theme ${theme.name} applied successfully`);
       } catch (err) {
         console.error("Error applying theme:", err);

@@ -571,6 +571,104 @@ export default {
         // Store the theme in localStorage first
         this.selectedTheme = theme;
         localStorage.setItem("activeTheme", theme.id);
+        console.log(
+          `[ThemeManagerModal] Saved theme to localStorage: ${theme.id}`
+        );
+
+        // Save in Vuex store which triggers IPC events
+        try {
+          console.log(
+            `[ThemeManagerModal] Sending theme update event for theme: ${theme.id}`
+          );
+
+          // First, ensure the theme is saved to localStorage for persistence
+          localStorage.setItem("activeTheme", theme.id);
+          console.log(
+            `[ThemeManagerModal] Saved theme to localStorage: ${theme.id}`
+          );
+
+          // Save to Vuex store as well
+          await this.$store.dispatch("settings/save", {
+            key: "theme",
+            value: theme.id,
+          });
+          console.log(
+            `[ThemeManagerModal] Saved theme to Vuex store: ${theme.id}`
+          );
+
+          // Create a complete theme data object
+          const themeData = {
+            id: theme.id,
+            name: theme.name,
+            label: theme.name || this.formatThemeName(theme.id),
+            colors: theme.colors || {},
+            description: theme.description || "",
+            type: theme.type || "custom",
+          };
+
+          // Send the theme update event to the main process
+          if (window.electron && window.electron.ipcRenderer) {
+            console.log("[ThemeManagerModal] Sending theme:update IPC event");
+            window.electron.ipcRenderer.send("theme:update", themeData);
+          }
+
+          console.log("[ThemeManagerModal] Theme update event sent");
+        } catch (err) {
+          console.error("[ThemeManagerModal] Error updating theme:", err);
+        }
+
+        // trigger menu rebuild with the new theme
+        try {
+          console.log(
+            `[ThemeManagerModal] Explicitly requesting menu rebuild with theme: ${theme.id}`
+          );
+
+          // First, ensure the theme is saved to localStorage
+          localStorage.setItem("activeTheme", theme.id);
+          console.log(
+            `[ThemeManagerModal] Confirmed theme saved to localStorage: ${theme.id}`
+          );
+
+          // Second, update Vuex store
+          await this.$store.dispatch("settings/save", {
+            key: "theme",
+            value: theme.id,
+          });
+          console.log(
+            `[ThemeManagerModal] Confirmed theme saved to Vuex store: ${theme.id}`
+          );
+
+          // Finally, trigger a complete menu rebuild with forced refresh
+          const rebuildResult = await this.$util.send("app/rebuildMenu", {
+            theme: theme.id,
+            forceRefresh: true,
+          });
+          console.log(
+            "[ThemeManagerModal] Menu rebuild result:",
+            rebuildResult
+          );
+
+          // If menu rebuild failed, try a fallback approach
+          if (!rebuildResult.success) {
+            console.log(
+              "[ThemeManagerModal] Menu rebuild failed, trying alternative approach"
+            );
+
+            // Try a direct IPC call to apply theme
+            if (window.electron && window.electron.ipcRenderer) {
+              console.log(
+                "[ThemeManagerModal] Sending direct IPC message to apply theme"
+              );
+              // Using non-TypeScript approach to call ipcRenderer
+              window.electron.ipcRenderer.invoke("app/rebuildMenu", {
+                theme: theme.id,
+                forceRefresh: true,
+              });
+            }
+          }
+        } catch (menuErr) {
+          console.error("[ThemeManagerModal] Error rebuilding menu:", menuErr);
+        }
 
         // thorough cleanup of existing theme elements
         document
@@ -636,33 +734,33 @@ export default {
         // add high-specificity selectors for key UI components
         cssContent += `
           }
-          
+
           /* Ensure body background and text colors */
           body, #app, .theme-${theme.id}, [class*="theme-${theme.id}"] {
             background-color: ${colors["--theme-bg"]} !important;
             color: ${colors["--theme-base"]} !important;
           }
-          
+
           /* Main content area */
           .connection-main, #main, main, .main-content {
             background-color: ${colors["--theme-bg"]} !important;
             color: ${colors["--theme-base"]} !important;
           }
-          
+
           /* Sidebar */
           .sidebar-wrapper, .sidebar, aside, nav.sidebar,
           .database-connection-panel, .connection-selector, .saved-connection-list {
             background-color: ${colors["--sidebar-bg"]} !important;
             color: ${colors["--theme-base"]} !important;
           }
-          
+
           /* Header/toolbar */
           header, .header, .app-header, .toolbar, nav:not(.sidebar),
           .titlebar, .connection-header {
             background-color: ${colors["--theme-bg"]} !important;
             color: ${colors["--theme-base"]} !important;
           }
-          
+
           /* Dropdowns, modals, and popups */
           .dropdown-content, .modal, .dialog, .popover, .context-menu {
             background-color: ${colors["--theme-bg"]} !important;
@@ -827,7 +925,7 @@ export default {
 
       cssContent += `
         }
-        
+
         /* Apply to body as well for components that might not inherit from :root */
         body {
       `;
@@ -839,26 +937,26 @@ export default {
 
       cssContent += `
         }
-        
+
         /* Ensure proper theme class is set */
         html, body {
           color-scheme: ${
             themeId.includes("light") ? "light" : "dark"
           } !important;
         }
-        
+
         /* Ensure proper theme background and text colors */
         .theme-${themeId}, body.theme-${themeId}, #app, #app-container {
           background-color: ${variables["--theme-bg"]} !important;
           color: ${variables["--theme-base"]} !important;
         }
-        
+
         /* Apply to specific application areas */
         .theme-${themeId} .connection-main,
         body.theme-${themeId} .connection-main {
           background-color: ${variables["--theme-bg"]} !important;
         }
-        
+
         /* Navbar/header styling */
         .theme-${themeId} .connection-header,
         .theme-${themeId} header,
@@ -869,7 +967,7 @@ export default {
           background-color: ${variables["--theme-bg"]} !important;
           color: ${variables["--theme-base"]} !important;
         }
-        
+
         /* Sidebar styling - these are explicit for maximum specificity */
         .theme-${themeId} .sidebar-wrapper,
         .theme-${themeId} .sidebar,
@@ -880,7 +978,7 @@ export default {
           background-color: ${variables["--sidebar-bg"]} !important;
           color: ${variables["--theme-base"]} !important;
         }
-        
+
         /* Database connection panel styling */
         .theme-${themeId} .database-connection-panel,
         .theme-${themeId} .connection-selector,
@@ -890,7 +988,7 @@ export default {
         }
 
         /* Make sure all popups and dialogs get theme colors */
-        .theme-${themeId} .modal, 
+        .theme-${themeId} .modal,
         .theme-${themeId} .dropdown-content,
         .theme-${themeId} .context-menu {
           background-color: ${variables["--theme-bg"]} !important;
@@ -1376,6 +1474,26 @@ export default {
       } catch (err) {
         console.error("Error reloading current theme:", err);
       }
+    },
+    // Format a theme ID into a display name
+    formatThemeName(themeId) {
+      if (!themeId) return "Unknown Theme";
+
+      // Convert dashed names to space-separated words
+      return (
+        themeId
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ")
+          // Format special terms
+          .replace(/Github/g, "GitHub")
+          .replace(/Vscode/g, "VSCode")
+          .replace(/Css/g, "CSS")
+          .replace(/Json/g, "JSON")
+          .replace(/Sql/g, "SQL")
+          .replace(/Api/g, "API")
+          .replace(/Ui/g, "UI")
+      );
     },
   },
 };

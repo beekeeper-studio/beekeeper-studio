@@ -1,36 +1,66 @@
 import platformInfo from '@/common/platform_info'
 import rawLog from '@bksLogger'
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, ipcMain, Menu } from 'electron'
 import { AppEvent } from '../common/AppEvent'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import MenuBuilder from '../common/menus/MenuBuilder'
+import { menuItems } from '../common/menus/MenuItems'
 import NativeMenuActionHandlers from './NativeMenuActionHandlers'
 
 const log = rawLog.scope('NativeMenuBuilder')
 
 export default class NativeMenuBuilder {
-  private builder?: MenuBuilder
   private handler: NativeMenuActionHandlers
+  private currentTheme: string | null = null
   private menu?: Electron.Menu
 
   constructor(private electron: any, settings: IGroupedUserSettings) {
     this.handler = new NativeMenuActionHandlers(settings)
-    // We only support native titlebars for Mac now
-    if (platformInfo.isMac) {
-      this.builder = new MenuBuilder(settings, this.handler, platformInfo)
-    }
+    this.rebuildMenu(settings)
   }
 
   initialize(): void {
-    if (this.builder) {
-      const template = this.builder.buildTemplate()
-      this.menu = this.electron.Menu.buildFromTemplate(template)
-      this.electron.Menu.setApplicationMenu(this.menu)
-    } else {
-      this.electron.Menu.setApplicationMenu(null)
+    if (this.menu) {
+      Menu.setApplicationMenu(this.menu)
     }
     this.listenForClicks()
     this.listenForToggleConnectionMenuItems();
+  }
+
+  rebuildMenu(settings: IGroupedUserSettings): void {
+    try {
+      // Extract current theme from settings
+      const currentTheme = settings?.theme?.value as string;
+
+      console.log('[NativeMenuBuilder] Building menu with theme:', currentTheme);
+
+      // Only rebuild the menu if the theme has changed or if we don't have a menu yet
+      if (this.currentTheme !== currentTheme || !this.menu) {
+        console.log('[NativeMenuBuilder] Theme changed, rebuilding menu');
+
+        this.currentTheme = currentTheme;
+        const items = menuItems(this.handler, settings, platformInfo)
+
+        // Build the application menu
+        const template = this.buildMenuTemplate(items)
+
+        // Create the menu
+        this.menu = Menu.buildFromTemplate(template)
+
+        console.log('[NativeMenuBuilder] Menu rebuilt successfully');
+      } else {
+        console.log('[NativeMenuBuilder] Theme has not changed, skipping menu rebuild');
+      }
+    } catch (error) {
+      console.error('[NativeMenuBuilder] Error rebuilding menu:', error);
+    }
+  }
+
+  // Method to force a menu rebuild regardless of theme change
+  forceRebuild(settings: IGroupedUserSettings): void {
+    console.log('[NativeMenuBuilder] Forcing menu rebuild');
+    this.currentTheme = null; // Reset the current theme to force a rebuild
+    this.rebuildMenu(settings);
+    this.initialize();
   }
 
   toggleConnectionMenuItems(action: "enable" | "disable") {
@@ -107,5 +137,107 @@ export default class NativeMenuBuilder {
       // Set the built-in theme
       this.sendToFocusedWindow('set-theme', themeName);
     }
+  }
+
+  private buildMenuTemplate(menuItemsObj: any): Electron.MenuItemConstructorOptions[] {
+    // Convert menuItems object into Electron menu template
+    if (!platformInfo.isMac) {
+      return [];
+    }
+
+    // Create template for macOS 
+    return [
+      {
+        label: 'Beekeeper Studio',
+        submenu: [
+          { role: 'about' },
+          { type: 'separator' },
+          menuItemsObj.enterLicense,
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          menuItemsObj.quit
+        ]
+      },
+      {
+        label: 'File',
+        submenu: [
+          menuItemsObj.newWindow,
+          menuItemsObj.newTab,
+          menuItemsObj.addBeekeeper,
+          { type: 'separator' },
+          menuItemsObj.closeTab,
+          menuItemsObj.importSqlFiles,
+          { type: 'separator' },
+          menuItemsObj.disconnect
+        ]
+      },
+      {
+        label: 'Edit',
+        submenu: [
+          menuItemsObj.undo,
+          menuItemsObj.redo,
+          { type: 'separator' },
+          menuItemsObj.cut,
+          menuItemsObj.copy,
+          menuItemsObj.paste,
+          { role: 'pasteAndMatchStyle' },
+          menuItemsObj.selectAll,
+        ]
+      },
+      {
+        label: 'View',
+        submenu: [
+          menuItemsObj.zoomreset,
+          menuItemsObj.zoomin,
+          menuItemsObj.zoomout,
+          { type: 'separator' },
+          menuItemsObj.fullscreen,
+          menuItemsObj.themeToggle,
+          { type: 'separator' },
+          menuItemsObj.primarySidebarToggle,
+          menuItemsObj.secondarySidebarToggle,
+          { type: 'separator' },
+          menuItemsObj.reload
+        ]
+      },
+      {
+        label: 'Tools',
+        submenu: [
+          menuItemsObj.quickSearch,
+          { type: 'separator' },
+          menuItemsObj.backupDatabase,
+          menuItemsObj.restoreDatabase,
+          menuItemsObj.exportTables
+        ]
+      },
+      {
+        label: 'Window',
+        submenu: [
+          { role: 'minimize' },
+          { role: 'zoom' },
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ]
+      },
+      {
+        role: 'help',
+        submenu: [
+          menuItemsObj.opendocs,
+          menuItemsObj.support,
+          { type: 'separator' },
+          menuItemsObj.checkForUpdate,
+          menuItemsObj.toggleBeta,
+          { type: 'separator' },
+          menuItemsObj.devtools
+        ]
+      }
+    ];
   }
 }

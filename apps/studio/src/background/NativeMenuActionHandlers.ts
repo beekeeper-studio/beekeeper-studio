@@ -1,13 +1,12 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { DevLicenseState } from '@/lib/license'
-import { app, shell } from 'electron'
+import { app, ipcMain, shell } from 'electron'
 import { autoUpdater } from "electron-updater"
 import _ from 'lodash'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { AppEvent } from '../common/AppEvent'
 import platformInfo from '../common/platform_info'
-import { applyThemeToWindow } from './theme-handlers'
 import { setAllowBeta } from './update_manager'
 import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
 
@@ -131,35 +130,31 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
     try {
-      const label = _.isString(menuItem) ? menuItem : menuItem.label
-      const themeId = label.toLowerCase().replaceAll(" ", "-")
+      // If menuItem is a string, use it directly, otherwise get from the MenuItem object
+      let themeId, themeName;
 
-      console.log(`Switching to theme: ${themeId}`);
-
-      // Save the theme setting
-      this.settings.theme.userValue = themeId
-      await this.settings.theme.save()
-
-      console.log(`Theme setting saved: ${themeId}`);
-
-      // Apply the theme to all windows
-      const windows = getActiveWindows()
-      console.log(`Applying theme to ${windows.length} windows`);
-
-      // Apply to each window one by one
-      for (const window of windows) {
-        try {
-          // Apply the theme CSS directly
-          await applyThemeToWindow(window as any, themeId)
-
-          // Also notify the renderer process about the settings change
-          window.send(AppEvent.settingsChanged)
-        } catch (error) {
-          console.error(`Error applying theme ${themeId} to window:`, error)
-        }
+      if (_.isString(menuItem)) {
+        themeId = menuItem;
+        themeName = themeId; // Will be formatted by the event handler
+      } else {
+        // For menu items, use the item's ID if available (this should be the theme ID)
+        themeId = menuItem.id || menuItem.label.toLowerCase().replace(/\s+/g, '-');
+        themeName = menuItem.label; // The properly formatted display name
       }
 
-      console.log(`Theme switch completed: ${themeId}`);
+      console.log(`Switching to theme: ${themeId} (display name: ${themeName})`);
+
+      // Create a theme event payload with minimal required information
+      // The main process theme:update handler will handle the details
+      const themeData = {
+        id: themeId,
+        name: themeName
+      };
+
+      // Broadcast the theme update event to all processes
+      ipcMain.emit('theme:update', null, themeData);
+
+      console.log(`Theme switch event emitted for: ${themeId}`);
     } catch (error) {
       console.error(`Error switching theme:`, error);
     }

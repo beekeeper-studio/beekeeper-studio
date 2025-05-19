@@ -1,77 +1,132 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
+import { defaultThemes } from '@/components/theme/ThemeConfigurations';
 import { DevLicenseState } from '@/lib/license';
 import { IPlatformInfo } from '../IPlatformInfo';
 import { IGroupedUserSettings } from '../transport/TransportUserSetting';
 
 // helper function to get the current theme from localStorage
 function getCurrentTheme(): string {
-  // access localStorage if available (in browser environment)
+  // in renderer process (has window)
   if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage.getItem('activeTheme') || 'dark';
+    const theme = window.localStorage.getItem('activeTheme') || 'dark';
+    console.log('getCurrentTheme() from localStorage:', theme);
+    return theme;
   }
-  return 'dark'; // Default fallback
+
+  // in main process (no window) - the theme should be passed through settings
+  // This will log in the main process context
+  console.log('getCurrentTheme() in main process - will use provided theme');
+  return 'dark'; // Default, but this should be overridden by the provided settings
+}
+
+// Format a theme name for display
+function formatThemeName(themeId: string): string {
+  if (!themeId) return 'Unknown Theme';
+
+  // Convert dashed names to space-separated words
+  return themeId
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+    // Format special abbreviations
+    .replace(/Github/g, 'GitHub')
+    .replace(/Vscode/g, 'VSCode')
+    .replace(/Css/g, 'CSS')
+    .replace(/Json/g, 'JSON')
+    .replace(/Sql/g, 'SQL');
 }
 
 export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings, platformInfo: IPlatformInfo) {
-  // default themes list
-  const defaultThemes = ['system', 'light', 'dark', 'solarized', 'solarized-dark'];
-
-  // Get the effective current theme (prefer settings value if available)
-  const effectiveTheme = (settings?.theme?.value || getCurrentTheme()) as string;
-
-  // create the submenu for themes
-  const themeSubmenu = [
-    {
-      type: 'radio',
-      label: 'System',
-      click: actionHandler.switchTheme,
-      checked: effectiveTheme === 'system'
-    },
-    {
-      type: 'radio',
-      label: 'Light',
-      click: actionHandler.switchTheme,
-      checked: effectiveTheme === 'light'
-    },
-    {
-      type: 'radio',
-      label: 'Dark',
-      click: actionHandler.switchTheme,
-      checked: effectiveTheme === 'dark'
-    },
-    {
-      type: 'radio',
-      label: 'Solarized',
-      click: actionHandler.switchTheme,
-      checked: effectiveTheme === 'solarized'
-    },
-    {
-      type: 'radio',
-      label: 'Solarized Dark',
-      click: actionHandler.switchTheme,
-      checked: effectiveTheme === 'solarized-dark'
-    },
+  // Define built-in default themes
+  const builtInThemes = [
+    { id: 'system', label: 'System' },
+    { id: 'light', label: 'Light' },
+    { id: 'dark', label: 'Dark' },
+    { id: 'solarized', label: 'Solarized' },
+    { id: 'solarized-dark', label: 'Solarized Dark' }
   ];
 
-  // if current theme is not one of the defaults, add it to the menu
-  if (effectiveTheme && !defaultThemes.includes(effectiveTheme)) {
-    themeSubmenu.push({ type: 'separator' } as any);
+  // In main process, settings.theme.value should be explicitly provided
+  const settingsTheme = settings?.theme?.value as string | undefined;
+  console.log('[MenuItems] Settings theme from argument:', settingsTheme);
+
+  // Get the current theme from settings or localStorage
+  const currentTheme = settingsTheme || getCurrentTheme();
+  console.log('[MenuItems] Current theme determined as:', currentTheme);
+
+  // Default theme IDs for quick checking
+  const builtInThemeIds = builtInThemes.map(t => t.id);
+  console.log('[MenuItems] Built-in theme IDs:', builtInThemeIds);
+
+  // Check if current theme is a custom theme (not a built-in theme)
+  const isCustomTheme = currentTheme && !builtInThemeIds.includes(currentTheme);
+  console.log('[MenuItems] Current theme:', currentTheme, 'Is custom theme:', isCustomTheme);
+
+  // Build the theme submenu items
+  const themeSubmenu = [];
+
+  // Add all built-in themes
+  builtInThemes.forEach(theme => {
+    const isChecked = currentTheme === theme.id;
+    console.log(`[MenuItems] Adding built-in theme: ${theme.id}, checked: ${isChecked}`);
+
     themeSubmenu.push({
       type: 'radio',
-      label: `${effectiveTheme.charAt(0).toUpperCase()}${effectiveTheme.slice(1).replace(/-/g, ' ')}`,
+      label: theme.label,
+      id: theme.id,
       click: actionHandler.switchTheme,
-      checked: true
+      checked: isChecked
     });
+  });
+
+  // If using a custom theme, add only the current one to the menu
+  if (isCustomTheme) {
+    // Add a separator before custom theme
+    themeSubmenu.push({ type: 'separator' } as any);
+
+    // Find the custom theme in ThemeConfigurations.defaultThemes if possible
+    const customThemeConfig = defaultThemes.find(t => t.id === currentTheme);
+
+    if (customThemeConfig) {
+      // Use the name from ThemeConfigurations if available
+      console.log(`[MenuItems] Adding current custom theme from config: ${currentTheme}`);
+
+      themeSubmenu.push({
+        type: 'radio',
+        label: customThemeConfig.name,
+        id: currentTheme,
+        click: actionHandler.switchTheme,
+        checked: true
+      });
+    } else {
+      // Create a formatted name for unknown custom themes
+      const formattedName = formatThemeName(currentTheme);
+      console.log(`[MenuItems] Adding unknown custom theme: ${currentTheme}, formatted as: ${formattedName}`);
+
+      themeSubmenu.push({
+        type: 'radio',
+        label: formattedName,
+        id: currentTheme,
+        click: actionHandler.switchTheme,
+        checked: true
+      });
+    }
   }
 
-  // add separator and "Find Additional Themes..." option
+  // Add separator and find themes option
   themeSubmenu.push({ type: 'separator' } as any);
   themeSubmenu.push({
     type: 'normal',
     label: 'Find Additional Themes...',
+    id: 'find-themes',
     click: actionHandler.manageCustomThemes,
     checked: false
   });
+
+  // Log the final theme submenu state for debugging
+  console.log('[MenuItems] Final theme submenu:', themeSubmenu.map(item =>
+    item.type === 'separator' ? '---' : `${item.label} (${item.id}) - ${item.checked ? 'checked' : 'unchecked'}`
+  ));
 
   return {
     upgradeModal: (label: string) => {

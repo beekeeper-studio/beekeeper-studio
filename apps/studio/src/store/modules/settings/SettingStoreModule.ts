@@ -49,11 +49,23 @@ const SettingStoreModule: Module<State, any> = {
       // Apply the theme class to the document body
       document.body.className = `theme-${themeId}`;
 
+      // Save to localStorage to ensure persistence
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('activeTheme', themeId);
+        console.log(`Saved theme to localStorage: ${themeId}`);
+      }
+
       // Apply the theme CSS via IPC if available
       if (window.electron && window.electron.ipcRenderer) {
         console.log(`Applying theme CSS for ${themeId} via IPC`);
         // Use type assertion to bypass TypeScript checking
         (window.electron.ipcRenderer as any).send('themes/apply', { name: themeId });
+
+        // Also trigger a menu rebuild to update the theme checkmark
+        console.log(`Requesting menu rebuild for theme: ${themeId}`);
+        (window.electron.ipcRenderer as any).invoke('app/rebuildMenu', { theme: themeId }).catch(err => {
+          console.error('Error rebuilding menu:', err);
+        });
       }
     },
     SET_THEME_PREVIEW(_state, payload) {
@@ -138,7 +150,18 @@ const SettingStoreModule: Module<State, any> = {
       return state.settings
     },
     themeValue(state) {
+      // First check localStorage which has the most up-to-date theme selection
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const localStorageTheme = window.localStorage.getItem('activeTheme');
+        if (localStorageTheme) {
+          console.log(`Using theme from localStorage: ${localStorageTheme}`);
+          return localStorageTheme;
+        }
+      }
+
+      // Fall back to database settings
       const theme = state.settings.theme ? state.settings.theme.value : null;
+      console.log(`Using theme from settings database: ${theme || 'null'}`);
       if (!theme) return null
       return theme;
     },

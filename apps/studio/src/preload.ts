@@ -18,6 +18,15 @@ contextBridge.exposeInMainWorld(
       if (validChannels.includes(channel)) {
         ipcRenderer.removeListener(channel, (_event, ...args) => func(...args));
       }
+    },
+    invoke(channel, ...args) {
+      const validChannels = ['app/rebuildMenu'];
+      if (validChannels.includes(channel)) {
+        console.log(`Invoking channel ${channel} from preload`);
+        return ipcRenderer.invoke(channel, ...args);
+      }
+      console.error(`Invalid channel for invoke: ${channel}`);
+      return Promise.reject(new Error(`Invalid channel: ${channel}`));
     }
   }
 }
