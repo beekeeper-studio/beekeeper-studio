@@ -281,10 +281,10 @@ export const defaultThemes: Theme[] = [
     name: 'Shades of Purple',
     description: 'A professional theme with hand-picked & bold shades of purple',
     colors: {
-      background: '#2d2b55',
-      foreground: '#ffffff',
-      string: '#a5ff90',
-      keyword: '#ff9d00'
+      background: '#2D2B55',
+      foreground: '#A599E9',
+      string: '#A5FF90',
+      keyword: '#FF9D00'
     },
     isBuiltIn: true
   },
@@ -333,6 +333,90 @@ export const defaultThemes: Theme[] = [
       foreground: '#e0e0e0',
       string: '#4cd964',
       keyword: '#c594c5'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'catppuccin-mocha',
+    name: 'Catppuccin Mocha',
+    description: 'Soothing pastel theme for the high-spirited!',
+    colors: {
+      background: '#1e1e2e',
+      foreground: '#cdd6f4',
+      string: '#a6e3a1',
+      keyword: '#cba6f7'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'github-copilot',
+    name: 'GitHub Copilot',
+    description: 'GitHub Copilot theme for VS Code',
+    colors: {
+      background: '#0d1117',
+      foreground: '#c9d1d9',
+      string: '#a5d6ff',
+      keyword: '#ff7b72'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'rose-pine',
+    name: 'Rosé Pine',
+    description: 'All natural pine, faux fur and a bit of soho vibes',
+    colors: {
+      background: '#191724',
+      foreground: '#e0def4',
+      string: '#ebbcba',
+      keyword: '#c4a7e7'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'andromeda',
+    name: 'Andromeda',
+    description: 'Dark theme with bright colors',
+    colors: {
+      background: '#23262e',
+      foreground: '#e5e5e5',
+      string: '#c3e88d',
+      keyword: '#ee6dff'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'nord-light',
+    name: 'Nord Light',
+    description: 'An arctic, north-bluish clean and elegant light theme',
+    colors: {
+      background: '#eceff4',
+      foreground: '#2e3440',
+      string: '#a3be8c',
+      keyword: '#5e81ac'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'nightingale',
+    name: 'Nightingale',
+    description: 'A dark theme with vivid colors',
+    colors: {
+      background: '#1f1f25',
+      foreground: '#eeeeee',
+      string: '#8aff80',
+      keyword: '#ff80bf'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'vscode-monokai-night',
+    name: 'Monokai Night',
+    description: 'Dark monokai theme for night coding sessions',
+    colors: {
+      background: '#1a1a1a',
+      foreground: '#f8f8f2',
+      string: '#e6db74',
+      keyword: '#ff6188'
     },
     isBuiltIn: true
   }

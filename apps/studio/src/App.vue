@@ -34,6 +34,7 @@
       <lifetime-license-expired-modal />
     </template>
     <theme-manager-modal v-if="appLoaded" />
+    <theme-handler />
   </div>
 </template>
 
@@ -68,6 +69,7 @@ import { AppEvent } from "./common/AppEvent";
 import globals from "./common/globals";
 import NotificationManager from "./components/NotificationManager.vue";
 import ThemeManagerModal from "./components/settings/ThemeManagerModal.vue";
+import ThemeHandler from "./components/theme/ThemeHandler.vue";
 import {
   initializeTheme,
   setupThemeChangeListener,
@@ -104,6 +106,7 @@ export default Vue.extend({
     WorkspaceRenameModal,
     ConfigurationWarningModal,
     ThemeManagerModal,
+    ThemeHandler,
   },
   data() {
     return {

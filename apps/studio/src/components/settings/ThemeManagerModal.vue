@@ -24,12 +24,14 @@
               >
                 Popular Themes
               </button>
+              <!-- Upload Custom Theme button hidden for initial PR
               <button
                 :class="['tab-button', { active: activeTab === 'upload' }]"
                 @click="activeTab = 'upload'"
               >
                 Upload Custom Theme
               </button>
+              -->
             </div>
 
             <div v-if="activeTab === 'popular'" class="tab-content">
@@ -38,57 +40,13 @@
                 {{ error }}
               </div>
               <div v-else class="theme-grid">
-                <div
+                <theme-preview-card
                   v-for="theme in filteredThemes"
                   :key="theme.id"
-                  class="theme-card"
-                  :class="{
-                    active: theme.id === selectedTheme.id,
-                    previewed:
-                      theme.id === previewedThemeId &&
-                      theme.id !== selectedTheme.id,
-                  }"
-                >
-                  <div
-                    class="theme-preview"
-                    :style="{ backgroundColor: theme.colors.background }"
-                  >
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.foreground }"
-                    >
-                      Text
-                    </div>
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.string }"
-                    >
-                      String
-                    </div>
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.keyword }"
-                    >
-                      Keyword
-                    </div>
-                  </div>
-                  <div class="theme-info">
-                    <h4>{{ theme.name }}</h4>
-                    <p>{{ theme.description }}</p>
-                    <div class="button-group">
-                      <button class="btn-preview" @click="previewTheme(theme)">
-                        Preview
-                      </button>
-                      <button
-                        class="btn-apply"
-                        @click="applyTheme(theme)"
-                        :disabled="theme.isActive"
-                      >
-                        {{ theme.isActive ? "Current Theme" : "Apply Theme" }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  :theme="theme"
+                  :is-active="theme.id === selectedTheme.id"
+                  @select="applyTheme"
+                />
               </div>
             </div>
 
@@ -98,57 +56,13 @@
                 {{ error }}
               </div>
               <div v-else class="theme-grid">
-                <div
+                <theme-preview-card
                   v-for="theme in filteredThemes"
                   :key="theme.id"
-                  class="theme-card"
-                  :class="{
-                    active: theme.id === selectedTheme.id,
-                    previewed:
-                      theme.id === previewedThemeId &&
-                      theme.id !== selectedTheme.id,
-                  }"
-                >
-                  <div
-                    class="theme-preview"
-                    :style="{ backgroundColor: theme.colors.background }"
-                  >
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.foreground }"
-                    >
-                      Text
-                    </div>
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.string }"
-                    >
-                      String
-                    </div>
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.keyword }"
-                    >
-                      Keyword
-                    </div>
-                  </div>
-                  <div class="theme-info">
-                    <h4>{{ theme.name }}</h4>
-                    <p>{{ theme.description }}</p>
-                    <div class="button-group">
-                      <button class="btn-preview" @click="previewTheme(theme)">
-                        Preview
-                      </button>
-                      <button
-                        class="btn-apply"
-                        @click="applyTheme(theme)"
-                        :disabled="theme.isActive"
-                      >
-                        {{ theme.isActive ? "Current Theme" : "Apply Theme" }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  :theme="theme"
+                  :is-active="theme.id === selectedTheme.id"
+                  @select="applyTheme"
+                />
               </div>
             </div>
 
@@ -158,57 +72,13 @@
                 {{ error }}
               </div>
               <div v-else class="theme-grid">
-                <div
+                <theme-preview-card
                   v-for="theme in filteredThemes"
                   :key="theme.id"
-                  class="theme-card"
-                  :class="{
-                    active: theme.id === selectedTheme.id,
-                    previewed:
-                      theme.id === previewedThemeId &&
-                      theme.id !== selectedTheme.id,
-                  }"
-                >
-                  <div
-                    class="theme-preview"
-                    :style="{ backgroundColor: theme.colors.background }"
-                  >
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.foreground }"
-                    >
-                      Text
-                    </div>
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.string }"
-                    >
-                      String
-                    </div>
-                    <div
-                      class="preview-item"
-                      :style="{ color: theme.colors.keyword }"
-                    >
-                      Keyword
-                    </div>
-                  </div>
-                  <div class="theme-info">
-                    <h4>{{ theme.name }}</h4>
-                    <p>{{ theme.description }}</p>
-                    <div class="button-group">
-                      <button class="btn-preview" @click="previewTheme(theme)">
-                        Preview
-                      </button>
-                      <button
-                        class="btn-apply"
-                        @click="applyTheme(theme)"
-                        :disabled="theme.isActive"
-                      >
-                        {{ theme.isActive ? "Current Theme" : "Apply Theme" }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  :theme="theme"
+                  :is-active="theme.id === selectedTheme.id"
+                  @select="applyTheme"
+                />
 
                 <div class="theme-card add-theme">
                   <div class="upload-area" @click="triggerFileInput">
@@ -224,6 +94,7 @@
                   </div>
                 </div>
 
+                <!-- Upload Custom Theme tab content hidden for initial PR
                 <div v-if="activeTab === 'upload'" class="tab-content">
                   <div class="upload-section">
                     <h4>Upload a VSCode or SublimeText Theme</h4>
@@ -259,6 +130,7 @@
                     </button>
                   </div>
                 </div>
+                -->
               </div>
 
               <div class="theme-manager-foot er">
@@ -274,8 +146,8 @@
 
 <script>
 import { AppEvent } from "@/common/AppEvent";
-import { defaultThemes } from "@/components/theme/ThemeConfigurations";
 import { initializeTheme } from "@/components/theme/ThemeInitializer";
+import ThemePreviewCard from "@/components/theme/ThemePreviewCard.vue";
 import { mapGetters, mapState } from "vuex";
 import "./theme-manager-modal.scss";
 
@@ -340,20 +212,22 @@ function getThemeVariables(themeName) {
 
 export default {
   name: "ThemeManagerModal",
+  components: {
+    ThemePreviewCard,
+  },
   data() {
     return {
       isVisible: false,
       activeTab: "popular",
       loading: true,
       error: null,
+      themes: [],
       selectedTheme: null,
-      allThemes: [],
-      popularThemes: [],
-      customThemes: [],
+      previewedThemeId: null,
+      activeTheme: null,
       selectedFile: null,
       uploadError: null,
       importing: false,
-      previewedThemeId: null,
     };
   },
   computed: {
@@ -365,22 +239,42 @@ export default {
     }),
     filteredThemes() {
       if (this.activeTab === "popular") {
-        return this.popularThemes;
-      } else if (this.activeTab === "all") {
-        return this.allThemes;
+        return this.themes.filter((theme) => !theme.custom);
       } else if (this.activeTab === "custom") {
-        return this.customThemes;
+        return this.themes.filter((theme) => theme.custom);
       }
-      return this.allThemes;
+      return this.themes;
     },
   },
-  mounted() {
-    this.loadThemes();
+  async mounted() {
     this.registerHandlers([
       { event: AppEvent.showThemeManager, handler: this.show },
     ]);
 
     window.showThemeManagerModal = this.show;
+
+    // Initialize themes
+    try {
+      await this.loadThemes();
+
+      // Get current theme from either store or localStorage
+      let currentThemeId = this.themeValue;
+      if (!currentThemeId) {
+        currentThemeId = localStorage.getItem("activeTheme") || "dark";
+      }
+
+      console.log("Current theme ID from settings:", currentThemeId);
+
+      // Set as strings to avoid object reference issues
+      this.activeTheme = String(currentThemeId);
+      this.selectedTheme = this.themes.find(
+        (t) => String(t.id) === String(currentThemeId)
+      );
+
+      console.log("Selected theme object:", this.selectedTheme);
+    } catch (err) {
+      console.error("Error initializing theme manager:", err);
+    }
   },
   beforeDestroy() {
     this.unregisterHandlers([
@@ -394,6 +288,12 @@ export default {
   methods: {
     show() {
       this.isVisible = true;
+
+      // Reload themes as a safety measure
+      this.loadThemes();
+
+      // Check if we need to reapply the current theme
+      this.reloadCurrentTheme();
     },
     close() {
       this.isVisible = false;
@@ -401,104 +301,571 @@ export default {
       this.$emit("close");
     },
     async loadThemes() {
-      this.loading = true;
       try {
-        this.allThemes = [...defaultThemes];
+        this.loading = true;
+        this.error = null;
 
-        try {
-          const fetchedThemes = await this.$store.dispatch(
-            "themes/fetchThemes"
-          );
-          if (fetchedThemes && fetchedThemes.length) {
-            const existingThemeIds = new Set(
-              this.allThemes.map((theme) => theme.id)
-            );
-            const uniqueCustomThemes = fetchedThemes.filter(
-              (theme) => !existingThemeIds.has(theme.id)
-            );
+        // Import theme configurations
+        const { defaultThemes } = await import(
+          "@/components/theme/ThemeConfigurations.ts"
+        );
+        console.log("Loaded theme configurations:", defaultThemes.length);
 
-            this.allThemes = [...this.allThemes, ...uniqueCustomThemes];
-          }
-        } catch (err) {
-          console.warn("No custom themes found:", err);
-        }
+        // Initialize themes with default themes
+        this.themes = defaultThemes.map((theme) => ({
+          ...theme,
+          // Ensure theme has proper CSS variables
+          cssVars: {
+            background: theme.colors.background,
+            foreground: theme.colors.foreground,
+            string: theme.colors.string,
+            keyword: theme.colors.keyword,
+          },
+        }));
+        console.log(
+          "Initialized themes array with",
+          this.themes.length,
+          "themes"
+        );
 
-        const currentThemeId = this.themeValue || "dark";
+        // Get current theme from localStorage
+        const activeThemeId = localStorage.getItem("activeTheme") || "dark";
+        console.log("Current active theme ID:", activeThemeId);
 
-        this.allThemes.forEach((theme) => {
-          theme.isActive = theme.id === currentThemeId;
-        });
-
+        // Set selected theme
         this.selectedTheme =
-          this.allThemes.find((theme) => theme.id === currentThemeId) ||
-          this.allThemes[0];
+          this.themes.find((t) => t.id === activeThemeId) || this.themes[0];
+        console.log("Selected theme:", this.selectedTheme.name);
 
-        this.popularThemes = this.allThemes.filter(
-          (theme) => theme.isBuiltIn !== false
+        // Filter themes for current tab
+        this.updateFilteredThemes();
+
+        // Log themes by category
+        console.log(
+          "Popular themes:",
+          this.themes.filter((t) => t.isBuiltIn).length
+        );
+        console.log(
+          "Custom themes:",
+          this.themes.filter((t) => !t.isBuiltIn).length
         );
 
         this.loading = false;
-      } catch (err) {
-        console.error("Error loading themes:", err);
-        this.error = `Failed to load themes: ${err.message}`;
+      } catch (error) {
+        console.error("Error loading themes:", error);
+        this.error = `Error loading themes: ${
+          error.message || "Unknown error"
+        }`;
         this.loading = false;
+      }
+    },
+
+    // Update filtered themes based on active tab
+    updateFilteredThemes() {
+      if (this.activeTab === "popular") {
+        // Filter to built-in themes
+        this.filteredThemes = this.themes.filter((t) => t.isBuiltIn === true);
+      } else if (this.activeTab === "custom") {
+        // Filter to custom themes
+        this.filteredThemes = this.themes.filter((t) => t.isBuiltIn !== true);
+      } else {
+        // Show all themes if on a different tab
+        this.filteredThemes = this.themes;
+      }
+
+      // Apply search filter if search is active
+      if (this.searchQuery) {
+        const query = this.searchQuery.toLowerCase();
+        this.filteredThemes = this.filteredThemes.filter(
+          (theme) =>
+            theme.name.toLowerCase().includes(query) ||
+            theme.description.toLowerCase().includes(query)
+        );
+      }
+
+      console.log(
+        `Filtered to ${this.filteredThemes.length} themes for tab "${this.activeTab}"`
+      );
+    },
+
+    getDefaultColorsForTheme(themeIdOrObject) {
+      // Extract the theme ID from theme object or use directly if it's a string
+      const themeId =
+        typeof themeIdOrObject === "object" && themeIdOrObject !== null
+          ? themeIdOrObject.id
+          : themeIdOrObject;
+
+      // If we can't determine the theme ID, return safe defaults
+      if (!themeId) {
+        return {
+          background: "#252525",
+          foreground: "#ffffff",
+          string: "#a5d6ff",
+          keyword: "#ff7b72",
+        };
+      }
+
+      // Find the theme in our themes list
+      const theme = this.themes.find((t) => t.id === themeId);
+      if (theme && theme.colors) {
+        return theme.colors;
+      }
+
+      // Provide default colors based on theme ID/name
+      const themeIdStr = String(themeId).toLowerCase();
+
+      // Dark themes detection
+      const isDark =
+        themeIdStr.includes("dark") ||
+        [
+          "dark",
+          "dracula",
+          "monokai",
+          "shades-of-purple",
+          "panda-syntax",
+          "city-lights",
+          "github-dark",
+          "cobalt",
+          "night-owl",
+          "nord",
+          "one-dark-pro",
+          "tokyo-night",
+          "catppuccin-mocha",
+          "rose-pine",
+          "material-theme",
+          "palenight",
+          "andromeda",
+          "nightingale",
+          "vscode-monokai-night",
+          "synthwave-84",
+          "github-copilot",
+        ].includes(themeIdStr);
+
+      if (isDark) {
+        // Check specific dark themes
+        if (themeIdStr === "dracula") {
+          return {
+            background: "#282a36",
+            foreground: "#f8f8f2",
+            string: "#f1fa8c",
+            keyword: "#ff79c6",
+          };
+        } else if (themeIdStr === "monokai") {
+          return {
+            background: "#272822",
+            foreground: "#f8f8f2",
+            string: "#e6db74",
+            keyword: "#f92672",
+          };
+        } else if (themeIdStr === "shades-of-purple") {
+          return {
+            background: "#2D2B55",
+            foreground: "#A599E9",
+            string: "#A5FF90",
+            keyword: "#FF9D00",
+          };
+        } else if (themeIdStr === "city-lights") {
+          return {
+            background: "#1d252c",
+            foreground: "#b7c5d3",
+            string: "#5ec4ff",
+            keyword: "#ebbf83",
+          };
+        } else if (themeIdStr === "panda-syntax") {
+          return {
+            background: "#292a2b",
+            foreground: "#e6e6e6",
+            string: "#19f9d8",
+            keyword: "#ff75b5",
+          };
+        } else if (themeIdStr === "solarized-dark") {
+          return {
+            background: "#002b36",
+            foreground: "#839496",
+            string: "#2aa198",
+            keyword: "#cb4b16",
+          };
+        }
+
+        // Default dark theme colors
+        return {
+          background: "#252525",
+          foreground: "#ffffff",
+          string: "#a5d6ff",
+          keyword: "#ff7b72",
+        };
+      } else {
+        // Check specific light themes
+        if (themeIdStr === "solarized" || themeIdStr === "solarized-light") {
+          return {
+            background: "#fdf6e3",
+            foreground: "#657b83",
+            string: "#2aa198",
+            keyword: "#cb4b16",
+          };
+        } else if (themeIdStr === "nord-light") {
+          return {
+            background: "#eceff4",
+            foreground: "#2e3440",
+            string: "#a3be8c",
+            keyword: "#5e81ac",
+          };
+        }
+
+        // Default light theme colors
+        return {
+          background: "#f5f5f5",
+          foreground: "#24292e",
+          string: "#032f62",
+          keyword: "#d73a49",
+        };
       }
     },
     async applyTheme(theme) {
       try {
-        this.selectedTheme = theme;
-        this.previewedThemeId = theme.id;
+        console.log("Applying theme with ID:", theme.id);
+        this.loading = true;
 
+        // Set a loading message
+        this.error = null;
+        this.statusMessage = `Applying ${theme.name} theme...`;
+
+        // Apply theme locally first for immediate feedback
+        this.selectedTheme = theme;
         localStorage.setItem("activeTheme", theme.id);
 
-        this.$store.commit("settings/SET_THEME", theme.id);
+        // Get theme colors
+        const colors = theme.colors || this.getDefaultColorsForTheme(theme);
+        document.body.style.setProperty("--theme-active", theme.id);
 
-        const themeVariables = getThemeVariables(theme.id);
-        Object.entries(themeVariables).forEach(([key, value]) => {
+        // Apply directly to DOM for immediate visual feedback
+        this.applyThemeDirectly(theme.id, colors);
+
+        // Try IPC call if available (in Electron context)
+        if (window.electron?.ipcRenderer) {
+          try {
+            await window.electron.ipcRenderer.invoke("themes/apply", {
+              name: theme.id,
+            });
+            console.log("Applied theme CSS directly:", theme.id);
+          } catch (err) {
+            console.error("Error applying theme via IPC:", err);
+            // Continue anyway as we've applied theme directly to DOM
+          }
+        }
+
+        // Update UI state
+        this.error = null;
+        this.statusMessage = `Applied ${theme.name} theme successfully`;
+
+        // Automatically close after successful application
+        setTimeout(() => {
+          this.close();
+        }, 1500);
+      } catch (error) {
+        console.error("Error applying theme:", error);
+        this.error = `Failed to apply theme: ${
+          error.message || "Unknown error"
+        }`;
+      } finally {
+        this.loading = false;
+      }
+    },
+    // Apply theme directly to DOM for immediate visual feedback
+    applyThemeDirectly(themeId, colors) {
+      try {
+        console.log("Applying theme CSS directly:", themeId, colors);
+
+        // Set theme class on body
+        document.body.className =
+          document.body.className.replace(/theme-[a-zA-Z0-9-_]+/g, "").trim() +
+          ` theme-${themeId}`;
+
+        // Also apply to document element for CSS variable inheritance
+        document.documentElement.className =
+          document.documentElement.className
+            .replace(/theme-[a-zA-Z0-9-_]+/g, "")
+            .trim() + ` theme-${themeId}`;
+
+        // Get CSS variables from theme
+        const cssVars = this.getColorsForTheme(themeId);
+
+        // Apply CSS variables to root and body
+        Object.entries(cssVars).forEach(([key, value]) => {
           document.documentElement.style.setProperty(key, value);
           document.body.style.setProperty(key, value);
         });
 
-        document.body.className =
-          document.body.className.replace(/theme-[a-zA-Z0-9-_]+/g, "").trim() +
-          ` theme-${theme.id}`;
+        // Create/update a style tag to ensure theme colors are applied with !important
+        this.applyThemeWithHighPriority(themeId, cssVars);
 
-        document.documentElement.className =
-          document.documentElement.className
-            .replace(/theme-[a-zA-Z0-9-_]+/g, "")
-            .trim() + ` theme-${theme.id}`;
-
-        const connectionMain = document.querySelector(".connection-main");
-        if (connectionMain) {
-          const isDarkTheme = [
-            "dark",
-            "solarized-dark",
-            "panda-syntax",
-            "min-dark",
-            "eva-dark",
-          ].includes(theme.id);
-
-          connectionMain.style.backgroundColor = themeVariables["--theme-bg"];
-
-          const sidebar = document.querySelector(".sidebar-wrapper");
-          if (sidebar) {
-            sidebar.style.backgroundColor = themeVariables["--sidebar-bg"];
-          }
-        }
-
-        await initializeTheme();
-
-        if (this.styleTag) {
-          document.head.removeChild(this.styleTag);
-          this.styleTag = null;
-        }
-
-        this.close();
-
-        this.$noty.success(`Theme "${theme.name}" applied successfully`);
+        return true;
       } catch (error) {
-        console.error("Error applying theme:", error);
-        this.error = `Could not apply theme: ${error.message}`;
+        console.error("Error applying theme directly:", error);
+        return false;
+      }
+    },
+    // Apply theme with high priority using a style tag
+    applyThemeWithHighPriority(themeId, variables) {
+      // Create a style element specifically for theme variables
+      let styleElement = document.getElementById(
+        "beekeeper-theme-manager-vars"
+      );
+
+      if (!styleElement) {
+        styleElement = document.createElement("style");
+        styleElement.id = "beekeeper-theme-manager-vars";
+        document.head.appendChild(styleElement);
+      }
+
+      // Build CSS content with !important flag for priority
+      let cssContent = `
+        /* Theme variables for ${themeId} */
+        :root {
+      `;
+
+      // Add each variable with !important
+      Object.entries(variables).forEach(([key, value]) => {
+        cssContent += `      ${key}: ${value} !important;\n`;
+      });
+
+      cssContent += `
+        }
+        
+        /* Apply to body as well for components that might not inherit from :root */
+        body {
+      `;
+
+      // Apply to body as well
+      Object.entries(variables).forEach(([key, value]) => {
+        cssContent += `      ${key}: ${value} !important;\n`;
+      });
+
+      cssContent += `
+        }
+        
+        /* Ensure proper theme class is set */
+        html, body {
+          color-scheme: ${themeId.includes("light") ? "light" : "dark"};
+        }
+        
+        /* Ensure proper theme background and text colors */
+        .theme-${themeId} {
+          background-color: ${variables["--theme-bg"]} !important;
+          color: ${variables["--theme-base"]} !important;
+        }
+        
+        /* Apply to connection interface specifically */
+        .theme-${themeId} .connection-main {
+          background-color: ${variables["--theme-bg"]} !important;
+        }
+        
+        .theme-${themeId} .sidebar-wrapper {
+          background-color: ${variables["--sidebar-bg"]} !important;
+        }
+      `;
+
+      // Set the style element content
+      styleElement.textContent = cssContent;
+
+      console.log(`Applied theme variables with high priority for ${themeId}`);
+    },
+    // Get color variables for a theme
+    getColorsForTheme(themeId) {
+      console.log("Getting colors for theme:", themeId);
+
+      // CSS variables mapping
+      let colors = {
+        "--theme-active": themeId,
+      };
+
+      // Find the theme in our list
+      const theme = this.themes.find((t) => t.id === themeId);
+      if (theme && theme.colors) {
+        // Convert theme colors to CSS variables
+        const { background, foreground, string, keyword } = theme.colors;
+        colors = {
+          ...colors,
+          "--theme-bg": background,
+          "--theme-base": foreground,
+          "--theme-string": string,
+          "--theme-keyword": keyword,
+          "--theme-primary": keyword,
+          "--theme-secondary": string,
+          "--border-color": `rgba(${this.colorToRgb(foreground)}, 0.1)`,
+          "--sidebar-bg": this.darken(background, 10),
+        };
+        console.log("Using colors from theme object:", colors);
+        return colors;
+      }
+
+      // Add theme-specific colors for known themes
+      if (
+        [
+          "dark",
+          "github-dark",
+          "dracula",
+          "monokai",
+          "ayu-mirage",
+          "gruvbox",
+          "shades-of-purple",
+          "city-lights",
+          "panda-syntax",
+          "catppuccin-mocha",
+          "tokyo-night",
+          "nord",
+          "one-dark-pro",
+          "palenight",
+          "material-theme",
+          "night-owl",
+        ].includes(themeId)
+      ) {
+        console.log(
+          "Using predefined color variables from ThemeInitializer for:",
+          themeId
+        );
+        // For known dark themes, we'll use the theme variables defined in ThemeInitializer
+        // We won't set any variables here, letting ThemeInitializer handle it
+        return { "--theme-active": themeId };
+      } else if (
+        [
+          "light",
+          "solarized",
+          "solarized-light",
+          "github-theme",
+          "nord-light",
+        ].includes(themeId)
+      ) {
+        console.log(
+          "Using predefined color variables from ThemeInitializer for:",
+          themeId
+        );
+        // For known light themes, we'll use the theme variables defined in ThemeInitializer
+        return { "--theme-active": themeId };
+      }
+
+      // Fallback to default values based on theme name pattern
+      if (
+        themeId.includes("dark") ||
+        themeId.includes("black") ||
+        themeId.includes("night")
+      ) {
+        // Dark theme colors
+        colors = {
+          ...colors,
+          "--theme-bg": "#1e1e1e",
+          "--theme-base": "#ffffff",
+          "--theme-string": "#a5d6ff",
+          "--theme-keyword": "#ff7b72",
+          "--theme-primary": "#ff7b72",
+          "--theme-secondary": "#4ad0ff",
+          "--border-color": "rgba(255, 255, 255, 0.1)",
+          "--sidebar-bg": "#171717",
+        };
+        console.log("Using dark theme fallback colors for:", themeId);
+      } else if (
+        themeId.includes("light") ||
+        themeId.includes("white") ||
+        themeId.includes("day")
+      ) {
+        // Light theme colors
+        colors = {
+          ...colors,
+          "--theme-bg": "#ffffff",
+          "--theme-base": "#333333",
+          "--theme-string": "#0000ff",
+          "--theme-keyword": "#ff0000",
+          "--theme-primary": "#ff0000",
+          "--theme-secondary": "#0066cc",
+          "--border-color": "rgba(0, 0, 0, 0.1)",
+          "--sidebar-bg": "#f5f5f5",
+        };
+        console.log("Using light theme fallback colors for:", themeId);
+      } else {
+        // Neutral theme colors (fallback)
+        colors = {
+          ...colors,
+          "--theme-bg": "#252525",
+          "--theme-base": "#ffffff",
+          "--theme-string": "#a5d6ff",
+          "--theme-keyword": "#ff7b72",
+          "--theme-primary": "#ff7b72",
+          "--theme-secondary": "#4ad0ff",
+          "--border-color": "rgba(255, 255, 255, 0.1)",
+          "--sidebar-bg": "#1e1e1e",
+        };
+        console.log("Using neutral fallback colors for:", themeId);
+      }
+
+      return colors;
+    },
+    // Utility: Convert color to RGB
+    colorToRgb(hex) {
+      // Handle empty or invalid hex
+      if (!hex || typeof hex !== "string") return "255, 255, 255";
+
+      // Remove # if present
+      hex = hex.replace("#", "");
+
+      // Handle shorthand hex (#RGB)
+      if (hex.length === 3) {
+        hex = hex
+          .split("")
+          .map((c) => c + c)
+          .join("");
+      }
+
+      // Parse the hex color
+      try {
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        // Return RGB values if valid
+        if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+          return `${r}, ${g}, ${b}`;
+        }
+      } catch (e) {
+        console.error("Error parsing color:", e);
+      }
+
+      // Fallback to white
+      return "255, 255, 255";
+    },
+    // Utility: Darken a color by a percentage
+    darken(hex, percent) {
+      // Handle empty or invalid hex
+      if (!hex || typeof hex !== "string") return "#1e1e1e";
+
+      try {
+        // Remove # if present
+        hex = hex.replace("#", "");
+
+        // Handle shorthand hex (#RGB)
+        if (hex.length === 3) {
+          hex = hex
+            .split("")
+            .map((c) => c + c)
+            .join("");
+        }
+
+        // Parse the hex color
+        let r = parseInt(hex.substring(0, 2), 16);
+        let g = parseInt(hex.substring(2, 4), 16);
+        let b = parseInt(hex.substring(4, 6), 16);
+
+        // Darken by reducing each component by the percentage
+        r = Math.max(0, Math.floor((r * (100 - percent)) / 100));
+        g = Math.max(0, Math.floor((g * (100 - percent)) / 100));
+        b = Math.max(0, Math.floor((b * (100 - percent)) / 100));
+
+        // Convert back to hex
+        return `#${r.toString(16).padStart(2, "0")}${g
+          .toString(16)
+          .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+      } catch (e) {
+        console.error("Error darkening color:", e);
+        return "#1e1e1e"; // Fallback to dark color
       }
     },
     async previewTheme(theme) {
@@ -689,10 +1056,122 @@ export default {
         this.importing = false;
       }
     },
+    // Reload the current theme from localStorage or default
+    reloadCurrentTheme() {
+      try {
+        // Get stored theme or default to 'dark'
+        const storedThemeId =
+          localStorage.getItem("activeTheme") || this.themeValue || "dark";
+
+        // Get the theme object from our loaded themes
+        const storedTheme = this.themes.find(
+          (t) => String(t.id) === String(storedThemeId)
+        );
+
+        // If we found the theme, make it active
+        if (storedTheme) {
+          this.selectedTheme = storedTheme;
+          this.activeTheme = storedThemeId;
+          console.log("Restored theme from storage:", storedThemeId);
+        } else {
+          console.warn("Could not find stored theme:", storedThemeId);
+        }
+      } catch (err) {
+        console.error("Error reloading current theme:", err);
+      }
+    },
   },
 };
 </script>
 
-<style lang="scss" scoped>
-@use "./theme-manager-modal.scss";
+<style lang="scss">
+/* Completely reset theme cards to avoid style inheritance */
+.theme-card {
+  /* Reset all inherited styles */
+  all: initial;
+
+  /* Basic styling */
+  display: block;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 10px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  width: 280px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  &.active::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 3px solid #4a90e2;
+    border-radius: 6px;
+    pointer-events: none;
+  }
+}
+
+.theme-manager-modal {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+
+  .theme-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .theme-info {
+    padding: 15px;
+    background-color: #f5f5f5;
+
+    h4 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    p {
+      margin: 0 0 15px;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: center;
+
+    button {
+      padding: 8px 16px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+
+      &:hover {
+        background-color: #c0392b;
+      }
+
+      &:disabled {
+        background-color: #bdc3c7;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
 </style>

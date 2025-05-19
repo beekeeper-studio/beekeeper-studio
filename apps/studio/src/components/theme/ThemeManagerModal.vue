@@ -1,42 +1,75 @@
 <template>
   <div class="theme-manager-modal">
-    <h2>Theme Manager</h2>
+    <h2>Manage Custom Themes</h2>
 
-    <div class="theme-list">
-      <div v-for="theme in themes" :key="theme.id" class="theme-item">
-        <div class="theme-name">{{ theme.name }}</div>
-        <div class="theme-controls">
-          <button @click="applyTheme(theme.id)" class="btn btn-primary">
-            Apply
-          </button>
-          <button
-            v-if="theme.type === 'custom'"
-            @click="removeTheme(theme.id)"
-            class="btn btn-danger"
+    <div class="theme-grid">
+      <div
+        v-for="theme in themes"
+        :key="theme.id"
+        class="theme-card"
+        :class="{ active: theme.id === activeTheme }"
+      >
+        <div
+          class="theme-preview"
+          :style="{ backgroundColor: theme.colors?.background || '#252525' }"
+        >
+          <div
+            class="preview-item text"
+            :style="{ color: theme.colors?.foreground || '#ffffff' }"
           >
-            Remove
-          </button>
+            Text
+          </div>
+          <div
+            class="preview-item string"
+            :style="{ color: theme.colors?.string || '#a5d6ff' }"
+          >
+            String
+          </div>
+          <div
+            class="preview-item keyword"
+            :style="{ color: theme.colors?.keyword || '#ff7b72' }"
+          >
+            Keyword
+          </div>
+        </div>
+        <div class="theme-info">
+          <h4>{{ theme.name }}</h4>
+          <p>
+            {{
+              theme.description ||
+              (theme.type === "custom" ? "Custom theme" : "Built-in theme")
+            }}
+          </p>
+          <div class="theme-actions">
+            <button @click="previewTheme(theme.id)" class="btn btn-flat">
+              Preview
+            </button>
+            <button @click="applyTheme(theme.id)" class="btn btn-primary">
+              {{ theme.id === activeTheme ? "Current Theme" : "Apply Theme" }}
+            </button>
+            <button
+              v-if="theme.type === 'custom'"
+              @click="removeTheme(theme.id)"
+              class="btn btn-danger"
+            >
+              Remove
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="theme-upload">
-      <h3>Import Theme</h3>
-      <div
-        class="dropzone"
-        @dragover.prevent="onDragOver"
-        @drop.prevent="onDrop"
-      >
-        <p>Drop theme files here or</p>
-        <input
-          type="file"
-          ref="fileInput"
-          @change="handleFileUpload"
-          accept=".json,.tmTheme,.xml"
-        />
-        <button @click="$refs.fileInput.click()" class="btn btn-secondary">
-          Browse
-        </button>
+      <div class="theme-card upload-card">
+        <div class="upload-area" @click="$refs.fileInput.click()">
+          <div class="upload-icon">+</div>
+          <p>Upload Theme</p>
+          <input
+            type="file"
+            ref="fileInput"
+            @change="handleFileUpload"
+            accept=".json,.tmTheme,.xml"
+            style="display: none"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -50,10 +83,13 @@ export default {
       themes: [],
       loading: false,
       error: null,
+      activeTheme: null,
+      previewingTheme: null,
     };
   },
   async mounted() {
     await this.loadThemes();
+    this.activeTheme = this.$store.getters["settings/themeValue"];
   },
   methods: {
     async loadThemes() {
@@ -70,18 +106,37 @@ export default {
         this.loading = false;
       }
     },
-    async applyTheme(name) {
+    async previewTheme(themeId) {
       try {
-        console.log(`Applying theme: ${name}`);
+        console.log(`Previewing theme: ${themeId}`);
+        this.previewingTheme = themeId;
+
+        // Find the theme
+        const theme = this.themes.find((t) => t.id === themeId);
+        if (!theme) return;
+
+        // Emit event for theme preview
+        this.$root.$emit("theme-preview-changed", { themeId });
+
+        this.$noty.success(`Previewing theme: ${theme.name}`);
+      } catch (err) {
+        console.error("Error previewing theme:", err);
+        this.$noty.error(`Error previewing theme: ${err.message}`);
+      }
+    },
+    async applyTheme(themeId) {
+      try {
+        console.log(`Applying theme: ${themeId}`);
+        this.activeTheme = themeId;
 
         // Update Vuex store
         await this.$store.dispatch("settings/update", {
           key: "theme",
-          value: name,
+          value: themeId,
         });
 
         // Use the utility process to apply the theme
-        const result = await this.$util.send("themes/apply", { name });
+        const result = await this.$util.send("themes/apply", { name: themeId });
 
         if (!result.success) {
           throw new Error(result.error || "Failed to apply theme");
@@ -90,13 +145,14 @@ export default {
         // Save the theme setting
         await this.$util.send("appdb/setting/save", {
           key: "theme",
-          value: name,
+          value: themeId,
         });
 
-        this.$toasted.show(`Theme ${name} applied successfully`);
+        const theme = this.themes.find((t) => t.id === themeId);
+        this.$noty.success(`Theme ${theme.name} applied successfully`);
       } catch (err) {
         console.error("Error applying theme:", err);
-        this.$toasted.error(`Error applying theme: ${err.message}`);
+        this.$noty.error(`Error applying theme: ${err.message}`);
       }
     },
     async removeTheme(themeId) {
@@ -110,17 +166,9 @@ export default {
 
         // Refresh theme list
         await this.loadThemes();
-        this.$toasted.show("Theme removed successfully");
+        this.$noty.success("Theme removed successfully");
       } catch (err) {
-        this.$toasted.error(`Error removing theme: ${err.message}`);
-      }
-    },
-    onDragOver(event) {
-      event.dataTransfer.dropEffect = "copy";
-    },
-    onDrop(event) {
-      if (event.dataTransfer.files.length) {
-        this.processFiles(event.dataTransfer.files);
+        this.$noty.error(`Error removing theme: ${err.message}`);
       }
     },
     handleFileUpload(event) {
@@ -143,11 +191,11 @@ export default {
 
           // Refresh theme list
           await this.loadThemes();
-          this.$toasted.show(
+          this.$noty.success(
             `Theme ${result.theme.name} imported successfully`
           );
         } catch (err) {
-          this.$toasted.error(`Error importing theme: ${err.message}`);
+          this.$noty.error(`Error importing theme: ${err.message}`);
         }
       }
     },
@@ -155,73 +203,105 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .theme-manager-modal {
   padding: 20px;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
+  color: var(--theme-base);
 
   h2 {
     margin-bottom: 20px;
+    font-size: 1.5rem;
   }
 
-  .theme-list {
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
     margin-bottom: 30px;
-    max-height: 400px;
-    overflow-y: auto;
+  }
 
-    .theme-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 15px;
-      margin-bottom: 5px;
-      border: 1px solid var(--border-color, #ddd);
-      border-radius: 4px;
+  .theme-card {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    position: relative;
 
-      &:last-child {
-        margin-bottom: 0;
+    &.active {
+      box-shadow: 0 0 0 2px var(--theme-primary, #0066ff);
+    }
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .theme-preview {
+      padding: 15px;
+      height: 100px;
+
+      .preview-item {
+        margin-bottom: 8px;
+        font-family: monospace;
+        font-size: 14px;
+      }
+    }
+
+    .theme-info {
+      padding: 15px;
+      background-color: var(--theme-bg);
+
+      h4 {
+        margin: 0 0 8px;
+        font-size: 16px;
       }
 
-      .theme-name {
-        font-weight: 500;
+      p {
+        margin: 0 0 15px;
+        font-size: 13px;
+        opacity: 0.7;
       }
 
-      .theme-controls {
+      .theme-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+
         button {
-          margin-left: 10px;
+          flex: 1;
+          min-width: 80px;
+          padding: 6px 10px;
+          font-size: 12px;
         }
       }
     }
   }
 
-  .theme-upload {
-    background-color: var(--background-color, #f5f5f5);
-    padding: 20px;
-    border-radius: 8px;
+  .upload-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.03);
+    cursor: pointer;
 
-    h3 {
-      margin-bottom: 15px;
-    }
-
-    .dropzone {
-      border: 2px dashed var(--border-color, #ddd);
-      border-radius: 4px;
-      padding: 30px;
+    .upload-area {
       text-align: center;
-      transition: background-color 0.3s;
+      padding: 20px;
 
-      &:hover {
-        background-color: rgba(0, 0, 0, 0.05);
-      }
-
-      input[type="file"] {
-        display: none;
+      .upload-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
       }
 
       p {
-        margin-bottom: 15px;
+        margin: 0;
       }
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
     }
   }
 }
