@@ -27,6 +27,7 @@ import { buffer as b, uint8 as u } from '@tests/utils'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
 import { DuckDBBlobValue } from '@duckdb/node-api'
+import { parseVersion } from '@/common/version'
 import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_tools'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
@@ -270,6 +271,38 @@ export class DBTestUtil {
       ])
     }
 
+    // idk why oracle decided it doesn't like knex for this specific task
+    if (!this.data.disabledFeatures.compositeKeys) {
+      // Insert some test data
+      if (this.dbType !== 'oracle') {
+        await this.knex("composite_parent").insert({
+          parent_id1: 1,
+          parent_id2: 2,
+          name: "parent test"
+        });
+
+        await this.knex("composite_child").insert({
+          child_id: 1, 
+          ref_id1: 1, 
+          ref_id2: 2, 
+          description: "child test"
+        });
+      } else {
+        await this.knex("COMPOSITE_PARENT").insert({
+          PARENT_ID1: 1,
+          PARENT_ID2: 2,
+          NAME: "Parent Test"
+        });
+
+        await this.knex("COMPOSITE_CHILD").insert({
+          CHILD_ID: 1, 
+          REF_ID1: 1, 
+          REF_ID2: 2, 
+          DESCRIPTION: "Child Test"
+        });
+      }
+
+    }
     await this.knex("test_param").insert([
       { data: "River Song", is_draft: false },
       { data: "Rose Tyler", is_draft: true },
@@ -1735,7 +1768,7 @@ export class DBTestUtil {
     })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
-      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse'> = {
+      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse' | 'mongodb' | 'sqlanywhere'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
         tidb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
@@ -1754,6 +1787,48 @@ export class DBTestUtil {
         table.specificType('full_name', generatedDef)
       })
     }
+    if (!this.data.disabledFeatures.compositeKeys) {
+      if (this.dbType !== 'oracle') {
+        // Create a parent table with composite primary key
+        await this.knex.schema.createTable("composite_parent", (table) => {
+          table.integer("parent_id1").notNullable();
+          table.integer("parent_id2").notNullable();
+          table.string("name").notNullable();
+          table.primary(["parent_id1", "parent_id2"]);
+        });
+
+        // Create a child table with composite foreign key
+        await this.knex.schema.createTable("composite_child", (table) => {
+          table.integer("child_id").notNullable().primary();
+          table.integer("ref_id1").notNullable();
+          table.integer("ref_id2").notNullable();
+          table.string("description");
+          table.foreign(['ref_id1', 'ref_id2']).references(['parent_id1', 'parent_id2']).inTable("composite_parent");
+        });
+      } else {
+        // the knex driver from oracle doesn't seem to create the fks properly
+        await this.knex.schema.raw(`
+          CREATE TABLE composite_parent (
+            parent_id1 NUMBER(10) NOT NULL,
+            parent_id2 NUMBER(10) NOT NULL,
+            name VARCHAR2(255) NOT NULL,
+            CONSTRAINT pk_comp_parent PRIMARY KEY (parent_id1, parent_id2)
+          )
+        `);
+
+        await this.knex.schema.raw(`
+          CREATE TABLE composite_child (
+            child_id NUMBER(10) NOT NULL,
+            ref_id1 NUMBER(10) NOT NULL,
+            ref_id2 NUMBER(10) NOT NULL,
+            description VARCHAR2(255),
+            CONSTRAINT comp_child_fk FOREIGN KEY (ref_id1, ref_id2)
+              REFERENCES composite_parent(parent_id1, parent_id2)
+          )
+        `)
+      }
+
+    }
   }
 
   async databaseVersionTest() {
@@ -1761,7 +1836,42 @@ export class DBTestUtil {
     expect(version).toBeDefined()
   }
 
-  async paramTest(params: string[]) {
+  async compositeKeyTests() {
+    // 5.1 doesn't have great support for composite keys, so we'll skip the test
+    if (this.dbType === 'mysql') {
+      const version = await this.connection.versionString();
+      const { major, minor } = parseVersion(version.split("-")[0]);
+      if (major === 5 && minor === 1) return expect.anything();
+    }
+    // Skip if database doesn't support composite keys
+    if (this.data.disabledFeatures?.compositeKeys) {
+      return expect.anything();
+    }
+
+    // Test composite foreign keys functionality
+    const tableKeys = await this.connection.getTableKeys('composite_child', this.defaultSchema);
+
+    // Check that we have composite keys
+    const compositeKey = tableKeys.find(key => key.isComposite === true);
+    // If we have a composite key, assert its structure
+    expect(compositeKey).toBeDefined();
+
+    const fromColumns = (compositeKey.fromColumn as string[]).map((c) => c.toLowerCase());
+    const toColumns = (compositeKey.toColumn as string[]).map((c) => c.toLowerCase());
+    
+    expect(compositeKey.isComposite).toBe(true);
+    expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
+    expect(Array.isArray(compositeKey.toColumn)).toBe(true);
+    expect(compositeKey.fromColumn.length).toBeGreaterThan(1);
+    expect(compositeKey.toColumn.length).toBeGreaterThan(1);
+    expect(fromColumns).toContain('ref_id1');
+    expect(fromColumns).toContain('ref_id2');
+    expect(toColumns).toContain('parent_id1');
+    expect(toColumns).toContain('parent_id2');
+    expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
+  }
+
+async paramTest(params: string[]) {
     if (params.length === 1) {
       params = [params[0], params[0], params[0]];
     }

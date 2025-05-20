@@ -28,7 +28,7 @@ Download the latest AppImage [from the Beekeeper Studio homepage](https://www.be
 If you want to integrate the AppImage into your system shell (so it appears in your Application menu), we recommend you [install AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher/releases/latest).
 
 ## DEB
-A repo is provided for Debian and Ubuntu 20.04+.
+A repo is provided for Debian and Ubuntu 22.04+.
 
 DEB builds are provided for both x86_64 and ARM64 systems.
 

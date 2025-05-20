@@ -32,24 +32,37 @@
         </div>
       </div>
       <sql-text-editor
-        v-model="unsavedText"
-        v-bind.sync="editor"
+        :value="unsavedText"
+        :height="editor.height"
+        :read-only="editor.readOnly"
         :focus="focusingElement === 'text-editor'"
-        @update:focus="updateTextEditorFocus"
         :markers="editorMarkers"
-        :connection-type="connectionType"
-        :extra-keybindings="keybindings"
+        :formatter-dialect="formatterDialect"
+        :identifier-dialect="identifierDialect"
+        :keybindings="keybindings"
         :vim-config="vimConfig"
-        @initialized="handleEditorInitialized"
+        :line-wrapping="wrapText"
+        :keymap="userKeymap"
+        :vim-keymaps="vimKeymaps"
+        :entities="entities"
+        :columns-getter="columnsGetter"
+        :default-schema="defaultSchema"
+        :mode="dialectData.textEditorMode"
+        :clipboard="$native.clipboard"
+        :replace-extensions="replaceExtensions"
+        @bks-initialized="handleEditorInitialized"
+        @bks-value-change="unsavedText = $event.value"
+        @bks-blur="onTextEditorBlur?.()"
+        @bks-query-selection-change="handleQuerySelectionChange"
       />
       <span class="expand" />
-      <div class="toolbar text-right">
+      <div
+        class="toolbar text-right"
+        ref="toolbar"
+      >
         <div class="editor-help expand" />
         <div class="expand" />
-        <div
-          class="actions btn-group"
-          ref="actions"
-        >
+        <div class="actions btn-group">
           <x-button
             v-if="showDryRun"
             class="btn btn-flat btn-small dry-run-btn"
@@ -149,6 +162,7 @@
         :result="result"
         :query="query"
         :tab="tab"
+        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
         class="message"
@@ -191,7 +205,9 @@
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
+        @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
 
@@ -327,7 +343,7 @@
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
-  import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
+  import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -337,6 +353,12 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
+  import { TableOrView } from "@/lib/db/models";
+  import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
+  import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
+  import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
+  import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
+  import { monokai } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -344,7 +366,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -374,7 +396,6 @@
         tableHeight: 0,
         savePrompt: false,
         lastWord: null,
-        marker: null,
         queryParameterValues: {},
         queryForExecution: null,
         executeTime: 0,
@@ -384,6 +405,8 @@
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
+        wrapText: false,
+        vimKeymaps: [],
 
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -394,6 +417,9 @@
          */
         focusElement: 'none',
         focusingElement: 'none',
+
+        individualQueries: [],
+        currentlySelectedQuery: null,
       }
     },
     computed: {
@@ -435,6 +461,7 @@
           'mariadb': 'mysql',
           'tidb': 'mysql',
           'redshift': 'psql',
+          'mongodb': 'psql'
         }
         return mappings[this.connectionType] || 'generic'
       },
@@ -610,12 +637,31 @@
       },
       editorMarkers() {
         const markers = []
-        if (this.marker) markers.push(this.marker)
         if (this.errorMarker) markers.push(this.errorMarker)
         return markers
       },
       showResultTable() {
         return this.rowCount > 0
+      },
+      entities() {
+        return this.tables.map((t: TableOrView) => ({ schema: t.schema, name: t.name }))
+      },
+      queryDialect() {
+        return this.dialectData.queryDialectOverride ?? this.connectionType;
+      },
+      formatterDialect() {
+        return FormatterDialect(dialectFor(this.queryDialect))
+      },
+      identifierDialect() {
+        return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      replaceExtensions() {
+        return (extensions) => {
+          return [
+            ...extensions,
+            monokai,
+          ]
+        }
       },
     },
     watch: {
@@ -667,24 +713,6 @@
           this.$modal.hide(`save-modal-${this.tab.id}`)
         }
       },
-      currentQueryPosition() {
-        this.marker = null
-
-        if(!this.individualQueries || this.individualQueries.length < 2) {
-          return;
-        }
-
-        if (!this.currentQueryPosition) {
-          return
-        }
-        const { from, to } = this.currentQueryPosition
-
-        const editorText = this.unsavedText
-        // const lines = editorText.split(/\n/)
-
-        const [markStart, markEnd] = this.locationFromPosition(editorText, from, to)
-        this.marker = { from: markStart, to: markEnd, type: 'highlight' } as EditorMarker
-      },
       async focusElement(element, oldElement) {
         if (oldElement === 'text-editor' && element !== 'text-editor') {
           await this.blurTextEditor()
@@ -726,39 +754,47 @@
       initialize() {
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
-        this.initializeQueries()
         this.query.title = this.activeTab.title
-
-        this.tab.unsavedChanges = this.unsavedChanges
 
         if (this.split) {
           this.split.destroy();
           this.split = null;
         }
 
-        this.$nextTick(() => {
-          this.split = Split(this.splitElements, {
-            elementStyle: (_dimension, size) => ({
-                'flex-basis': `calc(${size}%)`,
-            }),
-            sizes: [50,50],
-            gutterSize: 8,
-            direction: 'vertical',
-            onDragEnd: () => {
-              this.$nextTick(() => {
-                this.tableHeight = this.$refs.bottomPanel.clientHeight
-                this.updateEditorHeight()
-              })
-            }
-          })
+        this.initializeQueries()
+        this.tab.unsavedChanges = this.unsavedChanges
 
-          this.$nextTick(() => {
-            this.tableHeight = this.$refs.bottomPanel.clientHeight
-            this.updateEditorHeight()
-          })
+        this.split = Split(this.splitElements, {
+          elementStyle: (_dimension, size) => ({
+            'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [50,50],
+          gutterSize: 8,
+          direction: 'vertical',
+          onDragEnd: () => {
+            this.$nextTick(() => {
+              this.tableHeight = this.$refs.bottomPanel.clientHeight
+              this.updateEditorHeight()
+            })
+          }
+        })
+
+        // Making sure split.js is initialized
+        this.$nextTick(() => {
+          this.tableHeight = this.$refs.bottomPanel.clientHeight
+          this.updateEditorHeight()
         })
       },
-      handleEditorInitialized() {
+      handleEditorInitialized(detail) {
+        this.editor.initialized = true
+
+        detail.codemirror.on("cursorActivity", (cm) => {
+          this.editor.selection = cm.getSelection()
+          this.editor.cursorIndex = cm.getDoc().indexFromPos(cm.getCursor())
+        });
+
+        registerQueryMagic(() => this.defaultSchema, () => this.tables, detail.codemirror)
+
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights
         this.$nextTick(() => {
@@ -808,7 +844,7 @@
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight
-        height -= this.$refs.actions.clientHeight
+        height -= this.$refs.toolbar.clientHeight
         this.editor.height = height
       },
       triggerSave() {
@@ -1011,11 +1047,6 @@
           this.close()
         }
       },
-      updateTextEditorFocus(focused: boolean) {
-        if (!focused) {
-          this.onTextEditorBlur?.()
-        }
-      },
       async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
         if (target) {
           this.focusElement = target
@@ -1049,9 +1080,35 @@
           this.focusingElement = 'none'
         })
       },
+      async columnsGetter(tableName: string) {
+        let table = this.tables.find(
+          (t: TableOrView) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+        );
+
+        if (!table) {
+          return null;
+        }
+
+        // Only refresh columns if we don't have them cached.
+        if (!table.columns?.length) {
+          await this.$store.dispatch("updateTableColumns", table);
+          table = this.tables.find(
+            (t: TableOrView) => t.name === tableName || `${t.schema}.${t.name}` === tableName
+          );
+        }
+
+        return table?.columns.map((c) => c.columnName);
+      },
+      handleQuerySelectionChange({ queries, selectedQuery }) {
+        this.individualQueries = queries;
+        this.currentlySelectedQuery = selectedQuery;
+      },
     },
     async mounted() {
-      if (this.shouldInitialize) this.initialize()
+      if (this.shouldInitialize) {
+        await this.$nextTick()
+        this.initialize()
+      }
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()
@@ -1062,6 +1119,8 @@
         await this.$nextTick()
         this.focusElement = 'text-editor'
       }
+
+      this.vimKeymaps = await getVimKeymapsFromVimrc()
     },
     beforeDestroy() {
       if(this.split) {

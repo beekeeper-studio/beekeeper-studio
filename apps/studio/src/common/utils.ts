@@ -3,10 +3,26 @@
 import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
 import { format } from 'sql-formatter';
-import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
+import { TableFilter, TableOrView, Routine, TableColumn } from '@/lib/db/models';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
 import type { Stream } from 'stream';
+
+export function camelCaseObjectKeys(data) {
+  if (_.isPlainObject(data)) {
+    const result = _.deepMapKeys(data, (_value, key) => _.camelCase(key))
+    return result
+  }
+  return data
+}
+
+// I don't know why different, but don't want to edit.
+export function snakeCaseObjectKeys(data) {
+  const result = _.mapKeys(data, (_value, key) => {
+    return _.snakeCase(key)
+  })
+  return result
+}
 
 export function parseIndexColumn(str: string): IndexColumn {
   str = str.trim()
@@ -182,9 +198,15 @@ export function stringifyRangeData(rangeData: Record<string, any>[]) {
     transformedRangeData[i] = {};
 
     for (const key of keys) {
-      const value = rangeData[i][key];
-      transformedRangeData[i][key] =
-        value && typeof value === "object" ? JSON.stringify(value) : value;
+      let value = rangeData[i][key];
+
+      if (_.isTypedArray(value)) {
+        value = typedArrayToString(value);
+      } else if (value && typeof value === "object") {
+        value = JSON.stringify(value);
+      }
+
+      transformedRangeData[i][key] = value
     }
   }
 
@@ -217,82 +239,6 @@ export function streamToBuffer(stream: Stream): Promise<Buffer> {
   });
 }
 
-/**
-  * Extracted from https://github.com/zloirock/core-js/blob/master/packages/core-js/modules/esnext.uint8-array.to-hex.js
-  * FIXME we don't need this soon after `UInt8Array.prototype.toHex` is
-  * implemented. See https://github.com/tc39/proposal-arraybuffer-base64
-  */
-export function uint8ArrayToHex(arr: Uint8Array): string {
-  let result = '';
-  for (var i = 0, length = arr.length; i < length; i++) {
-    var hex = 1.0.toString.call(arr[i], 16);
-    result += hex.length === 1 ? '0' + hex : hex;
-  }
-  return result;
-}
-
-function uncurryThis(fn: any): any {
-  return function () {
-    return Function.prototype.call.apply(fn, arguments);
-  };
-}
-
-var min = Math.min;
-var NOT_HEX = /[^\da-f]/i;
-var exec = uncurryThis(NOT_HEX.exec);
-var stringSlice = uncurryThis(''.slice);
-
-/**
-  * Extracted from https://github.com/zloirock/core-js/blob/master/packages/core-js/internals/uint8-from-hex.js
-  * FIXME we don't need this soon after `UInt8Array.prototype.fromHex` is
-  * implemented. See https://github.com/tc39/proposal-arraybuffer-base64
-  */
-export function hexToUint8Array(string: string, into?: any): Uint8Array {
-  var stringLength = string.length;
-  if (stringLength % 2 !== 0) throw new SyntaxError('String should be an even number of characters');
-  var maxLength = into ? min(into.length, stringLength / 2) : stringLength / 2;
-  var bytes = into || new Uint8Array(maxLength);
-  var read = 0;
-  var written = 0;
-  while (written < maxLength) {
-    var hexits = stringSlice(string, read, read += 2);
-    if (exec(NOT_HEX, hexits)) throw new SyntaxError('String should only contain hex characters');
-    bytes[written++] = parseInt(hexits, 16);
-  }
-  return bytes
-}
-
-type FriendlyUint8Array = Uint8Array & {
-  toString(): string
-  toJSON(): string
-  toHex(): string
-  toBase64(): string
-}
-
-/** Make `Uint8Array.toString` look better :D */
-export function friendlyUint8Array(bytes: string, encoding: 'hex'): FriendlyUint8Array
-export function friendlyUint8Array(bytes: Uint8Array): FriendlyUint8Array
-export function friendlyUint8Array(bytes: string | Uint8Array, encoding?: 'hex'): FriendlyUint8Array {
-  if (typeof bytes === 'string') {
-    bytes = hexToUint8Array(bytes)
-  }
-  Object.assign(bytes, {
-    toString() {
-      return uint8ArrayToHex(this)
-    },
-    toJSON() {
-      return uint8ArrayToHex(this)
-    },
-    toHex() {
-      return uint8ArrayToHex(this)
-    },
-    toBase64() {
-      return '[TODO]'
-    }
-  })
-  return bytes as FriendlyUint8Array
-}
-
 /** Make `object.toString` look better :D */
 export function friendlyJsonObject<T extends object>(obj: T): T {
   Object.defineProperties(obj, {
@@ -321,7 +267,7 @@ export function friendlyJsonObject<T extends object>(obj: T): T {
         }
       })
    }
-  
+
   return obj;
 }
 
@@ -332,3 +278,37 @@ export function stringifyWithBigInt(value: any): string {
   );
 }
 
+/** Convert Typed Array (Array Buffer View) to string based on `binaryEncoding` */
+export function typedArrayToString(typedArray: ArrayBufferView, forceEncoding?: 'hex' | 'base64') {
+  const encoding = forceEncoding || window.bksConfig.ui.general.binaryEncoding
+  if (encoding === 'base64') {
+    // @ts-expect-error polyfill
+    return typedArray.toBase64();
+  } else {
+    // @ts-expect-error polyfill
+    return typedArray.toHex();
+  }
+}
+
+export function stringToTypedArray(str: string, forceEncoding?: 'hex' | 'base64') {
+  const encoding = forceEncoding || window.bksConfig.ui.general.binaryEncoding
+  if (encoding === 'base64') {
+    // @ts-expect-error polyfill
+    return Uint8Array.fromBase64(str);
+  } else {
+    // @ts-expect-error polyfill
+    return Uint8Array.fromHex(str);
+  }
+}
+
+export function removeUnsortableColumnsFromSortBy(sortParms: { field: string; dir: string }[], tableColumns: TableColumn[], disallowedSortColumns = []) {
+  return sortParms.reduce((acc, sortObj) => {
+      const found = tableColumns.find(el => el.columnName.toLowerCase() === sortObj.field.toLowerCase())
+
+      if (!found) return acc
+      if (disallowedSortColumns.includes(found.dataType.toLowerCase())) return acc
+
+      acc.push(sortObj)
+      return acc
+    }, [])
+}

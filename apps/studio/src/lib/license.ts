@@ -1,6 +1,5 @@
 import { TransportLicenseKey } from "@/common/transport";
 import { parseVersion, Version } from "@/common/version";
-
 export interface BksVersion extends Version {
   channel: 'stable' | 'beta' | 'alpha'
   channelRelease?: number
@@ -15,10 +14,13 @@ export enum DevLicenseState {
   expiredLifetimeCoversEarlierVersion,
 }
 
+
 export class LicenseStatus {
   edition: "community" | "ultimate"
   condition: string[]
   license?: TransportLicenseKey
+  fromFile = false
+  filePath?: string = undefined
 
   get isUltimate() {
     return this.edition === "ultimate";

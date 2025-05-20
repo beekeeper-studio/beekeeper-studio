@@ -1,4 +1,5 @@
 @use "../../../../../node_modules/tabulator-tables/dist/css/tabulator.css";
+@use 'sass:color';
 @use '../../styles/variables' as *;
 @use "../../styles/base";
 @use './tabulator/magics.scss';
@@ -61,7 +62,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   --bks-table-sorter-fg-color-active: #{$theme-base};
   --bks-table-sorter-fg-color-inactive: #{rgba($theme-base, 0.35)};
 
-  --bks-table-range-border-color: #{darken($theme-primary, 20%)};
+  --bks-table-range-border-color: #{color.adjust($theme-primary, $lightness: -20%)};
 
   --bks-table-tooltip-bg-color: #292A2D;
   --bks-table-tooltip-fg-color: lightgray;
@@ -73,8 +74,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   .tabulator-tableholder {
     .tabulator-table {
       .tabulator-row {
-        &.tabulator-row-even,
-        &:nth-child(odd) {
+        &.tabulator-row-even {
           &.inserted,
           &.inserted:hover {
             background: $row-add;
@@ -99,19 +99,19 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           &.edited {
             background: $cell-edited;
             &:hover {
-              background: darken($cell-edited, 5%);
+              background: color.adjust($cell-edited, $lightness: -5%);
             }
           }
           &.edit-error {
             background: $cell-error;
             &:hover {
-              background: darken($cell-error, 5%);
+              background: color.adjust($cell-error, $lightness: -5%);
             }
           }
           &.edit-success {
             background: $cell-success;
             &:hover {
-              background: darken($cell-success, 5%);
+              background: color.adjust($cell-success, $lightness: -5%);
             }
           }
           &.foreign-key-button {
@@ -144,18 +144,13 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       .tabulator-col {
         &.foreign-key {
           &:before {
-            color: darken($brand-primary, 6%);
+            color: color.adjust($brand-primary, $lightness: -6%);
           }
         }
         .badge {
           color: $text-light;
         }
       }
-    }
-  }
-  .tabulator-row {
-    &:nth-child(odd) {
-      background: rgba($theme-base, 0.025);
     }
   }
 
@@ -401,19 +396,19 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       &.edited {
         background: $cell-edited;
         &:hover {
-          background: lighten($cell-edited, 3%);
+          background: color.adjust($cell-edited, $lightness: 3%);
         }
       }
       &.edit-error {
         background: $cell-error;
         &:hover {
-          background: lighten($cell-error, 5%);
+          background: color.adjust($cell-error, $lightness: 5%);
         }
       }
       &.edit-success {
         background: $cell-success;
         &:hover {
-          background: lighten($cell-success, 5%);
+          background: color.adjust($cell-success, $lightness: 5%);
         }
       }
       &.edited,
@@ -793,7 +788,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
             color: black;
           }
           .tabulator-header-popup-button::before, .tabulator-col-sorter.tabulator-col-sorter-element:hover {
-            background-color: darken($header-selected, 10%);
+            background-color: color.adjust($header-selected, $lightness: -10%);
           }
         }
       }

@@ -2,6 +2,7 @@
 title: Oracle Database
 summary: "Specific instructions for making connections with Oracle Database"
 old_url: "https://docs.beekeeperstudio.io/docs/oracle-database"
+icon: material/database
 ---
 
 ## Requirements
