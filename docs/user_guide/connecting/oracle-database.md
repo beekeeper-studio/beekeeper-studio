@@ -1,11 +1,12 @@
 ---
 title: Oracle Database
 summary: "Specific instructions for making connections with Oracle Database"
+description: "Beekeeper Studio supports connecting to Oracle databases in both thin and thick mode. This guide provides instructions for setting up the Oracle Instant Client and connecting to your database."
 old_url: "https://docs.beekeeperstudio.io/docs/oracle-database"
 icon: material/database
 ---
 
-# How to connect to Oracle Database
+# How To Connect to Oracle Database
 
 Beekeeper Studio supports connecting to Oracle databases in two modes:
 
