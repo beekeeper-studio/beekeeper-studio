@@ -7,14 +7,15 @@ old_url: "https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edit
 
 # Upgrading From The Community Edition
 
+Upgrading to the paid version of Beekeeper Studio is easy, you don't need to download a new app. Simply purchase a license key and enter it into the app when prompted.
 
-Upgrading to the paid version of Beekeeper Studio is easy, and can be done entirely in-app without needing a new installation.
-
+1. Purchase a license key from our [pricing page](https://beekeeperstudio.io/pricing).
+1. You'll receive your license key after your purchase completes.
 1. Click `Help -> Manage License Keys` in the app.
-2. Click `Buy a new license`.
-3. Follow the instructions to purchase the level of license you need
-4. You'll receive your license key after your purchase completes.
-5. Enter the license key into Beekeeper Studio
+1. Enter the license key into Beekeeper Studio
+
+!!! info "Air gapped systems"
+    Our business license supports offline activation. Read more about [offline license support](../purchasing/license-types.md)
 
 ## Why Upgrade Beekeeper Studio?
 
@@ -24,7 +25,11 @@ For example, the full version includes a **JSON row viewer** and more comprehens
 
 ![JSON row viewer](../../assets/images/json-row-view.png)
 
-There are a lot more, you can see them all [on the pricing page](https://beekeeperstudio.io/pricing).
+There are a lot more awesome features in the full version of Beekeeper Studio, you can see them all [on the pricing page](https://beekeeperstudio.io/pricing).
+
+??? info "Full Version Database Support"
+    {% include-markdown "../includes/supported_databases.md" %}
+
 
 ## Lifetime Access
 
@@ -44,7 +49,8 @@ Learn more about lifetime access [on the pricing page](https://beekeeperstudio.i
 
 If you want software updates past January 1, 2025, simply renew your subscription.
 
-Note for monthly subscribers: You won' receive lifetime access until you've paid for 12 consecutive months. This is to prevent abuse of the system.
+!!! info "Monthly Subscribers"
+    You won't receive lifetime access until you've paid for 12 consecutive months. This is to prevent abuse of the system.
 
 ### How to get lifetime access with a single payment
 
