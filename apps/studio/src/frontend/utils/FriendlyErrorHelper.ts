@@ -3,8 +3,8 @@ import { ConnectionType } from "@/lib/db/types"
 interface HelpInfo {
   help: string
   link?: string
+  pattern?: string
 }
-
 const errorMappings = {
   'sqlserver': [
     {
@@ -16,6 +16,13 @@ const errorMappings = {
       pattern: 'self signed certificate',
       help: "You might need to check 'Trust Server Certificate'"
     }
+  ],
+  'oracle': [
+    {
+      pattern: 'thin mode',
+      help: "You likely need to enable 'thick mode' which supports all connection types. Please provide the path to the Oracle Instant client to Beekeeper Studio in the box above",
+      link: "https://docs.beekeeperstudio.io/user_guide/connecting/oracle-database/"
+    }
   ]
 }
 
@@ -23,10 +30,10 @@ const errorMappings = {
 export const FriendlyErrorHelper = {
   getHelpText(connectionType: ConnectionType, error: Error): HelpInfo | null {
     if (!error?.message) return null
-    
+
     // Check if message is a string
     if (typeof error.message !== 'string') return null
-    
+
     const lowerMessage = error.message.toLowerCase()
     const options = errorMappings[connectionType] || []
     const result = options.find((candidate) => {
