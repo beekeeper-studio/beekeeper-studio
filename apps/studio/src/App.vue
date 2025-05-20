@@ -171,7 +171,62 @@ export default Vue.extend({
   async mounted() {
     try {
       this.appLoaded = true;
+
+      // Initialize settings from database first
       await this.$store.dispatch("settings/initializeSettings");
+
+      // Initialize theme from localStorage and database
+      const themeFromStore = this.$store.getters["settings/themeValue"];
+      const themeFromLocalStorage = localStorage.getItem("activeTheme");
+
+      console.log("[App] Theme from store:", themeFromStore);
+      console.log("[App] Theme from localStorage:", themeFromLocalStorage);
+
+      // If we have both values and they don't match, prioritize localStorage
+      // and update the database to keep them in sync
+      if (
+        themeFromStore &&
+        themeFromLocalStorage &&
+        themeFromStore !== themeFromLocalStorage
+      ) {
+        console.log(
+          `[App] Theme mismatch detected. Syncing database with localStorage value: ${themeFromLocalStorage}`
+        );
+        this.$store
+          .dispatch("settings/save", {
+            key: "theme",
+            value: themeFromLocalStorage,
+          })
+          .catch((err) => {
+            console.error("[App] Error syncing theme with database:", err);
+          });
+      }
+      // If we only have a database value, update localStorage
+      else if (themeFromStore && !themeFromLocalStorage) {
+        console.log(
+          `[App] Setting localStorage theme from database: ${themeFromStore}`
+        );
+        localStorage.setItem("activeTheme", themeFromStore);
+      }
+      // If we only have localStorage but no database value, update database
+      else if (!themeFromStore && themeFromLocalStorage) {
+        console.log(
+          `[App] Setting database theme from localStorage: ${themeFromLocalStorage}`
+        );
+        this.$store
+          .dispatch("settings/save", {
+            key: "theme",
+            value: themeFromLocalStorage,
+          })
+          .catch((err) => {
+            console.error("[App] Error syncing theme with database:", err);
+          });
+      }
+
+      // Now initialize the theme
+      await initializeTheme();
+      setupThemeChangeListener();
+
       this.$store.dispatch("licenses/updateAll");
       this.interval = setInterval(this.notifyFreeTrial, 1000 * 60 * 60 * 24);
       this.licenseInterval = setInterval(

@@ -4,7 +4,7 @@ $base-font-size: 0.875rem; // ~14px
 
 @use "variables" as *;
 @use "./custom-icons.scss";
-@import "material-icons/iconfont/material-icons.scss";
+@use "material-icons/iconfont/material-icons.scss";
 
 .BksUiKit {
   font-size: $base-font-size;

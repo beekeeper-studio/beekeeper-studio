@@ -64,7 +64,7 @@ export default {
               // Try to update the store if available
               if (this.$store && this.$store.dispatch) {
                 this.$store
-                  .dispatch("settings/update", {
+                  .dispatch("settings/save", {
                     key: "theme",
                     value: themeId,
                   })
@@ -149,16 +149,32 @@ export default {
       // Set the theme class on the body (immediate visual feedback)
       this.applyThemeToDOM(themeId, themeData.fallbacks);
 
+      // Ensure we save this theme to the settings store for persistence
+      this.syncThemeWithStore(themeId);
+    },
+
+    syncThemeWithStore(themeId) {
       // Try to update the store if available
       if (this.$store && this.$store.dispatch) {
+        console.log("[ThemeHandler] Saving theme to store:", themeId);
         this.$store
-          .dispatch("settings/update", {
+          .dispatch("settings/save", {
             key: "theme",
             value: themeId,
           })
-          .catch((err) =>
-            console.error("[ThemeHandler] Error updating theme in store:", err)
-          );
+          .then(() => {
+            console.log(
+              "[ThemeHandler] Successfully saved theme to store:",
+              themeId
+            );
+          })
+          .catch((err) => {
+            console.error("[ThemeHandler] Error updating theme in store:", err);
+          });
+      } else {
+        console.warn(
+          "[ThemeHandler] Store not available for theme persistence"
+        );
       }
     },
 

@@ -1,14 +1,16 @@
-/**
- * Initializes and applies the current theme on application start
- */
 import { defaultThemes } from './ThemeConfigurations';
+
+function logTheme(source: string, theme: string) {
+  console.log(`[ThemeInitializer] Theme from ${source}: ${theme}`);
+}
 
 export async function initializeTheme() {
   try {
-    // Get active theme from localStorage or default to 'dark'
+    // get active theme from localStorage or default to 'dark'
     let activeTheme = localStorage.getItem('activeTheme');
+    let themeSource = 'localStorage';
 
-    console.log('[ThemeInitializer] Theme from localStorage:', activeTheme);
+    logTheme('localStorage', activeTheme || 'not set');
 
     // If no theme in localStorage, try to fetch from store (if it's available)
     if (!activeTheme) {
@@ -22,71 +24,90 @@ export async function initializeTheme() {
           window.$store.getters['settings/themeValue']) {
           // @ts-ignore
           activeTheme = window.$store.getters['settings/themeValue'];
-          console.log('[ThemeInitializer] Theme from settings store:', activeTheme);
+          themeSource = 'settings store';
+          logTheme('settings store', activeTheme);
 
-          // Save to localStorage for future consistency
+          // save to localStorage for future consistency
           localStorage.setItem('activeTheme', activeTheme);
+          console.log(`[ThemeInitializer] Saved store theme to localStorage: ${activeTheme}`);
         }
       } catch (err) {
         console.log('[ThemeInitializer] Could not access store:', err);
       }
     }
 
-    // Default to dark if nothing found
+    // default to dark if nothing found
     if (!activeTheme) {
       activeTheme = 'dark';
-      console.log('[ThemeInitializer] Using default theme:', activeTheme);
+      themeSource = 'default';
+      logTheme('default', activeTheme);
 
-      // Save default to localStorage
+      // save default to localStorage
       localStorage.setItem('activeTheme', activeTheme);
+    } else {
+      // make sure the store is updated with the localStorage value
+      try {
+        if (typeof window !== 'undefined' &&
+          // @ts-ignore - Accessing potential global Vue app
+          window.$store &&
+          // @ts-ignore
+          window.$store.dispatch) {
+          console.log(`[ThemeInitializer] Saving theme from ${themeSource} to database: ${activeTheme}`);
+
+          // @ts-ignore
+          window.$store.dispatch('settings/save', {
+            key: 'theme',
+            value: activeTheme
+          }).then(() => {
+            console.log(`[ThemeInitializer] Successfully saved theme to settings database: ${activeTheme}`);
+          }).catch(err => {
+            console.error('[ThemeInitializer] Error syncing theme with database:', err);
+          });
+        }
+      } catch (err) {
+        console.log('[ThemeInitializer] Could not sync theme with store:', err);
+      }
     }
 
-    console.log('[ThemeInitializer] Initializing theme:', activeTheme);
-
-    // For system theme, check user preference
+    // for system theme, check user preference
     if (activeTheme === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       activeTheme = prefersDark ? 'dark' : 'light';
-      console.log('[ThemeInitializer] System theme preference detected:', activeTheme);
     }
 
-    // Apply theme class directly and forcefully
+    // apply theme class directly and forcefully
     document.body.className = document.body.className
       .replace(/theme-[a-zA-Z0-9-_]+/g, '')
       .trim() + ` theme-${activeTheme}`;
 
-    // Also apply to document element for CSS variable inheritance
+    // also apply to document element for CSS variable inheritance
     document.documentElement.className = document.documentElement.className
       .replace(/theme-[a-zA-Z0-9-_]+/g, '')
       .trim() + ` theme-${activeTheme}`;
 
-    console.log('[ThemeInitializer] Applied theme class to body:', document.body.className);
-    console.log('[ThemeInitializer] Applied theme class to documentElement:', document.documentElement.className);
-
-    // Set theme-specific CSS variables based on the active theme
+    // set theme-specific CSS variables based on the active theme
     const themeVariables = getThemeVariables(activeTheme);
-    console.log('[ThemeInitializer] Theme variables:', themeVariables);
 
-    // Apply variables directly to root and body
+    // apply variables directly to root and body
     Object.entries(themeVariables).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
       document.body.style.setProperty(key, value);
     });
 
-    // make sure theme vars are applied with !important to override any conflicting styles
+    // make sure vars applied with !important to override any conflicting styles
     applyThemeWithPriority(activeTheme, themeVariables);
 
-    // Ensure the theme variables are applied
+    // ensure the theme variables are applied
     document.documentElement.style.setProperty('--theme-active', activeTheme);
 
-    // Verify theme application
+    // verify theme application
     verifyThemeApplication(activeTheme, themeVariables);
 
     return activeTheme;
   } catch (error) {
     console.error('[ThemeInitializer] Error initializing theme:', error);
 
-    // Fallback to dark theme
+    // fallback to dark theme
     document.body.className = document.body.className
       .replace(/theme-[a-zA-Z0-9-_]+/g, '')
       .trim() + ' theme-dark';
@@ -99,9 +120,6 @@ export async function initializeTheme() {
   }
 }
 
-/**
- * apply theme variables with higher priority to overcome any specificity issues
- */
 function applyThemeWithPriority(themeName: string, variables: Record<string, string>) {
   // create a style element specifically for theme variables
   let styleElement = document.getElementById('beekeeper-theme-vars');
@@ -166,10 +184,7 @@ function applyThemeWithPriority(themeName: string, variables: Record<string, str
     }
   `;
 
-  // Set the style element content
   styleElement.textContent = cssContent;
-
-  console.log(`[ThemeInitializer] Applied theme variables with high priority for ${themeName}`);
 }
 
 /**
@@ -194,17 +209,13 @@ function verifyThemeApplication(themeName: string, variables: Record<string, str
   }, 50);
 }
 
-/**
- * Get theme-specific CSS variables
- */
 function getThemeVariables(themeName: string): Record<string, string> {
   const baseVariables = {
     '--theme-active': themeName,
   };
 
-  // find the theme in defaultThemes
   const themeConfig = defaultThemes.find(theme => theme.id === themeName) ||
-    defaultThemes.find(theme => theme.id === 'dark'); // default to dark if not found
+    defaultThemes.find(theme => theme.id === 'dark');
 
   if (!themeConfig) {
     console.warn(`[ThemeInitializer] Theme "${themeName}" not found, falling back to default dark theme`);
@@ -268,9 +279,6 @@ function getThemeVariables(themeName: string): Record<string, string> {
   };
 }
 
-/**
- * converts a hex color to RGB format
- */
 function colorToRgb(hex: string): string {
   // remove # if present
   hex = hex.replace('#', '');
@@ -288,9 +296,6 @@ function colorToRgb(hex: string): string {
   return `${r}, ${g}, ${b}`;
 }
 
-/**
- * Determines if a color is dark based on its luminance
- */
 function isColorDark(hex: string): boolean {
   // remove # if present
   hex = hex.replace('#', '');
@@ -312,24 +317,14 @@ function isColorDark(hex: string): boolean {
   return luminance < 0.5;
 }
 
-/**
- * lightens a hex color by the specified percentage
- */
 function lightenColor(hex: string, percent: number): string {
   return adjustColor(hex, percent);
 }
 
-/**
- * darkens a hex color by the specified percentage
- */
 function darkenColor(hex: string, percent: number): string {
   return adjustColor(hex, -percent);
 }
 
-/**
- * adjusts a hex color by the specified percentage
- * positive percent lightens, negative percent darkens
- */
 function adjustColor(hex: string, percent: number): string {
   // remove # if present
   hex = hex.replace('#', '');
@@ -357,9 +352,6 @@ function adjustColor(hex: string, percent: number): string {
   return `#${rHex}${gHex}${bHex}`;
 }
 
-/**
- * setup theme change listener for system theme change
- */
 export function setupThemeChangeListener() {
   // watch for system theme changes
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
