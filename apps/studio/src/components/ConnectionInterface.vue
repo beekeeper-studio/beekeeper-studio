@@ -207,7 +207,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['workspaceId', 'connection', 'connectionType']),
+    ...mapState(['workspaceId', 'connection']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapGetters(['isUltimate']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
@@ -275,7 +275,7 @@ export default Vue.extend({
     connectionError() {
 
       if (this.connectionError) {
-        const friendlyHelp = FriendlyErrorHelper.getHelpText(this.connectionType, this.connectionError)
+        const friendlyHelp = FriendlyErrorHelper.getHelpText(this.config.connectionType, this.connectionError)
         this.errorHelp = friendlyHelp?.help
         this.errorLink = friendlyHelp?.link
       } else {
@@ -405,6 +405,7 @@ export default Vue.extend({
 
         await this.$store.dispatch('connect', this.config)
       } catch (ex) {
+        console.log("CONNECTION ERROR", ex)
         this.connectionError = ex
         this.$noty.error("Error establishing a connection")
         log.error(ex)

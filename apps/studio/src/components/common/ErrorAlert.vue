@@ -120,8 +120,6 @@ export default Vue.extend({
       margin-top: calc($gutter-h / 2);
       padding-left: $gutter-w;
     }
-    &:hover{
-      cursor: pointer;
-    }
+
   }
 </style>
