@@ -1,3 +1,4 @@
+
 import _ from 'lodash'
 import Noty from 'noty'
 
@@ -30,7 +31,7 @@ export interface NativePlugin {
 
   openLink(link: string): void
   dialog: IWindowDialog
-  rebuildMenu(): void
+
 }
 
 
@@ -42,11 +43,6 @@ export const ElectronPlugin: NativePlugin = {
   },
   openLink(link: string) {
     window.main.openLink(link);
-  },
-  rebuildMenu() {
-    // Use main directly for consistency
-    console.log('Directly calling rebuildMenu via main');
-    window.main.rebuildMenu();
   },
   clipboard: {
     writeText(rawText: any, notify = true) {

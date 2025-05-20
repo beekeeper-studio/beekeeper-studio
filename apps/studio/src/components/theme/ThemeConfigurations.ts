@@ -13,6 +13,66 @@ export interface Theme {
 
 export const defaultThemes: Theme[] = [
   {
+    id: 'system',
+    name: 'System',
+    description: 'Follows your system appearance settings',
+    colors: {
+      background: '#252525',
+      foreground: '#ffffff',
+      string: '#a5d6ff',
+      keyword: '#ff7b72'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'light',
+    name: 'Light',
+    description: 'Default light theme for Beekeeper Studio',
+    colors: {
+      background: '#ffffff',
+      foreground: '#24292e',
+      string: '#032f62',
+      keyword: '#d73a49'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'dark',
+    name: 'Dark',
+    description: 'Default dark theme for Beekeeper Studio',
+    colors: {
+      background: '#252525',
+      foreground: '#ffffff',
+      string: '#a5d6ff',
+      keyword: '#ff7b72'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'solarized',
+    name: 'Solarized',
+    description: 'Light variant of the popular Solarized theme',
+    colors: {
+      background: '#fdf6e3',
+      foreground: '#657b83',
+      string: '#2aa198',
+      keyword: '#cb4b16'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'solarized-dark',
+    name: 'Solarized Dark',
+    description: 'Dark variant of the popular Solarized theme',
+    colors: {
+      background: '#002b36',
+      foreground: '#839496',
+      string: '#2aa198',
+      keyword: '#cb4b16'
+    },
+    isBuiltIn: true
+  },
+  {
     id: 'github-dark',
     name: 'GitHub Dark',
     description: 'GitHub dark theme for Beekeeper Studio',
@@ -357,6 +417,90 @@ export const defaultThemes: Theme[] = [
       foreground: '#f8f8f2',
       string: '#e6db74',
       keyword: '#ff6188'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'tomorrow-night',
+    name: 'Tomorrow Night',
+    description: 'A dark theme based on a the Tomorrow color scheme',
+    colors: {
+      background: '#1d1f21',
+      foreground: '#c5c8c6',
+      string: '#b5bd68',
+      keyword: '#b294bb'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'tender',
+    name: 'Tender',
+    description: 'A dark and warm theme',
+    colors: {
+      background: '#282828',
+      foreground: '#eeeeee',
+      string: '#a8ce93',
+      keyword: '#c9a0dc'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'oceanic-next',
+    name: 'Oceanic Next',
+    description: 'Theme inspired by Sublime Text\'s Oceanic Next',
+    colors: {
+      background: '#1b2b34',
+      foreground: '#d8dee9',
+      string: '#99c794',
+      keyword: '#c594c5'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'deepocean',
+    name: 'Deep Ocean',
+    description: 'Dark blue theme with vivid accent colors',
+    colors: {
+      background: '#0f111a',
+      foreground: '#8f93a2',
+      string: '#c3e88d',
+      keyword: '#c792ea'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'ayu-dark',
+    name: 'Ayu Dark',
+    description: 'Dark version of the Ayu theme family',
+    colors: {
+      background: '#0a0e14',
+      foreground: '#b3b1ad',
+      string: '#aad94c',
+      keyword: '#ff8f40'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'moonlight',
+    name: 'Moonlight',
+    description: 'A dark blue theme with a touch of purple and bright colors',
+    colors: {
+      background: '#222436',
+      foreground: '#c8d3f5',
+      string: '#c3e88d',
+      keyword: '#c099ff'
+    },
+    isBuiltIn: true
+  },
+  {
+    id: 'kanagawa',
+    name: 'Kanagawa',
+    description: 'Dark theme inspired by the colors of the Great Wave painting',
+    colors: {
+      background: '#1f1f28',
+      foreground: '#dcd7ba',
+      string: '#98bb6c',
+      keyword: '#957fb8'
     },
     isBuiltIn: true
   }

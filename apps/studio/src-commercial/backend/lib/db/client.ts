@@ -36,31 +36,9 @@ const clients = new Map<ConnectionType, any>([
   ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
   ['mongodb', MongoDBClient],
-  ['sqlanywhere', (server, database) => {
-    try {
-      return new SQLAnywhereClient(server, database);
-    } catch (error) {
-      console.warn('SQLAnywhere client not available:', error.message);
-      return createMockUnavailableClient('SQLAnywhere', error.message);
-    }
-  }]
+  ['sqlanywhere', SQLAnywhereClient]
 ],);
 
-function createMockUnavailableClient(type: string, errorMessage: string) {
-  const handler = {
-    get: function (target, prop) {
-      if (typeof prop === 'string' && !['then', 'catch', 'finally'].includes(prop)) {
-        return async function () {
-          console.warn(`${type} client method '${prop}' called but ${type} is not available: ${errorMessage}`);
-          return null;
-        };
-      }
-      return target[prop];
-    }
-  };
-
-  return new Proxy({}, handler);
-}
 
 class FriendlyErrorClient {
   constructor() {

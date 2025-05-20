@@ -1,5 +1,6 @@
 import rawLog from '@bksLogger'
 import electron, { BrowserWindow, Rectangle } from 'electron'
+import fs from 'fs'
 import _ from 'lodash'
 import path from 'path'
 import querystring from 'query-string'
@@ -38,8 +39,40 @@ class BeekeeperWindow {
     }
 
     log.info('constructing the window')
-    const preloadPath = path.join(__dirname, 'preload.js')
-    console.log("PRELOAD PATH:", preloadPath)
+    let preloadPath = path.join(__dirname, '..', 'preload.js')
+    console.log("PRELOAD PATH RESOLVED TO:", preloadPath)
+
+    // Check if preload script exists
+    if (fs.existsSync(preloadPath)) {
+      console.log("PRELOAD SCRIPT FOUND at:", preloadPath);
+    } else {
+      console.error("ERROR: PRELOAD SCRIPT NOT FOUND at:", preloadPath);
+
+      // Try alternate locations if the file doesn't exist at the expected path
+      const alternateLocations = [
+        path.join(__dirname, 'preload.js'),
+        path.join(__dirname, '..', '..', 'preload.js'),
+        path.join(__dirname, '..', '..', 'dist', 'preload.js'),
+        path.join(__dirname, '..', '..', 'build', 'preload.js'),
+        path.join(process.resourcesPath, 'app.asar', 'preload.js'),
+        path.join(process.resourcesPath, 'app.asar', 'dist', 'preload.js'),
+        path.join(process.resourcesPath, 'app', 'preload.js'),
+        path.join(process.resourcesPath, 'app', 'dist', 'preload.js')
+      ];
+
+      for (const location of alternateLocations) {
+        if (fs.existsSync(location)) {
+          console.log("PRELOAD SCRIPT FOUND at alternate location:", location);
+          preloadPath = location;
+          break;
+        }
+      }
+
+      if (!fs.existsSync(preloadPath)) {
+        console.error("ERROR: PRELOAD SCRIPT NOT FOUND in any expected location");
+      }
+    }
+
     this.win = new BrowserWindow({
       ...this.getWindowPosition(settings),
       minWidth: 800,

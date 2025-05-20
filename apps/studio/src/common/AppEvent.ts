@@ -68,8 +68,23 @@ export enum AppEvent {
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
   /** Triggered to show the theme manager modal */
-  showThemeManager = 'show-theme-manager',
   toggleSidebar = 'toggleSidebar',
+  /** Theme update event */
+  themeUpdate = 'theme:update',
+  /** Theme changed event (broadcasted from main process) */
+  themeChanged = 'theme:changed',
+  /** Set theme event */
+  setTheme = 'set-theme',
+  /** Activate custom theme */
+  activateCustomTheme = 'activate-custom-theme',
+  /** Deactivate custom theme */
+  deactivateCustomTheme = 'deactivate-custom-theme',
+  /** Theme preview changed */
+  themePreviewChanged = 'theme-preview-changed',
+  /** Theme applied */
+  themeApplied = 'theme-applied',
+  /** App menu rebuild */
+  rebuildMenu = 'app/rebuildMenu',
 }
 
 export interface RootBinding {

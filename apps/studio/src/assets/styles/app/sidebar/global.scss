@@ -4,10 +4,11 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: $global-sidebar-bg;
+    background: var(--sidebar-bg, $global-sidebar-bg);
     &:hover {
       .nav-item {
-        &.refresh {
+        &.refresh,
+        &.theme-manager {
           display: flex;
         }
       }
@@ -117,7 +118,8 @@
       .material-icons {
         font-size: 24px;
       }
-      &.refresh {
+      &.refresh,
+      &.theme-manager {
         display: none;
       }
       &.account {

@@ -6,6 +6,7 @@ interface ThemeState {
   availableThemes: Theme[];
   customThemes: Theme[];
   showThemeManager: boolean;
+  currentTheme: string;
 }
 
 const ThemeStoreModule: Module<ThemeState, any> = {
@@ -13,7 +14,8 @@ const ThemeStoreModule: Module<ThemeState, any> = {
   state: () => ({
     availableThemes: [...defaultThemes],
     customThemes: [],
-    showThemeManager: false
+    showThemeManager: false,
+    currentTheme: ''
   }),
   mutations: {
     ADD_THEME(state, theme: Theme) {
@@ -25,7 +27,13 @@ const ThemeStoreModule: Module<ThemeState, any> = {
       }
     },
     ADD_CUSTOM_THEME(state, theme: Theme) {
-      state.customThemes.push(theme);
+      const existingCustomIndex = state.customThemes.findIndex(t => t.id === theme.id);
+      if (existingCustomIndex >= 0) {
+        Vue.set(state.customThemes, existingCustomIndex, theme);
+      } else {
+        state.customThemes.push(theme);
+      }
+
       const existingIndex = state.availableThemes.findIndex(t => t.id === theme.id);
       if (existingIndex >= 0) {
         Vue.set(state.availableThemes, existingIndex, theme);
@@ -39,6 +47,31 @@ const ThemeStoreModule: Module<ThemeState, any> = {
     },
     SET_SHOW_THEME_MANAGER(state, value: boolean) {
       state.showThemeManager = value;
+    },
+    SET_CURRENT_THEME(state, theme) {
+      console.log(`[ThemeStore] Setting current theme: ${theme.id}`);
+
+      // Store the theme ID in state
+      state.currentTheme = theme.id;
+
+      // Update available themes to ensure the theme is included
+      const existingIndex = state.availableThemes.findIndex(t => t.id === theme.id);
+      if (existingIndex >= 0) {
+        Vue.set(state.availableThemes, existingIndex, theme);
+      } else {
+        // Add to available themes if it's not there
+        state.availableThemes.push(theme);
+      }
+
+      // If it's a custom theme, also update the customThemes array
+      if (!['system', 'light', 'dark', 'solarized', 'solarized-dark'].includes(theme.id)) {
+        const customIndex = state.customThemes.findIndex(t => t.id === theme.id);
+        if (customIndex >= 0) {
+          Vue.set(state.customThemes, customIndex, theme);
+        } else {
+          state.customThemes.push(theme);
+        }
+      }
     }
   },
   actions: {
@@ -56,6 +89,9 @@ const ThemeStoreModule: Module<ThemeState, any> = {
     },
     hideThemeManager({ commit }) {
       commit('SET_SHOW_THEME_MANAGER', false);
+    },
+    toggleThemeManager({ commit, state }) {
+      commit('SET_SHOW_THEME_MANAGER', !state.showThemeManager);
     },
     async fetchThemes({ commit, state }) {
       console.log('Fetching themes');
@@ -92,6 +128,13 @@ const ThemeStoreModule: Module<ThemeState, any> = {
       }
 
       return state.availableThemes;
+    },
+    setCurrentTheme({ commit }, theme) {
+      console.log(`[ThemeStore] setCurrentTheme action called with theme: ${theme.id}`);
+      commit('SET_CURRENT_THEME', theme);
+
+      // Return a promise to allow async/await usage
+      return Promise.resolve(theme);
     }
   },
   getters: {
@@ -106,6 +149,9 @@ const ThemeStoreModule: Module<ThemeState, any> = {
     },
     isThemeManagerVisible(state) {
       return state.showThemeManager;
+    },
+    currentTheme(state) {
+      return state.currentTheme;
     }
   }
 };

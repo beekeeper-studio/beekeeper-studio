@@ -35,6 +35,7 @@
     width: $sidebar-w;
     // min-width: $sidebar-min-w;
     max-width: $sidebar-max-w;
+    background-color: var(--sidebar-bg, $sidebar-bg);
   }
   .primary-sidebar,
   .secondary-sidebar {

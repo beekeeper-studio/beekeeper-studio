@@ -82,7 +82,7 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
-    themes: ThemeStoreModule,
+    theme: ThemeStoreModule,
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,

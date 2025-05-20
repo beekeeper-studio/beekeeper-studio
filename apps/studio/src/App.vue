@@ -33,7 +33,11 @@
       <license-expired-modal />
       <lifetime-license-expired-modal />
     </template>
-    <theme-manager-modal v-if="appLoaded" />
+    <theme-manager-modal
+      ref="themeManagerModal"
+      :visible="showThemeManagerModal"
+      @close="closeThemeManager"
+    />
     <theme-handler />
   </div>
 </template>
@@ -68,12 +72,12 @@ import Noty from "noty";
 import { AppEvent } from "./common/AppEvent";
 import globals from "./common/globals";
 import NotificationManager from "./components/NotificationManager.vue";
-import ThemeManagerModal from "./components/settings/ThemeManagerModal.vue";
 import ThemeHandler from "./components/theme/ThemeHandler.vue";
 import {
   initializeTheme,
   setupThemeChangeListener,
 } from "./components/theme/ThemeInitializer";
+import ThemeManagerModal from "./components/theme/ThemeManagerModal.vue";
 import EnterLicenseModal from "./components/ultimate/EnterLicenseModal.vue";
 import UpgradeRequiredModal from "./components/upsell/UpgradeRequiredModal.vue";
 
@@ -115,6 +119,7 @@ export default Vue.extend({
       licenseInterval: null,
       runningWayland: false,
       appLoaded: false,
+      showThemeManagerModal: false,
     };
   },
   computed: {
@@ -142,18 +147,8 @@ export default Vue.extend({
       async handler(newTheme) {
         if (typeof newTheme === "string") {
           localStorage.setItem("activeTheme", newTheme);
-
-          const appliedTheme = await initializeTheme();
-
-          this.$root.$emit("theme-preview-changed", { themeId: newTheme });
         } else if (newTheme && newTheme.themeId) {
           localStorage.setItem("activeTheme", newTheme.themeId);
-
-          this.$root.$emit("theme-preview-changed", {
-            themeId: newTheme.themeId,
-            css: newTheme.css,
-            baseTheme: newTheme.baseTheme,
-          });
         }
       },
       immediate: true,
@@ -175,44 +170,14 @@ export default Vue.extend({
   },
   async mounted() {
     try {
-      const activeTheme = await initializeTheme();
-
-      setupThemeChangeListener();
-
-      this.notifyFreeTrial();
-      this.interval = setInterval(
-        this.notifyFreeTrial,
-        globals.trialNotificationInterval
-      );
+      this.appLoaded = true;
+      await this.$store.dispatch("settings/initializeSettings");
       this.$store.dispatch("licenses/updateAll");
+      this.interval = setInterval(this.notifyFreeTrial, 1000 * 60 * 60 * 24);
       this.licenseInterval = setInterval(
         () => this.$store.dispatch("licenses/updateAll"),
-        globals.licenseCheckInterval
+        1000 * 60 * 60 * 24
       );
-      await this.$store.dispatch("settings/initializeSettings");
-
-      const query = querystring.parse(window.location.search, {
-        parseBooleans: true,
-      });
-      if (query) {
-        this.url = query.url || null;
-        this.runningWayland = !!query.runningWayland;
-      }
-      this.$nextTick(() => {
-        window.main.isReady();
-        setTimeout(() => {
-          this.appLoaded = true;
-        }, 1000);
-      });
-      if (this.url) {
-        try {
-          await this.$store.dispatch("openUrl", this.url);
-        } catch (error) {
-          console.error(error);
-          this.$noty.error(`Error opening ${this.url}: ${error}`);
-          throw error;
-        }
-      }
     } catch (error) {
       console.error("Error in App.vue mounted hook:", error);
     }
@@ -245,7 +210,7 @@ export default Vue.extend({
         n.show();
       }
     },
-    databaseSelected(_db) {
+    databaseSelected(db) {
       // TODO: do something here if needed
     },
     validateLicenseExpiry(curr, prev) {
@@ -276,6 +241,12 @@ export default Vue.extend({
         this.$root.$emit(AppEvent.licenseExpired, status);
         SmartLocalStorage.setBool("expiredLicenseEventsEmitted", true);
       }
+    },
+    showThemeManager() {
+      this.showThemeManagerModal = true;
+    },
+    closeThemeManager() {
+      this.showThemeManagerModal = false;
     },
   },
 });

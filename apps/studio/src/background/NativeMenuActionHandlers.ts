@@ -1,6 +1,6 @@
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { DevLicenseState } from '@/lib/license'
-import { app, ipcMain, shell } from 'electron'
+import { app, shell } from 'electron'
 import { autoUpdater } from "electron-updater"
 import _ from 'lodash'
 import path from 'path'
@@ -128,38 +128,6 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.quickSearch)
   }
 
-  switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
-    try {
-      // If menuItem is a string, use it directly, otherwise get from the MenuItem object
-      let themeId, themeName;
-
-      if (_.isString(menuItem)) {
-        themeId = menuItem;
-        themeName = themeId; // Will be formatted by the event handler
-      } else {
-        // For menu items, use the item's ID if available (this should be the theme ID)
-        themeId = menuItem.id || menuItem.label.toLowerCase().replace(/\s+/g, '-');
-        themeName = menuItem.label; // The properly formatted display name
-      }
-
-      console.log(`Switching to theme: ${themeId} (display name: ${themeName})`);
-
-      // Create a theme event payload with minimal required information
-      // The main process theme:update handler will handle the details
-      const themeData = {
-        id: themeId,
-        name: themeName
-      };
-
-      // Broadcast the theme update event to all processes
-      ipcMain.emit('theme:update', null, themeData);
-
-      console.log(`Theme switch event emitted for: ${themeId}`);
-    } catch (error) {
-      console.error(`Error switching theme:`, error);
-    }
-  }
-
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.send(AppEvent.beekeeperAdded)
   }
@@ -223,21 +191,5 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     setAllowBeta(this.settings.useBeta.value as boolean);
     autoUpdater.checkForUpdates();
   }
-
-  manageCustomThemes(_menuItem: Electron.MenuItem, win: ElectronWindow): void {
-    console.log('manageCustomThemes called');
-
-    if (win) {
-      win.webContents.send(AppEvent.showThemeManager);
-
-      win.webContents.executeJavaScript(`
-        if (typeof window.showThemeManagerModal === 'function') {
-          console.log('Calling showThemeManagerModal directly');
-          window.showThemeManagerModal();
-        } else {
-          console.log('showThemeManagerModal function not found');
-        }
-      `).catch(err => console.error('Error executing JavaScript:', err));
-    }
-  }
 }
+

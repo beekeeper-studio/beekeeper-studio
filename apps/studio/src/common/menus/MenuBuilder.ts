@@ -1,7 +1,7 @@
-import DefaultMenu from './BaseMenuBuilder'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { IGroupedUserSettings } from '../transport/TransportUserSetting'
 import { IPlatformInfo } from '../IPlatformInfo'
+import { IGroupedUserSettings } from '../transport/TransportUserSetting'
+import DefaultMenu from './BaseMenuBuilder'
 
 export default class extends DefaultMenu {
   constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo) {
@@ -16,7 +16,6 @@ export default class extends DefaultMenu {
         this.menuItems.zoomin,
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
-        this.menuItems.themeToggle,
         this.menuItems.primarySidebarToggle,
         this.menuItems.secondarySidebarToggle,
         this.menuItems.reload,

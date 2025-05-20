@@ -18,7 +18,6 @@ import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
 import rawLog from "@bksLogger";
-import { ipcRenderer } from 'electron';
 import _ from 'lodash';
 import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
 
@@ -142,18 +141,6 @@ export const AppDbHandlers = {
   },
   'appdb/setting/get': async function ({ key }: { key: string }) {
     return transformSetting(await UserSetting.findOneBy({ key }), UserSetting);
-  },
-  'app/rebuildMenu': async function ({ theme }: { theme: string }) {
-    log.info('Handling rebuildMenu request with theme:', theme);
-    try {
-      // Forward to main process through IPC
-      const result = await ipcRenderer.invoke('app/rebuildMenu', { theme });
-      log.info('Menu rebuild result:', result);
-      return result;
-    } catch (error) {
-      log.error('Error during menu rebuild:', error);
-      return { success: false, error: error.message };
-    }
   },
   'appdb/cache/remove': async function ({ authId }: { authId: number }) {
     const cache = await TokenCache.findOneBy({ id: authId });

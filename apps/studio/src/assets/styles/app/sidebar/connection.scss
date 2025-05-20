@@ -3,6 +3,7 @@
 // Connection Sidebar
 // --------------------------------
 .connection-sidebar {
+  background-color: var(--sidebar-bg, #ececec);
   .list-body {
     height: fit-content;
   }

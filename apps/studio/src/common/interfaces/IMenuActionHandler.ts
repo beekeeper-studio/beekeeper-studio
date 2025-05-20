@@ -28,7 +28,7 @@ export interface IMenuActionHandler {
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   closeTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   quickSearch: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  switchTheme: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  switchTheme?: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -42,5 +42,5 @@ export interface IMenuActionHandler {
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  manageCustomThemes: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  manageCustomThemes?: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }
