@@ -2,7 +2,6 @@
 import log from '@bksLogger'
 import * as electron from 'electron'
 import { app, ipcMain, protocol } from 'electron'
-import { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import * as fs from 'fs'
 import _ from 'lodash'
 import path from 'path'
@@ -222,8 +221,8 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
-
-    installExtension(VUEJS_DEVTOOLS)
+    const VUES_DEVTOOLS_ID = 'iaajmlceplecbljialhhkmedjlpdblhp';
+    installExtension(VUES_DEVTOOLS_ID)
       .then((name) => console.log(`Added Extension: ${name}`))
       .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because
