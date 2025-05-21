@@ -4,11 +4,7 @@ import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
-
-const POSTGRES_USER = 'postgres';
-const POSTGRES_PASSWRD = 'T@est1234';
-const POSTGRES_DEFAULT_DB = 'test_beekeeper';
-const CONNECTION_TYPE = 'Postgres';
+import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 
 let electronApp;
 let window;
@@ -16,7 +12,6 @@ let queryTab;
 let resultPane;
 let userAttemptsTo;
 let newDatabaseConnection;
-let connectionObj;
 
 test.describe("Postgres query execution", () => {
 
@@ -27,11 +22,6 @@ test.describe("Postgres query execution", () => {
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
         userAttemptsTo = userActions(window);
-        connectionObj = {
-            databaseUser: POSTGRES_USER,
-            databasePassword: POSTGRES_PASSWRD,
-            defaultDatabase: POSTGRES_DEFAULT_DB
-        };
     });
 
     afterEach(async () => {
@@ -41,8 +31,8 @@ test.describe("Postgres query execution", () => {
     test("perform a Postgres query", async () => {
         const postgresQuery = 'select * from test_load limit 1;';
 
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(connectionObj);
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.connectWithDatabase();
 
         await expect(queryTab.queryTabTextArea).toBeVisible();
@@ -56,8 +46,8 @@ test.describe("Postgres query execution", () => {
     test("postgres query with WHERE and 2 results", async () => {
         const queryWithConditionals = 'SELECT * FROM test_load WHERE id IN (1, 2);'
 
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(connectionObj);
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.connectWithDatabase();
 
         await expect(queryTab.queryTabTextArea).toBeVisible();
@@ -73,8 +63,8 @@ test.describe("Postgres query execution", () => {
     test("runs valid query with no results", async () => {
         const zeroResultsQuery = 'SELECT * FROM test_load WHERE id = null;'
 
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(connectionObj);
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.connectWithDatabase();
 
         await expect(queryTab.queryTabTextArea).toBeVisible();

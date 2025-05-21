@@ -3,13 +3,7 @@ import { test, expect } from '@playwright/test';
 import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { userActions } from "../pageActions/index";
-
-const POSTGRES_CREDENTIALS = {
-    databaseUser: 'postgres',
-    databasePassword: 'T@est1234',
-    defaultDatabase: 'test_beekeeper',
-};
-const CONNECTION_TYPE = 'Postgres';
+import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 
 let electronApp;
 let window;
@@ -32,16 +26,16 @@ test.describe('New Connection Tests', () => {
     });
 
     test('Test a Postgres connection', async () => {
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CREDENTIALS);
-        await userAttemptsTo.testDatabaseConnection();
 
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
+        await userAttemptsTo.testDatabaseConnection();
         await expect(newDatabaseConnection.testConnectionButton).toBeVisible();
     });
 
     test('Connect with a Postgres database', async () => {
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CREDENTIALS);
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.testDatabaseConnection();
         await userAttemptsTo.connectWithDatabase();
 

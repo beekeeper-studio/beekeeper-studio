@@ -4,12 +4,10 @@ import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
+import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 
-const POSTGRES_USER = 'postgres';
-const POSTGRES_PASSWRD = 'T@est1234';
-const POSTGRES_DEFAULT_DB = 'test_beekeeper';
 const POSTGRES_QUERY = 'SELECT * FROM test_load WHERE id IN (1, 2);';
-const CONNECTION_TYPE = 'Postgres';
+
 
 let electronApp;
 let window;
@@ -17,7 +15,7 @@ let queryTab;
 let resultPane;
 let userAttemptsTo;
 let newDatabaseConnection;
-let connectionObj;
+
 test.describe("Result Pane Verifications", () => {
 
     beforeEach(async () => {
@@ -27,11 +25,6 @@ test.describe("Result Pane Verifications", () => {
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
         userAttemptsTo = userActions(window);
-        connectionObj = {
-            databaseUser: POSTGRES_USER,
-            databasePassword: POSTGRES_PASSWRD,
-            defaultDatabase: POSTGRES_DEFAULT_DB
-        }
     });
 
     afterEach(async () => {
@@ -40,8 +33,8 @@ test.describe("Result Pane Verifications", () => {
 
     test("clicks on results columns", async () => {
 
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(connectionObj);
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.connectWithDatabase();
 
         await expect(queryTab.queryTabTextArea).toBeVisible();
@@ -55,8 +48,8 @@ test.describe("Result Pane Verifications", () => {
 
     test("reorders items by clicking", async () => {
 
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(connectionObj);
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.connectWithDatabase();
 
         await expect(queryTab.queryTabTextArea).toBeVisible();

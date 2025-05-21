@@ -4,13 +4,8 @@ import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { TablesSideBar } from '../pageComponents/TablesSideBar';
-
+import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 import { userActions } from "../pageActions/index";
-
-const POSTGRES_USER = 'postgres';
-const POSTGRES_PASSWRD = 'T@est1234';
-const POSTGRES_DEFAULT_DB = 'test_beekeeper';
-const CONNECTION_TYPE = 'Postgres';
 
 let electronApp;
 let window;
@@ -18,9 +13,9 @@ let queryTab;
 let resultPane;
 let userAttemptsTo;
 let newDatabaseConnection;
-let connectionObj;
 let tablesSideBar;
 let newTableName;
+
 test.describe("Table creation", () => {
 
     beforeEach(async () => {
@@ -31,14 +26,9 @@ test.describe("Table creation", () => {
         resultPane = new QueryResultPane(window);
         tablesSideBar = new TablesSideBar(window);
         userAttemptsTo = userActions(window);
-        connectionObj = {
-            databaseUser: POSTGRES_USER,
-            databasePassword: POSTGRES_PASSWRD,
-            defaultDatabase: POSTGRES_DEFAULT_DB
-        };
 
-        await userAttemptsTo.selectNewConnection(CONNECTION_TYPE);
-        await userAttemptsTo.insertDatabaseDetails(connectionObj);
+        await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
+        await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.connectWithDatabase();
     });
 
