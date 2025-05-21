@@ -14,7 +14,7 @@
         <div class="description">
           {{ plugin.description }}
         </div>
-        <div class="author">{{ plugin.author.name }}</div>
+        <div class="author">{{ plugin.author.name || plugin.author }}</div>
       </div>
       <div class="actions">
         <x-button

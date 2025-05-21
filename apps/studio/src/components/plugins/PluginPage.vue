@@ -5,7 +5,11 @@
         {{ plugin.name }} <span class="version">{{ plugin.version }}</span>
       </div>
       <div>
-        By <a :href="plugin.author.url">{{ plugin.author.name }}</a>
+        By
+        <template v-if="plugin.author.name && plugin.author.url">
+          <a :href="plugin.author.url">{{ plugin.author.name }}</a>
+        </template>
+        <template v-else>{{ plugin.author }}</template>
       </div>
       <a :href="`https://github.com/${plugin.repo}`">
         <span class="flex">

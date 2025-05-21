@@ -168,7 +168,14 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
     try {
-      const webPluginManager = new WebPluginManager(Vue.prototype.$util, new PluginStoreService(store))
+      const webPluginManager = new WebPluginManager(
+        Vue.prototype.$util,
+        new PluginStoreService(store, {
+          emit: app.$emit,
+          on: app.$on,
+          off: app.$off,
+        })
+      )
       await webPluginManager.initialize()
       Vue.prototype.$plugin = {
         notify: webPluginManager.notify.bind(webPluginManager),

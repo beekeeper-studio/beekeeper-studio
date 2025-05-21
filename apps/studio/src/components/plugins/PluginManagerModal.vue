@@ -9,6 +9,10 @@
         <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
           <i class="material-icons">clear</i>
         </a>
+        <x-progressbar
+          v-if="loadingPlugins"
+          style="margin-top: -5px;"
+        />
         <div class="plugin-manager-content">
           <div class="plugin-list-container">
             <div class="description">
@@ -58,11 +62,12 @@ export default Vue.extend({
       selectedPluginIdx: -1,
       selectedPluginReadme: null,
       selectedPluginRemoteManifest: null,
+      loadedPlugins: false,
+      loadingPlugins: false,
     };
   },
   async mounted() {
     this.registerHandlers(this.rootBindings);
-    this.plugins = await this.buildPluginListData();
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
@@ -160,28 +165,59 @@ export default Vue.extend({
     async buildPluginListData() {
       const entries = await this.$plugin.getAllEntries();
       const installedPlugins = await this.$plugin.getEnabledPlugins();
-      for (const manifest of installedPlugins) {
-        const entry = entries.find((entry) => entry.id === manifest.id);
+      const list = []
+      console.log({
+        entries,
+        installedPlugins,
+      })
 
-        if (!entry) {
-          // This is a plugin that is installed but not found in registry / github.
-          manifest.push(structuredClone(entry));
-        } else {
-          manifest.repo = entry.repo;
-          manifest.updateAvailable = await this.$plugin.checkForUpdates(entry);
+      for (const manifest of installedPlugins) {
+        const data = {
+          ...manifest,
+          installed: true,
+          installing: false,
+          enabled: true,
+          checkingForUpdates: null,
         }
 
-        manifest.installed = true;
-        manifest.installing = false;
-        manifest.enabled = true;
-        manifest.checkingForUpdates = null;
+        const entry = entries.find((entry) => entry.id === manifest.id);
+        const installedPluginNotFoundInRegistry = !entry;
+
+        if (installedPluginNotFoundInRegistry) {
+          // do nothing
+        } else {
+          data.repo = entry.repo;
+          data.updateAvailable = await this.$plugin.checkForUpdates(entry);
+        }
+
+        list.push(data);
       }
 
-      return installedPlugins;
+      for (const entry of entries) {
+        if (!_.find(list, { id: entry.id })) {
+          const data = {
+            ...entry,
+            installed: false,
+            installing: false,
+            enabled: false,
+            checkingForUpdates: null,
+          }
+
+          list.push(data);
+        }
+      }
+
+      return list;
     },
     async open() {
       this.$modal.show(this.modalName);
-      this.plugins = await this.buildPluginListData();
+      if (!this.loadedPlugins) {
+        console.log('hello?')
+        this.loadingPlugins = true;
+        this.plugins = await this.buildPluginListData();
+        this.loadingPlugins = false;
+        this.loadedPlugins = true;
+      }
     },
     close() {
       this.$modal.hide(this.modalName);
