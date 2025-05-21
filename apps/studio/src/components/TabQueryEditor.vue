@@ -637,6 +637,9 @@
         this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
+      fullSavedQuery() {
+        this.initializeQueries();
+      },
       remoteDeleted() {
         if (this.remoteDeleted) {
           this.editor.readOnly = 'nocursor'
