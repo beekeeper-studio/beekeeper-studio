@@ -315,12 +315,12 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import { escapeHtml } from '@shared/lib/tabulator';
+import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
-import { stringToTypedArray } from "@/common/utils";
+import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
 const log = rawLog.scope('TableTable')
@@ -732,10 +732,10 @@ export default Vue.extend({
           if (keyDatas?.length > 0) {
             keyDatas.forEach(keyData => {
               // For composite foreign keys, show all related columns
-              const displayTarget = keyData.isComposite ? 
+              const displayTarget = keyData.isComposite ?
                 `${keyData.toTable} (${keyData.toColumn.join(', ')})` :
                 `${keyData.toTable} (${keyData.toColumn})`;
-              
+
               menu.push({
                 label: createMenuItem(`Go to ${displayTarget}`),
                 action: (_e, cell) => this.fkClick(keyData, cell)
@@ -779,6 +779,7 @@ export default Vue.extend({
         ]
       }
 
+      const { disallowedSortColumns = [] } = this.dialectData
       const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
       // this needs fixing
       // currently it doesn't fetch the right result if you update the PK
@@ -837,6 +838,13 @@ export default Vue.extend({
         headerTooltip += `<br/> ${escapeHtml(column.comment)}`
       }
 
+      const formatterParams: FormatterParams = {
+        fk: hasKeyDatas && keyDatas[0][1],
+        fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
+        isPK: isPK,
+        binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+      }
+
       const result = {
         title: column.columnName,
         field: column.columnName,
@@ -855,7 +863,7 @@ export default Vue.extend({
         resizable: 'header',
         cssClass,
         editable: this.cellEditCheck,
-        headerSort: !this.dialectData.disabledFeatures.headerSort,
+        headerSort: !this.dialectData.disabledFeatures.headerSort && !disallowedSortColumns.includes(column.dataType?.toLowerCase()),
         editor: editorType,
         tooltip: this.cellTooltip,
         contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
@@ -864,12 +872,7 @@ export default Vue.extend({
         headerTooltip: headerTooltip,
         cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
-        formatterParams: {
-          fk: hasKeyDatas && keyDatas[0][1],
-          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
-          isPK: isPK,
-          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
-        },
+        formatterParams,
         editorParams: {
           verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
           dataType: column.dataType,
@@ -1158,15 +1161,19 @@ export default Vue.extend({
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
-        const columnNames = this.table.columns.filter((c) => !c.generated).map((c) => c.columnName)
+        const columnNames = this.table.columns.filter((c) => !c.generated)
         const rowData = item.row.getData()
         const result = {}
-        columnNames.forEach((c) => {
-          const d = rowData[c]
-          if (this.isPrimaryKey(c) && (!d && d != 0)) {
+        columnNames.forEach(({ columnName, dataType }) => {
+          const d = rowData[columnName]
+          if (this.isPrimaryKey(columnName) && (!d && d != 0)) {
             // do nothing
           } else {
-            result[c] = d
+            result[columnName] = d
+            // HACK (azmi): we should handle this from backend with tests instead
+            if (this.dialect === 'postgresql' && dataType === 'jsonb') {
+              result[columnName] = JSON.stringify(d)
+            }
           }
         })
         return {
@@ -1191,14 +1198,6 @@ export default Vue.extend({
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
       if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
-    },
-    // TODO: this is not attached to anything. but it might be needed?
-    allowHeaderSort(column) {
-      const badStarts = [
-        'json', 'clob'
-      ]
-      if(!column.dataType) return true
-      return !badStarts.find((bad) => column.dataType.toLowerCase().startsWith(bad))
     },
     slimDataType(dt) {
       if (!dt) return null
@@ -1626,7 +1625,7 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
-      const { usesOffsetPagination } = this.dialectData
+      const { usesOffsetPagination, disallowedSortColumns = [] } = this.dialectData
       log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
@@ -1634,7 +1633,7 @@ export default Vue.extend({
       let filters = this.filters
 
       if (params.sort) {
-        orderBy = params.sort
+        orderBy = removeUnsortableColumnsFromSortBy(params.sort,  this.table.columns, disallowedSortColumns)
       }
 
       if (params.size) {

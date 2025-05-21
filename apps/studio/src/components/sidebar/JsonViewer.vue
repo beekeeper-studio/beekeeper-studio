@@ -19,7 +19,7 @@
           <button
             type="button"
             class="clear btn-link"
-            @click="filter = ''"
+            @click="setFilter('')"
             v-if="filter"
           >
             <i class="material-icons">cancel</i>
@@ -101,11 +101,39 @@ const log = rawLog.scope("json-viewer");
 
 export default Vue.extend({
   components: { TextEditor, JsonViewerUpsell },
-  props: ["value", "hidden", "expandablePaths", "editablePaths", "dataId", "title", "reinitialize", "signs", "binaryEncoding"],
+  props: {
+    value: {
+      type: [Object, Array],
+      default: () => ({})
+    },
+    hidden: {
+      type: Boolean,
+      default: false
+    },
+    expandablePaths: {
+      type: Array,
+      default: () => []
+    },
+    editablePaths: {
+      type: Array,
+      default: () => []
+    },
+    dataId: [String, Number],
+    title: String,
+    reinitialize: null,
+    signs: {
+      type: Object,
+      default: () => ({})
+    },
+    binaryEncoding: String,
+    filter: {
+      type: String,
+      default: ""
+    },
+  },
   data() {
     return {
       reinitializeTextEditor: 0,
-      filter: "",
       foldAll: 0,
       unfoldAll: 0,
       restoredTruncatedPaths: [],
@@ -156,11 +184,18 @@ export default Vue.extend({
         return this.filter;
       },
       set: _.debounce(function (value) {
-        this.filter = value;
+        this.setFilter(value);
       }, 500),
     },
     sourceMap() {
-      return JsonSourceMap.stringify(this.filteredValue, null, 2);
+      let replacedFilteredValue = this.filteredValue;
+      try {
+        // run the replacer on the filteredValue
+        replacedFilteredValue = JSON.parse(JSON.stringify(this.filteredValue, this.replacer));
+      } catch (error) {
+        log.warn("Failed to replace filtered value", error);
+      }
+      return JsonSourceMap.stringify(replacedFilteredValue, null, 2);
     },
     filteredValue() {
       if (this.empty) {
@@ -343,6 +378,10 @@ export default Vue.extend({
   },
   methods: {
     replacer(_key: string, value: unknown) {
+      // HACK: this is the case in mongodb objectid
+      if (value && typeof value === "object" && _.isTypedArray((value as any).buffer)) {
+        return typedArrayToString((value as any).buffer, this.binaryEncoding)
+      }
       if (_.isTypedArray(value)) {
         return typedArrayToString(value as ArrayBufferView, this.binaryEncoding)
       }
@@ -350,6 +389,9 @@ export default Vue.extend({
     },
     expandPath(path: ExpandablePath) {
       this.$emit("expandPath", path);
+    },
+    setFilter(filter: string) {
+      this.$emit("bks-filter-change", { filter });
     },
     handleEditableRangeChange: _.debounce(function (range, value) {
       this.editableRangeErrors = []

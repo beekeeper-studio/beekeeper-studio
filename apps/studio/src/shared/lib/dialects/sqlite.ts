@@ -29,6 +29,7 @@ export const SqliteData: DialectData = {
   wrapIdentifier: defaultWrapIdentifier,
   usesOffsetPagination: true,
   requireDataset: false,
+  disallowedSortColumns: ['blob'],
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);

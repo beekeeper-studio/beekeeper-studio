@@ -81,7 +81,6 @@ jobs:
           - name: macos-14
             arch: arm64
             type: macos
-
     steps:
 
       - name: Check out Git repository

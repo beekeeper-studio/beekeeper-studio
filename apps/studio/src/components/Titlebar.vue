@@ -6,21 +6,24 @@
     />
     <div
       class="titlebar"
+      ref="titlebar"
       @dblclick.prevent.stop="maximizeWindow"
       :class="{ windows: !$config.isMac, fullscreen }"
     >
       <div
         class="titlebar-icon"
+        ref="titlebarIcon"
         v-if="!$config.isMac"
       >
         <img src="@/assets/logo.svg">
-        <AppMenu />
+        <AppMenu ref="appMenu" />
       </div>
-      <div class="titlebar-title noselect">
-        {{ windowTitle }}
+      <div class="titlebar-title noselect" ref="titlebarTitle">
+        <span>{{ windowTitle }}</span>
       </div>
       <div
         class="titlebar-actions"
+        ref="titlebarActions"
       >
         <div class="titlebar-actions-extra">
           <button
@@ -103,7 +106,8 @@ export default {
   data() {
     return {
       maximized: false,
-      fullscreen: false
+      fullscreen: false,
+      resizeObserver: null,
     }
   },
   computed: {
@@ -126,8 +130,30 @@ export default {
     window.main.onLeaveFullscreen(() => {
       this.fullscreen = false
     }, this.$util.sId);
+
+    this.resizeObserver = new ResizeObserver(() => this.calculateTitleMaxWidth())
+    this.resizeObserver.observe(this.$refs.titlebar)
+    this.calculateTitleMaxWidth()
+  },
+  beforeDestroy() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+    }
   },
   methods: {
+    calculateTitleMaxWidth() {
+      const halfTitlebarWidth = this.$refs.titlebar.offsetWidth / 2
+      const titlebarIconWidth = this.$refs.titlebarIcon?.offsetWidth || 0
+      const appMenuWidth = this.$refs.appMenu?.$el.children[0].offsetWidth || 0
+
+      const leftWidth = titlebarIconWidth + appMenuWidth
+      const rightWidth = this.$refs.titlebarActions.offsetWidth
+      const sideBuffer = Math.max(leftWidth, rightWidth)
+
+      const titleMaxWidth = Math.max((halfTitlebarWidth - sideBuffer) * 2, 0)
+
+      this.$refs.titlebarTitle.style.maxWidth = `${titleMaxWidth}px`
+    },
     togglePrimarySidebar() {
       this.trigger(AppEvent.togglePrimarySidebar)
     },

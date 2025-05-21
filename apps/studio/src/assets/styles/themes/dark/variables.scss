@@ -50,3 +50,6 @@ $statusbar-text:            black;
 $statusbar-text-default:    white;
 
 $row-handle: rgb(22 22 22);
+
+$grouped-tables-base: color.adjust($theme-bg, $lightness: 2%);
+$grouped-tables-light: color.adjust($grouped-tables-base, $lightness: 2%);

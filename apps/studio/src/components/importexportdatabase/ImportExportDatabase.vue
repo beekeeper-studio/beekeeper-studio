@@ -102,7 +102,7 @@
       StatusBar,
       UpsellContent
     },
-    props: ['schema', 'tab'],
+    props: ['schema', 'tab', 'active'],
     data() {
       return {
         exportSteps: [
@@ -136,7 +136,8 @@
             stepperProps: {
               exportsStarted: false,
               successModalName: `success-modal-${this.tab.id}`,
-              failModalName: `fail-modal-${this.tab.id}`
+              failModalName: `fail-modal-${this.tab.id}`,
+              preventAutoShowSuccessModal: true
             },
             completed: false,
             completePrevious: true,
@@ -171,7 +172,9 @@
         })
       },
       exportsAllDone() {
-        return !this.hasRunningExports && this.exportSteps[2].stepperProps.exportsStarted;
+        return !this.hasRunningExports 
+          && this.exportSteps[2].stepperProps.exportsStarted 
+          && this.checkAllExportsCompleted();
       }
     },
     watch: {
@@ -187,6 +190,9 @@
         this.$native.files.open(this.tableOptions.filePath)
       },
       async startExport() {
+        // Hide any success modal that might be showing already
+        this.$modal.hide(`success-modal-${this.tab.id}`);
+        
         this.tab.isRunning = true;
         const exporters = await Promise.all(this.listTables.map(async (exportTable) => {
           await this.$store.dispatch('updateTableColumns', exportTable.table)
@@ -198,12 +204,54 @@
         }))
 
         this.exportSteps[2].stepperProps.exportsStarted = true
-        this.$util.send('export/batch', { ids: exporters }).then(() => {
+        
+        try {
+          await this.$util.send('export/batch', { ids: exporters });
+          
+          // Check for any failed exports
+          const failedExports = await this.checkForFailedExports(exporters);
+          
+          if (failedExports && failedExports.length > 0) {
+            // Show fail modal if any exports failed
+            this.$modal.show(`fail-modal-${this.tab.id}`);
+          } else {
+            // Only show success modal if all exports succeeded
+            this.$modal.show(`success-modal-${this.tab.id}`);
+          }
+        } catch (error) {
+          // Show fail modal on error
+          this.$modal.show(`fail-modal-${this.tab.id}`);
+        } finally {
           this.tab.isRunning = false;
-
           exporters.forEach((id) => {
             this.$util.removeListener(`onExportProgress/${id}`);
-          })
+          });
+        }
+      },
+      checkAllExportsCompleted() {
+        // Get all exports from our current batch
+        const batchExports = this.$store.state.exports.exports
+          .filter(exp => this.listTables.some(table => 
+            exp.filePath.includes(table.name)
+          ));
+        
+        // Check if all exports are either successful or failed
+        return batchExports.every(exp => 
+          exp.status === ExportStatus.COMPLETED || 
+          exp.status === ExportStatus.FAILED
+        );
+      },
+      async checkForFailedExports(exportIds) {
+        // Get all exports
+        const allExports = this.$store.state.exports.exports;
+        // Filter for failed exports from our batch
+        return exportIds.filter(id => {
+          const exp = allExports.find(e => e.id === id);
+          return exp && (
+            exp.status === ExportStatus.FAILED || 
+            exp.status === ExportStatus.Error || 
+            exp.status === ExportStatus.Aborted
+          );
         });
       },
       async addExport(tableToExport) {

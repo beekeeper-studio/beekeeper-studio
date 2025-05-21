@@ -67,6 +67,7 @@ export const ClickHouseData: DialectData = {
     return quote ? `'${result}'` : result
   },
   requireDataset: false,
+  disallowedSortColumns: ['longblob', 'mediumblob', 'tinyblob', 'blob', 'json', 'array(t)', 'map(k, v)'],
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   },
