@@ -28,4 +28,15 @@ export class TablesSideBar {
   async tableSideBarButton(tableName): Promise<Locator> {
     return this.page.getByRole('button', { name: tableName });
   }
+
+  async expandTableOnSideBarButton(tableName): Promise<Locator> {
+    return this.page.locator('span.table-name.truncate', {
+      hasText: tableName
+    }).locator('xpath=ancestor::a//span[contains(@class, "open-close")]');
+  }
+
+  async columnInTable(columnName) {
+    return await this.page.locator('#tab-tables').getByText(columnName, { exact: true });
+  }
+
 }

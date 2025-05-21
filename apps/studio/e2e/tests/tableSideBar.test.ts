@@ -52,20 +52,19 @@ test.describe("Table creation", () => {
         await electronApp.close();
     });
 
-    test.only("create a table and verify that the columns are visible in the sidebar", async () => {
+    test("create a table and verify that the columns are visible in the sidebar", async () => {
         newTableName = `automated_test_table_${Date.now()}`;
+        const columnName = `test_number_${newTableName}`;
         const CREATE_TABLE_QUERY = `CREATE TABLE ${newTableName} (
-                test_number INT,
+                ${columnName} INT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );`;
 
         await userAttemptsTo.writeAQuery(CREATE_TABLE_QUERY);
         await userAttemptsTo.runQuery();
-        await window.pause();
-        const tableSideBarButton = await tablesSideBar.tableSideBarButton(newTableName);
-        await tableSideBarButton.click();
-        const testColumn = await window.locator('#tab-tables').getByText('test_number', { exact: true });
-        await expect(testColumn).toBeVisible();
+        await userAttemptsTo.expandTableOnSideBar(newTableName);
+
+        await expect(await tablesSideBar.columnInTable(columnName)).toBeVisible();
     });
 
 });

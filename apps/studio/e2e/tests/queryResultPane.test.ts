@@ -49,7 +49,7 @@ test.describe("Result Pane Verifications", () => {
         await userAttemptsTo.runQuery();
         await expect(resultPane.resultSecondRow).toBeVisible();
         // will move this to an action
-        await resultPane.firstColumnHeader.click();
+        await userAttemptsTo.clickOnFirstColumnHeader();
         await expect(resultPane.firstColumnHeader).toBeVisible();
     });
 
@@ -65,11 +65,11 @@ test.describe("Result Pane Verifications", () => {
         await expect(resultPane.resultSecondRow).toBeVisible();
 
         // clicking twice due to a bug (will be reported) 
-        await resultPane.firstColumnHeader.click();
+        await userAttemptsTo.clickOnFirstColumnHeader();
 
         const cellValueBeforeReordering = await resultPane.firstItemAndFirstColumn.textContent()
         await expect(await resultPane.firstItemAndFirstColumn).toBeVisible();
-        await resultPane.firstColumnHeader.click();
+        await userAttemptsTo.clickOnFirstColumnHeader();
         const cellValueAfterReordering = await resultPane.firstItemAndFirstColumn.textContent();
 
         await expect(resultPane.resultFirstRow).toBeVisible();
