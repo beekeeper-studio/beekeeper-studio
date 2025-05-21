@@ -81,9 +81,6 @@ jobs:
           - name: macos-14
             arch: arm64
             type: macos
-        # macos-13 is Intel, macos-14 is arm (obviously)
-        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-
     steps:
 
       - name: Check out Git repository

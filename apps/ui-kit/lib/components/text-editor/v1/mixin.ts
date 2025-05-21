@@ -21,9 +21,8 @@ import "codemirror/addon/merge/merge";
 import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
-import { setKeybindings, Config, extendVimOnCodeMirror } from "./vim";
+import { setKeybindings, Config, extendVimOnCodeMirror, Clipboard } from "./vim";
 import { divider, InternalContextItem, openMenu } from "../../context-menu/menu";
-import { writeClipboard, readClipboard } from "../../../utils/clipboard";
 import { cmCtrlOrCmd } from "../../../utils/platform"
 import { PropType } from "vue";
 import { CustomMenuItems, useCustomMenuItems } from "../../context-menu/menu";
@@ -500,10 +499,10 @@ export default {
           {
             label: "Cut",
             id: "text-cut",
-            handler: () => {
+            handler: async () => {
               const selection = this.editor.getSelection();
               this.editor.replaceSelection("");
-              writeClipboard(selection);
+              await this.clipboard?.writeText(selection);
             },
             class: selectionDepClass,
             shortcut: "Control+X",
@@ -514,7 +513,7 @@ export default {
             id: "text-copy",
             handler: async () => {
               const selection = this.editor.getSelection();
-              await writeClipboard(selection);
+              await this.clipboard?.writeText(selection);
             },
             class: selectionDepClass,
             shortcut: "Control+C",
@@ -523,7 +522,7 @@ export default {
             label: "Paste",
             id: "text-paste",
             handler: async () => {
-              const clipboard = await readClipboard();
+              const clipboard = this.clipboard?.readText()
               if (this.editor.getSelection()) {
                 this.editor.replaceSelection(clipboard, "around");
               } else {

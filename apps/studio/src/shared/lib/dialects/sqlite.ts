@@ -41,6 +41,7 @@ export const SqliteData: DialectData = {
     shell: true,
     schema: true,
     comments: true,
+    compositeKeys: true,
     alter: {
       alterColumn: true,
       multiStatement: true,
