@@ -42,6 +42,7 @@ export default Vue.extend({
   },
   computed: {
     baseUrl() {
+      // FIXME move this somewhere
       return `plugin://${this.pluginId}/${this.entryUrl}?timestamp=${this.timestamp}`;
     },
     rootBindings() {

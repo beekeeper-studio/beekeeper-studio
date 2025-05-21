@@ -622,7 +622,12 @@
         set(value: string) {
           this.tab.unsavedQueryText = value
         },
-      }
+      },
+      rootBindings() {
+        return [
+          { event: AppEvent.runQueryTab, handler: this.handleRunQueryTab },
+        ]
+      },
     },
     watch: {
       error() {
@@ -882,10 +887,16 @@
         const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
-          this.submitQuery(text)
+          await this.submitQuery(text)
         } else {
           this.error = 'No query to run'
         }
+
+        const results = this.results || []
+        this.$emit(AppEvent.executedQueryTab, this.tab.id, {
+          results,
+          ...(this.error && { error: this.error }),
+        })
       },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
@@ -1055,12 +1066,19 @@
         this.individualQueries = queries;
         this.currentlySelectedQuery = selectedQuery;
       },
+      handleRunQueryTab(tabId: number) {
+        if (tabId === this.tab.id) {
+          this.submitTabQuery()
+        }
+      },
     },
     async mounted() {
       if (this.shouldInitialize) {
         await this.$nextTick()
         this.initialize()
       }
+
+      this.registerHandlers(this.rootBindings)
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()

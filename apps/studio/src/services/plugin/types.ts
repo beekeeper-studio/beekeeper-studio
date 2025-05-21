@@ -51,4 +51,4 @@ export interface Release {
   sourceArchiveUrl: string;
 }
 
-export * from "./commTypes";
+export * from "./comm";

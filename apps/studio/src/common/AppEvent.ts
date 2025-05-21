@@ -68,7 +68,8 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
-  updateQuery = 'updateQuery',
+  runQueryTab = 'runQueryTab',
+  executedQueryTab = 'executedQueryTab',
 }
 
 export interface RootBinding {

@@ -230,8 +230,6 @@ export default class PluginFileManager {
         PLUGIN_MANIFEST_FILENAME
       );
 
-      console.log('MOIASND)IASNOIASND', manifestPath)
-
       if (!fs.existsSync(manifestPath)) {
         log.warn(`Found folder without manifest: ${dir}. Skipping.`);
         continue;

@@ -1,4 +1,3 @@
-import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import {
   Manifest,
   PluginNotificationData,
@@ -7,14 +6,6 @@ import {
 } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
-import {
-  GetActiveTabResponse,
-  GetColumnsResponse,
-  GetConnectionInfoResponse,
-  GetTablesResponse,
-  GetThemeResponse,
-  ThemePalette,
-} from "../commTypes";
 import _ from "lodash";
 
 function joinUrlPath(a: string, b: string): string {
@@ -28,7 +19,6 @@ export default class WebPluginLoader {
 
   constructor(
     public readonly manifest: Manifest,
-    private utilityConnection: UtilityConnection,
     private pluginStore: PluginStoreService
   ) {
     this.handleMessage = this.handleMessage.bind(this);
@@ -52,7 +42,7 @@ export default class WebPluginLoader {
 
     // Check if the message is from our iframe
     if (event.source === this.iframe.contentWindow) {
-      this.handleIframeRequest({
+      this.handleViewRequest({
         id: event.data.id,
         name: event.data.name,
         args: event.data.args[0],
@@ -60,7 +50,7 @@ export default class WebPluginLoader {
     }
   }
 
-  private async handleIframeRequest(request: PluginRequestData) {
+  private async handleViewRequest(request: PluginRequestData) {
     this.checkPermission(request);
 
     const response: PluginResponseData = {
@@ -70,153 +60,54 @@ export default class WebPluginLoader {
 
     try {
       switch (request.name) {
-        // Read actions
+        // ========= READ ACTIONS ===========
+        case "getTheme":
+          response.result = this.pluginStore.getTheme();
+          break;
         case "getTables":
-          response.result = this.pluginStore.getTables() as GetTablesResponse;
+          response.result = this.pluginStore.getTables();
           break;
         case "getColumns":
-          response.result = (await this.pluginStore.getColumns(
+          response.result = await this.pluginStore.getColumns(
             request.args.table
-          )) as GetColumnsResponse;
+          );
           break;
         case "getConnectionInfo":
-          response.result =
-            this.pluginStore.getConnectionInfo() as GetConnectionInfoResponse;
+          response.result = this.pluginStore.getConnectionInfo();
           break;
         case "getActiveTab":
-          response.result =
-            this.pluginStore.getActiveTab() as GetActiveTabResponse;
+          response.result = this.pluginStore.getActiveTab();
           break;
-        case "getTheme":
-          const cssProps = [
-            "--theme-bg",
-            "--theme-base",
-            "--theme-primary",
-            "--theme-secondary",
-
-            "--text-dark",
-            "--text",
-            "--text-light",
-            "--text-lighter",
-            "--text-hint",
-            "--text-disabled",
-
-            "--brand-info",
-            "--brand-success",
-            "--brand-warning",
-            "--brand-danger",
-            "--brand-default",
-            "--brand-purple",
-            "--brand-pink",
-
-            "--border-color",
-            "--link-color",
-            "--placeholder",
-            "--selection",
-            "--input-highlight",
-
-            // BksTextEditor
-            "--bks-text-editor-activeline-bg-color",
-            "--bks-text-editor-activeline-gutter-bg-color",
-            "--bks-text-editor-atom-fg-color",
-            "--bks-text-editor-bg-color",
-            "--bks-text-editor-bracket-fg-color",
-            "--bks-text-editor-builtin-fg-color",
-            "--bks-text-editor-comment-attribute-fg-color",
-            "--bks-text-editor-comment-def-fg-color",
-            "--bks-text-editor-comment-fg-color",
-            "--bks-text-editor-comment-tag-fg-color",
-            "--bks-text-editor-comment-type-fg-color",
-            "--bks-text-editor-cursor-bg-color",
-            "--bks-text-editor-def-fg-color",
-            "--bks-text-editor-error-bg-color",
-            "--bks-text-editor-error-fg-color",
-            "--bks-text-editor-fg-color",
-            "--bks-text-editor-gutter-bg-color",
-            "--bks-text-editor-guttermarker-fg-color",
-            "--bks-text-editor-guttermarker-subtle-fg-color",
-            "--bks-text-editor-header-fg-color",
-            "--bks-text-editor-keyword-fg-color",
-            "--bks-text-editor-linenumber-fg-color",
-            "--bks-text-editor-link-fg-color",
-            "--bks-text-editor-matchingbracket-fg-color",
-            "--bks-text-editor-matchingbracket-bg-color",
-            "--bks-text-editor-number-fg-color",
-            "--bks-text-editor-property-fg-color",
-            "--bks-text-editor-selected-bg-color",
-            "--bks-text-editor-string-fg-color",
-            "--bks-text-editor-tag-fg-color",
-            "--bks-text-editor-variable-2-fg-color",
-            "--bks-text-editor-variable-3-fg-color",
-            "--bks-text-editor-variable-fg-color",
-            "--bks-text-editor-namespace-fg-color",
-            "--bks-text-editor-type-fg-color",
-            "--bks-text-editor-class-fg-color",
-            "--bks-text-editor-enum-fg-color",
-            "--bks-text-editor-interface-fg-color",
-            "--bks-text-editor-struct-fg-color",
-            "--bks-text-editor-typeParameter-fg-color",
-            "--bks-text-editor-parameter-fg-color",
-            "--bks-text-editor-enumMember-fg-color",
-            "--bks-text-editor-decorator-fg-color",
-            "--bks-text-editor-event-fg-color",
-            "--bks-text-editor-function-fg-color",
-            "--bks-text-editor-method-fg-color",
-            "--bks-text-editor-macro-fg-color",
-            "--bks-text-editor-label-fg-color",
-            "--bks-text-editor-regexp-fg-color",
-            "--bks-text-editor-operator-fg-color",
-            "--bks-text-editor-definition-fg-color",
-            "--bks-text-editor-variableName-fg-color",
-            "--bks-text-editor-bool-fg-color",
-            "--bks-text-editor-null-fg-color",
-            "--bks-text-editor-className-fg-color",
-            "--bks-text-editor-propertyName-fg-color",
-            "--bks-text-editor-punctuation-fg-color",
-            "--bks-text-editor-meta-fg-color",
-            "--bks-text-editor-typeName-fg-color",
-            "--bks-text-editor-labelName-fg-color",
-            "--bks-text-editor-attributeName-fg-color",
-            "--bks-text-editor-attributeValue-fg-color",
-            "--bks-text-editor-heading-fg-color",
-            "--bks-text-editor-url-fg-color",
-            "--bks-text-editor-processingInstruction-fg-color",
-            "--bks-text-editor-special-string-fg-color",
-
-            // BksTextEditor context menu
-            "--bks-text-editor-context-menu-bg-color",
-            "--bks-text-editor-context-menu-fg-color",
-            "--bks-text-editor-context-menu-item-bg-color-active",
-            "--bks-text-editor-context-menu-item-fg-color-active",
-            "--bks-text-editor-context-menu-item-bg-color-hover",
-          ];
-
-          const styles = getComputedStyle(document.body);
-          /** Key = css property, value = css value */
-          const palette: Record<string, string> = {};
-
-          for (const name of cssProps) {
-            const camelKey = _.camelCase(name);
-            palette[camelKey] = styles.getPropertyValue(name).trim();
-          }
-
-          const cssString = cssProps
-            .map((cssProp) => `${cssProp}: ${palette[_.camelCase(cssProp)]};`)
-            .join("");
-          response.result = {
-            type: this.pluginStore.getThemeType(),
-            palette,
-            cssString,
-          } as GetThemeResponse;
+        case "getAllTabs":
+          response.result = this.pluginStore.getAllTabs();
           break;
 
-        // Write actions
+        // ======== WRITE ACTIONS ===========
+        case "createQueryTab":
+          response.result = await this.pluginStore.createQueryTab(
+            request.args.query,
+            request.args.title
+          );
+          break;
         case "updateQueryText":
-          this.pluginStore.updateQueryText(
+          response.result = this.pluginStore.updateQueryText(
             request.args.tabId,
             request.args.query
           );
           break;
+        case "runQuery":
+          response.result = await this.pluginStore.runQuery(request.args.query);
+          break;
+        case "runQueryTab":
+          response.result = await this.pluginStore.runQueryTab(
+            request.args.tabId
+          );
+          break;
+        case "runQueryTabPartially":
+          throw new Error("Not implemented."); // FIXME
+        case "insertSuggestion":
+          // TODO this will add suggestion to the query tab like copilot or cursor
+          throw new Error("Not implemented."); // FIXME
 
         default:
           throw new Error(`Unknown request: ${request.name}`);

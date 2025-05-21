@@ -21,7 +21,7 @@ export default class WebPluginManager {
   constructor(
     private utilityConnection: UtilityConnection,
     private pluginStore: PluginStoreService
-  ) { }
+  ) {}
 
   async initialize() {
     if (this.initialized) {
@@ -73,11 +73,7 @@ export default class WebPluginManager {
       return this.loaders.get(manifest.id);
     }
 
-    const loader = new WebPluginLoader(
-      manifest,
-      this.utilityConnection,
-      this.pluginStore
-    );
+    const loader = new WebPluginLoader(manifest, this.pluginStore);
     await loader.load();
     this.loaders.set(manifest.id, loader);
     return loader;
@@ -123,7 +119,6 @@ export default class WebPluginManager {
       throw new Error("Plugin not found: " + pluginId);
     }
     await loader.registerIframe(iframe);
-
   }
 
   async notify(pluginId: string, data: PluginNotificationData) {
@@ -133,5 +128,4 @@ export default class WebPluginManager {
     }
     loader.postMessage(data);
   }
-
 }
