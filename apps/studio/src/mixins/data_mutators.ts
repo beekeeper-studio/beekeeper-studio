@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
+import { TabulatorFormatterParams } from '@/common/tabulator'
 import helpers, { escapeHtml } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
@@ -44,12 +45,28 @@ export default {
       const cellValue = cell.getValue()
       return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
     },
-    cellTooltip(_event, cell: CellComponent) {
+    cellTooltip(
+      _event,
+      cell: CellComponent
+    ) {
+      const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams || {}
       let cellValue = cell.getValue()
+
       if (cellValue instanceof Uint8Array) {
-        const binaryEncoding = cell.getColumn().getDefinition().formatterParams?.binaryEncoding || 'hex'
+        const binaryEncoding = params.binaryEncoding || 'hex'
         cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
+      } else if (
+        !params?.fk &&
+        !params?.isPK &&
+        _.isInteger(Number(cellValue))
+      ) {
+        try {
+          cellValue += ` (${new Date(Number(cellValue)).toISOString()} in unixtime)`
+        } catch (e) {
+          console.error(`${cellValue} cannot be converted to a date`)
+        }
       }
+      
       const nullValue = emptyResult(cellValue)
       return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
     },
@@ -59,7 +76,6 @@ export default {
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
-      let htmlPrefix = ''
       let cellValue = cell.getValue()
 
       if (cellValue instanceof Uint8Array) {
@@ -87,23 +103,11 @@ export default {
           const fkLink = cell.getElement().querySelector('.fk-link') as HTMLElement
           fkLink.onclick = (e) => params.fkOnClick(e, cell);
         })
-      } else if (
-          params?.isPK != null &&
-          !params.isPK &&
-          !classNames.includes('binary-type') &&
-          _.isInteger(Number(cellValue))
-        ) {
-        try {
-          tooltip = `${new Date(Number(cellValue)).toISOString()} in unixtime`
-          result = buildFormatterWithTooltip(cellValue, tooltip)
-        } catch (e) {
-          console.error(`${cellValue} cannot be converted to a date`)
-        }
-    }
+      }
 
       cell.getElement().classList.add(...classNames)
 
-      return htmlPrefix + result;
+      return result;
     },
     yesNoFormatter: helpers.yesNoFormatter,
     ...Mutators
