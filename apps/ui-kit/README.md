@@ -17,8 +17,9 @@ npm install @beekeeperstudio/ui-kit
 
 ```bash
 yarn install
-yarn lib:dev # build and watch
+yarn lib:dev # build and watch library
 yarn test # unit test
+yarn dev # start development server, ideal for testing components quickly
 ```
 
 ## License

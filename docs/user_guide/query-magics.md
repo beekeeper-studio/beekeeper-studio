@@ -2,6 +2,7 @@
 title: Query Magics
 summary: "Use Query Magics to format your SQL query results by just renaming your columns."
 old_url: "https://docs.beekeeperstudio.io/docs/query-magics"
+icon: material/magic-staff
 ---
 
 

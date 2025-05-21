@@ -6,7 +6,8 @@ Currently, it includes the following components:
 
 - [**Table**](./table.md): Displaying tabular data.
 - [**Entity List**](./entity-list.md): Displaying a list of entities in a tree structure.
-- [**SQL Text Editor**](./sql-text-editor.md): Editing SQL queries with syntax highlighting and auto-completion.
+- [**Text Editor**](./text-editor.md): LSP powered text editor with syntax highlighting, auto-completion and more.
+- [**SQL Text Editor**](./sql-text-editor.md): Extended version of the Text Editor for editing SQL queries.
 - [**Data Editor**](./data-editor.md): Providing all of the above in one place.
 
 For information on customizing the appearance of these components, see the [Customizing UI Kit Components](./customizing.md) documentation. Specific CSS properties for styling the SQL Text Editor and Table components can be found in their respective documentation pages.

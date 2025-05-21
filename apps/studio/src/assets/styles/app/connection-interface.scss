@@ -1,3 +1,4 @@
+@use "sass:color";
 .interface.connection-interface {
   padding-top: 0;
 }
@@ -153,7 +154,7 @@
 .advanced-connection-settings {
   display: flex;
   flex-direction: column;
-  background: darken($theme-bg, 4%);
+  background: color.adjust($theme-bg, $lightness: -4%);
   border-radius: 8px;
   margin: $gutter-w 0;
   padding: $gutter-w ($gutter-w * 1.25);

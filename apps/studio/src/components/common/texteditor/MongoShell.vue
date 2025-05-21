@@ -37,6 +37,9 @@ import { keymapTypes } from "@/lib/db/types";
 import { mapGetters, mapState } from 'vuex';
 import { plugins } from "@/lib/editor/utils";
 import { AppEvent } from '@/common/AppEvent';
+import AnsiToHtml from 'ansi-to-html';
+
+const ansiToHtml = new AnsiToHtml();
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
@@ -44,6 +47,7 @@ interface InitializeOptions {
 
 export default {
   props: [
+    "focus",
     "output",
     "vimConfig" // not sure if we need this
   ],
@@ -51,18 +55,18 @@ export default {
     return {
       shell: null,
       promptSymbol: "mongo> ",
-      commandBuffer: "",
       commandHistory: [],
       historyIndex: -1,
       promptLine: 0, // where current prompt starts
-      wasShellFocused: false
+      wasShellFocused: false,
+      firstInitialization: true
     }
   },
   computed: {
     ...mapGetters({ 'userKeymap': 'settings/userKeymap' }),
     ...mapState(['connection']),
     prompt() {
-      const maxLength = 50;
+      const maxLength = 30;
       if (this.promptSymbol.length <= maxLength) return this.promptSymbol;
 
       const startLength = Math.floor((maxLength - 3) / 2);
@@ -102,7 +106,15 @@ export default {
       const lastLineNum = this.shell.lastLine();
       let output = value.output;
 
-      if (typeof output === 'object') {
+      if (typeof output === 'string' && /\x1b\[[0-9;]*m/.test(output)) {
+        const html = ansiToHtml.toHtml(output);
+
+        const el = document.createElement('pre');
+        el.className = 'ansi-output';
+        el.innerHTML = html;
+
+        this.shell.addLineWidget(lastLineNum, el, { above: false });
+      } else if (typeof output === 'object') {
         try {
           const formattedOutput = JSON.stringify(output, null, 2);
           
@@ -121,11 +133,21 @@ export default {
         this.promptSymbol = v;
         this.resetPrompt();
       })
+    },
+    async focus() {
+      if (!this.shell) return;
+      if (this.focus) {
+        this.shell.focus();
+        await this.$nextTick();
+        this.shell.refresh();
+      } else {
+        this.shell.display.input.blur();
+      }
     }
   },
   methods: {
     focusShell() {
-      if (this.shell && this.autoFocus && this.wasShellFocused) {
+      if (this.shell && this.wasShellFocused) {
         this.shell.focus();
         this.wasShellFocused = false;
       }
@@ -144,7 +166,11 @@ export default {
       }
     },
     async initialize(options: InitializeOptions = {}) {
+      await this.$nextTick();
+
       this.destroyShell();
+      await this.$nextTick();
+      this.promptLine = 0;
 
       const indicatorOpen = document.createElement("span");
       indicatorOpen.classList.add("foldgutter", "btn-fab", "open-close");
@@ -249,7 +275,16 @@ export default {
         });
       }
 
+      if (this.firstInitialization && this.focus) {
+        cm.focus();
+      }
+
       this.shell = cm;
+      this.firstInitialization = false;
+
+      this.$nextTick(() => {
+        this.$emit("initialized");
+      })
     },
     async executeCommand() {
       const doc = this.shell.getDoc();
@@ -262,6 +297,7 @@ export default {
       this.historyIndex = this.commandHistory.length;
 
       if (userCommand === "clear") {
+        this.firstInitialization = true;
         this.initialize({ userKeymap: this.userKeymap });
         this.$emit('clear');
         return;
@@ -302,6 +338,11 @@ export default {
     await this.initialize({
       userKeymap: this.userKeymap,
     });
+
+    if (this.focus) {
+      this.shell.focus();
+    }
+
     window.addEventListener('focus', this.focusShell);
     window.addEventListener('blur', this.handleBlur);
     this.registerHandlers(this.rootBindings);
@@ -316,6 +357,7 @@ export default {
 </script>
 
 <style lang="scss">
+@use 'sass:color';
 @import '../../../assets/styles/app/_variables';
  
 .cm-s-monokai .cm-prompt {
@@ -325,8 +367,16 @@ export default {
 
 .text-editor {
   .dropdown-icon:hover {
-    color: lighten($theme-primary, 15%);
+    color: color.adjust($theme-primary, $lightness: 15%);
   }
+}
+
+.ansi-output {
+  user-select: text !important;
+  white-space: pre-wrap;
+  color: white;
+  padding: 4px;
+  margin: 0;
 }
 
 </style>

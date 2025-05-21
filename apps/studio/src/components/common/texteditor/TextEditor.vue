@@ -43,10 +43,14 @@ import {
 import { AppEvent } from "@/common/AppEvent";
 import { keymapTypes } from "@/lib/db/types"
 import { EditorMarker, LineGutter } from "@/lib/editor/utils";
+import { TextEditorPlugin } from "@/lib/editor/plugins/TextEditorPlugin";
+import rawLog from '@bksLogger'
 
 interface InitializeOptions {
   userKeymap?: typeof keymapTypes[number]['value']
 }
+
+const log = rawLog.scope('TextEditor')
 
 export default {
   props: [
@@ -87,6 +91,7 @@ export default {
       activeLineGutters: [],
       wasEditorFocused: false,
       firstInitialization: true,
+      initializedPlugins: [],
     };
   },
   computed: {
@@ -187,6 +192,12 @@ export default {
     },
     unfoldAll() {
       CodeMirror.commands.unfoldAll(this.editor)
+    },
+    plugins() {
+      this.destroyPlugins();
+      if (this.editor) {
+        this.initializePlugins(this.editor);
+      }
     },
   },
   methods: {
@@ -342,11 +353,7 @@ export default {
         }
       }
 
-      if (this.plugins) {
-        this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
-          plugin(cm);
-        });
-      }
+      this.initializePlugins(cm)
 
       if (this.firstInitialization && this.focus) {
         cm.focus();
@@ -374,7 +381,8 @@ export default {
         let markInstance: TextMarker;
         if (marker.type === "error") {
           markInstance = this.editor.markText(marker.from, marker.to, {
-            className: "error",
+            className: "bks-error-marker",
+            attributes: { title: marker.message },
           });
         } else if (marker.type === "highlight") {
           markInstance = this.editor.markText(marker.from, marker.to, {
@@ -436,12 +444,38 @@ export default {
         this.activeLineGutters.push(lineGutter)
       })
     },
+    initializePlugins(editor: CodeMirror.Editor) {
+      this.plugins?.forEach((plugin: ((editor: CodeMirror.Editor) => Function) | TextEditorPlugin) => {
+        try {
+          if (typeof plugin === "function") {
+            const destroy = plugin(editor);
+            this.initializedPlugins.push({ destroy });
+          } else {
+            plugin.initialize(editor);
+            this.initializedPlugins.push(plugin);
+          }
+        } catch (e) {
+          log.error("Error initializing plugin", e)
+        }
+      });
+    },
     destroyEditor() {
+      this.destroyPlugins();
       if (this.editor) {
         this.editor
           .getWrapperElement()
           .parentNode.removeChild(this.editor.getWrapperElement());
       }
+    },
+    destroyPlugins() {
+      this.initializedPlugins.forEach((plugin: TextEditorPlugin) => {
+        try {
+          plugin.destroy()
+        } catch (e) {
+          log.error("Error destroying plugin", e)
+        }
+      })
+      this.initializedPlugins = []
     },
     showContextMenu(event) {
       const hasSelectedText = this.editor.getSelection();
@@ -543,9 +577,18 @@ export default {
         menu.options = menu.options.filter((option) => !option.write);
       }
 
-      const customOptions = this.contextMenuOptions
-        ? this.contextMenuOptions(event, menu.options)
-        : undefined;
+      let customOptions: typeof menu.options | false | undefined;
+
+      for (const plugin of this.initializedPlugins) {
+        if (plugin.beforeOpeningContextMenu) {
+          customOptions = plugin.beforeOpeningContextMenu(event, menu.options)
+        }
+      }
+
+      // FIXME remove this in favor of plugin
+      if (this.contextMenuOptions) {
+        customOptions = this.contextMenuOptions(event, customOptions || menu.options);
+      }
 
       if (customOptions === false) {
         return;

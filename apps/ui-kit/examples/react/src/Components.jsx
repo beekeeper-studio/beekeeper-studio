@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getEntities } from "./data";
 import BksTable from "./BksTable";
+import BksTextEditor from "./BksTextEditor";
 import BksSqlTextEditor from "./BksSqlTextEditor";
 import BksEntityList from "./BksEntityList";
 import BksDataEditor from "./BksDataEditor";
@@ -30,6 +31,10 @@ export default function Components() {
 
   return (
     <>
+      <h2>Text Editor</h2>
+      <div className="card">
+        <BksTextEditor />
+      </div>
       <h2>Sql Text Editor</h2>
       <div className="card">
         <BksSqlTextEditor entities={entities} />

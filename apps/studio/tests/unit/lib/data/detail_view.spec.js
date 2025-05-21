@@ -5,7 +5,7 @@ import {
   findKeyPosition,
   findValueInfo,
   eachPaths,
-} from "../../../../src/lib/data/detail_view";
+} from "../../../../src/lib/data/jsonViewer";
 
 const jsonStr = fs.readFileSync(
   path.resolve(__dirname, "./sample.json"),

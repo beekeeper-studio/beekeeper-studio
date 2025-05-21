@@ -134,13 +134,15 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "New Tab",
       accelerator: "CommandOrControl+T",
       click: actionHandler.newQuery,
+      enabled: false,
     },
     closeTab: {
       id: 'close-tab',
       label: "Close Tab",
       accelerator: "CommandOrControl+W",
       click: actionHandler.closeTab,
-      registerAccelerator: false
+      registerAccelerator: false,
+      enabled: false,
     },
     importSqlFiles: {
       id: 'import-sql-files',
@@ -148,25 +150,36 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       accelerator: "CommandOrControl+I",
       click: actionHandler.importSqlFiles,
       showWhenConnected: true,
+      enabled: false,
     },
     quickSearch: {
       id: 'go-to',
       label: "Quick Search",
       accelerator: "CommandOrControl+P",
       registerAccelerator: false,
-      click: actionHandler.quickSearch
+      click: actionHandler.quickSearch,
+      enabled: false,
     },
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",
       accelerator: "Shift+CommandOrControl+Q",
-      click: actionHandler.disconnect
+      click: actionHandler.disconnect,
+      enabled: false,
     },
-    sidebarToggle: {
+    primarySidebarToggle: {
       id: 'menu-toggle-sidebar',
-      label: 'Toggle Sidebar',
+      label: 'Toggle Primary Sidebar',
       accelerator: "Alt+S",
-      click: actionHandler.toggleSidebar,
+      click: actionHandler.togglePrimarySidebar,
+      enabled: false,
+    },
+    secondarySidebarToggle: {
+      id: 'menu-secondary-sidebar',
+      label: 'Toggle Secondary Sidebar',
+      // accelerator: "Alt+S",
+      click: actionHandler.toggleSecondarySidebar,  
+      enabled: false,
     },
     themeToggle: {
       id: "theme-toggle-menu",
@@ -213,17 +226,20 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     backupDatabase: {
       id: 'backup-database',
       label: "Create a Database Backup",
-      click: actionHandler.backupDatabase
+      click: actionHandler.backupDatabase,
+      enabled: false,
     },
     restoreDatabase: {
       id: 'restore-database',
       label: "Restore a Database Backup",
-      click: actionHandler.restoreDatabase
+      click: actionHandler.restoreDatabase,
+      enabled: false,
     },
     exportTables: {
       id: 'export-tables',
       label: 'Export Data',
-      click: actionHandler.exportTables
+      click: actionHandler.exportTables,
+      enabled: false,
     },
     minimalModeToggle: {
       id: "minimal-mode-toggle",

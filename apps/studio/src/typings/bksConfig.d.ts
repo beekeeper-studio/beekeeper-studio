@@ -61,8 +61,8 @@ declare interface IBksConfig {
         };
         tab: {
             closeTab: string;
-            nextTab: string;
-            previousTab: string;
+            nextTab: string[];
+            previousTab: string[];
             reopenLastClosedTab: string;
             switchTab1: string;
             switchTab2: string;
@@ -77,12 +77,21 @@ declare interface IBksConfig {
         tableTable: {
             focusOnFilterInput: string;
             nextPage: string;
+            openEditorModal: string;
             previousPage: string;
         };
     };
     ui: {
         export: {
             errorNoticeTimeout: number;
+        };
+        general: {
+            binaryEncoding: string;
+        };
+        layout: {
+            mainContentMinWidth: number;
+            primarySidebarMinWidth: number;
+            secondarySidebarMinWidth: number;
         };
         queryEditor: {
             maxResults: number;

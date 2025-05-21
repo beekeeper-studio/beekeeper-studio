@@ -1,11 +1,17 @@
 ---
-title: ClickHouse
-summary: "How to connect to ClickHouse from Beekeeper Studio"
+title: How To Connect To ClickHouse
+# meta:
+#     title: How to connect to ClickHouse
+description: Connecting to ClickHouse is super easy, even over an SSH tunnel or with TLS/SSL, on Windows, Mac, and Linux.
+# summary: Connecting to ClickHouse is super easy, even over an SSH tunnel or with TLS/SSL, on Windows, Mac, and Linux.
+icon: simple/clickhouse
 ---
+
+# How To Connect To ClickHouse
 
 Connecting to a ClickHouse database from Beekeeper Studio is straightforward. Simply select ClickHouse from the dropdown, and fill in the host, port, username, and password fields, then click Connect.
 
-## Connection Details
+## ClickHouse Connection Details
 
 To connect to a ClickHouse database, you'll need the following information:
 
@@ -14,7 +20,7 @@ To connect to a ClickHouse database, you'll need the following information:
 - Username: Your ClickHouse username, with default being the typical default.
 - Password: Your ClickHouse password, if applicable.
 
-## Testing Your Connection
+## Testing Your ClickHouse Connection
 
 Before saving your connection details, Beekeeper Studio allows you to test the connection:
 
@@ -22,13 +28,13 @@ Before saving your connection details, Beekeeper Studio allows you to test the c
 2. Click the Test Connection button.
 3. If the test is successful, you’re ready to connect. Otherwise, check your details and try again.
 
-## Saving Your Connection
+## Saving Your ClickHouse Connection
 
 Once your connection details have been verified, you can choose to save them by entering a name, checking the `Save Passwords` box if desired, and then clicking save.
 
 ![Saving connection form](../../assets/images/saving-connection.png)
 
-## Advanced Settings (Optional)
+## Advanced ClickHouse Settings (Optional)
 
 For users needing advanced configurations:
 

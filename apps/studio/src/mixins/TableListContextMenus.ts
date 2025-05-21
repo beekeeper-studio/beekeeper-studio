@@ -168,6 +168,7 @@ export default {
         {
           name: "Drop",
           slug: 'sql-drop',
+          disabled: disabled(dialect.disabledFeatures?.dropSchema),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'drop'})
           }

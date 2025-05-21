@@ -604,6 +604,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       constraintName: row.constraint_name as string,
       onUpdate: row.update_rule as string,
       onDelete: row.delete_rule as string,
+      isComposite: false
     }));
   }
 

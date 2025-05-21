@@ -37,6 +37,7 @@ export const SqlServerData: DialectData = {
   editorFriendlyIdentifier: (s) => s,
   wrapLiteral: defaultWrapLiteral,
   requireDataset: false,
+  disallowedSortColumns: ['geometry', 'xml'],
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;

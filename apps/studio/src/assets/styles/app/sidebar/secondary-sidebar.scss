@@ -1,0 +1,32 @@
+.secondary-sidebar {
+  display: flex;
+  flex-direction: column;
+  z-index: 0;
+
+  .sidebar-heading x-tabs {
+    padding: 0;
+    gap: 0.8rem;
+
+    x-tab {
+      padding: 0;
+      min-height: 0px;
+      color: $text;
+      z-index: 0;
+      --selection-indicator-height: 0;
+      --ripple-background: none;
+
+      x-label {
+        font-size: 0.85rem;
+        letter-spacing: 0.025em;
+      }
+
+      &[selected] {
+        color: $text-dark;
+      }
+    }
+  }
+
+  .sidebar-body {
+    flex: 1;
+  }
+}

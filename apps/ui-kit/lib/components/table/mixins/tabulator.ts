@@ -20,6 +20,13 @@ export interface YesNoParams {
   falseEmpty?: boolean
 }
 
+export interface TabulatorFormatterParams { 
+  fk?: any[];
+  isPK?: boolean;
+  fkOnClick?: (e: MouseEvent, cell: CellComponent) => void
+  binaryEncoding?: string
+}
+
 
 function yesNoResult(value: boolean) {
   const result = value ? 'YES' : 'NO'
@@ -27,9 +34,12 @@ function yesNoResult(value: boolean) {
 }
 
 export default {
-  niceString(value: any, truncate = false) {
+  niceString(value: any, truncate = false, binaryEncoding?: 'hex' | 'base64') {
     let cellValue = value.toString();
-    if(_.isArray(value) || (_.isObject(value) && !ArrayBuffer.isView(value))) {
+    if (value instanceof Uint8Array) {
+      // @ts-expect-error polyfilled
+      cellValue = binaryEncoding === 'base64' ? value.toBase64() : value.toHex()
+    } else if (_.isArray(value) || (_.isObject(value) && !ArrayBuffer.isView(value))) {
       cellValue = JSON.stringify(value)
     }
     return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue

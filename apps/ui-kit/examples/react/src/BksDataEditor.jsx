@@ -27,6 +27,7 @@ export default function BksDataEditor({ entities }) {
           "bks-query-submit",
           handleQuerySubmit
         );
+        ref.current.vueComponent.$destroy();
       }
     };
   }, []);

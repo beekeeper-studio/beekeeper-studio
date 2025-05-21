@@ -1,5 +1,8 @@
 <template>
-  <statusbar :class="{ 'empty': results.length === 0, 'query-meta': true }">
+  <statusbar
+    :active="active"
+    :class="{ 'empty': results.length === 0, 'query-meta': true }"
+  >
     <template v-if="results.length > 0">
       <div
         class="truncate statusbar-info"
@@ -61,94 +64,95 @@
         </span>
       </div>
     </template>
-    <template v-else>
-      <span class="expand" />
-      <span class="empty">No Data</span>
-    </template>
-    <div class="flex flex-right statusbar-right-actions">
-      <x-button
-        class="btn btn-flat btn-icon end"
-        :disabled="results.length === 0"
-        menu
-      >
-        Download <i class="material-icons">arrow_drop_down</i>
-        <x-menu>
-          <x-menuitem @click.prevent="download('csv')">
-            <x-label>Download as CSV</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="download('xlsx')">
-            <x-label>Download as Excel</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="download('json')">
-            <x-label>Download as JSON</x-label>
-          </x-menuitem>
-          <x-menuitem @click.prevent="download('md')">
-            <x-label>Download as Markdown</x-label>
-          </x-menuitem>
-          <span
-            v-if="dialect !== 'mongodb'"
-            v-tooltip="{
-              content: downloadFullTooltip
-            }"
-          >
-            <x-menuitem
-              @click.prevent="$event => submitCurrentQueryToFile()"
-              :disabled="!(result && result.truncated)"
-            >
-              <x-label>Download Full Resultset</x-label>
-              <i
-                v-if="$store.getters.isCommunity"
-                class="material-icons menu-icon"
-              >stars</i>
-            </x-menuitem>
-          </span>
-          <hr>
+    <span v-else class="empty">No Data</span>
+    <span class="expand" />
+    <x-button
+      class="btn btn-flat btn-icon end"
+      :disabled="results.length === 0"
+      menu
+    >
+      Download <i class="material-icons">arrow_drop_down</i>
+      <x-menu>
+        <x-menuitem @click.prevent="download('csv')">
+          <x-label>Download as CSV</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="download('xlsx')">
+          <x-label>Download as Excel</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="download('json')">
+          <x-label>Download as JSON</x-label>
+        </x-menuitem>
+        <x-menuitem @click.prevent="download('md')">
+          <x-label>Download as Markdown</x-label>
+        </x-menuitem>
+        <span
+          v-if="dialect !== 'mongodb'"
+          v-tooltip="{
+            content: downloadFullTooltip
+          }"
+        >
           <x-menuitem
-            title="Probably don't do this with large results (500+)"
-            @click.prevent="copyToClipboard"
+            @click.prevent="$event => submitCurrentQueryToFile()"
+            :disabled="!(result && result.truncated)"
           >
-            <x-label>Copy to Clipboard (TSV / Excel)</x-label>
+            <x-label>Download Full Resultset</x-label>
+            <i
+              v-if="$store.getters.isCommunity"
+              class="material-icons menu-icon"
+            >stars</i>
           </x-menuitem>
-          <x-menuitem
-            title="Probably don't do this with large results (500+)"
-            @click.prevent="copyToClipboardJson"
-          >
-            <x-label>Copy to Clipboard (JSON)</x-label>
-          </x-menuitem>
-          <x-menuitem
-            title="Probably don't do this with large results (500+)"
-            @click.prevent="copyToClipboardMarkdown"
-          >
-            <x-label>Copy to Clipboard (Markdown)</x-label>
-          </x-menuitem>
-        </x-menu>
-      </x-button>
-      <x-button
-        class="actions-btn btn btn-flat settings-btn"
-        menu
-      >
-        <i class="material-icons">settings</i>
-        <i class="material-icons">arrow_drop_down</i>
-        <x-menu>
-          <x-menuitem disabled>
-            <x-label>Editor keymap</x-label>
-          </x-menuitem>
-          <x-menuitem
-            :key="t.value"
-            v-for="t in keymapTypes"
-            @click.prevent="userKeymap = t.value"
-          >
-            <x-label class="flex-between">
-              {{ t.name }}
-              <span
-                class="material-icons"
-                v-if="t.value === userKeymap"
-              >done</span>
-            </x-label>
-          </x-menuitem>
-        </x-menu>
-      </x-button>
-    </div>
+        </span>
+        <hr>
+        <x-menuitem
+          title="Probably don't do this with large results (500+)"
+          @click.prevent="copyToClipboard"
+        >
+          <x-label>Copy to Clipboard (TSV / Excel)</x-label>
+        </x-menuitem>
+        <x-menuitem
+          title="Probably don't do this with large results (500+)"
+          @click.prevent="copyToClipboardJson"
+        >
+          <x-label>Copy to Clipboard (JSON)</x-label>
+        </x-menuitem>
+        <x-menuitem
+          title="Probably don't do this with large results (500+)"
+          @click.prevent="copyToClipboardMarkdown"
+        >
+          <x-label>Copy to Clipboard (Markdown)</x-label>
+        </x-menuitem>
+      </x-menu>
+    </x-button>
+    <x-button
+      class="actions-btn btn btn-flat settings-btn"
+      menu
+    >
+      <i class="material-icons">settings</i>
+      <i class="material-icons">arrow_drop_down</i>
+      <x-menu>
+        <x-menuitem disabled togglable>
+          <x-label>Editor keymap</x-label>
+        </x-menuitem>
+        <x-menuitem
+          :key="t.value"
+          v-for="t in keymapTypes"
+          togglable
+          :toggled="t.value === userKeymap"
+          @click.prevent="userKeymap = t.value"
+        >
+          <x-label>{{ t.name }}</x-label>
+        </x-menuitem>
+        <x-menuitem
+          togglable
+          :toggled="wrapText"
+          @click.prevent="$emit('wrap-text')"
+        >
+          <x-label class="flex-between">
+            Wrap Text
+          </x-label>
+        </x-menuitem>
+      </x-menu>
+    </x-button>
   </statusbar>
 </template>
 <script>
@@ -174,7 +178,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active'],
   components: { Statusbar },
   data() {
     return {
@@ -222,7 +226,7 @@ export default {
     },
     hasUsedDropdown: {
       get() {
-        return this.settings?.hideResultsDropdown.value ?? false
+        return this.settings?.hideResultsDropdown?.value ?? false
       },
       set(value) {
         this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })

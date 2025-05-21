@@ -1,7 +1,7 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -20,7 +20,8 @@ export const ConnectionTypes = [
   { name: 'Firebird', value: 'firebird'},
   { name: 'DuckDB', value: 'duckdb' },
   { name: 'ClickHouse', value: 'clickhouse' },
-  { name: 'MongoDB', value: 'mongodb' }
+  { name: 'MongoDB', value: 'mongodb' },
+  { name: 'SqlAnywhere', value: 'sqlanywhere' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -103,6 +104,12 @@ export interface LibSQLOptions {
   syncPeriod?: number;
 }
 
+export interface SQLAnywhereOptions {
+  mode: 'server' | 'file';
+  serverName?: string;
+  databaseFile?: string;
+}
+
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
@@ -160,6 +167,7 @@ export interface IDbConnectionServerConfig {
   azureAuthOptions?: AzureAuthOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
+  sqlAnywhereOptions?: SQLAnywhereOptions
   runtimeExtensions?: string[]
 }
 
@@ -187,6 +195,7 @@ export interface IBasicDatabaseClient {
   getTableReferences(table: string, schema?: string): Promise<string[]>,
   getTableKeys(table: string, schema?: string): Promise<TableKey[]>,
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
+  executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, options?: any): Promise<CancelableQuery>,
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,

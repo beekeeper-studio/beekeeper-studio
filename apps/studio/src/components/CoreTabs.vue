@@ -34,7 +34,22 @@
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
         ><i class=" material-icons">add_circle</i></a>
-        <!-- TODO (@day): when we have SQL queries for mongo, add an action dropdown here for shell/query tab -->
+        <x-button
+          class="add-tab-dropdown"
+          menu
+          v-if="supportsShell"
+        >
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <x-menuitem @click.prevent="createQuery(null)">
+              <x-label>New Query</x-label>
+              <x-shortcut value="Control+T"/>
+            </x-menuitem>
+            <x-menuitem @click.prevent="createShell">
+              <x-label>New Shell</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
       </span>
       <a
         @click.prevent="showUpgradeModal"
@@ -46,11 +61,10 @@
       </a>
     </div>
     <div class="tab-content">
-      <div class="empty flex-col  expand">
+      <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
           <shortcut-hints />
         </div>
-        <statusbar class="tabulator-footer" />
       </div>
       <div
         v-for="(tab, idx) in tabItems"
@@ -109,6 +123,7 @@
           v-if="tab.tabType === 'import-export-database'"
           :schema="tab.schemaName"
           :tab="tab"
+          :active="activeTab.id === tab.id"
           @close="close"
         />
         <DatabaseBackup
@@ -132,6 +147,7 @@
           :tab="tab"
           :schema="tab.schemaName"
           :table="tab.tableName"
+          :active="activeTab.id === tab.id"
           :connection="connection"
           @close="close"
         />
@@ -348,7 +364,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
   computed: {
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
-    ...mapState(['connection']),
+    ...mapState(['connection', 'connectionType']),
     ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
     tabIcon() {
       return {
@@ -356,6 +372,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         tabType: this.dbEntityType,
         entityType: this.dbEntityType
       }
+    },
+    supportsShell() {
+      return !this.dialectData.disabledFeatures?.shell;
     },
     titleCaseAction() {
       return _.capitalize(this.dbAction)
@@ -429,8 +448,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
         result['meta+shift+t'] = this.reopenLastClosedTab
-        result['shift+meta+['] = this.previousTab
-        result['shift+meta+]'] = this.nextTab
       }
 
       return result
@@ -578,8 +595,15 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     openContextMenu(event, item) {
       this.contextEvent = { event, item }
     },
-    async setActiveTab(tab) {
+    async setActiveTab(tab: TransportOpenTab) {
+      const switchingTab = tab.id !== this.activeTab?.id
+      if (switchingTab) {
+        this.trigger(AppEvent.switchingTab, tab)
+      }
       await this.$store.dispatch('tabs/setActive', tab)
+      if (switchingTab) {
+        this.trigger(AppEvent.switchedTab, tab)
+      }
     },
     async addTab(item: TransportOpenTab) {
       const savedItem = await this.$store.dispatch('tabs/add', { item, endOfPosition: true })
@@ -624,9 +648,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       await this.addTab(result);
     },
     async createQuery(optionalText, queryTitle?) {
-      if (this.dialect === 'mongodb') {
-        return await this.createShell();
-      }
       // const text = optionalText ? optionalText : ""
       console.log("Creating tab")
       let qNum = 0
@@ -899,7 +920,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
     },
     openTableBuilder() {
-      if (this.dialect === 'mongodb') {
+      if (this.connectionType === 'mongodb') {
         this.$root.$emit(AppEvent.openCreateCollectionModal);
         return;
       }
@@ -919,7 +940,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
     },
-    async openTable({ table, filters, openDetailView }) {
+    async openTable({ table, filters }) {
       let tab = {} as TransportOpenTab;
       tab.tabType = 'table';
       tab.title = table.name ?? table.tableName
@@ -936,10 +957,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         await this.$store.dispatch('tabs/setActive', existing)
       } else {
         await this.addTab(tab)
-      }
-
-      if (openDetailView) {
-        this.$store.dispatch('toggleOpenDetailView', true)
       }
     },
     openExportModal(options) {
@@ -975,6 +992,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         this.closingTab = null
         if (!confirmed) return
       }
+
+      this.trigger(AppEvent.closingTab, tab)
 
       if (this.activeTab === tab) {
         if (tab === this.lastTab) {
@@ -1097,3 +1116,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
   }
 })
 </script>
+
+<style lang="scss">
+  .add-tab-dropdown {
+    padding: 0 0 !important;
+  }
+</style>

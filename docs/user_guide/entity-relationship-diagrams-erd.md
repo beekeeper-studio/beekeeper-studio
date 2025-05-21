@@ -2,6 +2,7 @@
 title: Entity Relationship Diagrams (ERD)
 summary: "Visualize and edit data using our entity relationship diagrams"
 old_url: "https://docs.beekeeperstudio.io/docs/entity-relationship-diagrams-erd"
+icon: material/chart-tree
 ---
 
 !!! experiment "Get notified when this launches"

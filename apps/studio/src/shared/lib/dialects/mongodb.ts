@@ -9,16 +9,17 @@ const types = [
 export const MongoDBData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t)),
   usesOffsetPagination: true,
-  textEditorMode: 'javascript',
+  queryDialectOverride: 'postgresql',
+  textEditorMode: 'text/x-pgsql',
   disabledFeatures: {
-    queryEditor: true,
+    rawFilters: true,
     truncateElement: true,
     sqlCreate: true,
     importFromFile: true,
-    exportTable: true,
     nullable: true,
     defaultValue: true,
     primary: true,
+    compositeKeys: true,
     comments: true,
     index: {
       id: true,

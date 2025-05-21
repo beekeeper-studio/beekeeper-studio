@@ -15,7 +15,7 @@ export default function BksTable({ columns, data }) {
     }
     return () => {
       table.removeEventListener("bks-initialized", listener);
-      tableRef.current = null;
+      tableRef.current.vueComponent.$destroy();
       if (containerRef.current) {
         containerRef.current.removeChild(table);
       }

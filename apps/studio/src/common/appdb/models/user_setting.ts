@@ -134,6 +134,7 @@ export class UserSetting extends ApplicationEntity {
   @Column({type: 'varchar'})
   windowsDefault?: string
 
+
   @Column({type: 'integer', nullable: false})
   valueType: UserSettingValueType = UserSettingValueType.string
 }

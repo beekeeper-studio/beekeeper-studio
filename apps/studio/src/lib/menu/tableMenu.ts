@@ -186,8 +186,13 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
   if (ranges.length === 0) return;
 
   if (ranges.length === 1) {
+    const rangeData = ranges[0].getData() as RangeData;
+    // Replace column identifiers with column titles
+    const columns = ranges[0].getColumns();
+    const mappedData = mapColumnIdsToTitles(rangeData, columns);
+    
     return {
-      data: ranges[0].getData() as RangeData,
+      data: mappedData,
       sources: [ranges[0]],
     };
   }
@@ -210,8 +215,13 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
   }
 
   if (sameColumns) {
+    const allData = ranges.reduce((data, range) => data.concat(range.getData()), []);
+    // Replace column identifiers with column titles
+    const columns = ranges[0].getColumns();
+    const mappedData = mapColumnIdsToTitles(allData, columns);
+    
     return {
-      data: ranges.reduce((data, range) => data.concat(range.getData()), []),
+      data: mappedData,
       sources: ranges,
     };
   }
@@ -221,21 +231,33 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
     const rows = sorted[0].getData() as RangeData;
     for (let i = 1; i < sorted.length; i++) {
       const data = sorted[i].getData() as RangeData;
-      for (let i = 0; i < data.length; i++) {
-        _.forEach(data[i], (value, key) => {
-          rows[i][key] = value;
+      for (let j = 0; j < data.length; j++) {
+        _.forEach(data[j], (value, key) => {
+          rows[j][key] = value;
         });
       }
     }
+    
+    // Replace column identifiers with column titles
+    const allColumns = sorted.reduce((cols, range) => cols.concat(range.getColumns()), []);
+    const uniqueColumns = _.uniqBy(allColumns, col => col.getField());
+    const mappedData = mapColumnIdsToTitles(rows, uniqueColumns);
+    
     return {
-      data: rows,
+      data: mappedData,
       sources: ranges,
     };
   }
 
   const source = _.first(ranges);
+  const rangeData = source.getData() as RangeData;
+  
+  // Replace column identifiers with column titles
+  const columns = source.getColumns();
+  const mappedData = mapColumnIdsToTitles(rangeData, columns);
+  
   return {
-    data: source.getData() as RangeData,
+    data: mappedData,
     sources: [source],
   };
 }
@@ -288,6 +310,28 @@ export function setCellValue(cell: CellComponent, value: string) {
   const editable =
     typeof editableFunc === "function" ? editableFunc(cell) : editableFunc;
   if (editable) cell.setValue(value);
+}
+
+// Helper function to map column IDs to column titles
+function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): RangeData {
+  if (!data || !data.length || !columns || !columns.length) return data;
+  
+  const colIdToTitleMap = new Map();
+  columns.forEach(col => {
+    const field = col.getField();
+    if (field === rowHeaderField) return; // Skip row header
+    const title = col.getDefinition().title;
+    if (title) colIdToTitleMap.set(field, title);
+  });
+  
+  return data.map(row => {
+    const newRow = {};
+    Object.entries(row).forEach(([key, value]) => {
+      const newKey = colIdToTitleMap.get(key) || key;
+      newRow[newKey] = value;
+    });
+    return newRow;
+  });
 }
 
 export function copyActionsMenu(options: {

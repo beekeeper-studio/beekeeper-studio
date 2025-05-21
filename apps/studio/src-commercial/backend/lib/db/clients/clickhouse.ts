@@ -286,6 +286,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     selects?: string[]
   ): Promise<TableResult> {
     const columns = await this.listTableColumns(table);
+    if (!selects || (selects?.length === 1 && selects[0] === '*')) {
+      // select all columns with the column names instead of *
+      selects = columns.map((v) => v.bksField.name);
+    }
     const queries = ClickHouseClient.buildSelectTopQuery(
       table,
       offset,

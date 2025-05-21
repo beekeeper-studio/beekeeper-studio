@@ -80,6 +80,10 @@ export default Vue.extend({
       type: Array as PropType<Array<OrderBy>>,
       default: () => [],
     },
+    binaryEncoding: {
+      type: String as PropType<'hex' | 'base64'>,
+      default: 'hex',
+    },
     cellContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     columnHeaderContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
     rowHeaderContextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
@@ -203,6 +207,7 @@ export default Vue.extend({
           resizable: "header",
           cssClass,
           sorter: column.sorter === 'none' ? () => 0 : column.sorter,
+          binaryEncoding: this.binaryEncoding,
         };
 
         const customDef =
@@ -349,6 +354,13 @@ export default Vue.extend({
 
         this.tabulator = tabulator
 
+        const unwatchTableColumns = this.$watch("tableColumns", () => {
+          this.setColumns(this.tableColumns);
+        });
+        const unwatchData = this.$watch("data", () => {
+          this.setData(this.data);
+        })
+
         tabulator.on("sortChanged", (sorters) => {
           this.$emit("bks-sorters-change", {
             sorters: sorters.map(({ field, dir }) => ({ field, dir }))
@@ -362,6 +374,8 @@ export default Vue.extend({
         tabulator.on('dataProcessed', this.maybeScrollAndSetWidths);
         tabulator.on("tableDestroyed", () => {
           this.$refs.table.removeEventListener("keydown", this.keydown);
+          unwatchTableColumns();
+          unwatchData();
         })
 
         this.$refs.table.addEventListener("keydown", this.keydown);

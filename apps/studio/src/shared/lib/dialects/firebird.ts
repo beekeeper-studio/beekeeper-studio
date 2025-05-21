@@ -49,6 +49,7 @@ export const FirebirdData: DialectData = {
   wrapLiteral: escape,
   unwrapIdentifier: defaultWrapLiteral,
   requireDataset: false,
+  disallowedSortColumns: ['blob'],
   textEditorMode: "text/x-sql",
   disabledFeatures: {
     shell: true,

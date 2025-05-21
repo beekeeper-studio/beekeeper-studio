@@ -1,5 +1,6 @@
 ---
-title: Create & Modify Table Structure
+title: Structure View
+icon: material/hammer-wrench
 summary: "Beekeeper Studio's SQL Table Creator lets you visually build a SQL table without having to remember the right syntax."
 old_url: "https://docs.beekeeperstudio.io/docs/editing-data"
 ---

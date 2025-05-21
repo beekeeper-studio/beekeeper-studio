@@ -2,6 +2,7 @@
 title: Google Big Query
 summary: "How to connect to Google Big Query from Beekeeper Studio, run queries, modify tables, and more!"
 old_url: "https://docs.beekeeperstudio.io/docs/google-bigquery"
+icon: simple/googlebigquery
 ---
 
 

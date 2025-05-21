@@ -1,3 +1,4 @@
+@use "sass:color";
 // Theme
 // -----------------------------
 $theme-bg:               #181818!default;
@@ -32,14 +33,14 @@ $selection:                 rgba($theme-primary, 0.2)!default;
 $input-highlight:           rgba($theme-base, 0.27)!default;
 
 $db-select-text:            white!default;
-$query-editor-bg:           darken($theme-bg, 6%)!default;
+$query-editor-bg:           color.adjust($theme-bg, $lightness: -6%)!default;
 
-$row-handle-selected:       lighten($query-editor-bg, 5%);
-$row-handle-hover:          lighten($query-editor-bg, 5%);
+$row-handle-selected:       color.adjust($query-editor-bg, $lightness: 5%);
+$row-handle-hover:          color.adjust($query-editor-bg, $lightness: 5%);
 
 $titlebar-bg:               transparent!default;
 $global-sidebar-bg:         transparent!default;
-$sidebar-bg:                darken($theme-bg, 3%)!default;
+$sidebar-bg:                color.adjust($theme-bg, $lightness: -3%)!default;
 $sidebar-heading-bg:        $theme-bg!default;
 $tabs-bg:                   transparent!default;
 $statusbar-bg:              rgba($theme-base, 0.1)!default;
@@ -85,5 +86,5 @@ $statusbar-height:          2.6rem;
 // text
 $font-family: 'Roboto, sans-serif';
 
-$grouped-tables-base: lighten($theme-bg, 2%);
-$grouped-tables-light: lighten($grouped-tables-base, 2%);
+$grouped-tables-base: color.adjust($theme-bg, $lightness: 2%);
+$grouped-tables-light: color.adjust($grouped-tables-base, $lightness: 2%);
