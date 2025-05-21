@@ -38,6 +38,7 @@ import { readOnly } from "./readOnly";
 import { ExtensionConfiguration } from "../types";
 import { json } from "@codemirror/lang-json";
 import { html } from "@codemirror/lang-html";
+import { javascript } from "@codemirror/lang-javascript";
 
 export { applyKeybindings } from "./extraKeymap";
 export { applyKeymap } from "./keymap";
@@ -80,6 +81,9 @@ function language(languageId: string) {
   }
   if (languageId === "html") {
     return html();
+  }
+  if (languageId === "javascript") {
+    return javascript();
   }
   return [];
 }

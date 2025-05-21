@@ -48,6 +48,8 @@
   "peerDependencies": {
     "@codemirror/autocomplete": "^6.18.4",
     "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/language": "^6.11.0",
@@ -64,6 +66,7 @@
     "@codemirror/autocomplete": "^6.18.4",
     "@codemirror/commands": "^6.8.1",
     "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/language": "^6.11.0",
