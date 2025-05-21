@@ -18,6 +18,7 @@ import { findTable } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { TabType } from "@/store/models";
 import { NgQueryResult } from "@/lib/db/models";
+import _ from "lodash";
 
 /**
  * Service that provides an interface to the plugin Vuex module
