@@ -15,11 +15,15 @@ export default class PluginManager {
   private fileManager: PluginFileManager;
   private installedPlugins: Manifest[] = [];
   private disabledAutoUpdatePlugins: Set<string> = new Set();
-  private pluginLocks: Map<string, boolean> = new Map();
+  private pluginLocks: string[] = [];
 
-  // Define a constant for the setting key
+  /** A Constant for the setting key */
   private static readonly DISABLED_AUTO_UPDATE_PLUGINS =
     "disabledAutoUpdatePlugins";
+  /** This is a list of plugins that are preinstalled by default. When the
+   * application starts, these plugins will be installed automatically. The user
+   * should be able to uninstall them later. */
+  private static readonly PREINSTALLED_PLUGINS = ["bks-ai-assistant"];
 
   constructor() {
     this.pluginRepositoryService = new PluginRepositoryService();
@@ -34,13 +38,33 @@ export default class PluginManager {
     }
 
     this.installedPlugins = this.fileManager.scanPlugins();
-    for (const plugin of this.installedPlugins) {
-      this.pluginLocks.set(plugin.id, false);
-    }
 
     await this.loadDisabledAutoUpdatePlugins();
 
     this.initialized = true;
+
+    const installedPreinstalledPlugins = ((
+      await UserSetting.get("installedPreinstalledPlugins")
+    ).value || []) as string[];
+
+    for (const id of PluginManager.PREINSTALLED_PLUGINS) {
+      // have installed before?
+      if (installedPreinstalledPlugins.includes(id)) {
+        continue;
+      }
+
+      // is installed now?
+      if (this.installedPlugins.find((plugin) => plugin.id === id)) {
+        continue;
+      }
+
+      await this.installPlugin(id);
+
+      await UserSetting.set(
+        "installedPreinstalledPlugins",
+        JSON.stringify([...installedPreinstalledPlugins, id])
+      );
+    }
 
     this.installedPlugins.map(async (plugin) => {
       if (this.disabledAutoUpdatePlugins.has(plugin.id)) {
@@ -153,16 +177,16 @@ export default class PluginManager {
   ): Promise<T> {
     let ret: T;
 
-    if (this.pluginLocks.get(id)) {
+    if (this.pluginLocks.includes(id)) {
       throw new Error(`Plugin "${id}" is not idle.`);
     }
 
-    this.pluginLocks.set(id, true);
+    this.pluginLocks.push(id);
 
     try {
       ret = await callback();
     } finally {
-      this.pluginLocks.set(id, false);
+      this.pluginLocks = this.pluginLocks.filter((lock) => lock !== id);
     }
 
     return ret;

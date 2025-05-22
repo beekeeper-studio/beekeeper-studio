@@ -66,9 +66,6 @@ export default Vue.extend({
   },
   async mounted() {
     this.registerHandlers(this.rootBindings);
-
-    await this.$nextTick();
-    setTimeout(() => this.open(), 500);
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
