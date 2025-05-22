@@ -1,13 +1,13 @@
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
-import { PluginRegistryEntry, PluginRepositoryInfo } from "./types";
+import { PluginRepository, PluginRegistryEntry } from "./types";
 
 const log = rawLog.scope("PluginRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
   private entries: PluginRegistryEntry[] = [];
-  private repositoryInfos: Record<string, PluginRepositoryInfo> = {};
+  private repositories: Record<string, PluginRepository> = {};
 
   constructor(private readonly repositoryService: PluginRepositoryService) {}
 
@@ -26,23 +26,35 @@ export default class PluginRegistry {
     return this.entries;
   }
 
-  async getRepositoryInfo(
-    entry: PluginRegistryEntry,
+  async getRepository(
+    pluginId: string,
     options: { reload?: boolean } = {}
-  ): Promise<PluginRepositoryInfo> {
-    if (!options.reload && Object.hasOwn(this.repositoryInfos, entry.id)) {
-      return this.repositoryInfos[entry.id];
+  ): Promise<PluginRepository> {
+    if (!options.reload && Object.hasOwn(this.repositories, pluginId)) {
+      return this.repositories[pluginId];
     }
 
-    log.debug(`Fetching info for plugin "${entry.id}"...`, entry);
+    const entries = await this.getEntries();
+    const entry = entries.find((entry) => entry.id === pluginId);
+
+    if (!entry) {
+      throw new Error(`Plugin "${pluginId}" not found in registry.`);
+    }
+
+    log.debug(
+      `Fetching info for plugin "${pluginId}" (repo: ${entry.repo})...`
+    );
 
     try {
       const [owner, repo] = entry.repo.split("/");
-      const info = await this.repositoryService.fetchEntryInfo(owner, repo);
-      this.repositoryInfos[entry.id] = info;
+      const info = await this.repositoryService.fetchPluginRepository(
+        owner,
+        repo
+      );
+      this.repositories[pluginId] = info;
       return info;
     } catch (e) {
-      log.error(`Failed to fetch info for plugin "${entry.id}"`, e);
+      log.error(`Failed to fetch info for plugin "${pluginId}"`, e);
       throw e;
     }
   }

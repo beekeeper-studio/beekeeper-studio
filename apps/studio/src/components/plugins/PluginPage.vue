@@ -59,6 +59,14 @@
           <x-button @click.prevent="$emit('uninstall')" class="btn btn-flat">
             <x-label>Uninstall</x-label>
           </x-button>
+          <label class="checkbox-group">
+            <input
+              type="checkbox"
+              :value="autoUpdateEnabled"
+              @change="toggleAutoUpdate"
+            />
+            <span>Auto-update</span>
+          </label>
         </template>
         <x-button
           v-else
@@ -102,6 +110,35 @@ export default Vue.extend({
     },
     markdown: {
       type: String,
+    },
+  },
+  data() {
+    return {
+      autoUpdateEnabled: true,
+    };
+  },
+  async mounted() {
+    await this.getAutoUpdateSetting();
+  },
+  watch: {
+    "plugin.id": async function () {
+      await this.getAutoUpdateSetting();
+    },
+  },
+  methods: {
+    async getAutoUpdateSetting() {
+      this.autoUpdateEnabled = await this.$util.send(
+        "plugin/getAutoUpdateEnabled",
+        { id: this.plugin.id }
+      );
+    },
+    async toggleAutoUpdate(event) {
+      const enabled = event.target.checked;
+      await this.$util.send("plugin/setAutoUpdateEnabled", {
+        id: this.plugin.id,
+        enabled,
+      });
+      this.autoUpdateEnabled = enabled;
     },
   },
   computed: {

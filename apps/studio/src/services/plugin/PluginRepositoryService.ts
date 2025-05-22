@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { Release } from "./types";
+import { Manifest, PluginRepository, Release } from "./types";
 
 export default class PluginRepositoryService {
   private octokit: Octokit;
@@ -21,16 +21,36 @@ export default class PluginRepositoryService {
         repo,
       }
     );
-    const manifest = await this.fetchManifest(owner, repo);
+
+    const manifestAsset = response.data.assets.find((asset) => asset.name === "manifest.json")
+
+    if (!manifestAsset) {
+      throw new Error(`No manifest.json found in the latest release`)
+    }
+
+    const manifestResponse = await this.octokit.request(
+      "GET /repos/{owner}/{repo}/releases/assets/{asset_id}",
+      {
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+          "accept": "application/octet-stream",
+        },
+        owner,
+        repo,
+        asset_id: manifestAsset.id,
+      }
+    )
+
+    const rawManifest = manifestResponse.data as unknown as ArrayBuffer
+    const manifest: Manifest = JSON.parse(Buffer.from(rawManifest).toString("utf-8"))
 
     const asset = response.data.assets.find((asset) => asset.name === `${manifest.id}-${manifest.version}.zip`)
     if (!asset) {
       throw new Error(`No asset found matching ${manifest.id}-${manifest.version}.zip in the latest release`)
     }
 
-    // Get the source code archive URL (either tarball or zipball)
     return {
-      version: manifest.version,
+      manifest,
       // FIXME rename this, it's not source
       sourceArchiveUrl: asset.browser_download_url,
     };
@@ -44,15 +64,10 @@ export default class PluginRepositoryService {
     );
   }
 
-  async fetchManifest(owner: string, repo: string) {
-    return await this.fetchJson(owner, repo, "manifest.json");
-  }
-
-  async fetchEntryInfo(owner: string, repo: string) {
+  async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
     const latestRelease = await this.fetchLatestRelease(owner, repo);
     const readme = await this.fetchReadme(owner, repo);
-    const manifest = await this.fetchManifest(owner, repo);
-    return { latestRelease, readme, manifest };
+    return { latestRelease, readme };
   }
 
   private async fetchReadme(owner: string, repo: string) {

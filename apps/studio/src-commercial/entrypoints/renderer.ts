@@ -171,23 +171,13 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
       const webPluginManager = new WebPluginManager(
         Vue.prototype.$util,
         new PluginStoreService(store, {
-          emit: app.$emit,
-          on: app.$on,
-          off: app.$off,
+          emit: (...args) => app.$root.$emit(...args),
+          on: (...args) => app.$root.$on(...args),
+          off: (...args) => app.$root.$off(...args),
         })
       )
       await webPluginManager.initialize()
-      Vue.prototype.$plugin = {
-        notify: webPluginManager.notify.bind(webPluginManager),
-        registerIframe: webPluginManager.registerIframe.bind(webPluginManager),
-        getAllEntries: webPluginManager.getAllEntries.bind(webPluginManager),
-        getEnabledPlugins: webPluginManager.getEnabledPlugins.bind(webPluginManager),
-        getRepositoryInfo: webPluginManager.getRepositoryInfo.bind(webPluginManager),
-        checkForUpdates: webPluginManager.checkForUpdates.bind(webPluginManager),
-        install: webPluginManager.install.bind(webPluginManager),
-        update: webPluginManager.update.bind(webPluginManager),
-        uninstall: webPluginManager.uninstall.bind(webPluginManager),
-      };
+      Vue.prototype.$plugin = webPluginManager;
       if (window.platformInfo.isDevelopment) {
         // For debugging
         window.webPluginManager = webPluginManager;

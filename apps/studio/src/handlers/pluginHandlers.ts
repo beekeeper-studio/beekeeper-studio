@@ -1,13 +1,15 @@
-import { Manifest, PluginManager, PluginRegistryEntry, PluginRepositoryInfo } from "@/services/plugin";
+import { Manifest, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
 
 interface IPluginHandlers {
   "plugin/enabledPlugins": () => Promise<Manifest[]>
   "plugin/entries": () => Promise<PluginRegistryEntry[]>
-  "plugin/repositoryInfo": ({ entry }: { entry: PluginRegistryEntry }) => Promise<PluginRepositoryInfo>
-  "plugin/install": ({ entry }: { entry: PluginRegistryEntry }) => Promise<Manifest>
-  "plugin/update": ({ entry }: { entry: PluginRegistryEntry }) => Promise<void>
-  "plugin/uninstall": ({ manifest }: { manifest: Manifest }) => Promise<void>
-  "plugin/checkForUpdates": ({ plugin }: { plugin: PluginRegistryEntry }) => Promise<boolean>
+  "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
+  "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
+  "plugin/update": ({ id }: { id: string }) => Promise<void>
+  "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
+  "plugin/checkForUpdates": ({ id }: { id: string }) => Promise<boolean>
+  "plugin/setAutoUpdateEnabled": ({ id, enabled }: { id: string, enabled: boolean }) => Promise<void>
+  "plugin/getAutoUpdateEnabled": ({ id }: { id: string }) => Promise<boolean>
 
   "plugin/getAsset": ({ manifest, path }: { manifest: Manifest, path: string }) => Promise<string>
 }
@@ -19,20 +21,26 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
   "plugin/entries": async () => {
     return await pluginManager.getEntries();
   },
-  "plugin/repositoryInfo": async ({ entry }) => {
-    return await pluginManager.getRepositoryInfo(entry);
+  "plugin/repository": async ({ id }) => {
+    return await pluginManager.getRepository(id);
   },
-  "plugin/install": async ({ entry }) => {
-    return await pluginManager.installPlugin(entry);
+  "plugin/install": async ({ id }) => {
+    return await pluginManager.installPlugin(id);
   },
-  "plugin/update": async ({ entry }) => {
-    return await pluginManager.updatePlugin(entry);
+  "plugin/update": async ({ id }) => {
+    return await pluginManager.updatePlugin(id);
   },
-  "plugin/uninstall": async ({ manifest }) => {
-    return await pluginManager.uninstallPlugin(manifest);
+  "plugin/uninstall": async ({ id }) => {
+    return await pluginManager.uninstallPlugin(id);
   },
-  "plugin/checkForUpdates": async ({ plugin }) => {
-    return await pluginManager.checkForUpdates(plugin);
+  "plugin/checkForUpdates": async ({ id }) => {
+    return await pluginManager.checkForUpdates(id);
+  },
+  "plugin/setAutoUpdateEnabled": async ({ id, enabled }) => {
+    await pluginManager.setPluginAutoUpdateEnabled(id, enabled);
+  },
+  "plugin/getAutoUpdateEnabled": async ({ id }) => {
+    return pluginManager.getPluginAutoUpdateEnabled(id);
   },
 
   "plugin/getAsset": async ({ manifest, path }) => {

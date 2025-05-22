@@ -209,7 +209,7 @@ export default class PluginStoreService {
   }
 
   getAllTabs(): GetAllTabsResponse {
-    return this.store.state.tabs.tabs.map(this.serializeTab);
+    return this.store.state.tabs.tabs.map((tab) => this.serializeTab(tab));
   }
 
   private serializeTab(tab: TransportOpenTab): TabResponse {

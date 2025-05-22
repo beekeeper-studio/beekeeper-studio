@@ -16,7 +16,8 @@ import { tmpdir } from "os";
 const log = rawLog.scope("PluginFileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
-const ARCHIVE_EXTENSION = platformInfo.isWindows ? ".zip" : ".tar.gz";
+// const ARCHIVE_EXTENSION = platformInfo.isWindows ? ".zip" : ".tar.gz";
+const ARCHIVE_EXTENSION = ".zip";
 const ARCHIVE_TMP_FILENAME = `plugin${ARCHIVE_EXTENSION}.tmp`;
 
 class PluginDownloadError extends Error {
@@ -48,7 +49,7 @@ async function download(options: DownloaderConfig & { signal?: AbortSignal }) {
     options.signal?.addEventListener("abort", downloader.cancel);
     report = await downloader.download().finally(() => {
       options.signal?.removeEventListener("abort", downloader.cancel);
-    })
+    });
     downloadStatus = report.downloadStatus;
   } catch (e) {
     if (e.responseBody) {
@@ -71,7 +72,10 @@ async function download(options: DownloaderConfig & { signal?: AbortSignal }) {
  * @param archivePath Path to the archive file
  * @param extractDir Directory to extract to
  */
-async function extractArchive(archivePath: string, extractDir: string): Promise<void> {
+async function extractArchive(
+  archivePath: string,
+  extractDir: string
+): Promise<void> {
   try {
     await extract(archivePath, { dir: extractDir });
   } catch (error) {
@@ -85,7 +89,7 @@ export default class PluginFileManager {
 
   /** Download plugin source archive to `directory` and extract it */
   async download(
-    entry: PluginRegistryEntry,
+    pluginId: string,
     release: Release,
     options: {
       signal?: AbortSignal;
@@ -93,15 +97,18 @@ export default class PluginFileManager {
       tmp?: boolean;
     } = {}
   ) {
-    const directory = this.getDirectoryOf(entry.id);
-    const tmpDirectory = path.join(tmpdir(), `beekeeper-plugin-${entry.id}-${Date.now()}`);
+    const directory = this.getDirectoryOf(pluginId);
+    const tmpDirectory = path.join(
+      tmpdir(),
+      `beekeeper-plugin-${pluginId}-${Date.now()}`
+    );
 
     try {
       // Create temp directory for initial download
       fs.mkdirSync(tmpDirectory, { recursive: true });
 
       log.debug(
-        `Downloading plugin "${entry.id}" version "${release.version}"...`
+        `Downloading plugin "${pluginId}" version "${release.manifest.version}"...`
       );
 
       // Download the source archive
@@ -180,13 +187,16 @@ export default class PluginFileManager {
   }
 
   async update(
-    entry: PluginRegistryEntry,
+    pluginId: string,
     release: Release,
     options: { signal?: AbortSignal } = {}
   ) {
     // Download to temp location
-    const tmpDirectory = await this.download(entry, release, { ...options, tmp: true });
-    const finalDirectory = this.getDirectoryOf(entry.id);
+    const tmpDirectory = await this.download(pluginId, release, {
+      ...options,
+      tmp: true,
+    });
+    const finalDirectory = this.getDirectoryOf(pluginId);
 
     try {
       // Remove existing plugin directory
@@ -208,8 +218,8 @@ export default class PluginFileManager {
     }
   }
 
-  remove(manifest: Manifest) {
-    fs.rmSync(this.getDirectoryOf(manifest), { recursive: true, force: true });
+  remove(id: string) {
+    fs.rmSync(this.getDirectoryOf(id), { recursive: true, force: true });
   }
 
   scanPlugins(): Manifest[] {
@@ -235,7 +245,9 @@ export default class PluginFileManager {
         continue;
       }
 
-      const manifestContent = fs.readFileSync(manifestPath, { encoding: "utf-8" });
+      const manifestContent = fs.readFileSync(manifestPath, {
+        encoding: "utf-8",
+      });
 
       try {
         manifests.push(JSON.parse(manifestContent));
@@ -256,11 +268,8 @@ export default class PluginFileManager {
     return JSON.parse(manifestContent);
   }
 
-  getDirectoryOf(manifestOrId: Manifest | Manifest["id"]) {
-    return path.join(
-      platformInfo.pluginsDirectory,
-      typeof manifestOrId === "string" ? manifestOrId : manifestOrId.id
-    );
+  getDirectoryOf(id: string) {
+    return path.join(platformInfo.pluginsDirectory, id);
   }
 
   readAsset(manifest: Manifest, filename: string): string {

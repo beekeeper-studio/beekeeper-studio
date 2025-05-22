@@ -893,7 +893,7 @@
         }
 
         const results = this.results || []
-        this.$emit(AppEvent.executedQueryTab, this.tab.id, {
+        this.trigger(AppEvent.executedQueryTab, this.tab.id, {
           results,
           ...(this.error && { error: this.error }),
         })

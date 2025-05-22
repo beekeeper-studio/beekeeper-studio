@@ -1,12 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import {
-  CommonPluginInfo,
-  Manifest,
-  PluginNotificationData,
-  PluginRegistryEntry,
-  PluginRepositoryInfo,
-} from "../types";
+import { Manifest, PluginNotificationData } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 
@@ -44,70 +38,40 @@ export default class WebPluginManager {
     this.initialized = true;
   }
 
-  async getAllEntries(): Promise<PluginRegistryEntry[]> {
-    return await this.utilityConnection.send("plugin/entries");
-  }
-
   // TODO implement enable/disable plugins
   async getEnabledPlugins(): Promise<Manifest[]> {
     return [...this.loaders.values()].map((loader) => loader.manifest);
   }
 
-  async getRepositoryInfo(
-    entry: PluginRegistryEntry
-  ): Promise<PluginRepositoryInfo> {
-    return await this.utilityConnection.send("plugin/repositoryInfo", {
-      entry,
-    });
-  }
-
-  async checkForUpdates(plugin: PluginRegistryEntry) {
-    return await this.utilityConnection.send("plugin/checkForUpdates", {
-      plugin,
-    });
-  }
-
-  private async loadPlugin(manifest: Manifest) {
-    if (this.loaders.has(manifest.id)) {
-      log.warn(`Plugin "${manifest.id}" already loaded. Skipping...`);
-      return this.loaders.get(manifest.id);
-    }
-
-    const loader = new WebPluginLoader(manifest, this.pluginStore);
-    await loader.load();
-    this.loaders.set(manifest.id, loader);
-    return loader;
-  }
-
-  async install(entry: PluginRegistryEntry) {
+  async install(id: string) {
     const manifest = await this.utilityConnection.send("plugin/install", {
-      entry,
+      id,
     });
     await this.loadPlugin(manifest);
     return manifest;
   }
 
-  async update(entry: PluginRegistryEntry) {
+  async update(id: string) {
     await this.utilityConnection.send("plugin/update", {
-      entry,
+      id,
     });
-    await this.reloadPlugin(entry);
+    await this.reloadPlugin(id);
   }
 
-  async uninstall(manifest: Manifest) {
-    await this.utilityConnection.send("plugin/uninstall", { manifest });
-    const loader = this.loaders.get(manifest.id);
+  async uninstall(id: string) {
+    await this.utilityConnection.send("plugin/uninstall", { id });
+    const loader = this.loaders.get(id);
     if (!loader) {
-      throw new Error("Plugin not found: " + manifest.id);
+      throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
-    this.loaders.delete(manifest.id);
+    this.loaders.delete(id);
   }
 
-  async reloadPlugin(plugin: CommonPluginInfo) {
-    const loader = this.loaders.get(plugin.id);
+  async reloadPlugin(id: string) {
+    const loader = this.loaders.get(id);
     if (!loader) {
-      throw new Error("Plugin not found: " + plugin.id);
+      throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
     await loader.load();
@@ -127,5 +91,17 @@ export default class WebPluginManager {
       throw new Error("Plugin not found: " + pluginId);
     }
     loader.postMessage(data);
+  }
+
+  private async loadPlugin(manifest: Manifest) {
+    if (this.loaders.has(manifest.id)) {
+      log.warn(`Plugin "${manifest.id}" already loaded. Skipping...`);
+      return this.loaders.get(manifest.id);
+    }
+
+    const loader = new WebPluginLoader(manifest, this.pluginStore);
+    await loader.load();
+    this.loaders.set(manifest.id, loader);
+    return loader;
   }
 }

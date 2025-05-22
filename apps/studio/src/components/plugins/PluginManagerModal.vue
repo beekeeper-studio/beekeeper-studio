@@ -9,15 +9,13 @@
         <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
           <i class="material-icons">clear</i>
         </a>
-        <x-progressbar
-          v-if="loadingPlugins"
-          style="margin-top: -5px;"
-        />
+        <x-progressbar v-if="loadingPlugins" style="margin-top: -5px" />
         <div class="plugin-manager-content">
           <div class="plugin-list-container">
             <div class="description">
               Manage and install plugins in Beekeeper Studio.
             </div>
+            <error-alert :error="errors" />
             <plugin-list
               :plugins="plugins"
               @install="install"
@@ -46,28 +44,31 @@
 import Vue from "vue";
 import { AppEvent } from "@/common/AppEvent";
 import rawLog from "@bksLogger";
-import { CommonPluginInfo } from "@/services/plugin/types";
 import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 
 const log = rawLog.scope("PluginManagerModal");
 
 export default Vue.extend({
-  components: { PluginList, PluginPage },
+  components: { PluginList, PluginPage, ErrorAlert },
   data() {
     return {
       modalName: "plugin-manager-modal",
       plugins: [],
       selectedPluginIdx: -1,
       selectedPluginReadme: null,
-      selectedPluginRemoteManifest: null,
       loadedPlugins: false,
       loadingPlugins: false,
+      errors: null,
     };
   },
   async mounted() {
     this.registerHandlers(this.rootBindings);
+
+    await this.$nextTick();
+    setTimeout(() => this.open(), 500);
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
@@ -81,14 +82,12 @@ export default Vue.extend({
     },
   },
   methods: {
-    async install(plugin: CommonPluginInfo) {
-      const state = this.plugins.find(
-        (p: CommonPluginInfo) => p.id === plugin.id
-      );
+    async install({ id }) {
+      const state = this.plugins.find((p) => p.id === id);
 
       try {
         state.installing = true;
-        await this.$plugin.install(plugin);
+        await this.$plugin.install(id);
         state.installed = true;
       } catch (e) {
         log.error(e);
@@ -97,14 +96,12 @@ export default Vue.extend({
         state.installing = false;
       }
     },
-    async update(plugin: CommonPluginInfo) {
-      const state = this.plugins.find(
-        (p: CommonPluginInfo) => p.id === plugin.id
-      );
+    async update({ id }) {
+      const state = this.plugins.find((p) => p.id === id);
 
       try {
         state.installing = true;
-        await this.$plugin.update(plugin);
+        await this.$plugin.update(id);
         state.updateAvailable = false;
       } catch (e) {
         log.error(e);
@@ -113,10 +110,8 @@ export default Vue.extend({
         state.installing = false;
       }
     },
-    async checkForUpdates(plugin: CommonPluginInfo) {
-      const idx = this.plugins.findIndex(
-        (p: CommonPluginInfo) => p.id === plugin.id
-      );
+    async checkForUpdates({ id }) {
+      const idx = this.plugins.findIndex((p) => p.id === id);
 
       try {
         this.$set(this.plugins, idx, {
@@ -125,8 +120,10 @@ export default Vue.extend({
         });
         this.$set(this.plugins, idx, {
           ...this.plugins[idx],
-          updateAvailable: await this.$plugin.checkForUpdates(plugin),
-        })
+          updateAvailable: await this.$util.send("plugin/checkForUpdates", {
+            id,
+          }),
+        });
       } catch (e) {
         log.error(e);
         this.$noty.error(`Failed to check for update: ${e.message}`);
@@ -137,39 +134,30 @@ export default Vue.extend({
         });
       }
     },
-    async uninstall(plugin: CommonPluginInfo) {
+    async uninstall({ id }) {
       if (!(await this.$confirm("Are you sure you want to uninstall?"))) {
         return;
       }
 
-      const state = this.plugins.find(
-        (p: CommonPluginInfo) => p.id === plugin.id
-      );
+      const state = this.plugins.find((p) => p.id === id);
 
       try {
-        await this.$plugin.uninstall(plugin);
+        await this.$plugin.uninstall(id);
         state.installed = false;
       } catch (e) {
         log.error(e);
         this.$noty.error(`Failed to uninstall plugin: ${e.message}`);
       }
     },
-    async openPluginPage(plugin: CommonPluginInfo) {
-      this.selectedPluginIdx = this.plugins.findIndex(
-        (p: CommonPluginInfo) => p.id === plugin.id
-      );
-      const info = await this.$plugin.getRepositoryInfo(plugin);
+    async openPluginPage({ id }) {
+      const info = await this.$util.send("plugin/repository", { id });
       this.selectedPluginReadme = info.readme;
-      this.selectedPluginRemoteManifest = info.manifest;
+      this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
     },
     async buildPluginListData() {
-      const entries = await this.$plugin.getAllEntries();
+      const entries = await this.$util.send("plugin/entries");
       const installedPlugins = await this.$plugin.getEnabledPlugins();
-      const list = []
-      console.log({
-        entries,
-        installedPlugins,
-      })
+      const list = [];
 
       for (const manifest of installedPlugins) {
         const data = {
@@ -178,16 +166,22 @@ export default Vue.extend({
           installing: false,
           enabled: true,
           checkingForUpdates: null,
-        }
+        };
 
         const entry = entries.find((entry) => entry.id === manifest.id);
-        const installedPluginNotFoundInRegistry = !entry;
 
-        if (installedPluginNotFoundInRegistry) {
-          // do nothing
-        } else {
+        // if the plugin is found in the beekeeper-studio-plugins
+        if (entry) {
           data.repo = entry.repo;
-          data.updateAvailable = await this.$plugin.checkForUpdates(entry);
+          data.updateAvailable = await this.$util
+            .send("plugin/checkForUpdates", { id: manifest.id })
+            .catch((e) => {
+              this.errors = [
+                `Failed to check for updates for ${manifest.id}: ${e.message}`,
+              ];
+              console.error(e);
+              return false;
+            });
         }
 
         list.push(data);
@@ -201,7 +195,7 @@ export default Vue.extend({
             installing: false,
             enabled: false,
             checkingForUpdates: null,
-          }
+          };
 
           list.push(data);
         }
@@ -212,7 +206,6 @@ export default Vue.extend({
     async open() {
       this.$modal.show(this.modalName);
       if (!this.loadedPlugins) {
-        console.log('hello?')
         this.loadingPlugins = true;
         this.plugins = await this.buildPluginListData();
         this.loadingPlugins = false;

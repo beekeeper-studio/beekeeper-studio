@@ -1,12 +1,8 @@
-export interface CommonPluginInfo {
+export interface Manifest {
   id: string;
   name: string;
   author: string;
   description: string;
-  readme?: string;
-}
-
-export interface Manifest extends CommonPluginInfo {
   version: string;
   minAppVersion: string;
   capabilities: {
@@ -32,23 +28,21 @@ export interface Manifest extends CommonPluginInfo {
   permissions: unknown[];
 }
 
-/** Info that is obtained from the registry repo a.k.a. beekeeper-studio/beekeeper-studio-plugins. */
-export interface PluginRegistryEntry extends CommonPluginInfo {
+export type PluginRegistryEntry = Pick<
+  Manifest,
+  "id" | "name" | "author" | "description"
+> & {
   repo: string;
-}
-
-/** Info that is attached to git's HEAD of a plugin. This interface contains
- * the most updated info of a plugin. */
-export interface PluginRepositoryInfo {
-  /** Markdown representation of the plugin's README */
-  readme: string;
-  latestRelease: Release;
-  manifest: Manifest;
-}
+};
 
 export interface Release {
-  version: string;
+  manifest: Manifest;
   sourceArchiveUrl: string;
+}
+
+export interface PluginRepository {
+  latestRelease: Release;
+  readme: string;
 }
 
 export * from "./comm";
