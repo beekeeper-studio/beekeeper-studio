@@ -7,10 +7,13 @@
       class="nav-item"
       :title="title + scope"
       @contextmenu="$emit('contextmenu', $event)"
+      @mouseenter="showTooltip('Double click to refresh')"
+      @mouseleave="hideTooltip"
     >
       <a
         class="nav-link"
         @mousedown="mousedown"
+        @dblclick="handleDoubleClick"
         @click.middle.prevent="maybeClose"
         @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
         :class="{ active: selected }"
@@ -24,6 +27,11 @@
           class="tab-title-scope"
         >{{ scope }}</span></span>
         <div class="tab-action">
+          <span v-if="isLoading" class="loading-spinner">
+            <svg class="spinner-svg" viewBox="0 0 50 50">
+              <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke-width="4"/>
+            </svg>
+          </span>
           <span
             class="tab-close"
             @mouseenter="hover=true"
@@ -43,6 +51,12 @@
         </div>
       </a>
     </li>
+    <div 
+      v-if="tooltip.visible"
+      class="tooltip"
+    >
+      {{ tooltip.message }}
+    </div>
     <portal to="modals">
       <modal
         :name="modalName"
@@ -93,10 +107,37 @@ import { mapState } from 'vuex'
         unsaved: false,
         hover: false,
         sureOpen: false,
-        lastFocused: null
+        lastFocused: null,
+        isLoading: false,
+        tooltip: {
+          visible: false,
+          timeout: null,
+          message: '',
+        },
       }
     },
     methods: {
+      showTooltip(message) {
+        this.tooltipTimeout = setTimeout(() => {
+          if (this.tab.tabType === 'table') {
+            this.tooltip.visible = true;
+            this.tooltip.message = message;
+
+            this.$nextTick(() => {
+              const tooltipElement = document.querySelector('.tooltip');
+              const rect = this.$el.getBoundingClientRect(); // Get the position of the tab header
+
+              // Dynamically set the tooltip's position to align with the center of the tab header
+              tooltipElement.style.top = `${rect.top - tooltipElement.offsetHeight}px`;
+              tooltipElement.style.left = `${rect.left + rect.width / 2 - tooltipElement.offsetWidth / 2}px`;
+            });
+          }
+        }, 1000);
+      },
+      hideTooltip() {
+        clearTimeout(this.tooltipTimeout);
+        this.tooltip.visible = false;
+      },
       beforeOpened() {
         this.lastFocused = document.activeElement
       },
@@ -128,7 +169,21 @@ import { mapState } from 'vuex'
         if (e.which === 1) {
           this.$emit('click', this.tab)
         }
-      }
+      },
+      handleDoubleClick(e) {
+        if (e.which === 1 || e.button === 0) {
+          if (this.tab.tabType === 'table') {
+            // Set loading indicator state
+            this.isLoading = true;
+            setTimeout(() => {
+              // Reset loading indicator state after a time period
+              this.isLoading = false;
+            }, 1000);
+            // Emit dbclick signal to CoreTabs
+            this.$emit('dblclick', this.tab);
+          }
+        }
+      },
     },
     watch: {
       activeTab() {
@@ -211,3 +266,76 @@ import { mapState } from 'vuex'
   }
 
 </script>
+
+<style scoped>
+
+.nav-item {
+  position: relative;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.nav-item:hover {
+  transform: scale(1.1);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.tooltip {
+  position: fixed;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 5px 7px 5px 8px;
+  border-radius: 10px 10px 0 0;
+  font-size: 0.8em;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Change the position and size of the loading indicator */
+.spinner-svg {
+  margin-right: 17px;
+  margin-top: 10px;
+  width: 10px;
+  height: 10px;
+  animation: rotate 2s linear infinite;
+}
+
+/* Change the color of the loading indicator */
+.spinner-path {
+  stroke: #ffffff;
+  stroke-linecap: round;
+  stroke-dasharray: 90, 150;
+  stroke-dashoffset: 0;
+  transform-origin: center;
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+</style>

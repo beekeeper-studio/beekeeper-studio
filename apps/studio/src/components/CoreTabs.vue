@@ -18,7 +18,9 @@
           :tab="tab"
           :tabs-count="tabItems.length"
           :selected="activeTab.id === tab.id"
+          :data-tab-id="tab.id"
           @click="click"
+          @dblclick="handleTabDoubleClick"
           @close="close"
           @closeAll="closeAll"
           @closeOther="closeOther"
@@ -457,6 +459,30 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     this.$root.$refs.CoreTabs = this;
   },
   methods: {
+    async handleTabDoubleClick(tab){
+      // Only proceed if this is a table tab
+      if (!tab || tab.tabType !== 'table') {
+        this.$noty.error('Tab is not a table');
+        return
+      }
+      
+      // Make sure the tab is active
+      if (this.activeTab.id !== tab.id) {
+        await this.setActiveTab(tab)
+      }
+
+      // Send global signal for refresh-active-table 
+      this.$root.$emit('refresh-active-table', tab.id);
+
+      // Add visual cue
+      const tabElement = document.querySelector(`[data-tab-id="${tab.id}"]`);
+      if (tabElement) {
+        tabElement.classList.add('refresh-success');
+        setTimeout(() => {
+          tabElement.classList.remove('refresh-success');
+        }, 1000); // Remove the class after 1 second
+  }
+    },
     showUpgradeModal() {
       this.$root.$emit(AppEvent.upgradeModal)
     },
@@ -1119,6 +1145,21 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
 
 <style lang="scss">
   .add-tab-dropdown {
-    padding: 0 0 !important;
+    padding: 0 0;
+  }
+  .refresh-success {
+  animation: refresh-highlight 1s ease-out;
+  }
+
+  @keyframes refresh-highlight {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 </style>

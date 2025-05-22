@@ -379,6 +379,10 @@ export default Vue.extend({
       expandablePaths: [],
     };
   },
+  created() {
+    // Listen for the 'refresh-active-table' event
+    this.$root.$on('refresh-active-table', this.refreshActiveTable);
+  },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
@@ -686,6 +690,7 @@ export default Vue.extend({
     },
   },
   beforeDestroy() {
+    this.$root.$off('refresh-active-table', this.refreshActiveTable);
     this.handleTabInactive()
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {
@@ -705,6 +710,40 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    refreshActiveTable(tabId) {
+      // Create a deep copy of the current table data for comparison
+      const originalTable = {
+        table: _.cloneDeep(this.table),
+        rows: _.cloneDeep(this.tabulator.getData()), // Fetch rows from tabulator
+      }
+
+      if (this.tab.id === tabId) {
+        this.refreshTable();
+      } else {
+        this.$noty.error('Tab id does not exist');
+        return;
+      }
+
+      setTimeout(() => {
+        // Create a deep copy of the updated table data
+        const updatedTable = {
+          table: _.cloneDeep(this.table),
+          rows: _.cloneDeep(this.tabulator.getData()),
+        }
+
+        // Compare whole table and columns separately
+        const equalTable = _.isEqual(originalTable.table, updatedTable.table);
+        const equalRows = _.isEqual(originalTable.rows, updatedTable.rows);
+
+        if (equalTable && equalRows) {
+          this.$noty.warning('Table already up to date!');
+        } else if (!updatedTable) {
+          this.$noty.error('Failed to refresh the table!');
+        } else {
+          this.$noty.success('Table refreshed successfully!');
+        }
+      }, 1000);
+    },
     createColumnFromProps(column) {
       // 1. add a column for a real column
       // if a FK, add another column with the link
