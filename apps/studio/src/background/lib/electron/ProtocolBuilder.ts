@@ -95,11 +95,14 @@ export const ProtocolBuilder = {
           headers['Expires'] = '0'
         }
 
-        respond({
+        const response: any = {
           mimeType: mimeTypeOf(pathName),
           data,
-          headers,
-        })
+        };
+        if (Object.keys(headers).length > 0) {
+          response.headers = headers;
+        }
+        respond(response);
       })
     });
   }
