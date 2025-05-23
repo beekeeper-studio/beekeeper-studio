@@ -21,6 +21,8 @@ import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
+import { PluginHandlers } from '@/handlers/pluginHandlers';
+import { PluginManager } from '@/services/plugin';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
@@ -30,6 +32,7 @@ if (platformInfo.env.development || platformInfo.env.test) {
 }
 
 let ormConnection: ORMConnection;
+const pluginManager = new PluginManager();
 
 interface Reply {
   id: string,
@@ -51,6 +54,7 @@ export const handlers: Handlers = {
   ...EnumHandlers,
   ...TempHandlers,
   ...LicenseHandlers,
+  ...PluginHandlers(pluginManager),
   ...TabHistoryHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
@@ -152,6 +156,12 @@ async function initState(sId: string, port: MessagePortMain) {
 async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
+
+  try {
+    await pluginManager.initialize();
+  } catch (e) {
+    log.error("Error initializing plugin manager", e);
+  }
 
   process.parentPort.postMessage({ type: 'ready' });
 }

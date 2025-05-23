@@ -119,7 +119,7 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
   }
 }
 
-.BksTextEditor {
+& {
   --bks-text-editor-bg-color: #{$query-editor-bg};
   --bks-text-editor-fg-color: #{$text-dark};
   --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
@@ -133,9 +133,7 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
   --bks-text-editor-string-fg-color: #{$brand-primary};
   --bks-text-editor-cursor-bg-color: #{$text-dark};
   --bks-text-editor-bracket-fg-color: #{$text};
-}
 
-.BksTextEditor-hints {
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
   --bks-text-editor-context-menu-item-bg-color-active: #{color.adjust($theme-secondary, $lightness: -25%)};

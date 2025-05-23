@@ -6,9 +6,10 @@
           v-for="tab in tabs"
           :key="tab.id"
           :selected="secondaryActiveTabId === tab.id"
-          @click="handleTabClick(tab)"
+          @click="handleTabClick($event, tab)"
+          @click.right="handleTabRightClick($event, tab)"
         >
-          <x-label>{{ tab.label }}</x-label>
+          <x-label>{{ tab.name }}</x-label>
         </x-tab>
       </x-tabs>
       <div class="actions">
@@ -18,16 +19,32 @@
       </div>
     </div>
     <div class="sidebar-body" ref="body">
-      <json-viewer-sidebar v-if="secondaryActiveTabId === 'json-viewer'" />
+      <template v-for="tab in tabs">
+        <template v-if="tab.id === 'json-viewer'">
+          <json-viewer-sidebar
+            v-show="secondaryActiveTabId === 'json-viewer'"
+            :key="tab.id"
+          />
+        </template>
+        <sidebar-view
+          v-else
+          :visible="secondaryActiveTabId === tab.id"
+          :key="tab.id"
+          :plugin-id="tab.id"
+          :entry-url="tab.entry"
+          :reload="reloaders[tab.id]"
+        />
+      </template>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
-import { mapState, mapActions } from "vuex";
+import { mapState, mapGetters, mapActions } from "vuex";
 import JsonViewerSidebar from "./JsonViewerSidebar.vue";
 import { AppEvent } from "@/common/AppEvent";
+import SidebarView from "@/components/plugins/views/SidebarView.vue";
 
 interface SidebarTab {
   id: string;
@@ -37,19 +54,45 @@ interface SidebarTab {
 
 export default Vue.extend({
   name: "SecondarySidebar",
-  components: { JsonViewerSidebar },
+  components: { JsonViewerSidebar, SidebarView },
+  data() {
+    return {
+      reloaders: {},
+    };
+  },
   computed: {
-    ...mapState("sidebar", ["secondaryActiveTabId", "tabs", "secondarySidebarOpen"]),
+    ...mapState("sidebar", ["secondaryActiveTabId", "secondarySidebarOpen"]),
+    ...mapGetters("sidebar", ["tabs"]),
     rootBindings() {
       return [
-        { event: AppEvent.selectSecondarySidebarTab, handler: this.setSecondaryActiveTabId },
+        {
+          event: AppEvent.selectSecondarySidebarTab,
+          handler: this.setSecondaryActiveTabId,
+        },
       ];
     },
   },
   methods: {
     ...mapActions("sidebar", ["setSecondaryActiveTabId"]),
-    handleTabClick(tab: SidebarTab) {
+    handleTabClick(event, tab: SidebarTab) {
       this.setSecondaryActiveTabId(tab.id);
+    },
+    handleTabRightClick(event, tab: SidebarTab) {
+      if (!window.platformInfo.isDevelopment) {
+        return
+      }
+
+      this.$bks.openMenu({
+        event,
+        options: [
+          {
+            name: "[DEV] Reload View",
+            handler: () => {
+              this.$set(this.reloaders, tab.id, Date.now());
+            },
+          },
+        ],
+      });
     },
   },
   mounted() {

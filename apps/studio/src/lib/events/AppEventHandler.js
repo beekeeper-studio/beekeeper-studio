@@ -27,12 +27,14 @@ export default class {
     this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
+    this.forward(AppEvent.settingsChanged)
+    this.forward(AppEvent.openPluginManager)
   }
 
   forward(event) {
-    const emit = () => {
+    const emit = (_e, ...args) => {
       log.debug("Received from electron, forwarding to app", event)
-      this.vueApp.$emit(event)
+      this.vueApp.$emit(event, ...args)
     }
     window.main.on(event, emit.bind(this))
   }

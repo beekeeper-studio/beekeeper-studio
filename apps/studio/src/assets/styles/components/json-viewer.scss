@@ -29,15 +29,8 @@
       }
     }
 
-    .menu-btn {
-      i.material-icons {
-        font-size: 18px;
-        color: $text-light;
-      }
-
-      &:not(:hover) {
-        background-color: transparent;
-      }
+    .title {
+      color: $text-dark;
     }
 
     .menu-btn x-menuitem {

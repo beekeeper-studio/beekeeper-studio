@@ -115,7 +115,8 @@ export default class extends DefaultMenu {
         submenu: [
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
-          this.menuItems.exportTables
+          this.menuItems.exportTables,
+          this.menuItems.managePlugins,
         ]
       },
       ...windowMenu,

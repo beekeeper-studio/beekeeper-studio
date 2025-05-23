@@ -37,6 +37,8 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
+import { WebPluginManager } from '@/services/plugin/web'
+import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 
 (async () => {
 
@@ -165,6 +167,25 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
+    try {
+      const webPluginManager = new WebPluginManager(
+        Vue.prototype.$util,
+        new PluginStoreService(store, {
+          emit: (...args) => app.$root.$emit(...args),
+          on: (...args) => app.$root.$on(...args),
+          off: (...args) => app.$root.$off(...args),
+        })
+      )
+      await webPluginManager.initialize()
+      Vue.prototype.$plugin = webPluginManager;
+      if (window.platformInfo.isDevelopment) {
+        window.webPluginManager = webPluginManager; // For debugging
+      }
+    } catch (e) {
+      log.error("Error initializing web plugin manager", e)
+      if (!Vue.prototype.$plugin) Vue.prototype.$plugin = {}
+      Vue.prototype.$plugin.failedToInitialize = true
+    }
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")
