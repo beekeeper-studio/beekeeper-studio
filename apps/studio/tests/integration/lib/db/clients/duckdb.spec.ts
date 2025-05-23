@@ -198,6 +198,12 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         expect(sql).toContain("('1','Test 1'),('2','Test 2')");
       });
     });
+
+    describe("Param tests", () => {
+      it("Should be able to handle positional (?) params", async () => {
+        await util.paramTest(['?']);
+      })
+    })
   });
 }
 

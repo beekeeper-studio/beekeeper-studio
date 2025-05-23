@@ -296,7 +296,7 @@
                   :key="index"
                 >
                   <div class="form-group row">
-                    <label>{{ param }}</label>
+                    <label>{{ isNumber(param) ? `? ${param + 1}` : param }}</label>
                     <input
                       type="text"
                       class="form-control"
@@ -338,6 +338,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
+  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, splitQueries, isTextSelected } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -494,6 +495,43 @@
       result() {
         return this.results[this.selectedResult]
       },
+      individualQueries() {
+        if (!this.unsavedText) return []
+        return splitQueries(this.unsavedText, this.identifyDialect)
+      },
+      currentlySelectedQueryIndex() {
+        const queries = this.individualQueries
+        for (let i = 0; i < queries.length; i++) {
+          // Find a query in between anchor and head cursors
+          if (this.editor.cursorIndex !== this.editor.cursorIndexAnchor) {
+            const isSelected = isTextSelected(queries[i].start, queries[i].end, this.editor.cursorIndexAnchor, this.editor.cursorIndex)
+            if (isSelected) return i
+          }
+          // Otherwise, find a query that sits before the cursor
+          else if (this.editor.cursorIndex <= queries[i].end + 1) return i
+        }
+        return null
+      },
+      currentlySelectedQuery() {
+        if (this.currentlySelectedQueryIndex === null) return null
+        return this.individualQueries[this.currentlySelectedQueryIndex]
+      },
+      currentQueryPosition() {
+        if(!this.editor.initialized || !this.currentlySelectedQuery || !this.individualQueries) {
+          return null
+        }
+        const qi = this.currentlySelectedQueryIndex
+        const previousQuery = qi === 0 ? null : this.individualQueries[qi - 1]
+        // adding 1 to account for semicolon
+        const start = previousQuery ? previousQuery.end + 1: 0
+        const end = this.currentlySelectedQuery.end
+
+        return {
+          from: start,
+          to: end + 1
+        }
+
+      },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
@@ -525,7 +563,14 @@
           params = this.currentlySelectedQuery.parameters
         }
 
-        if (params.length && params[0] === '?') return []
+        if (params.length && params.includes('?')) {
+          let posIndex = 0; // number doesn't matter, this just distinguishes positional from other types
+          params = params.map((param) => {
+            if (param != '?') return param;
+
+            return posIndex++;
+          })
+        }
 
         return _.uniq(params)
       },
@@ -534,9 +579,11 @@
         if (_.isEmpty(query)) {
           return query;
         }
-        _.each(this.queryParameterPlaceholders, param => {
-          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`, 'g'), `$1${this.queryParameterValues[param]}$2`)
-        });
+
+        const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
+        const values = Object.values(this.queryParameterValues) as string[];
+        const convertedParams = convertParamsForReplacement(placeholders, values);
+        query = deparameterizeQuery(query, this.dialect, convertedParams);
         return query;
       },
       unsavedChanges() {
@@ -674,7 +721,9 @@
       },
     },
     methods: {
-
+      isNumber(value: any) {
+        return _.isNumber(value);
+      },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
         // 2.
@@ -903,8 +952,14 @@
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            this.$modal.show(`parameters-modal-${this.tab.id}`)
-            return
+            const params = this.individualQueries.flatMap((qs) => qs.parameters);
+            if (canDeparameterize(params)) {
+              this.$modal.show(`parameters-modal-${this.tab.id}`)
+              return;
+            } else {
+              this.error = `You can't use positional and non-positional parameters at the same time`
+              return;
+            }
           }
 
           const query = this.deparameterizedQuery
