@@ -197,7 +197,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     autoUpdater.checkForUpdates();
   }
 
-  managePlugins = async (_menuItem: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
+  managePlugins = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.openPluginManager);
   }
 }
