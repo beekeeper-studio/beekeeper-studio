@@ -116,8 +116,7 @@ export default class extends DefaultMenu {
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
           this.menuItems.exportTables,
-          // FIXME remove the flag once it's ready
-          ...(this.platformInfo.isDevelopment && [this.menuItems.managePlugins]),
+          this.menuItems.managePlugins,
         ]
       },
       ...windowMenu,

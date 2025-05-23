@@ -22,10 +22,10 @@ import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
+import { PluginManager } from '@/services/plugin';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
-import { PluginManager } from '@/services/plugin';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
