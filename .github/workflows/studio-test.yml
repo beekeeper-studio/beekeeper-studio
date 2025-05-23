@@ -135,31 +135,41 @@ jobs:
         on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
         command: yarn workspace beekeeper-studio run test:codemirror --runInBand --ci
 
-  # e2e:
-  #   name: E2E tests
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out Git repository
-  #       uses: actions/checkout@v2
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
 
-  #     - name: Install Node.js, NPM and Yarn
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version-file: '.nvmrc'
-  #         cache: yarn
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
 
-  #     - name: Install dependencies
-  #       run: yarn install --frozen-lockfile
-  #       env:
-  #         npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
-  #     - name: E2E Tests
-  #       run: yarn workspace beekeeper-studio run test:e2e
+      
+      - name: Start postgres container
+        run: docker compose up psql15 -d
+        
+      - name: Run Yarn build
+        run: yarn build
 
-  #     - name: Upload test results
-  #       if: ${{ !cancelled() }}
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: test-results
-  #         path: apps/studio/test-results
-  #         retention-days: 30
+      - name: Serve application 
+        run: nohup yarn run electron:serve &  sleep 15
+  
+      - name: Run E2E Tests
+        run: yarn test:e2e:ci
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: apps/studio/test-results
+          retention-days: 30
