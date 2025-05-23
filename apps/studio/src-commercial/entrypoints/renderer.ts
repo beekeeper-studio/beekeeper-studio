@@ -179,11 +179,12 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
       await webPluginManager.initialize()
       Vue.prototype.$plugin = webPluginManager;
       if (window.platformInfo.isDevelopment) {
-        // For debugging
-        window.webPluginManager = webPluginManager;
+        window.webPluginManager = webPluginManager; // For debugging
       }
     } catch (e) {
       log.error("Error initializing web plugin manager", e)
+      if (!Vue.prototype.$plugin) Vue.prototype.$plugin = {}
+      Vue.prototype.$plugin.failedToInitialize = true
     }
     app.$mount('#app')
   } catch (err) {

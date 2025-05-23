@@ -61,10 +61,17 @@ export default Vue.extend({
       selectedPluginReadme: null,
       loadedPlugins: false,
       loadingPlugins: false,
-      errors: null,
+      errors: this.$plugin.failedToInitialize
+        ? [
+            "Plugin system was not initialized properly. Please restart Beekeeper Studio to continue using plugins or report this issue.",
+          ]
+        : null,
     };
   },
   async mounted() {
+    if (this.$plugin.failedToInitialize) {
+      this.$noty.error("Failed to initialize plugin manager.");
+    }
     this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
@@ -202,6 +209,9 @@ export default Vue.extend({
     },
     async open() {
       this.$modal.show(this.modalName);
+      if (this.$plugin.failedToInitialize) {
+        return;
+      }
       if (!this.loadedPlugins) {
         this.loadingPlugins = true;
         this.plugins = await this.buildPluginListData();

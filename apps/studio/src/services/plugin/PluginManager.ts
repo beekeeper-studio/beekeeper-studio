@@ -77,10 +77,12 @@ export default class PluginManager {
   }
 
   async getEntries() {
+    this.initializeGuard();
     return await this.registry.getEntries();
   }
 
   async findPluginEntry(id: string): Promise<PluginRegistryEntry> {
+    this.initializeGuard();
     const entries = await this.getEntries();
     const entry = entries.find((entry) => entry.id === id);
     if (!entry) {
@@ -90,15 +92,18 @@ export default class PluginManager {
   }
 
   async getRepository(pluginId: string): Promise<PluginRepository> {
+    this.initializeGuard();
     return await this.registry.getRepository(pluginId);
   }
 
   // TODO implement enable/disable plugins
   async getEnabledPlugins() {
+    this.initializeGuard();
     return this.installedPlugins;
   }
 
   async installPlugin(id: string): Promise<Manifest> {
+    this.initializeGuard();
     if (this.installedPlugins.find((manifest) => manifest.id === id)) {
       throw new Error(`Plugin "${id}" is already installed.`);
     }
@@ -118,6 +123,7 @@ export default class PluginManager {
   }
 
   async updatePlugin(id: string): Promise<void> {
+    this.initializeGuard();
     const installedPluginIdx = this.installedPlugins.findIndex(
       (manifest) => manifest.id === id
     );
@@ -139,6 +145,7 @@ export default class PluginManager {
   }
 
   async uninstallPlugin(id: string): Promise<void> {
+    this.initializeGuard();
     return await this.withPluginLock(id, async () => {
       log.debug(`Uninstalling plugin "${id}"...`);
 
@@ -153,6 +160,7 @@ export default class PluginManager {
 
   /** if returns true, update is available */
   async checkForUpdates(id: string): Promise<boolean> {
+    this.initializeGuard();
     const manifest = this.installedPlugins.find(
       (manifest) => manifest.id === id
     );
@@ -168,6 +176,7 @@ export default class PluginManager {
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
+    this.initializeGuard();
     return this.fileManager.readAsset(manifest, filename);
   }
 
@@ -239,5 +248,11 @@ export default class PluginManager {
    */
   getPluginAutoUpdateEnabled(id: string): boolean {
     return !this.disabledAutoUpdatePlugins.has(id);
+  }
+
+  private initializeGuard() {
+    if (!this.initialized) {
+      throw new Error("Plugin manager is not initialized.");
+    }
   }
 }
