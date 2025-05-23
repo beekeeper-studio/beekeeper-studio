@@ -155,13 +155,16 @@ jobs:
 
       
       - name: Start postgres container
-        run: docker compose up psql15 -d 
+        run: docker compose up psql15 -d
+        
+      - name: Run Yarn build
+        run: yarn build
 
       - name: Serve application 
         run: nohup yarn run electron:serve &  sleep 15
   
       - name: Run E2E Tests
-        run: yarn test:e2e
+        run: yarn test:e2e:ci
 
       - name: Upload test results
         if: ${{ !cancelled() }}
