@@ -102,6 +102,7 @@ services:
       - ./dev/docker_trino/catalog:/etc/trino/catalog
     depends_on:
       - psql
+      - mysql8
   psql:
     image: postgres:9.6
     environment:
