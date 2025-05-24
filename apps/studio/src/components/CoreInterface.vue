@@ -110,6 +110,9 @@
           { event: AppEvent.quickSearch, handler: this.showQuickSearch},
           { event: AppEvent.togglePrimarySidebar, handler: this.handleToggleOpenPrimarySidebar },
           { event: AppEvent.toggleSecondarySidebar, handler: this.handleToggleOpenSecondarySidebar },
+          { event: AppEvent.deviceIdle, handler: this.handleDeviceLocked },
+          { event: AppEvent.deviceLocked, handler: this.handleDeviceLocked },
+          { event: AppEvent.deviceSuspended, handler: this.handleDeviceSuspended }
         ]
       },
     },
@@ -311,6 +314,9 @@
           this.toggleOpenPrimarySidebar(true)
         }
         this.setGlobalSidebarActiveItem(item);
+      },
+      handleDeviceIdle() {
+
       },
     }
   })

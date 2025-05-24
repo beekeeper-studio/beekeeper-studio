@@ -12,6 +12,7 @@
           @databaseSelected="databaseSelected"
           v-else
         />
+        <lock-manager />
         <auto-updater />
         <state-manager />
         <notification-manager />
@@ -36,6 +37,7 @@
     <import-queries-modal />
     <import-connections-modal />
     <confirmation-modal-manager />
+    <device-state-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
