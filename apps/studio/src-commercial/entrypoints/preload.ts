@@ -39,8 +39,8 @@ export const api = {
   isReady() {
     ipcRenderer.send('ready');
   },
-  whichTool() {
-    return ipcRenderer.invoke('which-tool', 'az');
+  whichTool(toolName: string) {
+    return ipcRenderer.invoke('which-tool', toolName);
   },
   invoke(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
