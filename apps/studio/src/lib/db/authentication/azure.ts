@@ -9,6 +9,7 @@ import {exec} from 'child_process'
 import {getEntraOptions} from "@/lib/db/clients/utils";
 import {IDbConnectionServer} from "@/lib/db/backendTypes";
 import { promisify } from "util";
+import BksConfig from '@/common/bksConfig';
 
 const log = rawLog.scope('auth/azure');
 const execAsync = promisify(exec);
@@ -177,7 +178,7 @@ export class AzureAuthService {
       throw new Error('AZ command not specified')
     }
 
-    const command = `${options?.cliPath} account get-access-token --resource ${globals.azSQLLoginScope} --output json`;
+    const command = `${options?.cliPath} account get-access-token --resource ${BksConfig.azure.azSQLLoginScope} --output json`;
 
     try {
       const { stdout } = await execAsync(command, { encoding: 'utf8' });
