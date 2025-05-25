@@ -174,6 +174,8 @@ ipcMain.handle('which-tool', async (_event, toolName: string) => {
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
+  ipcMain.emit("disable-connection-menu-items");
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
