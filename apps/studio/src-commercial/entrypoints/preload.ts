@@ -9,7 +9,7 @@ import username from 'username';
 import { execSync } from 'child_process';
 import 'electron-log/preload';
 import pluralize from 'pluralize';
-
+import * as utility from './utility'
 
 const electron = require('@electron/remote');
 
@@ -39,8 +39,8 @@ export const api = {
   isReady() {
     ipcRenderer.send('ready');
   },
-  rawInvoke(channel: string, ...args: any[]) {
-    return ipcRenderer.invoke(channel, ...args);
+  whichTool() {
+    return ipcRenderer.invoke('which-tool', 'az');
   },
   invoke(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;

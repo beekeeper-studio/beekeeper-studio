@@ -203,7 +203,7 @@ export default {
     async tryFindAzCli() {
       if (!this.config.azureAuthOptions.cliPath) {
         try {
-          const result = await window.main.rawInvoke('which-tool', 'az')
+          const result = await window.main.whichTool()
           if (result.success) {
             this.config.azureAuthOptions.cliPath = result.path;
           } else {
