@@ -99,10 +99,7 @@ export default class WebPluginLoader {
           response.result = await this.pluginStore.runQuery(request.args.query);
           break;
         case "runQueryTab":
-          response.result = await this.pluginStore.runQueryTab(
-            request.args.tabId
-          );
-          break;
+          throw new Error("Not implemented."); // FIXME
         case "runQueryTabPartially":
           throw new Error("Not implemented."); // FIXME
         case "insertSuggestion":

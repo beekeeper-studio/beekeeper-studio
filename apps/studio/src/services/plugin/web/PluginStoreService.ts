@@ -299,36 +299,4 @@ export default class PluginStoreService {
       results: results.map(this.serializeQueryResponse),
     };
   }
-
-  async runQueryTab(tabId: number): Promise<RunQueryTabResponse> {
-    const tab = this.store.state.tabs.tabs.find(
-      (t: TransportOpenTab) => t.id === tabId
-    );
-
-    if (!tab) {
-      throw new Error(`Tab with ID ${tabId} not found`);
-    }
-
-    if (tab.tabType !== TabType.query) {
-      throw new Error(`Tab with ID ${tabId} is not a query tab`);
-    }
-
-    return new Promise<RunQueryTabResponse>((resolve) => {
-      const handleExecutedQueryTab = (
-        tabId: number,
-        result: { results: NgQueryResult[]; error?: unknown }
-      ) => {
-        if (tab.id === tabId) {
-          resolve({
-            results: result.results.map(this.serializeQueryResponse),
-            error: result.error,
-          });
-        }
-
-        this.appEventBus.off(AppEvent.executedQueryTab, handleExecutedQueryTab);
-      };
-      this.appEventBus.on(AppEvent.executedQueryTab, handleExecutedQueryTab);
-      this.appEventBus.emit(AppEvent.runQueryTab, tabId);
-    });
-  }
 }
