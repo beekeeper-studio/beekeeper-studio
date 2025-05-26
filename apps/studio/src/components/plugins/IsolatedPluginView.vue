@@ -17,7 +17,7 @@ import { PluginNotificationData } from "@/services/plugin/types";
 import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
-  name: "SidebarView",
+  name: "IsolatedPluginView",
   props: {
     visible: {
       type: Boolean,
