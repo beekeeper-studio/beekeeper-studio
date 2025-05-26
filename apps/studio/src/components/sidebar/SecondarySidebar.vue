@@ -9,7 +9,7 @@
           @click="handleTabClick($event, tab)"
           @click.right="handleTabRightClick($event, tab)"
         >
-          <x-label>{{ tab.name }}</x-label>
+          <x-label>{{ tab.label }}</x-label>
         </x-tab>
       </x-tabs>
       <div class="actions">
@@ -31,7 +31,7 @@
           :visible="secondaryActiveTabId === tab.id"
           :key="tab.id"
           :plugin-id="tab.id"
-          :entry-url="tab.entry"
+          :url="tab.url"
           :reload="reloaders[tab.id]"
         />
       </template>
@@ -41,7 +41,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapState, mapGetters, mapActions } from "vuex";
+import { mapState, mapActions } from "vuex";
 import JsonViewerSidebar from "./JsonViewerSidebar.vue";
 import { AppEvent } from "@/common/AppEvent";
 import SidebarView from "@/components/plugins/views/SidebarView.vue";
@@ -61,8 +61,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState("sidebar", ["secondaryActiveTabId", "secondarySidebarOpen"]),
-    ...mapGetters("sidebar", ["tabs"]),
+    ...mapState("sidebar", ["secondaryActiveTabId", "tabs", "secondarySidebarOpen"]),
     rootBindings() {
       return [
         {

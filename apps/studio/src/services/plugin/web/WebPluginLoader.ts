@@ -29,10 +29,11 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.sidebars.forEach((sidebar) => {
+    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.addSidebarTab({
-        ...sidebar,
-        entry: this.getEntry(sidebar.entry),
+        id: sidebar.id,
+        label: sidebar.name,
+        url: `plugin://${this.manifest.id}/${this.getEntry(sidebar.entry)}`,
       });
     });
   }
@@ -83,7 +84,7 @@ export default class WebPluginLoader {
           break;
 
         // ======== WRITE ACTIONS ===========
-        case "createQueryTab":
+        case "createQueryTab": // FIXME not stable yet
           response.result = await this.pluginStore.createQueryTab(
             request.args.query,
             request.args.title

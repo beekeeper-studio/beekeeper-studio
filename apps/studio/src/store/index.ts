@@ -35,7 +35,6 @@ import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
-import { PluginModule } from '../services/plugin/PluginModule'
 
 
 const log = RawLog.scope('store/index')
@@ -94,7 +93,6 @@ const store = new Vuex.Store<State>({
     imports: ImportStoreModule,
     backups: BackupModule,
     sidebar: SidebarModule,
-    plugins: PluginModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),

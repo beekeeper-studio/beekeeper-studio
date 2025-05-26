@@ -1,6 +1,5 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
-import { SidebarTab } from "../PluginModule";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import {
   CreateQueryTabResponse,
@@ -19,6 +18,7 @@ import { AppEvent } from "@/common/AppEvent";
 import { TabType } from "@/store/models";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
+import { SidebarTab } from "@/store/modules/SidebarModule";
 
 /**
  * Service that provides an interface to the plugin Vuex module
@@ -158,13 +158,11 @@ export default class PluginStoreService {
   }
 
   addSidebarTab(tab: SidebarTab): void {
-    this.store.dispatch("plugins/addSidebarTab", tab);
+    this.store.commit("sidebar/addSecondarySidebar", tab);
   }
+
   removeSidebarTab(id: string): void {
-    this.store.dispatch("plugins/removeSidebarTab", id);
-  }
-  getSidebarTabs(): SidebarTab[] {
-    return this.store.state.plugins.sidebarTabs;
+    this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
   getTables(): GetTablesResponse {

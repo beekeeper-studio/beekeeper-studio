@@ -27,7 +27,7 @@ export default Vue.extend({
       type: String,
       required: true,
     },
-    entryUrl: {
+    url: {
       type: String,
       required: true,
     },
@@ -43,7 +43,7 @@ export default Vue.extend({
   computed: {
     baseUrl() {
       // FIXME move this somewhere
-      return `plugin://${this.pluginId}/${this.entryUrl}?timestamp=${this.timestamp}`;
+      return `${this.url}?timestamp=${this.timestamp}`;
     },
     rootBindings() {
       return [
