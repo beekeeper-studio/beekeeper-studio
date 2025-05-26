@@ -165,7 +165,6 @@ export interface DialectData {
     chunkSizeStream?: boolean
     binaryColumn?: boolean
     initialSort?: boolean
-    multipleDatabase?: boolean
     sqlCreate?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled

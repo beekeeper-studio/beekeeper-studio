@@ -26,6 +26,7 @@ interface ClientConfig {
   key: string,
   name: string,
   defaultPort?: number,
+  topLevelEntity?: string,
   defaultDatabase?: string,
   disabledFeatures?: string[],
 }
@@ -205,6 +206,16 @@ export const CLIENTS: ClientConfig[] = [
       'server:schema',
       'server:domain',
       'server:ssh',
+      'cancelQuery', // TODO how to do this?
+    ],
+  },
+  {
+    key: 'trino',
+    name: 'Trino',
+    topLevelEntity: 'Catalog',
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
       'cancelQuery', // TODO how to do this?
     ],
   },
