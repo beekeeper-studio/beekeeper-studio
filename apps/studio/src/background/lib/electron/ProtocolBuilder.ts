@@ -73,7 +73,8 @@ export const ProtocolBuilder = {
   createPluginProtocol: () => {
     protocol.registerBufferProtocol("plugin", (request, respond) => {
       // Removes the leading "plugin://" and the query string
-      const pathName = request.url.replace("plugin://", "").split('?')[0]
+      const url = new URL(request.url);
+      const pathName = path.join(url.host, url.pathname);
       const normalized = path.normalize(pathName)
       const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
       log.debug("resolving", pathName, 'to', fullPath)
