@@ -13,6 +13,10 @@ const TEST_VERSIONS = [
   { tag: 'latest', readOnly: true },
   { tag: '24.2', readOnly: false },
   { tag: '24.2', readOnly: true },
+  // Clickhouse 21.8 Introduced information schema,
+  // so we need to test before that so we know our driver works properly.
+  { tag: '21.7', readOnly: false },
+  { tag: '21.7', readOnly: true },
 ] as const
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
