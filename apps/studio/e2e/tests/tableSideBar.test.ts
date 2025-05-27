@@ -15,7 +15,7 @@ let userAttemptsTo;
 let newDatabaseConnection;
 let tablesSideBar;
 let newTableName;
-test.describe.only("Table creation", () => {
+test.describe("Table creation", () => {
 
     beforeEach(async () => {
         electronApp = await electron.launch({ args: ['dist/main.js'] });

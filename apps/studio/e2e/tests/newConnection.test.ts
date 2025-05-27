@@ -12,7 +12,7 @@ let queryTab;
 let userAttemptsTo;
 
 
-test.describe('New Connection Tests', () => {
+test.describe.only('New Connection Tests', () => {
     test.beforeEach(async () => {
         electronApp = await electron.launch({ args: ['dist/main.js'] });
         window = await electronApp.firstWindow();
