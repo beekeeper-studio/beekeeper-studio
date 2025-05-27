@@ -3,6 +3,7 @@ import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
+  OnViewRequestListener,
 } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
@@ -16,6 +17,7 @@ const log = rawLog.scope("WebPluginManager");
 
 export default class WebPluginLoader {
   private iframe?: HTMLIFrameElement;
+  private listeners: OnViewRequestListener[] = [];
 
   constructor(
     public readonly manifest: Manifest,
@@ -36,6 +38,15 @@ export default class WebPluginLoader {
         url: `plugin://${this.manifest.id}/${this.getEntry(sidebar.entry)}`,
       });
     });
+
+    this.manifest.capabilities.views?.tabTypes?.forEach((tabType) => {
+      this.pluginStore.addTabTypeConfig({
+        pluginId: this.manifest.id,
+        pluginTabTypeId: tabType.id,
+        name: tabType.name,
+        kind: tabType.kind,
+      });
+    });
   }
 
   private handleMessage(event: MessageEvent) {
@@ -52,7 +63,16 @@ export default class WebPluginLoader {
   }
 
   private async handleViewRequest(request: PluginRequestData) {
-    this.checkPermission(request);
+    const afterCallbacks: ((response: PluginResponseData) => void)[] = [];
+
+    for (const listener of this.listeners) {
+      listener({
+        request,
+        after: (callback) => {
+          afterCallbacks.push(callback);
+        },
+      })
+    }
 
     const response: PluginResponseData = {
       id: request.id,
@@ -60,6 +80,8 @@ export default class WebPluginLoader {
     };
 
     try {
+      this.checkPermission(request);
+
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getTheme":
@@ -115,6 +137,10 @@ export default class WebPluginLoader {
     }
 
     this.iframe.contentWindow.postMessage(response, "*");
+
+    afterCallbacks.forEach((callback) => {
+      callback(response);
+    });
   }
 
   async registerIframe(iframe: HTMLIFrameElement) {
@@ -127,6 +153,10 @@ export default class WebPluginLoader {
       return;
     }
     this.iframe.contentWindow.postMessage(data, "*");
+  }
+
+  buildEntryUrl(entry: string) {
+    return `plugin://${this.manifest.id}/${this.getEntry(entry)}`;
   }
 
   getEntry(entry: string) {
@@ -142,6 +172,17 @@ export default class WebPluginLoader {
     this.manifest.capabilities.views?.sidebars.forEach((sidebar) => {
       this.pluginStore.removeSidebarTab(sidebar.id);
     });
+
+    this.manifest.capabilities.views?.tabTypes.forEach((tab) => {
+      this.pluginStore.removeTabTypeConfig(tab.kind);
+    });
+  }
+
+  addListener(listener: OnViewRequestListener) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = _.without(this.listeners, listener);
+    }
   }
 
   checkPermission(data: PluginRequestData) {

@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-view">
+  <div class="isolated-plugin-view">
     <iframe
       v-if="visible || loaded"
       :src="baseUrl"

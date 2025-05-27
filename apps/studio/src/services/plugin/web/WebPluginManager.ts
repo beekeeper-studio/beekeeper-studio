@@ -1,6 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, PluginNotificationData } from "../types";
+import { Manifest, OnViewRequestListener, PluginNotificationData } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 
@@ -91,6 +91,30 @@ export default class WebPluginManager {
       throw new Error("Plugin not found: " + pluginId);
     }
     loader.postMessage(data);
+  }
+
+  manifestOf(pluginId: string) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.manifest;
+  }
+
+  buildUrlFor(pluginId: string, entry: string) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.buildEntryUrl(entry);
+  }
+
+  onViewRequest(pluginId: string, listener: OnViewRequestListener) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    loader.addListener(listener);
   }
 
   private async loadPlugin(manifest: Manifest) {

@@ -1,6 +1,9 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
-import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import type {
+  TabType,
+  TransportOpenTab,
+} from "@/common/transport/TransportOpenTab";
 import {
   CreateQueryTabResponse,
   GetActiveTabResponse,
@@ -15,10 +18,13 @@ import {
 } from "../comm";
 import { findTable } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { TabType } from "@/store/models";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
+import {
+  PluginQueryTabTypeConfig,
+} from "@/store/modules/TabModule";
+import { TabKind } from "../types";
 
 /**
  * Service that provides an interface to the plugin Vuex module
@@ -60,6 +66,8 @@ export default class PluginStoreService {
       "--placeholder",
       "--selection",
       "--input-highlight",
+
+      "--query-editor-bg",
 
       // BksTextEditor
       "--bks-text-editor-activeline-bg-color",
@@ -165,22 +173,42 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
+  addTabTypeConfig(params: {
+    pluginId: string;
+    pluginTabTypeId: string;
+    name: string;
+    kind: TabKind;
+  }): void {
+    const config: PluginQueryTabTypeConfig = {
+      type: `plugin-${params.kind}` as const,
+      name: params.name,
+      pluginId: params.pluginId,
+      pluginTabTypeId: params.pluginTabTypeId,
+      menuItem: { label: `Add ${params.name}` },
+    };
+    this.store.commit("tabs/addTabTypeConfig", config);
+  }
+
+  removeTabTypeConfig(tabType: TabType): void {
+    this.store.commit("tabs/removeTabTypeConfig", tabType);
+  }
+
   getTables(): GetTablesResponse {
     return this.store.state.tables.map((t) => t.name);
   }
 
-  async getColumns(tableName: string): Promise<GetColumnsResponse> {
+  async getColumns(tableName: string, schema?: string): Promise<GetColumnsResponse> {
     let table = this.store.state.tables.find((t) => t.name === tableName);
 
     if (!table) {
       throw new Error(`Table ${tableName} not found`);
     }
 
-    if (!table.columns) {
+    if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);
     }
 
-    table = this.store.state.tables.find((t) => t.name === tableName);
+    table = this.store.state.tables.find((t) => t.name === tableName && t.schema === schema);
 
     return table.columns.map((c) => ({
       name: c.columnName,

@@ -2,15 +2,42 @@ import _ from 'lodash'
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import rawLog from '@bksLogger'
-import { TransportOpenTab, duplicate, matches } from '@/common/transport/TransportOpenTab';
+import { TransportOpenTab, duplicate, matches, TabType } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
+
+interface BaseTabTypeConfig {
+  type: TabType;
+  name: string;
+  /** Used for the dropdown menu next to the "new tab" icon. */
+  menuItem: {
+    label: string;
+    shortcut?: string;
+  }
+}
+
+interface DefaultTabType extends BaseTabTypeConfig {
+  type: Exclude<TabType, 'plugin-query'>;
+}
+
+/** `"plugin-query"` consists of two parts; an iframe at the top and a table at
+ * the bottom. This tab looks almost identical to the query tab. The only
+ * difference is, in this tab, the result table can be collapsed completely. */
+export interface PluginQueryTabTypeConfig extends BaseTabTypeConfig {
+  type: 'plugin-query';
+  pluginId: string;
+  pluginTabTypeId: string;
+}
+
+export type TabTypeConfig = DefaultTabType | PluginQueryTabTypeConfig;
 
 interface State {
   tabs: TransportOpenTab[],
   active?: TransportOpenTab,
   lastClosedTabs: TransportOpenTab[]
+  /** All tab type configurations available. */
+  allTabTypeConfigs: TabTypeConfig[];
 }
 
 
@@ -20,8 +47,28 @@ export const TabModule: Module<State, RootState> = {
     tabs: [],
     active: undefined,
     lastClosedTabs: [],
+    allTabTypeConfigs: [
+      {
+        type: 'query',
+        name: "Query",
+        menuItem: { label: 'Add Query', shortcut: 'Control+T' },
+      },
+      {
+        type: 'shell',
+        name: "Shell",
+        menuItem: { label: 'Add Shell' },
+      },
+    ],
   }),
   getters: {
+    tabTypeConfigs(state, _getters, rootState) {
+      return state.allTabTypeConfigs.filter((tab) => {
+        if (tab.type === "shell" && !rootState.dialectData?.disabledFeatures?.shell) {
+          return false;
+        }
+        return true;
+      })
+    },
     sortedTabs(state) {
       return _.sortBy(state.tabs, 'position')
     },
@@ -70,6 +117,15 @@ export const TabModule: Module<State, RootState> = {
       state.active = tab
       state.tabs = tabs
     },
+
+    addTabTypeConfig(state, newConfig: PluginQueryTabTypeConfig) {
+      state.allTabTypeConfigs.push(newConfig)
+    },
+
+    removeTabTypeConfig(state, config: PluginQueryTabTypeConfig) {
+      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t) => t.type !== config.type)
+    },
+
   },
   actions: {
     async load(context) {

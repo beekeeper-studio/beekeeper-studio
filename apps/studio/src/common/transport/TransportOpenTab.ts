@@ -3,11 +3,11 @@ import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 
-export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
+export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-query'
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
-export interface TransportOpenTab extends Transport {
+interface BaseTransportOpenTab extends Transport {
   tabType: TabType,
   unsavedChanges: boolean,
   title: string,
@@ -27,6 +27,24 @@ export interface TransportOpenTab extends Transport {
   deletedAt?: Date|null 
   isRunning: boolean, // not on the actual model, but used in frontend
 }
+
+interface TransportDefaultOpenTab extends BaseTransportOpenTab {
+  tabType: Exclude<TabType, 'plugin-query'>;
+  context: unknown;
+}
+
+export interface TransportPluginQueryTab extends BaseTransportOpenTab {
+  tabType: "plugin-query";
+  context: {
+    pluginId: string;
+    pluginTabTypeId: string;
+    /** A plugin can save the state of the tab here. For example, an AI plugin
+     * can save the chat conversation here */
+    data: any;
+  }
+}
+
+export type TransportOpenTab = TransportDefaultOpenTab | TransportPluginQueryTab;
 
 export function setFilters(obj: TransportOpenTab, filters: Nullable<TableFilter[]>) {
   if (filters && _.isArray(filters)) {
