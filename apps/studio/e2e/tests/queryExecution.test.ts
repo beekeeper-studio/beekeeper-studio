@@ -1,6 +1,5 @@
 import { _electron as electron } from 'playwright';
 import { test, expect, beforeEach, afterEach } from '@playwright/test';
-import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
@@ -11,14 +10,13 @@ let window;
 let queryTab;
 let resultPane;
 let userAttemptsTo;
-let newDatabaseConnection;
+const testQueryPrefix = `SELECT * FROM actor`;
 
 test.describe("Postgres query execution", () => {
 
     beforeEach(async () => {
         electronApp = await electron.launch({ args: ['dist/main.js'] });
         window = await electronApp.firstWindow();
-        newDatabaseConnection = new NewDatabaseConnection(window);
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
         userAttemptsTo = userActions(window);
@@ -29,7 +27,7 @@ test.describe("Postgres query execution", () => {
     });
 
     test("perform a Postgres query", async () => {
-        const postgresQuery = 'select * from test_load limit 1;';
+        const postgresQuery = `${testQueryPrefix} limit 1;`;
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
@@ -44,7 +42,7 @@ test.describe("Postgres query execution", () => {
     });
 
     test("postgres query with WHERE and 2 results", async () => {
-        const queryWithConditionals = 'SELECT * FROM test_load WHERE id IN (1, 2);'
+        const queryWithConditionals = `${testQueryPrefix} WHERE actor_id IN (1, 2);`
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
@@ -61,7 +59,7 @@ test.describe("Postgres query execution", () => {
     });
 
     test("runs valid query with no results", async () => {
-        const zeroResultsQuery = 'SELECT * FROM test_load WHERE id = null;'
+        const zeroResultsQuery = `${testQueryPrefix} actor WHERE actor_id = null;`
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);

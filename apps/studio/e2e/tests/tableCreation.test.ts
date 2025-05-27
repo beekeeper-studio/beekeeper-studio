@@ -1,6 +1,5 @@
 import { _electron as electron } from 'playwright';
 import { test, expect, beforeEach, afterEach } from '@playwright/test';
-import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { TablesSideBar } from '../pageComponents/TablesSideBar';
@@ -12,7 +11,6 @@ let window;
 let queryTab;
 let resultPane;
 let userAttemptsTo;
-let newDatabaseConnection;
 let tablesSideBar;
 let newTableName;
 
@@ -21,7 +19,6 @@ test.describe("Table creation", () => {
     beforeEach(async () => {
         electronApp = await electron.launch({ args: ['dist/main.js'] });
         window = await electronApp.firstWindow();
-        newDatabaseConnection = new NewDatabaseConnection(window);
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
         tablesSideBar = new TablesSideBar(window);

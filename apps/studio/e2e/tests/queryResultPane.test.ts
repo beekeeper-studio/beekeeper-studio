@@ -1,12 +1,11 @@
 import { _electron as electron } from 'playwright';
 import { test, expect, beforeEach, afterEach } from '@playwright/test';
-import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 
-const POSTGRES_QUERY = 'SELECT * FROM test_load WHERE id IN (1, 2);';
+const POSTGRES_QUERY = 'SELECT * FROM actor WHERE actor_id IN (1, 2);';
 
 
 let electronApp;
@@ -14,14 +13,12 @@ let window;
 let queryTab;
 let resultPane;
 let userAttemptsTo;
-let newDatabaseConnection;
 
 test.describe("Result Pane Verifications", () => {
 
     beforeEach(async () => {
         electronApp = await electron.launch({ args: ['dist/main.js'] });
         window = await electronApp.firstWindow();
-        newDatabaseConnection = new NewDatabaseConnection(window);
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
         userAttemptsTo = userActions(window);
