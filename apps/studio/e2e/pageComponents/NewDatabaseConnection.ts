@@ -16,7 +16,7 @@ export class NewDatabaseConnection {
     this.newConnectionDropdown = this.page.getByLabel('Connection Type');
     //this one feels wrong but works :(
     this.portInputField = this.page.locator('div').getByRole('spinbutton');
-    this.userInputField = this.page.locator('div').filter({ hasText: /^UserPasswordvisibility$/ }).locator('input[name="user"]');
+    this.userInputField = this.page.locator('div').filter({ hasText: /^UserPasswordvisibility$/ }).locator('input[type="text"]');
     this.passwordInputField = this.page.locator('div').filter({ hasText: /^Passwordvisibility$/ }).getByRole('textbox');
     this.defaultDatabaseInputField = this.page.locator('div').filter({ hasText: /^Default Database$/ }).getByRole('textbox');
     this.testConnectionButton = this.page.getByRole('button', { name: 'Test' });

@@ -25,7 +25,7 @@ test.describe.only('New Connection Tests', () => {
         await electronApp.close();
     });
 
-    test('Test a Postgres connection', async () => {
+    test.only('Test a Postgres connection', async () => {
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
