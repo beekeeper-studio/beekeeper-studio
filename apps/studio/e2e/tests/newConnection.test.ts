@@ -12,7 +12,7 @@ let queryTab;
 let userAttemptsTo;
 
 
-test.describe.only('New Connection Tests', () => {
+test.describe('New Connection Tests', () => {
     test.beforeEach(async () => {
         electronApp = await electron.launch({ args: ['dist/main.js'] });
         window = await electronApp.firstWindow();
@@ -25,7 +25,7 @@ test.describe.only('New Connection Tests', () => {
         await electronApp.close();
     });
 
-    test.only('Test a Postgres connection', async () => {
+    test('Test a Postgres connection', async () => {
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
