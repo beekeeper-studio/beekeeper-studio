@@ -213,6 +213,7 @@ export const CLIENTS: ClientConfig[] = [
     key: 'trino',
     name: 'Trino',
     topLevelEntity: 'Catalog',
+    defaultPort: 8080,
     disabledFeatures: [
       'server:ssl',
       'server:socketPath',

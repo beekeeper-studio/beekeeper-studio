@@ -1,14 +1,17 @@
 import rawLog from "@bksLogger";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import {
-  Trino as TrinoClient,
+  Trino as TrinoNodeClient,
   BasicAuth,
-  QueryResult
+  QueryResult,
+  ConnectionOptions as TrinoConnectionOptions,
+  // QueryData
 } from 'trino-client'
 import {
+  BaseQueryResult,
   BasicDatabaseClient,
-  ExecutionContext,
-  QueryLogOptions,
+  // ExecutionContext,
+  // QueryLogOptions,
 } from "@/lib/db/clients/BasicDatabaseClient";
 // import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 // import knexlib from "knex";
@@ -49,7 +52,7 @@ import {
   IndexColumn,
   TableKey,
 } from "@shared/lib/dialects/models";
-import { Stream } from "stream";
+// import { Stream } from "stream";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { uuidv4 } from "@/lib/uuid";
 import { errors } from "@/lib/errors";
@@ -57,58 +60,65 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 // import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
 
-interface JSONResult {
-  statement: IdentifyResult;
-  data: QueryResult;
-  resultType: "json";
-}
+// interface JSONResult {
+//   statement: IdentifyResult;
+//   data: QueryResult;
+//   resultType: "json";
+// }
 
-interface StreamResult {
-  statement: IdentifyResult;
-  data: Stream;
-  resultType: "stream";
-}
+// interface StreamResult {
+//   statement: IdentifyResult;
+//   data: Stream;
+//   resultType: "stream";
+// }
 
-type JSONOrStreamResult = JSONResult | StreamResult;
+// type JSONOrStreamResult = JSONResult | StreamResult;
 
 interface ResultColumn {
   name: string;
+  type: string
 }
 
-interface BaseResult {
+/*
+columns: { name: string }[]
   rows: any[][] | Record<string, any>[];
-  columns: ResultColumn[]
   arrayMode: boolean;
-}
+*/
+// interface BaseResult {
+//   rows: any[];
+//   columns: ResultColumn[]
+//   arrayMode: boolean
+// }
 
-type Result = BaseResult & JSONOrStreamResult;
+type Result = BaseQueryResult;
+// type Result = BaseResult & JSONOrStreamResult;
 
 interface ExecuteQueryOptions {
   params?: Record<string, any>;
   queryId?: string;
 }
 
-interface RawExecuteQueryOptions extends ExecuteQueryOptions {
-  statements: IdentifyResult[];
-  /** Run using insert method */
-  insert?: InsertParams;
-  arrayMode?: boolean;
-}
+// interface RawExecuteQueryOptions extends ExecuteQueryOptions {
+//   statements: IdentifyResult[];
+//   /** Run using insert method */
+//   insert?: InsertParams;
+//   arrayMode?: boolean;
+// }
 
 const log = rawLog.scope("clickhouse");
 
-const clickhouseContext = {
-  getExecutionContext(): ExecutionContext {
-    return null;
-  },
-  logQuery(
-    _query: string,
-    _options: QueryLogOptions,
-    _context: ExecutionContext
-  ): Promise<number | string> {
-    return null;
-  },
-};
+// const clickhouseContext = {
+//   getExecutionContext(): ExecutionContext {
+//     return null;
+//   },
+//   logQuery(
+//     _query: string,
+//     _options: QueryLogOptions,
+//     _context: ExecutionContext
+//   ): Promise<number | string> {
+//     return null;
+//   },
+// };
 
 // const knex = knexlib({ client: ClickhouseKnexClient });
 const knex = null
@@ -116,21 +126,57 @@ const knex = null
 const RE_NULLABLE = /^Nullable\((.*)\)$/;
 const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/i;
 
-export class ClickHouseClient extends BasicDatabaseClient<Result> {
+export class TrinoClient extends BasicDatabaseClient<Result> {
   version: string;
   client: any;
   supportsTransaction: boolean;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, clickhouseContext, server, database);
+    super(knex, null, server, database);
     this.dialect = "generic";
     this.readOnlyMode = server?.config?.readOnlyMode || false;
+  }
+
+  rowsToObject(columns: ResultColumn[], rows: any[][]) {
+    const keys = columns.map(col => col.name)
+    return rows.map(row => _.zipObject(keys, row))
+  }
+
+  async driverExecuteSingle(sql): Promise<Result> {
+    const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
+
+    let columns: ResultColumn[] = []
+    let rows: any[] = []
+
+    for await (const r of result) {
+      columns = r.columns
+
+      console.log('r.data: ', r.data)
+      if (r.data) rows.push(...r.data)
+    }
+
+    if (rows.length === 0) {
+      return {
+        columns,
+        rows,
+        arrayMode: false
+      }
+    }
+
+    return {
+      columns,
+      rows: this.rowsToObject(columns, rows),
+      arrayMode: false
+    }
+
+    
   }
 
   async connect(): Promise<void> {
     await super.connect();
 
     let url: string;
+    let connectionObj = {} as TrinoConnectionOptions
 
     if (this.server.config.url) {
       url = this.server.config.url
@@ -142,126 +188,48 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       url = urlObj.toString();
     }
 
-    this.client = TrinoClient.create({
+    connectionObj = {
       server: url,
-      auth: new BasicAuth(this.server.config.user, this.server.config.password),
       catalog: this.database.database
-    });
+    }
+    
+    // TODO: Add ssl using SecureContextOptions (https://trinodb.github.io/trino-js-client/types/ConnectionOptions.html)
+    
+    if ((this.server.config.user != null && this.server.config.user !== '') || (this.server.config.password != null && this.server.config.password !== '')) {
+      connectionObj.auth = new BasicAuth(this.server.config.user, this.server.config.password)
+    }
+
+    this.client = TrinoNodeClient.create(connectionObj);
     const result = await this.driverExecuteSingle(
-      "SELECT version() AS version"
+      "SELECT version()"
     );
-    const json = result.data as ResponseJSON<{ version: string }>;
-    const str = json.data[0].version;
-    this.version = str.trim();
+
+    this.version = result.rows[0]['_col0']
     this.supportsTransaction = await this.checkTransactionSupport();
   }
 
   async disconnect(): Promise<void> {
-    await super.disconnect();
     await this.client.close();
+    await super.disconnect();
   }
 
   async versionString(): Promise<string> {
     return this.version;
   }
 
-  async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
-    const sql = `SELECT name, engine FROM system.tables where database = currentDatabase() ORDER BY name`;
-    const result = await this.driverExecuteSingle(sql);
-    const json = result.data as ResponseJSON<{ name: string; engine: string }>;
-    return json.data.map((row) => ({
-      name: row.name,
-      entityType: "table",
-      engine: row.engine,
-    }));
+  async alterTable(_change: AlterTableSpec): Promise<void> {
+    log.error("Trino doesn't support changing data")
+    return null
   }
 
-  async listTableColumns(
-    table?: string,
-    _schema?: string
-  ): Promise<ExtendedTableColumn[]> {
-    const sql = `
-      SELECT
-        name,
-        table,
-        type,
-        is_in_primary_key,
-        position,
-        comment,
-        default_expression,
-      FROM system.columns
-      WHERE database = currentDatabase()
-        ${table ? "AND table = {table: String}" : ""}
-      ORDER BY position
-    `;
-    const result = await this.driverExecuteSingle(sql, {
-      params: { table },
-    });
-    const json = result.data as ResponseJSON<{
-      name: string;
-      table: string;
-      type: string;
-      is_in_primary_key: number;
-      position: number;
-      comment: string;
-      default_expression: string;
-    }>;
-    return json.data.map((row) => {
-      // Empty string if it is not defined.
-      const hasDefault = row.default_expression !== "";
-      return {
-        tableName: row.table,
-        columnName: row.name,
-        dataType: row.type,
-        ordinalPosition: row.position,
-        defaultValue: hasDefault ? row.default_expression : null,
-        hasDefault,
-        comment: row.comment,
-        primaryKey: row.is_in_primary_key === 1,
-        nullable: RE_NULLABLE.test(row.type),
-        bksField: this.parseTableColumn(row),
-      };
-    });
+  async getPrimaryKeys(): Promise<PrimaryKeyColumn[]> {
+    log.error("Trino doesn't support primary keys")
+    return null
   }
 
-  async alterTable(change: AlterTableSpec): Promise<void> {
-    const sql = await this.alterTableSql(change);
-    const queries = sql
-      .split(";")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const query of queries) {
-      await this.executeQuery(query);
-    }
-  }
-
-  async getPrimaryKeys(
-    table: string,
-    _schema?: string
-  ): Promise<PrimaryKeyColumn[]> {
-    log.debug("finding primary keys for", this.db, table);
-    const result = await this.driverExecuteSingle(
-      `
-        SELECT name, position FROM system.columns
-        WHERE database = currentDatabase()
-          AND table = {table: String}
-          AND is_in_primary_key = 1
-      `,
-      { params: { table } }
-    );
-    const json = result.data as ResponseJSON<{
-      name: string;
-      position: number;
-    }>;
-    return json.data.map((r) => ({
-      columnName: r.name,
-      position: r.position,
-    }));
-  }
-
-  async getPrimaryKey(table: string, _schema?: string): Promise<string | null> {
-    const res = await this.getPrimaryKeys(table);
-    return res.length === 1 ? res[0].columnName : null;
+  async getPrimaryKey(_table: string, _schema?: string): Promise<string | null> {
+    log.error("Trino doesn't support primary keys")
+    return null
   }
 
   async selectTop(
@@ -319,39 +287,11 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async getTableProperties(
-    table: string,
+    _table: string,
     _schema?: string
   ): Promise<TableProperties> {
-    const query = `
-      SELECT
-        comment,
-        total_bytes
-      FROM system.tables
-      WHERE database = {database: String}
-        AND table = {table: String}
-    `;
-    const params = { database: this.database.database, table };
-
-    const [queryResult, relations, triggers, indexes] = await Promise.all([
-      this.driverExecuteSingle(query, { params }),
-      this.getTableKeys(table),
-      this.listTableTriggers(table),
-      this.listTableIndexes(table),
-    ]);
-
-    const json = queryResult.data as ResponseJSON<{
-      comment: string;
-      total_bytes: number;
-    }>;
-
-    return {
-      description: json.data[0].comment,
-      size: json.data[0].total_bytes,
-      indexes,
-      relations,
-      triggers,
-      partitions: [],
-    };
+    log.error("Trino doesn't support table properties for all databases")
+    return null
   }
 
   async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
@@ -368,56 +308,18 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async listTableIndexes(
-    table: string,
+    _table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
-    const sql = `
-      SHOW INDEX
-        FROM ${TrinoData.wrapIdentifier(table)}
-        IN ${TrinoData.wrapIdentifier(this.database.database)}
-    `;
-
-    const result = await this.driverExecuteSingle(sql);
-    const json = result.data as ResponseJSON;
-
-    const grouped = _.groupBy(json.data, "key_name");
-
-    return Object.keys(grouped).map((key, idx) => {
-      const row = grouped[key][0] as any;
-
-      const columns: IndexColumn[] = grouped[key].map((r: any) => ({
-        name: r.column_name,
-        order: r.collation === "A" ? "ASC" : "DESC",
-        prefix: r.sub_part, // Also called index prefix length.
-      }));
-
-      return {
-        id: idx.toString(),
-        table,
-        schema: "",
-        name: row.key_name as string,
-        columns,
-        unique: row.non_unique === "0",
-        primary: row.key_name === "PRIMARY",
-      };
-    });
+    log.error("Trino doesn't support table indexes in all databases it supports")
+    return null
   }
 
   async listViews(
     _filter: FilterOptions = { schema: "public" }
   ): Promise<TableOrView[]> {
-    const sql = `
-      SELECT table_name as name
-      FROM information_schema.views
-      WHERE table_schema = currentDatabase()
-      ORDER BY table_name
-    `;
-    const result = await this.driverExecuteSingle(sql);
-    const json = result.data as ResponseJSON<{ name: string }>;
-    return json.data.map((row) => ({
-      name: row.name,
-      entityType: "view",
-    }));
+    log.error("Trino doesn't support views")
+    return null
   }
 
   async executeApplyChanges(_changes: TableChanges): Promise<any[]> {
@@ -449,143 +351,112 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
    * See: https://clickhouse.com/docs/en/guides/developer/transactional#transactions-commit-and-rollback
    **/
   private async checkTransactionSupport(): Promise<boolean> {
-    let supportsTransaction = false;
-    try {
-      log.debug("Checking if transaction is supported");
-      await this.driverExecuteSingle("BEGIN TRANSACTION");
-      await this.driverExecuteSingle("ROLLBACK");
-      supportsTransaction = true;
-    } catch (e) {
-      log.warn(e);
-      log.debug("Transaction not supported");
-    }
-    return supportsTransaction;
+    return false
   }
 
-  private async updateValues(_updates: TableUpdate[]) {
+  async dropElement(): Promise<void> {
     log.error("Trino doesn't support changing data")
     return null
-  }
-
-  private async deleteValues(_deletes: TableDelete[]) {
-    log.error("Trino doesn't support changing data")
-    return null
-  }
-
-  async dropElement(
-    elementName: string,
-    typeOfElement: DatabaseElement,
-    _schema?: string
-  ): Promise<void> {
-    let sql = "DROP ";
-
-    if (typeOfElement === DatabaseElement.SCHEMA) {
-      throw new Error("Schemas are not supported");
-    } else if (typeOfElement === DatabaseElement.TABLE) {
-      sql += "TABLE";
-    } else if (
-      typeOfElement === DatabaseElement.VIEW ||
-      typeOfElement === DatabaseElement["MATERIALIZED-VIEW"]
-    ) {
-      sql += "VIEW";
-    } else if (typeOfElement === DatabaseElement.DATABASE) {
-      sql += "DATABASE";
-    }
-
-    sql += ` ${TrinoData.wrapIdentifier(elementName)}`;
-
-    await this.driverExecuteSingle(sql);
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const sql = "SHOW DATABASES";
+    const sql = "show catalogs";
     const result = await this.driverExecuteSingle(sql);
-    const json = result.data as ResponseJSON<{ name: string }>;
-    return json.data.map((row) => row.name);
+
+    return result.rows.map((row) => row.Catalog);
   }
 
-  async createDatabase(
-    databaseName: string,
-    _charset: string,
-    _collation: string
-  ): Promise<string> {
-    await this.driverExecuteSingle(
-      `CREATE DATABASE ${TrinoData.wrapIdentifier(databaseName)}`
-    );
-    return databaseName;
+  async listSchemas(_filter: SchemaFilterOptions): Promise<string[]> {
+    // this is where we'll need to get which database is coming through so we can get the command
+    // show schemas from <database>
+    // Trino doesn't support schemas
+    return [];
   }
 
-  async truncateElementSql(
-    elementName: string,
-    typeOfElement: DatabaseElement
-  ) {
-    if (typeOfElement === DatabaseElement.TABLE) {
-      return `TRUNCATE TABLE ${TrinoData.wrapIdentifier(
-        this.database.database
-      )}.${TrinoData.wrapIdentifier(elementName)}`;
-    }
-    if (typeOfElement === DatabaseElement.DATABASE) {
-      return `TRUNCATE DATABASE ${TrinoData.wrapIdentifier(elementName)}`;
-    }
-    return "";
+   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
+    // const sql = `show tables from ${filter.database}.${filter.schema}`;
+    // const result: Result = await this.driverExecuteSingle(sql);
+    // console.log('list tables: ', result)
+    
+    return []
+    // return result.rows.map((row) => ({
+    //   name: row.name,
+    //   tabletype: "table",
+    //   engine: row.engine,
+    // }));
   }
 
-  async duplicateTable(
-    tableName: string,
-    duplicateTableName: string,
-    schema?: string
-  ): Promise<void> {
-    const sql = await this.duplicateTableSql(
-      tableName,
-      duplicateTableName,
-      schema
-    );
-    const queries = sql
-      .split(";")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const query of queries) {
-      await this.driverExecuteSingle(query);
-    }
-  }
-
-  async duplicateTableSql(
-    tableName: string,
-    duplicateTableName: string,
+  async listTableColumns(
+    table?: string,
     _schema?: string
-  ): Promise<string> {
-    tableName = `${TrinoData.wrapIdentifier(
-      this.database.database
-    )}.${TrinoData.wrapIdentifier(tableName)}`;
-    duplicateTableName = `${TrinoData.wrapIdentifier(
-      this.database.database
-    )}.${TrinoData.wrapIdentifier(duplicateTableName)}`;
-    return `
-      CREATE TABLE ${duplicateTableName} AS ${tableName};
-      INSERT INTO ${duplicateTableName} SELECT * FROM ${tableName};
+  ): Promise<ExtendedTableColumn[]> {
+    const sql = `
+      SELECT
+        name,
+        table,
+        type,
+        is_in_primary_key,
+        position,
+        comment,
+        default_expression,
+      FROM system.columns
+      WHERE database = currentDatabase()
+        ${table ? "AND table = {table: String}" : ""}
+      ORDER BY position
     `;
+    const result = await this.driverExecuteSingle(sql, {
+      params: { table },
+    });
+    const json = result.data as ResponseJSON<{
+      name: string;
+      table: string;
+      type: string;
+      is_in_primary_key: number;
+      position: number;
+      comment: string;
+      default_expression: string;
+    }>;
+    return json.data.map((row) => {
+      // Empty string if it is not defined.
+      const hasDefault = row.default_expression !== "";
+      return {
+        tableName: row.table,
+        columnName: row.name,
+        dataType: row.type,
+        ordinalPosition: row.position,
+        defaultValue: hasDefault ? row.default_expression : null,
+        hasDefault,
+        comment: row.comment,
+        primaryKey: row.is_in_primary_key === 1,
+        nullable: RE_NULLABLE.test(row.type),
+        bksField: this.parseTableColumn(row),
+      };
+    });
   }
 
-  async setElementNameSql(
-    elementName: string,
-    newElementName: string,
-    typeOfElement: DatabaseElement
-  ): Promise<string> {
-    elementName = TrinoData.wrapIdentifier(elementName);
-    newElementName = TrinoData.wrapIdentifier(newElementName);
+  async createDatabase(): Promise<string> {
+    log.error("Trino doesn't support creating databases")
+    return null
+  }
 
-    if (typeOfElement === DatabaseElement.DATABASE) {
-      return `RENAME DATABASE ${elementName} TO ${newElementName};`;
-    }
-    if (
-      typeOfElement === DatabaseElement.TABLE ||
-      typeOfElement === DatabaseElement.VIEW ||
-      typeOfElement === DatabaseElement["MATERIALIZED-VIEW"]
-    ) {
-      return `RENAME TABLE ${elementName} TO ${newElementName};`;
-    }
+  async truncateElementSql() {
+    log.error("Trino doesn't support changing data")
+    return null
+  }
 
-    return "";
+  async duplicateTable(): Promise<void> {
+    log.error("Trino doesn't support changing data")
+    return null
+  }
+
+  async duplicateTableSql(): Promise<string> {
+    log.error("Trino doesn't support changing data")
+    return null
+  }
+
+  async setElementNameSql(): Promise<string> {
+    log.error("Trino doesn't support changing data")
+    return null
   }
 
   async getBuilder(_table: string, _schema?: string): Promise<ChangeBuilderBase> {
@@ -690,64 +561,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return ret;
   }
 
-  async rawExecuteQuery(
-    query: string,
-    options: RawExecuteQueryOptions
-  ): Promise<Result[]> {
-    log.info(`Running Query`, query, options);
-
-    if (options.insert) {
-      await this.client.insert(options.insert as any);
-      return [];
-    }
-
-    const results: Result[] = [];
-
-    // Multi-statement is not supported so we need to execute each statement
-    // one by one.
-    for (const statement of options.statements) {
-      const format = this.parseQueryFormat(statement.text);
-      let resultType: Result["resultType"];
-      let data: any;
-      let rows: any[][] | Record<string, any>[] = [];
-      let columns: ResultColumn[] = [];
-      if (statement.executionType === "LISTING" && !format) {
-        const result = await this.client.query({
-          query: statement.text,
-          query_params: options.params,
-          query_id: options.queryId,
-          format: options.arrayMode ? "JSONCompact" : "JSON",
-        });
-        data = await result.json();
-        resultType = "json";
-        rows = data.data;
-        columns = data.meta;
-      } else {
-        const result = await this.client.exec({
-          query,
-          query_params: options.params,
-          query_id: options.queryId,
-
-          clickhouse_settings: {
-            // Recommended for cluster usage to avoid situations where a query
-            // processing error occurred after the response code, and HTTP
-            // headers were already sent to the client.
-            // See https://clickhouse.com/docs/en/interfaces/http/#response-buffering
-            //
-            // TODO (azmi): Using this setting can obscure the error message
-            // (found in ClickHouse 24.2).
-            wait_end_of_query: 1,
-          },
-        });
-        data = result.stream;
-        resultType = "stream";
-      }
-      results.push({ statement, data, resultType, rows, columns, arrayMode: options.arrayMode });
-    }
-
-    log.info(`Running Query Finished`);
-
-    return results;
+  async rawExecuteQuery(_query: string): Promise<Result[]> {
+    // TODO: Still need this?
+    log.error("Trino doesn't support changing data")
+    return null
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
@@ -761,7 +578,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: this.supportsTransaction,
+      transactions: this.supportsTransaction
     };
   }
 
@@ -770,48 +587,16 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return [];
   }
 
-  async listMaterializedViewColumns(
-    table: string,
-    _schema?: string
-  ): Promise<TableColumn[]> {
-    const sql = `
-      SELECT
-          c.name as name,
-          c.type as type,
-          v.table_name as table_name
-      FROM information_schema.views v
-      JOIN system.columns c
-        ON c.table = v.table_name
-        AND c.database = v.table_schema
-      WHERE v.is_insertable_into = 1
-        AND v.table_name = {table: String}
-        AND v.table_schema = currentDatabase()
-    `;
-    const result = await this.driverExecuteSingle(sql, {
-      params: { table },
-    });
-    const json = result.data as ResponseJSON<{
-      name: string;
-      type: string;
-      table_name: string;
-    }>;
-    return json.data.map((row) => ({
-      columnName: row.name,
-      dataType: row.type,
-      tableName: row.table_name,
-    }));
-  }
-
-  async listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
-    // Clickhouse doesn't support schemas
-    return [];
+  async listMaterializedViewColumns(): Promise<TableColumn[]> {
+    log.error("Trino doesn't support materialized views")
+    return null
   }
 
   async getTableReferences(
     _table: string,
     _schema?: string
   ): Promise<string[]> {
-    // Clickhouse does not support foreign keys.
+    // Trino does not support foreign keys.
     return [];
   }
 
@@ -826,18 +611,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
-    const sql = `
-      SELECT v.table_name as name
-      FROM information_schema.views v
-      WHERE v.is_insertable_into = 1
-        AND v.table_schema = currentDatabase()
-    `;
-    const result = await this.driverExecuteSingle(sql);
-    const json = result.data as ResponseJSON<{ name: string }>;
-    return json.data.map((row) => ({
-      name: row.name,
-      entityType: "materialized-view",
-    }));
+    log.error("Trino doesn't support materialized views")
+    return []
   }
 
   async listCharsets(): Promise<string[]> {
@@ -856,57 +631,28 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     throw new Error("Method not implemented.");
   }
 
-  async getTableCreateScript(table: string, _schema?: string): Promise<string> {
-    const result = await this.driverExecuteSingle(
-      `
-      SELECT create_table_query
-      FROM system.tables
-      WHERE name = {table: String}
-    `,
-      { params: { table } }
-    );
-    const json = result.data as ResponseJSON<{ create_table_query: string }>;
-    return json.data[0]?.create_table_query || "";
+  async getTableCreateScript(_table: string, _schema?: string): Promise<string> {
+    log.error("Trino doesn't support creating tables")
+    return null
   }
 
-  async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
-    const result = await this.driverExecuteSingle(
-      `
-      SELECT view_definition
-      FROM information_schema.views
-      WHERE table_name = {view: String}
-    `,
-      { params: { view } }
-    );
-    const json = result.data as ResponseJSON<{ view_definition: string }>;
-    return json.data.map((row) => row.view_definition);
+  async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+    log.error("Trino doesn't support view creatinon")
+    return null
   }
 
-  async getRoutineCreateScript(
-    _routine: string,
-    _type: string,
-    _schema?: string
-  ): Promise<string[]> {
+  async getRoutineCreateScript(): Promise<string[]> {
     return [];
   }
 
-  async setTableDescription(
-    table: string,
-    description: string,
-    _schema?: string
-  ): Promise<string> {
-    const sql = `
-      ALTER TABLE ${TrinoData.wrapIdentifier(table)}
-      MODIFY COMMENT ${TrinoData.escapeString(description, true)}
-    `;
-    await this.driverExecuteSingle(sql);
-    return description;
+  async setTableDescription(): Promise<string> {
+    log.error("Trino doesn't support changing data")
+    return null
   }
 
   async truncateAllTables(_schema?: string): Promise<void> {
-    await this.driverExecuteSingle(
-      `TRUNCATE ALL TABLES FROM currentDatabase()`
-    );
+    log.error("Trino doesn't support changing data")
+    return null
   }
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
@@ -1095,14 +841,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       countQuery: countSQL,
       params: filterParams,
     };
-  }
-
-  private parseQueryFormat(query: string): string {
-    const match = query.match(RE_SELECT_FORMAT);
-    if (match && match[1]) {
-      return match[1];
-    }
-    return "";
   }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {

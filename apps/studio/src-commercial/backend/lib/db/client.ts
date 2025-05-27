@@ -18,6 +18,7 @@ import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
 import { MongoDBClient } from "./clients/mongodb";
 import { SQLAnywhereClient } from "./clients/anywhere";
+import { TrinoClient } from "./clients/trino";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -36,7 +37,8 @@ const clients = new Map<ConnectionType, any>([
   ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
   ['mongodb', MongoDBClient],
-  ['sqlanywhere', SQLAnywhereClient]
+  ['sqlanywhere', SQLAnywhereClient],
+  ['trino', TrinoClient]
 ], );
 
 
@@ -58,6 +60,8 @@ export function createConnection(server: IDbConnectionServer, database: IDbConne
   /**
    * Database public API
    */
+  console.log('~~~')
+  console.log(server.config.client)
   const client = clients.get(server.config.client) || FriendlyErrorClient;
   return new client(server, database);
 }
