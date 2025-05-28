@@ -78,7 +78,7 @@ export const ClickHouseData: DialectData = {
   versionWarnings: [
     {
       minVersion: { major: 23, minor: 0, patch: 0},
-      warning: "Beekeeper's Support for versions older than v23 may have issues with SQL generation and other features. We recommend you upgrade your server."
+      warning: "FYI: Beekeeper Studio supports ClickHouse v23+, you may experience buggy behavior for earlier versions"
     }
   ],
   disabledFeatures: {
