@@ -35,6 +35,7 @@ import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
+import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 
 
 const log = RawLog.scope('store/index')
@@ -444,8 +445,23 @@ const store = new Vuex.Store<State>({
         context.dispatch('updateWindowTitle', config)
 
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id }) 
+
+        await context.dispatch('checkVersion');
       } else {
         throw "No username provided"
+      }
+    },
+    async checkVersion(context) {
+      const data = context.getters['dialectData'];
+      if (data?.versionWarnings && data?.versionWarnings.length > 0) {
+        const version = context.state['versionString'];
+        const parsed = parseVersion(version);
+
+        for (const warning of data.versionWarnings) {
+          if (!isVersionLessThanOrEqual(warning.minVersion, parsed)) {
+            Vue.prototype.$noty.warning(warning.warning, { timeout: 5000 })
+          }
+        }
       }
     },
     async reconnect(context) {
