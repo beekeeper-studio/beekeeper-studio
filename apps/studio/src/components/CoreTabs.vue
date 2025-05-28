@@ -26,6 +26,7 @@
           @forceClose="forceClose"
           @duplicate="duplicate"
           @copyName="copyName"
+          @reloadPluginView="handleReloadPluginView"
         />
       </Draggable>
       <!-- </div> -->
@@ -91,6 +92,7 @@
           v-if="tab.tabType === 'plugin-query'"
           :tab="tab"
           :active="activeTab.id === tab.id"
+          :reload="reloader[tab.id]"
           @close="close"
         />
         <tab-with-table
@@ -359,6 +361,7 @@ import { TransportOpenTab, TransportPluginQueryTab, setFilters, matches, duplica
         duplicateTableName: null,
         closingTab: null,
         confirmModalId: 'core-tabs-close-confirmation',
+        reloader: {},
       }
     },
     watch: {
@@ -1135,7 +1138,13 @@ import { TransportOpenTab, TransportPluginQueryTab, setFilters, matches, duplica
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
       this.$copyText(item.tableName)
-    }
+    },
+    handleReloadPluginView(tab) {
+      this.reloader = {
+        ...this.reloader,
+        [tab.id]: Date.now(),
+      }
+    },
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)

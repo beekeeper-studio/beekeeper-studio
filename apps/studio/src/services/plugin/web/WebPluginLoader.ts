@@ -66,7 +66,7 @@ export default class WebPluginLoader {
     const afterCallbacks: ((response: PluginResponseData) => void)[] = [];
 
     for (const listener of this.listeners) {
-      listener({
+      await listener({
         request,
         after: (callback) => {
           afterCallbacks.push(callback);
@@ -76,7 +76,7 @@ export default class WebPluginLoader {
 
     const response: PluginResponseData = {
       id: request.id,
-      result: {},
+      result: undefined,
     };
 
     try {
@@ -106,28 +106,14 @@ export default class WebPluginLoader {
           break;
 
         // ======== WRITE ACTIONS ===========
-        case "createQueryTab": // FIXME not stable yet
-          response.result = await this.pluginStore.createQueryTab(
-            request.args.query,
-            request.args.title
-          );
-          break;
-        case "updateQueryText":
-          response.result = this.pluginStore.updateQueryText(
-            request.args.tabId,
-            request.args.query
-          );
-          break;
         case "runQuery":
           response.result = await this.pluginStore.runQuery(request.args.query);
           break;
-        case "runQueryTab":
-          throw new Error("Not implemented."); // FIXME
-        case "runQueryTabPartially":
-          throw new Error("Not implemented."); // FIXME
-        case "insertSuggestion":
-          // TODO this will add suggestion to the query tab like copilot or cursor
-          throw new Error("Not implemented."); // FIXME
+
+        // ======== UI ACTIONS ===========
+        case "expandTableResult":
+          // Directly handled by the view component
+          break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);

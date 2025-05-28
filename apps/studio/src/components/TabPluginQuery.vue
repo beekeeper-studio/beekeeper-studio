@@ -53,6 +53,7 @@ import { PropType } from "vue";
 import { TransportPluginQueryTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
+import { PluginRequestData } from "@/services/plugin/comm";
 
 export default Vue.extend({
   components: {
@@ -69,6 +70,7 @@ export default Vue.extend({
       required: true,
     },
     active: Boolean,
+    reload: null,
   },
   data() {
     return {
@@ -84,9 +86,6 @@ export default Vue.extend({
       initialized: false,
       containerResizeObserver: null,
       focusingElement: "table",
-      topPanelSize: 0,
-      bottomPanelSize: 0,
-      reload: 0,
       unsubscribePluginRequest: null,
       query: "",
     };
@@ -136,15 +135,10 @@ export default Vue.extend({
       if (!this.unsubscribePluginRequest) {
         this.unsubscribePluginRequest = this.$plugin.onViewRequest(
           this.tab.context.pluginId,
-          ({ request, after }) => {
-            if (request.name === "runQuery") {
-              after((response) => {
-                this.results = response.result.results.map((res) => ({
-                  fields: res.fields,
-                  rows: res.rows,
-                }))
-                this.selectedResult = 0
-              })
+          async ({ request }: { request: PluginRequestData }) => {
+            if (request.name === "expandTableResult") {
+              this.results = request.args.results;
+              await this.expandTableResult();
             }
           }
         );
@@ -182,8 +176,12 @@ export default Vue.extend({
           this.focusingElement === "text-editor" ? "table" : "text-editor";
       }
     },
-    devReload() {
-      this.reload++;
+    async expandTableResult() {
+      if (!this.split) return;
+
+      this.split.setSizes([60, 40]);
+      await this.$nextTick();
+      this.tableHeight = this.$refs.bottomPanel?.clientHeight || 0;
     },
   },
   async mounted() {

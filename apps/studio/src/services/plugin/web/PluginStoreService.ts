@@ -5,7 +5,6 @@ import type {
   TransportOpenTab,
 } from "@/common/transport/TransportOpenTab";
 import {
-  CreateQueryTabResponse,
   GetActiveTabResponse,
   GetAllTabsResponse,
   GetColumnsResponse,
@@ -13,7 +12,6 @@ import {
   GetTablesResponse,
   GetThemeResponse,
   RunQueryResponse,
-  RunQueryTabResponse,
   TabResponse,
 } from "../comm";
 import { findTable } from "@/common/transport/TransportOpenTab";
@@ -21,9 +19,7 @@ import { AppEvent } from "@/common/AppEvent";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
-import {
-  PluginQueryTabTypeConfig,
-} from "@/store/modules/TabModule";
+import { PluginQueryTabTypeConfig } from "@/store/modules/TabModule";
 import { TabKind } from "../types";
 
 /**
@@ -194,11 +190,26 @@ export default class PluginStoreService {
   }
 
   getTables(): GetTablesResponse {
-    return this.store.state.tables.map((t) => t.name);
+    return this.store.state.tables.map((t) => ({
+      name: t.name,
+      schema: t.schema,
+    }));
   }
 
-  async getColumns(tableName: string, schema?: string): Promise<GetColumnsResponse> {
-    let table = this.store.state.tables.find((t) => t.name === tableName);
+  private findTable(name: string, schema?: string) {
+    return this.store.state.tables.find((t) => {
+      if (!schema) {
+        schema = this.store.state.defaultSchema;
+      }
+      return t.name === name && t.schema === schema;
+    });
+  }
+
+  async getColumns(
+    tableName: string,
+    schema?: string
+  ): Promise<GetColumnsResponse> {
+    const table = this.findTable(tableName, schema);
 
     if (!table) {
       throw new Error(`Table ${tableName} not found`);
@@ -208,9 +219,7 @@ export default class PluginStoreService {
       await this.store.dispatch("updateTableColumns", table);
     }
 
-    table = this.store.state.tables.find((t) => t.name === tableName && t.schema === schema);
-
-    return table.columns.map((c) => ({
+    return this.findTable(tableName, schema).columns.map((c) => ({
       name: c.columnName,
       type: c.dataType,
     }));
@@ -267,43 +276,6 @@ export default class PluginStoreService {
       id: tab.id,
       title: tab.title,
     };
-  }
-
-  async createQueryTab(
-    query: string,
-    title: string
-  ): Promise<CreateQueryTabResponse> {
-    const tab = {
-      tabType: "query",
-      title,
-      unsavedChanges: false,
-      unsavedQueryText: query,
-    } as TransportOpenTab;
-
-    const { id }: { id: number } = await this.store.dispatch("tabs/add", {
-      item: tab,
-      endOfPosition: true,
-    });
-    await this.store.dispatch("tabs/setActive", tab);
-
-    return { id };
-  }
-
-  updateQueryText(tabId: number, query: string): void {
-    const tab = this.store.state.tabs.tabs.find(
-      (t: TransportOpenTab) => t.id === tabId
-    );
-
-    if (!tab) {
-      throw new Error(`Tab with ID ${tabId} not found`);
-    }
-
-    if (tab.tabType !== TabType.query) {
-      throw new Error(`Tab with ID ${tabId} is not a query tab`);
-    }
-
-    // Update the unsaved query text in the tab
-    tab.unsavedQueryText = query;
   }
 
   private serializeQueryResponse(result: NgQueryResult) {

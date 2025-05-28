@@ -66,6 +66,6 @@ export interface PluginRepository {
 export type OnViewRequestListener = (params: {
   request: PluginRequestData;
   after: (callback: (response: PluginResponseData) => void) => void;
-}) => void;
+}) => void | Promise<void>;
 
 export * from "./comm";
