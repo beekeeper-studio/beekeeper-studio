@@ -922,7 +922,7 @@ export default Vue.extend({
       log.debug('tab pressed')
 
     },
-    navigatePage (dir: 'next' | 'prev' | 'first' | 'last') {
+    async navigatePage (dir: 'next' | 'prev' | 'first' | 'last') {
       const focusingTable = this.tabulator.element.contains(document.activeElement)
       if (!focusingTable) {
         if (dir === 'next') {
