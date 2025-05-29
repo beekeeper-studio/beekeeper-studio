@@ -132,17 +132,7 @@ export default Vue.extend({
     initialize() {
       this.initialized = true;
 
-      if (!this.unsubscribePluginRequest) {
-        this.unsubscribePluginRequest = this.$plugin.onViewRequest(
-          this.tab.context.pluginId,
-          async ({ request }: { request: PluginRequestData }) => {
-            if (request.name === "expandTableResult") {
-              this.results = request.args.results;
-              await this.expandTableResult();
-            }
-          }
-        );
-      }
+      this.subscribePlugin();
 
       if (this.split) {
         this.split.destroy();
@@ -164,6 +154,19 @@ export default Vue.extend({
       this.$nextTick(() => {
         this.tableHeight = this.$refs.bottomPanel.clientHeight;
       });
+    },
+    subscribePlugin() {
+      this.unsubscribePluginRequest?.();
+      this.unsubscribePluginRequest = this.$plugin.onViewRequest(
+        this.tab.context.pluginId,
+        async ({ request }: { request: PluginRequestData }) => {
+          // FIXME this should also check for the pluginTabTypeId
+          if (request.name === "expandTableResult") {
+            await this.expandTableResult();
+            this.results = request.args.results;
+          }
+        }
+      );
     },
     async switchPaneFocus(
       _event?: KeyboardEvent,
