@@ -52,10 +52,11 @@ export default class WebPluginManager {
   }
 
   async update(id: string) {
-    await this.utilityConnection.send("plugin/update", {
+    const manifest = await this.utilityConnection.send("plugin/update", {
       id,
     });
     await this.reloadPlugin(id);
+    return manifest;
   }
 
   async uninstall(id: string) {
@@ -68,13 +69,13 @@ export default class WebPluginManager {
     this.loaders.delete(id);
   }
 
-  async reloadPlugin(id: string) {
+  async reloadPlugin(id: string, manifest?: Manifest) {
     const loader = this.loaders.get(id);
     if (!loader) {
       throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
-    await loader.load();
+    await loader.load(manifest);
   }
 
   async registerIframe(pluginId: string, iframe: HTMLIFrameElement) {

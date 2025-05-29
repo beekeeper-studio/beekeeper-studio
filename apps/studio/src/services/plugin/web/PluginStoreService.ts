@@ -1,7 +1,7 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
 import type {
-  TabType,
+  TabTypeConfig,
   TransportOpenTab,
 } from "@/common/transport/TransportOpenTab";
 import {
@@ -19,7 +19,6 @@ import { AppEvent } from "@/common/AppEvent";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
-import { PluginQueryTabTypeConfig } from "@/store/modules/TabModule";
 import { TabKind } from "../types";
 
 /**
@@ -175,7 +174,7 @@ export default class PluginStoreService {
     name: string;
     kind: TabKind;
   }): void {
-    const config: PluginQueryTabTypeConfig = {
+    const config: TabTypeConfig.PluginQueryConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
@@ -185,8 +184,8 @@ export default class PluginStoreService {
     this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  removeTabTypeConfig(tabType: TabType): void {
-    this.store.commit("tabs/removeTabTypeConfig", tabType);
+  removeTabTypeConfig(identifier: TabTypeConfig.PluginQueryConfigIdentifiers): void {
+    this.store.commit("tabs/removeTabTypeConfig", identifier);
   }
 
   getTables(): GetTablesResponse {

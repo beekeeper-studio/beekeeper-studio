@@ -46,6 +46,36 @@ export interface TransportPluginQueryTab extends BaseTransportOpenTab {
 
 export type TransportOpenTab = TransportDefaultOpenTab | TransportPluginQueryTab;
 
+export namespace TabTypeConfig {
+  interface BaseTabTypeConfig {
+    type: TabType;
+    name: string;
+    /** Used for the dropdown menu next to the "new tab" icon. */
+    menuItem: {
+      label: string;
+      shortcut?: string;
+    };
+  }
+
+  interface DefaultConfig extends BaseTabTypeConfig {
+    type: Exclude<TabType, "plugin-query">;
+  }
+
+  /** `"plugin-query"` consists of two parts; an iframe at the top and a table at
+   * the bottom. This tab looks almost identical to the query tab. The only
+   * difference is, in this tab, the result table can be collapsed completely. */
+  export interface PluginQueryConfig extends BaseTabTypeConfig, PluginQueryConfigIdentifiers {
+    type: "plugin-query";
+  }
+
+  export interface PluginQueryConfigIdentifiers {
+    pluginId: string;
+    pluginTabTypeId: string;
+  }
+
+  export type Config = DefaultConfig | PluginQueryConfig;
+}
+
 export function setFilters(obj: TransportOpenTab, filters: Nullable<TableFilter[]>) {
   if (filters && _.isArray(filters)) {
     obj.filters = JSON.stringify(filters);

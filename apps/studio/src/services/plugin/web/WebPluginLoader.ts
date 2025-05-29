@@ -27,7 +27,12 @@ export default class WebPluginLoader {
   }
 
   /** Starts the plugin */
-  async load() {
+  async load(manifest?: Manifest) {
+    if (manifest) {
+      // @ts-ignore
+      this.manifest = manifest;
+    }
+
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
@@ -155,12 +160,15 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.sidebars.forEach((sidebar) => {
+    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.removeSidebarTab(sidebar.id);
     });
 
-    this.manifest.capabilities.views?.tabTypes.forEach((tab) => {
-      this.pluginStore.removeTabTypeConfig(tab.kind);
+    this.manifest.capabilities.views?.tabTypes?.forEach((tab) => {
+      this.pluginStore.removeTabTypeConfig({
+        pluginId: this.manifest.id,
+        pluginTabTypeId: tab.id,
+      });
     });
   }
 

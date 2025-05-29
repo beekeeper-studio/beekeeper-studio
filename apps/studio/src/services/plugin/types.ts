@@ -68,4 +68,10 @@ export type OnViewRequestListener = (params: {
   after: (callback: (response: PluginResponseData) => void) => void;
 }) => void | Promise<void>;
 
+export type PluginSettings = {
+  [pluginId: string]: {
+    autoUpdate: boolean;
+  }
+}
+
 export * from "./comm";
