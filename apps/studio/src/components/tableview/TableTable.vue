@@ -932,7 +932,7 @@ export default Vue.extend({
         } else if (dir === 'first') {
           this.page = 1
         } else if (dir === 'last') {
-          this.page = this.jumpToLastPage()
+          await this.jumpToLastPage()
         }
       }
     },
@@ -1788,7 +1788,6 @@ export default Vue.extend({
 
         this.page = lastPage;
 
-        this.tabulator.setPage(lastPage);
       } catch (error) {
         console.error("Error jumping to the last page:", error);
       }
