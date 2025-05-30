@@ -174,7 +174,7 @@ export default class PluginStoreService {
     name: string;
     kind: TabKind;
   }): void {
-    const config: TabTypeConfig.PluginQueryConfig = {
+    const config: TabTypeConfig.PluginShellConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
@@ -184,7 +184,7 @@ export default class PluginStoreService {
     this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  removeTabTypeConfig(identifier: TabTypeConfig.PluginQueryConfigIdentifiers): void {
+  removeTabTypeConfig(identifier: TabTypeConfig.PluginShellConfigIdentifiers): void {
     this.store.commit("tabs/removeTabTypeConfig", identifier);
   }
 

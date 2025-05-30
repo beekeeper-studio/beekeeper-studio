@@ -88,8 +88,8 @@
           :tab="tab"
           :tab-id="tab.id"
         />
-        <PluginQuery
-          v-if="tab.tabType === 'plugin-query'"
+        <PluginShell
+          v-if="tab.tabType === 'plugin-shell'"
           :tab="tab"
           :active="activeTab.id === tab.id"
           :reload="reloader[tab.id]"
@@ -295,7 +295,7 @@ import TableBuilder from './TabTableBuilder.vue'
 import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
 import ImportTable from './TabImportTable.vue'
 import DatabaseBackup from './TabDatabaseBackup.vue'
-import PluginQuery from './TabPluginQuery.vue'
+import PluginShell from './TabPluginShell.vue'
 import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
@@ -317,7 +317,7 @@ import Shell from './TabShell.vue'
 import { TabTypeConfig } from "@/store/modules/TabModule";
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TransportOpenTab, TransportPluginQueryTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { TransportOpenTab, TransportPluginShellTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
 
   export default Vue.extend({
     props: [],
@@ -340,7 +340,7 @@ import { TransportOpenTab, TransportPluginQueryTab, setFilters, matches, duplica
       SqlFilesImportModal,
       CreateCollectionModal,
       Shell,
-      PluginQuery,
+      PluginShell,
     },
     data() {
       return {
@@ -650,7 +650,7 @@ import { TransportOpenTab, TransportPluginQueryTab, setFilters, matches, duplica
         this.createQuery()
       } else if (config.type === "shell") {
         this.createShell()
-      } else if (config.type === "plugin-query") {
+      } else if (config.type === "plugin-shell") {
         let tNum = 0;
         let title = config.name;
         do {
@@ -666,7 +666,7 @@ import { TransportOpenTab, TransportPluginQueryTab, setFilters, matches, duplica
             pluginId: config.pluginId,
             pluginTabTypeId: config.pluginTabTypeId,
           },
-        } as TransportPluginQueryTab;
+        } as TransportPluginShellTab;
         await this.addTab(tab)
       }
     },

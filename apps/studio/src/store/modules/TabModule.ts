@@ -93,13 +93,13 @@ export const TabModule: Module<State, RootState> = {
       state.tabs = tabs
     },
 
-    addTabTypeConfig(state, newConfig: PluginQueryConfig) {
+    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginShellConfig) {
       state.allTabTypeConfigs.push(newConfig)
     },
 
-    removeTabTypeConfig(state, config: Omit<PluginQueryConfig, keyof BaseTabTypeConfig>) {
-      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: PluginQueryConfig) => {
-        if (t.type !== "plugin-query") {
+    removeTabTypeConfig(state, config: TabTypeConfig.PluginShellConfig) {
+      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginShellConfig) => {
+        if (t.type !== "plugin-shell") {
           return true;
         }
         const matches = t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId

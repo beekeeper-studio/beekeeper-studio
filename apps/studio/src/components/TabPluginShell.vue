@@ -1,11 +1,11 @@
 <template>
   <div
-    v-if="isCommunity && tab.context.pluginId === 'bks-ai-assistant'"
+    v-if="isCommunity && tab.context.pluginId === 'bks-ai-shell'"
     class="tab-upsell-wrapper"
   >
     <upsell-content />
   </div>
-  <div v-else class="plugin-query" ref="container" v-hotkey="keymap">
+  <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
       <isolated-plugin-view
         :visible="active"
@@ -57,7 +57,7 @@ import ShortcutHints from "@/components/editor/ShortcutHints.vue";
 import QueryEditorStatusBar from "@/components/editor/QueryEditorStatusBar.vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { PropType } from "vue";
-import { TransportPluginQueryTab } from "@/common/transport/TransportOpenTab";
+import { TransportPluginShellTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { PluginRequestData } from "@/services/plugin/comm";
@@ -76,7 +76,7 @@ export default Vue.extend({
   },
   props: {
     tab: {
-      type: Object as PropType<TransportPluginQueryTab>,
+      type: Object as PropType<TransportPluginShellTab>,
       required: true,
     },
     active: Boolean,

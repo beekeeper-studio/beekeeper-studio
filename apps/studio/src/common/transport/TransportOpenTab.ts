@@ -3,7 +3,7 @@ import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 
-export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-query'
+export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-shell'
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
@@ -29,12 +29,12 @@ interface BaseTransportOpenTab extends Transport {
 }
 
 interface TransportDefaultOpenTab extends BaseTransportOpenTab {
-  tabType: Exclude<TabType, 'plugin-query'>;
+  tabType: Exclude<TabType, 'plugin-shell'>;
   context: unknown;
 }
 
-export interface TransportPluginQueryTab extends BaseTransportOpenTab {
-  tabType: "plugin-query";
+export interface TransportPluginShellTab extends BaseTransportOpenTab {
+  tabType: "plugin-shell";
   context: {
     pluginId: string;
     pluginTabTypeId: string;
@@ -44,7 +44,7 @@ export interface TransportPluginQueryTab extends BaseTransportOpenTab {
   }
 }
 
-export type TransportOpenTab = TransportDefaultOpenTab | TransportPluginQueryTab;
+export type TransportOpenTab = TransportDefaultOpenTab | TransportPluginShellTab;
 
 export namespace TabTypeConfig {
   interface BaseTabTypeConfig {
@@ -58,22 +58,22 @@ export namespace TabTypeConfig {
   }
 
   interface DefaultConfig extends BaseTabTypeConfig {
-    type: Exclude<TabType, "plugin-query">;
+    type: Exclude<TabType, "plugin-shell">;
   }
 
-  /** `"plugin-query"` consists of two parts; an iframe at the top and a table at
+  /** `"plugin-shell"` consists of two parts; an iframe at the top and a table at
    * the bottom. This tab looks almost identical to the query tab. The only
    * difference is, in this tab, the result table can be collapsed completely. */
-  export interface PluginQueryConfig extends BaseTabTypeConfig, PluginQueryConfigIdentifiers {
-    type: "plugin-query";
+  export interface PluginShellConfig extends BaseTabTypeConfig, PluginShellConfigIdentifiers {
+    type: "plugin-shell";
   }
 
-  export interface PluginQueryConfigIdentifiers {
+  export interface PluginShellConfigIdentifiers {
     pluginId: string;
     pluginTabTypeId: string;
   }
 
-  export type Config = DefaultConfig | PluginQueryConfig;
+  export type Config = DefaultConfig | PluginShellConfig;
 }
 
 export function setFilters(obj: TransportOpenTab, filters: Nullable<TableFilter[]>) {
