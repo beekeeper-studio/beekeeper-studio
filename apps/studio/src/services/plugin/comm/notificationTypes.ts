@@ -1,13 +1,13 @@
+import { ThemeType } from "./commonTypes";
+
 export interface ThemeChangedNotification {
   name: "themeChanged";
+  args: {
+    palette: Record<string, string>;
+    cssString: string;
+    type: ThemeType;
+  };
 }
 
-// whether the suggestion is accepted or rejected
-export interface SuggestionResultNotification {
-  name: "suggestionResult";
-  suggestionId: number;
-  accepted: boolean;
-}
-
-export type PluginNotificationData = ThemeChangedNotification | SuggestionResultNotification;
+export type PluginNotificationData = ThemeChangedNotification;
 

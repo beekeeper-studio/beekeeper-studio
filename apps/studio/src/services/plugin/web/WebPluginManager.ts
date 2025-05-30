@@ -14,7 +14,7 @@ export default class WebPluginManager {
 
   constructor(
     private utilityConnection: UtilityConnection,
-    private pluginStore: PluginStoreService
+    public readonly pluginStore: PluginStoreService
   ) {}
 
   async initialize() {
@@ -78,20 +78,38 @@ export default class WebPluginManager {
     await loader.load(manifest);
   }
 
-  async registerIframe(pluginId: string, iframe: HTMLIFrameElement) {
+  /** If the plugin uses iframes, please register the iframe so we can send
+   * and receive messages. Make sure to register after the iframe is fully loaded. */
+  registerIframe(pluginId: string, iframe: HTMLIFrameElement) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    await loader.registerIframe(iframe);
+    loader.registerIframe(iframe);
   }
 
+  unregisterIframe(pluginId: string, iframe: HTMLIFrameElement) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    loader.unregisterIframe(iframe);
+  }
+
+  /** Send a notification to a specific plugin */
   async notify(pluginId: string, data: PluginNotificationData) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
     loader.postMessage(data);
+  }
+
+  /** Send a notification to all plugins */
+  async notifyAll(data: PluginNotificationData) {
+    this.loaders.forEach((loader) => {
+      loader.postMessage(data);
+    })
   }
 
   manifestOf(pluginId: string) {

@@ -13,8 +13,6 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { PluginNotificationData } from "@/services/plugin/types";
-import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
   name: "IsolatedPluginView",
@@ -45,33 +43,13 @@ export default Vue.extend({
       // FIXME move this somewhere
       return `${this.url}?timestamp=${this.timestamp}`;
     },
-    rootBindings() {
-      return [
-        {
-          event: AppEvent.settingsChanged,
-          handler: this.handleSettingsChanged,
-        },
-      ];
-    },
   },
   watch: {
     reload() {
       this.timestamp = Date.now();
     },
   },
-  mounted() {
-    this.registerHandlers(this.rootBindings);
-  },
-  beforeDestroy() {
-    this.unregisterHandlers(this.rootBindings);
-  },
   methods: {
-    handleSettingsChanged(key) {
-      if (key === "theme") {
-        const data: PluginNotificationData = { name: "themeChanged" }
-        this.$plugin.notify(this.pluginId, data);
-      }
-    },
     handleIframeLoad() {
       this.loaded = true;
       this.$plugin.registerIframe(this.pluginId, this.$refs.iframe);
@@ -79,6 +57,9 @@ export default Vue.extend({
     handleError(e) {
       console.error(`${this.pluginId} iframe error`, e);
     }
+  },
+  beforeDestroy() {
+    this.$plugin.unregisterIframe(this.pluginId, this.$refs.iframe);
   },
 });
 </script>

@@ -2,15 +2,6 @@ import { TabType } from "@/common/transport/TransportOpenTab";
 import { TableFilter, TableOrView } from "@/lib/db/models";
 import { QueryResult } from "./commonTypes";
 
-export type ThemeType = "dark" | "light";
-
-export type GetThemeResponse = {
-  type: ThemeType;
-  /** The palette colors in hex format */
-  palette: Record<string, string>;
-  cssString: string;
-};
-
 /** The list of tables */
 export type GetTablesResponse = {
   name: string;
@@ -45,7 +36,6 @@ export type ExpandTableResultResponse = void;
 export interface PluginResponseData {
   id: string;
   result:
-    | GetThemeResponse
     | GetTablesResponse
     | GetColumnsResponse
     | GetConnectionInfoResponse

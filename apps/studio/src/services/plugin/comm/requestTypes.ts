@@ -4,10 +4,6 @@ interface BaseRequest {
   id: string;
 }
 
-export interface GetThemeRequest extends BaseRequest {
-  name: "getTheme";
-}
-
 export interface GetTablesRequest extends BaseRequest {
   name: "getTables";
   args: {
@@ -50,7 +46,6 @@ export interface ExpandTableResultRequest extends BaseRequest {
 }
 
 export type PluginRequestData =
-  | GetThemeRequest
   | GetTablesRequest
   | GetColumnsRequest
   | GetConnectionInfoRequest

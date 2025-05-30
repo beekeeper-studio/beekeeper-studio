@@ -7,3 +7,5 @@ export interface QueryResult {
   rows: Record<string, unknown>[];
 }
 
+export type ThemeType = "dark" | "light";
+

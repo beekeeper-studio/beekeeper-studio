@@ -16,7 +16,7 @@ function joinUrlPath(a: string, b: string): string {
 const log = rawLog.scope("WebPluginManager");
 
 export default class WebPluginLoader {
-  private iframe?: HTMLIFrameElement;
+  private iframes: HTMLIFrameElement[] = [];
   private listeners: OnViewRequestListener[] = [];
 
   constructor(
@@ -55,10 +55,12 @@ export default class WebPluginLoader {
   }
 
   private handleMessage(event: MessageEvent) {
-    if (!this.iframe) return;
+    const foundIframe = this.iframes.find(
+      (iframe) => iframe.contentWindow === event.source
+    )
 
     // Check if the message is from our iframe
-    if (event.source === this.iframe.contentWindow) {
+    if (foundIframe) {
       this.handleViewRequest({
         id: event.data.id,
         name: event.data.name,
@@ -89,9 +91,6 @@ export default class WebPluginLoader {
 
       switch (request.name) {
         // ========= READ ACTIONS ===========
-        case "getTheme":
-          response.result = this.pluginStore.getTheme();
-          break;
         case "getTables":
           response.result = this.pluginStore.getTables();
           break;
@@ -127,23 +126,33 @@ export default class WebPluginLoader {
       response.error = e;
     }
 
-    this.iframe.contentWindow.postMessage(response, "*");
+    this.postMessage(response);
 
     afterCallbacks.forEach((callback) => {
       callback(response);
     });
   }
 
-  async registerIframe(iframe: HTMLIFrameElement) {
-    this.iframe = iframe;
+  registerIframe(iframe: HTMLIFrameElement) {
+    this.iframes.push(iframe);
+    this.postMessage({
+      name: "themeChanged",
+      args: this.pluginStore.getTheme(),
+    })
+  }
+
+  unregisterIframe(iframe: HTMLIFrameElement) {
+    this.iframes = _.without(this.iframes, iframe);
   }
 
   postMessage(data: PluginNotificationData | PluginResponseData) {
-    if (!this.iframe) {
+    if (!this.iframes) {
       log.warn("Cannot post message, iframe not registered.");
       return;
     }
-    this.iframe.contentWindow.postMessage(data, "*");
+    this.iframes.forEach((iframe) => {
+      iframe.contentWindow.postMessage(data, "*");
+    })
   }
 
   buildEntryUrl(entry: string) {
