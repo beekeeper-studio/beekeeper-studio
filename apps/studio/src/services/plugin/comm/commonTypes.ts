@@ -1,3 +1,5 @@
+export type ThemeType = "dark" | "light";
+
 export interface QueryResult {
   fields: {
     id: string;
@@ -7,5 +9,13 @@ export interface QueryResult {
   rows: Record<string, unknown>[];
 }
 
-export type ThemeType = "dark" | "light";
+export type WindowEventClass =
+  | "MouseEvent"
+  | "KeyboardEvent"
+  | "PointerEvent"
+  | "Event";
 
+export type WindowEventInits =
+  | MouseEventInit
+  | KeyboardEventInit
+  | PointerEventInit;

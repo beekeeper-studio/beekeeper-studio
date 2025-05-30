@@ -1,4 +1,4 @@
-import { ThemeType } from "./commonTypes";
+import { ThemeType, WindowEventInits, WindowEventClass } from "./commonTypes";
 
 export interface ThemeChangedNotification {
   name: "themeChanged";
@@ -9,5 +9,15 @@ export interface ThemeChangedNotification {
   };
 }
 
-export type PluginNotificationData = ThemeChangedNotification;
+export interface WindowEventNotification {
+  name: "windowEvent";
+  args: {
+    eventType: string;
+    eventClass: WindowEventClass;
+    eventInitOptions: WindowEventInits;
+  };
+}
 
+export type PluginNotificationData =
+  | ThemeChangedNotification
+  | WindowEventNotification;

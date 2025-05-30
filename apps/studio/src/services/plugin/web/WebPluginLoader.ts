@@ -8,6 +8,7 @@ import {
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
+import { WindowEventNameToClass } from "../comm/commonTypes";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -57,15 +58,22 @@ export default class WebPluginLoader {
   private handleMessage(event: MessageEvent) {
     const foundIframe = this.iframes.find(
       (iframe) => iframe.contentWindow === event.source
-    )
+    );
 
     // Check if the message is from our iframe
     if (foundIframe) {
-      this.handleViewRequest({
-        id: event.data.id,
-        name: event.data.name,
-        args: event.data.args[0],
-      });
+      if (event.data.id) {
+        this.handleViewRequest({
+          id: event.data.id,
+          name: event.data.name,
+          args: event.data.args[0],
+        });
+      } else {
+        this.handleViewNotification({
+          name: event.data.name,
+          args: event.data.args,
+        });
+      }
     }
   }
 
@@ -78,7 +86,7 @@ export default class WebPluginLoader {
         after: (callback) => {
           afterCallbacks.push(callback);
         },
-      })
+      });
     }
 
     const response: PluginResponseData = {
@@ -133,12 +141,41 @@ export default class WebPluginLoader {
     });
   }
 
+  private async handleViewNotification(notification: PluginNotificationData) {
+    switch (notification.name) {
+      case "windowEvent": {
+        const windowEventMap = {
+          MouseEvent,
+          PointerEvent,
+          KeyboardEvent,
+          Event,
+        };
+
+        if (!windowEventMap[notification.args.eventClass]) {
+          log.warn(`Unknown event class: ${notification.args.eventClass}`);
+        }
+
+        document.dispatchEvent(
+          new windowEventMap[notification.args.eventClass](
+            notification.args.eventType,
+            notification.args.eventInitOptions
+          )
+        );
+
+        break;
+      }
+
+      default:
+        log.warn(`Unknown notification: ${notification.name}`);
+    }
+  }
+
   registerIframe(iframe: HTMLIFrameElement) {
     this.iframes.push(iframe);
     this.postMessage({
       name: "themeChanged",
       args: this.pluginStore.getTheme(),
-    })
+    });
   }
 
   unregisterIframe(iframe: HTMLIFrameElement) {
@@ -152,7 +189,7 @@ export default class WebPluginLoader {
     }
     this.iframes.forEach((iframe) => {
       iframe.contentWindow.postMessage(data, "*");
-    })
+    });
   }
 
   buildEntryUrl(entry: string) {
@@ -185,7 +222,7 @@ export default class WebPluginLoader {
     this.listeners.push(listener);
     return () => {
       this.listeners = _.without(this.listeners, listener);
-    }
+    };
   }
 
   checkPermission(data: PluginRequestData) {
