@@ -3,11 +3,11 @@ import { PluginRequestData, PluginResponseData } from "./comm";
 /**
  * The kind of the tab. There is only one kind currently:
  *
- * - `query`: Like a query tab. This tab has two main parts; A plugin's
+ * - `shell`: Like a query tab. This tab has two main parts; A plugin's
  *   `<iframe>` (placed at the top), and a table component (placed at the
  *   bottom). The table can be collapsed completely.
  **/
-export type TabKind = "query";
+export type TabKind = "shell";
 
 export interface Manifest {
   id: string;
