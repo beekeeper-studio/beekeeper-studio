@@ -64,6 +64,7 @@ export interface PluginRepository {
 }
 
 export type OnViewRequestListener = (params: {
+  source: HTMLIFrameElement;
   request: PluginRequestData;
   after: (callback: (response: PluginResponseData) => void) => void;
 }) => void | Promise<void>;

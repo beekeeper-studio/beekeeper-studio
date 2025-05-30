@@ -7,7 +7,7 @@ interface BaseRequest {
 export interface GetTablesRequest extends BaseRequest {
   name: "getTables";
   args: {
-    schema: string;
+    schema?: string;
   };
 }
 
@@ -45,6 +45,13 @@ export interface ExpandTableResultRequest extends BaseRequest {
   };
 }
 
+export interface SetTabTitleRequest extends BaseRequest {
+  name: "setTabTitle";
+  args: {
+    title: string;
+  };
+}
+
 export type PluginRequestData =
   | GetTablesRequest
   | GetColumnsRequest
@@ -52,5 +59,5 @@ export type PluginRequestData =
   | GetActiveTabRequest
   | GetAllTabsRequest
   | RunQueryRequest
-  | ExpandTableResultRequest;
-
+  | ExpandTableResultRequest
+  | SetTabTitleRequest;

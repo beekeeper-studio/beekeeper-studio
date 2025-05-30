@@ -6,6 +6,7 @@
         :plugin-id="tab.context.pluginId"
         :url="url"
         :reload="reload"
+        :on-request="handleRequest"
       />
     </div>
     <div class="bottom-panel" ref="bottomPanel">
@@ -86,7 +87,6 @@ export default Vue.extend({
       initialized: false,
       containerResizeObserver: null,
       focusingElement: "table",
-      unsubscribePluginRequest: null,
       query: "",
     };
   },
@@ -132,8 +132,6 @@ export default Vue.extend({
     initialize() {
       this.initialized = true;
 
-      this.subscribePlugin();
-
       if (this.split) {
         this.split.destroy();
         this.split = null;
@@ -155,18 +153,22 @@ export default Vue.extend({
         this.tableHeight = this.$refs.bottomPanel.clientHeight;
       });
     },
-    subscribePlugin() {
-      this.unsubscribePluginRequest?.();
-      this.unsubscribePluginRequest = this.$plugin.onViewRequest(
-        this.tab.context.pluginId,
-        async ({ request }: { request: PluginRequestData }) => {
-          // FIXME this should also check for the pluginTabTypeId
-          if (request.name === "expandTableResult") {
-            await this.expandTableResult();
-            this.results = request.args.results;
-          }
+    async handleRequest({ request }: { request: PluginRequestData }) {
+      switch (request.name) {
+        case "expandTableResult": {
+          this.expandTableResult();
+          this.results = request.args.results;
+          break;
         }
-      );
+        case "setTabTitle": {
+          if (!request.args.title) {
+            throw new Error("Tab title is required");
+          }
+          this.tab.title = request.args.title;
+          await this.$store.dispatch('tabs/save', this.tab)
+          break;
+        }
+      }
     },
     async switchPaneFocus(
       _event?: KeyboardEvent,
@@ -203,7 +205,6 @@ export default Vue.extend({
       this.split.destroy();
     }
     this.containerResizeObserver.disconnect();
-    this.unsubscribePluginRequest?.();
   },
 });
 </script>

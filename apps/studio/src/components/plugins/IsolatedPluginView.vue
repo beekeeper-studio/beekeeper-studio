@@ -29,6 +29,7 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    onRequest: Function,
     reload: null,
   },
   data() {
@@ -36,6 +37,7 @@ export default Vue.extend({
       loaded: false,
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
+      unsubscribe: null,
     };
   },
   computed: {
@@ -53,6 +55,11 @@ export default Vue.extend({
     handleIframeLoad() {
       this.loaded = true;
       this.$plugin.registerIframe(this.pluginId, this.$refs.iframe);
+      this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
+        if (args.source === this.$refs.iframe) {
+          this.onRequest?.(args);
+        }
+      });
     },
     handleError(e) {
       console.error(`${this.pluginId} iframe error`, e);
@@ -60,6 +67,7 @@ export default Vue.extend({
   },
   beforeDestroy() {
     this.$plugin.unregisterIframe(this.pluginId, this.$refs.iframe);
+    this.unsubscribe?.();
   },
 });
 </script>

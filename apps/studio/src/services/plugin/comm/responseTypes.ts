@@ -33,6 +33,8 @@ export type RunQueryResponse = {
 
 export type ExpandTableResultResponse = void;
 
+export type SetTabTitleResponse = void;
+
 export interface PluginResponseData {
   id: string;
   result:
@@ -42,7 +44,8 @@ export interface PluginResponseData {
     | GetActiveTabResponse
     | GetAllTabsResponse
     | RunQueryResponse
-    | ExpandTableResultResponse;
+    | ExpandTableResultResponse
+    | SetTabTitleResponse;
   error?: Error;
 }
 

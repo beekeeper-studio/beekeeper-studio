@@ -56,18 +56,21 @@ export default class WebPluginLoader {
   }
 
   private handleMessage(event: MessageEvent) {
-    const foundIframe = this.iframes.find(
+    const source = this.iframes.find(
       (iframe) => iframe.contentWindow === event.source
     );
 
     // Check if the message is from our iframe
-    if (foundIframe) {
+    if (source) {
       if (event.data.id) {
-        this.handleViewRequest({
-          id: event.data.id,
-          name: event.data.name,
-          args: event.data.args[0],
-        });
+        this.handleViewRequest(
+          {
+            id: event.data.id,
+            name: event.data.name,
+            args: event.data.args[0],
+          },
+          source
+        );
       } else {
         this.handleViewNotification({
           name: event.data.name,
@@ -77,11 +80,15 @@ export default class WebPluginLoader {
     }
   }
 
-  private async handleViewRequest(request: PluginRequestData) {
+  private async handleViewRequest(
+    request: PluginRequestData,
+    source: HTMLIFrameElement
+  ) {
     const afterCallbacks: ((response: PluginResponseData) => void)[] = [];
 
     for (const listener of this.listeners) {
       await listener({
+        source,
         request,
         after: (callback) => {
           afterCallbacks.push(callback);
@@ -124,6 +131,9 @@ export default class WebPluginLoader {
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
+          // Directly handled by the view component
+          break;
+        case "setTabTitleRequest":
           // Directly handled by the view component
           break;
 
