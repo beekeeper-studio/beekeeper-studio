@@ -1,5 +1,11 @@
 <template>
-  <div class="plugin-query" ref="container" v-hotkey="keymap">
+  <div
+    v-if="isCommunity && tab.context.pluginId === 'bks-ai-assistant'"
+    class="tab-upsell-wrapper"
+  >
+    <upsell-content />
+  </div>
+  <div v-else class="plugin-query" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
       <isolated-plugin-view
         :visible="active"
@@ -55,6 +61,8 @@ import { TransportPluginQueryTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { PluginRequestData } from "@/services/plugin/comm";
+import { mapGetters } from "vuex";
+import UpsellContent from "@/components/upsell/UpsellContent.vue";
 
 export default Vue.extend({
   components: {
@@ -64,6 +72,7 @@ export default Vue.extend({
     QueryEditorStatusBar,
     ErrorAlert,
     IsolatedPluginView,
+    UpsellContent,
   },
   props: {
     tab: {
@@ -91,6 +100,7 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapGetters(["isCommunity"]),
     url() {
       const manifest = this.$plugin.manifestOf(this.tab.context.pluginId);
       const tabType = manifest.capabilities.views.tabTypes.find(
