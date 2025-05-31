@@ -58,6 +58,7 @@ export enum AppEvent {
   switchLicenseState = 'switchLicenseState',
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
+  openPluginManager = 'openPluginManager',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
