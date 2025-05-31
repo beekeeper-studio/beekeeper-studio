@@ -76,25 +76,6 @@ Best suited for automated services or non-interactive applications.
 
 ---
 
-## Signing in with Azure CLI
-
-Use this method when you have an active Azure CLI session:
-
-1. Ensure Azure CLI is installed.
-2. Run the following to authenticate:
-   ```bash
-   az login
-   ```
-3. In the application, choose **Azure CLI Authentication**.
-4. Input:
-   - **Server**
-   - **Database**
-   - **Username**
-
-Your session token will be used to access the database.
-
----
-
 ## Summary
 
 | Authentication Method     | Supported Databases        |
