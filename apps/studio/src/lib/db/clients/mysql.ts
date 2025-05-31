@@ -17,7 +17,6 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  getIAMPassword,
   ClientError, refreshTokenIfNeeded
 } from "./utils";
 import {
@@ -49,7 +48,6 @@ import {
   TableColumn,
   TableDelete,
   BksField,
-  BksFieldType,
   TableFilter,
   TableIndex,
   TableInsert,
@@ -66,6 +64,7 @@ import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
+import {AzureAuthService} from "@/lib/db/authentication/azure";
 
 type ResultType = {
   tableName?: string
@@ -149,6 +148,11 @@ async function configDatabase(
     bigNumberStrings: true,
     connectTimeout: BksConfig.db.mysql.connectTimeout,
   };
+
+  if (server.config.azureAuthOptions?.azureAuthEnabled) {
+    const authService = new AzureAuthService();
+    return authService.configDB(server, config)
+  }
 
   if (server.config.socketPathEnabled) {
     config.socketPath = server.config.socketPath;
@@ -309,7 +313,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     await super.connect();
     const dbConfig = await configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
-
     this.conn = {
       pool: mysql.createPool(dbConfig),
     };
