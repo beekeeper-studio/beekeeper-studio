@@ -3,7 +3,7 @@
 @use '../../../styles/base';
 @use 'sass:color';
 
-.BksTextEditor {
+:root {
   --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.03)};
   --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.03)};
   --bks-text-editor-atom-fg-color: #ae81ff;
@@ -72,6 +72,15 @@
   --bks-text-editor-processingInstruction-fg-color: #75715e;
   --bks-text-editor-special-string-fg-color: #{color.adjust($brand-success, $lightness: -10%)};
 
+  // Context Menu
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
+  --bks-text-editor-context-menu-fg-color: #{$text-dark};
+  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+}
+
+.BksTextEditor {
   height: 100%;
 
   // Common CodeMirror styles
@@ -177,12 +186,6 @@
 }
 
 .BksTextEditor-hints {
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
-  --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
-  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
-  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
-
   font-family: $font-family-mono;
   padding: $gutter-h 0;
   border: 0;
