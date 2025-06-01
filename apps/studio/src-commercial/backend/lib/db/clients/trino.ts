@@ -7,6 +7,7 @@ import {
   ConnectionOptions as TrinoConnectionOptions,
   // QueryData
 } from 'trino-client'
+import { identify } from "sql-query-identifier";
 import {
   BaseQueryResult,
   BasicDatabaseClient,
@@ -105,7 +106,7 @@ interface ExecuteQueryOptions {
 //   arrayMode?: boolean;
 // }
 
-const log = rawLog.scope("clickhouse");
+const log = rawLog.scope("trino");
 
 // const clickhouseContext = {
 //   getExecutionContext(): ExecutionContext {
@@ -143,33 +144,47 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async driverExecuteSingle(sql): Promise<Result> {
-    const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
+    try {
+      const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
+  
+      let columns: ResultColumn[] = []
+      const rows: any[] = []
+  
+      log.info('client query result', result)
+  
+      for await (const r of result) {
+        columns = r.columns
+  
+        if (r.data) rows.push(...r.data)
+      }
 
-    let columns: ResultColumn[] = []
-    let rows: any[] = []
-
-    for await (const r of result) {
-      columns = r.columns
-
-      console.log('r.data: ', r.data)
-      if (r.data) rows.push(...r.data)
-    }
-
-    if (rows.length === 0) {
+      if (rows.length === 0) {
+        log.info('driverExecuteSingle response no rows:', {
+          columns: [],
+          rows: this.rowsToObject(columns, rows),
+          arrayMode: false
+        })
+        return {
+          columns,
+          rows,
+          arrayMode: false
+        }
+      }
+  
+      log.info('driverExecuteSingle response:', {
+        columns,
+        rows: this.rowsToObject(columns, rows),
+        arrayMode: false
+      })
+  
       return {
         columns,
-        rows,
+        rows: this.rowsToObject(columns, rows),
         arrayMode: false
       }
+    } catch (err) {
+      log.error(err)
     }
-
-    return {
-      columns,
-      rows: this.rowsToObject(columns, rows),
-      arrayMode: false
-    }
-
-    
   }
 
   async connect(): Promise<void> {
@@ -205,7 +220,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     );
 
     this.version = result.rows[0]['_col0']
-    this.supportsTransaction = await this.checkTransactionSupport();
+    this.supportsTransaction = false
   }
 
   async disconnect(): Promise<void> {
@@ -327,33 +342,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return null
   }
 
-  private async runWithTransaction(fn: () => Promise<any>) {
-    const supportsTransactions = (await this.supportedFeatures()).transactions;
-    try {
-      await fn();
-      if (supportsTransactions) {
-        await this.driverExecuteSingle("COMMIT");
-      }
-    } catch (e) {
-      log.error(e);
-      if (supportsTransactions) {
-        await this.driverExecuteSingle("ROLLBACK");
-      }
-      throw e;
-    }
-  }
-
-  /**
-   * ClickHouse has experimental support for transactions, commits, and
-   * rollback functionality. You'll need to enable it by adding the settings
-   * to the ClickHouse config.
-   *
-   * See: https://clickhouse.com/docs/en/guides/developer/transactional#transactions-commit-and-rollback
-   **/
-  private async checkTransactionSupport(): Promise<boolean> {
-    return false
-  }
-
   async dropElement(): Promise<void> {
     log.error("Trino doesn't support changing data")
     return null
@@ -366,24 +354,25 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return result.rows.map((row) => row.Catalog);
   }
 
-  async listSchemas(_filter: SchemaFilterOptions): Promise<string[]> {
-    // this is where we'll need to get which database is coming through so we can get the command
-    // show schemas from <database>
-    // Trino doesn't support schemas
-    return [];
+  async listSchemas(filter: SchemaFilterOptions): Promise<string[]> {
+    log.info('filters in listSchemas', filter)
+    if (filter.database == null) return []
+    const sql = `show schemas from ${filter.database}`
+    const result = await this.driverExecuteSingle(sql);
+
+    return result.rows.map((row) => row.Schema);
   }
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
-    // const sql = `show tables from ${filter.database}.${filter.schema}`;
-    // const result: Result = await this.driverExecuteSingle(sql);
-    // console.log('list tables: ', result)
-    
-    return []
-    // return result.rows.map((row) => ({
-    //   name: row.name,
-    //   tabletype: "table",
-    //   engine: row.engine,
-    // }));
+    log.info('filters in listTables', filter)
+    if (filter.database == null || filter.database == null) return []
+    const sql = `show tables from ${filter.database}.${filter.schema}`
+    const result = await this.driverExecuteSingle(sql);
+
+    return result.rows.map((row) => ({
+      name: row.Table,
+      entityType: 'table' as const
+    }));
   }
 
   async listTableColumns(
@@ -465,6 +454,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
+    log.info('I am in the query section!')
     let queryId = uuidv4();
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
     return {
@@ -499,65 +489,110 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     };
   }
 
+  async driverExecuteMultiple(queryText: string): Promise<BaseQueryResult[]> {
+    let identification
+    try {
+      identification = identify(queryText, { strict: false, dialect: 'generic', identifyTables: false })
+    } catch (ex) {
+      log.error("Unable to identify query", ex)
+    }
+
+    log.info('indentification in driverExecuteMultiple', identification)
+    log.info('identification typeof', typeof identification)
+
+    const results = await Promise.all(
+      identification.map(async query => {
+        let queryText = query.text.trim()
+
+        if (queryText.endsWith(';')) {
+          queryText = queryText.slice(0, -1)
+        }
+
+        try {
+          const queryResult = await this.driverExecuteSingle(queryText) 
+          
+          return queryResult
+        } catch (err) {
+          throw new Error(err)
+        }
+      })
+    )
+
+    log.info('driverExecuteMultiple results', results)
+
+    return results
+  }
+
+  parseFields(fields: any[]) {
+    return fields.map(column => ({
+      dataType: column.type,
+      id: column.name,
+      name: column.name
+    }))
+  }
+
   async executeQuery(
-    queryText: string,
-    options?: ExecuteQueryOptions
+    queryText: string
   ): Promise<NgQueryResult[]> {
     // FIXME we should check if the result is in JSON or buffer. If not both,
     // just cast it to a string.
-    const results = await this.driverExecuteMultiple(queryText, {
-      ...options,
-      arrayMode: true,
-    });
+    
+    const results = await this.driverExecuteMultiple(queryText);
     const ret = [];
+    log.info('results:', results)
     for (const result of results) {
-      const data =
-        result.resultType === "stream"
-          ? await streamToString(result.data)
-          : result.data;
+      const fields = this.parseFields(result.columns)
+      log.info('in loop', result)
+      const data = result.rows
+      // const data =
+      //   result.resultType === "stream"
+      //     ? await streamToString(result.data)
+      //     : result.data;
 
       const isEmptyResult = !data;
 
       if (isEmptyResult) {
         ret.push({
           fields: [],
-          affectedRows: 0, // TODO (azmi): implement affectedRows
-          command: result.statement.type,
+          affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
+          command: 'SELECT',
           rows: [],
-          rowCount: 0,
+          rowCount: 0
         });
         continue;
       }
 
-      if (_.isString(data)) {
-        ret.push({
-          fields: [{ id: "c0", name: "Result" }],
-          affectedRows: 0, // TODO (azmi): implement affectedRows
-          command: result.statement.type,
-          rows: [{ c0: data }],
-          rowCount: 1,
-        });
-        continue;
-      }
+      // if (_.isString(data)) {
+      //   ret.push({
+      //     fields: result.columns,
+      //     affectedRows: 0, // TODO (azmi): implement affectedRows
+      //     command: 'select',
+      //     rows: data,
+      //     rowCount: data.length,
+      //   });
+      //   continue;
+      // }
 
-      const fields = data.meta.map((field, idx) => ({
-        id: `c${idx}`,
-        name: field.name,
-        dataType: field.type,
-      }));
+      // const fields = data.meta.map((field, idx) => ({
+      //   id: `c${idx}`,
+      //   name: field.name,
+      //   dataType: field.type,
+      // }));
 
-      const rows = data.data.map((row) =>
-        row.reduce((acc, val, idx) => ({ ...acc, [`c${idx}`]: val }), {})
-      );
+      // const rows = data.data.map((row) =>
+      //   row.reduce((acc, val, idx) => ({ ...acc, [`c${idx}`]: val }), {})
+      // );
 
       ret.push({
         fields,
-        affectedRows: 0, // TODO we can get this somewhere i feel like??
-        command: result.statement.type,
-        rows,
-        rowCount: rows.length,
+        affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
+        command: 'select',
+        rows: data,
+        rowCount: data.length,
       });
     }
+
+    log.info('executeQuery result', ret)
     return ret;
   }
 
