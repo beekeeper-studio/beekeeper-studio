@@ -465,7 +465,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         c_for.column_name AS from_column,
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
         'NO ACTION' AS on_update,
-        'NO ACTION' AS on_delete
+        'NO ACTION' AS on_delete,
+        ic_for.sequence AS sequence
       FROM SYS.SYSFKEY fk
       JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
       JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
@@ -478,21 +479,52 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       WHERE t_for.table_name = ${D.escapeString(table, true)}
       AND u_for.user_name = ${D.escapeString(schema, true)}
       AND ic_for.sequence = ic_pri.sequence
+      ORDER BY name, sequence
     `;
 
     const { rows } = await this.driverExecuteSingle(sql);
     
-    const result = rows.map((row) => ({
-      constraintName: row.name,
-      toTable: row.to_table,
-      toColumn: row.to_column,
-      toSchema: row.to_schema,
-      fromSchema: row.from_schema,
-      fromTable: row.from_table,
-      fromColumn: row.from_column,
-      onUpdate: row.on_update,
-      onDelete: row.on_delete
-    }));
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'name');
+    
+    const result = Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+      
+      // Sort key parts by sequence to ensure correct column order
+      const sortedKeyParts = _.sortBy(keyParts, 'sequence');
+      
+      // If there's only one part, return a simple key (backward compatibility)
+      if (sortedKeyParts.length === 1) {
+        const row = sortedKeyParts[0];
+        return {
+          constraintName: row.name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.on_update,
+          onDelete: row.on_delete,
+          isComposite: false
+        };
+      } 
+      
+      // If there are multiple parts, it's a composite key
+      const firstPart = sortedKeyParts[0];
+      return {
+        constraintName: firstPart.name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: sortedKeyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: sortedKeyParts.map(p => p.from_column),
+        onUpdate: firstPart.on_update,
+        onDelete: firstPart.on_delete,
+        isComposite: true
+      };
+    });
     
     log.debug("tableKeys result", result);
     return result;

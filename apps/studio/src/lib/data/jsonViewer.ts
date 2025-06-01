@@ -1,6 +1,16 @@
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from "lodash";
 import globals from '@/common/globals'
+import { LineGutter } from "../editor/utils";
+import { toRegexSafe } from "@/common/utils";
+
+export interface UpdateOptions {
+  dataId: number | string;
+  value: Record<string, unknown>;
+  expandablePaths: string[];
+  signs: Record<string, LineGutter["type"]>;
+  editablePaths: string[];
+}
 
 export interface ExpandablePath {
   path: string[];
@@ -90,9 +100,11 @@ export function deepFilterObjectProps(
   filter: string,
   paths?: string[]
 ) {
+  const regex = toRegexSafe(filter);
+
   if (!paths) paths = getPaths(obj);
   const filteredPaths = paths.filter((path) =>
-    path.toLowerCase().includes(filter)
+    regex ? regex.test(path) : path.toLowerCase().includes(filter)
   );
   return _.pick(obj, filteredPaths);
 }
