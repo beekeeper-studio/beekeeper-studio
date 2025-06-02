@@ -175,11 +175,19 @@
 }
 
 .truncatable-value .more {
-  color: #4da6ff; /* Azul clarinho parecido ao do DevTools */
-  font-size: 1rem; /* Letra mais pequena */
-  font-weight: normal; /* Fonte normal, não bold */
+  color: white;
+  font-size: 0.85rem;
+  font-weight: normal;
   cursor: pointer;
-  padding-left: 0.25rem;
-  text-decoration: none; /* Sem sublinhado por defeito */
-  user-select: none; /* Não deixa selecionar o texto */
+  padding: 0.125rem 0.375rem;
+  margin-left: 0.25rem;
+  text-decoration: none;
+  user-select: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+.truncatable-value .more:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
