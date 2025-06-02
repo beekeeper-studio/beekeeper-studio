@@ -86,7 +86,7 @@ export const api = {
 
     return [];
   },
-  async getLastExportPath(filename?: string) {
+  async defaultExportPath(filename?: string) {
     return path.join(homedir(), filename);
   },
   showOpenDialogSync(args: any) {

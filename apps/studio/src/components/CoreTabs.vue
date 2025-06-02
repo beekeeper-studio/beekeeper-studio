@@ -837,11 +837,11 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');
       const fileName = `${safeFilename}.sql`;
 
-      const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.getLastExportPath(fileName));
+      const defaultExportPath = await Vue.prototype.$settings.get("defaultExportPath", await window.main.defaultExportPath(fileName));
 
       const filePath = this.$native.dialog.showSaveDialogSync({
         title: "Export Query",
-        defaultPath: lastExportPath,
+        defaultPath: defaultExportPath,
         filters: [
           { name: 'SQL (*.sql)', extensions: ['sql'] },
           { name: 'All Files (*.*)', extensions: ['*'] },
