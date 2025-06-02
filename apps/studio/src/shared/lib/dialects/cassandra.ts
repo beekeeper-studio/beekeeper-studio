@@ -64,6 +64,7 @@ export const CassandraData: DialectData = {
   disabledFeatures: {
     shell: true,
     defaultValue: true,
+    compositeKeys: true,
     alter: {
       alterColumn: true,
       multiStatement: true,

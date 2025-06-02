@@ -857,6 +857,9 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
             display: inline;
           }
         }
+        &:not(:has(.tabulator-col-sorter)) {
+          flex-direction: row;
+        }
         .tabulator-col-sorter.tabulator-col-sorter-element {
           margin-left: auto;
           width: 24px;

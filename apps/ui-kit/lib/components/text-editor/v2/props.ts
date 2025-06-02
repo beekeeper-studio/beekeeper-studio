@@ -52,7 +52,7 @@ export default {
   /** The id of the language. If language server is enabled, this will be the language id sent to the language server.
    * This replaces `mode: [String, Object]` and `hint: String`. */
   languageId: {
-    type: String as PropType<"plaintext" | "sql">,
+    type: String,
     default: "plaintext",
   },
   /** Enable language server support by passing the configuration. */

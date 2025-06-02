@@ -12,12 +12,14 @@ export const MongoDBData: DialectData = {
   queryDialectOverride: 'postgresql',
   textEditorMode: 'text/x-pgsql',
   disabledFeatures: {
+    rawFilters: true,
     truncateElement: true,
     sqlCreate: true,
     importFromFile: true,
     nullable: true,
     defaultValue: true,
     primary: true,
+    compositeKeys: true,
     comments: true,
     index: {
       id: true,

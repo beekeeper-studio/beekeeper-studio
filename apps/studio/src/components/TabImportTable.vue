@@ -141,7 +141,8 @@
       tab: {
         type: Object,
         required: true
-      }
+      },
+      active: Boolean,
     },
     data() {
       return {
