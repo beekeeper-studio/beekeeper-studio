@@ -162,8 +162,12 @@ export default class WebPluginLoader {
           Event,
         };
 
-        if (!windowEventMap[notification.args.eventClass]) {
-          log.warn(`Unknown event class: ${notification.args.eventClass}`);
+        if (
+          !Object.prototype.hasOwnProperty.call(windowEventMap, notification.args.eventClass) ||
+          typeof windowEventMap[notification.args.eventClass] !== "function"
+        ) {
+          log.warn(`Invalid or unknown event class: ${notification.args.eventClass}`);
+          return;
         }
 
         document.dispatchEvent(
