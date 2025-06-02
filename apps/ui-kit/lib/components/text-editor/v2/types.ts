@@ -40,7 +40,6 @@ export interface TextEditorConfiguration extends ExtensionConfiguration {
   onFocus?: (event: { event: FocusEvent }) => void;
   onBlur?: (event: { event: FocusEvent }) => void;
   onLspReady?: (capabilities: object) => void;
-  languageId: string;
   initialValue?: string;
   focus?: boolean;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);
@@ -48,6 +47,7 @@ export interface TextEditorConfiguration extends ExtensionConfiguration {
 }
 
 export interface ExtensionConfiguration {
+  languageId: string;
   readOnly?: boolean;
   keymap?: Keymap;
   vimOptions?: VimOptions;

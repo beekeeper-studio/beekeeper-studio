@@ -6,7 +6,9 @@ volumes:
   mysql8:
   mysql4.1:
   psql96:
+  psql14:
   psql13:
+  psql15_load_test_data:
   mariadb:
   cockroachdb:
   oracle18:
@@ -46,6 +48,18 @@ services:
     ports:
       - 1521:1521
 
+  psql15-load-test:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: load_test_db
+    volumes:
+      - psql15_load_test_data:/var/lib/postgresql/data
+      - ./dev/docker_psql_load_test_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5435:5432
+
   psql15:
     image: postgres:15
     environment:
@@ -58,6 +72,17 @@ services:
     ports:
       - 5434:5432
 
+  psql14:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql14:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5436:5432
   psql13:
     image: postgres:13
     environment:
@@ -136,8 +161,8 @@ services:
   sqlserverlatin:
     image: 'mcr.microsoft.com/mssql/server:2017-latest-ubuntu'
     volumes:
-    - mssqllatin:/var/opt/mssql/data
-    - ./dev/docker_sqlserver:/docker_init
+      - mssqllatin:/var/opt/mssql/data
+      - ./dev/docker_sqlserver:/docker_init
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: Example@1"
@@ -155,16 +180,16 @@ services:
     command: start-single-node --insecure
   cassandra:
     image: cassandra:latest
-    entrypoint: ["/docker-entrypoint.initdb.d/entry.sh"]
+    entrypoint: [ "/docker-entrypoint.initdb.d/entry.sh" ]
     ports:
       - 9042:9042
     volumes:
       - cassandra:/var/lib/cassandra
       - ./dev/docker_cassandra_init:/docker-entrypoint.initdb.d
-# use keyspace; describe tables; # get all the tables for a specific keyspace
-# select * from system_schema.keyspaces; # gets all keyspaces
-# https://www.folkstalk.com/2022/09/get-all-keyspaces-in-cassandra-with-code-examples.html
-# Create keyspace https://www.tutorialspoint.com/cassandra/cassandra_create_keyspace.htm
+  # use keyspace; describe tables; # get all the tables for a specific keyspace
+  # select * from system_schema.keyspaces; # gets all keyspaces
+  # https://www.folkstalk.com/2022/09/get-all-keyspaces-in-cassandra-with-code-examples.html
+  # Create keyspace https://www.tutorialspoint.com/cassandra/cassandra_create_keyspace.htm
   bigquery:
     image: ghcr.io/goccy/bigquery-emulator:latest
     volumes:
@@ -191,9 +216,9 @@ services:
       - 8081:8080
       - 5001:5001
       # environment:
-    #   - SQLD_NODE=primary
-    # volumes:
-    #   - ./dev/docker_libsql:/var/lib/sqld
+      #   - SQLD_NODE=primary
+      # volumes:
+      #   - ./dev/docker_libsql:/var/lib/sqld
   clickhouse:
     image: clickhouse/clickhouse-server
     ports:

@@ -712,29 +712,28 @@
           this.split = null;
         }
 
+        this.initializeQueries()
+        this.tab.unsavedChanges = this.unsavedChanges
+
+        this.split = Split(this.splitElements, {
+          elementStyle: (_dimension, size) => ({
+            'flex-basis': `calc(${size}%)`,
+          }),
+          sizes: [50,50],
+          gutterSize: 8,
+          direction: 'vertical',
+          onDragEnd: () => {
+            this.$nextTick(() => {
+              this.tableHeight = this.$refs.bottomPanel.clientHeight
+              this.updateEditorHeight()
+            })
+          }
+        })
+
+        // Making sure split.js is initialized
         this.$nextTick(() => {
-          this.initializeQueries()
-          this.tab.unsavedChanges = this.unsavedChanges
-
-          this.split = Split(this.splitElements, {
-            elementStyle: (_dimension, size) => ({
-                'flex-basis': `calc(${size}%)`,
-            }),
-            sizes: [50,50],
-            gutterSize: 8,
-            direction: 'vertical',
-            onDragEnd: () => {
-              this.$nextTick(() => {
-                this.tableHeight = this.$refs.bottomPanel.clientHeight
-                this.updateEditorHeight()
-              })
-            }
-          })
-
-          this.$nextTick(() => {
-            this.tableHeight = this.$refs.bottomPanel.clientHeight
-            this.updateEditorHeight()
-          })
+          this.tableHeight = this.$refs.bottomPanel.clientHeight
+          this.updateEditorHeight()
         })
       },
       handleEditorInitialized(detail) {
@@ -1051,7 +1050,10 @@
       },
     },
     async mounted() {
-      if (this.shouldInitialize) this.initialize()
+      if (this.shouldInitialize) {
+        await this.$nextTick()
+        this.initialize()
+      }
 
       this.containerResizeObserver = new ResizeObserver(() => {
         this.updateEditorHeight()

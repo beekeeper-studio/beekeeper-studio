@@ -12,6 +12,7 @@ import dev4 from './dev-4'
 import dev5 from './dev-5'
 import dev6 from './dev-6'
 import dev7 from './dev-7'
+import dev8 from './dev-8'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -55,6 +56,8 @@ import tabHistoryIndex from './20250211_add_tab_history_index'
 import fixOracleData from './20250225_oracle_default_connection_method'
 import addInstallationId from './20250404_add_installation_id'
 import sqlAnywhereOptions from './20250414_add_anywhere_options'
+import disabledPluginAutoUpdates from './20250522_add_disabled_plugin_auto_updates'
+import preinstalledPlugins from "./20250523_add_preinstalled_plugins"
 
 import ultimate from './ultimate/index'
 
@@ -89,7 +92,8 @@ const realMigrations = [
   tabHistoryIndex,
   fixOracleData,
   addInstallationId,
-  sqlAnywhereOptions
+  sqlAnywhereOptions,
+  disabledPluginAutoUpdates, preinstalledPlugins,
 ]
 
 // fixtures require the models
@@ -98,7 +102,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3, dev4, dev5, dev6, dev7
+  dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]
@@ -142,10 +146,10 @@ export default class {
     const runner = this.connection.connection.createQueryRunner()
     try {
       await runner.query(setupSQL)
-      for(let i = 0; i < migrations.length; i++) {
+      for (let i = 0; i < migrations.length; i++) {
         const migration = migrations[i]
         logger.debug(`Checking migration ${migration.name}`)
-        if(migration.env && migration.env !== this.env) {
+        if (migration.env && migration.env !== this.env) {
           // env defined, and does not match
           logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
           continue

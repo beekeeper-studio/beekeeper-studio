@@ -81,6 +81,9 @@ export function ls(
       goToDefinition: "",
     },
     ...features,
+    // This allows us to trigger manual autocomplete when there is any character
+    // behind cursor.
+    completionMatchBefore: /.{0}/,
   });
 
   // Store a reference to the initialized LS client for use in the context
