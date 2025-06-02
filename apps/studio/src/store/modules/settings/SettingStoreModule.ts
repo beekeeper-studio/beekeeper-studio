@@ -88,6 +88,12 @@ const SettingStoreModule: Module<State, any> = {
       if (!theme) return null
       return theme;
     },
+    /** is the theme light or dark? */
+    themeType(_state, getters) {
+      if (!getters.themeValue) return 'light'
+      if (getters.themeValue.includes('dark')) return 'dark'
+      return 'light'
+    },
     /** The keymap type to be used in text editor */
     userKeymap(state) {
       const value = state.settings.keymap?.value as string;
