@@ -2,7 +2,7 @@ import type { CustomMenuItems } from "../../context-menu";
 import { PropType } from "vue";
 import { Keybindings, Keymap, LanguageServerConfiguration } from "./types";
 import { Extension } from "@codemirror/state";
-import { Config } from "../v1/vim";
+import { Config } from "./extensions/vim";
 
 export default {
   value: {
