@@ -72,7 +72,9 @@ export const ProtocolBuilder = {
   },
   createPluginProtocol: () => {
     protocol.registerBufferProtocol("plugin", (request, respond) => {
-      const pathName = request.url.replace("plugin://", "")
+      // Removes the leading "plugin://" and the query string
+      const url = new URL(request.url);
+      const pathName = path.join(url.host, url.pathname);
       const normalized = path.normalize(pathName)
       const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
       log.debug("resolving", pathName, 'to', fullPath)
@@ -87,10 +89,21 @@ export const ProtocolBuilder = {
           return
         }
 
-        respond({
+        const headers = {}
+        if (platformInfo.isDevelopment) {
+          headers['Cache-Control'] = 'no-cache'
+          headers['Pragma'] = 'no-cache'
+          headers['Expires'] = '0'
+        }
+
+        const response: any = {
           mimeType: mimeTypeOf(pathName),
           data,
-        })
+        };
+        if (Object.keys(headers).length > 0) {
+          response.headers = headers;
+        }
+        respond(response);
       })
     });
   }
