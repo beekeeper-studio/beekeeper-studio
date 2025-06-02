@@ -66,6 +66,7 @@ export namespace TabTypeConfig {
    * difference is, in this tab, the result table can be collapsed completely. */
   export interface PluginShellConfig extends BaseTabTypeConfig, PluginShellConfigIdentifiers {
     type: "plugin-shell";
+    icon?: string; // from material-icons
   }
 
   export interface PluginShellConfigIdentifiers {

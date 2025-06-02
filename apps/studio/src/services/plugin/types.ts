@@ -16,6 +16,8 @@ export interface Manifest {
   description: string;
   version: string;
   minAppVersion: string;
+  /** Material UI icon name. https://fonts.google.com/icons?icon.set=Material+Icons */
+  icon?: string;
   capabilities: {
     views: {
       sidebars?: {

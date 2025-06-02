@@ -16,7 +16,8 @@ export type GetColumnsResponse = {
 
 export interface GetConnectionInfoResponse {
   connectionType: string;
-  defaultDatabase?: string;
+  databaseName: string;
+  defaultSchema?: string;
   readOnlyMode: boolean;
 }
 

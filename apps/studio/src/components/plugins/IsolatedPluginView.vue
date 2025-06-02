@@ -4,6 +4,7 @@
       v-if="visible || loaded"
       :src="baseUrl"
       sandbox="allow-scripts allow-same-origin allow-forms"
+      allow="clipboard-read; clipboard-write;"
       ref="iframe"
       @load="handleIframeLoad"
       @error="handleError"

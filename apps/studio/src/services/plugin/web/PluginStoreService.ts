@@ -173,6 +173,7 @@ export default class PluginStoreService {
     pluginTabTypeId: string;
     name: string;
     kind: TabKind;
+    icon?: string;
   }): void {
     const config: TabTypeConfig.PluginShellConfig = {
       type: `plugin-${params.kind}` as const,
@@ -180,6 +181,7 @@ export default class PluginStoreService {
       pluginId: params.pluginId,
       pluginTabTypeId: params.pluginTabTypeId,
       menuItem: { label: `Add ${params.name}` },
+      icon: params.icon,
     };
     this.store.commit("tabs/addTabTypeConfig", config);
   }
@@ -227,7 +229,8 @@ export default class PluginStoreService {
   getConnectionInfo(): GetConnectionInfoResponse {
     return {
       connectionType: this.store.state.connectionType,
-      defaultDatabase: this.store.state.usedConfig.defaultDatabase,
+      databaseName: this.store.state.database,
+      defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
   }

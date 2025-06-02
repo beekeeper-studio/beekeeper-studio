@@ -51,6 +51,7 @@ export default class WebPluginLoader {
         pluginTabTypeId: tabType.id,
         name: tabType.name,
         kind: tabType.kind,
+        icon: this.manifest.icon,
       });
     });
   }
@@ -67,7 +68,7 @@ export default class WebPluginLoader {
           {
             id: event.data.id,
             name: event.data.name,
-            args: event.data.args[0],
+            args: event.data.args,
           },
           source
         );
@@ -133,7 +134,7 @@ export default class WebPluginLoader {
         case "expandTableResult":
           // Directly handled by the view component
           break;
-        case "setTabTitleRequest":
+        case "setTabTitle":
           // Directly handled by the view component
           break;
 
