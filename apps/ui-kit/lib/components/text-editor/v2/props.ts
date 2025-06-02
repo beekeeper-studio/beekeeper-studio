@@ -22,7 +22,7 @@ export default {
       return true;
     },
   },
-  focus: Boolean,
+  isFocused: Boolean,
   forceInitialize: null,
   /**
    * Configure the keymap to use. The default is 'default'. Other possible

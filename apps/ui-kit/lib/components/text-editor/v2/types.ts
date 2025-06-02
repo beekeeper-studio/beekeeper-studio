@@ -2,6 +2,8 @@ import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
 import { LanguageServerClient } from "./LanguageServerClient";
+import { TextEditor } from "./TextEditor";
+import type * as LSP from "vscode-languageserver-protocol";
 
 export interface LanguageServerConfiguration {
   /** The WebSocket URI of the language server. For example, `ws://localhost:3000/server` */
@@ -36,8 +38,8 @@ export type Keybindings = {
 export interface TextEditorConfiguration extends ExtensionConfiguration {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
-  onFocus?: (event: { event: FocusEvent }) => void;
-  onBlur?: (event: { event: FocusEvent }) => void;
+  onFocus?: (event: FocusEvent) => void;
+  onBlur?: (event: FocusEvent) => void;
   onLspReady?: (capabilities: object) => void;
   initialValue?: string;
   focus?: boolean;
@@ -59,3 +61,42 @@ export interface LSContext {
   documentUri: string;
   timeout: number;
 }
+
+export interface ExposedMethods {
+  ls: () => LanguageServerHelpers;
+}
+
+export interface LanguageServerHelpers {
+  getClient: () => LanguageServerClient | null;
+  formatDocument: (options: LSP.FormattingOptions) => Promise<void>;
+  formatDocumentRange: (
+    range: LSP.Range,
+    options: LSP.FormattingOptions
+  ) => Promise<void>;
+  requestSemanticTokens: (lastResultId?: string) => Promise<void>;
+}
+
+export type TextEditorInitializedEvent = CustomEvent<{
+  editor: TextEditor;
+}>;
+
+export type TextEditorValueChangeEvent = CustomEvent<{
+  value: string;
+}>;
+
+export type TextEditorFocusEvent = FocusEvent;
+
+export type TextEditorBlurEvent = FocusEvent;
+
+export type TextEditorLSPReadyEvent = CustomEvent<{
+  capabilities: object;
+}>;
+
+export interface TextEditorEventMap extends HTMLElementEventMap {
+  "bks-value-change": TextEditorValueChangeEvent;
+  "bks-focus": TextEditorFocusEvent;
+  "bks-blur": TextEditorFocusEvent;
+  "bks-lsp-ready": TextEditorLSPReadyEvent;
+  "bks-initialized": TextEditorInitializedEvent;
+}
+
