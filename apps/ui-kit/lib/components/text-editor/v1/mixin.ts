@@ -21,7 +21,7 @@ import "codemirror/addon/merge/merge";
 import 'codemirror/keymap/vim.js'
 import CodeMirror, { TextMarker } from "codemirror";
 import _ from "lodash";
-import { setKeybindings, Config, extendVimOnCodeMirror, Clipboard } from "./vim";
+import { setKeybindings, Config, extendVimOnCodeMirror, Clipboard } from "../v2/extensions/vim";
 import { divider, InternalContextItem, openMenu } from "../../context-menu/menu";
 import { cmCtrlOrCmd } from "../../../utils/platform"
 import { PropType } from "vue";

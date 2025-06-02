@@ -23,6 +23,7 @@ import {
   requestSemanticTokens,
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
+import { VimOptions } from "./extensions/keymap";
 
 export const exposeMethods = ["ls"] as const;
 
@@ -122,8 +123,8 @@ export class TextEditor {
     return this.view.state.doc.toString();
   }
 
-  setKeymap(keymap: Keymap) {
-    applyKeymap(this.view, keymap);
+  setKeymap(keymap: Keymap, options: VimOptions = {}) {
+    applyKeymap(this.view, keymap, options);
   }
 
   setKeybindings(keybindings: Keybindings) {

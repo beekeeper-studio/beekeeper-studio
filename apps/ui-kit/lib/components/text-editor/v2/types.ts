@@ -1,6 +1,7 @@
 import { Extension } from "@codemirror/state";
 import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
 import { WebSocketTransport } from "@open-rpc/client-js";
+import { VimOptions } from "./extensions/keymap";
 import { LanguageServerClient } from "./LanguageServerClient";
 import { TextEditor } from "./TextEditor";
 import type * as LSP from "vscode-languageserver-protocol";
@@ -51,6 +52,7 @@ export interface ExtensionConfiguration {
   languageId: string;
   readOnly?: boolean;
   keymap?: Keymap;
+  vimOptions?: VimOptions;
   lineWrapping?: boolean;
   lineNumbers?: boolean;
   keybindings?: Keybindings;
