@@ -1,3 +1,3 @@
-import { SqlTextEditor } from ".";
+import { SqlTextEditorElement } from "./index";
 
-window.customElements.define("bks-sql-text-editor", SqlTextEditor);
+window.customElements.define("bks-sql-text-editor", SqlTextEditorElement);

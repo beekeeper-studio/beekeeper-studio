@@ -7,6 +7,7 @@ import {
   useCustomMenuItems,
 } from "../../context-menu";
 import { readClipboard, writeClipboard } from "../../../utils";
+import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorValueChangeEvent } from "./types";
 
 export default {
   props,
@@ -70,11 +71,7 @@ export default {
   methods: {
     // Exposed to custom element as `.ls()`
     ls() {
-      const textEditor: TextEditor = this.textEditor;
-      return {
-        getClient: () => textEditor.getLsClient(),
-        ...textEditor.getLsActions(),
-      };
+      return this.textEditor.getLsHelpers();
     },
 
     applyValue() {
@@ -117,16 +114,16 @@ export default {
       textEditor.initialize({
         parent: this.$refs.editor,
         onValueChange: (value) => {
-          this.$emit("bks-value-change", { value });
+          this.$emit("bks-value-change", { value } as TextEditorValueChangeEvent['detail']);
         },
         onFocus: (event) => {
-          this.$emit("bks-focus", event);
+          this.$emit("bks-focus", event as TextEditorFocusEvent);
         },
         onBlur: (event) => {
-          this.$emit("bks-blur", event);
+          this.$emit("bks-blur", event as TextEditorBlurEvent);
         },
         onLspReady: (capabilities) => {
-          this.$emit("bks-lsp-ready", { capabilities });
+          this.$emit("bks-lsp-ready", { capabilities } as TextEditorLSPReadyEvent['detail']);
         },
         languageId: this.languageId,
         replaceExtensions: this.replaceExtensions,
@@ -145,7 +142,7 @@ export default {
 
       this.initialized?.();
 
-      this.$emit("bks-initialized", { editor: textEditor });
+      this.$emit("bks-initialized", { editor: textEditor } as TextEditorInitializedEvent['detail']);
     },
 
     showContextMenu(event: Event) {
