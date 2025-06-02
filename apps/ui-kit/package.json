@@ -24,7 +24,10 @@
   "main": "./dist/index.js",
   "style": "./dist/style.css",
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
     "./style.css": "./dist/style.css",
     "./table": "./dist/table.js",
     "./entity-list": "./dist/entity-list.js",
@@ -40,9 +43,9 @@
   "scripts": {
     "dev": "vite -c vite.config.dev.ts",
     "lib:dev": "vite build -c vite.config.ts --watch --mode development",
-    "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
+    "lib:types": "tsc -p ./tsconfig.types.json",
     "test": "vitest",
-    "build": "vite build -c vite.config.ts --mode production",
+    "build": "vite build -c vite.config.ts --mode production && yarn lib:types",
     "preview": "vite preview"
   },
   "peerDependencies": {
@@ -101,7 +104,7 @@
     "sql-query-identifier": "^2.8.0",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
-    "typescript": "~4.3.0",
+    "typescript": "~5.8.3",
     "vite": "~5.4.19",
     "vite-plugin-vue2": "^2.0.3",
     "vitest": "^3.0.5",

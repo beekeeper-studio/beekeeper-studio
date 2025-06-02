@@ -26,8 +26,6 @@ import {
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap,
-  CompletionContext,
-  CompletionResult,
 } from "@codemirror/autocomplete";
 import { lintKeymap } from "@codemirror/lint";
 import { keymap as specialKeymap } from "./keymap";
@@ -91,7 +89,7 @@ function language(languageId: string) {
 export function extensions(config: ExtensionConfiguration) {
   return [
     extraKeymap({ keybindings: config.keybindings }),
-    specialKeymap({ keymap: config.keymap }),
+    specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     lineNumbers({ enabled: config.lineNumbers }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),

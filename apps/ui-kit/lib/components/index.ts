@@ -4,5 +4,6 @@ export * from "./sql-text-editor";
 export * from "./table";
 export * from "./entity-list";
 export * from "./data-editor";
+export * from "./types";
 
 export { TabulatorFull as Tabulator } from "tabulator-tables";

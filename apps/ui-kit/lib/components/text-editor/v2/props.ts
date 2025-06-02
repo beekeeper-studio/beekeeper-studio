@@ -2,6 +2,7 @@ import type { CustomMenuItems } from "../../context-menu";
 import { PropType } from "vue";
 import { Keybindings, Keymap, LanguageServerConfiguration } from "./types";
 import { Extension } from "@codemirror/state";
+import { Config } from "./extensions/vim";
 
 export default {
   value: {
@@ -22,7 +23,7 @@ export default {
       return true;
     },
   },
-  focus: Boolean,
+  isFocused: Boolean,
   forceInitialize: null,
   /**
    * Configure the keymap to use. The default is 'default'. Other possible
@@ -61,7 +62,7 @@ export default {
     Extension | ((extensions: Extension) => Extension)
   >,
 
-  // vimConfig: Object as PropType<Config>,
+  vimConfig: Object as PropType<Config>,
   // markers: {
   //   type: Array,
   //   default: () => [],
@@ -74,23 +75,23 @@ export default {
   // bookmarks: Array,
   // foldAll: null,
   // unfoldAll: null,
-  // /**
-  //  * Configure custom key mappings in vim. `vimKeymaps` accepts an array of
-  //  * objects that contain the following properties:
-  //  * - lhs: The key you want to map
-  //  * - rhs: The key you want to map to
-  //  * - mode: (optional) The mode in which you want to map the key ('normal', 'visual', 'insert')
-  //  *
-  //  * For example, to map `;` to `:`, you can do:
-  //  *
-  //  * ```
-  //  * const vimKeymaps = [
-  //  *   { lhs: ';', rhs: ':' }
-  //  * ]
-  //  * ```
-  //  *
-  //  * In vim, that would be `:map ; :`.
-  //  */
-  // vimKeymaps: Array,
-  // clipboard: Object as PropType<Clipboard>
+  /**
+   * Configure custom key mappings in vim. `vimKeymaps` accepts an array of
+   * objects that contain the following properties:
+   * - lhs: The key you want to map
+   * - rhs: The key you want to map to
+   * - mode: (optional) The mode in which you want to map the key ('normal', 'visual', 'insert')
+   *
+   * For example, to map `;` to `:`, you can do:
+   *
+   * ```
+   * const vimKeymaps = [
+   *   { lhs: ';', rhs: ':' }
+   * ]
+   * ```
+   *
+   * In vim, that would be `:map ; :`.
+   */
+  vimKeymaps: Array,
+  clipboard: Object as PropType<Clipboard>
 };
