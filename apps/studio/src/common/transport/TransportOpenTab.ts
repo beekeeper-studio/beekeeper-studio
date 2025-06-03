@@ -7,7 +7,7 @@ export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'tab
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
-interface BaseTransportOpenTab extends Transport {
+export interface TransportOpenTab<Context = {}> extends Transport {
   tabType: TabType,
   unsavedChanges: boolean,
   title: string,
@@ -24,27 +24,18 @@ interface BaseTransportOpenTab extends Transport {
   workspaceId?: number,
   filters?: string,
   lastActive?: Date|null,
-  deletedAt?: Date|null 
+  deletedAt?: Date|null
   isRunning: boolean, // not on the actual model, but used in frontend
+  context: Context
 }
 
-interface TransportDefaultOpenTab extends BaseTransportOpenTab {
-  tabType: Exclude<TabType, 'plugin-shell'>;
-  context: unknown;
-}
-
-export interface TransportPluginShellTab extends BaseTransportOpenTab {
-  tabType: "plugin-shell";
-  context: {
-    pluginId: string;
-    pluginTabTypeId: string;
-    /** A plugin can save the state of the tab here. For example, an AI plugin
+export type TransportPluginShellTab = TransportOpenTab<{
+  pluginId: string;
+  pluginTabTypeId: string;
+  /** A plugin can save the state of the tab here. For example, an AI plugin
      * can save the chat conversation here */
-    data: any;
-  }
-}
-
-export type TransportOpenTab = TransportDefaultOpenTab | TransportPluginShellTab;
+  data: any;
+}>
 
 export namespace TabTypeConfig {
   interface BaseTabTypeConfig {
@@ -132,7 +123,7 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
   }
 
   switch (other.tabType) {
-    case 'table-properties': 
+    case 'table-properties':
       return obj.tableName === other.tableName &&
         (obj.schemaName || null) === (other.schemaName || null) &&
         (obj.entityType || null) === (other.entityType || null) &&
