@@ -88,8 +88,8 @@ function language(languageId: string) {
 
 export function extensions(config: ExtensionConfiguration) {
   return [
-    extraKeymap({ keybindings: config.keybindings }),
     specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
+    extraKeymap({ keybindings: config.keybindings }),
     lineNumbers({ enabled: config.lineNumbers }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
