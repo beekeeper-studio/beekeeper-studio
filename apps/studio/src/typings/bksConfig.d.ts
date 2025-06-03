@@ -87,7 +87,6 @@ declare interface IBksConfig {
         disconnectOnSuspend: boolean;
         idleThresholdSeconds: number;
         lockMode: string;
-        lockOnConnect: boolean;
     };
     ui: {
         export: {
