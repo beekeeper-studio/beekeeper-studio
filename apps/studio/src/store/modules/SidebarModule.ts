@@ -3,9 +3,11 @@ import { Module } from "vuex";
 import { State as RootState } from "../index";
 import { SmartLocalStorage } from "@/common/LocalStorage";
 
-interface SidebarTab {
+export interface SidebarTab {
   id: string;
   label: string;
+  /** By passing url, the tab will load an iframe */
+  url?: string;
 }
 
 interface State {
@@ -70,6 +72,12 @@ export const SidebarModule: Module<State, RootState> = {
     },
     secondaryActiveTabId(state, tabId: string) {
       state.secondaryActiveTabId = tabId;
+    },
+    addSecondarySidebar(state, tab: SidebarTab) {
+      state.tabs.push(tab)
+    },
+    removeSecondarySidebar(state, tabId: string) {
+      state.tabs = state.tabs.filter((t) => t.id !== tabId)
     },
   },
   actions: {

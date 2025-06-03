@@ -75,7 +75,9 @@ declare interface IBksConfig {
             switchTab9: string;
         };
         tableTable: {
+            firstPage: string;
             focusOnFilterInput: string;
+            lastPage: string;
             nextPage: string;
             openEditorModal: string;
             previousPage: string;
