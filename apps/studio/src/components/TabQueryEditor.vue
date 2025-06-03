@@ -964,7 +964,23 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
+          const lastQuery = this.$store.state['data/usedQueries']?.items?.[0]
+          const isDuplicate = lastQuery?.text === query
+
+          const queryObj = { 
+            text: query, 
+            numberOfRecords: totalRows, 
+            queryId: this.query?.id, 
+            connectionId: this.usedConfig.id 
+          }
+
+          if(lastQuery && isDuplicate){
+            queryObj.createdAt = new Date();
+            queryObj.id = lastQuery.id;
+          }
+          
+          this.$store.dispatch('data/usedQueries/save', queryObj)
+          
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'
