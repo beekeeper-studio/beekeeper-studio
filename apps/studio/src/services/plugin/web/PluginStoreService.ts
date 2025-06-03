@@ -5,15 +5,14 @@ import type {
   TransportOpenTab,
 } from "@/common/transport/TransportOpenTab";
 import {
-  GetActiveTabResponse,
   GetAllTabsResponse,
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
-  GetThemeResponse,
   RunQueryResponse,
   TabResponse,
-} from "../comm";
+  ThemeChangedNotification,
+} from "@beekeeperstudio/plugin";
 import { findTable } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { NgQueryResult } from "@/lib/db/models";
@@ -34,7 +33,7 @@ export default class PluginStoreService {
     }
   ) {}
 
-  getTheme(): GetThemeResponse {
+  getTheme(): ThemeChangedNotification["args"] {
     const cssProps = [
       "--theme-bg",
       "--theme-base",

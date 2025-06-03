@@ -1,4 +1,4 @@
-import { PluginRequestData, PluginResponseData } from "./comm";
+import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
 
 /**
  * The kind of the tab. There is only one kind currently:

@@ -60,7 +60,7 @@ import { PropType } from "vue";
 import { TransportPluginShellTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { PluginRequestData } from "@/services/plugin/comm";
+import { PluginRequestData } from "@beekeeperstudio/plugin";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
 

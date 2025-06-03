@@ -1,6 +1,6 @@
 <script lang="ts">
 import Vue from "vue";
-import { PluginNotificationData } from "@/services/plugin/types";
+import { PluginNotificationData } from "@beekeeperstudio/plugin";
 import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
