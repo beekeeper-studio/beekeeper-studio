@@ -1,7 +1,7 @@
-import { SqlTextEditor } from ".";
+import { SqlTextEditorElement } from ".";
 import CodeMirror from "codemirror";
 
-window.customElements.define("bks-sql-text-editor", SqlTextEditor);
+window.customElements.define("bks-sql-text-editor", SqlTextEditorElement);
 
 declare module "codemirror" {
   interface Editor {

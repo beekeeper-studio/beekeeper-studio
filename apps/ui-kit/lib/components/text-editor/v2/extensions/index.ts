@@ -26,8 +26,6 @@ import {
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap,
-  CompletionContext,
-  CompletionResult,
 } from "@codemirror/autocomplete";
 import { lintKeymap } from "@codemirror/lint";
 import { keymap as specialKeymap } from "./keymap";
@@ -36,6 +34,9 @@ import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
 import { readOnly } from "./readOnly";
 import { ExtensionConfiguration } from "../types";
+import { json } from "@codemirror/lang-json";
+import { html } from "@codemirror/lang-html";
+import { javascript } from "@codemirror/lang-javascript";
 
 export { applyKeybindings } from "./extraKeymap";
 export { applyKeymap } from "./keymap";
@@ -72,10 +73,23 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.special(tags.string), class: "cm-special-string" },
 ]);
 
+function language(languageId: string) {
+  if (languageId === 'json') {
+    return json();
+  }
+  if (languageId === "html") {
+    return html();
+  }
+  if (languageId === "javascript") {
+    return javascript();
+  }
+  return [];
+}
+
 export function extensions(config: ExtensionConfiguration) {
   return [
     extraKeymap({ keybindings: config.keybindings }),
-    specialKeymap({ keymap: config.keymap }),
+    specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     lineNumbers({ enabled: config.lineNumbers }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
@@ -88,6 +102,7 @@ export function extensions(config: ExtensionConfiguration) {
     syntaxHighlighting(customHighlightStyle),
     bracketMatching(),
     closeBrackets(),
+    language(config.languageId),
     autocompletion({
       tooltipClass: () => "BksTextEditor-hints",
       optionClass: (completion: any) => {
