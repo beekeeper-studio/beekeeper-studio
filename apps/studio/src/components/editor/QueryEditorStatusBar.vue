@@ -270,7 +270,7 @@ export default {
       return `Execution time: ${humanizeDuration(this.executeTime)}`
     },
     elapsedTimeText() {
-      return formatSeconds(this.elapsedTime + 7200);
+      return formatSeconds(this.elapsedTime);
     },
     downloadFullTooltip() {
       if (this.result?.truncated) {
