@@ -8,23 +8,29 @@ import {
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
-import { WindowEventNameToClass } from "../comm/commonTypes";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
 }
 
-const log = rawLog.scope("WebPluginManager");
+const windowEventMap = new Map();
+windowEventMap.set("MouseEvent", MouseEvent);
+windowEventMap.set("PointerEvent", PointerEvent);
+windowEventMap.set("KeyboardEvent", KeyboardEvent);
+windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
   private iframes: HTMLIFrameElement[] = [];
   private listeners: OnViewRequestListener[] = [];
+  private log: ReturnType<typeof rawLog.scope>;
+
 
   constructor(
     public readonly manifest: Manifest,
     private pluginStore: PluginStoreService
   ) {
     this.handleMessage = this.handleMessage.bind(this);
+    this.log = rawLog.scope(`WebPluginLoader:${manifest.id}`);
   }
 
   /** Starts the plugin */
@@ -132,10 +138,10 @@ export default class WebPluginLoader {
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
-          // Directly handled by the view component
+          // Directly handled by the view components
           break;
         case "setTabTitle":
-          // Directly handled by the view component
+          // Directly handled by the view components
           break;
 
         default:
@@ -155,23 +161,19 @@ export default class WebPluginLoader {
   private async handleViewNotification(notification: PluginNotificationData) {
     switch (notification.name) {
       case "windowEvent": {
-        const windowEventMap = {
-          MouseEvent,
-          PointerEvent,
-          KeyboardEvent,
-          Event,
-        };
+        const windowEventClass = windowEventMap.get(
+          notification.args.eventClass
+        );
 
-        if (
-          !Object.prototype.hasOwnProperty.call(windowEventMap, notification.args.eventClass) ||
-          typeof windowEventMap[notification.args.eventClass] !== "function"
-        ) {
-          log.warn(`Invalid or unknown event class: ${notification.args.eventClass}`);
+        if (!windowEventClass || typeof windowEventClass !== "function") {
+          this.log.warn(
+            `Invalid or unknown event class: ${notification.args.eventClass}`
+          );
           return;
         }
 
         document.dispatchEvent(
-          new windowEventMap[notification.args.eventClass](
+          new windowEventClass(
             notification.args.eventType,
             notification.args.eventInitOptions
           )
@@ -181,7 +183,7 @@ export default class WebPluginLoader {
       }
 
       default:
-        log.warn(`Unknown notification: ${notification.name}`);
+        this.log.warn(`Unknown notification: ${notification.name}`);
     }
   }
 
@@ -199,7 +201,7 @@ export default class WebPluginLoader {
 
   postMessage(data: PluginNotificationData | PluginResponseData) {
     if (!this.iframes) {
-      log.warn("Cannot post message, iframe not registered.");
+      this.log.warn("Cannot post message, iframe not registered.");
       return;
     }
     this.iframes.forEach((iframe) => {
