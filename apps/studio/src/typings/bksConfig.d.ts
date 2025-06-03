@@ -88,8 +88,6 @@ declare interface IBksConfig {
         idleThresholdSeconds: number;
         lockMode: string;
         lockOnConnect: boolean;
-        lockOnIdle: boolean;
-        lockOnSuspend: boolean;
     };
     ui: {
         export: {
