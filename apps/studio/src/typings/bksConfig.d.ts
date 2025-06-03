@@ -81,6 +81,16 @@ declare interface IBksConfig {
             previousPage: string;
         };
     };
+    security: {
+        disconnectOnIdle: boolean;
+        disconnectOnLock: boolean;
+        disconnectOnSuspend: boolean;
+        idleThresholdSeconds: number;
+        lockMode: string;
+        lockOnConnect: boolean;
+        lockOnIdle: boolean;
+        lockOnSuspend: boolean;
+    };
     ui: {
         export: {
             errorNoticeTimeout: number;
