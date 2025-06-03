@@ -898,6 +898,9 @@
           } catch (err) {
             this.error = err instanceof Error ? err.message : String(err);
             this.$bksNotify?.error?.(`Error preparing query: ${this.error}`);
+            this.results = [];
+            this.running = false;
+            this.tab.isRunning = false;
             return;
           }
         this.tab.isRunning = true

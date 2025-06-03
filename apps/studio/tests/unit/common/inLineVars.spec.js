@@ -1,144 +1,158 @@
 import { extractVariablesAndCleanQuery, substituteVariables } from "@/common/utils";
 
-describe("Inline Variables - extractVariablesAndCleanQuery", () => {
-  it("extracts variables defined with line comments", () => {
-    const query = `
-      -- %limit% = 10
-      -- %status% = 'active'
-      SELECT * FROM users WHERE status = %status% LIMIT %limit%;
-    `;
+describe("Inline Variables", () => {
 
-    const { variables, cleanedQuery } = extractVariablesAndCleanQuery(query);
+  describe("extractVariablesAndCleanQuery", () => {
+    it("extracts variables defined with line comments", () => {
+      const query = `
+        -- %limit% = 10
+        -- %status% = 'active'
+        SELECT * FROM users WHERE status = %status% LIMIT %limit%;
+      `;
 
-    expect(variables).toEqual({
-      limit: '10',
-      status: "'active'",
+      const { variables, cleanedQuery } = extractVariablesAndCleanQuery(query);
+
+      expect(variables).toEqual({
+        limit: '10',
+        status: "'active'",
+      });
+
+      expect(cleanedQuery).toContain("SELECT * FROM users");
+      expect(cleanedQuery).not.toContain("-- %limit%");
     });
 
-    expect(cleanedQuery).toContain("SELECT * FROM users");
-    expect(cleanedQuery).not.toContain("-- %limit%");
-  });
+    it("extracts variables from VARS block", () => {
+      const query = `
+        /* VARS:
+        %limit% = 20
+        %status% = 'pending'
+        */
+        SELECT * FROM orders WHERE status = %status% LIMIT %limit%;
+      `;
 
-  it("extracts variables from VARS block", () => {
-    const query = `
-      /* VARS:
-      %limit% = 20
-      %status% = 'pending'
-      */
-      SELECT * FROM orders WHERE status = %status% LIMIT %limit%;
-    `;
+      const { variables } = extractVariablesAndCleanQuery(query);
 
-    const { variables } = extractVariablesAndCleanQuery(query);
+      expect(variables).toEqual({
+        limit: '20',
+        status: "'pending'",
+      });
+    });
 
-    expect(variables).toEqual({
-      limit: '20',
-      status: "'pending'",
+    it("throws error if line comment variable is malformed", () => {
+      const query = `
+        -- %limit% =
+        SELECT * FROM users;
+      `;
+
+      expect(() => extractVariablesAndCleanQuery(query)).toThrow("Malformed variable");
+    });
+
+    it("throws error if block variable is malformed", () => {
+      const query = `
+        /* VARS:
+        %limit% =
+        */
+        SELECT * FROM users;
+      `;
+
+      expect(() => extractVariablesAndCleanQuery(query)).toThrow("Malformed variable");
     });
   });
 
-  it("throws error if line comment variable is malformed", () => {
-    const query = `
-      -- %limit% =
-      SELECT * FROM users;
-    `;
+  describe("substituteVariables", () => {
+    it("substitutes variables correctly", () => {
+      const query = "SELECT * FROM users WHERE status = %status% LIMIT %limit%;";
+      const variables = {
+        status: "'active'",
+        limit: "10",
+      };
 
-    expect(() => extractVariablesAndCleanQuery(query)).toThrow("Malformed variable");
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM users WHERE status = 'active' LIMIT 10;");
+    });
+
+    it("adds quotes if missing", () => {
+      const query = "SELECT * FROM products WHERE category = %category%;";
+      const variables = { category: "books" };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM products WHERE category = 'books';");
+    });
+
+    it("keeps valid JSON values as-is", () => {
+      const query = "SELECT * FROM data WHERE payload = %payload%;";
+      const variables = { payload: '{"key": "value"}' };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe(`SELECT * FROM data WHERE payload = {"key": "value"};`);
+    });
+
+    it("does not add quotes to valid SQL lists", () => {
+      const query = "SELECT * FROM users WHERE id IN %ids%;";
+      const variables = { ids: "(1, 2, 3)" };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM users WHERE id IN (1, 2, 3);");
+    });
+
+    it("substitutes multiple occurrences of the same variable", () => {
+      const query = "SELECT * FROM logs WHERE user_id = %id% OR actor_id = %id%;";
+      const variables = { id: "42" };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM logs WHERE user_id = 42 OR actor_id = 42;");
+    });
+
+    it("keeps null without quotes", () => {
+      const query = "SELECT * FROM users WHERE deleted_at IS %deleted%;";
+      const variables = { deleted: "null" };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM users WHERE deleted_at IS null;");
+    });
+
+    it("adds quotes to strings with spaces", () => {
+      const query = "SELECT * FROM books WHERE title = %title%;";
+      const variables = { title: "Harry Potter" };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM books WHERE title = 'Harry Potter';");
+    });
+
+    it("does not add quotes to floats and negative numbers", () => {
+      const query = "SELECT * FROM readings WHERE value > %min% AND value < %max%;";
+      const variables = { min: "-5.5", max: "42.0" };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM readings WHERE value > -5.5 AND value < 42.0;");
+    });
+
+    it("ignores variables that are not used in the query", () => {
+      const query = "SELECT * FROM products;";
+      const variables = { price: "100" };
+
+      const result = substituteVariables(query, variables);
+      expect(result).toBe("SELECT * FROM products;");
+    });
   });
 
-  it("throws error if block variable is malformed", () => {
-    const query = `
-      /* VARS:
-      %limit% =
-      */
-      SELECT * FROM users;
-    `;
+  describe("Edge cases", () => {
+    it("should not replace variables inside SQL string literals", () => {
+      const inputQuery = `
+        -- %id% = 7
 
-    expect(() => extractVariablesAndCleanQuery(query)).toThrow("Malformed variable");
-  });
-});
+        SELECT * FROM test_table
+        WHERE id = %id%
+        AND name LIKE '%id%';
+      `;
 
-describe("Inline Variables - substituteVariables", () => {
-  it("substitutes variables correctly", () => {
-    const query = "SELECT * FROM users WHERE status = %status% LIMIT %limit%;";
-    const variables = {
-      status: "'active'",
-      limit: "10",
-    };
+      const { variables, cleanedQuery } = extractVariablesAndCleanQuery(inputQuery);
+      const substituted = substituteVariables(cleanedQuery, variables);
 
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM users WHERE status = 'active' LIMIT 10;");
+      expect(substituted).toContain(`id = 7`);
+      expect(substituted).toContain(`LIKE '%id%'`); // Should remain untouched
+      expect(substituted).not.toContain(`LIKE '7'`);
+    });
   });
 
-  it("adds quotes if missing", () => {
-    const query = "SELECT * FROM products WHERE category = %category%;";
-    const variables = { category: "books" };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM products WHERE category = 'books';");
-  });
-
-  it("keeps valid JSON values as-is", () => {
-    const query = "SELECT * FROM data WHERE payload = %payload%;";
-    const variables = { payload: '{"key": "value"}' };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe(`SELECT * FROM data WHERE payload = {"key": "value"};`);
-  });
-
-  it("does not add quotes to valid SQL lists", () => {
-    const query = "SELECT * FROM users WHERE id IN %ids%;";
-    const variables = { ids: "(1, 2, 3)" };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM users WHERE id IN (1, 2, 3);");
-  });
-
-  it("substitutes multiple occurrences of the same variable", () => {
-    const query = "SELECT * FROM logs WHERE user_id = %id% OR actor_id = %id%;";
-    const variables = { id: "42" };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM logs WHERE user_id = 42 OR actor_id = 42;");
-  });
-
-  it("keeps null without quotes", () => {
-    const query = "SELECT * FROM users WHERE deleted_at IS %deleted%;";
-    const variables = { deleted: "null" };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM users WHERE deleted_at IS null;");
-  });
-
-  it("adds quotes to strings with spaces", () => {
-    const query = "SELECT * FROM books WHERE title = %title%;";
-    const variables = { title: "Harry Potter" };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM books WHERE title = 'Harry Potter';");
-  });
-
-  it("does not add quotes to floats and negative numbers", () => {
-    const query = "SELECT * FROM readings WHERE value > %min% AND value < %max%;";
-    const variables = { min: "-5.5", max: "42.0" };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM readings WHERE value > -5.5 AND value < 42.0;");
-  });
-
-  it("ignores variables that are not used in the query", () => {
-    const query = "SELECT * FROM products;";
-    const variables = { price: "100" };
-
-    const result = substituteVariables(query, variables);
-
-    expect(result).toBe("SELECT * FROM products;");
-  });
 });
