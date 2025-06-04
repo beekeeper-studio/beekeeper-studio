@@ -5,25 +5,32 @@
       @before-open="beforeOpen"
       @opened="opened"
       @closed="closed"
-      class="vue-dialog beekeeper-modal"
+      class="vue-dialog beekeeper-modal input-pin-modal"
     >
       <form v-kbd-trap="true" @submit.prevent="submit">
         <div class="dialog-content">
-          <div class="dialog-c-title">
+          <div class="dialog-c-title has-icon">
+            <i class="material-icons">lock_open</i>
             Please input your PIN
             <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
               <i class="material-icons">clear</i>
             </a>
           </div>
+          <div class="description">
+            <p>Enter your PIN to connect to the database.</p>
+          </div>
+          
           <error-alert v-if="errorMessage" :error="errorMessage" />
+          
           <div class="form-group form-group-password">
-            <label for="input-pin">Pin</label>
+            <label for="input-pin">PIN</label>
             <input
               id="input-pin"
               name="pin"
               :type="showPin ? 'text' : 'password'"
               v-model="pin"
               ref="pinInput"
+              placeholder="Enter your PIN"
             />
             <i
               class="material-icons password-icon"

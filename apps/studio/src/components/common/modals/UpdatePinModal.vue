@@ -4,45 +4,55 @@
       :name="modalName"
       @before-open="beforeOpen"
       @opened="opened"
-      class="vue-dialog beekeeper-modal"
+      class="vue-dialog beekeeper-modal update-pin-modal"
     >
       <form v-kbd-trap="true" @submit.prevent="submit">
         <div class="dialog-content">
-          <div class="dialog-c-title">
-            Please input your old pin and new pin to update
+          <div class="dialog-c-title has-icon">
+            <i class="material-icons">edit</i>
+            Update your PIN
             <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
               <i class="material-icons">clear</i>
             </a>
           </div>
+          <div class="description">
+            <p>Enter your current PIN and choose a new one. Your new PIN will be required for all future database connections.</p>
+          </div>
+          
           <error-alert v-if="errorMessage" :error="errorMessage" />
           <error-alert
             v-if="!valid && attemptedSubmit"
-            :error="`Pin must be at least ${$bksConfig.security.minPinLength} characters long`"
+            :error="`New PIN must be at least ${$bksConfig.security.minPinLength} characters long`"
+            title="Please fix the following errors"
           />
+          
           <div class="form-group form-group-password">
-            <label for="input-old-pin">Old pin</label>
+            <label for="input-old-pin">Current PIN</label>
             <input
               id="input-old-pin"
               name="oldPin"
               :type="showOldPin ? 'text' : 'password'"
               v-model="oldPin"
               ref="oldPinInput"
+              placeholder="Enter your current PIN"
             />
             <i
               class="material-icons password-icon"
               @click="toggleOldPinVisibility"
-              :title="showOldPin ? 'Hide old PIN' : 'Show old PIN'"
+              :title="showOldPin ? 'Hide current PIN' : 'Show current PIN'"
             >
               {{ showOldPin ? "visibility_off" : "visibility" }}
             </i>
           </div>
+          
           <div class="form-group form-group-password">
-            <label for="input-new-pin">New pin</label>
+            <label for="input-new-pin">New PIN</label>
             <input
               id="input-new-pin"
               name="newPin"
               :type="showNewPin ? 'text' : 'password'"
               v-model="newPin"
+              :placeholder="`Enter at least ${$bksConfig.security.minPinLength} characters`"
             />
             <i
               class="material-icons password-icon"
@@ -51,6 +61,11 @@
             >
               {{ showNewPin ? "visibility_off" : "visibility" }}
             </i>
+          </div>
+          
+          <div class="alert alert-info">
+            <i class="material-icons">info</i>
+            <div class="alert-body">Your new PIN will be encrypted and stored securely on your device.</div>
           </div>
         </div>
         <div class="vue-dialog-buttons">
