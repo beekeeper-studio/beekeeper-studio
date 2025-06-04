@@ -16,10 +16,15 @@ export function initializeSecurity() {
     return;
   }
 
-  idleCheckInterval = setInterval(
-    idleChecker,
-    bksConfig.security.idleCheckIntervalSeconds
-  );
+  if (bksConfig.security.lockMode !== "disabled") {
+    idleCheckInterval = setInterval(
+      idleChecker,
+      bksConfig.security.idleCheckIntervalSeconds
+    );
+
+    powerMonitor.on("suspend", disconnect);
+    powerMonitor.on("lock-screen", disconnect);
+  }
 
   initialized = true;
 }
@@ -29,8 +34,14 @@ function idleChecker() {
     powerMonitor.getSystemIdleTime() > bksConfig.security.idleThresholdSeconds
   ) {
     log.info("Idle threshold reached.");
-    getActiveWindows().forEach((win) => win.send(AppEvent.disconnect, {
-      reason: "Idle threshold reached.",
-    }));
+    disconnect();
   }
+}
+
+function disconnect() {
+  getActiveWindows().forEach((win) =>
+    win.send(AppEvent.disconnect, {
+      reason: "Idle threshold reached.",
+    })
+  );
 }
