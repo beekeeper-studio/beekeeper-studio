@@ -126,7 +126,7 @@ export default {
     settings: {
       deep: true,
       handler() {
-        this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
+        this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config, this.$bksConfig)
         this.menus = this.menuBuilder.buildTemplate()
       }
     },
@@ -262,7 +262,7 @@ export default {
     }
   },
   async mounted() {
-    this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
+    this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config, this.$bksConfig)
     this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
     window.addEventListener('keydown', this.maybeCaptureKeydown, false)

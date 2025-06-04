@@ -134,11 +134,7 @@ export const ConnHandlers: IConnectionHandlers = {
       if (auth.mode !== "pin") {
         throw new Error(`Invalid authentication mode: ${auth.mode}`);
       }
-      const userPin = await UserPin.findOne({});
-      if (!userPin) {
-        throw new Error(`No pin found. Please set a pin before proceeding.`);
-      }
-      if(!await userPin.verifyPin(auth.input)) {
+      if(!await UserPin.verifyPin(auth.input)) {
         throw new Error(`Incorrect pin. Please try again.`);
       }
     }

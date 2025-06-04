@@ -148,7 +148,7 @@ async function initBasics() {
   }
 
   log.debug("setting up the menu")
-  menuHandler = new MenuHandler(electron, settings)
+  menuHandler = new MenuHandler(electron, settings, bksConfig)
   menuHandler.initialize()
   log.debug("Building the window")
   log.debug("managing updates")

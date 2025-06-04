@@ -70,6 +70,7 @@ export enum AppEvent {
   deviceIdle = 'deviceIdle',
   deviceLocked = 'deviceLocked',
   deviceSuspended = 'deviceSuspended',
+  updatePin = 'updatePin',
 
 }
 

@@ -164,7 +164,9 @@ export default Vue.extend({
 
     if (this.url) {
       try {
-        await this.$store.dispatch('openUrl', this.url)
+        const { auth, cancelled  } = await this.$bks.unlock();
+        if (cancelled) return;
+        await this.$store.dispatch('openUrl', { url: this.url, auth })
       } catch (error) {
         console.error(error)
         this.$noty.error(`Error opening ${this.url}: ${error}`)

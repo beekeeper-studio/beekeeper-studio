@@ -1,0 +1,81 @@
+<template>
+  <portal to="modals">
+    <modal
+      :name="modalName"
+      @before-open="beforeOpen"
+      @closed="closed"
+      class="vue-dialog beekeeper-modal"
+    >
+      <form v-kbd-trap="true" @submit.prevent="submit">
+        <div class="dialog-content">
+          <div class="dialog-c-title">
+            Please input your PIN
+            <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
+              <i class="material-icons">clear</i>
+            </a>
+          </div>
+          <div class="form-group">
+            <label for="input-pin">Pin</label>
+            <input id="input-pin" name="pin" type="password" v-model="pin" />
+          </div>
+        </div>
+        <div class="vue-dialog-buttons">
+          <button
+            class="btn btn-flat btn-cancel"
+            type="button"
+            @click.prevent="close"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="submit"
+            @click.prevent="submit"
+            :disabled="submitting"
+          >
+            Submit
+          </button>
+        </div>
+      </form>
+    </modal>
+  </portal>
+</template>
+
+<script lang="ts">
+import Vue from "vue";
+
+export default Vue.extend({
+  data() {
+    return {
+      modalName: "input-pin-modal",
+      submitListener: () => {},
+      cancelListener: () => {},
+      submitting: false,
+      pin: "",
+    };
+  },
+  methods: {
+    beforeOpen(event) {
+      const params = event.params;
+      this.submitListener = params.onSubmit;
+      this.cancelListener = params.onCancel;
+      this.submitting = false;
+      this.pin = "";
+    },
+    close() {
+      this.$modal.hide(this.modalName);
+    },
+    submit() {
+      this.submitting = true;
+      this.close();
+    },
+    closed() {
+      if (this.submitting) {
+        this.submitListener(this.pin);
+      } else {
+        this.cancelListener();
+      }
+    },
+  },
+});
+</script>

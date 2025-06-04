@@ -392,9 +392,9 @@ const store = new Vuex.Store<State>({
       context.commit('setUsername', name)
     },
 
-    async openUrl(context, url: string) {
+    async openUrl(context, { url, auth }: { url: string, auth?: { input: string; mode: 'pin'; }}) {
       const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
-      await context.dispatch('connect', conn)
+      await context.dispatch('connect', { config: conn, auth })
     },
 
     updateWindowTitle(context) {
@@ -419,7 +419,7 @@ const store = new Vuex.Store<State>({
       if(isConnected) context.dispatch('updateWindowTitle', config)
     },
 
-    async connect(context, config: IConnection, auth?: { input: string; mode: 'pin'; }) {
+    async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
       if (context.state.username) {
         await Vue.prototype.$util.send('conn/create', { config, auth, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();

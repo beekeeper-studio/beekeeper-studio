@@ -13,11 +13,11 @@ export default class NativeMenuBuilder {
   private handler: NativeMenuActionHandlers
   private menu?: Electron.Menu
 
-  constructor(private electron: any, settings: IGroupedUserSettings){
+  constructor(private electron: any, settings: IGroupedUserSettings, bksConfig: IBksConfig){
     this.handler = new NativeMenuActionHandlers(settings)
     // We only support native titlebars for Mac now
     if (platformInfo.isMac) {
-      this.builder = new MenuBuilder(settings, this.handler, platformInfo)
+      this.builder = new MenuBuilder(settings, this.handler, platformInfo, bksConfig)
     }
   }
 
