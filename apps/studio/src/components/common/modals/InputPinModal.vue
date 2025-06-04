@@ -15,6 +15,7 @@
               <i class="material-icons">clear</i>
             </a>
           </div>
+          <error-alert v-if="errorMessage" :error="errorMessage" />
           <div class="form-group form-group-password">
             <label for="input-pin">Pin</label>
             <input
@@ -29,7 +30,7 @@
               @click="togglePinVisibility"
               :title="showPin ? 'Hide PIN' : 'Show PIN'"
             >
-              {{ showPin ? 'visibility_off' : 'visibility' }}
+              {{ showPin ? "visibility_off" : "visibility" }}
             </i>
           </div>
         </div>
@@ -57,8 +58,10 @@
 
 <script lang="ts">
 import Vue from "vue";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 
 export default Vue.extend({
+  components: { ErrorAlert },
   data() {
     return {
       modalName: "input-pin-modal",
@@ -67,6 +70,7 @@ export default Vue.extend({
       submitting: false,
       pin: "",
       showPin: false,
+      errorMessage: "",
     };
   },
   methods: {
@@ -77,6 +81,7 @@ export default Vue.extend({
       this.submitting = false;
       this.pin = "";
       this.showPin = false;
+      this.errorMessage = "";
     },
     opened() {
       this.$nextTick(() => {
@@ -90,7 +95,13 @@ export default Vue.extend({
       this.showPin = !this.showPin;
     },
     submit() {
+      if (!this.pin) {
+        this.errorMessage = "PIN is required";
+        return;
+      }
+
       this.submitting = true;
+      this.errorMessage = "";
       this.close();
     },
     closed() {

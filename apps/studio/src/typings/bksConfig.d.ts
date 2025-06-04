@@ -88,6 +88,7 @@ declare interface IBksConfig {
         idleCheckIntervalSeconds: number;
         idleThresholdSeconds: number;
         lockMode: string;
+        minPinLength: number;
     };
     ui: {
         export: {

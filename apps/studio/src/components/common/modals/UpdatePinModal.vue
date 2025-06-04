@@ -14,6 +14,11 @@
               <i class="material-icons">clear</i>
             </a>
           </div>
+          <error-alert v-if="errorMessage" :error="errorMessage" />
+          <error-alert
+            v-if="!valid && attemptedSubmit"
+            :error="`Pin must be at least ${$bksConfig.security.minPinLength} characters long`"
+          />
           <div class="form-group form-group-password">
             <label for="input-old-pin">Old pin</label>
             <input
@@ -28,7 +33,7 @@
               @click="toggleOldPinVisibility"
               :title="showOldPin ? 'Hide old PIN' : 'Show old PIN'"
             >
-              {{ showOldPin ? 'visibility_off' : 'visibility' }}
+              {{ showOldPin ? "visibility_off" : "visibility" }}
             </i>
           </div>
           <div class="form-group form-group-password">
@@ -44,7 +49,7 @@
               @click="toggleNewPinVisibility"
               :title="showNewPin ? 'Hide new PIN' : 'Show new PIN'"
             >
-              {{ showNewPin ? 'visibility_off' : 'visibility' }}
+              {{ showNewPin ? "visibility_off" : "visibility" }}
             </i>
           </div>
         </div>
@@ -60,7 +65,7 @@
             class="btn btn-primary"
             type="submit"
             @click.prevent="submit"
-            :disabled="submitting"
+            :disabled="submitting || !valid"
           >
             Submit
           </button>
@@ -72,9 +77,11 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { AppEvent } from "@/common/AppEvent"
+import { AppEvent } from "@/common/AppEvent";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 
 export default Vue.extend({
+  components: { ErrorAlert },
   data() {
     return {
       modalName: "update-pin-modal",
@@ -83,13 +90,16 @@ export default Vue.extend({
       newPin: "",
       showOldPin: false,
       showNewPin: false,
+      errorMessage: "",
+      attemptedSubmit: false,
     };
   },
   computed: {
     rootBindings() {
-      return [
-        { event: AppEvent.updatePin, handler: this.open },
-      ];
+      return [{ event: AppEvent.updatePin, handler: this.open }];
+    },
+    valid() {
+      return this.newPin.length >= this.$bksConfig.security.minPinLength;
     },
   },
   methods: {
@@ -99,6 +109,8 @@ export default Vue.extend({
       this.oldPin = "";
       this.showOldPin = false;
       this.showNewPin = false;
+      this.errorMessage = "";
+      this.attemptedSubmit = false;
     },
     opened() {
       this.$nextTick(() => {
@@ -118,20 +130,27 @@ export default Vue.extend({
       this.$modal.show(this.modalName);
     },
     async submit() {
+      this.attemptedSubmit = true;
+
       if (this.submitting) {
         return;
       }
 
+      if (!this.valid) {
+        return;
+      }
+
       this.submitting = true;
+      this.errorMessage = "";
 
       try {
         await this.$util.send("lock/update", {
           oldPin: this.oldPin,
           newPin: this.newPin,
-        })
+        });
         this.close();
       } catch (e) {
-        this.$noty.error(e.message);
+        this.errorMessage = e.message;
       }
       this.submitting = false;
     },
