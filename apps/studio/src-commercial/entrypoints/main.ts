@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
 import * as electron from 'electron'
-import { ipcMain } from 'electron'
+import { ipcMain, powerMonitor } from 'electron'
 import _ from 'lodash'
 import log from '@bksLogger'
 
@@ -27,6 +27,7 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
+import { initializeSecurity } from '@/backend/lib/security'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -223,6 +224,7 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
+      initializeSecurity(app);
       await createUtilityProcess()
 
       await buildWindow(settings)

@@ -52,6 +52,7 @@
     "axios": "^1.8.2",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
+    "bcryptjs": "^3.0.2",
     "better-sqlite3": "~11.1.2",
     "builder-util-runtime": "^9.1.1",
     "bytes": "^3.1.0",

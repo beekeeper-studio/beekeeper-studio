@@ -419,9 +419,9 @@ const store = new Vuex.Store<State>({
       if(isConnected) context.dispatch('updateWindowTitle', config)
     },
 
-    async connect(context, config: IConnection) {
+    async connect(context, config: IConnection, auth?: { input: string; mode: 'pin'; }) {
       if (context.state.username) {
-        await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
+        await Vue.prototype.$util.send('conn/create', { config, auth, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();

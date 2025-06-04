@@ -12,7 +12,6 @@
           @databaseSelected="databaseSelected"
           v-else
         />
-        <lock-manager />
         <auto-updater />
         <state-manager />
         <notification-manager />
@@ -37,7 +36,7 @@
     <import-queries-modal />
     <import-connections-modal />
     <confirmation-modal-manager />
-    <device-state-manager />
+    <lock-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
@@ -79,6 +78,7 @@ import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
+import LockManager from "@/components/managers/LockManager.vue";
 
 import rawLog from '@bksLogger'
 
@@ -92,7 +92,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
-    ConfigurationWarningModal,
+    ConfigurationWarningModal, LockManager,
   },
   data() {
     return {
