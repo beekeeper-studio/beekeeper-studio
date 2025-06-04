@@ -3,6 +3,7 @@
     <modal
       :name="modalName"
       @before-open="beforeOpen"
+      @opened="opened"
       @closed="closed"
       class="vue-dialog beekeeper-modal"
     >
@@ -21,6 +22,7 @@
               name="pin"
               :type="showPin ? 'text' : 'password'"
               v-model="pin"
+              ref="pinInput"
             />
             <i
               class="material-icons password-icon"
@@ -75,6 +77,11 @@ export default Vue.extend({
       this.submitting = false;
       this.pin = "";
       this.showPin = false;
+    },
+    opened() {
+      this.$nextTick(() => {
+        this.$refs.pinInput.focus();
+      });
     },
     close() {
       this.$modal.hide(this.modalName);

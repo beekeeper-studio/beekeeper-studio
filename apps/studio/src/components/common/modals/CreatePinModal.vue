@@ -3,15 +3,13 @@
     <modal
       :name="modalName"
       :click-to-close="false"
+      @opened="opened"
       class="vue-dialog beekeeper-modal"
     >
       <form v-kbd-trap="true" @submit.prevent="submit">
         <div class="dialog-content">
           <div class="dialog-c-title">
             Create your PIN
-            <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
-              <i class="material-icons">clear</i>
-            </a>
           </div>
           <div class="form-group form-group-password">
             <label for="input-pin">Pin</label>
@@ -20,6 +18,7 @@
               name="pin"
               :type="showPin ? 'text' : 'password'"
               v-model="pin"
+              ref="pinInput"
             />
             <i
               class="material-icons password-icon"
@@ -60,6 +59,11 @@ export default Vue.extend({
   methods: {
     close() {
       this.$modal.hide(this.modalName);
+    },
+    opened() {
+      this.$nextTick(() => {
+        this.$refs.pinInput.focus();
+      });
     },
     togglePinVisibility() {
       this.showPin = !this.showPin;

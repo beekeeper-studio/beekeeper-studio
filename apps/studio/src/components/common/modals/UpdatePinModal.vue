@@ -3,6 +3,7 @@
     <modal
       :name="modalName"
       @before-open="beforeOpen"
+      @opened="opened"
       class="vue-dialog beekeeper-modal"
     >
       <form v-kbd-trap="true" @submit.prevent="submit">
@@ -20,6 +21,7 @@
               name="oldPin"
               :type="showOldPin ? 'text' : 'password'"
               v-model="oldPin"
+              ref="oldPinInput"
             />
             <i
               class="material-icons password-icon"
@@ -97,6 +99,11 @@ export default Vue.extend({
       this.oldPin = "";
       this.showOldPin = false;
       this.showNewPin = false;
+    },
+    opened() {
+      this.$nextTick(() => {
+        this.$refs.oldPinInput.focus();
+      });
     },
     close() {
       this.$modal.hide(this.modalName);

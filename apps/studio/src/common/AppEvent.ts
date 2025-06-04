@@ -67,11 +67,7 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
-  deviceIdle = 'deviceIdle',
-  deviceLocked = 'deviceLocked',
-  deviceSuspended = 'deviceSuspended',
   updatePin = 'updatePin',
-
 }
 
 export interface RootBinding {

@@ -22,14 +22,17 @@ export function initializeSecurity() {
         idleChecker,
         bksConfig.security.idleCheckIntervalSeconds
       );
+      log.info("Idle checker started");
     }
 
     if (bksConfig.security.disconnectOnSuspend) {
       powerMonitor.on("suspend", disconnect);
+      log.info("Suspend monitor started");
     }
 
     if (bksConfig.security.disconnectOnLock) {
       powerMonitor.on("lock-screen", disconnect);
+      log.info("Lock monitor started");
     }
   }
 
