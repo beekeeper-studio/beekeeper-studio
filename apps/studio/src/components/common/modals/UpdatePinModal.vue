@@ -13,23 +13,37 @@
               <i class="material-icons">clear</i>
             </a>
           </div>
-          <div class="form-group">
+          <div class="form-group form-group-password">
             <label for="input-old-pin">Old pin</label>
             <input
               id="input-old-pin"
               name="oldPin"
-              type="password"
+              :type="showOldPin ? 'text' : 'password'"
               v-model="oldPin"
             />
+            <i
+              class="material-icons password-icon"
+              @click="toggleOldPinVisibility"
+              :title="showOldPin ? 'Hide old PIN' : 'Show old PIN'"
+            >
+              {{ showOldPin ? 'visibility_off' : 'visibility' }}
+            </i>
           </div>
-          <div class="form-group">
+          <div class="form-group form-group-password">
             <label for="input-new-pin">New pin</label>
             <input
               id="input-new-pin"
               name="newPin"
-              type="password"
+              :type="showNewPin ? 'text' : 'password'"
               v-model="newPin"
             />
+            <i
+              class="material-icons password-icon"
+              @click="toggleNewPinVisibility"
+              :title="showNewPin ? 'Hide new PIN' : 'Show new PIN'"
+            >
+              {{ showNewPin ? 'visibility_off' : 'visibility' }}
+            </i>
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -65,6 +79,8 @@ export default Vue.extend({
       submitting: false,
       oldPin: "",
       newPin: "",
+      showOldPin: false,
+      showNewPin: false,
     };
   },
   computed: {
@@ -79,9 +95,17 @@ export default Vue.extend({
       this.submitting = false;
       this.newPin = "";
       this.oldPin = "";
+      this.showOldPin = false;
+      this.showNewPin = false;
     },
     close() {
       this.$modal.hide(this.modalName);
+    },
+    toggleOldPinVisibility() {
+      this.showOldPin = !this.showOldPin;
+    },
+    toggleNewPinVisibility() {
+      this.showNewPin = !this.showNewPin;
     },
     open() {
       this.$modal.show(this.modalName);

@@ -13,9 +13,21 @@
               <i class="material-icons">clear</i>
             </a>
           </div>
-          <div class="form-group">
+          <div class="form-group form-group-password">
             <label for="input-pin">Pin</label>
-            <input id="input-pin" name="pin" type="password" v-model="pin" />
+            <input
+              id="input-pin"
+              name="pin"
+              :type="showPin ? 'text' : 'password'"
+              v-model="pin"
+            />
+            <i
+              class="material-icons password-icon"
+              @click="togglePinVisibility"
+              :title="showPin ? 'Hide PIN' : 'Show PIN'"
+            >
+              {{ showPin ? 'visibility_off' : 'visibility' }}
+            </i>
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -42,11 +54,15 @@ export default Vue.extend({
       modalName: "create-pin-modal",
       submitting: false,
       pin: "",
+      showPin: false,
     };
   },
   methods: {
     close() {
       this.$modal.hide(this.modalName);
+    },
+    togglePinVisibility() {
+      this.showPin = !this.showPin;
     },
     async submit() {
       if (this.submitting) {
