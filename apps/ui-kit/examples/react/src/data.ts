@@ -1,8 +1,10 @@
-const cheeses = {
+import { Entity, TableEntity } from "@beekeeperstudio/ui-kit";
+
+const cheeses: TableEntity = {
   name: "cheeses",
   schema: "public",
   columns: [
-    { field: "id", dataType: "integer", primaryKey: true },
+    { field: "id", dataType: "integer" },
     { field: "name", dataType: "string" },
     { field: "origin_country_id", dataType: "integer", foreignKey: true },
     { field: "cheese_type", dataType: "string" },
@@ -13,7 +15,7 @@ const cheeses = {
   data: [{ "id": 1, "name": "Cheddar", "origin_country_id": 44, "cheese_type": "Hard", "description": "A firm, smooth cheese with a nutty flavor.", "first_seen": "12th Century" }, { "id": 2, "name": "Brie", "origin_country_id": 33, "cheese_type": "Soft", "description": "A soft cheese with a creamy texture and edible rind.", "first_seen": "8th Century" }, { "id": 3, "name": "Gouda", "origin_country_id": 31, "cheese_type": "Semi-Hard", "description": "A mild, yellow cheese made from cow's milk.", "first_seen": "1184" }, { "id": 4, "name": "Parmesan", "origin_country_id": 39, "cheese_type": "Hard", "description": "A granular cheese with a rich, savory flavor.", "first_seen": "13th Century" }, { "id": 5, "name": "Feta", "origin_country_id": 30, "cheese_type": "Soft", "description": "A brined, crumbly cheese made from sheep or goat milk.", "first_seen": "8th Century BC" }],
 };
 
-const users = {
+const users: TableEntity = {
   name: "users",
   schema: "public",
   columns: [
@@ -27,7 +29,7 @@ const users = {
   ],
 };
 
-const posts = {
+const posts: TableEntity = {
   name: "posts",
   schema: "public",
   columns: [
@@ -41,7 +43,7 @@ const posts = {
   ],
 };
 
-const comments = {
+const comments: TableEntity = {
   name: "comments",
   schema: "public",
   columns: [
@@ -55,7 +57,7 @@ const comments = {
   ],
 };
 // Post-User Link (Who posted which post)
-const postUser = {
+const postUser: TableEntity = {
   name: "post_user",
   schema: "public",
   columns: [
@@ -70,7 +72,7 @@ const postUser = {
 };
 
 // Comment-User-Post Link (Who commented on which post)
-const commentUserPost = {
+const commentUserPost: TableEntity = {
   name: "comment_user_post",
   schema: "public",
   columns: [
@@ -90,6 +92,6 @@ const commentUserPost = {
   ],
 };
 
-export function getEntities() {
+export function getEntities(): Entity[] {
   return [cheeses, users, posts, comments, postUser, commentUserPost];
 }
