@@ -17,13 +17,20 @@ export function initializeSecurity() {
   }
 
   if (bksConfig.security.lockMode !== "disabled") {
-    idleCheckInterval = setInterval(
-      idleChecker,
-      bksConfig.security.idleCheckIntervalSeconds
-    );
+    if (bksConfig.security.disconnectOnIdle) {
+      idleCheckInterval = setInterval(
+        idleChecker,
+        bksConfig.security.idleCheckIntervalSeconds
+      );
+    }
 
-    powerMonitor.on("suspend", disconnect);
-    powerMonitor.on("lock-screen", disconnect);
+    if (bksConfig.security.disconnectOnSuspend) {
+      powerMonitor.on("suspend", disconnect);
+    }
+
+    if (bksConfig.security.disconnectOnLock) {
+      powerMonitor.on("lock-screen", disconnect);
+    }
   }
 
   initialized = true;
