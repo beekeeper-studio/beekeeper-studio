@@ -1,7 +1,12 @@
 import _ from "lodash";
 import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
-import { Manifest, PluginRegistryEntry, PluginRepository } from "./types";
+import {
+  Manifest,
+  PluginRegistryEntry,
+  PluginRepository,
+  PluginSettings,
+} from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
@@ -14,16 +19,15 @@ export default class PluginManager {
   private registry: PluginRegistry;
   private fileManager: PluginFileManager;
   private installedPlugins: Manifest[] = [];
-  private disabledAutoUpdatePlugins: Set<string> = new Set();
+  private pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
   /** A Constant for the setting key */
-  private static readonly DISABLED_AUTO_UPDATE_PLUGINS =
-    "disabledAutoUpdatePlugins";
+  private static readonly PLUGIN_SETTINGS = "pluginSettings";
   /** This is a list of plugins that are preinstalled by default. When the
    * application starts, these plugins will be installed automatically. The user
    * should be able to uninstall them later. */
-  private static readonly PREINSTALLED_PLUGINS = ["bks-ai-assistant"];
+  private static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell"];
 
   constructor() {
     this.pluginRepositoryService = new PluginRepositoryService();
@@ -39,41 +43,29 @@ export default class PluginManager {
 
     this.installedPlugins = this.fileManager.scanPlugins();
 
-    await this.loadDisabledAutoUpdatePlugins();
+    await this.loadPluginSettings();
 
     this.initialized = true;
 
-    const installedPreinstalledPlugins = ((
-      await UserSetting.get("installedPreinstalledPlugins")
-    ).value || []) as string[];
-
     for (const id of PluginManager.PREINSTALLED_PLUGINS) {
       // have installed before?
-      if (installedPreinstalledPlugins.includes(id)) {
-        continue;
-      }
-
-      // is installed now?
-      if (this.installedPlugins.find((plugin) => plugin.id === id)) {
+      if (this.pluginSettings[id]) {
         continue;
       }
 
       await this.installPlugin(id);
-
-      await UserSetting.set(
-        "installedPreinstalledPlugins",
-        JSON.stringify([...installedPreinstalledPlugins, id])
-      );
     }
 
-    this.installedPlugins.map(async (plugin) => {
-      if (this.disabledAutoUpdatePlugins.has(plugin.id)) {
-        return;
-      }
-      if (await this.checkForUpdates(plugin.id)) {
+    const promises = this.installedPlugins.map(async (plugin) => {
+      if (
+        this.pluginSettings[plugin.id]?.autoUpdate &&
+        (await this.checkForUpdates(plugin.id))
+      ) {
         await this.updatePlugin(plugin.id);
       }
     });
+
+    await Promise.allSettled(promises);
   }
 
   async getEntries() {
@@ -115,6 +107,12 @@ export default class PluginManager {
       await this.fileManager.download(id, info.latestRelease);
       const manifest = this.fileManager.getManifest(id);
       this.installedPlugins.push(manifest);
+      if (!this.pluginSettings[id]) {
+        this.pluginSettings[id] = {
+          autoUpdate: true,
+        };
+      }
+      await this.savePluginSettings();
 
       log.debug(`Plugin "${id}" installed!`);
 
@@ -122,7 +120,7 @@ export default class PluginManager {
     });
   }
 
-  async updatePlugin(id: string): Promise<void> {
+  async updatePlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
     const installedPluginIdx = this.installedPlugins.findIndex(
       (manifest) => manifest.id === id
@@ -137,10 +135,12 @@ export default class PluginManager {
       const info = await this.registry.getRepository(id, { reload: true });
       await this.fileManager.update(id, info.latestRelease);
 
-      this.installedPlugins[installedPluginIdx] =
-        this.fileManager.getManifest(id);
+      const newManifest = this.fileManager.getManifest(id);
+      this.installedPlugins[installedPluginIdx] = newManifest;
 
       log.debug(`Plugin "${id}" updated!`);
+
+      return newManifest;
     });
   }
 
@@ -204,15 +204,12 @@ export default class PluginManager {
   /**
    * Loads the list of disabled auto-update plugins from the database
    */
-  private async loadDisabledAutoUpdatePlugins() {
-    const setting = await UserSetting.get(
-      PluginManager.DISABLED_AUTO_UPDATE_PLUGINS
-    );
+  private async loadPluginSettings() {
+    const setting = await UserSetting.get(PluginManager.PLUGIN_SETTINGS);
     if (setting && setting.value) {
-      const disabledPlugins = setting.value as string[];
-      this.disabledAutoUpdatePlugins = new Set(disabledPlugins);
+      this.pluginSettings = setting.value as PluginSettings;
       log.debug(
-        `Loaded ${disabledPlugins.length} disabled auto-update plugins`
+        `Loaded plugin settings: ${JSON.stringify(this.pluginSettings)}`
       );
     }
   }
@@ -220,34 +217,32 @@ export default class PluginManager {
   /**
    * Saves the current list of disabled auto-update plugins to the database
    */
-  private async saveDisabledAutoUpdatePlugins() {
-    const disabledPlugins = Array.from(this.disabledAutoUpdatePlugins);
+  private async savePluginSettings() {
     await UserSetting.set(
-      PluginManager.DISABLED_AUTO_UPDATE_PLUGINS,
-      JSON.stringify(disabledPlugins)
+      PluginManager.PLUGIN_SETTINGS,
+      JSON.stringify(this.pluginSettings)
     );
-    log.debug(`Saved ${disabledPlugins.length} disabled auto-update plugins`);
+    log.debug(`Saved plugin settings.`);
   }
 
   /**
    * Enable or disable automatic update checks for a specific plugin
    */
   async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
-    if (enabled) {
-      this.disabledAutoUpdatePlugins.delete(id);
-    } else {
-      this.disabledAutoUpdatePlugins.add(id);
-    }
-
+    this.pluginSettings[id].autoUpdate = enabled;
     // Persist the changes to the database
-    await this.saveDisabledAutoUpdatePlugins();
+    await this.savePluginSettings();
   }
 
   /**
    * Get the current auto-update setting for a specific plugin
    */
   getPluginAutoUpdateEnabled(id: string): boolean {
-    return !this.disabledAutoUpdatePlugins.has(id);
+    if (!_.has(this.pluginSettings, id)) {
+      log.warn(`Plugin "${id}" not found in plugin settings.`);
+      return false;
+    }
+    return this.pluginSettings[id].autoUpdate;
   }
 
   private initializeGuard() {
