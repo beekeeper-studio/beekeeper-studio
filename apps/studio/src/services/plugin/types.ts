@@ -1,3 +1,14 @@
+import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
+
+/**
+ * The kind of the tab. There is only one kind currently:
+ *
+ * - `shell`: Like a query tab. This tab has two main parts; A plugin's
+ *   `<iframe>` (placed at the top), and a table component (placed at the
+ *   bottom). The table can be collapsed completely.
+ **/
+export type TabKind = "shell";
+
 export interface Manifest {
   id: string;
   name: string;
@@ -5,13 +16,22 @@ export interface Manifest {
   description: string;
   version: string;
   minAppVersion: string;
+  /** Material UI icon name. https://fonts.google.com/icons?icon.set=Material+Icons */
+  icon?: string;
   capabilities: {
     views: {
-      sidebars: {
+      sidebars?: {
         id: string;
         name: string;
         location: "secondary";
         /** The path to the entry html file of the sidebar. This is relative to the plugin's root directory. */
+        entry: string;
+      }[];
+      tabTypes?: {
+        id: string;
+        name: string;
+        kind: TabKind;
+        /** Same as `entry` above. */
         entry: string;
       }[];
     };
@@ -43,6 +63,18 @@ export interface Release {
 export interface PluginRepository {
   latestRelease: Release;
   readme: string;
+}
+
+export type OnViewRequestListener = (params: {
+  source: HTMLIFrameElement;
+  request: PluginRequestData;
+  after: (callback: (response: PluginResponseData) => void) => void;
+}) => void | Promise<void>;
+
+export type PluginSettings = {
+  [pluginId: string]: {
+    autoUpdate: boolean;
+  }
 }
 
 export * from "./comm";
