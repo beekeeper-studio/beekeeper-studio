@@ -16,42 +16,36 @@ export function initializeSecurity() {
     return;
   }
 
-  if (bksConfig.security.lockMode !== "disabled") {
-    if (bksConfig.security.disconnectOnIdle) {
-      idleCheckInterval = setInterval(
-        idleChecker,
-        bksConfig.security.idleCheckIntervalSeconds
-      );
-      log.info("Idle checker started");
-    }
+  if (bksConfig.security.disconnectOnIdle) {
+    idleCheckInterval = setInterval(() => {
+      if (
+        powerMonitor.getSystemIdleTime() >
+        bksConfig.security.idleThresholdSeconds
+      ) {
+        log.info("User has been idle, disconnecting.");
+        disconnect("User has been idle");
+      }
+    }, bksConfig.security.idleCheckIntervalSeconds);
+    log.info("Idle checker started");
+  }
 
-    if (bksConfig.security.disconnectOnSuspend) {
-      powerMonitor.on("suspend", disconnect);
-      log.info("Suspend monitor started");
-    }
+  if (bksConfig.security.disconnectOnSuspend) {
+    powerMonitor.on("suspend", () => disconnect("System was suspended"));
+    log.info("Suspend monitor started");
+  }
 
-    if (bksConfig.security.disconnectOnLock) {
-      powerMonitor.on("lock-screen", disconnect);
-      log.info("Lock monitor started");
-    }
+  if (bksConfig.security.disconnectOnLock) {
+    powerMonitor.on("lock-screen", () => disconnect("Screen was locked"));
+    log.info("Lock monitor started");
   }
 
   initialized = true;
 }
 
-function idleChecker() {
-  if (
-    powerMonitor.getSystemIdleTime() > bksConfig.security.idleThresholdSeconds
-  ) {
-    log.info("Idle threshold reached.");
-    disconnect();
-  }
-}
-
-function disconnect() {
+function disconnect(reason: string) {
   getActiveWindows().forEach((win) =>
     win.send(AppEvent.disconnect, {
-      reason: "Idle threshold reached.",
+      reason,
     })
   );
 }
