@@ -33,6 +33,17 @@
       >
         <favorite-list />
       </div>
+
+      <!-- User Management -->
+      <div
+        class="tab-pane"
+        id="tab-user-management"
+        :class="tabClasses('user-management')"
+        v-show="activeItem === 'user-management'"
+      >
+        <user-management />
+      </div>
+
     </div>
   </div>
 </template>
@@ -43,6 +54,7 @@
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
+  import UserManagement from './core/UserManagement.vue'
 
   import { mapState, mapGetters, mapActions } from 'vuex'
   import rawLog from '@bksLogger'
@@ -50,7 +62,7 @@
   const log = rawLog.scope('core-sidebar')
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, FavoriteList},
+    components: { TableList, DatabaseDropdown, HistoryList, FavoriteList, UserManagement },
     data() {
       return {
         tableLoadError: null,

@@ -613,4 +613,52 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
       .trim();
   }
 
+  async hasAdminPermission(): Promise<boolean> {
+    return false;
+  }
+
+  async getListOfUsers(): Promise<any[]> { 
+    return [];
+  }
+
+  async getUserAuthenticationDetails(user: string, host: string): Promise<any[]> { 
+    return [];
+  }
+
+  async getUserPrivileges(user: string, host: string): Promise<any[]> {
+    return [];
+  }
+
+  async getUserResourceLimits(user: string, host: string): Promise<any[]> {
+    return [];
+  }
+  
+  async showGrantsForUser(user: string, host: string): Promise<any[]> {
+    return [];
+  }
+
+  async applyUserChanges(changes: any[][]): Promise<{ success: boolean; error?: string }> {
+    return { success: false };
+  }
+
+  async getSchemas(): Promise<string[]> {
+    return [];
+  }
+
+  async deleteUser(user: string, host: string): Promise<NgQueryResult> {
+    return null;
+  }
+
+  async renameUser(user: string, host: string, newName: string): Promise<NgQueryResult> {
+    return null;
+  }
+
+  async expireUserPassword(user: string, host: string): Promise<NgQueryResult> {
+    return null;
+  }
+
+  async revokeAllPrivileges(user: string, host: string): Promise<NgQueryResult> {
+    return null;
+  }
+
 }
