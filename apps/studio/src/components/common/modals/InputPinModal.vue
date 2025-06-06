@@ -40,6 +40,8 @@
               {{ showPin ? "visibility_off" : "visibility" }}
             </i>
           </div>
+
+          <small style="margin-top: 8px; display: block;"><external-link href="https://docs.beekeeperstudio.io/user_guide/configuration#forgot-pin" style="text-decoration: underline;">Forgot your PIN?</external-link></small>
         </div>
         <div class="vue-dialog-buttons">
           <button
@@ -66,9 +68,10 @@
 <script lang="ts">
 import Vue from "vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import ExternalLink from "@/components/common/ExternalLink.vue";
 
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, ExternalLink },
   data() {
     return {
       modalName: "input-pin-modal",

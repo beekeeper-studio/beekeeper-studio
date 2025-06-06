@@ -67,7 +67,15 @@
 
           <div class="alert alert-warning">
             <i class="material-icons">warning</i>
-            <div class="alert-body">Make sure to remember your PIN - if you lose it, it CANNOT be recovered.</div>
+            <div class="alert-body">
+              <span>
+                Make sure to remember your PIN - if you lose it, it CANNOT be recovered.
+                Learn about
+                <external-link href="https://docs.beekeeperstudio.io/user_guide/configuration#forgot-pin">
+                  PIN recovery.
+                </external-link>
+              </span>
+            </div>
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -88,9 +96,10 @@
 <script lang="ts">
 import Vue from "vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import ExternalLink from "@/components/common/ExternalLink.vue";
 
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, ExternalLink },
   data() {
     return {
       modalName: "create-pin-modal",

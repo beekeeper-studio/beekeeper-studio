@@ -18,14 +18,14 @@
           <div class="description">
             <p>Enter your current PIN and choose a new one. Your new PIN will be required for all future database connections.</p>
           </div>
-          
+
           <error-alert v-if="errorMessage" :error="errorMessage" />
           <error-alert
             v-if="!valid && attemptedSubmit"
             :error="`New PIN must be at least ${$bksConfig.security.minPinLength} characters long`"
             title="Please fix the following errors"
           />
-          
+
           <div class="form-group form-group-password">
             <label for="input-old-pin">Current PIN</label>
             <input
@@ -44,7 +44,7 @@
               {{ showOldPin ? "visibility_off" : "visibility" }}
             </i>
           </div>
-          
+
           <div class="form-group form-group-password">
             <label for="input-new-pin">New PIN</label>
             <input
@@ -62,10 +62,10 @@
               {{ showNewPin ? "visibility_off" : "visibility" }}
             </i>
           </div>
-          
+
           <div class="alert alert-info">
             <i class="material-icons">info</i>
-            <div class="alert-body">Your new PIN will be encrypted and stored securely on your device.</div>
+            <div class="alert-body">Your new PIN will be encrypted and stored securely on your device.&nbsp<external-link href="https://docs.beekeeperstudio.io/user_guide/configuration#forgot-pin">Forgot your current PIN?</external-link></div>
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -94,9 +94,10 @@
 import Vue from "vue";
 import { AppEvent } from "@/common/AppEvent";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import ExternalLink from "@/components/common/ExternalLink.vue";
 
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, ExternalLink },
   data() {
     return {
       modalName: "update-pin-modal",
