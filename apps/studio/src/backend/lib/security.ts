@@ -25,7 +25,7 @@ export function initializeSecurity() {
         log.info("User has been idle, disconnecting.");
         disconnect("User has been idle");
       }
-    }, bksConfig.security.idleCheckIntervalSeconds);
+    }, (bksConfig.security.idleCheckIntervalSeconds || 1) * 1000);
     log.info("Idle checker started");
   }
 
