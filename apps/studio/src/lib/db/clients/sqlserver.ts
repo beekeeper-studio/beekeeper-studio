@@ -421,13 +421,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     `;
 
     const { data } = await this.driverExecuteSingle(sql);
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(data.recordset, 'name');
-    
+
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -443,8 +443,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           onDelete: row.on_delete,
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite mekey
       const firstPart = keyParts[0];
       return {
@@ -460,7 +460,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         isComposite: true
       };
     });
-    
+
     this.logger().debug("tableKeys result", result);
     return result;
   }
@@ -977,6 +977,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async connect(signal?: AbortSignal): Promise<void> {
     await super.connect();
+    throw new Error("login failed for user <token-identified principal> Something something")
 
     this.dbConfig = await this.configDatabase(this.server, this.database, signal)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
