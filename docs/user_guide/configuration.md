@@ -166,6 +166,24 @@ minPinLength = 6                        ; Minimum PIN length when using PIN mode
 !!! warning "Security Note"
     If you forget your PIN, there is no recovery option. You'll need to disable PIN mode in your configuration file and restart the application. Consider using a password manager to store your PIN securely.
 
+### Forgot PIN {#forgot-pin}
+
+If you forget your PIN and cannot connect to any databases, you can reset the application by deleting the application data directory:
+
+!!! danger "Data Loss Warning"
+    This will remove ALL your saved connections, queries, settings, and PIN. Only use this if you cannot remember your PIN.
+
+#### Reset Steps
+
+1. **Close Beekeeper Studio completely**
+
+2. **Delete the application data directory**:
+   - **Windows**: `%APPDATA%\beekeeper-studio\`
+   - **macOS**: `~/Library/Application Support/beekeeper-studio/`
+   - **Linux**: `~/.config/beekeeper-studio/`
+
+3. **Restart Beekeeper Studio** - it will start fresh with default settings
+
 ### User Interface Settings
 
 Customize the interface to match your workflow and screen setup.
