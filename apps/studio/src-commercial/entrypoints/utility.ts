@@ -21,6 +21,7 @@ import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
+import { LockHandlers } from '@/handlers/lockHandlers';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
@@ -52,6 +53,7 @@ export const handlers: Handlers = {
   ...TempHandlers,
   ...LicenseHandlers,
   ...TabHistoryHandlers,
+  ...LockHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 

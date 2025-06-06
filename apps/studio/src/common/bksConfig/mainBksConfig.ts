@@ -114,16 +114,41 @@ function readConfig(filePath: string) {
   }
 }
 
-export function loadConfig(file: ConfigFileName): IBksConfig {
+export function loadConfig(file: "default.config.ini"): IBksConfig;
+export function loadConfig(file: Omit<ConfigFileName, "default.config.ini">): Partial<IBksConfig>;
+export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfig> {
   log.debug(`Loading config ${file}.`);
 
   const isDev = platformInfo.isDevelopment || platformInfo.testMode;
   const filePath = path.join(resolveConfigDir(), file);
 
-  if (
-    !isDev &&
-    (file === "default.config.ini" || file === "system.config.ini")
-  ) {
+  if (!isDev && file === "system.config.ini") {
+    let systemConfigPath: string;
+    switch (platformInfo.platform) {
+      case "mac":
+        systemConfigPath = "/Library/Application Support/beekeeper-studio";
+      break;
+      case "linux":
+        systemConfigPath = "/etc/beekeeper-studio";
+      break;
+      case "windows":
+        const programData = process.env.ProgramData || "C:\\ProgramData";
+        systemConfigPath = path.join(programData, "beekeeper-studio");
+      break;
+    }
+    if (!systemConfigPath) {
+      log.warn(`Failed loading system config. Unable to determine system config path. platform: ${platformInfo.platform}`);
+      return {};
+    }
+    const systemConfigFilePath = path.join(systemConfigPath, file);
+    if (!existsSync(systemConfigFilePath)) {
+      log.warn(`Failed loading system config. System config path not found: ${systemConfigFilePath}`);
+      return {};
+    }
+    return readConfig(systemConfigFilePath);
+  }
+
+  if (!isDev && file === "default.config.ini") {
     // We always read the bundled version of default.config.ini and
     // system.config.ini so it's not possible for users to modify it. However,
     // we want to make sure they can read them for reference.
