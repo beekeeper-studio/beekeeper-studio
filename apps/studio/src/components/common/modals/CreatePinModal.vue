@@ -18,8 +18,8 @@
 
           <error-alert v-if="errorMessage" :error="errorMessage" />
           <error-alert
-            v-else-if="!valid && attemptedSubmit"
-            :error="`PIN must be at least ${$bksConfig.security.minPinLength} characters long`"
+            v-else-if="!validation.isValid && attemptedSubmit"
+            :error="validation.message"
             title="Please fix the following errors"
           />
 
@@ -42,6 +42,24 @@
             </i>
           </div>
 
+          <div class="form-group form-group-password">
+            <label for="input-confirm-pin">Confirm PIN</label>
+            <input
+              id="input-confirm-pin"
+              name="confirmPin"
+              :type="showConfirmPin ? 'text' : 'password'"
+              v-model="confirmPin"
+              placeholder="Enter PIN again to confirm"
+            />
+            <i
+              class="material-icons password-icon"
+              @click="toggleConfirmPinVisibility"
+              :title="showConfirmPin ? 'Hide PIN' : 'Show PIN'"
+            >
+              {{ showConfirmPin ? "visibility_off" : "visibility" }}
+            </i>
+          </div>
+
           <div class="alert alert-info">
             <i class="material-icons">info</i>
             <div class="alert-body">Your PIN is encrypted and stored securely on your device.</div>
@@ -57,7 +75,7 @@
             class="btn btn-primary"
             type="submit"
             @click.prevent="submit"
-            :disabled="submitting || !valid"
+            :disabled="submitting || !validation.isValid"
           >
             Submit
           </button>
@@ -78,14 +96,31 @@ export default Vue.extend({
       modalName: "create-pin-modal",
       submitting: false,
       pin: "",
+      confirmPin: "",
       showPin: false,
+      showConfirmPin: false,
       errorMessage: "",
       attemptedSubmit: false,
     };
   },
   computed: {
-    valid() {
-      return this.pin.length >= this.$bksConfig.security.minPinLength;
+    validation() {
+      if (this.pin.length < this.$bksConfig.security.minPinLength) {
+        return {
+          isValid: false,
+          message: `PIN must be at least ${this.$bksConfig.security.minPinLength} characters long`
+        };
+      }
+      if (this.pin !== this.confirmPin) {
+        return {
+          isValid: false,
+          message: "PINs do not match"
+        };
+      }
+      return {
+        isValid: true,
+        message: ""
+      };
     },
   },
   methods: {
@@ -100,6 +135,9 @@ export default Vue.extend({
     togglePinVisibility() {
       this.showPin = !this.showPin;
     },
+    toggleConfirmPinVisibility() {
+      this.showConfirmPin = !this.showConfirmPin;
+    },
     async submit() {
       this.attemptedSubmit = true;
 
@@ -107,7 +145,7 @@ export default Vue.extend({
         return;
       }
 
-      if (!this.valid) {
+      if (!this.validation.isValid) {
         return;
       }
 
