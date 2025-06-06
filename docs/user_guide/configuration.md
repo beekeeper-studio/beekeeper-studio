@@ -7,9 +7,7 @@ icon: material/cog
 
 # Configuration
 
-Beekeeper Studio uses a flexible configuration system that lets you customize the app to match your workflow and preferences. Using simple INI configuration files, you can adjust everything from keyboard shortcuts and database connection timeouts to security settings like PIN protection.
-
-Whether you're a database administrator managing multiple environments, a developer working with large datasets, or part of a team that needs consistent settings across all members, configuration files give you the control you need.
+Beekeeper Studio uses an `ini` configuration system that lets you customize the app to match your workflow and preferences. Using simple INI configuration files, you can adjust everything from keyboard shortcuts and database connection timeouts to security settings like PIN protection.
 
 !!! tip "Quick Start"
     New to configuration? Jump to the [Getting Started section](#getting-started-with-configuration) for a simple walkthrough, or check out our [example configurations](#example-configurations) to see common customizations.
@@ -22,7 +20,7 @@ Beekeeper Studio uses a three-tier configuration system that gives you flexible 
 | ------------------- | ------------------------------------------ | --------------------------------------------- |
 | **Default**         | `default.config.ini` (bundled)             | Baseline settings that ship with the app      |
 | **User**            | [Your app data directory](#file-locations) | Your personal customizations                  |
-| **System**          | [System-wide directory](#file-locations)   | Organization-wide settings (admin controlled) |
+| **Administrator**          | [System-wide directory](#file-locations)   | Organization-wide settings (admin controlled) |
 
 ### File Locations
 
@@ -34,7 +32,7 @@ This is where you make your personal customizations:
 -   **Linux**: `~/.config/beekeeper-studio/user.config.ini`
 -   **Windows**: `%APPDATA%/beekeeper-studio/user.config.ini`
 
-#### System Configuration (`system.config.ini`)
+#### Administrator Configuration (`system.config.ini`)
 
 Administrators can use this for organization-wide settings:
 
@@ -46,45 +44,23 @@ Administrators can use this for organization-wide settings:
 
 For developers and testing (place in project root directory)
 
-### Loading Priority
+### Config Loading Order
 
-Beekeeper Studio loads configuration files in this priority order:
+Beekeeper Studio loads configuration files in this priority order.
 
 1. **Default configuration** (baseline settings)
 2. **User configuration** (your personal overrides)
-3. **System configuration** (admin overrides - highest priority)
+3. **Administrator configuration** (admin overrides - highest priority)
 
-!!! note "Override Behavior"
-    Later configurations override earlier ones. System configuration always takes precedence, allowing administrators to enforce organization-wide policies.
+!!! note "Loading precedence"
+    Admin settings override user settings, user settings override default settings. IT administrators can enforce policies by setting the `system.config.ini` file, which will override any user customizations.
 
 ## Getting Started with Configuration
 
-New to configuration files? This section will walk you through creating your first custom configuration in just a few minutes.
 
-### Step 1: Locate Your Configuration Directory
+### Step 1: Create Your Configuration File
 
-First, find where Beekeeper Studio stores user configuration files on your system:
-
-**Windows:**
-```
-%APPDATA%\beekeeper-studio\user.config.ini
-```
-*Full path example:* `C:\Users\YourName\AppData\Roaming\beekeeper-studio\user.config.ini`
-
-**macOS:**
-```
-~/Library/Application Support/beekeeper-studio/user.config.ini
-```
-*Shortcut:* Press `Cmd+Shift+G` in Finder and paste the path above
-
-**Linux:**
-```
-~/.config/beekeeper-studio/user.config.ini
-```
-
-### Step 2: Create Your Configuration File
-
-If the file doesn't exist yet, create it using any text editor. Here's a simple starter configuration:
+Decide which file to change (user or administrator). If the file doesn't exist yet, create it using any text editor. Here's a simple starter configuration:
 
 ```ini
 ; My Beekeeper Studio Configuration
@@ -100,13 +76,13 @@ openQuickSearch = ctrlOrCmd+shift+p     ; Custom shortcut for quick search
 disconnectOnLock = true                 ; Disconnect when system locks
 ```
 
-### Step 3: Save and Restart
+### Step 2: Save and Restart
 
 1. Save your configuration file
 2. Restart Beekeeper Studio completely
 3. Your new settings will take effect immediately
 
-### Step 4: Verify Your Changes
+### Step 3: Verify Your Changes
 
 Test that your configuration is working:
 
@@ -127,7 +103,7 @@ Test that your configuration is working:
     - **File permissions**: Ensure the configuration file is readable by Beekeeper Studio
     - **Check logs**: Enable debug logging to see configuration loading details
 
-## Configuration Settings
+## Configuration Options
 
 ### General Settings
 
@@ -145,14 +121,14 @@ workspaceSyncInterval = 5000            ; Sync workspace every 5 seconds
 
 ### Security Settings
 
-Enhance security with PIN protection and automatic disconnection:
+When connecting to a database, Beekeeper Studio can prompt you for a PIN/password. Combined with the auto-disconnect options below, this allows you to further secure your connections and data.
 
 ```ini
 [security]
 disconnectOnSuspend = true              ; Disconnect when system goes to sleep
-disconnectOnLock = true                 ; Disconnect when system is locked
-disconnectOnIdle = true                 ; Disconnect when user is idle
-lockMode = disabled                     ; Options: disabled, pin
+disconnectOnLock = true                 ; Disconnect when system is locked (win/mac only)
+disconnectOnIdle = true                 ; Disconnect when user is idle (win/mac only)
+lockMode = disabled                     ; Options: disabled, pin (on connecting to a database)
 idleThresholdSeconds = 300              ; Idle timeout (5 minutes)
 idleCheckIntervalSeconds = 30           ; How often to check for idle state
 minPinLength = 6                        ; Minimum PIN length when using PIN mode
@@ -161,7 +137,7 @@ minPinLength = 6                        ; Minimum PIN length when using PIN mode
 **Lock Mode Options:**
 
 -   `disabled` - No additional protection (default)
--   `pin` - Require PIN entry to unlock the application
+-   `pin` - Require PIN entry to connect to a database
 
 !!! warning "Security Note"
     If you forget your PIN, there is no recovery option. You'll need to disable PIN mode in your configuration file and restart the application. Consider using a password manager to store your PIN securely.
@@ -183,6 +159,18 @@ If you forget your PIN and cannot connect to any databases, you can reset the ap
    - **Linux**: `~/.config/beekeeper-studio/`
 
 3. **Restart Beekeeper Studio** - it will start fresh with default settings
+
+### Recommendations for IT Administrators
+
+The best way to enforce PIN protection is to deploy an administrator configuration file (`system.config.ini`) with the following steps:
+
+1. Create an ini file
+2. enable `lockMode = pin`.
+3. Enable all 3 auto-disconnect options with reasonable timeouts
+4. Deploy this config file to the 'administrator configuration' location for your OS (see above)
+
+This forces all users to set a PIN on first load of the app, requires pin entry when connecting to a database, and disconnects users when their system is locked, suspended, or idle.
+
 
 ### User Interface Settings
 
