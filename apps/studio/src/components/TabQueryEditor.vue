@@ -358,7 +358,7 @@
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
-  import { monokai } from '@uiw/codemirror-theme-monokai';
+  import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -615,7 +615,12 @@
         return (extensions) => {
           return [
             ...extensions,
-            monokai,
+            monokaiInit({
+              settings: {
+                selection: "",
+                selectionMatch: "",
+              },
+            }),
           ]
         }
       },
