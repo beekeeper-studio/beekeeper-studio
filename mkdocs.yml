@@ -109,6 +109,11 @@ nav:
     - user_guide/backup-restore.md
     - Cloud Sync: user_guide/cloud-storage-team-workspaces.md
     - user_guide/privacy-mode.md
+  - Plugin Development:
+    - user_guide/plugin_development/index.md
+    - Getting Started: user_guide/plugin_development/creating-plugins.md
+    - API Reference: user_guide/plugin_development/api-reference.md
+    - Publishing: user_guide/plugin_development/publishing-plugins.md
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md
