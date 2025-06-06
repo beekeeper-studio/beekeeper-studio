@@ -1,9 +1,10 @@
 <template>
-  <div class="sidebar-view">
+  <div class="isolated-plugin-view">
     <iframe
       v-if="visible || loaded"
       :src="baseUrl"
       sandbox="allow-scripts allow-same-origin allow-forms"
+      allow="clipboard-read; clipboard-write;"
       ref="iframe"
       @load="handleIframeLoad"
       @error="handleError"
@@ -13,11 +14,9 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { PluginNotificationData } from "@/services/plugin/types";
-import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
-  name: "SidebarView",
+  name: "IsolatedPluginView",
   props: {
     visible: {
       type: Boolean,
@@ -31,6 +30,7 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    onRequest: Function,
     reload: null,
   },
   data() {
@@ -38,6 +38,7 @@ export default Vue.extend({
       loaded: false,
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
+      unsubscribe: null,
     };
   },
   computed: {
@@ -45,40 +46,29 @@ export default Vue.extend({
       // FIXME move this somewhere
       return `${this.url}?timestamp=${this.timestamp}`;
     },
-    rootBindings() {
-      return [
-        {
-          event: AppEvent.settingsChanged,
-          handler: this.handleSettingsChanged,
-        },
-      ];
-    },
   },
   watch: {
     reload() {
       this.timestamp = Date.now();
     },
   },
-  mounted() {
-    this.registerHandlers(this.rootBindings);
-  },
-  beforeDestroy() {
-    this.unregisterHandlers(this.rootBindings);
-  },
   methods: {
-    handleSettingsChanged(key) {
-      if (key === "theme") {
-        const data: PluginNotificationData = { name: "themeChanged" }
-        this.$plugin.notify(this.pluginId, data);
-      }
-    },
     handleIframeLoad() {
       this.loaded = true;
       this.$plugin.registerIframe(this.pluginId, this.$refs.iframe);
+      this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
+        if (args.source === this.$refs.iframe) {
+          this.onRequest?.(args);
+        }
+      });
     },
     handleError(e) {
       console.error(`${this.pluginId} iframe error`, e);
     }
+  },
+  beforeDestroy() {
+    this.$plugin.unregisterIframe(this.pluginId, this.$refs.iframe);
+    this.unsubscribe?.();
   },
 });
 </script>

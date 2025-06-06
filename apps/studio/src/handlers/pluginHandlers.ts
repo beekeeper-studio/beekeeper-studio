@@ -5,7 +5,7 @@ interface IPluginHandlers {
   "plugin/entries": () => Promise<PluginRegistryEntry[]>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
-  "plugin/update": ({ id }: { id: string }) => Promise<void>
+  "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
   "plugin/checkForUpdates": ({ id }: { id: string }) => Promise<boolean>
   "plugin/setAutoUpdateEnabled": ({ id, enabled }: { id: string, enabled: boolean }) => Promise<void>

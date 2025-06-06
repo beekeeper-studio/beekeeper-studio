@@ -26,7 +26,7 @@
             :key="tab.id"
           />
         </template>
-        <sidebar-view
+        <isolated-plugin-view
           v-else
           :visible="secondaryActiveTabId === tab.id"
           :key="tab.id"
@@ -44,7 +44,7 @@ import Vue from "vue";
 import { mapState, mapActions } from "vuex";
 import JsonViewerSidebar from "./JsonViewerSidebar.vue";
 import { AppEvent } from "@/common/AppEvent";
-import SidebarView from "@/components/plugins/views/SidebarView.vue";
+import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 
 interface SidebarTab {
   id: string;
@@ -54,7 +54,7 @@ interface SidebarTab {
 
 export default Vue.extend({
   name: "SecondarySidebar",
-  components: { JsonViewerSidebar, SidebarView },
+  components: { JsonViewerSidebar, IsolatedPluginView },
   data() {
     return {
       reloaders: {},
