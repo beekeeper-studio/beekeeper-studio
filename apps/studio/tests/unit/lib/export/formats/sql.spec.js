@@ -22,4 +22,11 @@ describe('sql exporter', () => {
     const result = exporter.formatRow(input)
     expect(result).toBe(`insert into "table" ("col_1") values ('a''\nb')`)
   })
+
+  it("Should set defaultPath correctly after refactor", () => {
+    const safeFilename = "exported_data";
+    let exporter = new SqlExporter(`${safeFilename}.sql`, {connectionType: 'postgresql'}, { name: 'table'}, '', '', [], {}, {})
+
+    expect(exporter.getFileName()).toBe("exported_data.sql");
+  });
 });
