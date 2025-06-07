@@ -110,6 +110,60 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/executeQuery', { queryText, options });
   }
 
+  async hasAdminPermission(): Promise<boolean> {
+      return await Vue.prototype.$util.send('conn/hasAdminPermission');
+  }
+
+  async getListOfUsers(): Promise<any[]> {
+    const users = await Vue.prototype.$util.send('conn/getListOfUsers');
+    return users;
+  }
+
+  async getUserAuthenticationDetails(user: string, host: string): Promise<any[]> {
+    const authDetails = await Vue.prototype.$util.send('conn/getUserAuthenticationDetails', {user, host});
+    return authDetails;
+  }
+
+  async getUserPrivileges(user: string, host: string): Promise<any[]> {
+    const privileges = await Vue.prototype.$util.send('conn/getUserPrivileges', {user, host});
+    return privileges;
+  }
+
+  async getUserResourceLimits(user: string, host: string): Promise<any[]> {
+    const resourceLimits = await Vue.prototype.$util.send('conn/getUserResourceLimits', {user, host});
+    return resourceLimits;
+  }
+
+  // Each row in the result represents a Schema and its corresponding privileges for the user
+  async showGrantsForUser(user: string, host: string): Promise<any[]> {
+    const grants = await Vue.prototype.$util.send('conn/showGrants', {user, host});
+    return grants;
+  }
+
+  async applyUserChanges(changes: any[][]): Promise<{ success: boolean; error?: string }> {
+    return await Vue.prototype.$util.send('conn/applyUserChanges', { changes });
+  }
+
+  async getSchemas(): Promise<string[]> {
+    return await Vue.prototype.$util.send('conn/getSchemas');
+  }
+
+  async deleteUser(user: string, host: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/deleteUser', { user, host });
+  }
+
+  async renameUser(user: string, host: string, newName: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/renameUser', { user, host, newName});
+  }
+
+  async expireUserPassword(user: string, host: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/expireUserPassword', { user, host });
+  }
+
+  async revokeAllPrivileges(user: string, host: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/revokeAllPrivileges', { user, host });
+  }
+
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
     return await Vue.prototype.$util.send('conn/listDatabases', { filter });
   }
