@@ -69,6 +69,8 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  /** The theme has been changed. */
+  changedTheme = 'changedTheme',
 }
 
 export interface RootBinding {

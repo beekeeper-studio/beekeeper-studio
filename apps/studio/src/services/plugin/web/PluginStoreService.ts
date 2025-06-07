@@ -1,24 +1,24 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
-import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import type {
+  TabTypeConfig,
+  TransportOpenTab,
+} from "@/common/transport/TransportOpenTab";
 import {
-  CreateQueryTabResponse,
-  GetActiveTabResponse,
   GetAllTabsResponse,
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
-  GetThemeResponse,
   RunQueryResponse,
-  RunQueryTabResponse,
   TabResponse,
-} from "../comm";
+  ThemeChangedNotification,
+} from "@beekeeperstudio/plugin";
 import { findTable } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { TabType } from "@/store/models";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
+import { TabKind } from "../types";
 
 /**
  * Service that provides an interface to the plugin Vuex module
@@ -33,7 +33,7 @@ export default class PluginStoreService {
     }
   ) {}
 
-  getTheme(): GetThemeResponse {
+  getTheme(): ThemeChangedNotification["args"] {
     const cssProps = [
       "--theme-bg",
       "--theme-base",
@@ -60,6 +60,8 @@ export default class PluginStoreService {
       "--placeholder",
       "--selection",
       "--input-highlight",
+
+      "--query-editor-bg",
 
       // BksTextEditor
       "--bks-text-editor-activeline-bg-color",
@@ -165,24 +167,59 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
-  getTables(): GetTablesResponse {
-    return this.store.state.tables.map((t) => t.name);
+  addTabTypeConfig(params: {
+    pluginId: string;
+    pluginTabTypeId: string;
+    name: string;
+    kind: TabKind;
+    icon?: string;
+  }): void {
+    const config: TabTypeConfig.PluginShellConfig = {
+      type: `plugin-${params.kind}` as const,
+      name: params.name,
+      pluginId: params.pluginId,
+      pluginTabTypeId: params.pluginTabTypeId,
+      menuItem: { label: `Add ${params.name}` },
+      icon: params.icon,
+    };
+    this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  async getColumns(tableName: string): Promise<GetColumnsResponse> {
-    let table = this.store.state.tables.find((t) => t.name === tableName);
+  removeTabTypeConfig(identifier: TabTypeConfig.PluginShellConfigIdentifiers): void {
+    this.store.commit("tabs/removeTabTypeConfig", identifier);
+  }
+
+  getTables(): GetTablesResponse {
+    return this.store.state.tables.map((t) => ({
+      name: t.name,
+      schema: t.schema,
+    }));
+  }
+
+  private findTable(name: string, schema?: string) {
+    return this.store.state.tables.find((t) => {
+      if (!schema) {
+        schema = this.store.state.defaultSchema;
+      }
+      return t.name === name && t.schema === schema;
+    });
+  }
+
+  async getColumns(
+    tableName: string,
+    schema?: string
+  ): Promise<GetColumnsResponse> {
+    const table = this.findTable(tableName, schema);
 
     if (!table) {
       throw new Error(`Table ${tableName} not found`);
     }
 
-    if (!table.columns) {
+    if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);
     }
 
-    table = this.store.state.tables.find((t) => t.name === tableName);
-
-    return table.columns.map((c) => ({
+    return this.findTable(tableName, schema).columns.map((c) => ({
       name: c.columnName,
       type: c.dataType,
     }));
@@ -191,7 +228,8 @@ export default class PluginStoreService {
   getConnectionInfo(): GetConnectionInfoResponse {
     return {
       connectionType: this.store.state.connectionType,
-      defaultDatabase: this.store.state.usedConfig.defaultDatabase,
+      databaseName: this.store.state.database,
+      defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
   }
@@ -239,43 +277,6 @@ export default class PluginStoreService {
       id: tab.id,
       title: tab.title,
     };
-  }
-
-  async createQueryTab(
-    query: string,
-    title: string
-  ): Promise<CreateQueryTabResponse> {
-    const tab = {
-      tabType: "query",
-      title,
-      unsavedChanges: false,
-      unsavedQueryText: query,
-    } as TransportOpenTab;
-
-    const { id }: { id: number } = await this.store.dispatch("tabs/add", {
-      item: tab,
-      endOfPosition: true,
-    });
-    await this.store.dispatch("tabs/setActive", tab);
-
-    return { id };
-  }
-
-  updateQueryText(tabId: number, query: string): void {
-    const tab = this.store.state.tabs.tabs.find(
-      (t: TransportOpenTab) => t.id === tabId
-    );
-
-    if (!tab) {
-      throw new Error(`Tab with ID ${tabId} not found`);
-    }
-
-    if (tab.tabType !== TabType.query) {
-      throw new Error(`Tab with ID ${tabId} is not a query tab`);
-    }
-
-    // Update the unsaved query text in the tab
-    tab.unsavedQueryText = query;
   }
 
   private serializeQueryResponse(result: NgQueryResult) {

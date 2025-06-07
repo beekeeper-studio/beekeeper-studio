@@ -3,11 +3,11 @@ import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 
-export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
+export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-shell'
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
-export interface TransportOpenTab extends Transport {
+export interface TransportOpenTab<Context = {}> extends Transport {
   tabType: TabType,
   unsavedChanges: boolean,
   title: string,
@@ -24,8 +24,48 @@ export interface TransportOpenTab extends Transport {
   workspaceId?: number,
   filters?: string,
   lastActive?: Date|null,
-  deletedAt?: Date|null 
+  deletedAt?: Date|null
   isRunning: boolean, // not on the actual model, but used in frontend
+  context: Context
+}
+
+export type TransportPluginShellTab = TransportOpenTab<{
+  pluginId: string;
+  pluginTabTypeId: string;
+  /** A plugin can save the state of the tab here. For example, an AI plugin
+     * can save the chat conversation here */
+  data: any;
+}>
+
+export namespace TabTypeConfig {
+  interface BaseTabTypeConfig {
+    type: TabType;
+    name: string;
+    /** Used for the dropdown menu next to the "new tab" icon. */
+    menuItem: {
+      label: string;
+      shortcut?: string;
+    };
+  }
+
+  interface DefaultConfig extends BaseTabTypeConfig {
+    type: Exclude<TabType, "plugin-shell">;
+  }
+
+  /** `"plugin-shell"` consists of two parts; an iframe at the top and a table at
+   * the bottom. This tab looks almost identical to the query tab. The only
+   * difference is, in this tab, the result table can be collapsed completely. */
+  export interface PluginShellConfig extends BaseTabTypeConfig, PluginShellConfigIdentifiers {
+    type: "plugin-shell";
+    icon?: string; // from material-icons
+  }
+
+  export interface PluginShellConfigIdentifiers {
+    pluginId: string;
+    pluginTabTypeId: string;
+  }
+
+  export type Config = DefaultConfig | PluginShellConfig;
 }
 
 export function setFilters(obj: TransportOpenTab, filters: Nullable<TableFilter[]>) {
@@ -83,7 +123,7 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
   }
 
   switch (other.tabType) {
-    case 'table-properties': 
+    case 'table-properties':
       return obj.tableName === other.tableName &&
         (obj.schemaName || null) === (other.schemaName || null) &&
         (obj.entityType || null) === (other.entityType || null) &&

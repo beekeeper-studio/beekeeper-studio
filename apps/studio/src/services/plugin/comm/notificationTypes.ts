@@ -1,13 +1,23 @@
+import { ThemeType, WindowEventInits, WindowEventClass } from "./commonTypes";
+
 export interface ThemeChangedNotification {
   name: "themeChanged";
+  args: {
+    palette: Record<string, string>;
+    cssString: string;
+    type: ThemeType;
+  };
 }
 
-// whether the suggestion is accepted or rejected
-export interface SuggestionResultNotification {
-  name: "suggestionResult";
-  suggestionId: number;
-  accepted: boolean;
+export interface WindowEventNotification {
+  name: "windowEvent";
+  args: {
+    eventType: string;
+    eventClass: WindowEventClass;
+    eventInitOptions: WindowEventInits;
+  };
 }
 
-export type PluginNotificationData = ThemeChangedNotification | SuggestionResultNotification;
-
+export type PluginNotificationData =
+  | ThemeChangedNotification
+  | WindowEventNotification;
