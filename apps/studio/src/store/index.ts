@@ -57,6 +57,7 @@ export interface State {
   databaseList: string[],
   tables: TableOrView[],
   routines: Routine[],
+  databaseSchemaList: Map<string, string[]>,
   entityFilter: EntityFilter,
   columnsLoading: string,
   tablesLoading: string,
@@ -105,6 +106,7 @@ const store = new Vuex.Store<State>({
     databaseList: [],
     tables: [],
     routines: [],
+    databaseSchemaList: new Map(),
     entityFilter: {
       filterQuery: undefined,
       showTables: true,
@@ -173,6 +175,8 @@ const store = new Vuex.Store<State>({
       return DialectTitles[getters.dialect] || getters.dialect || 'Unknown'
     },
     dialectData(_state: State, getters) {
+      console.log('^^^')
+      console.log(getters.dialect)
       return getDialectData(getters.dialect)
     },
     selectedSidebarItem(state) {
@@ -221,7 +225,10 @@ const store = new Vuex.Store<State>({
     connectionColor(state) {
       return state.usedConfig?.labelColor ?? 'default'
     },
-    schemas(state) {
+    schemas(state, getters) {
+      if (getters.dialectData.topDownGetEntities) {
+        return state.databaseSchemaList
+      }
       if (state.tables.find((t) => !!t.schema)) {
         return _.uniq(state.tables.map((t) => t.schema));
       }
@@ -284,6 +291,11 @@ const store = new Vuex.Store<State>({
     setUsername(state, name) {
       state.username = name
     },
+    setDatabaseSchemaList(state, {database, databaseSchemaList}) {
+      const newSchemaList = new Map(state.databaseSchemaList)
+      newSchemaList.set(database, databaseSchemaList)
+      state.databaseSchemaList = newSchemaList
+    },
     newConnection(state, config: Nullable<IConnection>) {
       state.usedConfig = config
       state.database = config?.defaultDatabase
@@ -297,6 +309,7 @@ const store = new Vuex.Store<State>({
       state.database = null
       state.databaseList = []
       state.tables = []
+      state.databaseSchemaList = new Map()
       state.routines = []
       state.entityFilter = {
         filterQuery: undefined,
@@ -421,6 +434,7 @@ const store = new Vuex.Store<State>({
     async connect(context, config: IConnection) {
       if (context.state.username) {
         await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
+        const { topDownGetEntities = false } = context.getters.dialectData 
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
@@ -430,6 +444,9 @@ const store = new Vuex.Store<State>({
           context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
         }
 
+        console.log('&&&')
+        console.log(context.getters.dialectData)
+        console.log(topDownGetEntities)
         window.main.enableConnectionMenuItems();
 
         context.commit('defaultSchema', defaultSchema);
@@ -440,8 +457,13 @@ const store = new Vuex.Store<State>({
         context.commit('newConnection', config)
 
         await context.dispatch('updateDatabaseList')
-        await context.dispatch('updateTables')
-        await context.dispatch('updateRoutines')
+        // probably shouldn't be doing based on connection type. That just feels yucky
+        if (topDownGetEntities) {
+          await context.dispatch('updateSchemas', context.state.database)
+        } else {
+          await context.dispatch('updateTables')
+          await context.dispatch('updateRoutines')
+        }
         await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
 
@@ -542,6 +564,13 @@ const store = new Vuex.Store<State>({
       } finally {
         context.commit("tablesLoading", null)
       }
+    },
+    async updateSchemas(context, database) {
+      console.log('***')
+      console.log(database)
+      const databaseSchemaList = await context.state.connection.listSchemas({database});
+      log.info("databaseSchemaList: ", databaseSchemaList)
+      context.commit('setDatabaseSchemaList', {database, databaseSchemaList})
     },
     async updateRoutines(context) {
       const routines: Routine[] = await context.state.connection.listRoutines(null);

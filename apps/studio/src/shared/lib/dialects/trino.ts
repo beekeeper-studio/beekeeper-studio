@@ -11,6 +11,7 @@ const supportsLength = [];
 export const TrinoData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
+  topDownGetEntities: true,
   wrapIdentifier: (id: string) => {
     if (id) {
       // Escape backticks and backslashes

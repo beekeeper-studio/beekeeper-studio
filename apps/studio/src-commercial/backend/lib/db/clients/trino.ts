@@ -534,15 +534,10 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   async executeQuery(
     queryText: string
   ): Promise<NgQueryResult[]> {
-    // FIXME we should check if the result is in JSON or buffer. If not both,
-    // just cast it to a string.
-    
     const results = await this.driverExecuteMultiple(queryText);
     const ret = [];
-    log.info('results:', results)
     for (const result of results) {
       const fields = this.parseFields(result.columns)
-      log.info('in loop', result)
       const data = result.rows
       // const data =
       //   result.resultType === "stream"
@@ -573,16 +568,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       //   continue;
       // }
 
-      // const fields = data.meta.map((field, idx) => ({
-      //   id: `c${idx}`,
-      //   name: field.name,
-      //   dataType: field.type,
-      // }));
-
-      // const rows = data.data.map((row) =>
-      //   row.reduce((acc, val, idx) => ({ ...acc, [`c${idx}`]: val }), {})
-      // );
-
       ret.push({
         fields,
         affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
@@ -591,8 +576,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         rowCount: data.length,
       });
     }
-
-    log.info('executeQuery result', ret)
     return ret;
   }
 
@@ -699,6 +682,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return json.data[0].count;
   }
 
+  // TODO: ALL THE STREAMING!
   async selectTopStream(
     table: string,
     orderBy: OrderBy[],
