@@ -71,6 +71,24 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.url, class: "cm-url" },
   { tag: tags.processingInstruction, class: "cm-processingInstruction" },
   { tag: tags.special(tags.string), class: "cm-special-string" },
+  { tag: tags.name, class: "cm-name" },
+  { tag: tags.deleted, class: "cm-deleted" },
+  { tag: tags.character, class: "cm-character" },
+  { tag: tags.macroName, class: "cm-macro" },
+  { tag: tags.color, class: "cm-color" },
+  { tag: tags.standard(tags.name), class: "cm-standard" },
+  { tag: tags.separator, class: "cm-separator" },
+  { tag: tags.changed, class: "cm-changed" },
+  { tag: tags.annotation, class: "cm-annotation" },
+  { tag: tags.modifier, class: "cm-modifier" },
+  { tag: tags.self, class: "cm-self" },
+  { tag: tags.operatorKeyword, class: "cm-operatorKeyword" },
+  { tag: tags.escape, class: "cm-escape" },
+  { tag: tags.regexp, class: "cm-regexp" },
+  { tag: tags.link, class: "cm-link" },
+  { tag: tags.strong, class: "cm-strong" },
+  { tag: tags.emphasis, class: "cm-emphasis" },
+  { tag: tags.strikethrough, class: "cm-strikethrough" },
 ]);
 
 function language(languageId: string) {
@@ -88,8 +106,8 @@ function language(languageId: string) {
 
 export function extensions(config: ExtensionConfiguration) {
   return [
-    extraKeymap({ keybindings: config.keybindings }),
     specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
+    extraKeymap({ keybindings: config.keybindings }),
     lineNumbers({ enabled: config.lineNumbers }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),

@@ -207,6 +207,7 @@
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :elapsed-time="elapsedTime"
         :active="active"
       />
     </div>
@@ -357,7 +358,7 @@
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
-  import { monokai } from '@uiw/codemirror-theme-monokai';
+  import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -392,6 +393,8 @@
         saveError: null,
         info: null,
         split: null,
+        elapsedTime: 0,
+        timerInterval: null,
         tableHeight: 0,
         savePrompt: false,
         lastWord: null,
@@ -612,7 +615,12 @@
         return (extensions) => {
           return [
             ...extensions,
-            monokai,
+            monokaiInit({
+              settings: {
+                selection: "",
+                selectionMatch: "",
+              },
+            }),
           ]
         }
       },
@@ -624,6 +632,13 @@
           const [a, b] = this.locationFromPosition(this.queryForExecution, parseInt(this.error.position) - 1, parseInt(this.error.position))
           this.errorMarker = { from: a, to: b, type: 'error' } as EditorMarker
           this.error.marker = {line: b.line + 1, ch: b.ch}
+        }
+      },
+      running() {
+        if (this.running) {
+          this.startTimer();
+        } else {
+          this.stopTimer();
         }
       },
       queryTitle() {
@@ -1048,6 +1063,16 @@
         this.individualQueries = queries;
         this.currentlySelectedQuery = selectedQuery;
       },
+      startTimer() {
+        this.elapsedTime = 0;
+        this.timerInterval = setInterval(() => {
+          this.elapsedTime += 1;
+        }, 1000);
+      },
+      stopTimer() {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
     },
     async mounted() {
       if (this.shouldInitialize) {

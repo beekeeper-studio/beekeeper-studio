@@ -1,6 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, PluginNotificationData } from "../types";
+import { Manifest, OnViewRequestListener, PluginNotificationData } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 
@@ -14,7 +14,7 @@ export default class WebPluginManager {
 
   constructor(
     private utilityConnection: UtilityConnection,
-    private pluginStore: PluginStoreService
+    public readonly pluginStore: PluginStoreService
   ) {}
 
   async initialize() {
@@ -52,10 +52,11 @@ export default class WebPluginManager {
   }
 
   async update(id: string) {
-    await this.utilityConnection.send("plugin/update", {
+    const manifest = await this.utilityConnection.send("plugin/update", {
       id,
     });
     await this.reloadPlugin(id);
+    return manifest;
   }
 
   async uninstall(id: string) {
@@ -68,29 +69,71 @@ export default class WebPluginManager {
     this.loaders.delete(id);
   }
 
-  async reloadPlugin(id: string) {
+  async reloadPlugin(id: string, manifest?: Manifest) {
     const loader = this.loaders.get(id);
     if (!loader) {
       throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
-    await loader.load();
+    await loader.load(manifest);
   }
 
-  async registerIframe(pluginId: string, iframe: HTMLIFrameElement) {
+  /** If the plugin uses iframes, please register the iframe so we can send
+   * and receive messages. Make sure to register after the iframe is fully loaded. */
+  registerIframe(pluginId: string, iframe: HTMLIFrameElement) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    await loader.registerIframe(iframe);
+    loader.registerIframe(iframe);
   }
 
+  unregisterIframe(pluginId: string, iframe: HTMLIFrameElement) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    loader.unregisterIframe(iframe);
+  }
+
+  /** Send a notification to a specific plugin */
   async notify(pluginId: string, data: PluginNotificationData) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
     loader.postMessage(data);
+  }
+
+  /** Send a notification to all plugins */
+  async notifyAll(data: PluginNotificationData) {
+    this.loaders.forEach((loader) => {
+      loader.postMessage(data);
+    })
+  }
+
+  manifestOf(pluginId: string) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.manifest;
+  }
+
+  buildUrlFor(pluginId: string, entry: string) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.buildEntryUrl(entry);
+  }
+
+  onViewRequest(pluginId: string, listener: OnViewRequestListener) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    loader.addListener(listener);
   }
 
   private async loadPlugin(manifest: Manifest) {

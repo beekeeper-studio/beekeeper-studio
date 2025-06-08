@@ -34,6 +34,7 @@
     "@aws-sdk/rds-signer": "^3.651.0",
     "@azure/msal-node": "^2.12.0",
     "@babel/plugin-transform-class-static-block": "^7.26.0",
+    "@beekeeperstudio/plugin": "github:beekeeper-studio/plugin",
     "@cleverbrush/async": "^1.1.10",
     "@cleverbrush/deep": "^1.1.10",
     "@clickhouse/client": "^1.8.1",
