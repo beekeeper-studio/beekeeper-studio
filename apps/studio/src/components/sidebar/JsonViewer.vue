@@ -46,11 +46,11 @@
     </div>
     <div class="text-editor-wrapper">
       <text-editor
+        language-id="json"
         :fold-gutter="true"
         :fold-all="foldAll"
         :unfold-all="unfoldAll"
         :value="text"
-        :mode="mode"
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
         :plugins="textEditorPlugins"
@@ -74,7 +74,8 @@
  * dataId:  use this to update the component with new data.
  */
 import Vue from "vue";
-import TextEditor from "@/components/common/texteditor/TextEditor.vue";
+// import TextEditor from "@/components/common/texteditor/TextEditor.vue";
+import TextEditor from "@beekeeperstudio/ui-kit/vue/text-editor"
 import {
   ExpandablePath,
   findKeyPosition,
@@ -166,12 +167,6 @@ export default Vue.extend({
     },
     empty() {
       return _.isEmpty(this.value);
-    },
-    mode() {
-      if (!this.value) {
-        return null;
-      }
-      return { name: "javascript", json: true };
     },
     text() {
       if (this.empty) {

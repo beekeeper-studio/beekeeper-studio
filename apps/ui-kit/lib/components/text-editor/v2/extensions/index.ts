@@ -112,7 +112,14 @@ export function extensions(config: ExtensionConfiguration) {
     highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
-    foldGutter(),
+    foldGutter({
+      markerDOM(open) {
+        const i = document.createElement("i");
+        i.classList.add("material-icons", "cm-foldgutter");
+        i.textContent = open ? "keyboard_arrow_down" : "keyboard_arrow_right";
+        return i;
+      }
+    }),
     drawSelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
