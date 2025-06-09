@@ -2,6 +2,7 @@ import { Magic } from "../../Magic";
 import { MagicColumn } from "../../MagicColumn";
 import { CellComponent } from "tabulator-tables";
 import CurrencyCodes from "@shared/lib/CurrencyCodes";
+import _ from "lodash";
 
 const MoneyMagic: Magic = {
   name: "MoneyMagic",
