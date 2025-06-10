@@ -7,84 +7,137 @@ import _ from "lodash";
 // FIXME (azmi): maybe use json-source-map instead?
 import { findKeyPosition } from "@/lib/data/jsonViewer";
 import { getLocation, JSONPath } from "jsonc-parser";
-import CodeMirror from "codemirror";
+import { foldState, foldEffect, foldable } from "@codemirror/language";
+import { EditorView, ViewPlugin } from "@codemirror/view";
+import { StateEffect, StateField, EditorState } from "@codemirror/state";
+import rawLog from "@bksLogger";
 
-type EditorInstance = CodeMirror.Editor & {
-  bksPersistJsonFold: {
-    foldedPaths: JSONPath[];
-    /** True if a fold event was triggered by this plugin */
-    ignoreFoldEvent: boolean;
-  };
-};
+const log = rawLog.scope("persistJsonFold");
 
-export function registerPersistJsonFold(instance: EditorInstance) {
-  if (!instance.getOption("foldGutter")) {
-    throw new Error("PersistJsonFold requires foldGutter to be enabled.");
-  }
-  instance.bksPersistJsonFold = {
-    foldedPaths: [],
-    ignoreFoldEvent: false,
-  };
-  // @ts-expect-error not fully typed
-  instance.on("fold", handleFold);
-  // @ts-expect-error not fully typed
-  instance.on("unfold", handleUnfold);
-  instance.on("change", handleChange);
-  return () => {
-    delete instance.bksPersistJsonFold;
-    // @ts-expect-error not fully typed
-    instance.off("fold", handleFold);
-    // @ts-expect-error not fully typed
-    instance.off("unfold", handleUnfold);
-    instance.off("change", handleChange);
-  };
+interface State {
+  foldedPaths: JSONPath[];
+  /** True if a fold event was triggered by this plugin */
+  ignoreFoldUpdate: boolean;
 }
 
-export const persistJsonFold = registerPersistJsonFold;
+const setIgnoreFoldUpdate = StateEffect.define<boolean>();
+const setFoldedPaths = StateEffect.define<JSONPath[]>();
+const state = StateField.define<State>({
+  create() {
+    return {
+      foldedPaths: [],
+      ignoreFoldUpdate: false,
+    };
+  },
+  update(value, tr) {
+    for (let e of tr.effects) {
+      if (e.is(setFoldedPaths)) {
+        return { ...value, foldedPaths: e.value };
+      }
+      if (e.is(setIgnoreFoldUpdate)) {
+        return { ...value, ignoreFoldUpdate: e.value };
+      }
+    }
+    return value;
+  },
+});
 
-function findJSONPath(cm: CodeMirror.Editor, line: number) {
-  const lineHandle = cm.getLineHandle(line);
+function findJSONPath(state: EditorState, pos: number) {
+  const lineHandle = state.doc.lineAt(pos);
   const keyPosition = lineHandle.text.length - lineHandle.text.trimStart().length;
 
-  const cursorPos = { line, ch: keyPosition };
-  const cursorIndex = cm.indexFromPos(cursorPos);
+  const cursorIndex = lineHandle.from + keyPosition;
 
-  const location = getLocation(cm.getValue(), cursorIndex);
+  const location = getLocation(state.doc.toString(), cursorIndex);
   return location.path;
 }
 
-function handleFold(
-  instance: EditorInstance,
-  from: CodeMirror.Position,
-  _to: CodeMirror.Position
-) {
-  if (instance.bksPersistJsonFold.ignoreFoldEvent) {
-    return
+const updateListener = EditorView.updateListener.of((update) => {
+  if (
+    update.startState.field(foldState, false) !==
+    update.state.field(foldState, false) &&
+    !update.state.field(state).ignoreFoldUpdate
+  ) {
+    onFoldUpdate(update.view);
   }
-  const path = findJSONPath(instance, from.line);
-  instance.bksPersistJsonFold.foldedPaths.push(path);
-}
+});
 
-function handleUnfold(
-  instance: EditorInstance,
-  from: CodeMirror.Position,
-  _to: CodeMirror.Position
-) {
-  const path = findJSONPath(instance, from.line);
-  instance.bksPersistJsonFold.foldedPaths =
-    instance.bksPersistJsonFold.foldedPaths.filter((p) => !_.isEqual(p, path));
-}
-
-function handleChange(instance: EditorInstance) {
-  const value = instance.getValue();
-  instance.bksPersistJsonFold.foldedPaths.forEach((path) => {
-    const line = findKeyPosition(value, path);
-    if (line === -1) {
-      return
-    }
-    instance.bksPersistJsonFold.ignoreFoldEvent = true
-    // @ts-expect-error not fully typed
-    instance.foldCode(line);
-    instance.bksPersistJsonFold.ignoreFoldEvent = false
+function onFoldUpdate(view: EditorView) {
+  const folded: JSONPath[] = [];
+  const foldField = view.state.field(foldState, false);
+  if (foldField) {
+    foldField.between(0, view.state.doc.length, (from) => {
+      const path = findJSONPath(view.state, from);
+      folded.push(path);
+    });
+  }
+  setTimeout(() => {
+    view.dispatch({
+      effects: setFoldedPaths.of(folded),
+    });
   });
+}
+
+function fold(view: EditorView) {
+  const paths = view.state.field(state).foldedPaths;
+  const effects = paths
+    .map((jsonPath) => {
+      const linePos =
+        jsonPath.length === 0
+          ? 0
+          : findKeyPosition(view.state.doc.toString(), jsonPath);
+      if (linePos === -1) return;
+      const line = view.state.doc.line(linePos + 1);
+      const range = foldable(view.state, line.from, line.to);
+      return foldEffect.of(range);
+    })
+    .filter((f) => !!f);
+
+  if (effects.length > 0) {
+    view.dispatch({
+      effects: setIgnoreFoldUpdate.of(true),
+    });
+    view.dispatch({ effects });
+    view.dispatch({
+      effects: setIgnoreFoldUpdate.of(false),
+    });
+  }
+}
+
+export function persistJsonFold() {
+  let view: EditorView;
+  let paths: JSONPath[] = [];
+
+  const extensions = [
+    state,
+    updateListener,
+    ViewPlugin.fromClass(
+      class {
+        constructor(v: EditorView) {
+          view = v;
+        }
+      }
+    ),
+  ];
+
+  function save() {
+    if (!view) {
+      log.warn("Calling `save` prematurely.");
+      return;
+    }
+    paths = view.state.field(state).foldedPaths;
+  }
+
+  function apply() {
+    if (!view) {
+      log.warn("Calling `apply` prematurely.");
+      return;
+    }
+    view.dispatch({
+      effects: setFoldedPaths.of(paths),
+    });
+    fold(view);
+  }
+
+  return { extensions, save, apply };
 }

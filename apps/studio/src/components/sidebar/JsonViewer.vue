@@ -53,7 +53,7 @@
         :value="text"
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
-        :plugins="textEditorPlugins"
+        :replaceExtensions="replaceExtensions"
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
@@ -144,6 +144,7 @@ export default Vue.extend({
         [this.cmCtrlOrCmd("Shift-R")]: () => false,
       },
       wrapText: false,
+      persistJsonFold: persistJsonFold(),
     };
   },
   watch: {
@@ -160,6 +161,11 @@ export default Vue.extend({
         });
       }
     },
+    async text() {
+      this.persistJsonFold.save()
+      await this.$nextTick()
+      setTimeout(() => this.persistJsonFold.apply())
+    }
   },
   computed: {
     sidebarTitle() {
@@ -363,12 +369,6 @@ export default Vue.extend({
 
       ]
     },
-    textEditorPlugins() {
-      return [
-        persistJsonFold,
-        new PartialReadOnlyPlugin(this.editableRanges, this.handleEditableRangeChange),
-      ]
-    },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
@@ -387,6 +387,13 @@ export default Vue.extend({
     },
     setFilter(filter: string) {
       this.$emit("bks-filter-change", { filter });
+    },
+    replaceExtensions(extensions) {
+      return [
+        extensions,
+        this.persistJsonFold.extensions,
+        // new PartialReadOnlyPlugin(this.editableRanges, this.handleEditableRangeChange),
+      ]
     },
     handleEditableRangeChange: _.debounce(function (range, value) {
       this.editableRangeErrors = []
