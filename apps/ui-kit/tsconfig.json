@@ -14,6 +14,10 @@
       "dom",
       "dom.iterable",
       "scripthost"
-    ]
+    ],
+    "declaration": true,
+    "declarationDir": "dist",
+    "sourceMap": true,
+    "emitDeclarationOnly": false
   }
 }

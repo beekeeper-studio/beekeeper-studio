@@ -15,16 +15,22 @@ export const FkLinkMixin = {
       const keyWidth = 40
       const icon = () => "<i class='material-icons fk-link'>launch</i>"
       const tooltip = () => {
-        if (keyDatas.length == 1)
-          return `View record in ${keyDatas[0].toTable}`
-        else
-          return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
+        if (keyDatas.length == 1) {
+          if (keyDatas[0].isComposite) {
+            const cols = keyDatas[0].toColumn.join(', ');
+            return `View record in ${keyDatas[0].toTable} (${cols})`;
+          } else {
+            return `View record in ${keyDatas[0].toTable}`;
+          }
+        } else {
+          return `View records in ${(keyDatas.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`;
+        }
       }
       const clickMenu = [];
       if (keyDatas.length > 1) {
         keyDatas.forEach(x => {
           clickMenu.push({
-            label: `<x-menuitem><x-label>${x.toTable}(${x.toColumn})</x-label></x-menuitem>`,
+            label: `<x-menuitem><x-label>${x.toTable}(${x.isComposite ? x.toColumn.join(', ') : x.toColumn})</x-label></x-menuitem>`,
             action: (_e, cell) => {
               this.fkClick(x, cell);
             }
@@ -64,7 +70,10 @@ export const FkLinkMixin = {
 
       let tableName = rawKeyData.toTable
       let schemaName = rawKeyData.toSchema
-      let columnName = rawKeyData.toColumn
+      // Handle both regular and composite foreign keys
+      let columnName = rawKeyData.isComposite ? 
+        rawKeyData.toColumn.join(',') : 
+        rawKeyData.toColumn
 
 
       let table = this.$store.state.tables.find(t => {
@@ -98,13 +107,25 @@ export const FkLinkMixin = {
 
       const filters = [];
 
-      // might be compound keys
-      const FromColumnKeys = fromColumn.split(',');
+      // Handle source column(s) - might be composite keys
+      const FromColumnKeys = rawKeyData.isComposite ? 
+        rawKeyData.fromColumn : 
+        fromColumn.split(',');
+        
+      // Handle target column(s)
       const ToColumnKeys = columnName.split(',');
       const values = [];
 
       ToColumnKeys.forEach((key: string, index: number) => {
-        const valueCell = cell.getRow().getCell(FromColumnKeys[index]);
+        // Get the appropriate cell for this column from the foreign key
+        const sourceColumnName = FromColumnKeys[index] || fromColumn;
+        const valueCell = cell.getRow().getCell(sourceColumnName);
+        
+        if (!valueCell) {
+          log.error(`fk-click: unable to find source column cell for '${sourceColumnName}'`);
+          return;
+        }
+        
         const value = valueCell.getValue();
         values.push(value);
         filters.push({

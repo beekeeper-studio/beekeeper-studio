@@ -166,6 +166,8 @@ export class RedshiftClient extends PostgresClient {
 
     const data = await this.driverExecuteSingle(sql, { params });
 
+    // For now, treat all keys as non-composite until we can properly test with Redshift
+    // TODO: Implement proper composite key detection for Redshift
     return data.rows.map((row) => ({
       toTable: row.to_table,
       toSchema: row.to_schema,
@@ -175,7 +177,8 @@ export class RedshiftClient extends PostgresClient {
       fromColumn: row.from_column,
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
-      onDelete: row.delete_rule
+      onDelete: row.delete_rule,
+      isComposite: false
     }));
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
