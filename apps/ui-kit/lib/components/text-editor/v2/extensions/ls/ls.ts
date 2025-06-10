@@ -25,7 +25,7 @@ export function ls(
 
   let transport: WebSocketTransport;
   if (_.has(config.transport, "wsUri")) {
-    transport = new WebSocketTransport(config.transport.wsUri);
+    transport = new WebSocketTransport(config.transport.wsUri as string);
     transport.connection.addEventListener("message", function () {
       if (arguments[0].data) {
         try {
@@ -81,6 +81,9 @@ export function ls(
       goToDefinition: "",
     },
     ...features,
+    // This allows us to trigger manual autocomplete when there is any character
+    // behind cursor.
+    completionMatchBefore: /.{0}/,
   });
 
   // Store a reference to the initialized LS client for use in the context

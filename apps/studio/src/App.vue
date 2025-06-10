@@ -35,6 +35,8 @@
     <workspace-rename-modal />
     <import-queries-modal />
     <import-connections-modal />
+    <plugin-controller />
+    <plugin-manager-modal />
     <confirmation-modal-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
@@ -77,6 +79,8 @@ import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
+import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
+import PluginController from '@/components/plugins/PluginController.vue'
 
 import rawLog from '@bksLogger'
 
@@ -90,7 +94,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
-    ConfigurationWarningModal,
+    PluginManagerModal, ConfigurationWarningModal, PluginController,
   },
   data() {
     return {
@@ -122,6 +126,7 @@ export default Vue.extend({
     },
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
+      this.trigger(AppEvent.changedTheme, this.themeValue)
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')

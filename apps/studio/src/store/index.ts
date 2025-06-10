@@ -430,6 +430,8 @@ const store = new Vuex.Store<State>({
           context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
         }
 
+        window.main.enableConnectionMenuItems();
+
         context.commit('defaultSchema', defaultSchema);
         context.commit('connectionType', config.connectionType);
         context.commit('connected', true);
@@ -456,6 +458,9 @@ const store = new Vuex.Store<State>({
     async disconnect(context) {
       const server = context.state.server
       server?.disconnect()
+
+      window.main.disableConnectionMenuItems();
+
       context.commit('clearConnection')
       context.commit('newConnection', null)
       context.dispatch('updateWindowTitle')

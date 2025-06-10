@@ -36,29 +36,26 @@ $titlebar-actions-height:   30px;
     margin: -11px 0;
   }
   .titlebar-title {
-    position: relative;
-    left: 0;
-    right: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     text-align: center;
     color: $text-light;
     font-size: 0.85rem;
     line-height: 2;
-    align-self: flex-start;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    margin-left: 25%;
-    margin-right: 10%;
-    @media (max-width: 900px) {
-      display: none;
+    > span {
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
   }
   &.fullscreen .titlebar-title {
     -webkit-app-region: no-drag;
   }
   .titlebar-actions {
-    margin: -$gutter-h;
-    margin-left: 0;
+    margin-left: auto;
     -webkit-app-region: no-drag;
     &, .window-controls-container {
       display: flex;
@@ -82,17 +79,17 @@ $titlebar-actions-height:   30px;
     .titlebar-actions-extra {
       display: flex;
       gap: 0.5rem;
+      margin-right: 0.75rem;
       & > button {
         height: auto;
         align-self: center;
         padding: 0;
         i {
-          font-size: 1.5rem;
+          font-size: 1.35rem;
         }
       }
     }
     .window-controls-container  {
-      margin-left: 0.75rem;
       button {
         padding: 0 0.75rem;
         height: $titlebar-actions-height;

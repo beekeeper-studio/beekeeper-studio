@@ -57,6 +57,10 @@ import fixOracleData from './20250225_oracle_default_connection_method'
 import addInstallationId from './20250404_add_installation_id'
 import addSnowflakeOptions from './20250410_add_snowflake_options'
 import sqlAnywhereOptions from './20250414_add_anywhere_options'
+import disabledPluginAutoUpdates from './20250522_add_disabled_plugin_auto_updates'
+import preinstalledPlugins from "./20250523_add_preinstalled_plugins"
+import addContextToTabs from "./20250527_add_context_to_tabs"
+import addPluginSettings from "./20250529_add_plugin_settings"
 
 import ultimate from './ultimate/index'
 
@@ -93,6 +97,7 @@ const realMigrations = [
   addInstallationId,
   addSnowflakeOptions,
   sqlAnywhereOptions,
+  disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings,
 ]
 
 // fixtures require the models

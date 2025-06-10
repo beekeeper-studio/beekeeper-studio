@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import rawLog from '@bksLogger'
-import { TransportOpenTab, duplicate, matches } from '@/common/transport/TransportOpenTab';
+import { TransportOpenTab, duplicate, matches, TabTypeConfig } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
@@ -11,6 +11,8 @@ interface State {
   tabs: TransportOpenTab[],
   active?: TransportOpenTab,
   lastClosedTabs: TransportOpenTab[]
+  /** All tab type configurations available. */
+  allTabTypeConfigs: TabTypeConfig.Config[];
 }
 
 
@@ -20,8 +22,28 @@ export const TabModule: Module<State, RootState> = {
     tabs: [],
     active: undefined,
     lastClosedTabs: [],
+    allTabTypeConfigs: [
+      {
+        type: 'query',
+        name: "Query",
+        menuItem: { label: 'Add Query', shortcut: 'Control+T' },
+      },
+      {
+        type: 'shell',
+        name: "Shell",
+        menuItem: { label: 'Add Shell' },
+      },
+    ],
   }),
   getters: {
+    tabTypeConfigs(state, _getters, rootState) {
+      return state.allTabTypeConfigs.filter((tab) => {
+        if (tab.type === "shell" && !rootState.dialectData?.disabledFeatures?.shell) {
+          return false;
+        }
+        return true;
+      })
+    },
     sortedTabs(state) {
       return _.sortBy(state.tabs, 'position')
     },
@@ -70,6 +92,21 @@ export const TabModule: Module<State, RootState> = {
       state.active = tab
       state.tabs = tabs
     },
+
+    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginShellConfig) {
+      state.allTabTypeConfigs.push(newConfig)
+    },
+
+    removeTabTypeConfig(state, config: TabTypeConfig.PluginShellConfig) {
+      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginShellConfig) => {
+        if (t.type !== "plugin-shell") {
+          return true;
+        }
+        const matches = t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
+        return !matches;
+      })
+    },
+
   },
   actions: {
     async load(context) {
@@ -92,7 +129,7 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
-      context.commit('remove', context.state.tabs)
+      context.dispatch('remove', context.state.tabs)
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {

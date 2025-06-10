@@ -287,4 +287,53 @@ describe("Firebird Tests", () => {
       SPECIAL_FEATURES: 'Deleted Scenes,Behind the Scenes',
     })
   });
+
+  it("should correctly handle composite foreign keys", async () => {
+    // Create tables with raw SQL to ensure they're created properly
+    const queries = [
+      // Create parent table with composite primary key
+      `CREATE TABLE composite_parent_test (
+        parent_id1 INTEGER NOT NULL,
+        parent_id2 INTEGER NOT NULL,
+        name VARCHAR(50) NOT NULL,
+        PRIMARY KEY (parent_id1, parent_id2)
+      )`,
+
+      // Create child table with composite foreign key
+      `CREATE TABLE composite_child_test (
+        child_id INTEGER NOT NULL PRIMARY KEY,
+        ref_id1 INTEGER NOT NULL,
+        ref_id2 INTEGER NOT NULL,
+        description VARCHAR(50),
+        CONSTRAINT fk_composite_test FOREIGN KEY (ref_id1, ref_id2) REFERENCES composite_parent_test(parent_id1, parent_id2)
+      )`,
+
+      // Insert test data
+      `INSERT INTO composite_parent_test (parent_id1, parent_id2, name) VALUES (1, 2, 'Parent Test')`,
+      `INSERT INTO composite_child_test (child_id, ref_id1, ref_id2, description) VALUES (1, 1, 2, 'Child Test')`
+    ];
+
+    for (const query of queries) {
+      await util.knex.raw(query);
+    }
+
+    // Test that composite keys are detected correctly
+    const tableKeys = await util.connection.getTableKeys('composite_child_test');
+    
+    console.log('All foreign keys:', JSON.stringify(tableKeys, null, 2));
+    
+    // Get the composite key
+    const compositeKey = tableKeys.find(key => key.isComposite);
+    
+    // Verify the composite key structure
+    expect(compositeKey).toBeDefined();
+    expect(compositeKey.isComposite).toBe(true);
+    expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
+    expect(Array.isArray(compositeKey.toColumn)).toBe(true);
+    expect(compositeKey.fromColumn).toContain('REF_ID1');
+    expect(compositeKey.fromColumn).toContain('REF_ID2');
+    expect(compositeKey.toColumn).toContain('PARENT_ID1');
+    expect(compositeKey.toColumn).toContain('PARENT_ID2');
+    expect(compositeKey.toTable).toBe('COMPOSITE_PARENT_TEST');
+  });
 });
