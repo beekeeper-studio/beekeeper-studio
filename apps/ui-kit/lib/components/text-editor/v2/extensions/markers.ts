@@ -104,7 +104,7 @@ const markersDecorationField = StateField.define<DecorationSet>({
           }
         }
 
-        return Decoration.set(newDecorations);
+        return Decoration.set(newDecorations, true);
       }
     }
 
