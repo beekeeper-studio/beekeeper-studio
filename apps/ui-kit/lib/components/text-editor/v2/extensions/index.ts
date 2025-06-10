@@ -33,6 +33,7 @@ import { extraKeymap } from "./extraKeymap";
 import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
 import { readOnly } from "./readOnly";
+import { markers } from "./markers";
 import { ExtensionConfiguration } from "../types";
 import { json } from "@codemirror/lang-json";
 import { html } from "@codemirror/lang-html";
@@ -43,6 +44,7 @@ export { applyKeymap } from "./keymap";
 export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
+export { applyMarkers } from "./markers";
 
 // Define a custom highlight style that uses CSS classes
 const customHighlightStyle = HighlightStyle.define([
@@ -149,6 +151,7 @@ export function extensions(config: ExtensionConfiguration) {
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
+    markers({ markers: config.markers || [] }),
     EditorView.theme({
       "&": {
         height: `100%`,

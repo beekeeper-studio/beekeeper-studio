@@ -702,11 +702,15 @@ x-switch {
 
 & {
   --bks-text-editor-bg-color: #{$query-editor-bg};
+  --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
+  --bks-text-editor-error-fg-color: #{$brand-danger};
+  --bks-text-editor-fg-color: #{$text-dark};
   --bks-text-editor-fg-color: #{$text-dark};
   --bks-text-editor-focused-outline-color: transparent;
   --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.6)};
   --bks-text-editor-foldgutter-fg-color-hover: #{$text-dark};
   --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};

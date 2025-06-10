@@ -1,6 +1,6 @@
 import type { CustomMenuItems } from "../../context-menu";
 import { PropType } from "vue";
-import { Keybindings, Keymap, LanguageServerConfiguration } from "./types";
+import { Keybindings, Keymap, LanguageServerConfiguration, EditorMarker } from "./types";
 import { Extension } from "@codemirror/state";
 import { Config } from "./extensions/vim";
 
@@ -63,10 +63,10 @@ export default {
   >,
 
   vimConfig: Object as PropType<Config>,
-  // markers: {
-  //   type: Array,
-  //   default: () => [],
-  // },
+  markers: {
+    type: Array as PropType<EditorMarker[]>,
+    default: () => [],
+  },
   // cursor: String,
   // initialized: Boolean,
   // autoFocus: Boolean,

@@ -1,6 +1,7 @@
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
 import {
+  EditorMarker,
   ExtensionConfiguration,
   Keybindings,
   Keymap,
@@ -14,6 +15,7 @@ import {
   applyLineWrapping,
   applyLineNumbers,
   applyReadOnly,
+  applyMarkers,
 } from "./extensions";
 import {
   formatDocument,
@@ -137,6 +139,10 @@ export class TextEditor {
 
   setLineNumbers(enabled: boolean) {
     applyLineNumbers(this.view, enabled);
+  }
+
+  setMarkers(markers: EditorMarker[]) {
+    applyMarkers(this.view, markers);
   }
 
   getSelection(): string {
