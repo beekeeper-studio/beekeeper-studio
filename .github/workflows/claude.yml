@@ -34,4 +34,6 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: Bash(yarn install),Bash(yarn electron:build --linux AppImage),Bash(yarn test:unit),Bash(yarn test:integration --run-in-band)
+
 
