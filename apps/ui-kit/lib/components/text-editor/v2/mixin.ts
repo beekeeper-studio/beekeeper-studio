@@ -66,6 +66,10 @@ export default {
       if (!this.textEditor) return;
       this.applyMarkers();
     },
+    lineGutters() {
+      if (!this.textEditor) return;
+      this.applyLineGutters();
+    },
 
     forceInitialize() {
       this.initialize();
@@ -106,6 +110,9 @@ export default {
     applyMarkers() {
       this.textEditor.setMarkers(this.markers);
     },
+    applyLineGutters() {
+      this.textEditor.setLineGutters(this.lineGutters);
+    },
 
     constructTextEditor() {
       return new TextEditor();
@@ -144,6 +151,7 @@ export default {
         lineNumbers: this.lineNumbers,
         keybindings: this.keybindings,
         markers: this.markers,
+        lineGutters: this.lineGutters,
       });
 
       this.textEditor = textEditor;

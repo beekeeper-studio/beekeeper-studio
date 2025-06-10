@@ -19,6 +19,11 @@ export interface EditorMarker extends EditorRange {
   type: "error" | "highlight" | "custom"; // | "warning"
 }
 
+export interface LineGutter {
+  line: number;
+  type: "changed";
+}
+
 export interface LanguageServerConfiguration {
   /** The WebSocket URI of the language server. For example, `ws://localhost:3000/server` */
   transport:
@@ -70,6 +75,7 @@ export interface ExtensionConfiguration {
   lineNumbers?: boolean;
   keybindings?: Keybindings;
   markers?: EditorMarker[];
+  lineGutters?: LineGutter[];
 }
 
 export interface LSContext {

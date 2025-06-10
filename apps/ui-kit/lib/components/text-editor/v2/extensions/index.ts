@@ -34,6 +34,7 @@ import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
 import { readOnly } from "./readOnly";
 import { markers } from "./markers";
+import { lineGutters } from "./lineGutters";
 import { ExtensionConfiguration } from "../types";
 import { json } from "@codemirror/lang-json";
 import { html } from "@codemirror/lang-html";
@@ -45,6 +46,7 @@ export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
 export { applyMarkers } from "./markers";
+export { applyLineGutters } from "./lineGutters";
 
 // Define a custom highlight style that uses CSS classes
 const customHighlightStyle = HighlightStyle.define([
@@ -152,6 +154,7 @@ export function extensions(config: ExtensionConfiguration) {
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
     markers({ markers: config.markers || [] }),
+    lineGutters({ lineGutters: config.lineGutters || [] }),
     EditorView.theme({
       "&": {
         height: `100%`,

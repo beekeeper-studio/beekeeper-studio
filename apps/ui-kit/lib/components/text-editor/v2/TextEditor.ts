@@ -7,6 +7,7 @@ import {
   Keymap,
   LanguageServerHelpers,
   TextEditorConfiguration,
+  LineGutter,
 } from "./types";
 import {
   extensions,
@@ -16,6 +17,7 @@ import {
   applyLineNumbers,
   applyReadOnly,
   applyMarkers,
+  applyLineGutters,
 } from "./extensions";
 import {
   formatDocument,
@@ -143,6 +145,10 @@ export class TextEditor {
 
   setMarkers(markers: EditorMarker[]) {
     applyMarkers(this.view, markers);
+  }
+
+  setLineGutters(lineGutters: LineGutter[]) {
+    applyLineGutters(this.view, lineGutters);
   }
 
   getSelection(): string {
