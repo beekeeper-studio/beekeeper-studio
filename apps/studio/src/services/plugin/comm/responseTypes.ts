@@ -1,17 +1,12 @@
 import { TabType } from "@/common/transport/TransportOpenTab";
 import { TableFilter, TableOrView } from "@/lib/db/models";
+import { QueryResult } from "./commonTypes";
 
-export type ThemeType = "dark" | "light";
-
-export type GetThemeResponse = {
-  type: ThemeType;
-  /** The palette colors in hex format */
-  palette: Record<string, string>;
-  cssString: string;
-};
-
-/** The list of table names */
-export type GetTablesResponse = string[];
+/** The list of tables */
+export type GetTablesResponse = {
+  name: string;
+  schema?: string;
+}[];
 
 /** The list of columns */
 export type GetColumnsResponse = {
@@ -21,7 +16,8 @@ export type GetColumnsResponse = {
 
 export interface GetConnectionInfoResponse {
   connectionType: string;
-  defaultDatabase?: string;
+  databaseName: string;
+  defaultSchema?: string;
   readOnlyMode: boolean;
 }
 
@@ -31,54 +27,26 @@ export type GetActiveTabResponse = TabResponse;
 
 export type GetAllTabsResponse = TabResponse[];
 
-export interface CreateQueryTabResponse {
-  id: number;
-}
-
-export type UpdateQueryTextResponse = void;
-
-export interface QueryResult {
-  fields: {
-    id: string;
-    name: string;
-    dataType?: string;
-  }[];
-  rows: Record<string, unknown>[];
-}
-
-export interface RunQueryResponse {
+export type RunQueryResponse = {
   results: QueryResult[];
   error?: unknown;
-}
+};
 
-export interface RunQueryTabResponse {
-  results: QueryResult[];
-  error?: unknown;
-}
+export type ExpandTableResultResponse = void;
 
-export interface RunQueryTabPartiallyResponse {
-  result: QueryResult;
-  error?: unknown;
-}
-
-export interface InsertSuggestionResponse {
-  suggestionId: number;
-}
+export type SetTabTitleResponse = void;
 
 export interface PluginResponseData {
   id: string;
   result:
-    | GetThemeResponse
     | GetTablesResponse
     | GetColumnsResponse
     | GetConnectionInfoResponse
     | GetActiveTabResponse
     | GetAllTabsResponse
-    | CreateQueryTabResponse
-    | UpdateQueryTextResponse
     | RunQueryResponse
-    | RunQueryTabResponse
-    | RunQueryTabPartiallyResponse;
+    | ExpandTableResultResponse
+    | SetTabTitleResponse;
   error?: Error;
 }
 

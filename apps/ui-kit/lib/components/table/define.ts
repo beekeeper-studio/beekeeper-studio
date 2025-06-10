@@ -1,3 +1,3 @@
-import { Table } from ".";
+import { TableElement } from ".";
 
-window.customElements.define("bks-table", Table);
+window.customElements.define("bks-table", TableElement);

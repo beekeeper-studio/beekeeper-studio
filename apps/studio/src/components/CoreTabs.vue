@@ -26,6 +26,7 @@
           @forceClose="forceClose"
           @duplicate="duplicate"
           @copyName="copyName"
+          @reloadPluginView="handleReloadPluginView"
         />
       </Draggable>
       <!-- </div> -->
@@ -37,16 +38,17 @@
         <x-button
           class="add-tab-dropdown"
           menu
-          v-if="supportsShell"
+          v-if="tabTypeConfigs.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <x-menuitem @click.prevent="createQuery(null)">
-              <x-label>New Query</x-label>
-              <x-shortcut value="Control+T"/>
-            </x-menuitem>
-            <x-menuitem @click.prevent="createShell">
-              <x-label>New Shell</x-label>
+            <x-menuitem
+              v-for="(config, index) in tabTypeConfigs"
+              :key="index"
+              @click.prevent="createTab(config)"
+            >
+              <x-label>{{ config.menuItem.label }}</x-label>
+              <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
             </x-menuitem>
           </x-menu>
         </x-button>
@@ -85,6 +87,13 @@
           :active="activeTab.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
+        />
+        <PluginShell
+          v-if="tab.tabType === 'plugin-shell'"
+          :tab="tab"
+          :active="activeTab.id === tab.id"
+          :reload="reloader[tab.id]"
+          @close="close"
         />
         <tab-with-table
           v-if="tab.tabType === 'table'"
@@ -286,6 +295,7 @@ import TableBuilder from './TabTableBuilder.vue'
 import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
 import ImportTable from './TabImportTable.vue'
 import DatabaseBackup from './TabDatabaseBackup.vue'
+import PluginShell from './TabPluginShell.vue'
 import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
@@ -304,9 +314,10 @@ import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import Shell from './TabShell.vue'
+import { TabTypeConfig } from "@/store/modules/TabModule";
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
+import { TransportOpenTab, TransportPluginShellTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
 
   export default Vue.extend({
     props: [],
@@ -328,7 +339,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       ConfirmationModal,
       SqlFilesImportModal,
       CreateCollectionModal,
-      Shell
+      Shell,
+      PluginShell,
     },
     data() {
       return {
@@ -349,6 +361,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         duplicateTableName: null,
         closingTab: null,
         confirmModalId: 'core-tabs-close-confirmation',
+        reloader: {},
       }
     },
     watch: {
@@ -365,16 +378,18 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection', 'connectionType']),
-    ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
+    ...mapGetters({
+      'dialect': 'dialect',
+      'dialectData': 'dialectData',
+      'dialectTitle': 'dialectTitle',
+      'tabTypeConfigs': 'tabs/tabTypeConfigs',
+    }),
     tabIcon() {
       return {
         type: this.dbEntityType,
         tabType: this.dbEntityType,
         entityType: this.dbEntityType
       }
-    },
-    supportsShell() {
-      return !this.dialectData.disabledFeatures?.shell;
     },
     titleCaseAction() {
       return _.capitalize(this.dbAction)
@@ -630,8 +645,30 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
     },
-    handleCreateTab() {
-      this.createQuery()
+    async createTab(config: TabTypeConfig) {
+      if (config.type === "query") {
+        this.createQuery()
+      } else if (config.type === "shell") {
+        this.createShell()
+      } else if (config.type === "plugin-shell") {
+        let tNum = 0;
+        let title = config.name;
+        do {
+          tNum = tNum + 1;
+          title = `${config.name} #${tNum}`;
+        } while (this.tabItems.filter((t) => t.title === title).length > 0);
+
+        const tab = {
+          tabType: config.type,
+          title,
+          unsavedChanges: false,
+          context: {
+            pluginId: config.pluginId,
+            pluginTabTypeId: config.pluginTabTypeId,
+          },
+        } as TransportPluginShellTab;
+        await this.addTab(tab)
+      }
     },
     async createShell() {
       let sNum = 0;
@@ -1101,7 +1138,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
       this.$copyText(item.tableName)
-    }
+    },
+    handleReloadPluginView(tab) {
+      this.reloader = {
+        ...this.reloader,
+        [tab.id]: Date.now(),
+      }
+    },
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
