@@ -148,55 +148,24 @@
 </template>
 
 <script lang="ts">
-import Vue, { PropType } from 'vue';
+import Vue from 'vue';
 import _ from 'lodash'
 import VirtualTableList from './VirtualTableList.vue'
 import { entityFilter } from './sql_tools'
 import { Item, SortByValues } from "./models";
 import { Entity } from "../types";
 import { writeClipboard } from "../../utils/clipboard";
-import { openMenu, CustomMenuItems, useCustomMenuItems } from "../context-menu/menu";
+import { openMenu, useCustomMenuItems } from "../context-menu/menu";
 import ProxyEmit from "../mixins/ProxyEmit";
 import HiddenEntitiesModal from "./HiddenEntitiesModal.vue";
 import PinnedTableList from "./PinnedTableList.vue";
 import Split from "split.js";
+import { props } from "./entity-list";
 
 export default Vue.extend({
   mixins: [ProxyEmit],
   components: { VirtualTableList, HiddenEntitiesModal, PinnedTableList },
-  props: {
-    entities: {
-      type: Array as PropType<Entity[]>,
-      default: () => [],
-    },
-    /** This should reference the same entities as `tables`. */
-    hiddenEntities: {
-      type: Array as PropType<Entity[]>,
-      default: () => [],
-    },
-    /** This should reference the same entities as `tables`. */
-    pinnedEntities: {
-      type: Array as PropType<Entity[]>,
-      default: () => [],
-    },
-    enablePinning: {
-      type: Boolean,
-      default: false,
-    },
-    pinnedSortBy: {
-      type: String as PropType<typeof SortByValues[number]>,
-      default: "position",
-    },
-    pinnedSortOrder: {
-      type: String,
-      default: "asc",
-    },
-    contextMenuItems: [Array, Function] as PropType<CustomMenuItems>,
-    showCreateEntityBtn: {
-      type: Boolean,
-      default: true,
-    },
-  },
+  props,
   data() {
     return {
       tableLoadError: null,

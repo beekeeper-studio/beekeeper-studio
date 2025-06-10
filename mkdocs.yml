@@ -89,13 +89,13 @@ nav:
     - user_guide/connecting/supported-databases.md
     - Connection Options: user_guide/connecting/connecting.md
     - user_guide/connecting/amazon-rds.md
-    - user_guide/connecting/clickhouse.md
+    - ClickHouse: user_guide/connecting/clickhouse.md
     - user_guide/connecting/duckdb.md
     - user_guide/connecting/firebird.md
     - user_guide/connecting/google-bigquery.md
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
-    - user_guide/connecting/sqlite.md
+    - SQLite: user_guide/connecting/sqlite.md
 
   - Features:
     - user_guide/sql_editor/editor.md
@@ -109,6 +109,7 @@ nav:
     - user_guide/backup-restore.md
     - Cloud Sync: user_guide/cloud-storage-team-workspaces.md
     - user_guide/privacy-mode.md
+    - Configuration: user_guide/configuration.md
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md

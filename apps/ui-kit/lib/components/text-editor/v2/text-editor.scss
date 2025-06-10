@@ -3,7 +3,7 @@
 @use '../../../styles/base';
 @use 'sass:color';
 
-.BksTextEditor {
+:root {
   --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.03)};
   --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.03)};
   --bks-text-editor-atom-fg-color: #ae81ff;
@@ -16,6 +16,7 @@
   --bks-text-editor-comment-tag-fg-color: #bc6283;
   --bks-text-editor-comment-type-fg-color: #bc6283;
   --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-fatcursor-bg-color: #77ee77;
   --bks-text-editor-def-fg-color: #fd971f;
   --bks-text-editor-error-bg-color: #f8f8f0;
   --bks-text-editor-error-fg-color: #f92672;
@@ -32,13 +33,14 @@
   --bks-text-editor-number-fg-color: #{$brand-warning};
   --bks-text-editor-property-fg-color: #a6e22e;
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-matchingselection-bg-color: #{rgba($theme-base, 0.1)};
   --bks-text-editor-string-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
   --bks-text-editor-tag-fg-color: #f92672;
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-variable-3-fg-color: #66d9ef;
   --bks-text-editor-variable-fg-color: #{color.adjust($text-dark, $lightness: -10%)};
   --bks-text-editor-namespace-fg-color: #7a7a7a;
-  --bks-text-editor-type-fg-color: #00aa66;
+  --bks-text-editor-type-fg-color: #{$text-dark};
   --bks-text-editor-class-fg-color: #4EC9B0;
   --bks-text-editor-enum-fg-color: #00aa77;
   --bks-text-editor-interface-fg-color: #00cc88;
@@ -54,7 +56,7 @@
   --bks-text-editor-macro-fg-color: #8855dd;
   --bks-text-editor-label-fg-color: #666666;
   --bks-text-editor-regexp-fg-color: #ee5555;
-  --bks-text-editor-operator-fg-color: #d4d4d4;
+  --bks-text-editor-operator-fg-color: #{$text-dark};
   --bks-text-editor-definition-fg-color: #fd971f;
   --bks-text-editor-variableName-fg-color: #f8f8f2;
   --bks-text-editor-bool-fg-color: #ae81ff;
@@ -63,7 +65,7 @@
   --bks-text-editor-propertyName-fg-color: #9CDCFE;
   --bks-text-editor-punctuation-fg-color: #{$text};
   --bks-text-editor-meta-fg-color: #75715e;
-  --bks-text-editor-typeName-fg-color: #4EC9B0;
+  --bks-text-editor-typeName-fg-color: #{$text-dark};
   --bks-text-editor-labelName-fg-color: #C8C8C8;
   --bks-text-editor-attributeName-fg-color: #9CDCFE;
   --bks-text-editor-attributeValue-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
@@ -71,7 +73,34 @@
   --bks-text-editor-url-fg-color: #ae81ff;
   --bks-text-editor-processingInstruction-fg-color: #75715e;
   --bks-text-editor-special-string-fg-color: #{color.adjust($brand-success, $lightness: -10%)};
+  --bks-text-editor-name-fg-color: #{$text-dark};
+  --bks-text-editor-deleted-fg-color: #f92672;
+  --bks-text-editor-character-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
+  --bks-text-editor-color-fg-color: #ae81ff;
+  --bks-text-editor-standard-fg-color: #66d9ef;
+  --bks-text-editor-separator-fg-color: #{$text};
+  --bks-text-editor-changed-fg-color: #e6db74;
+  --bks-text-editor-annotation-fg-color: #75715e;
+  --bks-text-editor-modifier-fg-color: #66d9ef;
+  --bks-text-editor-self-fg-color: #fd971f;
+  --bks-text-editor-operatorKeyword-fg-color: #{$brand-pink};
+  --bks-text-editor-escape-fg-color: #ae81ff;
+  --bks-text-editor-link-fg-color: #ae81ff;
+  --bks-text-editor-strong-fg-color: #{$text-dark};
+  --bks-text-editor-emphasis-fg-color: #{$text-dark};
+  --bks-text-editor-strikethrough-fg-color: #{$text-light};
+  --bks-text-editor-sql-alias-fg-color: #{$text-dark};
+  --bks-text-editor-sql-field-fg-color: #{$brand-secondary};
 
+  // Context Menu
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
+  --bks-text-editor-context-menu-fg-color: #{$text-dark};
+  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+}
+
+.BksTextEditor {
   height: 100%;
 
   // Common CodeMirror styles
@@ -138,11 +167,34 @@
   .cm-url { color: var(--bks-text-editor-url-fg-color); }
   .cm-processingInstruction { color: var(--bks-text-editor-processingInstruction-fg-color); }
   .cm-special-string { color: var(--bks-text-editor-special-string-fg-color); }
+  .cm-name { color: var(--bks-text-editor-name-fg-color); }
+  .cm-sql-alias .cm-name { color: var(--bks-text-editor-sql-alias-fg-color); }
+  .cm-sql-field .cm-name { color: var(--bks-text-editor-sql-field-fg-color); }
+  .cm-deleted { color: var(--bks-text-editor-deleted-fg-color); }
+  .cm-character { color: var(--bks-text-editor-character-fg-color); }
+  .cm-macro { color: var(--bks-text-editor-macro-fg-color); }
+  .cm-color { color: var(--bks-text-editor-color-fg-color); }
+  .cm-standard { color: var(--bks-text-editor-standard-fg-color); }
+  .cm-separator { color: var(--bks-text-editor-separator-fg-color); }
+  .cm-changed { color: var(--bks-text-editor-changed-fg-color); }
+  .cm-annotation { color: var(--bks-text-editor-annotation-fg-color); }
+  .cm-modifier { color: var(--bks-text-editor-modifier-fg-color); }
+  .cm-self { color: var(--bks-text-editor-self-fg-color); }
+  .cm-operatorKeyword { color: var(--bks-text-editor-operatorKeyword-fg-color); }
+  .cm-escape { color: var(--bks-text-editor-escape-fg-color); }
+  .cm-regexp { color: var(--bks-text-editor-regexp-fg-color); }
+  .cm-link { color: var(--bks-text-editor-link-fg-color); }
+  .cm-strong { color: var(--bks-text-editor-strong-fg-color); }
+  .cm-emphasis { color: var(--bks-text-editor-emphasis-fg-color); }
+  .cm-strikethrough { color: var(--bks-text-editor-strikethrough-fg-color); }
 
   // Selection
   .cm-selectionBackground,
   .cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
     background-color: var(--bks-text-editor-selected-bg-color);
+  }
+  .cm-selectionMatch {
+    background-color: var(--bks-text-editor-matchingselection-bg-color);
   }
 
   // Gutters and line numbers
@@ -157,6 +209,9 @@
   // Cursor
   .cm-cursor {
     border-left-color: var(--bks-text-editor-cursor-bg-color);
+  }
+  .cm-fat-cursor:not(.CodeMirror) {
+    background-color: var(--bks-text-editor-fatcursor-bg-color);
   }
 
   // Active line
@@ -177,19 +232,15 @@
 }
 
 .BksTextEditor-hints {
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
-  --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
-  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
-  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
-
   font-family: $font-family-mono;
   padding: $gutter-h 0;
   border: 0;
   border-radius: 6px;
-  background-color: var(--bks-text-editor-context-menu-bg-color);
-  color: var(--bks-text-editor-context-menu-fg-color);
-  @include card-shadow;
+  &, &.cm-tooltip {
+    background-color: var(--bks-text-editor-context-menu-bg-color);
+    color: var(--bks-text-editor-context-menu-fg-color);
+    @include card-shadow;
+  }
 
   .cm-completionIcon-table::before {
     font-family: "Material Icons";
@@ -209,18 +260,17 @@
     width: 0.8em;
     text-align: center;
   }
+  &.cm-tooltip-autocomplete ul li[aria-selected] {
+    background-color: var(--bks-text-editor-context-menu-item-bg-color-active);
+    color: var(--bks-text-editor-context-menu-item-fg-color-active);
+  }
   ul li {
     padding: ($gutter-h * 0.5) $gutter-h;
     border-radius: 0;
     cursor: pointer;
 
-    &:hover:not([aria-selected="true"]) {
+    &:hover:not([aria-selected]) {
       background-color: var(--bks-text-editor-context-menu-item-bg-color-hover);
-    }
-
-    &[aria-selected="true"] {
-      background-color: var(--bks-text-editor-context-menu-item-bg-color-active);
-      color: var(--bks-text-editor-context-menu-item-fg-color-active);
     }
 
     // Option type-based styling

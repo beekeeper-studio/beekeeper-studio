@@ -29,15 +29,8 @@
       }
     }
 
-    .menu-btn {
-      i.material-icons {
-        font-size: 18px;
-        color: $text-light;
-      }
-
-      &:not(:hover) {
-        background-color: transparent;
-      }
+    .title {
+      color: $text-dark;
     }
 
     .menu-btn x-menuitem {
@@ -179,4 +172,20 @@
       height: 100%
     }
   }
+}
+
+.truncatable-value .more {
+  @include btn;
+  @include btn-flat;
+  margin-left: 0.5rem;
+  min-width: fit-content;
+  font-size: 0.85rem;
+  font-weight: normal;
+  cursor: pointer;
+  height: 1.3rem;
+  padding: 0 0.5rem;
+  margin-left: 0.25rem;
+  text-decoration: none;
+  user-select: none;
+  border-radius: 0.25rem;
 }
