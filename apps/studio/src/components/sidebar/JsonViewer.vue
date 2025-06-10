@@ -89,7 +89,7 @@ import {
 import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@/lib/editor/utils";
 import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
-import PartialReadOnlyPlugin from "@/lib/editor/plugins/PartialReadOnlyPlugin";
+import { partialReadonly } from "@/lib/editor/extensions/partialReadOnly";
 import JsonViewerUpsell from '@/components/upsell/JsonViewerSidebarUpsell.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
@@ -145,6 +145,7 @@ export default Vue.extend({
       },
       wrapText: false,
       persistJsonFold: persistJsonFold(),
+      partialReadonly: partialReadonly(),
     };
   },
   watch: {
@@ -165,7 +166,11 @@ export default Vue.extend({
       this.persistJsonFold.save()
       await this.$nextTick()
       setTimeout(() => this.persistJsonFold.apply())
-    }
+    },
+    editableRanges() {
+      console.log('aslkdhs')
+      this.partialReadonly.setEditableRanges(this.editableRanges)
+    },
   },
   computed: {
     sidebarTitle() {
@@ -232,6 +237,7 @@ export default Vue.extend({
       return _.difference(this.truncatablePaths, this.restoredTruncatedPaths)
     },
     markers() {
+      // return [];
       const markers: EditorMarker[] = [];
       _.forEach(this.expandablePaths, (expandablePath: ExpandablePath) => {
         try {
@@ -392,7 +398,7 @@ export default Vue.extend({
       return [
         extensions,
         this.persistJsonFold.extensions,
-        // new PartialReadOnlyPlugin(this.editableRanges, this.handleEditableRangeChange),
+        this.partialReadonly.extensions(this.editableRanges),
       ]
     },
     handleEditableRangeChange: _.debounce(function (range, value) {
@@ -404,6 +410,12 @@ export default Vue.extend({
         this.editableRangeErrors.push({ id: range.id, error, from: range.from, to: range.to })
       }
     }, 250),
+  },
+  mounted() {
+    this.partialReadonly.addListener("change", this.handleEditableRangeChange)
+  },
+  beforeDestroy() {
+    this.partialReadonly.removeListener("change", this.handleEditableRangeChange)
   },
 });
 </script>
