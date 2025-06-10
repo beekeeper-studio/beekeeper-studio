@@ -356,10 +356,6 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
   }
 
   async query(text: string, _options: any): Promise<CancelableQuery> {
-    // It executes, but:
-    // TODO: SILENTLY FAILS STILL
-    // TODO: All the results are null!
-
     let statement: snowflake.RowStatement
 
     return {
@@ -370,23 +366,28 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
       },
       execute: () => new Promise<QueryResult>((resolve, reject) => {
         this.connection.execute({
-          sqlText: text, asyncExec: true,
-          complete: async (e, s) => {
-            if (e) return reject(e);
-            const queryId = s.getQueryId()
-            statement = s
-            // @ts-ignore
-            const result = this.connection.getResultsFromQueryId({
-              queryId: queryId,
-              complete: async (err, stmt, rows) => {
-                if (err) return reject(err);
-                return resolve([{
-                  rows, fields: this.statementToColumns(stmt)
-                }])
-              }
-            })
+          sqlText: text,
+          complete: (err, stmt, rows) => {
+            if (err) {
+              log.error('Query execution error:', err);
+              return reject(err);
+            }
+            
+            statement = stmt;
+            log.debug('Query executed successfully, rows:', rows?.length || 0);
+            
+            try {
+              const result = [{
+                rows: rows || [],
+                fields: this.statementToColumns(stmt)
+              }];
+              resolve(result);
+            } catch (parseError) {
+              log.error('Error parsing query results:', parseError);
+              reject(parseError);
+            }
           }
-        })
+        });
       })
     }
   }
@@ -452,12 +453,61 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
     return [];
   }
   async getPrimaryKey(table: string, schema?: string): Promise<string | null> {
-    // TODO: Implement primary key retrieval
-    return null;
+    const primaryKeys = await this.getPrimaryKeys(table, schema);
+    return primaryKeys.length > 0 ? primaryKeys[0].columnName : null;
   }
+
   async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {
-    // TODO: Implement primary keys columns retrieval
-    return [];
+    let tableSpec = SnowflakeData.wrapIdentifier(table);
+    if (schema) {
+      tableSpec = `${SnowflakeData.wrapIdentifier(schema)}.${tableSpec}`;
+    }
+
+    // Snowflake doesn't have a direct way to query primary keys via INFORMATION_SCHEMA
+    // We need to use SHOW PRIMARY KEYS or query the constraints
+    const sql = `
+      SELECT 
+        COLUMN_NAME as column_name,
+        ORDINAL_POSITION as position
+      FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+      WHERE TABLE_NAME = ${SnowflakeData.escapeString(table, true)}
+        ${schema ? `AND TABLE_SCHEMA = ${SnowflakeData.escapeString(schema, true)}` : ''}
+        AND CONSTRAINT_NAME IN (
+          SELECT CONSTRAINT_NAME 
+          FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+          WHERE CONSTRAINT_TYPE = 'PRIMARY KEY'
+            AND TABLE_NAME = ${SnowflakeData.escapeString(table, true)}
+            ${schema ? `AND TABLE_SCHEMA = ${SnowflakeData.escapeString(schema, true)}` : ''}
+        )
+      ORDER BY ORDINAL_POSITION
+    `;
+
+    try {
+      const result = await this.rawExecuteQuery(sql, {});
+      const rows = Array.isArray(result) ? result[0].rows : result.rows;
+      
+      return rows.map(row => ({
+        columnName: row.COLUMN_NAME || row.column_name,
+        position: row.ORDINAL_POSITION || row.position || 1
+      }));
+    } catch (error) {
+      log.error(`Error getting primary keys for ${table}`, error);
+      
+      // Fallback: try SHOW PRIMARY KEYS command if it's supported
+      try {
+        const showSql = `SHOW PRIMARY KEYS IN TABLE ${tableSpec}`;
+        const showResult = await this.rawExecuteQuery(showSql, {});
+        const showRows = Array.isArray(showResult) ? showResult[0].rows : showResult.rows;
+        
+        return showRows.map((row, index) => ({
+          columnName: row.column_name || row.COLUMN_NAME,
+          position: index + 1
+        }));
+      } catch (fallbackError) {
+        log.error(`Fallback primary key query also failed for ${table}`, fallbackError);
+        return [];
+      }
+    }
   }
   async listCharsets(): Promise<string[]> {
     // TODO: Implement charsets listing or determine if Snowflake supports this concept
@@ -534,47 +584,76 @@ export class SnowflakeClient extends BaseV1DatabaseClient<SnowflakeResult> {
 
 
   protected statementToColumns(statement: snowflake.RowStatement) {
-    const columns = statement.getColumns().map((c) => {
-      const columnInfo = {
-        id: c.getId().toString(),
-        name: c.getName(),
-        dataType: c.getType()
-      };
-      return columnInfo;
-    });
-    return columns
+    if (!statement || !statement.getColumns) {
+      log.warn('Invalid statement provided to statementToColumns');
+      return [];
+    }
+    
+    try {
+      const columns = statement.getColumns().map((c) => {
+        const columnInfo = {
+          id: c.getId()?.toString() || '',
+          name: c.getName() || '',
+          dataType: c.getType() || null
+        };
+        return columnInfo;
+      });
+      return columns;
+    } catch (error) {
+      log.error('Error extracting columns from statement:', error);
+      return [];
+    }
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SnowflakeResult | SnowflakeResult[]> {
-    // Execute query
+    log.debug('Executing raw query:', { query: q });
+    
     const results = await new Promise<SnowflakeResult>((resolve, reject) => {
       this.connection.execute({
         sqlText: q,
         complete: (err, stmt, rows) => {
-          if (err) return reject(err);
-          // Extract column information including type data if available
-          return resolve({
-            rows: rows,
-            arrayMode: false,
-            columns: this.statementToColumns(stmt)
+          if (err) {
+            log.error('Raw query execution error:', err);
+            return reject(err);
+          }
+          
+          log.debug('Raw query executed successfully:', { 
+            rowCount: rows?.length || 0,
+            columnCount: stmt?.getColumns()?.length || 0
           });
+          
+          try {
+            const result = {
+              rows: rows || [],
+              arrayMode: false,
+              columns: this.statementToColumns(stmt)
+            };
+            resolve(result);
+          } catch (parseError) {
+            log.error('Error parsing raw query results:', parseError);
+            reject(parseError);
+          }
         }
       });
     });
-    console.log("SNOWFLAKE RESULTS", results)
+    
     return results;
   }
   protected parseQueryResultColumns(qr: SnowflakeResult): BksField[] {
+    if (!qr?.columns) {
+      return [];
+    }
+    
     return qr.columns.map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';
 
       // Check if the column type is available and is a binary type
-      if (column.type?.toUpperCase() === 'BINARY' || column.type?.toUpperCase() === 'VARBINARY') {
+      if (column.dataType?.toUpperCase() === 'BINARY' || column.dataType?.toUpperCase() === 'VARBINARY') {
         bksType = 'BINARY';
       }
 
       return {
-        name: column.name,
+        name: column.name || '',
         bksType
       };
     });
