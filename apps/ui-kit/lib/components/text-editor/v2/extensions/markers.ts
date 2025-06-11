@@ -1,3 +1,18 @@
+/**
+ * Markers Extension for CodeMirror 6
+ * 
+ * Adds visual markers to text ranges in the editor. Supports error highlights,
+ * text highlights, and custom widgets with click handlers.
+ * 
+ * Marker types:
+ * - "error": Red underline with optional tooltip message
+ * - "highlight": Background highlight
+ * - "custom": Custom decoration or widget element
+ * 
+ * Usage:
+ * 1. Add to extensions: markers({ markers: markerArray })
+ * 2. Update markers: applyMarkers(view, newMarkers)
+ */
 import { StateField, StateEffect, Extension, Text } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet, WidgetType } from "@codemirror/view";
 import { EditorMarker } from "../types";
