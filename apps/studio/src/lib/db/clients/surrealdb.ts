@@ -5,7 +5,7 @@ import { DatabaseElement, IDbConnectionDatabase } from '../types';
 import { IDbConnectionServer } from '../backendTypes';
 import rawLog from '@bksLogger';
 import { TableKey } from '@shared/lib/dialects/models';
-import { getDialectData } from '@shared/lib/dialects';
+import { SurrealDBData, surrealEscapeValue } from '@shared/lib/dialects/surrealdb';
 
 const log = rawLog.scope('surrealdb');
 
@@ -25,6 +25,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   version: SurrealDBResult;
   db: Surreal;
   connectionString: string;
+  dialectData = SurrealDBData;
   
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, null, server, database);
@@ -248,10 +249,11 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
-    const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode });
+    const results = options.multiple 
+      ? await this.driverExecuteMultiple(queryText, options)
+      : [await this.driverExecuteSingle(queryText, options)];
     
-    return data.map((result) => ({
+    return results.map(result => ({
       command: queryText.trim().split(' ')[0].toUpperCase(),
       rows: result.rows,
       fields: result.columns.map(col => ({ name: col.name, id: col.name })),
@@ -335,10 +337,12 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<string> {
-    const dialectData = getDialectData('surrealdb');
-    const escapedTable = dialectData.wrapIdentifier(table);
+    const escapedTable = this.dialectData.wrapIdentifier(table);
+    const selectFields = selects 
+      ? selects.map(field => this.dialectData.wrapIdentifier(field)).join(', ')
+      : '*';
     
-    let query = `SELECT ${selects?.join(', ') || '*'} FROM ${escapedTable}`;
+    let query = `SELECT ${selectFields} FROM ${escapedTable}`;
     
     // Add filters
     if (filters && filters.length > 0) {
@@ -346,10 +350,8 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
         query += ` WHERE ${filters}`;
       } else {
         const filterClauses = filters.map(filter => {
-          const escapedField = dialectData.wrapIdentifier(filter.field);
-          const escapedValue = typeof filter.value === 'string' 
-            ? dialectData.escapeString(filter.value, true)
-            : JSON.stringify(filter.value);
+          const escapedField = this.dialectData.wrapIdentifier(filter.field);
+          const escapedValue = surrealEscapeValue(filter.value);
           return `${escapedField} ${filter.type === '=' ? '==' : filter.type} ${escapedValue}`;
         });
         query += ` WHERE ${filterClauses.join(' AND ')}`;
@@ -359,7 +361,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     // Add ordering
     if (orderBy && orderBy.length > 0) {
       const orderClauses = orderBy.map(order => {
-        const escapedField = dialectData.wrapIdentifier(order.field);
+        const escapedField = this.dialectData.wrapIdentifier(order.field);
         return `${escapedField} ${order.dir?.toUpperCase() || 'ASC'}`;
       });
       query += ` ORDER BY ${orderClauses.join(', ')}`;
@@ -382,11 +384,6 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
 
   async queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
     throw new Error('Stream results not implemented for SurrealDB');
-  }
-
-  wrapIdentifier(value: string): string {
-    const dialectData = getDialectData('surrealdb');
-    return dialectData.wrapIdentifier(value);
   }
 
   async executeApplyChanges(_changes: TableChanges): Promise<TableUpdateResult[]> {
@@ -469,7 +466,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
         return {
           rows,
           columns,
-          arrayMode: options?.arrayMode || false
+          arrayMode: false
         };
       });
       

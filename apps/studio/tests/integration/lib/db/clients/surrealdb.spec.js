@@ -1,6 +1,6 @@
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { runCommonTests } from './all'
+import { runCommonTests, runReadOnlyTests } from './all'
 
 const TEST_VERSIONS = [
   { version: 'v1.5.4', readonly: false },
@@ -18,6 +18,7 @@ function testWith(version, readonly = false) {
     beforeAll(async () => {
       // Start SurrealDB container
       container = await new GenericContainer(`surrealdb/surrealdb:${version}`)
+        .withName("testsurrealdb")
         .withCommand(['start', '--user', 'root', '--pass', 'root', 'memory'])
         .withExposedPorts(8000)
         .withStartupTimeout(dbtimeout)
@@ -93,7 +94,11 @@ function testWith(version, readonly = false) {
       }
     })
 
-    if (!readonly) {
+    if (readonly) {
+      describe("Read Only Tests", () => {
+        runReadOnlyTests(() => util)
+      })
+    } else {
       describe("Common Tests", () => {
         // Note: SurrealDB has a very different data model than traditional SQL databases
         // So we'll run a limited subset of common tests
