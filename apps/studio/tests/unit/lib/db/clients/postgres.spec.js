@@ -116,4 +116,51 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result).toBe(expected);
   })
 
+  it("Should handle read-only permission errors gracefully and still return relations", async () => {
+    // Mock the methods that might fail due to permission issues
+    const mockRelations = [
+      {
+        constraintName: 'fk_test',
+        fromTable: 'table1',
+        fromSchema: 'public',
+        fromColumn: 'id',
+        toTable: 'table2',
+        toSchema: 'public',
+        toColumn: 'ref_id',
+        onUpdate: 'NO ACTION',
+        onDelete: 'CASCADE',
+        isComposite: false
+      }
+    ];
+
+    // Mock methods that may fail with permission errors
+    client.driverExecuteSingle = jest.fn().mockRejectedValue(new Error('permission denied for function pg_relation_size'));
+    client.listTableIndexes = jest.fn().mockRejectedValue(new Error('permission denied'));
+    client.listTableTriggers = jest.fn().mockRejectedValue(new Error('permission denied'));
+    client.listTablePartitions = jest.fn().mockRejectedValue(new Error('permission denied'));
+    client.getTableOwner = jest.fn().mockRejectedValue(new Error('permission denied'));
+
+    // Mock getTableKeys to return relations successfully (this should work with read-only)
+    client.getTableKeys = jest.fn().mockResolvedValue(mockRelations);
+
+    const result = await client.getTableProperties('test_table', 'public');
+
+    // Verify that relations are returned even when other properties fail
+    expect(result.relations).toEqual(mockRelations);
+    expect(result.indexes).toEqual([]);
+    expect(result.triggers).toEqual([]);
+    expect(result.partitions).toEqual([]);
+    expect(result.owner).toBeNull();
+    expect(result.indexSize).toBe(0);
+    expect(result.size).toBe(0);
+    expect(result.description).toBeNull();
+
+    // Verify that all methods were called despite some failing
+    expect(client.getTableKeys).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.listTableIndexes).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.listTableTriggers).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.listTablePartitions).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.getTableOwner).toHaveBeenCalledWith('test_table', 'public');
+  })
+
 })
