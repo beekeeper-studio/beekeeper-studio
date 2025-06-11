@@ -1,7 +1,16 @@
 /**
- * This plugin stores JSON paths that should be folded in the editor and
- * restores them when the editor value changes.
- **/
+ * Persist JSON Fold Extension for CodeMirror 6
+ * 
+ * Remembers which JSON sections were folded/collapsed and restores them
+ * when the editor content changes. Useful for maintaining fold state
+ * across JSON updates in the JSON viewer.
+ * 
+ * Usage:
+ * 1. Create instance: const persist = persistJsonFold()
+ * 2. Add to extensions: persist.extensions
+ * 3. Before content change: persist.save()
+ * 4. After content change: persist.apply()
+ */
 
 import _ from "lodash";
 // FIXME (azmi): maybe use json-source-map instead?

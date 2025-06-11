@@ -1,3 +1,13 @@
+/**
+ * Line Gutters Extension for CodeMirror 6
+ * 
+ * Adds visual indicators (gutters) to specific lines in the editor.
+ * Supports different gutter types like "changed" for marking modified lines.
+ * 
+ * Usage:
+ * 1. Add to extensions: lineGutters({ lineGutters: gutterArray })
+ * 2. Update gutters: applyLineGutters(view, newGutters)
+ */
 import { StateField, StateEffect, Extension } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { LineGutter } from "../types";

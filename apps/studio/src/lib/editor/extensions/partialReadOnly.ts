@@ -1,3 +1,15 @@
+/**
+ * Partial Read-Only Extension for CodeMirror 6
+ * 
+ * Makes the editor mostly read-only except for specific editable ranges.
+ * Useful for JSON editors where only certain values should be editable.
+ * 
+ * Usage:
+ * 1. Create instance: const partial = partialReadonly()
+ * 2. Add to extensions: partial.extensions(editableRanges)
+ * 3. Listen for changes: partial.addListener("change", (range, value) => {...})
+ * 4. Update ranges: partial.setEditableRanges(newRanges)
+ */
 import {
   EditorState,
   StateEffect,
