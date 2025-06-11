@@ -47,7 +47,6 @@
     <div class="text-editor-wrapper">
       <text-editor
         language-id="json"
-        :fold-gutter="true"
         :fold-all="foldAll"
         :unfold-all="unfoldAll"
         :value="text"
@@ -57,7 +56,6 @@
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
-        :extra-keybindings="disableReplaceKeybindings"
       />
     </div>
     <div class="empty-state" v-show="empty">
@@ -74,20 +72,19 @@
  * dataId:  use this to update the component with new data.
  */
 import Vue from "vue";
-// import TextEditor from "@/components/common/texteditor/TextEditor.vue";
 import TextEditor from "@beekeeperstudio/ui-kit/vue/text-editor"
 import {
   ExpandablePath,
   findKeyPosition,
   findValueInfo,
-  createExpandableElement,
-  createTruncatableElement,
+  createExpandableTextDecoration,
+  createTruncatableTextDecoration,
   deepFilterObjectProps,
   getPaths,
   eachPaths,
 } from "@/lib/data/jsonViewer";
 import { mapGetters } from "vuex";
-import { EditorMarker, LineGutter } from "@/lib/editor/utils";
+import { EditorMarker, LineGutter } from "@beekeeperstudio/ui-kit";
 import { persistJsonFold } from "@/lib/editor/extensions/persistJsonFold";
 import { partialReadonly } from "@/lib/editor/extensions/partialReadOnly";
 import JsonViewerUpsell from '@/components/upsell/JsonViewerSidebarUpsell.vue'
@@ -139,10 +136,6 @@ export default Vue.extend({
       unfoldAll: 0,
       restoredTruncatedPaths: [],
       editableRangeErrors: [],
-      disableReplaceKeybindings: {
-        [this.cmCtrlOrCmd("R")]: () => false,
-        [this.cmCtrlOrCmd("Shift-R")]: () => false,
-      },
       wrapText: false,
       persistJsonFold: persistJsonFold(),
       partialReadonly: partialReadonly(),
@@ -168,7 +161,6 @@ export default Vue.extend({
       setTimeout(() => this.persistJsonFold.apply())
     },
     editableRanges() {
-      console.log('aslkdhs')
       this.partialReadonly.setEditableRanges(this.editableRanges)
     },
   },
@@ -237,22 +229,19 @@ export default Vue.extend({
       return _.difference(this.truncatablePaths, this.restoredTruncatedPaths)
     },
     markers() {
-      // return [];
       const markers: EditorMarker[] = [];
       _.forEach(this.expandablePaths, (expandablePath: ExpandablePath) => {
         try {
           const line = findKeyPosition(this.text, expandablePath.path);
           const { from, to, value } = findValueInfo(this.lines[line]);
-          const element = createExpandableElement(value);
-          const onClick = (_event) => {
+          const onClick = () => {
             this.expandPath(expandablePath);
           };
           markers.push({
             type: "custom",
             from: { line, ch: from },
             to: { line, ch: to },
-            onClick,
-            element,
+            decoration: createExpandableTextDecoration(value, onClick),
           });
         } catch (e) {
           log.warn("Failed to mark expandable path", expandablePath);
@@ -267,18 +256,14 @@ export default Vue.extend({
         try {
           const line = findKeyPosition(this.text, path.split("."));
           const { from, to, value } = findValueInfo(this.lines[line]);
-          const element = createTruncatableElement(value);
           const onClick = async () => {
             this.restoredTruncatedPaths.push(path)
-            await this.$nextTick()
-            this.reinitializeTextEditor++
           }
           markers.push({
             type: "custom",
             from: { line, ch: from },
             to: { line, ch: to },
-            onClick,
-            element,
+            decoration: createTruncatableTextDecoration(value, onClick),
           });
         } catch (e) {
           log.warn("Failed to mark truncated path", path);

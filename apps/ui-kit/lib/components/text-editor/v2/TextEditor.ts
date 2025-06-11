@@ -1,5 +1,6 @@
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
+import { foldAll, unfoldAll } from "@codemirror/language";
 import {
   EditorMarker,
   ExtensionConfiguration,
@@ -183,6 +184,14 @@ export class TextEditor {
 
   focus() {
     this.view.focus();
+  }
+
+  foldAll() {
+    foldAll(this.view);
+  }
+
+  unfoldAll() {
+    unfoldAll(this.view);
   }
 
   destroy() {

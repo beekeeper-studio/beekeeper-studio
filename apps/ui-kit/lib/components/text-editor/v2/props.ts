@@ -74,11 +74,12 @@ export default {
   // cursor: String,
   // initialized: Boolean,
   // autoFocus: Boolean,
-  // foldGutter: Boolean,
   // removeJsonRootBrackets: Boolean,
   // bookmarks: Array,
-  // foldAll: null,
-  // unfoldAll: null,
+  /** Fold all folds in the editor. */
+  foldAll: null,
+  /** Unfold all folds in the editor. */
+  unfoldAll: null,
   /**
    * Configure custom key mappings in vim. `vimKeymaps` accepts an array of
    * objects that contain the following properties:

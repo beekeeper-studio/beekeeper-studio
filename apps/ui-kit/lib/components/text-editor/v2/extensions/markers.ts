@@ -1,15 +1,6 @@
 import { StateField, StateEffect, Extension, Text } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet, WidgetType } from "@codemirror/view";
-
-export interface EditorMarker {
-  id?: string;
-  from: { line: number; ch: number };
-  to: { line: number; ch: number };
-  message?: string;
-  element?: HTMLElement;
-  onClick?: (event: MouseEvent) => void;
-  type: "error" | "highlight" | "custom";
-}
+import { EditorMarker } from "../types";
 
 // Convert line/ch position to absolute position
 function posFromLineCol(doc: Text, line: number, ch: number): number {
@@ -92,6 +83,8 @@ const markersDecorationField = StateField.define<DecorationSet>({
                   class: "cm-highlight",
                 }).range(from, to)
               );
+            } else if (marker.type === "custom" && marker.decoration) {
+              newDecorations.push(marker.decoration.range(from, to))
             } else if (marker.type === "custom" && marker.element) {
               newDecorations.push(
                 Decoration.replace({
@@ -131,7 +124,6 @@ export function markers(config: { markers?: EditorMarker[] } = {}): Extension {
 }
 
 export function applyMarkers(view: EditorView, markers: EditorMarker[]) {
-  console.log("applyMarkers called with", markers.length, "markers");
   view.dispatch({
     effects: setMarkersEffect.of(markers),
   });

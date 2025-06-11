@@ -393,7 +393,6 @@ export function partialReadonly() {
       editableRangeDecorations,
       updateExtension,
       partialReadOnlyFilter((range, value) => {
-        console.log(range,value)
         changeListener.forEach((listener) => listener(range, value));
       }),
     ];
@@ -404,13 +403,11 @@ export function partialReadonly() {
       log.warn("Calling `setEditableRanges` prematurely.");
       return;
     }
-    console.log("editableranges", ranges);
 
     view.dispatch({ effects: setEditableRangesEffect.of(ranges) });
   }
 
   function addListener(_type: "change", listener: EditInRangeListener) {
-    console.log('what', listener)
     changeListener.push(listener);
   }
 

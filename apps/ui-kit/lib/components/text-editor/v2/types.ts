@@ -5,6 +5,7 @@ import { VimOptions } from "./extensions/keymap";
 import { LanguageServerClient } from "./LanguageServerClient";
 import { TextEditor } from "./TextEditor";
 import type * as LSP from "vscode-languageserver-protocol";
+import { Decoration } from "@codemirror/view";
 
 export interface EditorRange {
   id?: string;
@@ -14,7 +15,11 @@ export interface EditorRange {
 
 export interface EditorMarker extends EditorRange {
   message?: string;
+  /** You can make your own marker by passing in a CodeMirror Decoration. */
+  decoration?: Decoration;
+  /** @deprecated Use `decoration` instead. */
   element?: HTMLElement;
+  /** @deprecated Use `decoration` instead. */
   onClick?: (event: MouseEvent) => void;
   type: "error" | "highlight" | "custom"; // | "warning"
 }

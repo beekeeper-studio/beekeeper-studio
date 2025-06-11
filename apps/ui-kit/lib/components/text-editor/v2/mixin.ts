@@ -70,6 +70,14 @@ export default {
       if (!this.textEditor) return;
       this.applyLineGutters();
     },
+    foldAll() {
+      if (!this.textEditor) return;
+      this.applyFoldAll();
+    },
+    unfoldAll() {
+      if (!this.textEditor) return;
+      this.applyUnfoldAll();
+    },
 
     forceInitialize() {
       this.initialize();
@@ -112,6 +120,12 @@ export default {
     },
     applyLineGutters() {
       this.textEditor.setLineGutters(this.lineGutters);
+    },
+    applyFoldAll() {
+      this.textEditor.foldAll();
+    },
+    applyUnfoldAll() {
+      this.textEditor.unfoldAll();
     },
 
     constructTextEditor() {
