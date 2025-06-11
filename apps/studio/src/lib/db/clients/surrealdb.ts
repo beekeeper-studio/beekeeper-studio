@@ -5,6 +5,7 @@ import { DatabaseElement, IDbConnectionDatabase } from '../types';
 import { IDbConnectionServer } from '../backendTypes';
 import rawLog from '@bksLogger';
 import { TableKey } from '@shared/lib/dialects/models';
+import { getDialectData } from '@shared/lib/dialects';
 
 const log = rawLog.scope('surrealdb');
 
@@ -28,7 +29,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, null, server, database);
     
-    this.dialect = 'generic'; // SurrealDB uses SurrealQL, not standard SQL
+    this.dialect = 'surrealdb';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.db = new Surreal();
   }
@@ -247,30 +248,16 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
-    try {
-      const result = await this.db.query(queryText);
-      
-      return result.map((queryResult, index) => {
-        const data = queryResult.result || [];
-        const rows = Array.isArray(data) ? data : [data];
-        
-        // Extract field names from the first row if available
-        const fields = rows.length > 0 
-          ? Object.keys(rows[0]).map(name => ({ name, id: name }))
-          : [];
-
-        return {
-          command: queryText.trim().split(' ')[0].toUpperCase(),
-          rows,
-          fields,
-          rowCount: rows.length,
-          affectedRows: queryResult.status === 'OK' ? rows.length : 0,
-        };
-      });
-    } catch (error) {
-      log.error('Query execution failed:', error);
-      throw error;
-    }
+    const arrayMode: boolean = options?.arrayMode;
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode });
+    
+    return data.map((result) => ({
+      command: queryText.trim().split(' ')[0].toUpperCase(),
+      rows: result.rows,
+      fields: result.columns.map(col => ({ name: col.name, id: col.name })),
+      rowCount: result.rows.length,
+      affectedRows: result.rows.length,
+    }));
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
@@ -348,25 +335,33 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<string> {
-    let query = `SELECT ${selects?.join(', ') || '*'} FROM ${table}`;
+    const dialectData = getDialectData('surrealdb');
+    const escapedTable = dialectData.wrapIdentifier(table);
+    
+    let query = `SELECT ${selects?.join(', ') || '*'} FROM ${escapedTable}`;
     
     // Add filters
     if (filters && filters.length > 0) {
       if (typeof filters === 'string') {
         query += ` WHERE ${filters}`;
       } else {
-        const filterClauses = filters.map(filter => 
-          `${filter.field} ${filter.type === '=' ? '==' : filter.type} ${JSON.stringify(filter.value)}`
-        );
+        const filterClauses = filters.map(filter => {
+          const escapedField = dialectData.wrapIdentifier(filter.field);
+          const escapedValue = typeof filter.value === 'string' 
+            ? dialectData.escapeString(filter.value, true)
+            : JSON.stringify(filter.value);
+          return `${escapedField} ${filter.type === '=' ? '==' : filter.type} ${escapedValue}`;
+        });
         query += ` WHERE ${filterClauses.join(' AND ')}`;
       }
     }
     
     // Add ordering
     if (orderBy && orderBy.length > 0) {
-      const orderClauses = orderBy.map(order => 
-        `${order.field} ${order.dir?.toUpperCase() || 'ASC'}`
-      );
+      const orderClauses = orderBy.map(order => {
+        const escapedField = dialectData.wrapIdentifier(order.field);
+        return `${escapedField} ${order.dir?.toUpperCase() || 'ASC'}`;
+      });
       query += ` ORDER BY ${orderClauses.join(', ')}`;
     }
     
@@ -390,8 +385,8 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   wrapIdentifier(value: string): string {
-    if (value === '*') return value;
-    return `\`${value.replace(/`/g, '``')}\``;
+    const dialectData = getDialectData('surrealdb');
+    return dialectData.wrapIdentifier(value);
   }
 
   async executeApplyChanges(_changes: TableChanges): Promise<TableUpdateResult[]> {
@@ -459,15 +454,30 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SurrealDBQueryResult | SurrealDBQueryResult[]> {
-    const results = await this.executeQuery(q, options);
-    
-    const surrealResults = results.map(result => ({
-      rows: result.rows,
-      columns: result.fields.map(f => ({ name: f.name })),
-      arrayMode: false
-    }));
-    
-    return options.multiple ? surrealResults : surrealResults[0];
+    try {
+      const result = await this.db.query(q);
+      
+      const surrealResults = result.map((queryResult) => {
+        const data = queryResult.result || [];
+        const rows = Array.isArray(data) ? data : [data];
+        
+        // Extract field names from the first row if available
+        const columns = rows.length > 0 
+          ? Object.keys(rows[0]).map(name => ({ name }))
+          : [];
+
+        return {
+          rows,
+          columns,
+          arrayMode: options?.arrayMode || false
+        };
+      });
+      
+      return options.multiple ? surrealResults : surrealResults[0];
+    } catch (error) {
+      log.error('Raw query execution failed:', error);
+      throw error;
+    }
   }
 
   parseTableColumn(column: { name: string, type: string }): BksField {

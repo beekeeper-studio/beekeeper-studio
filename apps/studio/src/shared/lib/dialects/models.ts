@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import CodeMirror from 'codemirror'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'surrealdb'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -43,7 +43,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   duckdb: "DuckDB",
   clickhouse: "ClickHouse",
   mongodb: "MongoDB",
-  sqlanywhere: 'SqlAnywhere'
+  sqlanywhere: 'SqlAnywhere',
+  surrealdb: 'SurrealDB'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -68,6 +69,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
   if (d === 'duckdb') return 'sql'
+  if (d === 'surrealdb') return 'sql'
   return 'mysql' // we want this as the default
 }
 

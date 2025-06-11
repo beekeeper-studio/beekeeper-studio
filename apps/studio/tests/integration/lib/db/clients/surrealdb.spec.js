@@ -18,7 +18,6 @@ function testWith(version, readonly = false) {
     beforeAll(async () => {
       // Start SurrealDB container
       container = await new GenericContainer(`surrealdb/surrealdb:${version}`)
-        .withName("testsurrealdb")
         .withCommand(['start', '--user', 'root', '--pass', 'root', 'memory'])
         .withExposedPorts(8000)
         .withStartupTimeout(dbtimeout)
