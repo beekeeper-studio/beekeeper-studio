@@ -13,6 +13,7 @@ import { ClickHouseData } from "./clickhouse";
 import { MongoDBData } from "./mongodb";
 import { SqlAnywhereData } from "./anywhere";
 import { SurrealDBData } from "./surrealdb";
+import { RedisData } from "@shared/lib/dialects/redis";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -44,6 +45,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return SqlAnywhereData
     case 'surrealdb':
       return SurrealDBData
+    case 'redis':
+      return RedisData
     default:
       return SqliteData
   }

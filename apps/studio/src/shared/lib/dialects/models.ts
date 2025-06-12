@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'redis'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -45,7 +45,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   clickhouse: "ClickHouse",
   mongodb: "MongoDB",
   sqlanywhere: 'SqlAnywhere',
-  surrealdb: 'SurrealDB'
+  surrealdb: 'SurrealDB',
+  redis: 'Redis'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
