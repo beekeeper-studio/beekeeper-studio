@@ -28,6 +28,15 @@ export const MysqlData: DialectData = {
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'text',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'int',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   usesOffsetPagination: true,
   editorFriendlyIdentifier: (s) => s,
   escapeString: defaultEscapeString,
