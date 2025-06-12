@@ -71,7 +71,6 @@
   .BksTextEditor {
     --bks-text-editor-bg-color: #{$theme-bg};
     --bks-text-editor-gutter-bg-color: #{$theme-bg};
-    --bks-text-editor-gutter-border-color: #{$theme-bg};
     --bks-text-editor-propertyName-fg-color: #{color.adjust($theme-primary, $lightness: -20%)};
     --bks-text-editor-string-fg-color: #{$text-dark};
     --bks-text-editor-number-fg-color: #{$text-dark};
