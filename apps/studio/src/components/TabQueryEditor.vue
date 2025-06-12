@@ -33,7 +33,6 @@
       </div>
       <sql-text-editor
         :value="unsavedText"
-        :height="editor.height"
         :read-only="editor.readOnly"
         :focus="focusingElement === 'text-editor'"
         :markers="editorMarkers"
