@@ -178,11 +178,11 @@ export default Vue.extend({
           await this.$store.dispatch('tabs/save', this.tab)
           break;
         }
-        case "getState": {
+        case "getViewState": {
           modifyResult(() => this.tab.context.state)
           break;
         }
-        case "setState": {
+        case "setViewState": {
           this.tab.context.state = request.args.state;
           await this.$store.dispatch('tabs/save', this.tab)
           break;

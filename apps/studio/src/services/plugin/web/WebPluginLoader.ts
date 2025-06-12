@@ -149,14 +149,14 @@ export default class WebPluginLoader {
         case "setTabTitle":
           // Directly handled by the view components
           break;
-        case "getState":
+        case "getViewState":
           // Directly handled by the view components - If the plugin is a tab
           // plugin, each tab has its own state. To easily access/modify the
           // state while isolating it, we let each Tab component to intercept
           // the response by using `modifyResult`. And then the state can be
           // accessed via `this.tab.context.state`.
           break;
-        case "setState":
+        case "setViewState":
           // Directly handled by the view components
           break;
 
