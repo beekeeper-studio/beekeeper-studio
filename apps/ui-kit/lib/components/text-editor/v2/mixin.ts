@@ -62,6 +62,10 @@ export default {
       if (!this.textEditor) return;
       this.applyKeybindings();
     },
+    languageId() {
+      if (!this.textEditor) return;
+      this.applyLanguageId();
+    },
 
     forceInitialize() {
       this.initialize();
@@ -98,6 +102,9 @@ export default {
     },
     applyKeybindings() {
       this.textEditor.setKeybindings(this.keybindings);
+    },
+    applyLanguageId() {
+      this.textEditor.setLanguageId(this.languageId);
     },
 
     constructTextEditor() {
