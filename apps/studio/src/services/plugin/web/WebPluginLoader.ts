@@ -1,10 +1,12 @@
 import {
   Manifest,
+  OnViewRequestListener,
+} from "../types";
+import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
-  OnViewRequestListener,
-} from "../types";
+} from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
@@ -92,6 +94,7 @@ export default class WebPluginLoader {
     source: HTMLIFrameElement
   ) {
     const afterCallbacks: ((response: PluginResponseData) => void)[] = [];
+    const modifyResultCallbacks: ((result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>)[] = [];
 
     for (const listener of this.listeners) {
       await listener({
@@ -99,6 +102,9 @@ export default class WebPluginLoader {
         request,
         after: (callback) => {
           afterCallbacks.push(callback);
+        },
+        modifyResult: (callback) => {
+          modifyResultCallbacks.push(callback);
         },
       });
     }
@@ -143,9 +149,23 @@ export default class WebPluginLoader {
         case "setTabTitle":
           // Directly handled by the view components
           break;
+        case "getViewState":
+          // Directly handled by the view components - If the plugin is a tab
+          // plugin, each tab has its own state. To easily access/modify the
+          // state while isolating it, we let each Tab component to intercept
+          // the response by using `modifyResult`. And then the state can be
+          // accessed via `this.tab.context.state`.
+          break;
+        case "setViewState":
+          // Directly handled by the view components
+          break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);
+      }
+
+      for (const callback of modifyResultCallbacks) {
+        response.result = await callback(response.result);
       }
     } catch (e) {
       response.error = e;
