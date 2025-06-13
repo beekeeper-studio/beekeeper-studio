@@ -3,7 +3,7 @@ import {  DialectData } from "./models";
 export const RedisData: DialectData = {
   columnTypes: [],
   usesOffsetPagination: true,
-  queryDialectOverride: 'postgresql', // TODO: idk what to put there
+  queryDialectOverride: 'generic', // TODO: idk what to put there
   textEditorMode: 'text/x-pgsql', // TODO: there's no "redis" mode for codemirror
   disabledFeatures: {
     // rawFilters: true, // TODO: how to disable non-raw filters?
