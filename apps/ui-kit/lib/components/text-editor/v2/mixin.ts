@@ -62,6 +62,9 @@ export default {
       if (!this.textEditor) return;
       this.applyKeybindings();
     },
+    languageId() {
+      if (!this.textEditor) return;
+      this.applyLanguageId();
     markers() {
       if (!this.textEditor) return;
       this.applyMarkers();
@@ -114,6 +117,9 @@ export default {
     },
     applyKeybindings() {
       this.textEditor.setKeybindings(this.keybindings);
+    },
+    applyLanguageId() {
+      this.textEditor.setLanguageId(this.languageId);
     },
     applyMarkers() {
       this.textEditor.setMarkers(this.markers);

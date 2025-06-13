@@ -36,15 +36,14 @@ import { readOnly } from "./readOnly";
 import { markers } from "./markers";
 import { lineGutters } from "./lineGutters";
 import { ExtensionConfiguration } from "../types";
-import { json } from "@codemirror/lang-json";
-import { html } from "@codemirror/lang-html";
-import { javascript } from "@codemirror/lang-javascript";
+import { language } from "./language";
 
 export { applyKeybindings } from "./extraKeymap";
 export { applyKeymap } from "./keymap";
 export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
+export { applyLanguageId } from "./language";
 export { applyMarkers } from "./markers";
 export { applyLineGutters } from "./lineGutters";
 
@@ -94,19 +93,6 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.emphasis, class: "cm-emphasis" },
   { tag: tags.strikethrough, class: "cm-strikethrough" },
 ]);
-
-function language(languageId: string) {
-  if (languageId === 'json') {
-    return json();
-  }
-  if (languageId === "html") {
-    return html();
-  }
-  if (languageId === "javascript") {
-    return javascript();
-  }
-  return [];
-}
 
 export function extensions(config: ExtensionConfiguration) {
   return [

@@ -59,7 +59,9 @@ export type Keybindings = {
   [key: string]: () => void;
 };
 
-export interface TextEditorConfiguration extends ExtensionConfiguration {
+export type TextEditorConfiguration = Configuration | ConfigurationWithLS;
+
+type Configuration = ExtensionConfiguration & {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
   onFocus?: (event: FocusEvent) => void;
@@ -68,11 +70,15 @@ export interface TextEditorConfiguration extends ExtensionConfiguration {
   initialValue?: string;
   focus?: boolean;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);
+}
+
+type ConfigurationWithLS = Configuration & {
+  languageId: string;
   lsConfig?: LanguageServerConfiguration;
 }
 
 export interface ExtensionConfiguration {
-  languageId: string;
+  languageId?: LanguageId;
   readOnly?: boolean;
   keymap?: Keymap;
   vimOptions?: VimOptions;
@@ -82,6 +88,8 @@ export interface ExtensionConfiguration {
   markers?: EditorMarker[];
   lineGutters?: LineGutter[];
 }
+
+export type LanguageId = "json" | "html" | "javascript";
 
 export interface LSContext {
   client: LanguageServerClient;

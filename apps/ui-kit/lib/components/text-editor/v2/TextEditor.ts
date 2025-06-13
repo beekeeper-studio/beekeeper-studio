@@ -8,6 +8,7 @@ import {
   Keymap,
   LanguageServerHelpers,
   TextEditorConfiguration,
+  LanguageId,
   LineGutter,
 } from "./types";
 import {
@@ -17,6 +18,7 @@ import {
   applyLineWrapping,
   applyLineNumbers,
   applyReadOnly,
+  applyLanguageId,
   applyMarkers,
   applyLineGutters,
 } from "./extensions";
@@ -38,7 +40,7 @@ export class TextEditor {
   private ls: ReturnType<typeof ls> | null;
 
   initialize(config: TextEditorConfiguration) {
-    if (config.lsConfig) {
+    if ('lsConfig' in config && config.lsConfig) {
       if (!config.lsConfig.rootUri) {
         throw new Error(
           "Missing 'rootUri' in lsConfig. This is required to initialize the language server client."
@@ -143,6 +145,9 @@ export class TextEditor {
   setLineNumbers(enabled: boolean) {
     applyLineNumbers(this.view, enabled);
   }
+
+  setLanguageId(languageId: LanguageId) {
+    applyLanguageId(this.view, languageId);
 
   setMarkers(markers: EditorMarker[]) {
     applyMarkers(this.view, markers);
