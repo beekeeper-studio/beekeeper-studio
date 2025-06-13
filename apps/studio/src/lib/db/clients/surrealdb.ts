@@ -477,6 +477,10 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     }
   }
 
+  wrapIdentifier(value: string): string {
+    return this.dialectData.wrapIdentifier(value);
+  }
+
   parseTableColumn(column: { name: string, type: string }): BksField {
     let bksType: BksFieldType = "UNKNOWN";
     
