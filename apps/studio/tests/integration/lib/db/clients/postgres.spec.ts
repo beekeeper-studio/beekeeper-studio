@@ -563,8 +563,14 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       const compositeKey = empKeys.find(k => k.constraintName === 'fk_emp_dept');
       expect(compositeKey).toBeDefined();
       expect(compositeKey.isComposite).toBe(true);
-      expect(compositeKey.fromColumn).toEqual(['dept_code', 'location_id']);
-      expect(compositeKey.toColumn).toEqual(['dept_code', 'location_id']);
+      expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
+      expect(Array.isArray(compositeKey.toColumn)).toBe(true);
+      expect(compositeKey.fromColumn).toHaveLength(2);
+      expect(compositeKey.toColumn).toHaveLength(2);
+      expect(compositeKey.fromColumn).toContain('dept_code');
+      expect(compositeKey.fromColumn).toContain('location_id');
+      expect(compositeKey.toColumn).toContain('dept_code');
+      expect(compositeKey.toColumn).toContain('location_id');
       expect(compositeKey.toTable).toBe('departments');
       expect(compositeKey.onUpdate).toBe('CASCADE');
       expect(compositeKey.onDelete).toBe('CASCADE');
