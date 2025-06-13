@@ -65,6 +65,7 @@ export default {
     languageId() {
       if (!this.textEditor) return;
       this.applyLanguageId();
+    },
     markers() {
       if (!this.textEditor) return;
       this.applyMarkers();
