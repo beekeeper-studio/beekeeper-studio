@@ -15,7 +15,7 @@
         :on-request="handleRequest"
       />
     </div>
-    <div class="bottom-panel" ref="bottomPanel">
+    <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">
       <result-table
         v-if="showResultTable"
         :focus="focusingElement === 'table'"
@@ -45,7 +45,20 @@
           <span>{{ info }}</span>
         </div>
       </div>
+      <div class="message empty" v-else>
+        Results will appear here
+      </div>
     </div>
+    <statusbar :active="active">
+      <div class="expand" />
+      <x-button
+        class="btn btn-flat btn-icon"
+        @click="toggleTablePanel"
+      >
+        <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>
+        {{ isTablePanelVisible ? 'Hide table' : 'Show table' }}
+      </x-button>
+    </statusbar>
   </div>
 </template>
 
@@ -63,6 +76,7 @@ import Vue from "vue";
 import { PluginRequestData } from "@beekeeperstudio/plugin";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
+import Statusbar from '@/components/common/StatusBar.vue';
 
 export default Vue.extend({
   components: {
@@ -73,6 +87,7 @@ export default Vue.extend({
     ErrorAlert,
     IsolatedPluginView,
     UpsellContent,
+    Statusbar,
   },
   props: {
     tab: {
@@ -97,6 +112,7 @@ export default Vue.extend({
       containerResizeObserver: null,
       focusingElement: "table",
       query: "",
+      isTablePanelVisible: false,
     };
   },
   computed: {
@@ -156,7 +172,15 @@ export default Vue.extend({
         snapOffset: 60,
         gutterSize: 5,
         direction: "vertical",
+        onDrag: ([topPanelSize, bottomPanelSize]) => {
+          // Define a threshold to detect if bottom panel is effectively visible
+          const VISIBLE_THRESHOLD = 5; // 5% minimum to consider panel visible
+          this.isTablePanelVisible = bottomPanelSize > VISIBLE_THRESHOLD;
+        },
       });
+
+      // Initialize table panel as collapsed
+      this.isTablePanelVisible = false;
 
       // Making sure split.js is initialized
       this.$nextTick(() => {
@@ -166,7 +190,7 @@ export default Vue.extend({
     async handleRequest({ request, modifyResult }: { request: PluginRequestData; modifyResult: any }) {
       switch (request.name) {
         case "expandTableResult": {
-          this.expandTableResult();
+          await this.expandTableResult();
           this.results = request.args.results;
           break;
         }
@@ -204,8 +228,24 @@ export default Vue.extend({
       if (!this.split) return;
 
       this.split.setSizes([60, 40]);
+      this.isTablePanelVisible = true;
       await this.$nextTick();
       this.tableHeight = this.$refs.bottomPanel?.clientHeight || 0;
+    },
+    async collapseTableResult() {
+      if (!this.split) return;
+
+      this.split.setSizes([100, 0]);
+      this.isTablePanelVisible = false;
+      await this.$nextTick();
+      this.tableHeight = this.$refs.bottomPanel?.clientHeight || 0;
+    },
+    async toggleTablePanel() {
+      if (this.isTablePanelVisible) {
+        await this.collapseTableResult();
+      } else {
+        await this.expandTableResult();
+      }
     },
   },
   async mounted() {
