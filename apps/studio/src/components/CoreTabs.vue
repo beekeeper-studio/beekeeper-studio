@@ -923,11 +923,14 @@ import { TransportOpenTab, TransportPluginShellTab, setFilters, matches, duplica
       }
     },
     async handlePromptQueryExport(query) {
-      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_')
+      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');
+      const fileName = `${safeFilename}.sql`;
+
+      const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.defaultExportPath(fileName));
 
       const filePath = this.$native.dialog.showSaveDialogSync({
         title: "Export Query",
-        defaultPath: await window.main.getLastExportPath(`${safeFilename}.sql`),
+        defaultPath: lastExportPath,
         filters: [
           { name: 'SQL (*.sql)', extensions: ['sql'] },
           { name: 'All Files (*.*)', extensions: ['*'] },
