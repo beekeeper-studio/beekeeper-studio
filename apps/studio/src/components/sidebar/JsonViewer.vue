@@ -94,6 +94,7 @@ import globals from '@/common/globals'
 import JsonSourceMap from "json-source-map";
 import JsonPointer from "json-pointer";
 import { typedArrayToString } from '@/common/utils'
+import { monokai } from "@uiw/codemirror-theme-monokai";
 
 const log = rawLog.scope("json-viewer");
 
@@ -382,6 +383,7 @@ export default Vue.extend({
     replaceExtensions(extensions) {
       return [
         extensions,
+        monokai,
         this.persistJsonFold.extensions,
         this.partialReadonly.extensions(this.editableRanges),
       ]
