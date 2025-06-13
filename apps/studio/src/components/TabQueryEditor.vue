@@ -355,7 +355,7 @@
   import { TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
-  import { registerQueryMagic } from "@/lib/editor/CodeMirrorPlugins";
+  import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 
@@ -421,6 +421,7 @@
 
         individualQueries: [],
         currentlySelectedQuery: null,
+        queryMagic: queryMagicExtension(),
       }
     },
     computed: {
@@ -613,13 +614,14 @@
       replaceExtensions() {
         return (extensions) => {
           return [
-            ...extensions,
+            extensions,
             monokaiInit({
               settings: {
                 selection: "",
                 selectionMatch: "",
               },
             }),
+            this.queryMagic.extensions,
           ]
         }
       },
@@ -753,12 +755,9 @@
       handleEditorInitialized(detail) {
         this.editor.initialized = true
 
-        detail.codemirror.on("cursorActivity", (cm) => {
-          this.editor.selection = cm.getSelection()
-          this.editor.cursorIndex = cm.getDoc().indexFromPos(cm.getCursor())
-        });
-
-        registerQueryMagic(() => this.defaultSchema, () => this.tables, detail.codemirror)
+        // Setup query magic data providers
+        this.queryMagic.setDefaultSchemaGetter(() => this.defaultSchema);
+        this.queryMagic.setTablesGetter(() => this.tables);
 
         // this gives the dom a chance to kick in and render these
         // before we try to read their heights

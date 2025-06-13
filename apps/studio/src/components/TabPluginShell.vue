@@ -163,7 +163,7 @@ export default Vue.extend({
         this.tableHeight = this.$refs.bottomPanel.clientHeight;
       });
     },
-    async handleRequest({ request }: { request: PluginRequestData }) {
+    async handleRequest({ request, modifyResult }: { request: PluginRequestData; modifyResult: any }) {
       switch (request.name) {
         case "expandTableResult": {
           this.expandTableResult();
@@ -175,6 +175,15 @@ export default Vue.extend({
             throw new Error("Tab title is required");
           }
           this.tab.title = request.args.title;
+          await this.$store.dispatch('tabs/save', this.tab)
+          break;
+        }
+        case "getViewState": {
+          modifyResult(() => this.tab.context.state)
+          break;
+        }
+        case "setViewState": {
+          this.tab.context.state = request.args.state;
           await this.$store.dispatch('tabs/save', this.tab)
           break;
         }

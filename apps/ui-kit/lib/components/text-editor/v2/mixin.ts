@@ -56,7 +56,7 @@ export default {
     },
     lineNumbers() {
       if (!this.textEditor) return;
-      this.applyLineWrapping();
+      this.applyLineNumbers();
     },
     keybindings() {
       if (!this.textEditor) return;
@@ -65,6 +65,21 @@ export default {
     languageId() {
       if (!this.textEditor) return;
       this.applyLanguageId();
+    markers() {
+      if (!this.textEditor) return;
+      this.applyMarkers();
+    },
+    lineGutters() {
+      if (!this.textEditor) return;
+      this.applyLineGutters();
+    },
+    foldAll() {
+      if (!this.textEditor) return;
+      this.applyFoldAll();
+    },
+    unfoldAll() {
+      if (!this.textEditor) return;
+      this.applyUnfoldAll();
     },
 
     forceInitialize() {
@@ -106,6 +121,18 @@ export default {
     applyLanguageId() {
       this.textEditor.setLanguageId(this.languageId);
     },
+    applyMarkers() {
+      this.textEditor.setMarkers(this.markers);
+    },
+    applyLineGutters() {
+      this.textEditor.setLineGutters(this.lineGutters);
+    },
+    applyFoldAll() {
+      this.textEditor.foldAll();
+    },
+    applyUnfoldAll() {
+      this.textEditor.unfoldAll();
+    },
 
     constructTextEditor() {
       return new TextEditor();
@@ -143,6 +170,8 @@ export default {
         lineWrapping: this.lineWrapping,
         lineNumbers: this.lineNumbers,
         keybindings: this.keybindings,
+        markers: this.markers,
+        lineGutters: this.lineGutters,
       });
 
       this.textEditor = textEditor;
