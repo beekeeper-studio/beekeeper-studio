@@ -557,35 +557,41 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
       SELECT 
-        tc.constraint_name,
-        kcu.column_name,
-        kcu.table_schema AS from_schema,
-        kcu.table_name AS from_table,
-        kcu2.column_name AS to_column,
-        kcu2.table_name AS to_table,
-        rc.unique_constraint_schema AS to_schema,
-        rc.update_rule,
-        rc.delete_rule,
-        kcu.ordinal_position
-      FROM 
-        information_schema.table_constraints AS tc 
-        JOIN information_schema.key_column_usage AS kcu
-          ON tc.constraint_name = kcu.constraint_name
-          AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.referential_constraints AS rc
-          ON rc.constraint_name = tc.constraint_name
-          AND rc.constraint_schema = tc.table_schema
-        JOIN information_schema.key_column_usage AS kcu2
-          ON kcu2.constraint_name = rc.unique_constraint_name
-          AND kcu.ordinal_position = kcu2.ordinal_position
-          AND kcu2.constraint_schema = rc.unique_constraint_schema
-      WHERE
-        tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_schema = $1
-        AND tc.table_name = $2
-      ORDER BY
-        tc.constraint_name,
-        kcu.ordinal_position;
+        c.conname AS constraint_name,
+        a1.attname AS column_name,
+        n1.nspname AS from_schema,
+        t1.relname AS from_table,
+        a2.attname AS to_column,
+        t2.relname AS to_table,
+        n2.nspname AS to_schema,
+        CASE c.confupdtype 
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          WHEN 'a' THEN 'NO ACTION'
+          ELSE 'NO ACTION'
+        END AS update_rule,
+        CASE c.confdeltype 
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          WHEN 'a' THEN 'NO ACTION'
+          ELSE 'NO ACTION'
+        END AS delete_rule,
+        generate_subscripts(c.conkey, 1) AS ordinal_position
+      FROM pg_constraint c
+      JOIN pg_class t1 ON c.conrelid = t1.oid
+      JOIN pg_namespace n1 ON t1.relnamespace = n1.oid
+      JOIN pg_class t2 ON c.confrelid = t2.oid
+      JOIN pg_namespace n2 ON t2.relnamespace = n2.oid
+      JOIN pg_attribute a1 ON a1.attrelid = c.conrelid AND a1.attnum = c.conkey[generate_subscripts(c.conkey, 1)]
+      JOIN pg_attribute a2 ON a2.attrelid = c.confrelid AND a2.attnum = c.confkey[generate_subscripts(c.confkey, 1)]
+      WHERE c.contype = 'f'
+        AND n1.nspname = $1
+        AND t1.relname = $2
+      ORDER BY c.conname, generate_subscripts(c.conkey, 1);
     `;
 
     const params = [
