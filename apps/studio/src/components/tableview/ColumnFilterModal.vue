@@ -1,4 +1,5 @@
 <template>
+  <div>
   <portal to="modals">
     <modal
       class="vue-dialog beekeeper-modal"
@@ -26,6 +27,7 @@
                 type="text"
                 placeholder="Filter"
                 v-model="searchQuery"
+                @contextmenu.prevent="onFilterInputContextMenu($event)"
               >
               <span
                 class="clear"
@@ -111,6 +113,13 @@
       </form>
     </modal>
   </portal>
+  <ContextMenu
+      v-if="showContextMenu"
+      :options="contextMenuOptions"
+      :event="contextMenuEvent"
+      @close="showContextMenu = false"
+    />
+  </div>
 </template>
 
 <style lang="scss">
@@ -119,13 +128,38 @@
 
 <script lang="ts">
   import _ from 'lodash'
+  import ContextMenu from '@/components/common/ContextMenu.vue'
 
   export default {
+    components: { ContextMenu },
     props: ['modalName', 'columnsWithFilterAndOrder', 'hasPendingChanges'],
     data() {
       return {
         searchQuery: '',
         columns: [],
+        showContextMenu: false,
+        contextMenuEvent: null,
+        contextMenuOptions: [
+          {
+            name: 'Cut',
+            handler: () => document.execCommand('cut'),
+          },
+          {
+            name: 'Copy',
+            handler: () => document.execCommand('copy'),
+          },
+          {
+            name: 'Paste',
+            handler: () => document.execCommand('paste'),
+          },
+            /*{
+            name: 'Select All',
+            handler: (ctx) => {
+              ctx.event.target.focus();
+              ctx.event.target.select();
+            },
+          },*/
+        ],
       }
     },
     computed: {
@@ -145,6 +179,10 @@
     methods: {
       toggleSelectColumn(column) {
         column.filter = !column.filter
+      },
+      onFilterInputContextMenu(event) {
+        this.contextMenuEvent = event
+        this.showContextMenu = true
       },
       toggleSelectAllColumn() {
         const mustSelect = !this.allSelected
