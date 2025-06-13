@@ -148,6 +148,7 @@ export class TextEditor {
 
   setLanguageId(languageId: LanguageId) {
     applyLanguageId(this.view, languageId);
+  }
 
   setMarkers(markers: EditorMarker[]) {
     applyMarkers(this.view, markers);
