@@ -508,6 +508,91 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
     })
 
+    it("should handle complex foreign key scenarios (composite keys, actions, edge cases)", async () => {
+      // Test for issue #1557 - comprehensive foreign key scenarios that might fail with information_schema
+      await util.knex.raw(`
+        CREATE SCHEMA fk_test_schema;
+        
+        -- Create tables with composite primary keys
+        CREATE TABLE fk_test_schema.departments (
+          dept_code VARCHAR(10),
+          location_id INTEGER,
+          dept_name VARCHAR(100),
+          PRIMARY KEY (dept_code, location_id)
+        );
+        
+        -- Create table with simple primary key
+        CREATE TABLE fk_test_schema.managers (
+          manager_id SERIAL PRIMARY KEY,
+          manager_name VARCHAR(100)
+        );
+        
+        -- Create table with multiple foreign keys, including composite and different actions
+        CREATE TABLE fk_test_schema.employees (
+          emp_id SERIAL PRIMARY KEY,
+          emp_name VARCHAR(100),
+          dept_code VARCHAR(10),
+          location_id INTEGER,
+          manager_id INTEGER,
+          -- Composite foreign key with CASCADE actions
+          CONSTRAINT fk_emp_dept FOREIGN KEY (dept_code, location_id) 
+            REFERENCES fk_test_schema.departments(dept_code, location_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+          -- Simple foreign key with different actions  
+          CONSTRAINT fk_emp_manager FOREIGN KEY (manager_id)
+            REFERENCES fk_test_schema.managers(manager_id)
+            ON UPDATE SET NULL ON DELETE RESTRICT
+        );
+        
+        -- Create table with self-referencing foreign key
+        CREATE TABLE fk_test_schema.categories (
+          cat_id SERIAL PRIMARY KEY,
+          cat_name VARCHAR(100),
+          parent_cat_id INTEGER,
+          CONSTRAINT fk_cat_parent FOREIGN KEY (parent_cat_id)
+            REFERENCES fk_test_schema.categories(cat_id)
+            ON UPDATE NO ACTION ON DELETE SET DEFAULT
+        );
+      `);
+      
+      // Test composite foreign key
+      const empKeys = await util.connection.getTableKeys('employees', 'fk_test_schema');
+      expect(empKeys.length).toBe(2);
+      
+      // Find the composite foreign key
+      const compositeKey = empKeys.find(k => k.constraintName === 'fk_emp_dept');
+      expect(compositeKey).toBeDefined();
+      expect(compositeKey.isComposite).toBe(true);
+      expect(compositeKey.fromColumn).toEqual(['dept_code', 'location_id']);
+      expect(compositeKey.toColumn).toEqual(['dept_code', 'location_id']);
+      expect(compositeKey.toTable).toBe('departments');
+      expect(compositeKey.onUpdate).toBe('CASCADE');
+      expect(compositeKey.onDelete).toBe('CASCADE');
+      
+      // Find the simple foreign key with different actions
+      const simpleKey = empKeys.find(k => k.constraintName === 'fk_emp_manager');
+      expect(simpleKey).toBeDefined();
+      expect(simpleKey.isComposite).toBe(false);
+      expect(simpleKey.fromColumn).toBe('manager_id');
+      expect(simpleKey.toColumn).toBe('manager_id');
+      expect(simpleKey.toTable).toBe('managers');
+      expect(simpleKey.onUpdate).toBe('SET NULL');
+      expect(simpleKey.onDelete).toBe('RESTRICT');
+      
+      // Test self-referencing foreign key
+      const catKeys = await util.connection.getTableKeys('categories', 'fk_test_schema');
+      expect(catKeys.length).toBe(1);
+      
+      const selfRefKey = catKeys[0];
+      expect(selfRefKey.constraintName).toBe('fk_cat_parent');
+      expect(selfRefKey.fromTable).toBe('categories');
+      expect(selfRefKey.toTable).toBe('categories');
+      expect(selfRefKey.fromColumn).toBe('parent_cat_id');
+      expect(selfRefKey.toColumn).toBe('cat_id');
+      expect(selfRefKey.onUpdate).toBe('NO ACTION');
+      expect(selfRefKey.onDelete).toBe('SET DEFAULT');
+    })
+
     it("should be able to define array column correctly", async () => {
       const arrayTable = await util.connection.listTableColumns('witharrays');
       const enumTable = await util.connection.listTableColumns('moody_people');
