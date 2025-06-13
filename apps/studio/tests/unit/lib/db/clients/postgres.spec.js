@@ -133,6 +133,11 @@ describe("Postgres UNIT tests (no connection required)", () => {
       }
     ];
 
+    // Set up the client properly for testing
+    client._defaultSchema = 'public';
+    client.version = { number: 100000 }; // Mock a modern PostgreSQL version
+    client.wrapTable = jest.fn().mockReturnValue('"public"."test_table"');
+
     // Mock methods that may fail with permission errors
     client.driverExecuteSingle = jest.fn().mockRejectedValue(new Error('permission denied for function pg_relation_size'));
     client.listTableIndexes = jest.fn().mockRejectedValue(new Error('permission denied'));
