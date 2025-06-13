@@ -94,9 +94,10 @@
         "globalSidebarActiveItem",
       ]),
       keymap() {
-        return this.$vHotkeyKeymap({
+        const result = this.$vHotkeyKeymap({
           'general.openQuickSearch': this.showQuickSearch
-        })
+        });
+        return result;
       },
       splitElements() {
         return [
