@@ -6,6 +6,8 @@
     <form
       class="table-search-wrapper table-filter"
       @submit.prevent="searchHandler"
+      :class="{ hidden: hiddenSearch }"
+      v-hotkey="tableFilterKeymap"
     >
       <div class="input-wrapper filter">
         <input
@@ -31,7 +33,18 @@
       >
         <i class="material-icons">search</i>
       </button>
+      <button
+        class="close-btn btn btn-flat btn-fab"
+        title="Close filter"
+        @click="hiddenSearch = true"
+      >
+        <i class="material-icons">close</i>
+      </button>
     </form>
+    <div
+      class="table-filter-placeholder"
+      :class="{ hidden: hiddenSearch }"
+    />
     <div
       ref="tabulator"
       class="spreadsheet-table"
@@ -68,6 +81,7 @@
         selectedRowData: {},
         filterValue: '',
         selectedRowPosition: -1,
+        hiddenSearch: true,
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
@@ -103,7 +117,12 @@
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
-          'tableTable.focusOnFilterInput': this.focusOnFilterInput.bind(this)
+          'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
+        });
+      },
+      tableFilterKeymap() {
+        return this.$vHotkeyKeymap({
+          'queryEditor.closeTableFilter': this.closeTableFilter.bind(this),
         });
       },
       tableData() {
@@ -261,7 +280,23 @@
         });
       },
       focusOnFilterInput() {
-        this.$refs.filterInput.focus()
+        // Only trigger if the result table is focused
+        const activeElement = document.activeElement
+        const isTableFocused = activeElement && (
+          activeElement.classList.contains('tabulator-cell') ||
+          activeElement.closest('.result-table') === this.$el ||
+          activeElement.closest('.tabulator')
+        )
+
+        if (!isTableFocused) return
+
+        this.hiddenSearch = false
+        this.$nextTick(() => {
+          this.$refs.filterInput.focus()
+        })
+      },
+      closeTableFilter() {
+        this.hiddenSearch = true
       },
       searchHandler() {
         this.tabulator.clearFilter()
@@ -458,10 +493,54 @@
 </script>
 
 <style lang="scss" scoped>
-  .table-search-wrapper {
+  @import '@/assets/styles/app/mixins';
+
+  .result-table {
+    position: relative;
+  }
+
+  .table-search-wrapper.table-filter {
     display: flex;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     justify-content: space-between;
+    position: absolute;
+    top: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    align-items: center;
+    background-color: var(--query-editor-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    max-width: min(35rem, 97%);
+    @include card-shadow;
+
+    &.hidden {
+      display: none;
+    }
+
+    .btn-fab {
+      min-width: auto;
+      width: 1.6rem;
+      height: 1.5rem;
+      margin-left: 0.4rem;
+
+      &[type=submit] {
+        margin-left: 0.75rem;
+      }
+
+      .material-icons {
+        font-size: 1.2rem;
+      }
+    }
+  }
+
+  .table-filter-placeholder {
+    height: 5rem;
+
+    &.hidden {
+      display: none;
+    }
   }
 
   .input-wrapper {
