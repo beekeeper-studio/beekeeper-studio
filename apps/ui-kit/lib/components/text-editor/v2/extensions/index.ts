@@ -33,6 +33,8 @@ import { extraKeymap } from "./extraKeymap";
 import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
 import { readOnly } from "./readOnly";
+import { markers } from "./markers";
+import { lineGutters } from "./lineGutters";
 import { ExtensionConfiguration } from "../types";
 import { json } from "@codemirror/lang-json";
 import { html } from "@codemirror/lang-html";
@@ -43,6 +45,8 @@ export { applyKeymap } from "./keymap";
 export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
+export { applyMarkers } from "./markers";
+export { applyLineGutters } from "./lineGutters";
 
 // Define a custom highlight style that uses CSS classes
 const customHighlightStyle = HighlightStyle.define([
@@ -112,7 +116,14 @@ export function extensions(config: ExtensionConfiguration) {
     highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
-    foldGutter(),
+    foldGutter({
+      markerDOM(open) {
+        const i = document.createElement("i");
+        i.classList.add("material-icons", "cm-foldgutter");
+        i.textContent = open ? "keyboard_arrow_down" : "keyboard_arrow_right";
+        return i;
+      }
+    }),
     drawSelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
@@ -142,6 +153,8 @@ export function extensions(config: ExtensionConfiguration) {
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
+    markers({ markers: config.markers || [] }),
+    lineGutters({ lineGutters: config.lineGutters || [] }),
     EditorView.theme({
       "&": {
         height: `100%`,

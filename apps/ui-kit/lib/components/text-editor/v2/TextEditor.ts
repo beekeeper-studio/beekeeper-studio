@@ -1,11 +1,14 @@
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
+import { foldAll, unfoldAll } from "@codemirror/language";
 import {
+  EditorMarker,
   ExtensionConfiguration,
   Keybindings,
   Keymap,
   LanguageServerHelpers,
   TextEditorConfiguration,
+  LineGutter,
 } from "./types";
 import {
   extensions,
@@ -14,6 +17,8 @@ import {
   applyLineWrapping,
   applyLineNumbers,
   applyReadOnly,
+  applyMarkers,
+  applyLineGutters,
 } from "./extensions";
 import {
   formatDocument,
@@ -139,6 +144,14 @@ export class TextEditor {
     applyLineNumbers(this.view, enabled);
   }
 
+  setMarkers(markers: EditorMarker[]) {
+    applyMarkers(this.view, markers);
+  }
+
+  setLineGutters(lineGutters: LineGutter[]) {
+    applyLineGutters(this.view, lineGutters);
+  }
+
   getSelection(): string {
     return this.view.state.selection.main.toString();
   }
@@ -171,6 +184,14 @@ export class TextEditor {
 
   focus() {
     this.view.focus();
+  }
+
+  foldAll() {
+    foldAll(this.view);
+  }
+
+  unfoldAll() {
+    unfoldAll(this.view);
   }
 
   destroy() {

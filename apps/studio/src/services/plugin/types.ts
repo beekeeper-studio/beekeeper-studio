@@ -69,6 +69,7 @@ export type OnViewRequestListener = (params: {
   source: HTMLIFrameElement;
   request: PluginRequestData;
   after: (callback: (response: PluginResponseData) => void) => void;
+  modifyResult: (callback: (result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>) => void;
 }) => void | Promise<void>;
 
 export type PluginSettings = {
@@ -76,5 +77,3 @@ export type PluginSettings = {
     autoUpdate: boolean;
   }
 }
-
-export * from "./comm";
