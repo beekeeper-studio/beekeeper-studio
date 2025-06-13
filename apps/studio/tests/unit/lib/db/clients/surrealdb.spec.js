@@ -32,7 +32,7 @@ describe("SurrealDB UNIT test (no connection)", () => {
   });
 
   it("Should initialize with correct configuration", () => {
-    expect(client.dialect).toBe('generic');
+    expect(client.dialect).toBe('surrealdb');
     expect(client.readOnlyMode).toBe(false);
   });
 
