@@ -15,7 +15,7 @@
         :on-request="handleRequest"
       />
     </div>
-    <div class="bottom-panel" ref="bottomPanel">
+    <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">
       <result-table
         v-if="showResultTable"
         :focus="focusingElement === 'table'"
@@ -45,6 +45,9 @@
           <span>{{ info }}</span>
         </div>
       </div>
+      <div class="message empty" v-else>
+        Results will appear here
+      </div>
     </div>
     <statusbar :active="active">
       <div class="expand" />
@@ -53,7 +56,7 @@
         @click="toggleTablePanel"
       >
         <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>
-        {{ isTablePanelVisible ? 'Close table' : 'Show table' }}
+        {{ isTablePanelVisible ? 'Hide table' : 'Show table' }}
       </x-button>
     </statusbar>
   </div>
@@ -169,7 +172,7 @@ export default Vue.extend({
         snapOffset: 60,
         gutterSize: 5,
         direction: "vertical",
-        onDragEnd: ([topPanelSize, bottomPanelSize]) => {
+        onDrag: ([topPanelSize, bottomPanelSize]) => {
           // Define a threshold to detect if bottom panel is effectively visible
           const VISIBLE_THRESHOLD = 5; // 5% minimum to consider panel visible
           this.isTablePanelVisible = bottomPanelSize > VISIBLE_THRESHOLD;
