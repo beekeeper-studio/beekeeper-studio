@@ -84,6 +84,7 @@
               :line-wrapping="wrapText"
               :focus="editorFocus"
               :readOnly="isReadOnly"
+              :replace-extensions="replaceExtensions"
               @focus="editorFocus = $event"
               @bks-value-change="content = $event.value"
             />
@@ -163,6 +164,7 @@ import _ from 'lodash'
 import { mapGetters } from 'vuex'
 import TextEditor from '@beekeeperstudio/ui-kit/vue/text-editor'
 import { typedArrayToString } from "@/common/utils";
+import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 
 export default Vue.extend({
   name: "CellEditorModal",
@@ -271,7 +273,18 @@ export default Vue.extend({
       if (e.key === "Escape" && this.userKeymap !== 'vim') {
         this.$modal.hide(this.modalName)
       }
-    }
+    },
+    replaceExtensions(extensions) {
+      return [
+        ...extensions,
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+          },
+        }),
+      ]
+    },
   }
 });
 </script>
