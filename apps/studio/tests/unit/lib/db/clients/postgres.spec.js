@@ -159,6 +159,16 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result.indexSize).toBe(0);
     expect(result.size).toBe(0);
     expect(result.description).toBeNull();
+    
+    // Verify that permission warnings are included
+    expect(result.permissionWarnings).toBeDefined();
+    expect(result.permissionWarnings).toContain('Unable to retrieve table size and description due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table indexes due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table triggers due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table partitions due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table owner due to insufficient permissions');
+    // Relations should succeed, so it should not have a warning for relations
+    expect(result.permissionWarnings).not.toContain('Unable to retrieve table relations due to insufficient permissions');
 
     // Verify that all methods were called despite some failing
     expect(client.getTableKeys).toHaveBeenCalledWith('test_table', 'public');
