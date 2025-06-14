@@ -145,6 +145,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
 
   async driverExecuteSingle(sql): Promise<Result> {
     try {
+      console.log('~~  the sql is ~~')
+      console.log(sql)
       const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
   
       let columns: ResultColumn[] = []
@@ -334,7 +336,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     _filter: FilterOptions = { schema: "public" }
   ): Promise<TableOrView[]> {
     log.error("Trino doesn't support views")
-    return null
+    return []
   }
 
   async executeApplyChanges(_changes: TableChanges): Promise<any[]> {
@@ -366,58 +368,44 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
     if (filter.database == null || filter.database == null) return []
-    const sql = `show tables from ${filter.database}.${filter.schema}`
+    const sql = `select * from ${filter.database}.information_schema.tables`
     const result = await this.driverExecuteSingle(sql);
 
     return result.rows.map((row) => ({
-      name: row.Table,
+      schema: row['table_schema'],
+      name: row['table_name'],
       entityType: 'table' as const
     }));
   }
 
-  async listTableColumns(
-    table?: string,
-    _schema?: string
-  ): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table: string, schema: string, catalog: string): Promise<ExtendedTableColumn[]> {
+    console.log(table, schema, catalog)
     const sql = `
       SELECT
-        name,
-        table,
-        type,
-        is_in_primary_key,
-        position,
-        comment,
-        default_expression,
-      FROM system.columns
-      WHERE database = currentDatabase()
-        ${table ? "AND table = {table: String}" : ""}
-      ORDER BY position
-    `;
-    const result = await this.driverExecuteSingle(sql, {
-      params: { table },
-    });
-    const json = result.data as ResponseJSON<{
-      name: string;
-      table: string;
-      type: string;
-      is_in_primary_key: number;
-      position: number;
-      comment: string;
-      default_expression: string;
-    }>;
-    return json.data.map((row) => {
+        *
+      FROM ${catalog}.information_schema.columns
+      WHERE table_schema = '${schema}'
+        AND table_name = '${table}'
+      ORDER BY ordinal_position
+    `
+    const result = await this.driverExecuteSingle(sql);
+    console.log('^^^^^^')
+    console.log(result)
+    return result.rows.map((row) => {
       // Empty string if it is not defined.
-      const hasDefault = row.default_expression !== "";
+      const hasDefault = row.column_default != null;
+
       return {
-        tableName: row.table,
-        columnName: row.name,
-        dataType: row.type,
-        ordinalPosition: row.position,
-        defaultValue: hasDefault ? row.default_expression : null,
+        schemaName: row.table_schame,
+        tableName: row.table_name,
+        columnName: row.column_name,
+        dataType: row.data_type,
+        ordinalPosition: row.ordinal_position,
+        defaultValue: row.column_default,
         hasDefault,
         comment: row.comment,
-        primaryKey: row.is_in_primary_key === 1,
-        nullable: RE_NULLABLE.test(row.type),
+        primaryKey: false,
+        nullable: row.is_nullable,
         bksField: this.parseTableColumn(row),
       };
     });
@@ -607,7 +595,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
 
   async listMaterializedViewColumns(): Promise<TableColumn[]> {
     log.error("Trino doesn't support materialized views")
-    return null
+    return []
   }
 
   async getTableReferences(

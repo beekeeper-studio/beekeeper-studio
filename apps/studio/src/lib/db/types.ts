@@ -189,7 +189,7 @@ export interface IBasicDatabaseClient {
   listViews(filter?: FilterOptions): Promise<TableOrView[]>,
   listRoutines(filter?: FilterOptions): Promise<Routine[]>,
   listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>,
-  listTableColumns(table: string, schema?: string): Promise<ExtendedTableColumn[]>,
+  listTableColumns(table: string, schema?: string, database?: string): Promise<ExtendedTableColumn[]>,
   listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>,
   listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>,
   listSchemas(filter?: SchemaFilterOptions): Promise<string[]>,

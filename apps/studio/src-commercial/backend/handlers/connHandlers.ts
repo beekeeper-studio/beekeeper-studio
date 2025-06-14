@@ -38,7 +38,7 @@ export interface IConnectionHandlers {
   'conn/listViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/listRoutines': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<Routine[]>,
   'conn/listMaterializedViewColumns': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableColumn[]>,
-  'conn/listTableColumns': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<ExtendedTableColumn[]>,
+  'conn/listTableColumns': ({ table, schema, database, sId }: { table: string, schema?: string, database?: string, sId: string }) => Promise<ExtendedTableColumn[]>,
   'conn/listTableTriggers': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableTrigger[]>,
   'conn/listTableIndexes': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableIndex[]>,
   'conn/listSchemas': ({ filter, sId }: { filter?: SchemaFilterOptions, sId: string }) => Promise<string[]>,
@@ -238,9 +238,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.listMaterializedViewColumns(table, schema);
   },
 
-  'conn/listTableColumns': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+  'conn/listTableColumns': async function({ table, schema, database, sId }: { table: string, schema?: string, database?: string, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.listTableColumns(table, schema);
+    return await state(sId).connection.listTableColumns(table, schema, database);
   },
 
   'conn/listTableTriggers': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {

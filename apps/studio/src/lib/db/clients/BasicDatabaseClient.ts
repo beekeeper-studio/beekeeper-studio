@@ -163,7 +163,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract listRoutines(filter?: FilterOptions): Promise<Routine[]>;
   abstract listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>;
-  abstract listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]>;
+  abstract listTableColumns(table?: string, schema?: string, database?: string): Promise<ExtendedTableColumn[]>;
   abstract listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>;
   abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
   abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
