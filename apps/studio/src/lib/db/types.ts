@@ -36,6 +36,7 @@ export const TableFilterSymbols = [
   { value: '=', label: 'equals' },
   { value: '!=', label: 'does not equal'},
   { value: 'like', label: 'like' },
+  { value: 'not like', label: 'not like' },
   { value: '<', label: 'less than' },
   { value: '<=', label: 'less than or equal' },
   { value: '>', label: 'greater than'},
