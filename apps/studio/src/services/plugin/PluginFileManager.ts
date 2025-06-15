@@ -225,6 +225,10 @@ export default class PluginFileManager {
   scanPlugins(): Manifest[] {
     const manifests: Manifest[] = [];
 
+    if (!fs.existsSync(platformInfo.pluginsDirectory)) {
+      fs.mkdirSync(platformInfo.pluginsDirectory, { recursive: true });
+    }
+
     for (const dir of fs.readdirSync(platformInfo.pluginsDirectory)) {
       if (
         !fs

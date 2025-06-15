@@ -23,22 +23,6 @@
       </div>
       <div class="actions">
         <template v-if="plugin.installed">
-          <!-- TODO we dont support disabling yet -->
-          <!-- <x-button -->
-          <!--   v-if="plugin.enabled" -->
-          <!--   @click.prevent="$emit('disable')" -->
-          <!--   disabled -->
-          <!--   class="btn btn-primary" -->
-          <!-- > -->
-          <!--   <x-label>Disable</x-label> -->
-          <!-- </x-button> -->
-          <!-- <x-button -->
-          <!--   v-else -->
-          <!--   @click.prevent="$emit('enable')" -->
-          <!--   class="btn btn-primary" -->
-          <!-- > -->
-          <!--   <x-label>Enable</x-label> -->
-          <!-- </x-button> -->
           <x-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
@@ -62,7 +46,7 @@
           <label class="checkbox-group">
             <input
               type="checkbox"
-              :value="autoUpdateEnabled"
+              :checked="autoUpdateEnabled"
               @change="toggleAutoUpdate"
             />
             <span>Auto-update</span>
