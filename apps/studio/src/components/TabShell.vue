@@ -18,6 +18,7 @@
         :auto-focus="true"
         @update:focus="updateTextEditorFocus"
         @initialized="handleEditorInitialized"
+        @bks-shell-run-command="submitMongoCommand"
       />
       <!-- This is we so we have the separating line -->
       <span class="expand"></span>
@@ -107,7 +108,7 @@ import ProgressBar from './editor/ProgressBar.vue'
 import ResultTable from './editor/ResultTable.vue'
 import ShortcutHints from './editor/ShortcutHints.vue'
 import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
-import MongoShell from '@/components/common/texteditor/MongoShell.vue'
+import MongoShell from '@beekeeperstudio/ui-kit/vue/mongo-shell'
 
 import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
 import rawlog from '@bksLogger'
@@ -163,6 +164,7 @@ export default Vue.extend({
        */
       focusElement: 'none',
       focusingElement: 'none',
+      promptSymbol: null
     }
   },
   computed: {
@@ -352,6 +354,7 @@ export default Vue.extend({
       this.selectEditor();
     },
     async submitMongoCommand(command) {
+      log.info('RECEIVED COMMAND: ', command)
       this.tab.isRunning = true
       this.running = true
       this.error = null
@@ -361,6 +364,9 @@ export default Vue.extend({
         const cmdStartTime = new Date();
         const results = await this.connection.executeCommand(command);
         const cmdEndTime = new Date();
+
+        // update promptSymbol before we do any processing so the new prompt is correct
+        this.promptSymbol = await this.connection.getShellPrompt();
 
         // eslint-disable-next-line
         // @ts-ignore
