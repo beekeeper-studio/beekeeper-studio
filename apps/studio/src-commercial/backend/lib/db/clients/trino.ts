@@ -18,6 +18,7 @@ import {
 // import knexlib from "knex";
 import {
   BksField,
+  BksFieldType,
   CancelableQuery,
   DatabaseFilterOptions,
   ExtendedTableColumn,
@@ -31,101 +32,38 @@ import {
   SupportedFeatures,
   TableChanges,
   TableColumn,
-  TableDelete,
   TableFilter,
   TableIndex,
   TableOrView,
   TableProperties,
   TableResult,
-  TableTrigger,
-  TableUpdate,
-  TableUpdateResult,
+  TableTrigger
 } from "@/lib/db/models";
 import { TrinoData } from "@shared/lib/dialects/trino";
 import _ from "lodash";
 import {
   createCancelablePromise,
-  joinFilters,
-  streamToString,
+  joinFilters
 } from "@/common/utils";
 import {
   AlterTableSpec,
-  IndexColumn,
-  TableKey,
+  TableKey
 } from "@shared/lib/dialects/models";
-// import { Stream } from "stream";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { uuidv4 } from "@/lib/uuid";
 import { errors } from "@/lib/errors";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-// import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
-
-// interface JSONResult {
-//   statement: IdentifyResult;
-//   data: QueryResult;
-//   resultType: "json";
-// }
-
-// interface StreamResult {
-//   statement: IdentifyResult;
-//   data: Stream;
-//   resultType: "stream";
-// }
-
-// type JSONOrStreamResult = JSONResult | StreamResult;
 
 interface ResultColumn {
   name: string;
   type: string
 }
 
-/*
-columns: { name: string }[]
-  rows: any[][] | Record<string, any>[];
-  arrayMode: boolean;
-*/
-// interface BaseResult {
-//   rows: any[];
-//   columns: ResultColumn[]
-//   arrayMode: boolean
-// }
-
 type Result = BaseQueryResult;
-// type Result = BaseResult & JSONOrStreamResult;
-
-interface ExecuteQueryOptions {
-  params?: Record<string, any>;
-  queryId?: string;
-}
-
-// interface RawExecuteQueryOptions extends ExecuteQueryOptions {
-//   statements: IdentifyResult[];
-//   /** Run using insert method */
-//   insert?: InsertParams;
-//   arrayMode?: boolean;
-// }
 
 const log = rawLog.scope("trino");
-
-// const clickhouseContext = {
-//   getExecutionContext(): ExecutionContext {
-//     return null;
-//   },
-//   logQuery(
-//     _query: string,
-//     _options: QueryLogOptions,
-//     _context: ExecutionContext
-//   ): Promise<number | string> {
-//     return null;
-//   },
-// };
-
-// const knex = knexlib({ client: ClickhouseKnexClient });
 const knex = null
-
-const RE_NULLABLE = /^Nullable\((.*)\)$/;
-const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/i;
 
 export class TrinoClient extends BasicDatabaseClient<Result> {
   version: string;
@@ -138,20 +76,19 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     this.readOnlyMode = server?.config?.readOnlyMode || false;
   }
 
-  rowsToObject(columns: ResultColumn[], rows: any[][]) {
-    const keys = columns.map(col => col.name)
+  rowsToObject(columns: ResultColumn[] = [], rows: any[][]= [[]]) {
+    const keys = columns.map(col => col?.name).filter(c => c != null)
     return rows.map(row => _.zipObject(keys, row))
   }
 
   async driverExecuteSingle(sql): Promise<Result> {
     try {
-      console.log('~~  the sql is ~~')
-      console.log(sql)
       const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
-  
+      
       let columns: ResultColumn[] = []
       const rows: any[] = []
-  
+      
+      log.info('!!sql!!', sql)
       log.info('client query result', result)
   
       for await (const r of result) {
@@ -241,7 +178,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
 
   async getPrimaryKeys(): Promise<PrimaryKeyColumn[]> {
     log.error("Trino doesn't support primary keys")
-    return null
+    return await []
   }
 
   async getPrimaryKey(_table: string, _schema?: string): Promise<string | null> {
@@ -255,15 +192,20 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     limit: number,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
-    _schema?: string,
-    selects?: string[]
+    schema: string,
+    selects: string[],
+    database: string
   ): Promise<TableResult> {
-    const columns = await this.listTableColumns(table);
-    if (!selects || (selects?.length === 1 && selects[0] === '*')) {
+    const columns = await this.listTableColumns(table, schema, database);
+    let selectFields = [...selects]
+    if (!selects || selects?.length === 0 || (selects?.length === 1 && selects[0] === '*')) {
       // select all columns with the column names instead of *
-      selects = columns.map((v) => v.bksField.name);
+      selectFields = columns.map((v) => v.columnName);
     }
-    const queries = ClickHouseClient.buildSelectTopQuery(
+
+
+    
+    const queries = TrinoClient.buildSelectTopQuery(
       table,
       offset,
       limit,
@@ -271,13 +213,21 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       filters,
       "total",
       columns,
-      selects
+      selectFields,
+      schema,
+      database
     );
-    const { fullQuery } = queries;
-    const result = await this.driverExecuteSingle(fullQuery);
-    const fields = this.parseQueryResultColumns(result);
-    const rows = await this.serializeQueryResult(result, fields);
-    return { result: rows, fields };
+
+    const { query } = queries;
+    const result = await this.driverExecuteSingle(query);
+    const fields = result.columns.map(c => ({
+      name: c.name,
+      bksType: 'UNKNOWN' as BksFieldType
+    }))
+    return {
+      result: result.rows,
+      fields
+    };
   }
 
   async selectTopSql(
@@ -286,11 +236,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     limit: number,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
-    _schema?: string,
-    selects?: string[]
+    schema: string,
+    selects: string[],
+    database: string
   ): Promise<string> {
-    const columns = await this.listTableColumns(table);
-    const { fullQuery } = ClickHouseClient.buildSelectTopQuery(
+    const columns = await this.listTableColumns(table, schema, database);
+    const { query } = TrinoClient.buildSelectTopQuery(
       table,
       offset,
       limit,
@@ -298,9 +249,11 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       filters,
       "total",
       columns,
-      selects
+      selects,
+      schema,
+      database
     );
-    return fullQuery;
+    return query;
   }
 
   async getTableProperties(
@@ -312,8 +265,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
-    // Clickhouse does not support foreign keys.
-    return [];
+    return await [];
   }
 
   async listTableTriggers(
@@ -379,7 +331,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async listTableColumns(table: string, schema: string, catalog: string): Promise<ExtendedTableColumn[]> {
-    console.log(table, schema, catalog)
     const sql = `
       SELECT
         *
@@ -389,14 +340,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       ORDER BY ordinal_position
     `
     const result = await this.driverExecuteSingle(sql);
-    console.log('^^^^^^')
-    console.log(result)
     return result.rows.map((row) => {
       // Empty string if it is not defined.
       const hasDefault = row.column_default != null;
 
       return {
-        schemaName: row.table_schame,
+        schemaName: row.table_schema,
         tableName: row.table_name,
         columnName: row.column_name,
         dataType: row.data_type,
@@ -663,7 +612,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
 
   async getTableLength(table: string, _schema?: string): Promise<number> {
     const result = await this.driverExecuteSingle(
-      `SELECT count() as count FROM {table: Identifier}`,
+      `SELECT count(*) as count FROM {table: Identifier}`,
       { params: { table } }
     );
     const json = result.data as ResponseJSON<{ count: number }>;
@@ -676,15 +625,20 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     orderBy: OrderBy[],
     filters: string | TableFilter[],
     chunkSize: number,
-    schema?: string
+    schema: string,
+    database: string
   ): Promise<StreamResults> {
-    const qs = ClickHouseClient.buildSelectTopQuery(
+    const qs = TrinoClient.buildSelectTopQuery(
       table,
       null,
       null,
       orderBy,
       filters,
-      schema
+      "total",
+      null,
+      null,
+      schema,
+      database
     );
     const result = await this.driverExecuteSingle(qs.countQuery, {
       params: qs.params,
@@ -709,70 +663,65 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return TrinoData.wrapIdentifier(value);
   }
 
-  static buildFilterString(filters: TableFilter[], columns = []) {
-    let fullFilterString = "";
-    let filterString = "";
-    let filterParams = {};
-    let paramCounter = 0;
-
-    if (filters && _.isArray(filters) && filters.length > 0) {
-      const filtersWithParams = [];
-      const filtersWithoutParams = [];
-      filters.forEach((item) => {
-        const column = columns.find((c) => c.columnName === item.field);
-        const field = column?.dataType.toUpperCase().includes("BINARY")
-          ? `HEX(${TrinoData.wrapIdentifier(item.field)})`
-          : TrinoData.wrapIdentifier(item.field);
-
-        if (item.type === "in") {
-          const params = _.isArray(item.value)
-            ? item.value.map(() => `{p${paramCounter++}: Dynamic}`).join(",")
-            : `{p${paramCounter++}: Dynamic}`;
-          const values = _.isArray(item.value)
-            ? item.value
-                .map((v) => TrinoData.escapeString(v, true))
-                .join(",")
-            : TrinoData.escapeString(item.value, true);
-
-          filtersWithParams.push(
-            `${field} ${item.type.toUpperCase()} (${params})`
-          );
-          filtersWithoutParams.push(
-            `${field} ${item.type.toUpperCase()} (${values})`
-          );
-        } else if (item.type.includes("is")) {
-          filtersWithParams.push(`${field} ${item.type.toUpperCase()} NULL`);
-          filtersWithoutParams.push(`${field} ${item.type.toUpperCase()} NULL`);
-        } else {
-          filtersWithParams.push(
-            `${field} ${item.type.toUpperCase()} {p${paramCounter++}: Dynamic}`
-          );
-          filtersWithoutParams.push(
-            `${field} ${item.type.toUpperCase()} ${TrinoData.escapeString(
-              item.value as any,
-              true
-            )}`
-          );
-        }
-      });
-
-      filterString = "WHERE " + joinFilters(filtersWithParams, filters);
-      fullFilterString = "WHERE " + joinFilters(filtersWithoutParams, filters);
-
-      filters
-        .filter((item) => !!item.value)
-        .flatMap((item) => {
-          return _.isArray(item.value) ? item.value : [item.value];
-        })
-        .forEach((str, idx) => {
-          filterParams[`p${idx}`] = str;
-        });
+  static wrapDynamicLiteral(value: any): string {
+    if (value == null) return 'NULL';
+    if (typeof value === 'number' || /^[+-]?([0-9]*[.])?[0-9]+$/.test(value)) {
+      return value.toString();
     }
+    if (typeof value === 'boolean') {
+      return value ? 'TRUE' : 'FALSE';
+    }
+    return `'${value.toString().replace(/'/g, "''")}'`;
+  }
+
+
+  static buildFilterString(filters: TableFilter[], columns = []) {
+    let fullFilterString = ""
+
+    if (filters && Array.isArray(filters) && filters.length > 0) {
+      const filtersWithoutParams: string[] = []
+
+      filters.forEach((item) => {
+        const column = columns.find((c) => c.columnName === item.field)
+        const field = column?.dataType?.toUpperCase().includes("BINARY")
+          ? `HEX(${TrinoData.wrapIdentifier(item.field)})`
+          : TrinoData.wrapIdentifier(item.field)
+
+        const op = item.type.toUpperCase()
+        const val = item.value
+
+        // Handle IS NULL / IS NOT NULL
+        if (op === "IS NULL" || op === "IS NOT NULL") {
+          filtersWithoutParams.push(`${field} ${op}`)
+          return
+        }
+
+        // Handle IN
+        if (op === "IN" && Array.isArray(val)) {
+          const values = val
+            .map((v) => this.wrapDynamicLiteral(v))
+            .join(", ")
+          filtersWithoutParams.push(`${field} IN (${values})`)
+          return
+        }
+
+        // Handle binary ops (>, <, >=, <=, =, !=, LIKE, ILIKE)
+        if (
+          ["=", "!=", "<", "<=", ">", ">=", "LIKE", "ILIKE"].includes(op) &&
+          val != null
+        ) {
+          const literal = this.wrapDynamicLiteral(val)
+          filtersWithoutParams.push(`${field} ${op} ${literal}`)
+          return
+        }
+      })
+
+      fullFilterString = "WHERE " + joinFilters(filtersWithoutParams, filters)
+    }
+
     return {
-      filterString,
-      filterParams,
       fullFilterString,
-    };
+    }
   }
 
   static buildSelectTopQuery(
@@ -783,9 +732,11 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     filters: string | TableFilter[],
     countTitle = "total",
     columns = [],
-    selects = ["*"]
+    selects = ["*"],
+    schema,
+    database
   ) {
-    log.debug("building selectTop for", table, offset, limit, orderBy, selects);
+    log.debug("building selectTop for", table, offset, limit, orderBy, selects, schema, database);
     let orderByString = "";
 
     if (orderBy && orderBy.length > 0) {
@@ -804,14 +755,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
           .join(",");
     }
     let filterString = "";
-    let filterParams = {};
     let fullFilterString = "";
     if (_.isString(filters)) {
       filterString = fullFilterString = `WHERE ${filters}`;
     } else {
-      const filterBlob = this.buildFilterString(filters, columns);
-      filterString = filterBlob.filterString;
-      filterParams = filterBlob.filterParams;
+      const filterBlob = TrinoClient.buildFilterString(filters, columns);
+      filterString = filterBlob.fullFilterString;
       fullFilterString = filterBlob.fullFilterString;
     }
 
@@ -819,7 +768,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       .map((s) => TrinoData.wrapIdentifier(s))
       .join(", ")}`;
     const baseSQL = `
-      FROM ${TrinoData.wrapIdentifier(table)}
+      FROM ${TrinoData.wrapIdentifier(database)}.${TrinoData.wrapIdentifier(schema)}.${TrinoData.wrapIdentifier(table)}
       ${filterString}
     `;
     const baseFullSQL = `
@@ -846,7 +795,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       query: sql,
       fullQuery: fullSql,
       countQuery: countSQL,
-      params: filterParams,
+      params: {},
     };
   }
 
@@ -857,7 +806,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     );
   }
 
-  parseTableColumn(column: { name: string }): BksField {
-    return { name: column.name, bksType: "UNKNOWN" };
+  parseTableColumn(column: TableColumn): BksField {
+    return { name: column.columnName, bksType: "UNKNOWN" };
   }
 }

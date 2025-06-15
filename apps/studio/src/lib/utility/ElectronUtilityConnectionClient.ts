@@ -230,12 +230,12 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/truncateAllTables', { schema });
   }
 
-  async getTableLength(table: string, schema?: string): Promise<number> {
-    return await Vue.prototype.$util.send('conn/getTableLength', { table, schema });
+  async getTableLength(table: string, schema?: string, database?: string): Promise<number> {
+    return await Vue.prototype.$util.send('conn/getTableLength', { table, schema, database });
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
-    return await Vue.prototype.$util.send('conn/selectTop', { table, offset, limit, orderBy, filters, schema, selects });
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<TableResult> {
+    return await Vue.prototype.$util.send('conn/selectTop', { table, offset, limit, orderBy, filters, schema, selects, database });
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {

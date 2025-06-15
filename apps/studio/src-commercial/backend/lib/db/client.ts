@@ -60,8 +60,6 @@ export function createConnection(server: IDbConnectionServer, database: IDbConne
   /**
    * Database public API
    */
-  console.log('~~~')
-  console.log(server.config.client)
   const client = clients.get(server.config.client) || FriendlyErrorClient;
   return new client(server, database);
 }
