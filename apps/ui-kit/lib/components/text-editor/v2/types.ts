@@ -5,6 +5,29 @@ import { VimOptions } from "./extensions/keymap";
 import { LanguageServerClient } from "./LanguageServerClient";
 import { TextEditor } from "./TextEditor";
 import type * as LSP from "vscode-languageserver-protocol";
+import { Decoration } from "@codemirror/view";
+
+export interface EditorRange {
+  id?: string;
+  from: { line: number; ch: number };
+  to: { line: number; ch: number };
+}
+
+export interface EditorMarker extends EditorRange {
+  message?: string;
+  /** You can make your own marker by passing in a CodeMirror Decoration. */
+  decoration?: Decoration;
+  /** @deprecated Use `decoration` instead. */
+  element?: HTMLElement;
+  /** @deprecated Use `decoration` instead. */
+  onClick?: (event: MouseEvent) => void;
+  type: "error" | "highlight" | "custom"; // | "warning"
+}
+
+export interface LineGutter {
+  line: number;
+  type: "changed";
+}
 
 export interface LanguageServerConfiguration {
   /** The WebSocket URI of the language server. For example, `ws://localhost:3000/server` */
@@ -36,7 +59,9 @@ export type Keybindings = {
   [key: string]: () => void;
 };
 
-export interface TextEditorConfiguration extends ExtensionConfiguration {
+export type TextEditorConfiguration = Configuration | ConfigurationWithLS;
+
+type Configuration = ExtensionConfiguration & {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
   onFocus?: (event: FocusEvent) => void;
@@ -45,18 +70,26 @@ export interface TextEditorConfiguration extends ExtensionConfiguration {
   initialValue?: string;
   focus?: boolean;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);
+}
+
+type ConfigurationWithLS = Configuration & {
+  languageId: string;
   lsConfig?: LanguageServerConfiguration;
 }
 
 export interface ExtensionConfiguration {
-  languageId: string;
+  languageId?: LanguageId;
   readOnly?: boolean;
   keymap?: Keymap;
   vimOptions?: VimOptions;
   lineWrapping?: boolean;
   lineNumbers?: boolean;
   keybindings?: Keybindings;
+  markers?: EditorMarker[];
+  lineGutters?: LineGutter[];
 }
+
+export type LanguageId = "json" | "html" | "javascript";
 
 export interface LSContext {
   client: LanguageServerClient;

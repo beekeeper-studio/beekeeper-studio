@@ -696,16 +696,28 @@ x-switch {
   }
 }
 
+.json-viewer .BksTextEditor {
+  --bks-text-editor-propertyName-fg-color: #{color.adjust($theme-primary, $lightness: 0%)};
+}
+
 & {
   --bks-text-editor-bg-color: #{$query-editor-bg};
+  --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
+  --bks-text-editor-error-fg-color: #{$brand-danger};
   --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-focused-outline-color: transparent;
+  --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.6)};
+  --bks-text-editor-foldgutter-fg-color-hover: #{$text-dark};
   --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-gutter-border-color: transparent;
+  --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};
   --bks-text-editor-number-fg-color: #{$brand-primary};
-  --bks-text-editor-string-fg-color: #{$brand-success};
+  --bks-text-editor-string-fg-color: #{$brand-primary};
   --bks-text-editor-cursor-bg-color: #{$text-dark};
   --bks-text-editor-bracket-fg-color: #{$text};
   --bks-text-editor-name-fg-color: #{$text-dark};
@@ -714,6 +726,7 @@ x-switch {
   --bks-text-editor-sql-field-fg-color: #{$brand-secondary};
   --bks-text-editor-operator-fg-color: #{$text-dark};
   --bks-text-editor-punctuation-fg-color: #{$text-dark};
+  --bks-text-editor-separator-fg-color: #{$text-dark};
   --bks-text-editor-type-fg-color: #{$text-dark};
 
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};

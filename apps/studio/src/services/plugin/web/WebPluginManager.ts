@@ -128,6 +128,7 @@ export default class WebPluginManager {
     return loader.buildEntryUrl(entry);
   }
 
+  /** Subscribe to view requests from a specific plugin. Inspired by Pinia's `$onAction`. */
   onViewRequest(pluginId: string, listener: OnViewRequestListener) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {

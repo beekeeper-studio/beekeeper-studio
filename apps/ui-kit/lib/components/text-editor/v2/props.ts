@@ -1,6 +1,6 @@
 import type { CustomMenuItems } from "../../context-menu";
 import { PropType } from "vue";
-import { Keybindings, Keymap, LanguageServerConfiguration } from "./types";
+import { Keybindings, Keymap, LanguageServerConfiguration, EditorMarker, LineGutter } from "./types";
 import { Extension } from "@codemirror/state";
 import { Config } from "./extensions/vim";
 
@@ -63,18 +63,23 @@ export default {
   >,
 
   vimConfig: Object as PropType<Config>,
-  // markers: {
-  //   type: Array,
-  //   default: () => [],
-  // },
+  markers: {
+    type: Array as PropType<EditorMarker[]>,
+    default: () => [],
+  },
+  lineGutters: {
+    type: Array as PropType<LineGutter[]>,
+    default: () => [],
+  },
   // cursor: String,
   // initialized: Boolean,
   // autoFocus: Boolean,
-  // foldGutter: Boolean,
   // removeJsonRootBrackets: Boolean,
   // bookmarks: Array,
-  // foldAll: null,
-  // unfoldAll: null,
+  /** Fold all folds in the editor. */
+  foldAll: null,
+  /** Unfold all folds in the editor. */
+  unfoldAll: null,
   /**
    * Configure custom key mappings in vim. `vimKeymaps` accepts an array of
    * objects that contain the following properties:
