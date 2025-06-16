@@ -62,7 +62,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
   import { AppEvent } from "@/common/AppEvent";
@@ -113,7 +113,7 @@
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
-          'queryEditor.openTableFilter': this.toggleFilter.bind(this),
+          'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
         });
       },
       tableFilterKeymap() {
@@ -130,12 +130,23 @@
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
+        const filterMenuItem = {
+          label: createMenuItem("Search results"),
+          action: () => {
+            this.focusOnFilterInput()
+          }
+        }
+
         const cellMenu = (_e, cell) => {
-          return copyActionsMenu({
-            ranges: cell.getRanges(),
-            table: this.result.tableName,
-            schema: this.defaultSchema,
-          })
+          return [
+            ...copyActionsMenu({
+              ranges: cell.getRanges(),
+              table: this.result.tableName,
+              schema: this.defaultSchema,
+            }),
+            { separator: true },
+            filterMenuItem,
+          ]
         }
 
         const columnMenu = (_e, column) => {
@@ -147,6 +158,8 @@
             }),
             { separator: true },
             ...commonColumnMenu,
+            { separator: true },
+            filterMenuItem,
           ]
         }
 
@@ -275,18 +288,7 @@
           onRangeChange: this.handleRangeChange,
         });
       },
-      async toggleFilter() {
-        if (this.hiddenFilter) {
-          this.focusOnFilterInput()
-        } else {
-          this.closeTableFilter()
-          this.triggerFocus()
-        }
-      },
       focusOnFilterInput() {
-        // Only trigger if the result table is focused
-        if (!this.checkTableFocus()) return
-
         this.hiddenFilter = false
         this.$nextTick(() => {
           this.$refs.filterInput.focus()
@@ -294,6 +296,7 @@
       },
       closeTableFilter() {
         this.hiddenFilter = true
+        this.triggerFocus()
       },
       searchHandler() {
         this.tabulator.clearFilter()
@@ -503,7 +506,7 @@
 
     &::v-deep:not(.hidden-filter) {
       .tabulator-tableholder {
-        padding-bottom: 4rem;
+        padding-bottom: 5rem;
       }
     }
   }
@@ -543,9 +546,13 @@
     width: 17rem;
     position: relative;
     .clear {
+      visibility: hidden;
       position: absolute;
       right: 0;
       top: 5px;
+    }
+    &:hover .clear {
+      visibility: visible;
     }
   }
 </style>
