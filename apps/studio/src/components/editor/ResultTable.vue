@@ -72,7 +72,6 @@
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
-        /** @type {import('tabulator-tables').Tabulator} */
         tabulator: null,
         actualTableHeight: '100%',
         selectedRowData: {},
@@ -114,7 +113,7 @@
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
-          'queryEditor.openTableFilter': _.throttle(this.toggleFilter.bind(this), 500),
+          'queryEditor.openTableFilter': this.toggleFilter.bind(this),
         });
       },
       tableFilterKeymap() {
@@ -257,7 +256,6 @@
         this.handleTabActive()
       }
       this.registerHandlers(this.rootBindings)
-      window.tabulator = this.tabulator
     },
     methods: {
       initializeTabulator() {
@@ -275,11 +273,6 @@
             columnHeaders: true
           },
           onRangeChange: this.handleRangeChange,
-          rowFormatter(row) {
-            if (row.getData()['--space-row--bks']) {
-              row.getElement().classList.add("space-row");
-            }
-          },
         });
       },
       async toggleFilter() {
