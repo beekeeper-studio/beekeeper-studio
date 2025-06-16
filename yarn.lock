@@ -2064,8 +2064,8 @@
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
 "@beekeeperstudio/plugin@github:beekeeper-studio/plugin":
-  version "1.0.9"
-  resolved "https://codeload.github.com/beekeeper-studio/plugin/tar.gz/203cb3ec170126dca20f78bf5e5e586299d6b1ee"
+  version "1.0.10"
+  resolved "https://codeload.github.com/beekeeper-studio/plugin/tar.gz/ef12ef9852a2e55396f349e77dfa83dbaab17a68"
 
 "@bufbuild/protobuf@^2.0.0":
   version "2.2.3"

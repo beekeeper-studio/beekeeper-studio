@@ -141,6 +141,9 @@ export default class WebPluginLoader {
         case "runQuery":
           response.result = await this.pluginStore.runQuery(request.args.query);
           break;
+        case "openExternal":
+          window.main.openLink(request.args.link);
+          break;
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":

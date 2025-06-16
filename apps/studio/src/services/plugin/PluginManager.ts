@@ -187,7 +187,7 @@ export default class PluginManager {
     let ret: T;
 
     if (this.pluginLocks.includes(id)) {
-      throw new Error(`Plugin "${id}" is not idle.`);
+      throw new Error(`There is an ongoing operation on plugin "${id}". Please wait for it to finish or cancel it.`);
     }
 
     this.pluginLocks.push(id);
