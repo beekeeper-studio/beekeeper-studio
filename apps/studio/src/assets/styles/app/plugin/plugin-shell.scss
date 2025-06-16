@@ -28,6 +28,10 @@
     overflow: auto;
   }
 
+  .hidden-panel {
+    visibility: hidden;
+  }
+
   .message.empty {
     width: 100%;
     height: 100%;
