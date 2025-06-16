@@ -510,7 +510,7 @@
 
   .table-search-wrapper.table-filter {
     display: flex;
-    padding: 0.5rem 1rem;
+    padding: 0.8rem 1rem;
     justify-content: space-between;
     width: auto;
     position: absolute;
