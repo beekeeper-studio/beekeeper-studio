@@ -1,12 +1,12 @@
 <template>
   <div
     class="result-table"
+    :class="{ 'hidden-filter': hiddenFilter }"
     v-hotkey="keymap"
   >
     <form
       class="table-search-wrapper table-filter"
       @submit.prevent="searchHandler"
-      :class="{ hidden: hiddenSearch }"
       v-hotkey="tableFilterKeymap"
     >
       <div class="input-wrapper filter">
@@ -36,15 +36,11 @@
       <button
         class="close-btn btn btn-flat btn-fab"
         title="Close filter"
-        @click="hiddenSearch = true"
+        @click="closeTableFilter"
       >
         <i class="material-icons">close</i>
       </button>
     </form>
-    <div
-      class="table-filter-placeholder"
-      :class="{ hidden: hiddenSearch }"
-    />
     <div
       ref="tabulator"
       class="spreadsheet-table"
@@ -76,12 +72,13 @@
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
+        /** @type {import('tabulator-tables').Tabulator} */
         tabulator: null,
         actualTableHeight: '100%',
         selectedRowData: {},
         filterValue: '',
         selectedRowPosition: -1,
-        hiddenSearch: true,
+        hiddenFilter: true,
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
@@ -117,7 +114,7 @@
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
-          'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
+          'queryEditor.openTableFilter': _.throttle(this.toggleFilter.bind(this), 500),
         });
       },
       tableFilterKeymap() {
@@ -260,6 +257,7 @@
         this.handleTabActive()
       }
       this.registerHandlers(this.rootBindings)
+      window.tabulator = this.tabulator
     },
     methods: {
       initializeTabulator() {
@@ -277,26 +275,32 @@
             columnHeaders: true
           },
           onRangeChange: this.handleRangeChange,
+          rowFormatter(row) {
+            if (row.getData()['--space-row--bks']) {
+              row.getElement().classList.add("space-row");
+            }
+          },
         });
+      },
+      async toggleFilter() {
+        if (this.hiddenFilter) {
+          this.focusOnFilterInput()
+        } else {
+          this.closeTableFilter()
+          this.triggerFocus()
+        }
       },
       focusOnFilterInput() {
         // Only trigger if the result table is focused
-        const activeElement = document.activeElement
-        const isTableFocused = activeElement && (
-          activeElement.classList.contains('tabulator-cell') ||
-          activeElement.closest('.result-table') === this.$el ||
-          activeElement.closest('.tabulator')
-        )
+        if (!this.checkTableFocus()) return
 
-        if (!isTableFocused) return
-
-        this.hiddenSearch = false
+        this.hiddenFilter = false
         this.$nextTick(() => {
           this.$refs.filterInput.focus()
         })
       },
       closeTableFilter() {
-        this.hiddenSearch = true
+        this.hiddenFilter = true
       },
       searchHandler() {
         this.tabulator.clearFilter()
@@ -314,10 +318,12 @@
         this.filterValue = ''
         this.tabulator.clearFilter()
       },
-      copySelection() {
+      checkTableFocus() {
         const classes = [...document.activeElement.classList.values()];
-        const isFocusingTable = classes.some(c => c.startsWith('tabulator'));
-
+        return classes.some(c => c.startsWith('tabulator'));
+      },
+      copySelection() {
+        const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
         copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
       },
@@ -497,27 +503,32 @@
 
   .result-table {
     position: relative;
+
+    &.hidden-filter .table-search-wrapper {
+      display: none;
+    }
+
+    &::v-deep:not(.hidden-filter) {
+      .tabulator-tableholder {
+        padding-bottom: 4rem;
+      }
+    }
   }
 
   .table-search-wrapper.table-filter {
     display: flex;
     padding: 0.5rem 1rem;
     justify-content: space-between;
+    width: auto;
     position: absolute;
-    top: 0.5rem;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 1rem;
+    right: 1.5rem;
     z-index: 10;
     align-items: center;
     background-color: var(--query-editor-bg);
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
-    max-width: min(35rem, 97%);
     @include card-shadow;
-
-    &.hidden {
-      display: none;
-    }
 
     .btn-fab {
       min-width: auto;
@@ -535,16 +546,8 @@
     }
   }
 
-  .table-filter-placeholder {
-    height: 5rem;
-
-    &.hidden {
-      display: none;
-    }
-  }
-
   .input-wrapper {
-    width: 97%;
+    width: 17rem;
     position: relative;
     .clear {
       position: absolute;
