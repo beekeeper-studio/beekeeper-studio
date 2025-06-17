@@ -10,7 +10,7 @@
           <h3>Columns Mapped</h3>
           <p>{{ columnsImportedCount }}</p>
         </div>
-        <div class="card-flat padding">
+        <div class="card-flat padding" v-if="!importOptions?.createNewTable">
           <h3>Columns Ignored</h3>
           <p>{{ columnsIgnoredCount }}</p>
         </div>
@@ -94,7 +94,7 @@ export default {
     },
 
     async initTabulator() {
-      if (this.tabulator) return this.tabulator.redraw(true)
+      if (this.tabulator) this.tabulator.destroy()
 
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: await this.tableData(),
@@ -111,8 +111,14 @@ export default {
     async onFocus () {
       const importOptions = await this.tablesToImport.get(this.importKey())
       this.table = importOptions.table
-      if (this.importerClass && this.tabulator) {
-        this.tabulator.redraw()
+
+      if (!importOptions.createNewTable) {
+        await this.$store.dispatch('updateTableColumns', this.getTable(importOptions.table))
+        this.table = this.getTable(importOptions.table)
+      }
+
+      if (Boolean(this.importerClass) && Boolean(this.tabulator)) {
+        this.initTabulator()
       } else {
         this.initialize()
       }
