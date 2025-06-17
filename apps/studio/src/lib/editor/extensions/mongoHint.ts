@@ -38,7 +38,6 @@ async function completionSource(
   const cmd = context.state.doc.sliceString(start, end);
 
   const completions = await getCompletionsFn(cmd);
-  log.info(`Mongo hints for cmd: ${cmd}:`, completions)
 
   const options = completions.map((c) => ({
     label: c

@@ -363,7 +363,6 @@ export default Vue.extend({
       this.selectEditor();
     },
     async submitMongoCommand(command) {
-      log.info('RECEIVED COMMAND: ', command)
       this.tab.isRunning = true
       this.running = true
       this.error = null
@@ -400,7 +399,6 @@ export default Vue.extend({
         }
         // get rid of old empty results
         this.results = Object.freeze([...this.results.filter((r) => !!r.rows?.length), ...results])
-        log.info('RESULTS: ', this.results)
         const nonEmptyResult = _.chain(this.results).findLastIndex((r) => !!r.rows?.length).value()
         console.log("non empty result", nonEmptyResult)
         this.selectedResult = nonEmptyResult === -1 ? this.results.length - 1 : nonEmptyResult;

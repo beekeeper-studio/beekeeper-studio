@@ -41,10 +41,6 @@ export default {
       }
     },
     output(value) {
-      console.log('Running watcher for output')
-      console.log('Current document content:', JSON.stringify(this.textEditor.getValue()))
-      console.log('Document length from textEditor.getLength():', this.textEditor.getLength())
-      console.log('Document length from view.state.doc.length:', this.textEditor.view.state.doc.length)
       const insertPos = this.textEditor.getLength();
       let output = value.output;
 
@@ -68,7 +64,6 @@ export default {
           scrollIntoView: true
         })
       } else {
-        console.log('Inserting changes. Pos: ', insertPos, 'output: ', output)
         this.textEditor.dispatchChange({
           changes: { from: insertPos, insert: `\n${output}`},
           scrollIntoView: true
@@ -90,8 +85,6 @@ export default {
         const promptLine = tr.startState.field(PromptLineField);
         const promptSymbol = tr.startState.field(PromptSymbolField);
         const prompt = this.getPromptText(promptSymbol);
-        console.log('promptLine: ', promptLine)
-        console.log('prompt: ', prompt)
         tr.changes.iterChanges((fromA) => {
           const fromLine = tr.startState.doc.lineAt(fromA);
           const lineNumber = fromLine.number - 1; // 1-based, really?!?!
@@ -138,8 +131,8 @@ export default {
             this.historyIndex = this.commandHistory.length;
 
             if (userCommand === 'clear') {
-              // TODO (@day): implement clear
               this.initialize();
+              this.$emit('clear');
               return;
             }
 
@@ -225,8 +218,6 @@ export default {
           setPromptLineEffect.of(newPromptLine),
         ],
       })
-
-      console.log('newPromptLine: ', newPromptLine)
     },
     navigateHistory(direction: 1 | -1) {
       if (this.commandHistory.length === 0) return;
