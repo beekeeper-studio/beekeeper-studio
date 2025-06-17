@@ -713,6 +713,8 @@ x-switch {
   --bks-text-editor-gutter-border-color: transparent;
   --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-attributeName-fg-color: #{$brand-info};
+  --bks-text-editor-variableName-fg-color: #{$text-dark};
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};

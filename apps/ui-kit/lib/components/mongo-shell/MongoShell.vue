@@ -1,5 +1,5 @@
 <template>
-  <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="shell"></div>
+  <div class="BksUiKit BksTextEditor BksMongoShell" ref="shell"></div>
 </template>
 
 <script lang="ts">
@@ -300,22 +300,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss">
-@use 'sass:color';
-@import '../../styles/_variables.scss';
- 
-.cm-mongo-prompt > span {
-  color: $theme-primary !important;
-  font-weight: bold;
-}
-
-.ansi-output {
-  user-select: text !important;
-  white-space: pre-wrap;
-  color: white;
-  padding: 4px;
-  margin: 0;
-}
-
-</style>
