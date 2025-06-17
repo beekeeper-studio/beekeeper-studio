@@ -29,12 +29,16 @@ export default {
     }
   },
   watch: {
-    promptSymbol() {
-      this.textEditor.dispatchChange({
-        effects: [
-          setPromptSymbolEffect.of(this.promptSymbol)
-        ]
-      })
+    promptSymbol(value) {
+      if (this.textEditor) {
+        this.textEditor.dispatchChange({
+          effects: [
+            setPromptSymbolEffect.of(value)
+          ]
+        })
+      } else {
+        this.initialize();
+      }
     },
     output(value) {
       console.log('Running watcher for output')
@@ -125,9 +129,6 @@ export default {
               doc.length
             ).trim();
 
-            console.log('Submit command: ', userCommand)
-            console.log('Document content at submit:', JSON.stringify(update.state.doc.toString()))
-            console.log('Document length at submit:', update.state.doc.length)
             if (!userCommand) {
               console.warn('Failed to find valid command to run')
               return
@@ -138,6 +139,7 @@ export default {
 
             if (userCommand === 'clear') {
               // TODO (@day): implement clear
+              this.initialize();
               return;
             }
 
@@ -161,16 +163,6 @@ export default {
           PromptSymbolField
         ]
       }
-    },
-    prompt() {
-      if (this.promptSymbol.length <= this.maxPromptSymbolLength) return this.promptSymbol;
-
-      const startLength = Math.floor((this.maxPromptSymbolLength - 3) / 2);
-      const endLength = this.maxPromptSymbolLength - 3 - startLength;
-      const start = this.promptSymbol.substring(0, startLength);
-      const end = this.promptSymbol.substring(this.promptSymbol.length - endLength)
-
-      return `${start}...${end}`;
     }
   },
   methods: {
@@ -217,9 +209,9 @@ export default {
       ]));
     },
     resetPrompt() {
-      const promptText = `\n${this.prompt}`;
+      const promptSymbol = this.textEditor.getStateField(PromptSymbolField) as string;
+      const promptText = `\n${this.getPromptText(promptSymbol)}`;
       const insertPos = this.textEditor.getLength();
-
 
       this.textEditor.dispatchChange({
         changes: { from: insertPos, insert: promptText },
@@ -231,14 +223,36 @@ export default {
       this.textEditor.dispatchChange({
         effects: [
           setPromptLineEffect.of(newPromptLine),
-          setPromptSymbolEffect.of(this.promptSymbol)
         ],
       })
 
       console.log('newPromptLine: ', newPromptLine)
     },
     navigateHistory(direction: 1 | -1) {
-      console.log('navigateHistory: ', direction)
+      if (this.commandHistory.length === 0) return;
+      const promptSymbol = this.textEditor.getStateField(PromptSymbolField) as string;
+      const promptLine = this.textEditor.getStateField(PromptLineField) as number;
+
+      this.historyIndex += direction;
+      if (this.historyIndex < 0) this.historyIndex = 0;
+      const insertPos = this.textEditor.getLineInfo(promptLine + 1).from + promptSymbol.length;
+      const length = this.textEditor.getLength();
+      if (this.historyIndex >= this.commandHistory.length) {
+        this.textEditor.dispatchChange({
+          changes: { from: insertPos, to: length, insert: ''},
+        });
+        return;
+      }
+
+      const cmd = this.commandHistory[this.historyIndex];
+      this.textEditor.dispatchChange({
+        changes: { from: insertPos, to: length, insert: cmd },
+      });
+      const newLength = this.textEditor.getLength();
+      this.textEditor.dispatchChange({
+        selection: { anchor: newLength },
+        scrollIntoView: true
+      })
     },
     constructTextEditor() {
       return new TextEditor();
@@ -262,7 +276,7 @@ export default {
         onValueChange: (value) => {
           
         },
-        initialValue: this.prompt,
+        initialValue: this.getPromptText(this.promptSymbol),
         // languageId: undefined, // We use mongoMode() extension instead
         keybindings: this.keybindings,
         lineNumbers: false,
@@ -274,12 +288,15 @@ export default {
 
       this.textEditor = textEditor;
 
+      const length = this.textEditor.getLength();
+
       // Initialize state fields
       this.textEditor.dispatchChange({
         effects: [
           setPromptLineEffect.of(0),
           setPromptSymbolEffect.of(this.promptSymbol)
-        ]
+        ],
+        selection: { anchor: length }
       });
 
       //extensions
@@ -288,7 +305,7 @@ export default {
   },
   async mounted() {
     //this.promptSymbol = await this.connection.getShellPrompt();
-    await this.initialize();
+    //await this.initialize();
   }
 }
 </script>

@@ -17,6 +17,7 @@
         :focus="focusingElement === 'text-editor'"
         :auto-focus="true"
         :extensions="extensions"
+        :promptSymbol="promptSymbol"
         @update:focus="updateTextEditorFocus"
         @bks-initialized="handleEditorInitialized"
         @bks-shell-run-command="submitMongoCommand"
@@ -320,7 +321,6 @@ export default Vue.extend({
       this.editor.initialized = true;
 
       this.mongoHint.setGetHints(this.connection.getCompletions);
-      log.info('set getCompletions')
 
       // this gives the dom a chance to kick in and render these
       // before we try to read their heights
@@ -457,6 +457,8 @@ export default Vue.extend({
     },
   },
   async mounted() {
+    this.promptSymbol = await this.connection.getShellPrompt();
+
     if (this.shouldInitialize) this.initialize()
 
     this.containerResizeObserver = new ResizeObserver(() => {
