@@ -26,6 +26,8 @@
 
   .bottom-panel {
     overflow: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   .hidden-panel {
