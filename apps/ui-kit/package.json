@@ -34,6 +34,7 @@
     "./sql-text-editor": "./dist/sql-text-editor.js",
     "./text-editor": "./dist/text-editor.js",
     "./mongo-shell": "./dist/mongo-shell.js",
+    "./mongo-shell/state": "./dist/mongo-shell/state.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",

@@ -53,6 +53,10 @@ export default defineConfig({
           __dirname,
           "lib/components/mongo-shell/define.ts"
         ),
+        "mongo-shell/state": resolve(
+          __dirname,
+          "lib/components/mongo-shell/state.ts"
+        ),
         "data-editor": resolve(
           __dirname,
           "lib/components/data-editor/define.ts"

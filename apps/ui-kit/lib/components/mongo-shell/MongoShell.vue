@@ -7,9 +7,10 @@ import { TextEditor } from '../text-editor/v2/TextEditor';
 import { monokai } from '@uiw/codemirror-theme-monokai';
 import { Annotation, EditorState, Compartment } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
-import mixin from '../text-editor/v2/mixin';
 import props from './props';
-import { addOutputEffect } from './extensions/ansi-widget';
+import { addOutputEffect, OutputField } from './extensions/ansi-widget';
+import { mongoMode } from './extensions/mongo-mode';
+import { PromptLineField, PromptSymbolField, setPromptLineEffect, setPromptSymbolEffect } from './state';
 import AnsiToHtml from 'ansi-to-html';
 
 const ansiToHtml = new AnsiToHtml();
@@ -18,7 +19,6 @@ const SubmitAnnotation = Annotation.define<boolean>();
 const BlockedEdit = Annotation.define();
 
 export default {
-  mixins: [mixin],
   props,
   data() {
     return {
@@ -30,7 +30,11 @@ export default {
   },
   watch: {
     promptSymbol() {
-      
+      this.textEditor.dispatchChange({
+        effects: [
+          setPromptSymbolEffect.of(this.promptSymbol)
+        ]
+      })
     },
     output(value) {
       console.log('Running watcher for output')
@@ -68,7 +72,7 @@ export default {
       }
 
       // this will need to update the shell prompt first
-      //this.resetPrompt();
+      this.resetPrompt();
     }
   },
   computed: {
@@ -79,14 +83,19 @@ export default {
         if (!tr.docChanged) return tr;
 
         let allow = true;
+        const promptLine = tr.startState.field(PromptLineField);
+        const promptSymbol = tr.startState.field(PromptSymbolField);
+        const prompt = this.getPromptText(promptSymbol);
+        console.log('promptLine: ', promptLine)
+        console.log('prompt: ', prompt)
         tr.changes.iterChanges((fromA) => {
           const fromLine = tr.startState.doc.lineAt(fromA);
           const lineNumber = fromLine.number - 1; // 1-based, really?!?!
           const column = fromA - fromLine.from;
 
           if (
-            lineNumber < this.promtLine ||
-            (lineNumber === this.promptLine && column < this.prompt.length)
+            lineNumber < promptLine ||
+            (lineNumber === promptLine && column < prompt.length)
           ) {
             allow = false
           }
@@ -98,17 +107,21 @@ export default {
       const updateListener = EditorView.updateListener.of((update) => {
         for (const tr of update.transactions) {
           if (tr.annotation(BlockedEdit)) {
+            const promptLine = update.state.field(PromptLineField);
             update.view.dispatch({
               selection: {
-                anchor: update.state.doc.line(this.promptLine + 1).to
+                anchor: update.state.doc.line(promptLine + 1).to
               },
               scrollIntoView: true
             })
           } else if (tr.annotation(SubmitAnnotation)) {
             const doc = update.state.doc;
-            const promptLineObj = doc.line(this.promptLine + 1);
+            const promptLine = update.state.field(PromptLineField);
+            const promptSymbol = update.state.field(PromptSymbolField);
+            const prompt = this.getPromptText(promptSymbol);
+            const promptLineObj = doc.line(promptLine + 1);
             const userCommand = doc.sliceString(
-              promptLineObj.from + this.prompt.length,
+              promptLineObj.from + prompt.length,
               doc.length
             ).trim();
 
@@ -134,12 +147,18 @@ export default {
       })
 
       return (extensions) => {
+        const ext = this.extensions || [];
         return [
           this.buildKeymap(),
+          ...ext,
           ...extensions,
+          mongoMode(),
           monokai,
           protectPrompt,
-          updateListener
+          updateListener,
+          OutputField,
+          PromptLineField,
+          PromptSymbolField
         ]
       }
     },
@@ -155,6 +174,16 @@ export default {
     }
   },
   methods: {
+    getPromptText(promptSymbol) {
+      if (promptSymbol.length <= this.maxPromptSymbolLength) return promptSymbol;
+
+      const startLength = Math.floor((this.maxPromptSymbolLength - 3) / 2);
+      const endLength = this.maxPromptSymbolLength - 3 - startLength;
+      const start = promptSymbol.substring(0, startLength);
+      const end = promptSymbol.substring(promptSymbol.length - endLength)
+
+      return `${start}...${end}`;
+    },
     buildKeymap() {
       const shellKeymapCompartment = new Compartment();
       return shellKeymapCompartment.of(keymap.of([
@@ -191,16 +220,28 @@ export default {
       const promptText = `\n${this.prompt}`;
       const insertPos = this.textEditor.getLength();
 
+
       this.textEditor.dispatchChange({
         changes: { from: insertPos, insert: promptText },
         selection: { anchor: insertPos + promptText.length },
         scrollIntoView: true
       })
 
-      this.promptLine = this.textEditor.getLineAt(insertPos + 1) - 1;
+      const newPromptLine = this.textEditor.getLineAt(insertPos + promptText.length).number - 1;
+      this.textEditor.dispatchChange({
+        effects: [
+          setPromptLineEffect.of(newPromptLine),
+          setPromptSymbolEffect.of(this.promptSymbol)
+        ],
+      })
+
+      console.log('newPromptLine: ', newPromptLine)
     },
     navigateHistory(direction: 1 | -1) {
       console.log('navigateHistory: ', direction)
+    },
+    constructTextEditor() {
+      return new TextEditor();
     },
     async initialize() {
       if (this.textEditor) {
@@ -217,11 +258,12 @@ export default {
 
       textEditor.initialize({
         parent: this.$refs.shell,
+        focus: true,
         onValueChange: (value) => {
           
         },
         initialValue: this.prompt,
-        languageId: "javascript",
+        // languageId: undefined, // We use mongoMode() extension instead
         keybindings: this.keybindings,
         lineNumbers: false,
         lineWrapping: this.lineWrapping,
@@ -232,8 +274,16 @@ export default {
 
       this.textEditor = textEditor;
 
-      //extensions
+      // Initialize state fields
+      this.textEditor.dispatchChange({
+        effects: [
+          setPromptLineEffect.of(0),
+          setPromptSymbolEffect.of(this.promptSymbol)
+        ]
+      });
 
+      //extensions
+      this.$emit('bks-initialized');
     },
   },
   async mounted() {
@@ -243,5 +293,21 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
+@use 'sass:color';
+@import '../../styles/_variables.scss';
+ 
+.cm-mongo-prompt > span {
+  color: $theme-primary !important;
+  font-weight: bold;
+}
+
+.ansi-output {
+  user-select: text !important;
+  white-space: pre-wrap;
+  color: white;
+  padding: 4px;
+  margin: 0;
+}
+
 </style>

@@ -2,6 +2,7 @@ import { PropType } from "vue";
 import { Keybindings, Keymap } from "../text-editor";
 import { CustomMenuItems } from "../context-menu";
 import { Clipboard, Config } from "../text-editor/v2/extensions/vim";
+import { Extension } from "@codemirror/state";
 
 export default {
   isFocused: Boolean,
@@ -29,5 +30,7 @@ export default {
     type: Number,
     default: 30
   },
-  output: Object
+  output: Object,
+  extensions: [Array, Function] as PropType<Extension>,
+  
 }

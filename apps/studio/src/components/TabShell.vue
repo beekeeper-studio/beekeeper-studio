@@ -16,8 +16,9 @@
         @submitCommand="submitMongoCommand"
         :focus="focusingElement === 'text-editor'"
         :auto-focus="true"
+        :extensions="extensions"
         @update:focus="updateTextEditorFocus"
-        @initialized="handleEditorInitialized"
+        @bks-initialized="handleEditorInitialized"
         @bks-shell-run-command="submitMongoCommand"
       />
       <!-- This is we so we have the separating line -->
@@ -109,6 +110,7 @@ import ResultTable from './editor/ResultTable.vue'
 import ShortcutHints from './editor/ShortcutHints.vue'
 import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 import MongoShell from '@beekeeperstudio/ui-kit/vue/mongo-shell'
+import { mongoHintExtension } from '@/lib/editor/extensions/mongoHint'
 
 import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
 import rawlog from '@bksLogger'
@@ -164,7 +166,8 @@ export default Vue.extend({
        */
       focusElement: 'none',
       focusingElement: 'none',
-      promptSymbol: null
+      promptSymbol: null,
+      mongoHint: mongoHintExtension()
     }
   },
   computed: {
@@ -177,6 +180,9 @@ export default Vue.extend({
     ...mapState('data/queries', {'savedQueries': 'items'}),
     ...mapState('settings', ['settings']),
     ...mapState('tabs', { 'activeTab': 'active' }),
+    extensions() {
+      return this.mongoHint.extensions;
+    },
     enabled() {
       return !this.dialectData?.disabledFeatures?.shell;
     },
@@ -312,6 +318,9 @@ export default Vue.extend({
     },
     handleEditorInitialized() {
       this.editor.initialized = true;
+
+      this.mongoHint.setGetHints(this.connection.getCompletions);
+      log.info('set getCompletions')
 
       // this gives the dom a chance to kick in and render these
       // before we try to read their heights
