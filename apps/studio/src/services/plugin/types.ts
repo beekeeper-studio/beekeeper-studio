@@ -65,12 +65,14 @@ export interface PluginRepository {
   readme: string;
 }
 
-export type OnViewRequestListener = (params: {
+export type OnViewRequestListener = (params: OnViewRequestListenerParams) => void | Promise<void>;
+
+export type OnViewRequestListenerParams = {
   source: HTMLIFrameElement;
   request: PluginRequestData;
   after: (callback: (response: PluginResponseData) => void) => void;
   modifyResult: (callback: (result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>) => void;
-}) => void | Promise<void>;
+}
 
 export type PluginSettings = {
   [pluginId: string]: {
