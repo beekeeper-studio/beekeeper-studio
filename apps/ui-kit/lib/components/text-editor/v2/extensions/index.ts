@@ -33,16 +33,19 @@ import { extraKeymap } from "./extraKeymap";
 import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
 import { readOnly } from "./readOnly";
+import { markers } from "./markers";
+import { lineGutters } from "./lineGutters";
 import { ExtensionConfiguration } from "../types";
-import { json } from "@codemirror/lang-json";
-import { html } from "@codemirror/lang-html";
-import { javascript } from "@codemirror/lang-javascript";
+import { language } from "./language";
 
 export { applyKeybindings } from "./extraKeymap";
 export { applyKeymap } from "./keymap";
 export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
+export { applyLanguageId } from "./language";
+export { applyMarkers } from "./markers";
+export { applyLineGutters } from "./lineGutters";
 
 // Define a custom highlight style that uses CSS classes
 const customHighlightStyle = HighlightStyle.define([
@@ -91,19 +94,6 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.strikethrough, class: "cm-strikethrough" },
 ]);
 
-function language(languageId: string) {
-  if (languageId === 'json') {
-    return json();
-  }
-  if (languageId === "html") {
-    return html();
-  }
-  if (languageId === "javascript") {
-    return javascript();
-  }
-  return [];
-}
-
 export function extensions(config: ExtensionConfiguration) {
   return [
     specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
@@ -112,7 +102,14 @@ export function extensions(config: ExtensionConfiguration) {
     highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
-    foldGutter(),
+    foldGutter({
+      markerDOM(open) {
+        const i = document.createElement("i");
+        i.classList.add("material-icons", "cm-foldgutter");
+        i.textContent = open ? "keyboard_arrow_down" : "keyboard_arrow_right";
+        return i;
+      }
+    }),
     drawSelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
@@ -142,6 +139,8 @@ export function extensions(config: ExtensionConfiguration) {
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
+    markers({ markers: config.markers || [] }),
+    lineGutters({ lineGutters: config.lineGutters || [] }),
     EditorView.theme({
       "&": {
         height: `100%`,
