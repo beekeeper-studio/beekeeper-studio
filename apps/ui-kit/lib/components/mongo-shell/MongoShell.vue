@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import { TextEditor } from '../text-editor/v2/TextEditor';
-import { monokai } from '@uiw/codemirror-theme-monokai';
+import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 import { Annotation, EditorState, Compartment } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import props from './props';
@@ -148,7 +148,12 @@ export default {
           ...ext,
           ...extensions,
           mongoMode(),
-          monokai,
+          monokaiInit({
+            settings: {
+              selection: "",
+              selectionMatch: "",
+            },
+          }),
           protectPrompt,
           updateListener,
           OutputField,
@@ -265,7 +270,7 @@ export default {
         parent: this.$refs.shell,
         focus: true,
         onValueChange: (value) => {
-          
+
         },
         initialValue: this.getPromptText(this.promptSymbol),
         // languageId: undefined, // We use mongoMode() extension instead
