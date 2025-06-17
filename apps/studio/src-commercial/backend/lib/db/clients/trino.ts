@@ -92,6 +92,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       log.info('client query result', result)
   
       for await (const r of result) {
+        console.log('RESULT YO')
+        console.log(r)
         columns = r.columns
   
         if (r.data) rows.push(...r.data)
@@ -610,13 +612,13 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return null
   }
 
-  async getTableLength(table: string, _schema?: string): Promise<number> {
+  async getTableLength(table: string, schema: string, database: string): Promise<number> {
     const result = await this.driverExecuteSingle(
-      `SELECT count(*) as count FROM {table: Identifier}`,
-      { params: { table } }
+      `SELECT count(*) as count FROM ${this.wrapIdentifier(database)}.${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`
     );
-    const json = result.data as ResponseJSON<{ count: number }>;
-    return json.data[0].count;
+
+    const [row] = result.rows as { count: number }[]
+    return row.count;
   }
 
   // TODO: ALL THE STREAMING!
