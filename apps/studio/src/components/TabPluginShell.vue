@@ -17,6 +17,7 @@
     </div>
     <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">
       <result-table
+        ref="table"
         v-if="showResultTable"
         :focus="focusingElement === 'table'"
         :active="active"
@@ -49,16 +50,27 @@
         Results will appear here
       </div>
     </div>
-    <statusbar :active="active">
-      <div class="expand" />
-      <x-button
-        class="btn btn-flat btn-icon"
-        @click="toggleTablePanel"
-      >
-        <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>
-        {{ isTablePanelVisible ? 'Hide table' : 'Show table' }}
-      </x-button>
-    </statusbar>
+    <query-editor-status-bar
+      v-model="selectedResult"
+      :results="results"
+      :running="isRunningQuery"
+      :execute-time="executeTime"
+      :active="active"
+      @download="download"
+      @clipboard="clipboard"
+      @clipboardJson="clipboardJson"
+      @clipboardMarkdown="clipboardMarkdown"
+    >
+      <template #left-actions>
+        <x-button
+          class="btn btn-flat btn-icon"
+          @click="toggleTablePanel"
+        >
+          <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>
+          {{ isTablePanelVisible ? 'Hide result' : 'Show result' }}
+        </x-button>
+      </template>
+    </query-editor-status-bar>
   </div>
 </template>
 
@@ -73,10 +85,10 @@ import { PropType } from "vue";
 import { TransportPluginShellTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { PluginRequestData } from "@beekeeperstudio/plugin";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
-import Statusbar from '@/components/common/StatusBar.vue';
+import { OnViewRequestListenerParams } from "@/services/plugin/types";
+import { RunQueryResponse } from "@beekeeperstudio/plugin"
 
 export default Vue.extend({
   components: {
@@ -87,7 +99,6 @@ export default Vue.extend({
     ErrorAlert,
     IsolatedPluginView,
     UpsellContent,
-    Statusbar,
   },
   props: {
     tab: {
@@ -102,7 +113,7 @@ export default Vue.extend({
       results: [],
       runningCount: 1,
       selectedResult: 0,
-      runningQuery: null,
+      isRunningQuery: null,
       error: null,
       info: null,
       split: null,
@@ -187,8 +198,42 @@ export default Vue.extend({
         this.tableHeight = this.$refs.bottomPanel.clientHeight;
       });
     },
-    async handleRequest({ request, modifyResult }: { request: PluginRequestData; modifyResult: any }) {
+    download(format) {
+      this.$refs.table.download(format)
+    },
+    clipboard() {
+      this.$refs.table.clipboard()
+    },
+    clipboardJson() {
+      // eslint-disable-next-line
+      // @ts-ignore
+      const data = this.$refs.table.clipboard('json')
+    },
+    clipboardMarkdown() {
+      // eslint-disable-next-line
+      // @ts-ignore
+      const data = this.$refs.table.clipboard('md')
+    },
+    async handleRequest({ request, modifyResult, after }: OnViewRequestListenerParams) {
+
       switch (request.name) {
+        case "runQuery": {
+          const queryStartTime = new Date()
+
+          this.isRunningQuery = true;
+
+          after((response) => {
+            const queryEndTime = new Date()
+            const result = response.result as RunQueryResponse
+            if (request.name === "runQuery") {
+              this.isRunningQuery = false;
+              this.executeTime = queryEndTime - queryStartTime;
+              this.results = result.results ?? [];
+            }
+          })
+
+          break;
+        }
         case "expandTableResult": {
           await this.expandTableResult();
           this.results = request.args.results;
