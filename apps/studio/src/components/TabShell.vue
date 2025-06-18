@@ -11,13 +11,16 @@
       <mongo-shell
         v-bind.sync="editor"
         :vim-config="vimConfig"
+        :vim-keymaps="vimKeymaps"
+        :keymap="userKeymap"
         :output="mongoOutputResult"
-        @clear="clear"
-        @submitCommand="submitMongoCommand"
         :focus="focusingElement === 'text-editor'"
         :auto-focus="true"
         :extensions="extensions"
         :promptSymbol="promptSymbol"
+        :line-wrapping="wrapText"
+        @clear="clear"
+        @submitCommand="submitMongoCommand"
         @update:focus="updateTextEditorFocus"
         @bks-initialized="handleEditorInitialized"
         @bks-shell-run-command="submitMongoCommand"
@@ -93,6 +96,7 @@
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
+        @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
         :active="active"
       />
@@ -120,6 +124,7 @@ import MergeManager from '@/components/editor/MergeManager.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { PropType } from 'vue'
 import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
+import { getVimKeymapsFromVimrc } from '@/lib/editor/vim';
 
 const log = rawlog.scope('query-editor')
 
@@ -157,6 +162,7 @@ export default Vue.extend({
       initialized: false,
       containerResizeObserver: null,
       onTextEditorBlur: null,
+      wrapText: false,
 
       /**
        * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -168,7 +174,8 @@ export default Vue.extend({
       focusElement: 'none',
       focusingElement: 'none',
       promptSymbol: null,
-      mongoHint: mongoHintExtension()
+      mongoHint: mongoHintExtension(),
+      vimKeymaps: []
     }
   },
   computed: {
@@ -468,6 +475,8 @@ export default Vue.extend({
       await this.$nextTick()
       this.focusElement = 'text-editor'
     }
+
+    this.vimKeymaps = await getVimKeymapsFromVimrc();
   },
   beforeDestroy() {
     if(this.split) {

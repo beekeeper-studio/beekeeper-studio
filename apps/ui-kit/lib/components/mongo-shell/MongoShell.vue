@@ -6,7 +6,7 @@
 import { TextEditor } from '../text-editor/v2/TextEditor';
 import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 import { Annotation, EditorState, Compartment } from '@codemirror/state';
-import { EditorView, keymap } from '@codemirror/view';
+import { EditorView, keymap as cmKeymap } from '@codemirror/view';
 import props from './props';
 import { addOutputEffect, OutputField } from './extensions/ansi-widget';
 import { mongoMode } from './extensions/mongo-mode';
@@ -29,6 +29,18 @@ export default {
     }
   },
   watch: {
+    keymap() {
+      if (!this.textEditor) return;
+      this.applyKeymap();
+    },
+    vimOptions() {
+      if (!this.textEditor) return;
+      this.applyKeymap();
+    },
+    lineWrapping() {
+      if (!this.textEditor) return;
+      this.applyLineWrapping();
+    },
     promptSymbol(value) {
       if (this.textEditor) {
         this.textEditor.dispatchChange({
@@ -75,6 +87,13 @@ export default {
     }
   },
   computed: {
+    vimOptions() {
+      return {
+        config: this.vimConfig,
+        keymaps: this.vimKeymaps,
+        clipboard: this.clipboard
+      }
+    },
     replaceExtensions() {
       // we may want to move these to their own files
       // may have to bind this here
@@ -164,6 +183,12 @@ export default {
     }
   },
   methods: {
+    applyLineWrapping() {
+      this.textEditor.setLineWrapping(this.lineWrapping);
+    },
+    applyKeymap() {
+      this.textEditor.setKeymap(this.keymap, this.vimOptions);
+    },
     getPromptText(promptSymbol) {
       if (promptSymbol.length <= this.maxPromptSymbolLength) return promptSymbol;
 
@@ -176,7 +201,7 @@ export default {
     },
     buildKeymap() {
       const shellKeymapCompartment = new Compartment();
-      return shellKeymapCompartment.of(keymap.of([
+      return shellKeymapCompartment.of(cmKeymap.of([
         {
           key: 'Shift-Enter',
           run: () => false

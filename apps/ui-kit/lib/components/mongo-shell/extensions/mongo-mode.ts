@@ -1,5 +1,4 @@
 import { Extension } from '@codemirror/state';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
@@ -37,7 +36,6 @@ const mongoPromptPlugin = ViewPlugin.fromClass(class {
         // Check if line matches prompt pattern
         const match = lineText.match(PROMPT_REGEX);
         if (match) {
-          console.log('Found prompt line:', lineText);
           builder.add(line.from, line.from + match[0].length, mongoPromptDecoration);
         }
         
