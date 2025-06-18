@@ -3,6 +3,7 @@
     :active="active"
     :class="{ 'empty': results.length === 0, 'query-meta': true }"
   >
+    <slot name="left-actions"></slot>
     <template v-if="results.length > 0">
       <div
         class="truncate statusbar-info"
@@ -64,7 +65,16 @@
         </span>
       </div>
     </template>
-    <span v-else class="empty">No Data</span>
+    <template v-else>
+      <span class="empty">No Data</span>
+      <span
+        class="statusbar-item execute-time"
+        v-if="this.elapsedTime > 1"
+      >
+        <i class="material-icons">access_time</i>
+        <span>{{ elapsedTimeText }}</span>
+      </span>
+    </template>
     <span class="expand" />
     <x-button
       class="btn btn-flat btn-icon end"
@@ -156,10 +166,11 @@
   </statusbar>
 </template>
 <script>
-import humanizeDuration from 'humanize-duration'
-import Statusbar from '../common/StatusBar.vue'
+import humanizeDuration from 'humanize-duration';
+import Statusbar from '../common/StatusBar.vue';
 import { mapState, mapGetters } from 'vuex';
-import { AppEvent } from '@/common/AppEvent'
+import { AppEvent } from '@/common/AppEvent';
+import formatSeconds from "@/lib/time/formatSeconds";
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -178,7 +189,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime'],
   components: { Statusbar },
   data() {
     return {
@@ -258,6 +269,9 @@ export default {
         return null;
       }
       return `Execution time: ${humanizeDuration(this.executeTime)}`
+    },
+    elapsedTimeText() {
+      return formatSeconds(this.elapsedTime);
     },
     downloadFullTooltip() {
       if (this.result?.truncated) {

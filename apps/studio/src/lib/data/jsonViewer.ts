@@ -3,6 +3,8 @@ import _ from "lodash";
 import rawLog from "@bksLogger";
 import globals from '@/common/globals'
 import { LineGutter } from "../editor/utils";
+import { toRegexSafe } from "@/common/utils";
+import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 
 export interface UpdateOptions {
   dataId: number | string;
@@ -56,7 +58,7 @@ export function findKeyPosition(jsonStr: string, path: (string | number)[]) {
   return -1;
 }
 
-export function createExpandableElement(text: string) {
+function createExpandableElement(text: string) {
   const element = document.createElement("a");
   element.classList.add("expandable-value");
   element.innerText = text;
@@ -71,14 +73,14 @@ export function createExpandableElement(text: string) {
 }
 
 // FIXME this works with string values only
-export function createTruncatableElement(text: string) {
+function createTruncatableElement(text: string) {
   const element = document.createElement("a");
   element.classList.add("truncatable-value", "bks-tooltip-wrapper");
   element.innerText = text.slice(0, -1);
 
   const more = document.createElement("span");
   more.classList.add("more");
-  more.innerText = "...";
+  more.innerText ="Show more";
 
   element.appendChild(more);
   element.appendChild(document.createTextNode('"'))
@@ -103,9 +105,11 @@ export function deepFilterObjectProps(
   filter: string,
   paths?: string[]
 ) {
+  const regex = toRegexSafe(filter);
+
   if (!paths) paths = getPaths(obj);
   const filteredPaths = paths.filter((path) =>
-    path.toLowerCase().includes(filter)
+    regex ? regex.test(path) : path.toLowerCase().includes(filter)
   );
   return _.pick(obj, filteredPaths);
 }
@@ -185,3 +189,58 @@ export function parseRowDataForJsonViewer(data: Record<string, any>, tableColumn
   return data
 }
 
+export function createTruncatableTextDecoration(
+  text: string,
+  onClick: () => void
+): Decoration {
+  return Decoration.replace({
+    widget: new TruncatableTextWidget(text, onClick),
+  });
+}
+
+class TruncatableTextWidget extends WidgetType {
+  constructor(
+    private readonly text: string,
+    private readonly onClick: () => void
+  ) {
+    super();
+  }
+
+  toDOM(): HTMLElement {
+    const element = createTruncatableElement(this.text);
+    element.addEventListener("click", this.onClick);
+    return element;
+  }
+
+  destroy(dom: HTMLElement) {
+    dom.removeEventListener('click', this.onClick);
+  }
+}
+
+export function createExpandableTextDecoration(
+  text: string,
+  onClick: () => void
+): Decoration {
+  return Decoration.replace({
+    widget: new ExpandableTextWidget(text, onClick),
+  });
+}
+
+class ExpandableTextWidget extends WidgetType {
+  constructor(
+    private readonly text: string,
+    private readonly onClick: () => void
+  ) {
+    super();
+  }
+
+  toDOM(): HTMLElement {
+    const element = createExpandableElement(this.text);
+    element.addEventListener("click", this.onClick);
+    return element;
+  }
+
+  destroy(dom: HTMLElement) {
+    dom.removeEventListener('click', this.onClick);
+  }
+}

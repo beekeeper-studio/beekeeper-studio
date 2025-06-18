@@ -1,10 +1,15 @@
-import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Extension, EditorState } from "@codemirror/state";
+import { foldAll, unfoldAll } from "@codemirror/language";
 import {
+  EditorMarker,
   ExtensionConfiguration,
   Keybindings,
   Keymap,
+  LanguageServerHelpers,
   TextEditorConfiguration,
+  LanguageId,
+  LineGutter,
 } from "./types";
 import {
   extensions,
@@ -13,6 +18,9 @@ import {
   applyLineWrapping,
   applyLineNumbers,
   applyReadOnly,
+  applyLanguageId,
+  applyMarkers,
+  applyLineGutters,
 } from "./extensions";
 import {
   formatDocument,
@@ -22,6 +30,9 @@ import {
   requestSemanticTokens,
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
+import { VimOptions } from "./extensions/keymap";
+
+export const exposeMethods = ["ls"] as const;
 
 export class TextEditor {
   protected view: EditorView;
@@ -29,7 +40,7 @@ export class TextEditor {
   private ls: ReturnType<typeof ls> | null;
 
   initialize(config: TextEditorConfiguration) {
-    if (config.lsConfig) {
+    if ('lsConfig' in config && config.lsConfig) {
       if (!config.lsConfig.rootUri) {
         throw new Error(
           "Missing 'rootUri' in lsConfig. This is required to initialize the language server client."
@@ -91,11 +102,11 @@ export class TextEditor {
     if (update.focusChanged) {
       if (update.view.hasFocus) {
         if (this.config.onFocus) {
-          this.config.onFocus({ event: new FocusEvent("focus") });
+          this.config.onFocus(new FocusEvent("focus"));
         }
       } else {
         if (this.config.onBlur) {
-          this.config.onBlur({ event: new FocusEvent("blur") });
+          this.config.onBlur(new FocusEvent("blur"));
         }
       }
     }
@@ -119,8 +130,8 @@ export class TextEditor {
     return this.view.state.doc.toString();
   }
 
-  setKeymap(keymap: Keymap) {
-    applyKeymap(this.view, keymap);
+  setKeymap(keymap: Keymap, options: VimOptions = {}) {
+    applyKeymap(this.view, keymap, options);
   }
 
   setKeybindings(keybindings: Keybindings) {
@@ -135,11 +146,40 @@ export class TextEditor {
     applyLineNumbers(this.view, enabled);
   }
 
+  setLanguageId(languageId: LanguageId) {
+    applyLanguageId(this.view, languageId);
+  }
+
+  setMarkers(markers: EditorMarker[]) {
+    applyMarkers(this.view, markers);
+  }
+
+  setLineGutters(lineGutters: LineGutter[]) {
+    applyLineGutters(this.view, lineGutters);
+  }
+
   getSelection(): string {
     return this.view.state.selection.main.toString();
   }
 
-  getLsClient() {
+  getLsHelpers(): LanguageServerHelpers {
+    return {
+      getClient: () => this.getLsClient(),
+
+      formatDocument: async (options: LSP.FormattingOptions) =>
+        await formatDocument(this.view, options),
+
+      formatDocumentRange: async (
+        range: LSP.Range,
+        options: LSP.FormattingOptions
+      ) => await formatDocumentRange(this.view, range, options),
+
+      requestSemanticTokens: async (lastResultId?: string) =>
+        await requestSemanticTokens(this.view, lastResultId),
+    };
+  }
+
+  private getLsClient() {
     try {
       return this.view?.state?.facet(lsContextFacet)?.client;
     } catch (e) {
@@ -148,21 +188,16 @@ export class TextEditor {
     }
   }
 
-  getLsActions() {
-    return {
-      formatDocument: async (options: LSP.FormattingOptions) =>
-        await formatDocument(this.view, options),
-      formatDocumentRange: async (
-        range: LSP.Range,
-        options: LSP.FormattingOptions
-      ) => await formatDocumentRange(this.view, range, options),
-      requestSemanticTokens: async (lastResultId?: string) =>
-        await requestSemanticTokens(this.view, lastResultId),
-    };
-  }
-
   focus() {
     this.view.focus();
+  }
+
+  foldAll() {
+    foldAll(this.view);
+  }
+
+  unfoldAll() {
+    unfoldAll(this.view);
   }
 
   destroy() {

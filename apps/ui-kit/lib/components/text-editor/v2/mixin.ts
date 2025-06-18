@@ -7,6 +7,7 @@ import {
   useCustomMenuItems,
 } from "../../context-menu";
 import { readClipboard, writeClipboard } from "../../../utils";
+import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorValueChangeEvent } from "./types";
 
 export default {
   props,
@@ -16,6 +17,16 @@ export default {
       textEditor: null,
       internalContextMenuItems: [],
     };
+  },
+
+  computed: {
+    vimOptions() {
+      return {
+        config: this.vimConfig,
+        keymaps: this.vimKeymaps,
+        clipboard: this.clipboard,
+      }
+    },
   },
 
   watch: {
@@ -35,17 +46,41 @@ export default {
       if (!this.textEditor) return;
       this.applyKeymap();
     },
+    vimOptions() {
+      if (!this.textEditor) return;
+      this.applyKeymap();
+    },
     lineWrapping() {
       if (!this.textEditor) return;
       this.applyLineWrapping();
     },
     lineNumbers() {
       if (!this.textEditor) return;
-      this.applyLineWrapping();
+      this.applyLineNumbers();
     },
     keybindings() {
       if (!this.textEditor) return;
       this.applyKeybindings();
+    },
+    languageId() {
+      if (!this.textEditor) return;
+      this.applyLanguageId();
+    },
+    markers() {
+      if (!this.textEditor) return;
+      this.applyMarkers();
+    },
+    lineGutters() {
+      if (!this.textEditor) return;
+      this.applyLineGutters();
+    },
+    foldAll() {
+      if (!this.textEditor) return;
+      this.applyFoldAll();
+    },
+    unfoldAll() {
+      if (!this.textEditor) return;
+      this.applyUnfoldAll();
     },
 
     forceInitialize() {
@@ -56,11 +91,7 @@ export default {
   methods: {
     // Exposed to custom element as `.ls()`
     ls() {
-      const textEditor: TextEditor = this.textEditor;
-      return {
-        getClient: () => textEditor.getLsClient(),
-        ...textEditor.getLsActions(),
-      };
+      return this.textEditor.getLsHelpers();
     },
 
     applyValue() {
@@ -77,7 +108,7 @@ export default {
       }
     },
     applyKeymap() {
-      this.textEditor.setKeymap(this.keymap);
+      this.textEditor.setKeymap(this.keymap, this.vimOptions);
     },
     applyLineWrapping() {
       this.textEditor.setLineWrapping(this.lineWrapping);
@@ -87,6 +118,21 @@ export default {
     },
     applyKeybindings() {
       this.textEditor.setKeybindings(this.keybindings);
+    },
+    applyLanguageId() {
+      this.textEditor.setLanguageId(this.languageId);
+    },
+    applyMarkers() {
+      this.textEditor.setMarkers(this.markers);
+    },
+    applyLineGutters() {
+      this.textEditor.setLineGutters(this.lineGutters);
+    },
+    applyFoldAll() {
+      this.textEditor.foldAll();
+    },
+    applyUnfoldAll() {
+      this.textEditor.unfoldAll();
     },
 
     constructTextEditor() {
@@ -103,16 +149,16 @@ export default {
       textEditor.initialize({
         parent: this.$refs.editor,
         onValueChange: (value) => {
-          this.$emit("bks-value-change", { value });
+          this.$emit("bks-value-change", { value } as TextEditorValueChangeEvent['detail']);
         },
         onFocus: (event) => {
-          this.$emit("bks-focus", event);
+          this.$emit("bks-focus", event as TextEditorFocusEvent);
         },
         onBlur: (event) => {
-          this.$emit("bks-blur", event);
+          this.$emit("bks-blur", event as TextEditorBlurEvent);
         },
         onLspReady: (capabilities) => {
-          this.$emit("bks-lsp-ready", { capabilities });
+          this.$emit("bks-lsp-ready", { capabilities } as TextEditorLSPReadyEvent['detail']);
         },
         languageId: this.languageId,
         replaceExtensions: this.replaceExtensions,
@@ -121,16 +167,19 @@ export default {
         focus: this.focus,
         readOnly: this.readOnly,
         keymap: this.keymap,
+        vimOptions: this.vimOptions,
         lineWrapping: this.lineWrapping,
         lineNumbers: this.lineNumbers,
         keybindings: this.keybindings,
+        markers: this.markers,
+        lineGutters: this.lineGutters,
       });
 
       this.textEditor = textEditor;
 
       this.initialized?.();
 
-      this.$emit("bks-initialized", { editor: textEditor });
+      this.$emit("bks-initialized", { editor: textEditor } as TextEditorInitializedEvent['detail']);
     },
 
     showContextMenu(event: Event) {
