@@ -129,7 +129,7 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
-      context.dispatch('remove', context.state.tabs)
+      await context.dispatch('remove', context.state.tabs)
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
@@ -176,7 +176,7 @@ export const TabModule: Module<State, RootState> = {
       items.forEach((tab) => {
         tab.deletedAt = new Date()
         tab.position = 99
-        return context.commit('remove', tab)
+        context.commit('remove', tab)
       })
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {

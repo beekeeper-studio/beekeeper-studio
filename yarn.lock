@@ -801,6 +801,14 @@
     "@smithy/util-middleware" "^4.0.1"
     tslib "^2.6.2"
 
+"@aws-sdk/shared-ini-file-loader@^3.374.0":
+  version "3.374.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/shared-ini-file-loader/-/shared-ini-file-loader-3.374.0.tgz#dc992051b59169a33cf1acef2d268b7c8e3470f5"
+  integrity sha512-r3mNf+GAsnJQGh2nssPIXdOMKSn/6v1vPPWEHC2Dy0uxVdeBRxlJLVGPt4QtlwX2dT2hnIttUh/vY9yuJRP4kg==
+  dependencies:
+    "@smithy/shared-ini-file-loader" "^1.0.1"
+    tslib "^2.5.0"
+
 "@aws-sdk/token-providers@3.750.0":
   version "3.750.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/token-providers/-/token-providers-3.750.0.tgz#dc72c3d71f224ee5a7df35829547966d2562aba2"
@@ -4017,6 +4025,14 @@
   dependencies:
     "@smithy/types" "^4.1.0"
 
+"@smithy/shared-ini-file-loader@^1.0.1":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@smithy/shared-ini-file-loader/-/shared-ini-file-loader-1.1.0.tgz#144a03a303590ef7d465ebcb21ffc2a52efc3389"
+  integrity sha512-S/v33zvCWzFyGZGlsEF0XsZtNNR281UhR7byk3nRfsgw5lGpg51rK/zjMgulM+h6NSuXaFILaYrw1I1v4kMcuA==
+  dependencies:
+    "@smithy/types" "^1.2.0"
+    tslib "^2.5.0"
+
 "@smithy/shared-ini-file-loader@^4.0.1":
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/@smithy/shared-ini-file-loader/-/shared-ini-file-loader-4.0.1.tgz#d35c21c29454ca4e58914a4afdde68d3b2def1ee"
@@ -4064,6 +4080,13 @@
     "@smithy/types" "^4.1.0"
     "@smithy/util-stream" "^4.1.2"
     tslib "^2.6.2"
+
+"@smithy/types@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@smithy/types/-/types-1.2.0.tgz#9dc65767b0ee3d6681704fcc67665d6fc9b6a34e"
+  integrity sha512-z1r00TvBqF3dh4aHhya7nz1HhvCg4TRmw51fjMrh5do3h+ngSstt/yKlNbHeb9QxJmFbmN8KEVSWgb1bRvfEoA==
+  dependencies:
+    tslib "^2.5.0"
 
 "@smithy/types@^4.1.0":
   version "4.1.0"
@@ -5745,6 +5768,11 @@ bcrypt-pbkdf@^1.0.2:
   integrity sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==
   dependencies:
     tweetnacl "^0.14.3"
+
+bcryptjs@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/bcryptjs/-/bcryptjs-3.0.2.tgz#caadcca1afefe372ed6e20f86db8e8546361c1ca"
+  integrity sha512-k38b3XOZKv60C4E2hVsXTolJWfkGRMbILBIe2IBITXciy5bOsTKot5kDrf3ZfufQtQOUN5mXceUEpU1rTl9Uog==
 
 before-after-hook@^3.0.2:
   version "3.0.2"

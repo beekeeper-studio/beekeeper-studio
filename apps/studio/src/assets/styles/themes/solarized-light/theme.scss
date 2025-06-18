@@ -15,9 +15,9 @@ $codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
 $row-highlight:            color.adjust($query-editor-bg, $lightness: -3%);
-$row-add:                  $insertedGreen;
+$row-add:                  color.mix($query-editor-bg, $brand-success, 70%);
 $row-delete:               $removedRed;
-$row-error:                #F9B8B7;
+$row-error:                color.mix($query-editor-bg, $brand-danger, 70%);
 
 $cell-edited:              #EDDFA1;
 $cell-error:               $row-error;
