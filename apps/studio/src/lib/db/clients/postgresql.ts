@@ -997,7 +997,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   wrapIdentifier(value: string): string {
-    if (value === '*') return value;
+    if (!value || value === '*') return value;
     const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
     if (matched) return this.wrapIdentifier(matched[1]) + matched[2];
     return `"${value.replaceAll(/"/g, '""')}"`;
@@ -1031,7 +1031,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
-    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+    // Schemas are top-level objects and don't need schema prefixing
+    const sql = typeOfElement === DatabaseElement.SCHEMA
+      ? `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(elementName)}`
+      : `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
@@ -1640,7 +1643,7 @@ pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // 
 pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 export function wrapIdentifier(value: string): string {
-  if (value === '*') return value;
+  if (!value || value === '*') return value;
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;
