@@ -11,6 +11,7 @@ import { PostgresTestDriver } from './postgres/container'
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { DatabaseElement } from '../../../../../src/lib/db/types';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -506,6 +507,28 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       // Verify no cross-schema references (schema_test_1.child shouldn't reference schema_test_2.parent)
       expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
       expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
+    })
+
+    // Regression test for #3260 "BUG: dropping a PostgreSQL schema results in error"
+    it("should be able to drop a schema without error", async () => {
+      // Skip in read-only mode since we can't create/drop schemas
+      if (util.connection.readOnlyMode) return;
+
+      const testSchemaName = 'test_schema_drop';
+
+      // Create a test schema
+      await util.knex.raw(`CREATE SCHEMA ${testSchemaName};`);
+      
+      // Verify the schema was created
+      const schemasBeforeDrop = await util.connection.listSchemas();
+      expect(schemasBeforeDrop).toContain(testSchemaName);
+
+      // Drop the schema using the dropElement method (this should not throw an error)
+      await util.connection.dropElement(testSchemaName, DatabaseElement.SCHEMA);
+
+      // Verify the schema was dropped
+      const schemasAfterDrop = await util.connection.listSchemas();
+      expect(schemasAfterDrop).not.toContain(testSchemaName);
     })
 
     it("should be able to define array column correctly", async () => {

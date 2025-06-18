@@ -41,7 +41,9 @@ declare interface IBksConfig {
             save: string;
         };
         queryEditor: {
+            closeTableFilter: string;
             copyResultSelection: string;
+            openTableFilter: string;
             selectEditor: string;
             selectNextResult: string;
             selectPreviousResult: string;
