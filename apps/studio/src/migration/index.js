@@ -60,6 +60,7 @@ import disabledPluginAutoUpdates from './20250522_add_disabled_plugin_auto_updat
 import preinstalledPlugins from "./20250523_add_preinstalled_plugins"
 import addContextToTabs from "./20250527_add_context_to_tabs"
 import addPluginSettings from "./20250529_add_plugin_settings"
+import addPrivacyModeSetting from "./20250618_add_privacy_mode_setting"
 
 import ultimate from './ultimate/index'
 
@@ -95,7 +96,7 @@ const realMigrations = [
   fixOracleData,
   addInstallationId,
   sqlAnywhereOptions,
-  disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings,
+  disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, addPrivacyModeSetting,
 ]
 
 // fixtures require the models
