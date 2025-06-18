@@ -45,6 +45,12 @@ const SettingStoreModule: Module<State, any> = {
     async initializeSettings(context) {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
       context.commit(M.REPLACEALL, settings);
+      
+      const privacyModeSetting = settings.find(s => s.key === 'privacyMode');
+      if (privacyModeSetting) {
+        context.commit('SET_PRIVACY_MODE', privacyModeSetting.value);
+      }
+      
       context.commit('setInitialized');
     },
     async saveSetting(context, setting: TransportUserSetting) {
@@ -74,9 +80,10 @@ const SettingStoreModule: Module<State, any> = {
         context.commit(M.ADD, setting);
       }
     },
-    togglePrivacyMode({ commit, state }) {
+    async togglePrivacyMode({ commit, state, dispatch }) {
       const newPrivacyMode = !state.privacyMode;
       commit('SET_PRIVACY_MODE', newPrivacyMode);
+      await dispatch('save', { key: 'privacyMode', value: newPrivacyMode });
     },
   },
   getters: {
