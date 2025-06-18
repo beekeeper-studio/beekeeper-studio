@@ -241,6 +241,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.exportTables,
       enabled: false,
     },
+    updatePin: {
+      id: 'update-pin',
+      label: 'Update Pin',
+      click: actionHandler.updatePin,
+    },
     minimalModeToggle: {
       id: "minimal-mode-toggle",
       label: "Toggle Minimal Mode",
