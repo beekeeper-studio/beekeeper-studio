@@ -136,17 +136,9 @@ class BeekeeperWindow {
 
     await this.win.loadURL(this.appUrl)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
-      globalShortcut.register('F12', this.toggleDevTools.bind(this))
-      globalShortcut.register('CommandOrControl+Shift+I', this.toggleDevTools.bind(this))
+      globalShortcut.register('F12', this.win.webContents.toggleDevTools.bind(this.win.webContents))
+      globalShortcut.register('CommandOrControl+Shift+I', this.win.webContents.toggleDevTools.bind(this.win.webContents))
 
-      this.win.webContents.openDevTools()
-    }
-  }
-
-  private toggleDevTools() {
-    if (this.win.webContents.isDevToolsOpened()) {
-      this.win.webContents.closeDevTools()
-    } else {
       this.win.webContents.openDevTools()
     }
   }
