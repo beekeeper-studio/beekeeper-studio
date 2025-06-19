@@ -3,7 +3,7 @@
 
   .v--modal {
     height: 100% !important;
-    max-width: 800px;
+    max-width: 80%;
   }
 
   .dialog-c-title {
@@ -24,7 +24,7 @@
 
   .plugin-list-container {
     padding: 0.5rem 0 0;
-    flex-grow: 1;
+    flex-grow: .1;
 
     >.description {
       padding-inline: $gutter-h;
@@ -147,6 +147,10 @@
         padding: 1rem;
         border-radius: 0.375rem;
         background-color: rgba($theme-base, 0.03);
+      }
+
+      img {
+        max-width: 100%;
       }
     }
   }
