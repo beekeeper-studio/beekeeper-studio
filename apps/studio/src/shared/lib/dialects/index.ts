@@ -12,6 +12,7 @@ import { DuckDBData } from "./duckdb";
 import { ClickHouseData } from "./clickhouse";
 import { MongoDBData } from "./mongodb";
 import { SqlAnywhereData } from "./anywhere";
+import { SurrealDBData } from "./surrealdb";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -41,6 +42,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return MongoDBData
     case 'sqlanywhere':
       return SqlAnywhereData
+    case 'surrealdb':
+      return SurrealDBData
     default:
       return SqliteData
   }
