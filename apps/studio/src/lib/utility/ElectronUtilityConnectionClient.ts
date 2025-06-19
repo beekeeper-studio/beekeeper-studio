@@ -11,7 +11,7 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   }
 
   async versionString(): Promise<string> {
-    return await Vue.prototype.$util.send('conn/defaultSchema', {});
+    return await Vue.prototype.$util.send('conn/versionString', {});
   }
 
   async defaultSchema(): Promise<string> {

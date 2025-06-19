@@ -10,10 +10,13 @@ import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
+import bksConfig from "@/common/bksConfig";
+import { UserPin } from "@/common/appdb/models/UserPin";
+import { waitPromise } from "@/common/utils";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
-  'conn/create': ({ config, osUser, sId }: {config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/create': ({ config, auth, osUser, sId }: {config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string }) => Promise<void>,
   'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
@@ -117,9 +120,23 @@ export interface IConnectionHandlers {
 }
 
 export const ConnHandlers: IConnectionHandlers = {
-  'conn/create': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string}) {
+  'conn/create': async function({ config, auth, osUser, sId }: { config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string}) {
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
+    }
+
+    if (bksConfig.security.lockMode === "pin") {
+      await waitPromise(1000);
+
+      if (!auth) {
+        throw new Error(`Authentication is required.`);
+      }
+      if (auth.mode !== "pin") {
+        throw new Error(`Invalid authentication mode: ${auth.mode}`);
+      }
+      if(!await UserPin.verifyPin(auth.input)) {
+        throw new Error(`Incorrect pin. Please try again.`);
+      }
     }
 
     if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
@@ -160,6 +177,19 @@ export const ConnHandlers: IConnectionHandlers = {
     // TODO (matthew): fix this mess.
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
+    }
+
+    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
+      let cache = new TokenCache();
+      cache = await cache.save();
+      config.authId = cache.id;
+      // need to single out saved connections here (this may change when used connections are fixed)
+      if (config.id) {
+        // we do this so any temp configs that the user did aren't saved, just the id
+        const conn = await SavedConnection.findOneBy({ id: config.id });
+        conn.authId = cache.id;
+        conn.save();
+      }
     }
 
     const settings = await UserSetting.all();

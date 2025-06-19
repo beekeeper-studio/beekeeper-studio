@@ -21,6 +21,7 @@ import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
+import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import _ from 'lodash';
@@ -56,6 +57,7 @@ export const handlers: Handlers = {
   ...LicenseHandlers,
   ...PluginHandlers(pluginManager),
   ...TabHistoryHandlers,
+  ...LockHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 

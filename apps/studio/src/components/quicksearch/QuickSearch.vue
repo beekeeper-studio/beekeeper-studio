@@ -260,7 +260,9 @@ export default Vue.extend({
         case 'connection':
           await this.$store.dispatch('disconnect')
           try {
-            await this.$store.dispatch('connect', result.item)
+            const { auth, cancelled } = await this.$bks.unlock();
+            if (cancelled) return;
+            await this.$store.dispatch('connect', { config: result.item, auth })
           } catch (ex) {
             this.$noty.error("Error establishing a connection")
             console.error(ex)

@@ -1358,7 +1358,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
