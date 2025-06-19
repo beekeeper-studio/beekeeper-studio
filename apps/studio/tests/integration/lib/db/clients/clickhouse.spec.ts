@@ -9,10 +9,12 @@ import path from 'path';
 import { identify } from 'sql-query-identifier';
 
 const TEST_VERSIONS = [
-  { tag: 'latest', readOnly: false },
-  { tag: 'latest', readOnly: true },
-  { tag: '24.2', readOnly: false },
-  { tag: '24.2', readOnly: true },
+  { tag: 'latest', readOnly: false, dropInformation: false },
+  { tag: 'latest', readOnly: false, dropInformation: true },
+  { tag: 'latest', readOnly: true, dropInformation: false },
+  { tag: '24.2', readOnly: false, dropInformation: false },
+  { tag: '24.2', readOnly: false, dropInformation: true },
+  { tag: '24.2', readOnly: true, dropInformation: false },
 ] as const
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
@@ -41,6 +43,21 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         "--query",
         "CREATE DATABASE my_database;",
       ]);
+
+      if (options.dropInformation) {
+        // ensure that our driver works even if information schema isn't present, as it may not be on
+        // more legacy systems
+        await container.exec([
+          "clickhouse-client",
+          "--query",
+          "DROP DATABASE IF EXISTS information_schema"
+        ])
+        await container.exec([
+          "clickhouse-client",
+          "--query",
+          "DROP DATABASE IF EXISTS INFORMATION_SCHEMA"
+        ])
+      }
 
       const url = `http://${container.getHost()}:${container.getMappedPort(
         8123

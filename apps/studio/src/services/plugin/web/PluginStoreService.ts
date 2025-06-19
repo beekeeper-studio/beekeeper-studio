@@ -290,6 +290,8 @@ export default class PluginStoreService {
         dataType: field.dataType,
       })),
       rows: result.rows,
+      rowCount: result.rowCount,
+      affectedRows: result.affectedRows,
     };
   }
 

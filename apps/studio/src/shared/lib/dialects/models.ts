@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import CodeMirror from 'codemirror'
+import { Version } from '@/common/version'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere'] as const
@@ -188,6 +189,7 @@ export interface DialectData {
     tableTable?: string
     query?: string
   },
+  versionWarnings?: { minVersion?: Version, warning?: string }[]
   defaultColumnType?: string
   charsets?: string[]|null
   boolean?: {

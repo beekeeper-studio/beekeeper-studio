@@ -85,6 +85,12 @@ export const ClickHouseData: DialectData = {
     defaultType: 'String'
   },
   textEditorMode: "text/x-mysql",
+  versionWarnings: [
+    {
+      minVersion: { major: 23, minor: 0, patch: 0},
+      warning: "FYI: Beekeeper Studio supports ClickHouse v23+, you may experience buggy behavior for earlier versions"
+    }
+  ],
   disabledFeatures: {
     shell: true,
     triggers: true,
