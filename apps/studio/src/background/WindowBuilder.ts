@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, Rectangle } from "electron"
+import { BrowserWindow, globalShortcut, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -123,23 +123,32 @@ class BeekeeperWindow {
 
   private async initialize() {
     // Install Vue Devtools
-    try {
-      // log.debug("installing vue devtools")
-      // installExtension({
-          // id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
-          // electron: '>=1.2.1'
-      // })
-      // log.debug("devtools loaded", name)
-    } catch (e) {
-      log.error('devtools failed to install:', e.toString())
-    }
+    // try {
+    //   log.debug("installing vue devtools")
+    //   installExtension({
+    //       id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
+    //       electron: '>=1.2.1'
+    //   })
+    //   log.debug("devtools loaded", name)
+    // } catch (e) {
+    //   log.error('devtools failed to install:', e.toString())
+    // }
 
     await this.win.loadURL(this.appUrl)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+      globalShortcut.register('F12', this.toggleDevTools.bind(this))
+      globalShortcut.register('CommandOrControl+Shift+I', this.toggleDevTools.bind(this))
+
       this.win.webContents.openDevTools()
     }
+  }
 
-
+  private toggleDevTools() {
+    if (this.win.webContents.isDevToolsOpened()) {
+      this.win.webContents.closeDevTools()
+    } else {
+      this.win.webContents.openDevTools()
+    }
   }
 
   private getWindowPosition(settings: IGroupedUserSettings) {
