@@ -60,25 +60,13 @@ const SettingStoreModule: Module<State, any> = {
     async save(context, { key, value }) {
       if (!key || !value) return;
     
-      if (key === 'privacyMode') {
-        const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
-        setting.key = key;
-    
-        if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
-        setValue(setting, value);
-        const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
-        _.merge(setting, newSetting);
-        context.commit(M.ADD, setting);
-      }
-      else {
-        const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
-        if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
-        setValue(setting, value);
-        setting.key = key;
-        const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
-        _.merge(setting, newSetting);
-        context.commit(M.ADD, setting);
-      }
+      const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
+      if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
+      setValue(setting, value);
+      setting.key = key;
+      const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
+      _.merge(setting, newSetting);
+      context.commit(M.ADD, setting);
     },
     async togglePrivacyMode({ commit, state, dispatch }) {
       const newPrivacyMode = !state.privacyMode;
