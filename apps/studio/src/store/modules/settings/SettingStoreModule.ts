@@ -58,7 +58,7 @@ const SettingStoreModule: Module<State, any> = {
       context.commit(M.ADD, setting)
     },
     async save(context, { key, value }) {
-      if (!key || !value) return;
+      if (!key || value === undefined) return;
     
       const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
