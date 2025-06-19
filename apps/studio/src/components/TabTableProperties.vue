@@ -86,6 +86,14 @@
                 >
                   <i class="material-icons-outlined">report_problem</i> Read Only
                 </span>
+                <span
+                  class="statusbar-item permission-warning"
+                  v-if="properties && properties.permissionWarnings && properties.permissionWarnings.length > 0"
+                  :title="permissionWarningsTooltip"
+                  @click="showPermissionWarnings"
+                >
+                  <i class="material-icons-outlined">warning</i> Limited Info
+                </span>
               </template>
             </div>
           </template>
@@ -288,6 +296,10 @@ export default {
     humanIndexSize() {
       return humanBytes(this.properties.indexSize)
     },
+    permissionWarningsTooltip() {
+      if (!this.properties?.permissionWarnings?.length) return ''
+      return `Some information couldn't be displayed:\n${this.properties.permissionWarnings.join('\n')}`
+    },
   },
   methods: {
     close() {
@@ -338,6 +350,19 @@ export default {
         this.loading = false
       }
     },
+    showPermissionWarnings() {
+      if (!this.properties?.permissionWarnings?.length) return
+      
+      const warnings = this.properties.permissionWarnings
+      const message = `Some table information couldn't be displayed due to insufficient permissions:\n\n• ${warnings.join('\n• ')}`
+      
+      this.$noty.warning(message, { 
+        timeout: 8000,
+        modal: false,
+        layout: 'center',
+        theme: 'mint'
+      })
+    },
     async openTable() {
       this.$root.$emit("loadTable", { table: this.table })
     }
@@ -347,3 +372,18 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.permission-warning {
+  cursor: pointer;
+  color: #f39c12;
+}
+
+.permission-warning:hover {
+  color: #e67e22;
+}
+
+.permission-warning i {
+  color: inherit !important;
+}
+</style>
