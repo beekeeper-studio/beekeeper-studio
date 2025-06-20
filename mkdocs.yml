@@ -55,7 +55,9 @@ plugins:
 #        background_color: "#2c2c2c"
 #        color: "#ffffff"
 #        font_family: Rubik
-
+  - ini-includer:
+      base_path: ../apps/studio
+      config_file: default.config.ini
 markdown_extensions:
   - admonition
   - pymdownx.details
