@@ -322,3 +322,128 @@ export function toRegexSafe(input: string) {
     return null;
   }
 }
+export function extractVariablesAndCleanQuery(query: string) {
+  const variables: Record<string, string> = {};
+
+  // Expression for valid lines: -- %var% = valor
+  const linePattern = /^\s*--\s*%(.*?)%\s*=\s*(.+)$/gm;
+
+  // Expression for invalid lines: -- %var% = (no value)
+  const invalidLinePattern = /^\s*--\s*%(.*?)%\s*=\s*$/gm;
+  const invalidMatch = query.match(invalidLinePattern);
+  if (invalidMatch) {
+    throw new Error(`Malformed variable: "${invalidMatch[0]}"`);
+  }
+
+  let match;
+  while ((match = linePattern.exec(query)) !== null) {
+    const [_, name, value] = match;
+    if (!name || !value || value.trim() === '') {
+      throw new Error(`Malformed variable: "${match[0]}"`);
+    }
+    variables[name] = value.trim();
+  }
+
+  // Variables inside blocks: /* VARS: ... */
+  const blockPattern = /\/\*\s*VARS:(.*?)\*\//gs;
+  let blockMatch;
+  while ((blockMatch = blockPattern.exec(query)) !== null) {
+    const blockContent = blockMatch[1];
+
+    const varPattern = /%(.*?)%\s*=\s*(.*)/g;
+    let varMatch;
+    while ((varMatch = varPattern.exec(blockContent)) !== null) {
+      const [_, name, value] = varMatch;
+      if (!name || !value || value.trim() === '') {
+        throw new Error(`Malformed variable: "${varMatch[0]}"`);
+      }
+      variables[name] = value.trim();
+    }
+  }
+
+  // Remove variable definitions from the query
+  const cleanedQuery = query
+    .replace(linePattern, '')
+    .replace(blockPattern, '')
+    .trim();
+
+  return { variables, cleanedQuery };
+}
+
+export function substituteVariables(query: string, variables: Record<string, string>): string {
+  return substituteVariablesSafely(query, variables);
+}
+
+export function substituteVariablesSafely(query: string, variables: Record<string, string>): string {
+  let result = '';
+  let insideSingleQuote = false;
+  let insideDoubleQuote = false;
+  let i = 0;
+
+  while (i < query.length) {
+    const char = query[i];
+    const nextChar = query[i + 1];
+
+    // Handle escaping of single quotes
+    if (char === "'" && nextChar === "'") {
+      result += "''";
+      i += 2;
+      continue;
+    }
+
+    // Toggle quote flags
+    if (!insideDoubleQuote && char === "'") {
+      insideSingleQuote = !insideSingleQuote;
+      result += char;
+      i++;
+      continue;
+    }
+
+    if (!insideSingleQuote && char === '"') {
+      insideDoubleQuote = !insideDoubleQuote;
+      result += char;
+      i++;
+      continue;
+    }
+
+    // Attempt to match variable pattern
+    const variableMatch = query.slice(i).match(/^%(\w+)%/);
+    if (!insideSingleQuote && !insideDoubleQuote && variableMatch) {
+      const varName = variableMatch[1];
+      const rawValue = variables[varName];
+      if (rawValue === undefined) {
+        // If variable is undefined, skip substitution
+        result += `%${varName}%`;
+        i += varName.length + 2;
+        continue;
+      }
+
+      let value = rawValue.trim();
+      let isJSON = false;
+
+      try {
+        const parsed = JSON.parse(value);
+        isJSON = typeof parsed === 'object';
+      } catch {
+        // Not JSON
+      }
+
+      const isList = value.startsWith('(') && value.endsWith(')');
+      const isQuoted = /^'.*'$/.test(value);
+      const isNull = value.toLowerCase() === 'null';
+      const isNumber = /^-?\d+(\.\d+)?$/.test(value); 
+
+      if (!isJSON && !isList && !isQuoted && !isNull && !isNumber) {
+        value = `'${value}'`;
+      }
+
+      result += value;
+      i += varName.length + 2;
+    } else {
+      result += char;
+      i++;
+    }
+  }
+
+  return result;
+}
