@@ -59,6 +59,8 @@ plugins:
       base_path: ../apps/studio
       config_file: default.config.ini
 markdown_extensions:
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -102,6 +104,7 @@ nav:
 
   - Features:
     - user_guide/sql_editor/editor.md
+    - user_guide/sql-ai-shell.md
     - user_guide/editing-data.md
     - user_guide/modify-tables.md
     - user_guide/sql_editor/saving_queries.md
