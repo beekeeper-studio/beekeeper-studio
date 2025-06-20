@@ -170,7 +170,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     primarySidebarToggle: {
       id: 'menu-toggle-sidebar',
       label: 'Toggle Primary Sidebar',
-      accelerator: "Alt+S",
+      accelerator: platformInfo.isMac? "CommandOrControl+B" : "Alt+S",
       click: actionHandler.togglePrimarySidebar,
       enabled: false,
     },
@@ -240,6 +240,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Export Data',
       click: actionHandler.exportTables,
       enabled: false,
+    },
+    updatePin: {
+      id: 'update-pin',
+      label: 'Update Pin',
+      click: actionHandler.updatePin,
     },
     minimalModeToggle: {
       id: "minimal-mode-toggle",

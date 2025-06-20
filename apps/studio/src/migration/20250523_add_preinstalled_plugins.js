@@ -3,7 +3,7 @@ export default {
   async run(runner) {
     const query = `
       -- installedPreinstalledPlugins - This is to avoid installing preinstalled
-      -- plugins that are already installed.
+      -- plugins that are already installed. :D
       INSERT INTO user_setting(key, defaultValue, valueType)
         VALUES ('installedPreinstalledPlugins', '[]', 4)
     `;

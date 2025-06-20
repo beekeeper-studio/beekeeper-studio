@@ -1,4 +1,4 @@
-import CodeMirror from 'codemirror'
+import { LanguageId } from "@beekeeperstudio/ui-kit";
 
 // According to the HTML spec, comments end at the forst -->
 // So nested comments aren't a thing.
@@ -12,7 +12,8 @@ export interface LanguageData {
   minify: (beautified: string) => string;
   name: string;
   label: string;
-  editorMode: CodeMirror.EditorConfiguration['mode'];
+  /** The `languageId` supported by UI Kit Text Editor */
+  languageId: LanguageId;
   wrapTextByDefault?: boolean;
   noMinify?: boolean;
   noBeautify?: boolean
@@ -21,9 +22,7 @@ export interface LanguageData {
 export const TextLanguage: LanguageData = {
   name: 'text',
   label: "Text",
-  editorMode: {
-    name: 'text'
-  },
+  languageId: undefined,
   isValid: () => true,
   beautify: (v) => v,
   minify: (v) => v,
@@ -37,11 +36,7 @@ export const Languages: LanguageData[] = [
   {
     name: "json",
     label: "JSON",
-    editorMode: {
-      name: "javascript",
-      json: true,
-      statementIndent: 2,
-    },
+    languageId: "json",
     isValid: (value: string) => {
       try {
         JSON.parse(value);
@@ -61,17 +56,7 @@ export const Languages: LanguageData[] = [
   {
     name: "html",
     label: "HTML",
-    editorMode: {
-      name: "htmlmixed",
-      tags: {
-        style: [["type", /^text\/(x-)?scss$/, "text/x-scss"], [
-          null,
-          null,
-          "css",
-        ]],
-        custom: [[null, null, "customMode"]],
-      },
-    },
+    languageId: "html",
     isValid: (value: string) => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(value, "text/xml");

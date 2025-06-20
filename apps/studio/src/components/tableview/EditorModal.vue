@@ -79,13 +79,14 @@
             @keyup="$event.key === 'Tab' && $event.stopPropagation()"
           >
             <text-editor
-              v-model="content"
-              :mode="language.editorMode"
+              :value="content"
+              :language-id="language.languageId"
               :line-wrapping="wrapText"
-              :height="editorHeight"
               :focus="editorFocus"
-              @focus="editorFocus = $event"
               :readOnly="isReadOnly"
+              :replace-extensions="replaceExtensions"
+              @focus="editorFocus = $event"
+              @bks-value-change="content = $event.value"
             />
           </div>
         </div>
@@ -161,8 +162,9 @@ import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
-import TextEditor from '@/components/common/texteditor/TextEditor.vue'
+import TextEditor from '@beekeeperstudio/ui-kit/vue/text-editor'
 import { typedArrayToString } from "@/common/utils";
+import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 
 export default Vue.extend({
   name: "CellEditorModal",
@@ -172,7 +174,6 @@ export default Vue.extend({
   data() {
     return {
       editorFocus: false,
-      editorHeight: 100,
       error: "",
       languageName: "text",
       content: "",
@@ -249,23 +250,11 @@ export default Vue.extend({
       await this.$nextTick();
       this.$refs.editorContainer.style.height = undefined
       this.editorFocus = true
-      this.$nextTick(this.resizeHeightToFitContent)
     },
     async onBeforeClose() {
       // Hack: keep the modal height as it was before.
       this.$refs.editorContainer.style.height = this.$refs.editorContainer.offsetHeight + 'px'
       this.editorFocus = false
-    },
-    resizeHeightToFitContent() {
-      const wrapperEl = this.$refs.editorContainer.querySelector('.CodeMirror')
-      const wrapperStyle = window.getComputedStyle(wrapperEl)
-
-      const minHeight = parseInt(wrapperStyle.minHeight)
-      const maxHeight = parseInt(wrapperStyle.maxHeight)
-
-      const sizerEl = wrapperEl.querySelector(".CodeMirror-sizer")
-
-      this.editorHeight = _.clamp(sizerEl.offsetHeight, minHeight, maxHeight)
     },
     debouncedCheckForErrors: _.debounce(function() {
       const isValid = this.language.isValid(this.content)
@@ -276,7 +265,6 @@ export default Vue.extend({
     },
     format() {
       this.content = this.language.beautify(this.content)
-      this.$nextTick(this.resizeHeightToFitContent)
     },
     minify() {
       this.content = this.language.minify(this.content)
@@ -285,7 +273,18 @@ export default Vue.extend({
       if (e.key === "Escape" && this.userKeymap !== 'vim') {
         this.$modal.hide(this.modalName)
       }
-    }
+    },
+    replaceExtensions(extensions) {
+      return [
+        ...extensions,
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+          },
+        }),
+      ]
+    },
   }
 });
 </script>
@@ -372,14 +371,12 @@ div.vue-dialog div.dialog-content {
   }
 
   .editor-container::v-deep {
-    & * {
-      box-sizing: initial;
-    }
-    .CodeMirror {
+    .BksTextEditor {
       height: 300px;
       min-height: 300px;
       max-height: 55vh;
       resize: vertical;
+      overflow: auto;
     }
   }
 }

@@ -1,15 +1,16 @@
 <template>
   <statusbar
     :active="active"
-    :class="{ 'empty': results.length === 0, 'query-meta': true }"
+    :class="{ 'empty': !results || results.length === 0, 'query-meta': true }"
   >
-    <template v-if="results.length > 0">
+    <slot name="left-actions"></slot>
+    <template v-if="results?.length > 0">
       <div
         class="truncate statusbar-info"
         v-hotkey="keymap"
       >
         <span
-          v-show="results.length > 1"
+          v-show="results?.length > 1"
           class="statusbar-item result-selector"
           :title="'Results'"
         >
@@ -64,11 +65,20 @@
         </span>
       </div>
     </template>
-    <span v-else class="empty">No Data</span>
+    <template v-else>
+      <span class="empty">No Data</span>
+      <span
+        class="statusbar-item execute-time"
+        v-if="this.elapsedTime > 1"
+      >
+        <i class="material-icons">access_time</i>
+        <span>{{ elapsedTimeText }}</span>
+      </span>
+    </template>
     <span class="expand" />
     <x-button
       class="btn btn-flat btn-icon end"
-      :disabled="results.length === 0"
+      :disabled="results?.length === 0"
       menu
     >
       Download <i class="material-icons">arrow_drop_down</i>
@@ -156,10 +166,11 @@
   </statusbar>
 </template>
 <script>
-import humanizeDuration from 'humanize-duration'
-import Statusbar from '../common/StatusBar.vue'
+import humanizeDuration from 'humanize-duration';
+import Statusbar from '../common/StatusBar.vue';
 import { mapState, mapGetters } from 'vuex';
-import { AppEvent } from '@/common/AppEvent'
+import { AppEvent } from '@/common/AppEvent';
+import formatSeconds from "@/lib/time/formatSeconds";
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
   language: "shortEn",
@@ -178,7 +189,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime'],
   components: { Statusbar },
   data() {
     return {
@@ -259,6 +270,9 @@ export default {
       }
       return `Execution time: ${humanizeDuration(this.executeTime)}`
     },
+    elapsedTimeText() {
+      return formatSeconds(this.elapsedTime);
+    },
     downloadFullTooltip() {
       if (this.result?.truncated) {
         return `Re - run the query and send the full result to a file${ this.result?.truncated ? ' (' + this.result.totalRowCount + ' rows)' : '' }`
@@ -275,7 +289,7 @@ export default {
   methods: {
     changeSelectedResult(direction) {
       const newIndex =  this.selectedResult + direction;
-      if (newIndex >= 0 && newIndex < this.results.length) {
+      if (newIndex >= 0 && newIndex < this.results?.length) {
         this.selectedResult = newIndex;
       }
     },

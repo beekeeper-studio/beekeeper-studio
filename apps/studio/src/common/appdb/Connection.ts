@@ -14,6 +14,7 @@ import { HiddenSchema } from "./models/HiddenSchema"
 import { PinnedConnection } from "./models/PinnedConnection"
 import { TokenCache } from "./models/token_cache"
 import { InstallationId } from "./models/installation_id"
+import { UserPin } from "./models/UserPin"
 
 const models = [
   SavedConnection,
@@ -29,7 +30,8 @@ const models = [
   HiddenSchema,
   PinnedConnection,
   TokenCache,
-  InstallationId
+  InstallationId,
+  UserPin,
 ]
 
 interface IConnectionState {

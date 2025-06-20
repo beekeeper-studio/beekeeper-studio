@@ -26,8 +26,6 @@ import {
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap,
-  CompletionContext,
-  CompletionResult,
 } from "@codemirror/autocomplete";
 import { lintKeymap } from "@codemirror/lint";
 import { keymap as specialKeymap } from "./keymap";
@@ -35,13 +33,19 @@ import { extraKeymap } from "./extraKeymap";
 import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
 import { readOnly } from "./readOnly";
+import { markers } from "./markers";
+import { lineGutters } from "./lineGutters";
 import { ExtensionConfiguration } from "../types";
+import { language } from "./language";
 
 export { applyKeybindings } from "./extraKeymap";
 export { applyKeymap } from "./keymap";
 export { applyLineNumbers } from "./lineNumbers";
 export { applyLineWrapping } from "./lineWrapping";
 export { applyReadOnly } from "./readOnly";
+export { applyLanguageId } from "./language";
+export { applyMarkers } from "./markers";
+export { applyLineGutters } from "./lineGutters";
 
 // Define a custom highlight style that uses CSS classes
 const customHighlightStyle = HighlightStyle.define([
@@ -70,17 +74,42 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.url, class: "cm-url" },
   { tag: tags.processingInstruction, class: "cm-processingInstruction" },
   { tag: tags.special(tags.string), class: "cm-special-string" },
+  { tag: tags.name, class: "cm-name" },
+  { tag: tags.deleted, class: "cm-deleted" },
+  { tag: tags.character, class: "cm-character" },
+  { tag: tags.macroName, class: "cm-macro" },
+  { tag: tags.color, class: "cm-color" },
+  { tag: tags.standard(tags.name), class: "cm-standard" },
+  { tag: tags.separator, class: "cm-separator" },
+  { tag: tags.changed, class: "cm-changed" },
+  { tag: tags.annotation, class: "cm-annotation" },
+  { tag: tags.modifier, class: "cm-modifier" },
+  { tag: tags.self, class: "cm-self" },
+  { tag: tags.operatorKeyword, class: "cm-operatorKeyword" },
+  { tag: tags.escape, class: "cm-escape" },
+  { tag: tags.regexp, class: "cm-regexp" },
+  { tag: tags.link, class: "cm-link" },
+  { tag: tags.strong, class: "cm-strong" },
+  { tag: tags.emphasis, class: "cm-emphasis" },
+  { tag: tags.strikethrough, class: "cm-strikethrough" },
 ]);
 
 export function extensions(config: ExtensionConfiguration) {
   return [
+    specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     extraKeymap({ keybindings: config.keybindings }),
-    specialKeymap({ keymap: config.keymap }),
     lineNumbers({ enabled: config.lineNumbers }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
-    foldGutter(),
+    foldGutter({
+      markerDOM(open) {
+        const i = document.createElement("i");
+        i.classList.add("material-icons", "cm-foldgutter");
+        i.textContent = open ? "keyboard_arrow_down" : "keyboard_arrow_right";
+        return i;
+      }
+    }),
     drawSelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
@@ -88,6 +117,7 @@ export function extensions(config: ExtensionConfiguration) {
     syntaxHighlighting(customHighlightStyle),
     bracketMatching(),
     closeBrackets(),
+    language(config.languageId),
     autocompletion({
       tooltipClass: () => "BksTextEditor-hints",
       optionClass: (completion: any) => {
@@ -109,6 +139,8 @@ export function extensions(config: ExtensionConfiguration) {
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
+    markers({ markers: config.markers || [] }),
+    lineGutters({ lineGutters: config.lineGutters || [] }),
     EditorView.theme({
       "&": {
         height: `100%`,

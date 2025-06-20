@@ -41,7 +41,9 @@ declare interface IBksConfig {
             save: string;
         };
         queryEditor: {
+            closeTableFilter: string;
             copyResultSelection: string;
+            openTableFilter: string;
             selectEditor: string;
             selectNextResult: string;
             selectPreviousResult: string;
@@ -75,11 +77,22 @@ declare interface IBksConfig {
             switchTab9: string;
         };
         tableTable: {
+            firstPage: string;
             focusOnFilterInput: string;
+            lastPage: string;
             nextPage: string;
             openEditorModal: string;
             previousPage: string;
         };
+    };
+    security: {
+        disconnectOnIdle: boolean;
+        disconnectOnLock: boolean;
+        disconnectOnSuspend: boolean;
+        idleCheckIntervalSeconds: number;
+        idleThresholdSeconds: number;
+        lockMode: string;
+        minPinLength: number;
     };
     ui: {
         export: {
