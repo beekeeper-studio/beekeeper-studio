@@ -62,13 +62,14 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
   - tables
   - abbr
   - attr_list
@@ -110,7 +111,7 @@ nav:
     - Diagrams: user_guide/entity-relationship-diagrams-erd.md
     - user_guide/backup-restore.md
     - Cloud Sync: user_guide/cloud-storage-team-workspaces.md
-    - user_guide/privacy-mode.md
+    - user_guide/security.md
     - Configuration: user_guide/configuration.md
   - Support:
     - purchasing/purchasing-a-license.md
