@@ -801,14 +801,6 @@
     "@smithy/util-middleware" "^4.0.1"
     tslib "^2.6.2"
 
-"@aws-sdk/shared-ini-file-loader@^3.374.0":
-  version "3.374.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/shared-ini-file-loader/-/shared-ini-file-loader-3.374.0.tgz#dc992051b59169a33cf1acef2d268b7c8e3470f5"
-  integrity sha512-r3mNf+GAsnJQGh2nssPIXdOMKSn/6v1vPPWEHC2Dy0uxVdeBRxlJLVGPt4QtlwX2dT2hnIttUh/vY9yuJRP4kg==
-  dependencies:
-    "@smithy/shared-ini-file-loader" "^1.0.1"
-    tslib "^2.5.0"
-
 "@aws-sdk/token-providers@3.750.0":
   version "3.750.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/token-providers/-/token-providers-3.750.0.tgz#dc72c3d71f224ee5a7df35829547966d2562aba2"
@@ -2071,10 +2063,9 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@beekeeperstudio/plugin@^1.3.0-beta":
-  version "1.3.0-beta"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.3.0-beta.tgz#87da0b7cbe65a653ab980775e33bbb232861de94"
-  integrity sha512-HYofwVa9YZWBJ9jb6JyJtYMqq7ULBXfD9nNKe70BbsFtphw8uK5z2H+jZKmu+i0IgPT65cofc+nP98eNDqad3g==
+"@beekeeperstudio/plugin@github:beekeeper-studio/plugin":
+  version "1.0.9"
+  resolved "https://codeload.github.com/beekeeper-studio/plugin/tar.gz/203cb3ec170126dca20f78bf5e5e586299d6b1ee"
 
 "@bufbuild/protobuf@^2.0.0":
   version "2.2.3"
@@ -2254,48 +2245,48 @@
     ajv "^6.12.0"
     ajv-keywords "^3.4.1"
 
-"@duckdb/node-api@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-api/-/node-api-1.3.1-alpha.22.tgz#953aaafbf2ee80a19f1248af4575e7aeb8f9d109"
-  integrity sha512-nfSepXefBJYk9r6wD/3OwOf3n/2lpeQBawPehfKWHFNq9ovYHw3EPNgKxaUCyyTfPipD/SnVhzzUQixnqcc4xg==
+"@duckdb/node-api@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-api/-/node-api-1.1.3-alpha.10.tgz#463a88ecfb478829d9991952b5a8fedc15c3e0b1"
+  integrity sha512-M28eiCIpLQWej1kt6h9A4culiM+N47H2HAH/dhULMgaI3vE5IpAGXIahkrcliseJW/pz4ve1rq4KJ6JFS/3vcQ==
   dependencies:
-    "@duckdb/node-bindings" "1.3.1-alpha.22"
+    "@duckdb/node-bindings" "1.1.3-alpha.10"
 
-"@duckdb/node-bindings-darwin-arm64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-arm64/-/node-bindings-darwin-arm64-1.3.1-alpha.22.tgz#6c63389d1f0055c40717d3ba531ed52e189a72da"
-  integrity sha512-JpMtLPbkAjp6Zwv4W/DcZIXqCA5pLy3vv5lUKrlbPeMas5QN8nxMPgAkVP/H4czCCvCbuoTbc7JTXXl/CuaUuQ==
+"@duckdb/node-bindings-darwin-arm64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-arm64/-/node-bindings-darwin-arm64-1.1.3-alpha.10.tgz#8450c36a3b523790bd67bbf436c204e8158af8e0"
+  integrity sha512-gNLfDZAoXUDSD4B/qOQTyPHmmjdPVXzEf3D4uEWsNuJQ9fLMzNY4gAkE8lyXWhMYJwJQSTtkXU3pQ5airPn1OA==
 
-"@duckdb/node-bindings-darwin-x64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-x64/-/node-bindings-darwin-x64-1.3.1-alpha.22.tgz#6f7cc51fde856d6ff5264b5041bbb5ca43a17de6"
-  integrity sha512-vbrV9pB4o8zmrX8k9ryGFkysKuUid95xvfA9bKSxqphzOWunRnaBLwW9akZpNQtV1SHqQy1CUTFyT/O7gHlrIw==
+"@duckdb/node-bindings-darwin-x64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-x64/-/node-bindings-darwin-x64-1.1.3-alpha.10.tgz#5fd51abc09d07c6807e4f622591b6773a0a3ad15"
+  integrity sha512-4Dlo99a3UnRd5Zl0ghJh1aZ6i9Khx/lIGEzZnajN+TvwI1n2+XXDo5ApEunU9AqvQofVzJKX+8T57mcOkF9uyA==
 
-"@duckdb/node-bindings-linux-arm64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-arm64/-/node-bindings-linux-arm64-1.3.1-alpha.22.tgz#c3aa792a1bde13580cbe7cb732080ca99c183df7"
-  integrity sha512-S7pUQXjPzhcTJMmier7Yin2uz1UImXMuy+2uNEnL+pmvXGJGDlYIMN+njXD093nDqO0rEPwqdEMi36rD19Gp6g==
+"@duckdb/node-bindings-linux-arm64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-arm64/-/node-bindings-linux-arm64-1.1.3-alpha.10.tgz#17db0ddbc6081eada28cbef1bba0b256b4cc6b40"
+  integrity sha512-BDBDiuBR7dW+P/N5MugyURblkMaeqD/Fx6hJWcLCPptoayalvzr9x+ijgt04FUDkwOF1gDJigc8UMgiTVA+RhA==
 
-"@duckdb/node-bindings-linux-x64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-x64/-/node-bindings-linux-x64-1.3.1-alpha.22.tgz#61655e2c82ac424854fb34a32f6f3807a617df66"
-  integrity sha512-nnyBd5LH7vI9IPUmHN1daqIi2WHSSWsm9Oub7lFB5KsPR4DSSAEKLKDuJ8OHCzUa590aZ9ushDsiFritWmTs/g==
+"@duckdb/node-bindings-linux-x64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-x64/-/node-bindings-linux-x64-1.1.3-alpha.10.tgz#8957ddcf5b57d01a41bc3a12d26af50ef398da8b"
+  integrity sha512-XuMKDGgx3bJ+rSYnkonP/TWk79rRYE0mbfPBDJSx2M2SjyqIVETJWT7mvtqUvsdyIxkYn2bWMOAUd3O+nEUeHQ==
 
-"@duckdb/node-bindings-win32-x64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-x64/-/node-bindings-win32-x64-1.3.1-alpha.22.tgz#e12f3c01dc39a6b5ef6115276e84ef7bb68e9b5c"
-  integrity sha512-ZbRroVNKrJ2LoO3LUKzbwn57sL3zauAoPG+PuRJFWeK5FO2lquM19lwfRufmVVf5P+kshUp13d0OgvtEz5sy+g==
+"@duckdb/node-bindings-win32-x64@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-x64/-/node-bindings-win32-x64-1.1.3-alpha.10.tgz#2ee320bbb3fde8921a4ca97484bdd910410cede1"
+  integrity sha512-JCCPPzil2JbK7my4ZPoKuJEYQs7ztsGSzGpj9XnJhKGltDXpZQBYjXd1RWKSb/ut6NwSwmdaBjjHP/+JkvE8SA==
 
-"@duckdb/node-bindings@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings/-/node-bindings-1.3.1-alpha.22.tgz#edc135195d30d072874c2c8ba80c60a732de1c4b"
-  integrity sha512-HKZxxjtGLlaYz1UWdcZbLjlTL/HHk60aBNOSCf3aq2ddp447fKOhWR+yqpBn3YcJCSbzBf1/6jVUOycmAbmAmw==
+"@duckdb/node-bindings@1.1.3-alpha.10":
+  version "1.1.3-alpha.10"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings/-/node-bindings-1.1.3-alpha.10.tgz#bd8bf8e46099e1a184746d4c999decbc92175432"
+  integrity sha512-wivhuZTsVlhz5HHLzu4yPatDE/q4W3E+93pg6s7Oma7OoljKOlRWsn33YDdEPNo6NcnPx1MFtMTuz8kt8cp0SQ==
   optionalDependencies:
-    "@duckdb/node-bindings-darwin-arm64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-darwin-x64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-linux-arm64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-linux-x64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-win32-x64" "1.3.1-alpha.22"
+    "@duckdb/node-bindings-darwin-arm64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-darwin-x64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-linux-arm64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-linux-x64" "1.1.3-alpha.10"
+    "@duckdb/node-bindings-win32-x64" "1.1.3-alpha.10"
 
 "@electron/asar@^3.2.7":
   version "3.3.1"
@@ -4026,14 +4017,6 @@
   dependencies:
     "@smithy/types" "^4.1.0"
 
-"@smithy/shared-ini-file-loader@^1.0.1":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@smithy/shared-ini-file-loader/-/shared-ini-file-loader-1.1.0.tgz#144a03a303590ef7d465ebcb21ffc2a52efc3389"
-  integrity sha512-S/v33zvCWzFyGZGlsEF0XsZtNNR281UhR7byk3nRfsgw5lGpg51rK/zjMgulM+h6NSuXaFILaYrw1I1v4kMcuA==
-  dependencies:
-    "@smithy/types" "^1.2.0"
-    tslib "^2.5.0"
-
 "@smithy/shared-ini-file-loader@^4.0.1":
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/@smithy/shared-ini-file-loader/-/shared-ini-file-loader-4.0.1.tgz#d35c21c29454ca4e58914a4afdde68d3b2def1ee"
@@ -4081,13 +4064,6 @@
     "@smithy/types" "^4.1.0"
     "@smithy/util-stream" "^4.1.2"
     tslib "^2.6.2"
-
-"@smithy/types@^1.2.0":
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/@smithy/types/-/types-1.2.0.tgz#9dc65767b0ee3d6681704fcc67665d6fc9b6a34e"
-  integrity sha512-z1r00TvBqF3dh4aHhya7nz1HhvCg4TRmw51fjMrh5do3h+ngSstt/yKlNbHeb9QxJmFbmN8KEVSWgb1bRvfEoA==
-  dependencies:
-    tslib "^2.5.0"
 
 "@smithy/types@^4.1.0":
   version "4.1.0"
@@ -5769,11 +5745,6 @@ bcrypt-pbkdf@^1.0.2:
   integrity sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==
   dependencies:
     tweetnacl "^0.14.3"
-
-bcryptjs@^3.0.2:
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/bcryptjs/-/bcryptjs-3.0.2.tgz#caadcca1afefe372ed6e20f86db8e8546361c1ca"
-  integrity sha512-k38b3XOZKv60C4E2hVsXTolJWfkGRMbILBIe2IBITXciy5bOsTKot5kDrf3ZfufQtQOUN5mXceUEpU1rTl9Uog==
 
 before-after-hook@^3.0.2:
   version "3.0.2"
@@ -10522,20 +10493,15 @@ named-placeholders@^1.1.3:
   dependencies:
     lru-cache "^7.14.1"
 
-nan@^2.19.0:
-  version "2.23.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.23.0.tgz#24aa4ddffcc37613a2d2935b97683c1ec96093c6"
-  integrity sha512-1UxuyYGdoQHcGg87Lkqm3FzefucTa0NAiOcuRsDmysep3c1LVCRK2krrUDafMWtjSG04htvAmvg96+SDknOmgQ==
+nan@^2.19.0, nan@^2.22.2:
+  version "2.22.2"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.22.2.tgz#6b504fd029fb8f38c0990e52ad5c26772fdacfbb"
+  integrity sha512-DANghxFkS1plDdRsX0X9pm0Z6SJNN6gBdtXfanwoZ8hooC5gosGFSBGRYHUVPz1asKA/kMRqDRdHrluZ61SpBQ==
 
 nan@^2.20.0:
   version "2.22.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.22.0.tgz#31bc433fc33213c97bad36404bb68063de604de3"
   integrity sha512-nbajikzWTMwsW+eSsNm3QwlOs7het9gGJU5dDZzRTQGk03vyBOauxgI4VakDzE0PtsGTmXPsXTbbjVhRwR5mpw==
-
-nan@^2.22.2:
-  version "2.22.2"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.22.2.tgz#6b504fd029fb8f38c0990e52ad5c26772fdacfbb"
-  integrity sha512-DANghxFkS1plDdRsX0X9pm0Z6SJNN6gBdtXfanwoZ8hooC5gosGFSBGRYHUVPz1asKA/kMRqDRdHrluZ61SpBQ==
 
 nanoid@^3.3.8:
   version "3.3.8"

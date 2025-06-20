@@ -109,12 +109,7 @@ Test that your configuration is working:
 
 Control application-wide behavior like update checks and data synchronization:
 
-```ini
-[general]
-checkForUpdatesInterval = 86400000      ; Check for updates every 24 hours (in milliseconds)
-dataSyncInterval = 30000                ; Sync data every 30 seconds
-workspaceSyncInterval = 5000            ; Sync workspace every 5 seconds
-```
+{% ini-include section="general" %}
 
 !!! info "Sync Intervals"
     Lower sync intervals provide more real-time updates but use more system resources. For team environments with [cloud storage](cloud-storage-team-workspaces.md), consider longer intervals to reduce network traffic.
