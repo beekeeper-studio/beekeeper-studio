@@ -60,7 +60,7 @@
       gap: 1rem;
       cursor: pointer;
 
-      &:hover:not(:has(*:hover)) {
+      &:hover {
         background-color: rgba($theme-base, 0.02);
       }
 
