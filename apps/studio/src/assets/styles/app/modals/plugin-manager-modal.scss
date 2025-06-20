@@ -3,7 +3,13 @@
 
   .v--modal {
     height: 100% !important;
-    max-width: 80%;
+    max-width: 800px;
+  }
+
+  &.plugin-page-open {
+    .v--modal {
+      max-width: 1200px;
+    }
   }
 
   .dialog-c-title {
@@ -24,7 +30,7 @@
 
   .plugin-list-container {
     padding: 0.5rem 0 0;
-    flex-grow: .1;
+    flex-grow: 1;
 
     >.description {
       padding-inline: $gutter-h;
@@ -44,6 +50,7 @@
     flex-direction: column;
     margin-top: 1rem;
     overflow-y: auto;
+    min-width: 400px;
 
     .item {
       padding: 1rem $gutter-h;
@@ -95,7 +102,6 @@
     overflow-y: auto;
     border-left: 1px solid rgba($theme-base, 0.1);
     flex-grow: 1;
-    width: 34rem;
 
     a:hover, a:hover * {
       &:not(:has(>*)):not(.material-icons) {
