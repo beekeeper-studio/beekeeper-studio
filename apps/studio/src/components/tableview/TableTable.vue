@@ -86,6 +86,13 @@
         <div class="flex-center flex-middle flex">
           <a
             v-if="(this.page > 1)"
+            @click="page = 1"
+            v-tooltip="$bksConfig.keybindings.tableTable.firstPage"
+          ><i
+            class="material-icons"
+          >first_page</i></a>
+          <a
+            v-if="(this.page > 1)"
             @click="page = page - 1"
             v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
           ><i
@@ -96,9 +103,17 @@
             v-model="page"
           >
           <a
+            v-if="hasNextPage"
             @click="page = page + 1"
             v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
+          <a
+            v-if="hasNextPage"
+            @click="jumpToLastPage"
+            v-tooltip="$bksConfig.keybindings.tableTable.lastPage"
+          >
+            <i class="material-icons">last_page</i>
+          </a>
         </div>
       </div>
 
@@ -315,7 +330,7 @@ import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import { escapeHtml } from '@shared/lib/tabulator';
+import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
@@ -340,6 +355,7 @@ export default Vue.extend({
       columnsSet: false,
       tabulator: null,
       loading: false,
+      hasNextPage: false,
 
       // table data
       data: null, // array of data
@@ -442,7 +458,9 @@ export default Vue.extend({
         'general.cloneSelection': this.cloneSelection.bind(this),
         'general.deleteSelection': this.deleteTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
+        'tableTable.lastPage': this.navigatePage.bind(this, 'last'),
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
+        'tableTable.firstPage': this.navigatePage.bind(this, 'first'),
         'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
       })
     },
@@ -838,6 +856,13 @@ export default Vue.extend({
         headerTooltip += `<br/> ${escapeHtml(column.comment)}`
       }
 
+      const formatterParams: FormatterParams = {
+        fk: hasKeyDatas && keyDatas[0][1],
+        fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
+        isPK: isPK,
+        binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+      }
+
       const result = {
         title: column.columnName,
         field: column.columnName,
@@ -865,12 +890,7 @@ export default Vue.extend({
         headerTooltip: headerTooltip,
         cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
-        formatterParams: {
-          fk: hasKeyDatas && keyDatas[0][1],
-          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
-          isPK: isPK,
-          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
-        },
+        formatterParams,
         editorParams: {
           verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
           dataType: column.dataType,
@@ -902,11 +922,18 @@ export default Vue.extend({
       log.debug('tab pressed')
 
     },
-    navigatePage (dir: 'next' | 'prev') {
+    async navigatePage (dir: 'next' | 'prev' | 'first' | 'last') {
       const focusingTable = this.tabulator.element.contains(document.activeElement)
       if (!focusingTable) {
-        if (dir === 'next') this.page++
-        else this.page--
+        if (dir === 'next') {
+          this.page++
+        } else if (dir === 'prev') {
+          this.page--
+        } else if (dir === 'first') {
+          this.page = 1
+        } else if (dir === 'last') {
+          await this.jumpToLastPage()
+        }
       }
     },
     copySelection() {
@@ -1328,7 +1355,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
@@ -1660,7 +1687,7 @@ export default Vue.extend({
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
-              this.limit,
+              this.limit + 1, // +1 to check if there is a next page
               orderBy,
               filters,
               this.table.schema,
@@ -1680,6 +1707,13 @@ export default Vue.extend({
             //  // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
             //  { allowFilter: this.isCassandra }
             //);
+
+            this.hasNextPage = response.result.length > this.limit
+
+            if (this.hasNextPage) {
+              response.result.pop()
+            }
+            this.data = response.result
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1745,6 +1779,18 @@ export default Vue.extend({
     },
     clearQueryError() {
       this.queryError = null
+    },
+    async jumpToLastPage() {
+      try {
+        const totalRows = await this.connection.getTableLength(this.table.name, this.table.schema); // -> SELECT (*) FROM table
+
+        const lastPage = Math.ceil(totalRows / this.limit);
+
+        this.page = lastPage;
+
+      } catch (error) {
+        console.error("Error jumping to the last page:", error);
+      }
     },
     async getTableKeys() {
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);

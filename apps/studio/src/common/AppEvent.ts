@@ -58,6 +58,7 @@ export enum AppEvent {
   switchLicenseState = 'switchLicenseState',
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
+  openPluginManager = 'openPluginManager',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
@@ -67,6 +68,9 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  updatePin = 'updatePin',
+  /** The theme has been changed. */
+  changedTheme = 'changedTheme',
 }
 
 export interface RootBinding {
