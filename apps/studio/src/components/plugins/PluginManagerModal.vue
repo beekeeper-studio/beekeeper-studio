@@ -2,7 +2,7 @@
   <portal to="modals">
     <modal
       :name="modalName"
-      class="vue-dialog beekeeper-modal plugin-manager-modal"
+      :class="['vue-dialog', 'beekeeper-modal', 'plugin-manager-modal', { 'plugin-page-open': selectedPlugin }]"
     >
       <div class="dialog-content">
         <div class="dialog-c-title">Plugins</div>

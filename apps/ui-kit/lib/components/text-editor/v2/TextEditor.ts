@@ -1,5 +1,5 @@
 import { EditorView, ViewUpdate } from "@codemirror/view";
-import { Extension, EditorState } from "@codemirror/state";
+import { Extension, EditorState, Transaction, Line, StateField } from "@codemirror/state";
 import { foldAll, unfoldAll } from "@codemirror/language";
 import {
   EditorMarker,
@@ -128,6 +128,26 @@ export class TextEditor {
 
   getValue() {
     return this.view.state.doc.toString();
+  }
+
+  getLength(): number {
+    return this.view.state.doc.length;
+  }
+
+  getStateField(field: StateField<any>): any {
+    return this.view.state.field(field);
+  }
+
+  dispatchChange(change: Transaction) {
+    this.view.dispatch(change)
+  }
+
+  getLineInfo(num: number): Line {
+    return this.view.state.doc.line(num);
+  }
+
+  getLineAt(pos: number): Line {
+    return this.view.state.doc.lineAt(pos);
   }
 
   setKeymap(keymap: Keymap, options: VimOptions = {}) {

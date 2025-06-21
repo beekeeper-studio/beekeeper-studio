@@ -1,16 +1,16 @@
 <template>
   <statusbar
     :active="active"
-    :class="{ 'empty': results.length === 0, 'query-meta': true }"
+    :class="{ 'empty': !results || results.length === 0, 'query-meta': true }"
   >
     <slot name="left-actions"></slot>
-    <template v-if="results.length > 0">
+    <template v-if="results?.length > 0">
       <div
         class="truncate statusbar-info"
         v-hotkey="keymap"
       >
         <span
-          v-show="results.length > 1"
+          v-show="results?.length > 1"
           class="statusbar-item result-selector"
           :title="'Results'"
         >
@@ -78,7 +78,7 @@
     <span class="expand" />
     <x-button
       class="btn btn-flat btn-icon end"
-      :disabled="results.length === 0"
+      :disabled="results?.length === 0"
       menu
     >
       Download <i class="material-icons">arrow_drop_down</i>
@@ -289,7 +289,7 @@ export default {
   methods: {
     changeSelectedResult(direction) {
       const newIndex =  this.selectedResult + direction;
-      if (newIndex >= 0 && newIndex < this.results.length) {
+      if (newIndex >= 0 && newIndex < this.results?.length) {
         this.selectedResult = newIndex;
       }
     },
