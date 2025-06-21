@@ -9,6 +9,7 @@ import {
   applyColumnsGetter,
   extensions as sqlExtensions,
   ColumnsGetter,
+  SQLExtensionsConfig,
 } from "./extensions";
 import { ExtensionConfiguration } from "../../text-editor/v2/types";
 
@@ -18,6 +19,10 @@ export interface CompletionSource {
 }
 
 export class SqlTextEditor extends TextEditor {
+  constructor(private extensionsConfig: SQLExtensionsConfig){
+    super();
+  }
+
   // --- Public API ---
 
   /**
@@ -49,6 +54,9 @@ export class SqlTextEditor extends TextEditor {
    */
   protected getExtensions(config: ExtensionConfiguration): Extension[] {
     const baseExtensions = super.getExtensions(config);
-    return [baseExtensions, sqlExtensions];
+    return [
+      baseExtensions,
+      sqlExtensions(this.extensionsConfig),
+    ];
   }
 }
