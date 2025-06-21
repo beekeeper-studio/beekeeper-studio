@@ -228,5 +228,21 @@ export const CLIENTS: ClientConfig[] = [
       'server:ssl',
       'server:socketPath'
     ]
+  },
+  {
+    key: 'redis',
+    name: 'Redis',
+    defaultPort: 6379,
+    defaultDatabase: '0',
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'scriptCreateTable',
+      'cancelQuery'
+    ],
   }
 ];
