@@ -169,7 +169,6 @@ export default Vue.extend({
           ...manifest,
           installed: true,
           installing: false,
-          enabled: true,
           checkingForUpdates: null,
         };
 
@@ -198,7 +197,6 @@ export default Vue.extend({
             ...entry,
             installed: false,
             installing: false,
-            enabled: false,
             checkingForUpdates: null,
           };
 

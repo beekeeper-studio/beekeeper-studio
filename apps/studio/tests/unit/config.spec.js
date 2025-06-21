@@ -108,6 +108,17 @@ minRes = 10
     expect(warnings).toEqual(expectedWarnings);
   });
 
+  it("should recognize plugin configurations", () => {
+    const defaultConfig = parseIni(``);
+    const userConfig = parseIni(`
+[plugins.bks-ai-shell]
+enabled = true
+    `);
+
+    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    expect(warnings).toEqual([]);
+  })
+
   it("should detect conflicts between user and system keys", () => {
     const systemConfig = parseIni(`
 [general]

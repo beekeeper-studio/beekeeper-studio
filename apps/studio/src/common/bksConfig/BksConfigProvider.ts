@@ -22,7 +22,9 @@ export interface ConfigEntryDetailWarning {
   path: string;
 }
 
-type ConfigValue = string | number | IniArray | undefined;
+type IniValue = string | number | boolean | IniArray | undefined;
+
+type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
