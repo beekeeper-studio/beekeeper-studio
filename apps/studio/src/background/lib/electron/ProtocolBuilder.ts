@@ -5,6 +5,7 @@ import * as fs from 'fs'
 import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
+import bksConfig from "@/common/bksConfig";
 
 const log = rawLog.scope('ProtocolBuilder')
 
@@ -78,6 +79,11 @@ export const ProtocolBuilder = {
       const normalized = path.normalize(pathName)
       const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
       log.debug("resolving", pathName, 'to', fullPath)
+      console.log("plugin", pathName, fullPath, {host:url.host})
+      if (bksConfig.get(`plugins.${url.host}.enabled`) === false) {
+        respond({ error: -20 }) // blocked by client
+        return;
+      }
       readFile(fullPath, (error, data) => {
         if (error) {
           log.error("error loading plugin file", pathName, error)
