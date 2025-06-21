@@ -15,9 +15,9 @@ $codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
 $row-highlight:            color.adjust($query-editor-bg, $lightness: -3%);
-$row-add:                  $insertedGreen;
+$row-add:                  color.mix($query-editor-bg, $brand-success, 70%);
 $row-delete:               $removedRed;
-$row-error:                #F9B8B7;
+$row-error:                color.mix($query-editor-bg, $brand-danger, 70%);
 
 $cell-edited:              #EDDFA1;
 $cell-error:               $row-error;
@@ -713,6 +713,8 @@ x-switch {
   --bks-text-editor-gutter-border-color: transparent;
   --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-attributeName-fg-color: #{$brand-info};
+  --bks-text-editor-variableName-fg-color: #{$text-dark};
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};

@@ -49,6 +49,14 @@ export default defineConfig({
           __dirname,
           "lib/components/sql-text-editor/define.ts"
         ),
+        "mongo-shell": resolve(
+          __dirname,
+          "lib/components/mongo-shell/define.ts"
+        ),
+        "mongo-shell/state": resolve(
+          __dirname,
+          "lib/components/mongo-shell/state.ts"
+        ),
         "data-editor": resolve(
           __dirname,
           "lib/components/data-editor/define.ts"
@@ -65,6 +73,10 @@ export default defineConfig({
         "vue/sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/v2/SqlTextEditor.vue"
+        ),
+        "vue/mongo-shell": resolve(
+          __dirname,
+          "lib/components/mongo-shell/MongoShell.vue"
         ),
         "vue/data-editor": resolve(
           __dirname,

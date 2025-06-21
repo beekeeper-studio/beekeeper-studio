@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "5.2.3",
+  "version": "5.2.12",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -33,6 +33,7 @@
     "@aws-sdk/client-redshift-serverless": "^3.651.1",
     "@aws-sdk/credential-providers": "^3.651.0",
     "@aws-sdk/rds-signer": "^3.651.0",
+    "@aws-sdk/shared-ini-file-loader": "^3.374.0",
     "@azure/msal-node": "^2.12.0",
     "@babel/plugin-transform-class-static-block": "^7.26.0",
     "@beekeeperstudio/plugin": "github:beekeeper-studio/plugin",
@@ -55,6 +56,7 @@
     "axios": "^1.8.2",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
+    "bcryptjs": "^3.0.2",
     "better-sqlite3": "~11.1.2",
     "builder-util-runtime": "^9.1.1",
     "bytes": "^3.1.0",
