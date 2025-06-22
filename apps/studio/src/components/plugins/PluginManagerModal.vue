@@ -2,7 +2,7 @@
   <portal to="modals">
     <modal
       :name="modalName"
-      class="vue-dialog beekeeper-modal plugin-manager-modal"
+      :class="['vue-dialog', 'beekeeper-modal', 'plugin-manager-modal', { 'plugin-page-open': selectedPlugin }]"
     >
       <div class="dialog-content">
         <div class="dialog-c-title">Plugins</div>
@@ -105,7 +105,8 @@ export default Vue.extend({
 
       try {
         state.installing = true;
-        await this.$plugin.update(id);
+        const manifest = await this.$plugin.update(id);
+        state.version = manifest.version;
         state.updateAvailable = false;
       } catch (e) {
         log.error(e);

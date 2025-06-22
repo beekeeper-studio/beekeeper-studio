@@ -1,11 +1,15 @@
 import { EditorView, ViewUpdate } from "@codemirror/view";
-import { Extension, EditorState } from "@codemirror/state";
+import { Extension, EditorState, Transaction, Line, StateField } from "@codemirror/state";
+import { foldAll, unfoldAll } from "@codemirror/language";
 import {
+  EditorMarker,
   ExtensionConfiguration,
   Keybindings,
   Keymap,
   LanguageServerHelpers,
   TextEditorConfiguration,
+  LanguageId,
+  LineGutter,
 } from "./types";
 import {
   extensions,
@@ -14,6 +18,9 @@ import {
   applyLineWrapping,
   applyLineNumbers,
   applyReadOnly,
+  applyLanguageId,
+  applyMarkers,
+  applyLineGutters,
 } from "./extensions";
 import {
   formatDocument,
@@ -33,7 +40,7 @@ export class TextEditor {
   private ls: ReturnType<typeof ls> | null;
 
   initialize(config: TextEditorConfiguration) {
-    if (config.lsConfig) {
+    if ('lsConfig' in config && config.lsConfig) {
       if (!config.lsConfig.rootUri) {
         throw new Error(
           "Missing 'rootUri' in lsConfig. This is required to initialize the language server client."
@@ -123,6 +130,26 @@ export class TextEditor {
     return this.view.state.doc.toString();
   }
 
+  getLength(): number {
+    return this.view.state.doc.length;
+  }
+
+  getStateField(field: StateField<any>): any {
+    return this.view.state.field(field);
+  }
+
+  dispatchChange(change: Transaction) {
+    this.view.dispatch(change)
+  }
+
+  getLineInfo(num: number): Line {
+    return this.view.state.doc.line(num);
+  }
+
+  getLineAt(pos: number): Line {
+    return this.view.state.doc.lineAt(pos);
+  }
+
   setKeymap(keymap: Keymap, options: VimOptions = {}) {
     applyKeymap(this.view, keymap, options);
   }
@@ -137,6 +164,18 @@ export class TextEditor {
 
   setLineNumbers(enabled: boolean) {
     applyLineNumbers(this.view, enabled);
+  }
+
+  setLanguageId(languageId: LanguageId) {
+    applyLanguageId(this.view, languageId);
+  }
+
+  setMarkers(markers: EditorMarker[]) {
+    applyMarkers(this.view, markers);
+  }
+
+  setLineGutters(lineGutters: LineGutter[]) {
+    applyLineGutters(this.view, lineGutters);
   }
 
   getSelection(): string {
@@ -171,6 +210,14 @@ export class TextEditor {
 
   focus() {
     this.view.focus();
+  }
+
+  foldAll() {
+    foldAll(this.view);
+  }
+
+  unfoldAll() {
+    unfoldAll(this.view);
   }
 
   destroy() {
