@@ -241,6 +241,7 @@ export const CLIENTS: ClientConfig[] = [
       'server:schema',
       'server:domain',
       'server:ssh',
+      'server:user',
       'scriptCreateTable',
       'cancelQuery'
     ],

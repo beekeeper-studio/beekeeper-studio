@@ -4,12 +4,13 @@ import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResul
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
-import ConnectionProvider from '../lib/connection-provider'; 
+import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
+import { DataStoreValue } from "@/lib/db/clients/BasicDatabaseClient";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -93,6 +94,7 @@ export interface IConnectionHandlers {
   'conn/selectTop': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<TableResult>,
   'conn/selectTopSql': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<string>,
   'conn/selectTopStream': ({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) => Promise<StreamResults>,
+  'conn/getDataStoreValue': ({ table, rowData, sId }: { table: string; rowData: Record<key, unknown>; sId: string }) => Promise<DataStoreValue>,
 
 
   // For Export *****************************************************************
@@ -469,6 +471,11 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/selectTopStream': async function({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.selectTopStream(table, orderBy, filters, chunkSize, schema);
+  },
+
+  'conn/getDataStoreValue': async function({ table, rowData, sId }) {
+    checkConnection(sId);
+    return await state(sId).connection.getDataStoreValue(table, rowData);
   },
 
   'conn/queryStream': async function({ query, chunkSize, sId }: { query: string, chunkSize: number, sId: string }) {

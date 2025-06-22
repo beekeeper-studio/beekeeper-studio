@@ -55,6 +55,13 @@ export const NoOpContextProvider: AppContextProvider = {
   }
 };
 
+export interface DataStoreValue {
+  // The actual value (string, list, set, json, etc)
+  value?: unknown;
+  // Any additional data (ttl, type, memory, etc)
+  [key: string]: unknown;
+}
+
 export interface BaseQueryResult {
   columns: { name: string }[]
   rows: any[][] | Record<string, any>[];
@@ -65,7 +72,7 @@ export interface BaseQueryResult {
 export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
-  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
+  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic" | "redis";
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
   server: IDbConnectionServer;
@@ -200,6 +207,15 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return [];
   }
   abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
+
+  // Key-value storages (redis, valkey, etc) ************************************
+  async getDataStoreValue(
+    _table: string,
+    _rowData: Record<string, unknown>, // selected row (first in range)
+  ): Promise<DataStoreValue | undefined> {
+    // Noop in relational dbs
+    return undefined;
+  }
 
   // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
   async createTable(_table: CreateTableSpec): Promise<void> {
