@@ -9,7 +9,7 @@ export { applyColumnsGetter } from "./sqlContextComplete";
 export type { ColumnsGetter } from "./sqlContextComplete";
 export { applySqlExtension, applyEntities } from "./customSql";
 export { applyDialect } from "./removeQueryQuotes";
-export { QuerySelectionChangeParams };
+export { QuerySelectionChangeParams } from "./querySelection";
 
 export type SQLExtensionsConfig = {
   identiferDialect: Options["dialect"];
