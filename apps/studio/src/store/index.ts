@@ -415,7 +415,7 @@ const store = new Vuex.Store<State>({
       try {
         await dispatch('fetchUsers');
       } catch (error) {
-        console.error('Failed to update user list:', error);
+        log.error('Failed to update user list:', error);
       }
     },
 
@@ -423,12 +423,12 @@ const store = new Vuex.Store<State>({
       try {
         const users = await state.connection.getListOfUsers();
         const formattedUsers = users.map((user) => ({
-          user: user.User || 'anonymous',
-          host: user.Host || 'localhost',
+          user: user.user || 'anonymous',
+          host: user.host || 'localhost',
         }));
         commit('setUsers', formattedUsers);
       } catch (error) {
-        console.error('Failed to fetch users:', error);
+        log.error('Failed to fetch users:', error);
       }
     },
 

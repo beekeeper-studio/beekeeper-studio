@@ -131,6 +131,9 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 import UserManagementListItem from './user_management_list/UserManagementListItem.vue';
+import rawLog from "@bksLogger"
+
+const log = rawLog.scope("UserManagement")
 
 export default {  
   components: {
@@ -193,7 +196,7 @@ export default {
         this.$modal.hide('rename-user-modal');
         this.updateSelectedUser(null);
       } catch (error) {
-        console.error('Failed to rename user:', error);
+        log.error('Failed to rename user:', error);
         this.$noty.error(`Failed to rename user: ${error.message}`);
       }
     },
@@ -206,7 +209,7 @@ export default {
         this.$modal.hide('delete-user-modal');
         this.updateSelectedUser(null);
       } catch (error) {
-        console.error('Failed to delete user:', error);
+        log.error('Failed to delete user:', error);
         this.$noty.error(`Failed to delete user: ${error.message}`);
       }
     },
@@ -221,7 +224,8 @@ export default {
     },
     openAllSettingsTab() {
       this.updateSelectedUser(null);
-      this.$root.$emit('userManagementOpen');    }
+      this.$root.$emit('userManagementOpen');
+    }
   }
 };
 </script>
@@ -232,29 +236,6 @@ export default {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-flat {
-  background: none;
-  border: 1px solid #ddd;
-}
-
-.btn-primary {
-  background-color: #4285f4;
-  color: white;
-  border: none;
-}
-
-.btn-danger {
-  background-color: #ea4335;
-  color: white;
-  border: none;
 }
 
 .form-group {

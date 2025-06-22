@@ -368,3 +368,88 @@ export interface BuildInsertOptions {
   primaryKeys?: string[]
   createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
 }
+
+export interface AdminPermission {
+  hasPermission: boolean;
+}
+
+export interface User {
+  user: string;
+  host: string;
+}
+
+export interface UserAuthenticationDetails {
+  authenticationType: string;
+  authenticationString: string;
+}
+
+export interface UserPrivileges {
+  schema: string;
+
+  // Object Rights
+  select: boolean;
+  insert: boolean;
+  update: boolean;
+  delete: boolean;
+  execute: boolean;
+  show_View: boolean;
+
+  // DDL Rights
+  create: boolean;
+  alter: boolean;
+  references: boolean;
+  index: boolean;
+  create_View: boolean;
+  create_Routine: boolean;
+  alter_Routine: boolean;
+  drop: boolean;
+  event: boolean;
+  trigger: boolean;
+
+  // Other Rights
+  grant_Option: boolean;
+  lock_Tables: boolean;
+  create_Temporary_Tables: boolean;
+}
+
+export interface UserGrant {
+  user: string;
+  host: string;
+  privileges: UserPrivileges[];
+}
+
+export interface UserResourceLimits {
+  maxQuestions: number;
+  maxUpdates: number;
+  maxConnections: number;
+  maxUserConnections: number;
+}
+
+export interface ApplyUserChangesResult {
+  success: boolean;
+  error?: string;
+}
+
+export interface Schema {
+  schemaName: string;
+}
+
+export interface TabUser_UserManagementList {
+  user: string;
+  host: string;
+  authType: string;
+  password: string;
+  confirmPassword: string;
+  isNew: boolean;
+}
+
+export function createNewTabUser(): TabUser_UserManagementList {
+  return {
+    user: 'newuser',
+    host: '%',
+    authType: 'caching_sha2_password',
+    password: '',
+    confirmPassword: '',
+    isNew: true,
+  };
+}

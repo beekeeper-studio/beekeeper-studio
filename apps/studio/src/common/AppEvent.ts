@@ -70,6 +70,8 @@ export enum AppEvent {
   closingTab = 'closingTab',
   /** The theme has been changed. */
   changedTheme = 'changedTheme',
+  /** User Management */
+  userManagementOpen = 'userManagementOpen',
 }
 
 export interface RootBinding {

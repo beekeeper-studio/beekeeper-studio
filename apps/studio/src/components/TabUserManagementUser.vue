@@ -1,273 +1,62 @@
 <template>
-  <div class="user-detail-view">
-    <div class="detail-header">
-      <button class="btn back-button" @click="$emit('back-to-list')">
+  <div class="bk-page-content">
+    <div class="bk-header-row">
+      <button class="btn btn-flat" @click="$emit('back-to-list')">
         <i class="material-icons">arrow_back</i> Back to Users
       </button>
-      <h3>
+      <h3 class="bk-title">
         <i class="material-icons">account_circle</i>
         Details for {{ displayUserName }}@{{ user.host }}
       </h3>
     </div>
 
-    <div class="subsection-tabs">
+    <div class="bk-tabs">
       <button 
-        class="tab-button" 
-        :class="{ active: activeTab === 'login' }"
+        class="bk-tab" 
+        :class="{ 'bk-tab-active': activeTab === 'login' }"
         @click="activeTab = 'login'"
       >
         <i class="material-icons">vpn_key</i> Login
       </button>
       <button 
-        class="tab-button" 
-        :class="{ active: activeTab === 'limits' }"
+        class="bk-tab" 
+        :class="{ 'bk-tab-active': activeTab === 'limits' }"
         @click="activeTab = 'limits'"
       >
         <i class="material-icons">speed</i> Account Limits
       </button>
       <button 
-        class="tab-button" 
-        :class="{ active: activeTab === 'privileges' }"
+        class="bk-tab" 
+        :class="{ 'bk-tab-active': activeTab === 'privileges' }"
         @click="activeTab = 'privileges'"
       >
         <i class="material-icons">storage</i> Schema Privileges
       </button>
     </div>
 
-    <div class="detail-card">
-      <!-- Login Information Tab -->
-      <div v-if="activeTab === 'login'" class="detail-section">
-        <h4><i class="material-icons">vpn_key</i> Login Information</h4>
-        <div class="form-group">
-          <label>Login Name:</label>
-          <input
-            type="text"
-            v-model="localUser.user"
-            class="form-control"
-            placeholder="Enter username"
-          />
-          <div class="form-note">
-            <i class="material-icons">info</i>
-            You may create multiple accounts with I to connect from different hosts.
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Authentication Type:</label>
-          <select v-model="localUser.authType" class="form-control">
-            <option>caching_sha2_password</option> 
-            <option>sha256_password</option>
-          </select>
-          <div class="form-note">
-            <i class="material-icons">info</i>
-            For the standard password select 'caching_sha2_password'.
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Limit to Hosts Matching:</label>
-          <input
-            type="text"
-            v-model="localUser.host"
-            class="form-control"
-            placeholder="e.g. 127.0.0.1"
-          >
-          <div class="form-note">
-            <i class="material-icons">info</i>
-            % and _ wildcards may be used
-          </div>
-        </div>
-
-        <h4 style="margin-top: 25px;"><i class="material-icons">lock</i> Password Management</h4>
-        <div class="form-group">
-          <label>Password:</label>
-          <div class="password-input">
-            <input
-              :type="showPassword ? 'text' : 'password'"
-              v-model="localUser.password"
-              class="form-control"
-              placeholder="••••••••"
-            >
-            <button class="btn-icon" @click="togglePassword('password')" title="Toggle visibility">
-              <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
-            </button>
-          </div>
-          <div class="form-note">
-            <i class="material-icons">info</i>
-            Type a password to reset it.
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Confirm Password:</label>
-          <div class="password-input">
-            <input
-              :type="showConfirmPassword ? 'text' : 'password'"
-              v-model="localUser.confirmPassword"
-              class="form-control"
-              placeholder="••••••••"
-            >
-            <button class="btn-icon" @click="togglePassword('confirmPassword')" title="Toggle visibility">
-              <i class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
-            </button>
-          </div>
-          <div class="form-note">
-            <i class="material-icons">info</i>
-            Confirm your previously typed password.
-          </div>
-        </div>
-        <div v-if="!localUser.password && localUser?.isNew" class="password-warning">
-          <i class="material-icons">warning</i>
-          No password is set for this account.
-        </div>
-        <div v-if="localUser.password && localUser.confirmPassword && !passwordsMatch" class="password-warning">
-          <i class="material-icons">warning</i>
-          Password and confirmation do not match.
-        </div>
-      </div>
-
-      <!-- Account Limits Tab -->
-      <div v-if="activeTab === 'limits'" class="detail-section">
-        <h4><i class="material-icons">speed</i> Account Limits</h4>
-        <div class="form-group">
-          <label>Max Queries per Hour:</label>
-          <input
-            type="number"
-            v-model.number="localUser.maxQueries"
-            class="form-control"
-            placeholder="0 for no limit"
-            min="0"
-          >
-        </div>
-        <div class="form-group">
-          <label>Max Updates per Hour:</label>
-          <input
-            type="number"
-            v-model.number="localUser.maxUpdates"
-            class="form-control"
-            placeholder="0 for no limit"
-            min="0"
-          >
-        </div>
-        <div class="form-group">
-          <label>Max Connections per Hour:</label>
-          <input
-            type="number"
-            v-model.number="localUser.maxConnections"
-            class="form-control"
-            placeholder="0 for no limit"
-            min="0"
-          >
-        </div>
-        <div class="form-group">
-          <label>Max User Connections:</label>
-          <input
-            type="number"
-            v-model.number="localUser.maxUserConnections"
-            class="form-control"
-            placeholder="0 for no limit"
-            min="0"
-          >
-        </div>
-      </div>
-
-      <!-- Schema Privileges Tab - Improved Version -->
-      <div v-if="activeTab === 'privileges'" class="detail-section">
-        <h4><i class="material-icons">storage</i> Schema Privileges</h4>
-
-        <div class="privilege-categories" v-if="newSchema.name">
-          <div class="privilege-category">
-            <h5>Object Rights</h5>
-            <div class="privilege-options">
-              <label v-for="priv in objectPrivileges" :key="priv">
-                <input 
-                  type="checkbox" 
-                  :checked="newSchema.privileges[priv]" 
-                  @change="updatePrivilege(priv, $event.target.checked)"
-                >
-                {{ priv }}
-              </label>
-            </div>
-          </div>
-
-          <div class="privilege-category">
-            <h5>DDL Rights</h5>
-            <div class="privilege-options">
-              <label v-for="priv in ddlPrivileges" :key="priv">
-                <input 
-                  type="checkbox" 
-                  :checked="newSchema.privileges[priv]" 
-                  @change="updatePrivilege(priv, $event.target.checked)"
-                >
-                {{ priv }}
-              </label>
-            </div>
-          </div>
-
-          <div class="privilege-category">
-            <h5>Other Rights</h5>
-            <div class="privilege-options">
-              <label v-for="priv in otherPrivileges" :key="priv">
-                <input 
-                  type="checkbox" 
-                  :checked="newSchema.privileges[priv]" 
-                  @change="updatePrivilege(priv, $event.target.checked)"
-                >
-                {{ priv }}
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="privilege-actions" v-if="newSchema.name">
-          <button class="btn" @click="selectAllPrivileges">
-            <i class="material-icons">check_box</i> Select ALL
-          </button>
-          <button class="btn" @click="unselectAllPrivileges">
-            <i class="material-icons">check_box_outline_blank</i> Unselect All
-          </button>
-        </div>
-
-        <div class="current-privileges">
-          <h5>Current Privileges</h5>
-          <div class="privilege-table-container">
-            <table class="privilege-table">
-              <thead>
-                <tr>
-                  <th>Schema</th>
-                  <th>Host</th>
-                  <th>Privileges</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr 
-                  v-for="(schema, index) in localUser.schemas" 
-                  :key="index" 
-                  :class="{ 'editing-row': schema.name === newSchema.name && schema.host === newSchema.host }"
-                >
-                  <td>{{ schema.name }}</td>
-                  <td>{{ schema.host || '%' }}</td>
-                  <td>
-                    <div class="privilege-tags">
-                      <span 
-                        class="privilege-tag" 
-                        v-for="(value, priv) in schema.privileges" 
-                        v-if="value"
-                        :key="priv"
-                      >
-                        {{ priv }}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <button class="btn-icon" @click="editSchema(index)" title="Edit">
-                      <i class="material-icons">edit</i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+    <div class="bk-card">
+      <TabUserManagementUserLogin
+        v-if="activeTab === 'login'"
+        :localUser="localUser"
+        :showPassword="showPassword"
+        :showConfirmPassword="showConfirmPassword"
+        :passwordsMatch="passwordsMatch"
+        @toggle-password="togglePassword"
+      />
+      <TabUserManagementUserLimits
+        v-if="activeTab === 'limits'"
+        :localUser="localUser"
+      />
+      <TabUserManagementUserPrivileges
+        v-if="activeTab === 'privileges'"
+        :localUser="localUser"
+        :allPrivileges="allPrivileges"
+        :newSchema="newSchema"
+        @edit-schema="editSchema"
+        @select-all-privileges="selectAllPrivileges"
+        @unselect-all-privileges="unselectAllPrivileges"
+        @update-privilege="updatePrivilege"
+      />
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -280,60 +69,107 @@
         <div class="dialog-content">
           <div class="dialog-c-title">Confirm Deletion</div>
             <p>Are you sure you want to delete user <strong>{{ localUser?.user }}</strong>?</p>
-          <div class="dialog-buttons">
-            <button class="btn btn-flat" @click="$modal.hide('delete-user-modal')">Cancel</button>
-            <button class="btn btn-danger" @click="confirmDelete">Delete</button>
+          <div class="bk-dialog-actions">
+            <button class="bk-btn bk-btn-flat" @click="$modal.hide('delete-user-modal')">Cancel</button>
+            <button class="bk-btn bk-btn-danger" @click="confirmDelete">Delete</button>
           </div>
         </div>
       </modal>
 
     <!-- Apply Changes Confirmation Modal -->
     <modal
-        class="vue-dialog beekeeper-modal"
-        name="apply-changes-user-modal"
-        height="auto"
-        :scrollable="true"
-      >
-        <div class="dialog-content">
-          <div class="dialog-c-title">Apply Changes</div>
-          <p>Are you sure you want to apply the changes to <strong>{{ localUser?.user }}</strong>?</p>
-          <div class="dialog-buttons">
-            <button class="btn btn-flat" @click="$modal.hide('apply-changes-user-modal')">Cancel</button>
-            <button class="btn btn-primary" @click="confirmApply">Apply</button>
-          </div>
+      class="vue-dialog beekeeper-modal"
+      name="apply-changes-user-modal"
+      height="auto"
+      :scrollable="true"
+    >
+      <div class="dialog-content">
+        <div class="dialog-c-title" style="font-weight: bold;">Apply Changes</div>
+        <p style="margin: 24px 0 32px 0; font-size: 1.15em;">
+          Are you sure you want to apply the changes to <strong>{{ localUser?.user }}</strong>?
+        </p>
+        <div class="bk-dialog-actions">
+          <button class="btn btn-flat" @click="$modal.hide('apply-changes-user-modal')">Cancel</button>
+          <button class="btn success" @click="confirmApply">Apply</button>
         </div>
-      </modal>
+      </div>
+    </modal>
 
-    <div class="action-buttons">
-      <button class="btn danger" @click="showDeleteModal()">
-        <i class="material-icons">delete</i> Delete Account
-      </button>
-      <button
-        class="btn"
-        @click="expirePassword"
-        v-if="!localUser.isNew"
-      >
-        <i class="material-icons">timer_off</i> Expire Password
-      </button>
-      <button
-        class="btn"
-        @click="revokeAllPrivileges"
-        v-if="!localUser.isNew"
-      >
-        <i class="material-icons">block</i> Revoke All Privileges
-      </button>
-      <button class="btn" @click="revertChanges">
-        <i class="material-icons">undo</i> Revert Changes
-      </button>
-      <button class="btn success" @click="showApplyModal()">
-        <i class="material-icons">check</i> Apply Changes
-      </button>
-    </div>
+    <StatusBar :active="true">
+      <div class="statusbar-actions flex-right">
+        <button class="btn danger" @click="showDeleteModal()">
+          <i class="material-icons">delete</i> Delete Account
+        </button>
+        <button
+          class="btn"
+          @click="expirePassword"
+          v-if="!localUser.isNew"
+        >
+          <i class="material-icons">timer_off</i> Expire Password
+        </button>
+        <button
+          class="btn"
+          @click="revokeAllPrivileges"
+          v-if="!localUser.isNew"
+        >
+          <i class="material-icons">block</i> Revoke All Privileges
+        </button>
+        <button class="btn" @click="revertChanges">
+          <i class="material-icons">undo</i> Revert Changes
+        </button>
+        <button class="btn success" @click="showApplyModal()">
+          <i class="material-icons">check</i> Apply Changes
+        </button>
+      </div>
+    </StatusBar>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { mapState, mapMutations } from 'vuex'
+import rawLog from "@bksLogger"
+import TabUserManagementUserLogin from './TabUserManagementUserLogin.vue'
+import TabUserManagementUserLimits from './TabUserManagementUserLimits.vue'
+import TabUserManagementUserPrivileges from './TabUserManagementUserPrivileges.vue'
+import StatusBar from '@/components/common/StatusBar.vue'
+
+const log = rawLog.scope("TabUserManagementUser")
+
+export enum UserChangeType {
+  CREATE = 'CREATE',
+  UPDATE_USER_HOST = 'UPDATE_USER_HOST',
+  UPDATE_AUTH = 'UPDATE_AUTH',
+  UPDATE_LIMITS = 'UPDATE_LIMITS',
+  UPDATE_PRIVILEGES = 'UPDATE_PRIVILEGES'
+}
+
+export interface UserChange {
+  type: UserChangeType;
+  user: string;
+  host: string;
+  password?: string;
+  authType?: string;
+  oldUser?: string;
+  oldHost?: string;
+  maxQueries?: number;
+  maxUpdates?: number;
+  maxConnections?: number;
+  maxUserConnections?: number;
+  schemaName?: string;
+  schemaHost?: string;
+  schemas?: UserSchema[];
+}
+
+export interface UserSchemaPrivileges {
+  [privilege: string]: boolean;
+}
+
+export interface UserSchema {
+  name: string;
+  host?: string;
+  privileges: UserSchemaPrivileges;
+}
+
 export default {
   props: {
     user: {
@@ -348,15 +184,13 @@ export default {
         schemas: this.user.schemas || []
       },
       backupDetails: {
-      authType: '',
-      maxQueries: 0,
-      maxUpdates: 0,
-      maxConnections: 0,
-      maxUserConnections: 0,
-    },
-      objectPrivileges: ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'EXECUTE', 'SHOW VIEW'],
-      ddlPrivileges: ['CREATE', 'ALTER', 'REFERENCES', 'INDEX', 'CREATE VIEW', 'CREATE ROUTINE', 'ALTER ROUTINE', 'EVENT', 'DROP', 'TRIGGER'],
-      otherPrivileges: ['GRANT OPTION', 'CREATE TEMPORARY TABLES', 'LOCK TABLES'],
+        authType: '',
+        maxQueries: 0,
+        maxUpdates: 0,
+        maxConnections: 0,
+        maxUserConnections: 0,
+      },
+      allPrivileges: [],
       newSchema: {
         name: '',
         host: '%',
@@ -381,122 +215,156 @@ export default {
         this.localUser.confirmPassword &&
         this.localUser.password === this.localUser.confirmPassword
       );
-    }
+    },
   },
   methods: {
-    ...mapMutations(['setSelectedUser']),
+      ...mapMutations(['setSelectedUser']),
+      
+      editSchema(index) {
+        const schema = this.localUser.schemas[index];
+        this.newSchema = {
+          name: schema.name,
+          host: schema.host,
+          privileges: { ...schema.privileges }
+        };
+      },
+  
+      showDeleteModal() {
+        this.$modal.show('delete-user-modal');
+      },
+
     async getAccountDetails() {
-
       try {
-        const authDetailsArray = await this.connection.getUserAuthenticationDetails(this.localUser.user, this.localUser.host);
-        
-        if (authDetailsArray && authDetailsArray.length > 0) {
-          const authDetails = authDetailsArray[0];
-
-          this.localUser.authType = authDetails.Authentication_Type || 'caching_sha2_password';
-          this.localUser.encryptedPassword = authDetails.Encrypted_Password || '';
-          this.backupDetails.authType = this.localUser.authType;
-          this.$forceUpdate();
-        }
+        const authDetails = await this.connection.getUserAuthenticationDetails(this.localUser.user, this.localUser.host);
+        this.localUser.authType = authDetails.authenticationType || 'caching_sha2_password';
+        this.localUser.encryptedPassword = authDetails.authenticationString || '';
+        this.backupDetails.authType = this.localUser.authType;
+        this.$forceUpdate();
       } catch (error) {
-        console.error('Error obtaining User Details:', error);
+        log.error('Error obtaining User Details:', error);
       }
     },
 
     async getUserResourceLimits() {
-
       try {
-        const limitsArray = await this.connection.getUserResourceLimits(this.localUser.user, this.localUser.host);
+        const limits = await this.connection.getUserResourceLimits(this.localUser.user, this.localUser.host);
         
-        if (limitsArray && limitsArray.length > 0) {
-          const limits = limitsArray[0];
+        this.localUser.maxQueries = limits.maxQuestions || 0;
+        this.localUser.maxUpdates = limits.maxUpdates || 0;
+        this.localUser.maxConnections = limits.maxConnections || 0;
+        this.localUser.maxUserConnections = limits.maxUserConnections || 0;
+        this.backupDetails.maxQueries = this.localUser.maxQueries || 0;
+        this.backupDetails.maxUpdates = this.localUser.maxUpdates || 0;
+        this.backupDetails.maxConnections = this.localUser.maxConnections || 0;
+        this.backupDetails.maxUserConnections = this.localUser.maxUserConnections || 0;
 
-          this.localUser.maxQueries = limits.max_questions || 0;
-          this.localUser.maxUpdates = limits.max_updates || 0;
-          this.localUser.maxConnections = limits.max_connections || 0;
-          this.localUser.maxUserConnections = limits.max_user_connections || 0;
-          this.backupDetails.maxQueries = this.localUser.maxQueries || 0;
-          this.backupDetails.maxUpdates = this.localUser.maxUpdates || 0;
-          this.backupDetails.maxConnections = this.localUser.maxConnections || 0;
-          this.backupDetails.maxUserConnections = this.localUser.maxUserConnections || 0;
-        }
       } catch (error) {
-        console.error('Error obtaning User Limits:', error);
+        log.error('Error obtaning User Limits:', error);
       }
     },
 
     async getUserGrants() {
       try {
-        const schemaGrantsMap = {};
-        const schemas = await this.connection.getSchemas();
-        schemas.forEach(schema => {
-          if (!schemaGrantsMap[schema.SCHEMA_NAME]) {
-            schemaGrantsMap[schema.SCHEMA_NAME] = {};
-          }
-        });
-
-        if (!this.localUser.isNew) {
-          const grants = await this.connection.showGrantsForUser(this.user.user, this.user.host);
-
-          for (const row of grants) {
-            const grantStr = Object.values(row)[0];
-
-            if (typeof grantStr !== 'string') continue;
-
-            const match = grantStr.match(/GRANT (.+) ON [`]?(.+?)[`]?.\* TO/i);
-            if (grantStr.includes('GRANT ALL PRIVILEGES') && match) {
-              const schema = match[2];
-              if (!schemaGrantsMap[schema]) {
-              schemaGrantsMap[schema] = {};
-              }
-              [...this.objectPrivileges, ...this.ddlPrivileges, ...this.otherPrivileges].forEach(priv => {
-              schemaGrantsMap[schema][priv] = true;
-              });
-              continue;
-            }
-            if (!match) continue;
-
-            const privsStr = match[1];
-            const schema = match[2];
-            const privileges = privsStr.split(',').map(p => p.trim().toUpperCase());
-
-            if (!schemaGrantsMap[schema]) {
-              schemaGrantsMap[schema] = {};
-            }
-
-            for (const priv of privileges) {
-              schemaGrantsMap[schema][priv] = true;
-            }
-          }
+        if (this.localUser.isNew) {
+          return [];
         }
 
-        return Object.entries(schemaGrantsMap).map(([name, privileges]) =>
-              this.normalizeSchemaPrivileges({ name, host: this.localUser.host || '%', privileges }));
+        const grants = await this.connection.showGrantsForUser(this.user.user, this.user.host);
+
+        const privilegeNames = new Set();
+        
+        grants.forEach(grant => {
+          Object.keys(grant).forEach(key => {
+            if (!key.match(/schema|host|grantOptionPrivilege/i)) {
+              const privName = key.replace(/Privilege$/i, '')
+                                .replace(/([A-Z])/g, ' $1')  
+                                .replace(/_/g, ' ')
+                                .trim()
+                                .toUpperCase();
+              privilegeNames.add(privName);
+            }
+          });
+        });
+        
+        if (grants.some(g => g.grantOptionPrivilege)) {
+          privilegeNames.add('GRANT OPTION');
+        }
+        
+        this.allPrivileges = Array.from(privilegeNames).sort();
+        
+        const schemaGrantsMap = {};
+        
+        grants.forEach(grant => {
+          const schemaName = grant.schema;
+          const host = grant.host || this.localUser.host || '%';
+          
+          if (!schemaGrantsMap[schemaName]) {
+            schemaGrantsMap[schemaName] = {
+              name: schemaName,
+              host: host,
+              privileges: this.createEmptyPrivileges()
+            };
+          }
+          
+          Object.keys(grant).forEach(key => {
+            if (!key.match(/schema|host|grantOptionPrivilege/i)) {
+              const privName = key.replace(/Privilege$/i, '')
+                                .replace(/([A-Z])/g, ' $1')
+                                .replace(/_/g, ' ')
+                                .trim()
+                                .toUpperCase();
+              if (this.allPrivileges.includes(privName)) {
+                schemaGrantsMap[schemaName].privileges[privName] = grant[key] || false;
+              }
+            }
+          });
+          
+          if (grant.grantOptionPrivilege) {
+            schemaGrantsMap[schemaName].privileges['GRANT OPTION'] = grant.grantOptionPrivilege;
+          }
+        });
+        
+        return Object.values(schemaGrantsMap);
 
       } catch (error) {
-        console.error('Error obtaining User Grants:', error);
+        log.error('Error obtaining User Grants:', error);
       }
     },
-      
+
+    createEmptyPrivileges() {
+     const emptyPrivs = {};
+      this.allPrivileges.forEach(priv => {
+        emptyPrivs[priv] = false;
+      });
+      return emptyPrivs;
+    },
+
+    resetNewSchemaPrivileges() {
+      this.newSchema.privileges = this.createEmptyPrivileges();
+    },
+
     togglePassword(field) {
       if (field === 'password') {
-        this.showPassword = !this.showPassword
+        this.showPassword = !this.showPassword;
       } else {
-        this.showConfirmPassword = !this.showConfirmPassword
+        this.showConfirmPassword = !this.showConfirmPassword;
       }
     },
+
     deleteAccount() {
-      this.$emit('user-deleted', this.localUser)
+      this.$emit('user-deleted', this.localUser);
     },
+
     expirePassword() {
-      this.$emit('expire-password', this.localUser)
+      this.$emit('expire-password', this.localUser);
     },
+
     revokeAllPrivileges() {
-      this.$emit('revoke-privileges', this.localUser)
+      this.$emit('revoke-privileges', this.localUser);
     },
+
     async revertChanges() {
       if (this.localUser.isNew) {
-
         this.localUser = { 
           ...this.user,
           schemas: this.user.schemas || []
@@ -508,43 +376,25 @@ export default {
         this.connection.getUserAuthenticationDetails(this.user.user, this.user.host),
         this.connection.getUserResourceLimits(this.user.user, this.user.host)
       ]);
-      const grants = await this.connection.showGrantsForUser(this.user.user, this.user.host);
 
-      const localUser = {
+      this.localUser = {
         ...this.user,
-        authType: details[0]?.Authentication_Type || 'caching_sha2_password',
-        encryptedPassword: details[0]?.Encrypted_Password || '',
-        maxQueries: limits[0]?.max_questions || 0,
-        maxUpdates: limits[0]?.max_updates || 0,
-        maxConnections: limits[0]?.max_connections || 0,
-        maxUserConnections: limits[0]?.max_user_connections || 0,
-        schemas: (() => {
-          const schemaGrantsMap = {};
-          for (const row of grants) {
-            const grantStr = Object.values(row)[0];
-            if (typeof grantStr !== 'string') continue;
-            const match = grantStr.match(/GRANT (.+) ON [`]?(.+?)[`]?.\* TO/i);
-            if (!match) continue;
-            const privsStr = match[1];
-            const schema = match[2];
-            const privileges = privsStr.split(',').map(p => p.trim().toUpperCase());
-            if (!schemaGrantsMap[schema]) schemaGrantsMap[schema] = {};
-            for (const priv of privileges) schemaGrantsMap[schema][priv] = true;
-          }
-          return Object.entries(schemaGrantsMap).map(([name, privileges]) =>
-            this.normalizeSchemaPrivileges({ name, host: this.user.host || '%', privileges })
-          );
-        })()
+        authType: details.authenticationType || 'caching_sha2_password',
+        encryptedPassword: details.authenticationString || '',
+        maxQueries: limits.maxQuestions || 0,
+        maxUpdates: limits.maxUpdates || 0,
+        maxConnections: limits.maxConnections || 0,
+        maxUserConnections: limits.maxUserConnections || 0,
+        schemas: await this.getUserGrants()
       };
-
-      this.localUser = localUser;
     },
+
     async loadUserGrants() {
       try {
         const grants = await this.getUserGrants();
         this.localUser.schemas = grants;
       } catch (error) {
-        console.error('Failed to load user grants:', error);
+        log.error('Failed to load user grants:', error);
       }
     },
     async applyChanges() {
@@ -552,22 +402,40 @@ export default {
         this.$noty.error('Password and confirmation do not match.');
         return;
       }
-      const changes = [];
+      const changes: UserChange[] = [];
 
       if (this.localUser.isNew) {
         // New User Creation - [0, user, host, password, authType]
-        changes.push([0, this.localUser.user, this.localUser.host, this.localUser.password, this.localUser.authType]);
+        changes.push({
+          type: UserChangeType.CREATE,
+          user: this.localUser.user,
+          host: this.localUser.host,
+          password: this.localUser.password,
+          authType: this.localUser.authType,
+        });
       } else {
 
         // UserName or Host Changes - [1, oldUserName, newUser, oldHost, newHost]
         if (this.localUser.user !== this.user.user || this.localUser.host !== this.user.host) {
-          changes.push([1, this.user.user, this.localUser.user, this.user.host, this.localUser.host]);
+          changes.push({
+            type: UserChangeType.UPDATE_USER_HOST,
+            oldUser: this.user.user,
+            user: this.localUser.user,
+            oldHost: this.user.host,
+            host: this.localUser.host,
+          });
         }
         
         // Authentication Type and Password Changes - [2, user, host, newPassword, newAuthType]
         if ((this.localUser.password && this.localUser.password !== undefined) || 
         this.localUser.authType !== this.backupDetails.authType) { 
-          changes.push([2, this.localUser.user, this.localUser.host, this.localUser.password, this.localUser.authType]); 
+          changes.push({
+            type: UserChangeType.UPDATE_AUTH,
+            user: this.localUser.user,
+            host: this.localUser.host,
+            password: this.localUser.password,
+            authType: this.localUser.authType,
+          }); 
         }
     }
       // Account Limits Changes - [3, user, host, maxQueries, maxUpdates, maxConnections, maxUserConnections]
@@ -577,19 +445,23 @@ export default {
         this.localUser.maxConnections !== this.backupDetails.maxConnections ||
         this.localUser.maxUserConnections !== this.backupDetails.maxUserConnections
       ) {
-        changes.push([
-          3,
-          this.localUser.user,
-          this.localUser.host,
-          this.localUser.maxQueries ?? 0,
-          this.localUser.maxUpdates ?? 0,
-          this.localUser.maxConnections ?? 0,
-          this.localUser.maxUserConnections ?? 0
-        ]); 
+        changes.push({
+          type: UserChangeType.UPDATE_LIMITS,
+          user: this.localUser.user,
+          host: this.localUser.host,
+          maxQueries: this.localUser.maxQueries ?? 0,
+          maxUpdates: this.localUser.maxUpdates ?? 0,
+          maxConnections: this.localUser.maxConnections ?? 0,
+          maxUserConnections: this.localUser.maxUserConnections ?? 0,
+        }); 
       }
 
-      // Schema Privileges Changes - [4, user, schemaName, schemaHost, privileges, revokedPrivileges]
-      const currentSchemasMap = new Map(this.localUser.schemas.map(schema => [`${schema.name}@${schema.host || '%'}`, schema]));
+      // Schema Privileges Changes - [4, user, UserSchema[]]
+      const schemaChanges: UserSchema[] = [];
+
+      const currentSchemasMap = new Map<string, UserSchema>(
+        this.localUser.schemas.map(schema => [`${schema.name}@${schema.host || '%'}`, schema])
+      );
       const originalSchemasArray = await this.getUserGrants();
       const originalSchemasMap = new Map(
         originalSchemasArray.map(schema => [`${schema.name}@${schema.host || '%'}`, schema])
@@ -597,26 +469,39 @@ export default {
 
       for (const [key, currentSchema] of currentSchemasMap.entries()) {
         const originalSchema = originalSchemasMap.get(key);
+
         if (!originalSchema) {
-          changes.push([4, this.localUser.user, currentSchema.name, currentSchema.host || '%', Object.keys(currentSchema.privileges).filter(priv => currentSchema.privileges[priv])]);
+          schemaChanges.push({
+            name: currentSchema.name,
+            host: currentSchema.host || '%',
+            privileges: Object.fromEntries(
+              Object.entries(currentSchema.privileges).map(([priv]) => [priv, false])
+            ),
+          });
         } else {
-            const privilegesChanged = Object.keys(currentSchema.privileges).some(priv => {
-            return currentSchema.privileges[priv] !== originalSchema.privileges[priv];
-            });
+          const privilegesChanged = Object.keys(currentSchema.privileges).some(priv => {
+            return currentSchema.privileges[priv] !== (originalSchema as UserSchema).privileges[priv];
+          });
+
           if (privilegesChanged) {
-            const revokedPrivileges = Object.keys(originalSchema.privileges).filter(
-              priv => originalSchema.privileges[priv] && !currentSchema.privileges[priv]
-            );
-            changes.push([
-              4,
-              this.localUser.user,
-              currentSchema.name,
-              currentSchema.host || '%',
-              Object.keys(currentSchema.privileges).filter(priv => currentSchema.privileges[priv]),
-              revokedPrivileges
-            ]);
+            schemaChanges.push({
+              name: currentSchema.name,
+              host: currentSchema.host || '%',
+              privileges: Object.fromEntries(
+                Object.entries(currentSchema.privileges).map(([priv]) => [priv, currentSchema.privileges[priv]])
+              ),
+            });
           }
         }
+      }
+
+      if (schemaChanges.length > 0) {
+        changes.push({
+          type: UserChangeType.UPDATE_PRIVILEGES,
+          user: this.localUser.user,
+          host: this.localUser.host,
+          schemas: schemaChanges,
+        });
       }
 
       if (changes.length === 0) {
@@ -650,86 +535,18 @@ export default {
         }
       }
     },
-
-    addNewSchema() {
-      this.localUser.schemas.push({
-        name: '',
-        privileges: {
-          select: false,
-          insert: false,
-          update: false,
-          delete: false,
-          create: false,
-          alter: false,
-          drop: false,
-          index: false,
-          references: false
-        }
-      })
-    },
-    resetNewSchemaPrivileges() {
-      const allPrivileges = [...this.objectPrivileges, ...this.ddlPrivileges, ...this.otherPrivileges];
-      this.newSchema.privileges = allPrivileges.reduce((acc, priv) => {
-        acc[priv] = false;
-        return acc;
-      }, {});
-    },
-    showDeleteModal() {
-      this.$modal.show('delete-user-modal');
-    },
-    async confirmDelete() {
-      if (!this.localUser) return;
-      try {
-        let result = await this.connection.deleteUser(this.localUser.user, this.localUser.host);
-        this.$noty.success(`User ${this.localUser.user} deleted successfully`);
-        this.$store.dispatch('updateUsersList');
-        this.$modal.hide('delete-user-modal');
-        this.setSelectedUser(null);
-      } catch (error) {
-        console.error('Failed to delete user:', error);
-        this.$noty.error(`Failed to delete user: ${error.message}`);
-      }
-    },
-    showApplyModal(user) {
-      this.$modal.show('apply-changes-user-modal');
-    },
-    async confirmApply() {
-      if (!this.localUser) return;
-      try {
-        await this.applyChanges();
-        this.$modal.hide('apply-changes-user-modal');
-        this.setSelectedUser(null);
-      } catch (error) {
-        console.error('Failed to apply changes:', error);
-        this.$noty.error(`Failed to apply changes: ${error.message}`);
-      }
-    },
-    removeSchema(index) {
-      this.localUser.schemas.splice(index, 1);
-    },
-    editSchema(index) {
-      const schema = this.localUser.schemas[index];
-      this.newSchema = this.normalizeSchemaPrivileges(schema);
-      this.newSchema = {
-        name: schema.name,
-        host: schema.host,
-        privileges: { ...schema.privileges },
-        localUser: {
-          ...this.localUser,
-          schemas: this.localUser.schemas.map((s, i) => (i === index ? schema : s))
-        }
-      };
-    },
     selectAllPrivileges() {
-      for (const priv in this.newSchema.privileges) {
+      this.allPrivileges.forEach(priv => {
         this.updatePrivilege(priv, true);
-      }
+      });
     },
+    
     unselectAllPrivileges() {
-      for (const priv in this.newSchema.privileges) {
+      this.allPrivileges.forEach(priv => {
         this.updatePrivilege(priv, false);
-      }
+      });
     },
+    
     updatePrivilege(privilege, value) {
       this.$set(this.newSchema.privileges, privilege, value); 
       const schemaIndex = this.localUser.schemas.findIndex(
@@ -739,20 +556,33 @@ export default {
         this.$set(this.localUser.schemas[schemaIndex].privileges, privilege, value);
       }
     },
-    normalizeSchemaPrivileges(schema) {
-      const allPrivileges = [
-        ...this.objectPrivileges,
-        ...this.ddlPrivileges,
-        ...this.otherPrivileges
-      ];
-      const normalized = {};
-      allPrivileges.forEach(priv => {
-        normalized[priv] = !!(schema.privileges && schema.privileges[priv]);
-      });
-      return {
-        ...schema,
-        privileges: normalized
-      };
+
+    async confirmDelete() {
+      if (!this.localUser) return;
+      try {
+        await this.connection.deleteUser(this.localUser.user, this.localUser.host);
+        this.$noty.success(`User ${this.localUser.user} deleted successfully`);
+        this.$store.dispatch('updateUsersList');
+        this.$modal.hide('delete-user-modal');
+        this.setSelectedUser(null);
+      } catch (error) {
+        log.error('Failed to delete user:', error);
+        this.$noty.error(`Failed to delete user: ${error.message}`);
+      }
+    },
+    showApplyModal() {
+      this.$modal.show('apply-changes-user-modal');
+    },
+    async confirmApply() {
+      if (!this.localUser) return;
+      try {
+        await this.applyChanges();
+        this.$modal.hide('apply-changes-user-modal');
+        this.setSelectedUser(null);
+      } catch (error) {
+        log.error('Failed to apply changes:', error);
+        this.$noty.error(`Failed to apply changes: ${error.message}`);
+      }
     },
   },
   watch: {
@@ -782,41 +612,42 @@ export default {
       this.getUserResourceLimits();
     }
   },
+  components: {
+    TabUserManagementUserLogin,
+    TabUserManagementUserLimits,
+    TabUserManagementUserPrivileges,
+    StatusBar,
+  },
 }
 </script>
 
-<style scoped>
-.user-detail-view {
-  padding: 20px;
+<style>
+
+.bk-page-content {
+  padding: 24px;
 }
 
-.detail-header {
+.bk-header-row {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.detail-header h3 {
+.bk-title {
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 0;
-  color: #444;
 }
 
-.back-button {
-  background-color: #f1f3f4;
-  border: none;
-}
-
-.subsection-tabs {
+.bk-tabs {
   display: flex;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 20px;
+  border-bottom: 1px solid var(--bk-border-color, #e0e0e0);
+  margin-bottom: 24px;
 }
 
-.tab-button {
+.bk-tab {
   padding: 10px 20px;
   background: none;
   border: none;
@@ -825,283 +656,86 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #555;
+  color: var(--bk-text-secondary, #555);
   font-weight: 500;
+  transition: color 0.2s, border-bottom-color 0.2s;
 }
 
-.tab-button:hover {
-  color: #4285f4;
-  background-color: #f8f9fa;
+.bk-tab:hover {
+  color: var(--bk-primary, #333);
+  background-color: var(--bk-bg-hover, #f8f9fa);
 }
 
-.tab-button.active {
-  color: #4285f4;
-  border-bottom-color: #4285f4;
+.bk-tab-active {
+  color: var(--bk-primary, #333);
+  border-bottom-color: var(--bk-primary, #333);
 }
 
-.detail-card {
-  background: white;
+.bk-card {
+  background: var(--bk-bg-card, #fff);
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  padding: 20px;
-  margin-bottom: 20px;
+  border: 1px solid var(--bk-border-color, #e0e0e0);
+  padding: 24px;
+  margin-bottom: 24px;
 }
 
-.detail-section {
-  margin-bottom: 25px;
-}
-
-.detail-section h4 {
+.statusbar-actions {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #4285f4;
-  margin-top: 0;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-  color: #555;
-}
-
-.form-control {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #4285f4;
-  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
-}
-
-.password-input {
-  position: relative;
-  display: flex;
-}
-
-.password-input .form-control {
-  padding-right: 40px;
-  color: #666;
-}
-
-.password-input .btn-icon {
-  position: absolute;
-  right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #666;
-}
-
-.form-note {
-  color: #666;
-  font-size: 0.85em;
-  margin-top: 5px;
-  display: flex;
-  align-items: flex-start;
-  gap: 5px;
-}
-
-.password-warning {
-  color: #d32f2f;
-  background-color: #fce8e6;
-  padding: 10px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 15px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
+  padding: 0 16px;
 }
-
-.dialog-buttons {
-  display: flex;
+.flex-right {
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
 }
 
 .btn {
-  padding: 10px 16px;
+  padding: 8px 18px;
+  border: none;
   border-radius: 4px;
-  font-size: 0.9em;
+  background: #eee;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid transparent;
-}
-
-.btn.success {
-  background-color: #34a853;
-  color: white;
-}
-
-.btn.success:hover {
-  background-color: #2d9249;
+  gap: 6px;
+  transition: background 0.2s, color 0.2s;
 }
 
 .btn.danger {
-  background-color: #ea4335;
-  color: white;
+  background: #e53935;
+  color: #fff;
+}
+
+.btn.success {
+  background: #43a047;
+  color: #fff;
+}
+
+.btn.btn-flat {
+  background: transparent;
+  color: #4285f4;
+}
+
+.btn:hover {
+  background: #e0e0e0;
 }
 
 .btn.danger:hover {
-  background-color: #d33426;
+  background: #b71c1c;
 }
 
-.btn-icon {
-  padding: 8px;
-  border-radius: 50%;
+.btn.success:hover {
+  background: #2e7031;
+}
+
+.bk-dialog-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: none;
-  border: none;
-}
-
-.btn-icon.primary {
-  color: #4285f4;
-}
-
-.btn-icon:hover {
-  background-color: #f1f3f4;
-}
-
-.material-icons {
-  font-size: 20px;
-}
-
-.checkbox-group {
-  margin-bottom: 12px;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.privilege-table-container {
-  overflow-x: auto;
-  margin-bottom: 20px;
-}
-
-.privilege-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.privilege-table th, .privilege-table td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.privilege-table th {
-  background-color: #f5f5f5;
-  font-weight: 500;
-}
-
-.privilege-table tr:hover {
-  background-color: #f9f9f9;
-}
-
-.privilege-table input[type="checkbox"] {
-  margin: 0;
-}
-
-.schema-privileges-header {
-  margin-bottom: 20px;
-}
-
-.schema-host-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.privilege-categories {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.privilege-category {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 15px;
-}
-
-.privilege-category h5 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #4285f4;
-}
-
-.privilege-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  justify-content: flex-end;
   gap: 10px;
-}
-
-.privilege-options label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9em;
-}
-
-.privilege-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.current-privileges {
-  margin-top: 30px;
-}
-
-.privilege-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.privilege-tag {
-  background-color: #e0e0e0;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
-}
-
-.editing-row {
-  background-color: #f9f9f9;
+  margin-top: 16px;
 }
 
 </style>

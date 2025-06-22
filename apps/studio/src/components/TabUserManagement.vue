@@ -28,6 +28,9 @@
 import TabUserManagementUserList from './TabUserManagement_UserList.vue'
 import TabUserManagementUser from './TabUserManagementUser.vue'
 import { mapState, mapActions } from 'vuex'
+import rawLog from "@bksLogger"
+
+const log = rawLog.scope("TabUserManagement")
 
 export default {
   computed: {
@@ -58,7 +61,7 @@ export default {
         this.updateSelectedUser(newUser);
         await this.$store.dispatch('updateUsersList');
       } catch (error) {
-        console.error('Failed to add user:', error);
+        log.error('Failed to add user:', error);
         this.$noty.error(`Failed to add user: ${error.message}`);
       }
     },
@@ -71,7 +74,7 @@ export default {
         this.$modal.hide('delete-user-modal');
         this.updateSelectedUser(null);
       } catch (error) {
-        console.error('Failed to delete user:', error);
+        log.error('Failed to delete user:', error);
         this.$noty.error(`Failed to delete user: ${error.message}`);
       }
     },
@@ -91,7 +94,7 @@ export default {
         this.updateSelectedUser(null);
         
       } catch (error) {
-        console.error('Failed to expire password:', error);
+        log.error('Failed to expire password:', error);
         this.$noty.error('Failed to expire password: ' + (error.message || error));
       }
     },
@@ -102,7 +105,7 @@ export default {
         this.updateSelectedUser(null);
 
       } catch (error) {
-        console.error('Failed to revoke privileges:', error);
+        log.error('Failed to revoke privileges:', error);
         this.$noty.error('Failed to revoke privileges: ' + (error.message || error));
       }
     },
@@ -129,8 +132,8 @@ export default {
 
 .header {
   padding: 20px;
-  background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
-  color: white;
+  background: linear-gradient(135deg, #fbbc05 0%, #ea4335 100%);
+  color: black;
 }
 
 .header h1, .header h2 {

@@ -443,7 +443,7 @@ import { TransportOpenTab, TransportPluginShellTab, setFilters, matches, duplica
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
-        { event: 'userManagementOpen', handler: this.userManagementOpen },
+        { event: AppEvent.userManagementOpen, handler: this.userManagementOpen },
       ]
     },
     lastTab() {

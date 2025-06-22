@@ -1,6 +1,6 @@
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
+import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult, User, UserAuthenticationDetails, UserPrivileges, UserResourceLimits, Schema, AdminPermission, } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
@@ -116,19 +116,19 @@ export interface IConnectionHandlers {
   'conn/getQueryForFilter': ({ filter, sId }: { filter: TableFilter, sId: string }) => Promise<string>,
 
   // For Admin Page ************************************************************
-  'conn/hasAdminPermission': ({ sId }: { sId: string}) => Promise<boolean>,
-  'conn/getListOfUsers': ({ sId }: { sId: string }) => Promise<any[]>,
-  'conn/getUserAuthenticationDetails': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<any[]>,
-  'conn/getUserPrivileges': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<any[]>,
-  'conn/getUserResourceLimits': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<any[]>,
-  'conn/showGrants': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<any[]>,
-  'conn/applyUserChanges': ({ sId, changes }: { sId: string, changes: any[][] }) => Promise<{ success: boolean, error?: string }>,
-  'conn/getSchemas': ({ sId }: { sId: string }) => Promise<string[]>,
-  'conn/revokeAllPrivileges': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<NgQueryResult>,
-  'conn/deleteUser': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<NgQueryResult>,
-  'conn/createUser': ({ sId, user, host, password }: { sId: string, user: string, host: string, password: string }) => Promise<NgQueryResult>,
-  'conn/renameUser': ({ sId, user, host, newName }: { sId: string, user: string, host: string, newName: string, newHost: string }) => Promise<NgQueryResult>,
-  'conn/expireUserPassword': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<NgQueryResult>,
+  'conn/hasAdminPermission': ({ sId }: { sId: string}) => Promise<AdminPermission>,
+  'conn/getListOfUsers': ({ sId }: { sId: string }) => Promise<User[]>,
+  'conn/getUserAuthenticationDetails': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<UserAuthenticationDetails>,
+  'conn/getUserPrivileges': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<UserPrivileges[]>,
+  'conn/getUserResourceLimits': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<UserResourceLimits>,
+  'conn/showGrants': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<UserPrivileges[]>,
+  'conn/applyUserChanges': ({ sId, changes }: { sId: string, changes: any[] }) => Promise<{ success: boolean, error?: string }>,
+  'conn/getSchemas': ({ sId }: { sId: string }) => Promise<Schema[]>,
+  'conn/revokeAllPrivileges': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<void>,
+  'conn/deleteUser': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<void>,
+  'conn/createUser': ({ sId, user, host, password }: { sId: string, user: string, host: string, password: string }) => Promise<void>,
+  'conn/renameUser': ({ sId, user, host, newName }: { sId: string, user: string, host: string, newName: string, newHost: string }) => Promise<void>,
+  'conn/expireUserPassword': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<void>,
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -538,51 +538,63 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/hasAdminPermission': async function({ sId }: { sId: string}) {
+    checkConnection(sId);
     return await state(sId).connection.hasAdminPermission();
   },
 
   'conn/getListOfUsers': async function({ sId }: { sId: string }) {
+    checkConnection(sId);
     return await state(sId).connection.getListOfUsers();
   },
 
   'conn/getUserAuthenticationDetails': async function({ sId, user, host }: { sId: string, user: string, host: string }) {
+    checkConnection(sId);
     return await state(sId).connection.getUserAuthenticationDetails(user, host);
   },
 
   'conn/getUserPrivileges': async function({ sId, user, host }: { sId: string, user: string, host: string }) {
+    checkConnection(sId);
     return await state(sId).connection.getUserPrivileges(user, host);
   },
 
   'conn/getUserResourceLimits': async function({ sId, user, host }: { sId: string, user: string, host: string }) {
+    checkConnection(sId);
     return await state(sId).connection.getUserResourceLimits(user, host);
   },
 
   'conn/showGrants': async function({ sId, user, host }: { sId: string, user: string, host: string }) {
+    checkConnection(sId);
     return await state(sId).connection.showGrantsForUser(user, host);
   },
 
-  'conn/applyUserChanges': async function({ sId, changes }: { sId: string, changes: any[][] }) {
+  'conn/applyUserChanges': async function({ sId, changes }: { sId: string, changes: any[] }) {
+    checkConnection(sId);
     return await state(sId).connection.applyUserChanges(changes);
   },
 
   'conn/getSchemas': async function({ sId }: { sId: string }) {
+    checkConnection(sId);
     return await state(sId).connection.getSchemas();
   },
 
   'conn/expireUserPassword': async function({ sId, user, host }) {
-    return await state(sId).connection.expireUserPassword(user, host);
+    checkConnection(sId);
+    await state(sId).connection.expireUserPassword(user, host);
   },
 
   'conn/revokeAllPrivileges': async function({ sId, user, host }) {
-  return await state(sId).connection.revokeAllPrivileges(user, host);
+    checkConnection(sId);
+    await state(sId).connection.revokeAllPrivileges(user, host);
   },
 
   'conn/deleteUser': async function({ sId, user, host }: { sId: string, user: string, host: string }) {
-    return await state(sId).connection.deleteUser(user, host);
+    checkConnection(sId);
+    await state(sId).connection.deleteUser(user, host);
   },
 
   'conn/renameUser': async function({ sId, user, host, newName }: { sId: string, user: string, host: string, newName: string }) {
-    return await state(sId).connection.renameUser(user, host, newName);
+    checkConnection(sId);
+    await state(sId).connection.renameUser(user, host, newName);
   },
 
 }

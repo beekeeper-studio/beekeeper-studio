@@ -58,6 +58,12 @@ import {
   TableResult,
   TableTrigger,
   TableUpdate,
+  AdminPermission,
+  User,
+  UserAuthenticationDetails,
+  UserPrivileges,
+  UserResourceLimits,
+  Schema,
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import BksConfig from "@/common/bksConfig";
@@ -1446,66 +1452,41 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     };
   }
 
-  async hasAdminPermission(): Promise<boolean> {
+  async hasAdminPermission(): Promise<AdminPermission> {
     const sql = "SELECT 1 FROM mysql.user LIMIT 1";
     const result = await this.driverExecuteSingle(sql);
-    if (result.rows.length === 0 || result.rows[0] === undefined) {
-      return false;
-    }
-    return true;
+    return { hasPermission: result.rows.length > 0 && result.rows[0] !== undefined };
   }
 
-  async getListOfUsers(): Promise<any[]> {
+  async getListOfUsers(): Promise<User[]> {
     const sql = "SELECT User, Host FROM mysql.user";
     const { rows } = await this.driverExecuteSingle(sql);
-    return rows;
+    return rows.map(row => ({ user: row.User, host: row.Host }));
   }
 
   async getUserAuthenticationDetails(
     user: string,
     host: string,
     connection?: Connection 
-  ): Promise<any[]> {
+  ): Promise<UserAuthenticationDetails> {
     const sql = `
       SELECT plugin AS Authentication_Type, authentication_string
       FROM mysql.user
       WHERE User = ? AND Host = ?
     `;
     const params = [user, host];
-  
-    const { rows } = await this.driverExecuteSingle(sql, {
-      params,
-      connection,
-    });
-  
-    return rows;
-  }
-  
-  async getUserPrivileges(
-    user: string,
-    host: string,
-    connection?: Connection
-  ): Promise<any[]> {
-    const sql = `
-      SELECT Super_priv, Create_priv, Drop_priv, Grant_priv, Insert_priv, Update_priv, Delete_priv 
-      FROM mysql.user 
-      WHERE User = ? AND Host = ?
-    `;
-    const params = [user, host];
-
-    const { rows } = await this.driverExecuteSingle(sql, {
-      params,
-      connection,
-    });
-
-    return rows;
+    const { rows } = await this.driverExecuteSingle(sql, { params, connection });
+    return {
+      authenticationType: rows[0].Authentication_Type,
+      authenticationString: rows[0].authentication_string,
+    } as UserAuthenticationDetails;
   }
 
   async getUserResourceLimits(
     user: string,
     host: string,
     connection?: Connection
-  ): Promise<any[]> {
+  ): Promise<UserResourceLimits> {
     const sql = `
       SELECT 
         max_questions,
@@ -1517,121 +1498,231 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       WHERE User = ? AND Host = ?
     `;
     const params = [user, host];
-
-    const { rows } = await this.driverExecuteSingle(sql, {
-      params,
-      connection,
-    });
-
-    return rows;
+    const { rows } = await this.driverExecuteSingle(sql, { params, connection });
+    return {
+      maxQuestions: rows[0].max_questions,
+      maxUpdates: rows[0].max_updates,
+      maxConnections: rows[0].max_connections,
+      maxUserConnections: rows[0].max_user_connections,
+    } as UserResourceLimits;
   }
 
   async showGrantsForUser(
     user: string,
     host: string,
     connection?: Connection
-  ): Promise<any[]> {
+  ): Promise<UserPrivileges[]> {
     const sql = `SHOW GRANTS FOR ?@?`;
     const params = [user, host];
+    const { rows } = await this.driverExecuteSingle(sql, { params, connection });
+  
+    const schemaGrantsMap: Record<string, Record<string, boolean>> = {};
+  
+    const objectPrivileges = [
+      "SELECT", "INSERT", "UPDATE", "DELETE", "EXECUTE", "SHOW VIEW"
+    ];
+    const ddlPrivileges = [
+      "CREATE", "ALTER", "REFERENCES", "INDEX", "CREATE VIEW", "CREATE ROUTINE",
+      "ALTER ROUTINE", "DROP", "EVENT", "TRIGGER"
+    ];
+    const otherPrivileges = [
+      "GRANT OPTION", "LOCK TABLES", "CREATE TEMPORARY TABLES"
+    ];
+    const allPrivileges = [...objectPrivileges, ...ddlPrivileges, ...otherPrivileges];
+  
+    for (const row of rows) {
+      const grantStrings = Object.values(row);
+      
+      for (const grantStr of grantStrings) {
+        if (typeof grantStr !== "string") continue;
 
-    const { rows } = await this.driverExecuteSingle(sql, {
-      params,
-      connection,
-    });
+        const schemaMatch = grantStr.match(/GRANT (.+) ON [`]?(.+?)[`]?\.\* TO/i);
+        if (schemaMatch) {
+          const privsStr = schemaMatch[1];
+          const schema = schemaMatch[2];
+          
+          schemaGrantsMap[schema] = schemaGrantsMap[schema] || {};
+          
+          if (privsStr.includes("ALL PRIVILEGES")) {
+            allPrivileges.forEach(priv => {
+              schemaGrantsMap[schema][priv] = true;
+            });
+          } else {
+            const privileges = privsStr.split(",").map(p => p.trim().toUpperCase());
+            privileges.forEach(priv => {
+              schemaGrantsMap[schema][priv] = true;
+            });
+          }
+          continue;
+        }
 
-    return rows;
+        const globalMatch = grantStr.match(/GRANT (.+) ON \*\.\* TO/i);
+        if (globalMatch) {
+          const privsStr = globalMatch[1];
+          
+          const { rows: schemaRows } = await this.driverExecuteSingle(
+            `SELECT schema_name
+             FROM information_schema.schemata
+             WHERE schema_name NOT IN ('information_schema', 'performance_schema', 'sys')`,
+            { connection }
+          );
+          
+          if (privsStr.includes("ALL PRIVILEGES")) {
+            for (const schemaRow of schemaRows) {
+              const schema = schemaRow['SCHEMA_NAME'];
+              schemaGrantsMap[schema] = schemaGrantsMap[schema] || {};
+              allPrivileges.forEach(priv => {
+                schemaGrantsMap[schema][priv] = true;
+              });
+            }
+          } else {
+            const privileges = privsStr.split(",").map(p => p.trim().toUpperCase());
+            for (const schemaRow of schemaRows) {
+              const schema = schemaRow['SCHEMA_NAME'];
+              schemaGrantsMap[schema] = schemaGrantsMap[schema] || {};
+              privileges.forEach(priv => {
+                schemaGrantsMap[schema][priv] = true;
+              });
+            }
+          }
+        }
+      }
+    }
+  
+    const { rows: schemaRows } = await this.driverExecuteSingle(
+      `SELECT schema_name
+       FROM information_schema.schemata
+       WHERE schema_name NOT IN ('information_schema', 'performance_schema', 'sys')`,
+      { connection }
+    );
+  
+    for (const row of schemaRows) {
+      const schema = row['SCHEMA_NAME'];
+      if (!schemaGrantsMap[schema]) {
+        schemaGrantsMap[schema] = {};
+        allPrivileges.forEach(priv => {
+          schemaGrantsMap[schema][priv] = false;
+        });
+      }
+    }
+  
+    const userPrivileges: UserPrivileges[] = Object.entries(schemaGrantsMap).map(([schema, privileges]) => ({
+      schema: schema,
+
+      select: !!privileges["SELECT"],
+      insert: !!privileges["INSERT"],
+      update: !!privileges["UPDATE"],
+      delete: !!privileges["DELETE"],
+      execute: !!privileges["EXECUTE"],
+      show_View: !!privileges["SHOW VIEW"],
+      create: !!privileges["CREATE"],
+      alter: !!privileges["ALTER"],
+      references: !!privileges["REFERENCES"],
+      index: !!privileges["INDEX"],
+      create_View: !!privileges["CREATE VIEW"],
+      create_Routine: !!privileges["CREATE ROUTINE"],
+      alter_Routine: !!privileges["ALTER ROUTINE"],
+      drop: !!privileges["DROP"],
+      event: !!privileges["EVENT"],
+      trigger: !!privileges["TRIGGER"],
+      grant_Option: !!privileges["GRANT OPTION"],
+      lock_Tables: !!privileges["LOCK TABLES"],
+      create_Temporary_Tables: !!privileges["CREATE TEMPORARY TABLES"],
+    }));
+  
+    return userPrivileges;
   }
-
-  async applyUserChanges(changes: any[][]): Promise<{ success: boolean; error?: string }> {
+  
+  async applyUserChanges(changes: any[]): Promise<{ success: boolean; error?: string }> {
     const statements: string[] = [];
 
     for (const change of changes) {
-      const [type, ...args] = change;
-  
-      switch (type) {
-
-        case 0: {
-          const [user, host, password, authType] = args;
+      switch (change.type) {
+        case 'CREATE': {
+          const { user, host, password, authType } = change;
           const escapedUser = escapeString(user);
           const escapedHost = escapeString(host);
           const escapedPassword = escapeString(password);
           const escapedAuth = escapeString(authType);
-  
+
           const auth = authType.toUpperCase() === 'STANDARD'
             ? `IDENTIFIED BY '${escapedPassword}'`
             : `IDENTIFIED WITH ${escapedAuth} BY '${escapedPassword}'`;
-  
+
           statements.push(`CREATE USER '${escapedUser}'@'${escapedHost}' ${auth}`);
           break;
         }
 
-        case 1: {
-          const [oldUserName, newUser, oldHost, newHost] = args;
+        case 'UPDATE_USER_HOST': {
+          const { oldUser, user, oldHost, host } = change;
           statements.push(
-            `RENAME USER '${escapeString(oldUserName)}'@'${escapeString(oldHost)}' TO '${escapeString(newUser)}'@'${escapeString(newHost)}'`
+            `RENAME USER '${escapeString(oldUser)}'@'${escapeString(oldHost)}' TO '${escapeString(user)}'@'${escapeString(host)}'`
           );
           break;
         }
-  
-        case 2: {
-          const [user, host, password, authType] = args;
+
+        case 'UPDATE_AUTH': {
+          const { user, host, password, authType } = change;
           const escapedUser = escapeString(user);
           const escapedHost = escapeString(host);
           const escapedPassword = escapeString(password);
           const escapedAuth = escapeString(authType);
-  
-            const auth = password === undefined
+
+          const auth = password === undefined
             ? `IDENTIFIED WITH ${escapedAuth}`
             : authType.toUpperCase() === 'STANDARD'
               ? `IDENTIFIED BY '${escapedPassword}'`
               : `IDENTIFIED WITH ${escapedAuth} BY '${escapedPassword}'`;
-  
+
           statements.push(`ALTER USER '${escapedUser}'@'${escapedHost}' ${auth}`);
           break;
         }
-  
-        case 3: {
-          const [user, host, maxQueries, maxUpdates, maxConnections, maxUserConnections] = args;
+
+        case 'UPDATE_LIMITS': {
+          const { user, host, maxQueries, maxUpdates, maxConnections, maxUserConnections } = change;
           const escapedUser = escapeString(user);
           const escapedHost = escapeString(host);
 
           statements.push(`UPDATE mysql.user SET` +
-          ` max_questions = ${maxQueries},` +
-          ` max_updates = ${maxUpdates},` +
-          ` max_connections = ${maxConnections},` +
-          ` max_user_connections = ${maxUserConnections}` +
-          ` WHERE User = '${escapedUser}' AND Host = '${escapedHost}'`);
+            ` max_questions = ${maxQueries},` +
+            ` max_updates = ${maxUpdates},` +
+            ` max_connections = ${maxConnections},` +
+            ` max_user_connections = ${maxUserConnections}` +
+            ` WHERE User = '${escapedUser}' AND Host = '${escapedHost}'`);
           break;
         }
-  
-        case 4: {
-          const [user, schemaName, host, privileges, revokedPrivileges] = args;
 
+        case 'UPDATE_PRIVILEGES': {
+          const { user, host, schemas } = change;
           const escapedUser = escapeString(user);
           const escapedHost = escapeString(host);
-          const escapedSchema = escapeString(schemaName);
 
-          if (revokedPrivileges && revokedPrivileges.length > 0) {
-            const revokedPrivs = revokedPrivileges.join(', ');
-            statements.push(
-              `REVOKE ${revokedPrivs} ON \`${escapedSchema}\`.* FROM '${escapedUser}'@'${escapedHost}'`
-            );
-          }
+          for (const schema of schemas) {
+            const escapedSchema = escapeString(schema.name);
 
-          if (privileges && privileges.length > 0) {
-            const grantedPrivs = privileges.join(', ');
+            const allPrivileges = Object.keys(schema.privileges).map(priv => priv.replace(/_/g, '').toUpperCase());
             statements.push(
-              `GRANT ${grantedPrivs} ON \`${escapedSchema}\`.* TO '${escapedUser}'@'${escapedHost}'`
+              `GRANT ${allPrivileges.join(', ')} ON \`${escapedSchema}\`.* TO '${escapedUser}'@'${escapedHost}'`
             );
+
+            const privilegesToRevoke = Object.entries(schema.privileges)
+              .filter(([_, value]) => !value)
+              .map(([priv]) => priv.replace(/_/g, ' ').toUpperCase());
+
+            if (privilegesToRevoke.length > 0) {
+              statements.push(
+                `REVOKE ${privilegesToRevoke.join(', ')} ON \`${escapedSchema}\`.* FROM '${escapedUser}'@'${escapedHost}'`
+              );
+            }
           }
           break;
         }
-  
+
         default:
-          throw new Error(`Unknown change type: ${type}`);
+          throw new Error(`Unknown change type: ${change.type}`);
       }
     }
-  
+
     try {
       await this.driverExecuteMultiple(statements.join('; '));
       return { success: true };
@@ -1640,7 +1731,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     }
   }
 
-  async getSchemas(): Promise<string[]> {
+  async getSchemas(): Promise<Schema[]> {
     const sql = `
       SELECT schema_name
       FROM information_schema.schemata
@@ -1653,30 +1744,27 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return rows;
   }
   
-  async deleteUser(user: string, host: string): Promise<NgQueryResult> {
+  async deleteUser(user: string, host: string): Promise<void> {
     const sql = `DROP USER '${escapeString(user)}'@'${escapeString(host)}'`;
 
-    const result = await this.driverExecuteSingle(sql); 
-    return result;
+    await this.driverExecuteSingle(sql);
   }
 
-  async renameUser(user: string, host: string, newName: string): Promise<NgQueryResult> {
+  async renameUser(user: string, host: string, newName: string): Promise<void> {
     const sql = `RENAME USER '${escapeString(user)}'@'${escapeString(host)}' TO '${escapeString(newName)}'@'${escapeString(host)}'`;
-
-    const result = await this.driverExecuteSingle(sql);
-    return result;
+    await this.driverExecuteSingle(sql);
   }
 
-  async expireUserPassword(user: string, host: string): Promise<NgQueryResult> {
+  async expireUserPassword(user: string, host: string): Promise<void> {
     const sql = `ALTER USER '${escapeString(user)}'@'${escapeString(host)}' PASSWORD EXPIRE`;
 
-    const result = await this.driverExecuteSingle(sql);
-    return result;
+    await this.driverExecuteSingle(sql);
   }
 
-  async revokeAllPrivileges(user: string, host: string): Promise<NgQueryResult> {
+  async revokeAllPrivileges(user: string, host: string): Promise<void> {
     const sql = `REVOKE ALL PRIVILEGES, GRANT OPTION FROM '${escapeString(user)}'@'${escapeString(host)}'`;
-    return await this.driverExecuteSingle(sql);
+   
+    await this.driverExecuteSingle(sql);
   }
 }
 
