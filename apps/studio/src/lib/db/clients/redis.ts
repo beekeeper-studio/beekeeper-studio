@@ -9,13 +9,14 @@ import {
   CancelableQuery,
   ExtendedTableColumn,
 } from "../models";
-import { AppContextProvider, BaseQueryResult, BasicDatabaseClient } from "./BasicDatabaseClient";
+import { AppContextProvider, BaseQueryResult, BasicDatabaseClient, DataStoreValue } from "./BasicDatabaseClient";
 import Redis, { RedisOptions } from "ioredis";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { Dialect, SchemaItem } from "@shared/lib/dialects/models";
 import splitargs from "redis-splitargs";
+import _ from 'lodash';
 
 type RedisQueryResult = BaseQueryResult;
 
@@ -36,6 +37,15 @@ function makeQueryError(command: string, error?: unknown): NgQueryResult {
     rowCount: 1,
     affectedRows: 0,
   };
+}
+
+type RedisKeyType = "string" | "list" | "hash" | "set" | "zset" | "ReJSON-RL";
+
+type RedisTableRow = {
+  key: string;
+  type: RedisKeyType;
+  ttl: number;
+  memory: number;
 }
 
 function makeQueryResult(command: string, result: unknown): NgQueryResult {
@@ -151,43 +161,60 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async getCompletions(): Promise<string[]> {
-    return [
-      "GET",
-      "SET",
-      "DEL",
-      "EXISTS",
-      "EXPIRE",
-      "TTL",
-      "TYPE",
-      "HGET",
-      "HSET",
-      "HDEL",
-      "HKEYS",
-      "HVALS",
-      "HGETALL",
-      "LPUSH",
-      "RPUSH",
-      "LPOP",
-      "RPOP",
-      "LLEN",
-      "LRANGE",
-      "SADD",
-      "SREM",
-      "SMEMBERS",
-      "SCARD",
-      "ZADD",
-      "ZREM",
-      "ZRANGE",
-      "ZCARD",
-      "ZSCORE",
-      "KEYS",
-      "SCAN",
-      "FLUSHDB",
-      "FLUSHALL",
-      "INFO",
-      "PING",
-    ];
+  async getDataStoreValue(table: string, rowData: RedisTableRow): Promise<DataStoreValue> {
+    if (table === "keys") {
+      let value: unknown;
+
+      switch (rowData.type) {
+        // TODO: these operations can be very memory intensive if the key's value contains large amounts of data
+        case "string":
+          // TODO: in case there's a stringified json, it would be nice to display it properly in JSON Viewer
+          value = await this.redis.get(rowData.key);
+          break;
+        case "list":
+          value = await this.redis.lrange(rowData.key, 0, -1);
+          break;
+        case "hash":
+          value = await this.redis.hgetall(rowData.key);
+          break;
+        case "set":
+          value = await this.redis.smembers(rowData.key);
+          break;
+        case "zset": {
+          // it comes as a flat list of [<member>, <score>, <member>, <score>, ...]
+          // convert it to object where keys are scores (sorted from low to high), and values are arrays of members (sorted lexically)
+          // so it's easier to read
+          const result = await this.redis.zrange(rowData.key, 0, -1, 'WITHSCORES');
+          const pairs = _.chunk(result, 2).map(([member, score]) => ({ member, score: Number(score) }))
+          const grouped = _.groupBy(pairs, item => item.score);
+          value = _.mapValues(grouped, group => group.map(item => item.member).sort());
+          break;
+        }
+        case "ReJSON-RL": {
+          const result = await this.redis.call('JSON.GET', rowData.key, '$');
+          value = JSON.parse(String(result));
+        }
+      }
+
+      return  {
+        key: rowData.key, // TODO: use this.redis.rename(...)
+        ttl: rowData.ttl, // TODO: use this.redis.expire(...)
+
+        // TODO: how to mark these two as non editable?
+        type: rowData.type,
+        memory: rowData.memory,
+
+        // TODO: i'd like to render just value in JSON viewer, but ideally this needs its own viewer
+        //  that supports binary types, encodings, etc. See Medis client for inspiration (redis-splitargs is actually from its author!)
+
+        // You'll need to use redis operations specific to each data type to edit the value
+        value,
+      }
+
+    }
+
+    // fallback to regular json viewer behavior for server info
+    return undefined;
   }
 
   async listTables(): Promise<TableOrView[]> {
@@ -345,11 +372,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async getPrimaryKey(): Promise<string | null> {
-    return "key";
+    return null;
   }
 
   async getPrimaryKeys(): Promise<any[]> {
-    return [{ columnName: "key", position: 0 }];
+    return [];
   }
 
   scanAll = async (match = "*", count = 100, cursor = "0", type?: string) => {
@@ -598,6 +625,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async syncDatabase(): Promise<void> {
+    return;
   }
 
   async importStepZero(): Promise<any> {

@@ -337,6 +337,7 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
+import { DataStoreValue } from "@/lib/db/clients/BasicDatabaseClient";
 
 const log = rawLog.scope('TableTable')
 
@@ -393,6 +394,7 @@ export default Vue.extend({
       selectedRowPosition: -1,
       selectedRowData: {},
       expandablePaths: [],
+      dataStoreValue: undefined as DataStoreValue | undefined,
     };
   },
   computed: {
@@ -1841,13 +1843,14 @@ export default Vue.extend({
     positionRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
-    updateJsonViewer(options: { range?: RangeComponent } = {}) {
+    async updateJsonViewer(options: { range?: RangeComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
         this.selectedRow = null
         this.selectedRowPosition = null
         this.selectedRowData = {}
+        this.dataStoreValue = undefined
         return
       }
       const position = this.positionRowOf(row)
@@ -1861,6 +1864,10 @@ export default Vue.extend({
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
       this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
+
+      if (["redis"].includes(this.dialect)) {
+        this.dataStoreValue = await this.connection.getDataStoreValue(this.table.name, this.selectedRowData)
+      }
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
@@ -1873,7 +1880,7 @@ export default Vue.extend({
     updateJsonViewerSidebar() {
       const updatedData: UpdateOptions = {
         dataId: this.selectedRowIndex,
-        value: this.selectedRowData,
+        value: this.dataStoreValue ?? this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,
         editablePaths: this.editablePaths,

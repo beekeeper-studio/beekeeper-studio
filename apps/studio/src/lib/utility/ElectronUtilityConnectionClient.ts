@@ -158,6 +158,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/getRoutineCreateScript', { routine, type, schema });
   }
 
+  async getDataStoreValue(table: string, rowData: Record<string, unknown>) {
+    return await Vue.prototype.$util.send('conn/getDataStoreValue', { table, rowData });
+  }
+
   async createTable(table: CreateTableSpec): Promise<void> {
     return await Vue.prototype.$util.send('conn/createTable', { table });
   }
@@ -281,27 +285,27 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   async importStepZero(_table: TableOrView): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importTruncateCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importLineReadCommand(_table: TableOrView, _sqlString: string | string[], _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importCommitCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importRollbackCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importFinalCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
