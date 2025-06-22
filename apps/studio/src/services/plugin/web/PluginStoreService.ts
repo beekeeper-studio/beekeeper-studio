@@ -198,10 +198,13 @@ export default class PluginStoreService {
 
   private findTable(name: string, schema?: string) {
     return this.store.state.tables.find((t) => {
-      if (!schema) {
+      if (!schema && this.store.state.defaultSchema) {
         schema = this.store.state.defaultSchema;
       }
-      return t.name === name && t.schema === schema;
+      if (schema) {
+        return t.name === name && t.schema === schema;
+      }
+      return t.name === name;
     });
   }
 
@@ -287,6 +290,8 @@ export default class PluginStoreService {
         dataType: field.dataType,
       })),
       rows: result.rows,
+      rowCount: result.rowCount,
+      affectedRows: result.affectedRows,
     };
   }
 

@@ -18,13 +18,18 @@
   --bks-text-editor-cursor-bg-color: #{$text-dark};
   --bks-text-editor-fatcursor-bg-color: #77ee77;
   --bks-text-editor-def-fg-color: #fd971f;
-  --bks-text-editor-error-bg-color: #f8f8f0;
-  --bks-text-editor-error-fg-color: #f92672;
+  --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
+  --bks-text-editor-error-fg-color: #{$brand-danger};
   --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-focused-outline-color: #{$query-editor-bg};
+  --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.37)};
+  --bks-text-editor-foldgutter-fg-color-hover: #{$text-dark};
   --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-gutter-border-color: #{$query-editor-bg};
   --bks-text-editor-guttermarker-fg-color: #f8f8f2;
   --bks-text-editor-guttermarker-subtle-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-header-fg-color: #ae81ff;
+  --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-link-fg-color: #ae81ff;
@@ -51,23 +56,23 @@
   --bks-text-editor-enumMember-fg-color: #4488ff;
   --bks-text-editor-decorator-fg-color: #cc33cc;
   --bks-text-editor-event-fg-color: #5555ff;
-  --bks-text-editor-function-fg-color: #dcdcaa;
+  --bks-text-editor-function-fg-color: #{$brand-warning};
   --bks-text-editor-method-fg-color: #4488ee;
   --bks-text-editor-macro-fg-color: #8855dd;
   --bks-text-editor-label-fg-color: #666666;
   --bks-text-editor-regexp-fg-color: #ee5555;
   --bks-text-editor-operator-fg-color: #{$text-dark};
   --bks-text-editor-definition-fg-color: #fd971f;
-  --bks-text-editor-variableName-fg-color: #f8f8f2;
+  --bks-text-editor-variableName-fg-color: #{$text-dark};
   --bks-text-editor-bool-fg-color: #ae81ff;
   --bks-text-editor-null-fg-color: #ae81ff;
   --bks-text-editor-className-fg-color: #4EC9B0;
-  --bks-text-editor-propertyName-fg-color: #9CDCFE;
+  --bks-text-editor-propertyName-fg-color: #{$brand-info};
   --bks-text-editor-punctuation-fg-color: #{$text};
   --bks-text-editor-meta-fg-color: #75715e;
   --bks-text-editor-typeName-fg-color: #{$text-dark};
   --bks-text-editor-labelName-fg-color: #C8C8C8;
-  --bks-text-editor-attributeName-fg-color: #9CDCFE;
+  --bks-text-editor-attributeName-fg-color: #{$brand-info};
   --bks-text-editor-attributeValue-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
   --bks-text-editor-heading-fg-color: #ae81ff;
   --bks-text-editor-url-fg-color: #ae81ff;
@@ -200,10 +205,25 @@
   // Gutters and line numbers
   .cm-gutters {
     background-color: var(--bks-text-editor-gutter-bg-color);
+    border-color: var(--bks-text-editor-gutter-border-color);
+  }
+
+  .cm-foldgutter {
+    font-size: 1.2rem;
+    color: var(--bks-text-editor-foldgutter-fg-color);
+
+    &:hover {
+      color: var(--bks-text-editor-foldgutter-fg-color-hover);
+    }
   }
 
   .cm-lineNumbers .cm-gutterElement {
     color: var(--bks-text-editor-linenumber-fg-color);
+  }
+
+  // Focused state
+  .cm-focused {
+    outline-color: var(--bks-text-editor-focused-outline-color);
   }
 
   // Cursor
@@ -228,6 +248,18 @@
     color: var(--bks-text-editor-matchingbracket-fg-color);
     background-color: var(--bks-text-editor-matchingbracket-bg-color);
     text-decoration: underline;
+  }
+
+  // Marker styles
+  .cm-error {
+    background-color: var(--bks-text-editor-error-bg-color);
+    border-bottom: 2px dashed var(--bks-text-editor-error-fg-color);
+    border-radius: 2px;
+  }
+
+  .cm-highlight {
+    background-color: var(--bks-text-editor-highlight-bg-color);
+    border-radius: 2px;
   }
 }
 

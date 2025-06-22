@@ -15,8 +15,9 @@
         :on-request="handleRequest"
       />
     </div>
-    <div class="bottom-panel" ref="bottomPanel">
+    <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">
       <result-table
+        ref="table"
         v-if="showResultTable"
         :focus="focusingElement === 'table'"
         :active="active"
@@ -45,7 +46,31 @@
           <span>{{ info }}</span>
         </div>
       </div>
+      <div class="message empty" v-else>
+        Results will appear here
+      </div>
     </div>
+    <query-editor-status-bar
+      v-model="selectedResult"
+      :results="results"
+      :running="isRunningQuery"
+      :execute-time="executeTime"
+      :active="active"
+      @download="download"
+      @clipboard="clipboard"
+      @clipboardJson="clipboardJson"
+      @clipboardMarkdown="clipboardMarkdown"
+    >
+      <template #left-actions>
+        <x-button
+          class="btn btn-flat btn-icon"
+          @click="toggleTablePanel"
+        >
+          <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>
+          {{ isTablePanelVisible ? 'Hide result' : 'Show result' }}
+        </x-button>
+      </template>
+    </query-editor-status-bar>
   </div>
 </template>
 
@@ -60,9 +85,10 @@ import { PropType } from "vue";
 import { TransportPluginShellTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { PluginRequestData } from "@beekeeperstudio/plugin";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
+import { OnViewRequestListenerParams } from "@/services/plugin/types";
+import { RunQueryResponse } from "@beekeeperstudio/plugin"
 
 export default Vue.extend({
   components: {
@@ -87,7 +113,7 @@ export default Vue.extend({
       results: [],
       runningCount: 1,
       selectedResult: 0,
-      runningQuery: null,
+      isRunningQuery: null,
       error: null,
       info: null,
       split: null,
@@ -97,6 +123,7 @@ export default Vue.extend({
       containerResizeObserver: null,
       focusingElement: "table",
       query: "",
+      isTablePanelVisible: false,
     };
   },
   computed: {
@@ -156,17 +183,59 @@ export default Vue.extend({
         snapOffset: 60,
         gutterSize: 5,
         direction: "vertical",
+        onDrag: ([topPanelSize, bottomPanelSize]) => {
+          // Define a threshold to detect if bottom panel is effectively visible
+          const VISIBLE_THRESHOLD = 5; // 5% minimum to consider panel visible
+          this.isTablePanelVisible = bottomPanelSize > VISIBLE_THRESHOLD;
+        },
       });
+
+      // Initialize table panel as collapsed
+      this.isTablePanelVisible = false;
 
       // Making sure split.js is initialized
       this.$nextTick(() => {
         this.tableHeight = this.$refs.bottomPanel.clientHeight;
       });
     },
-    async handleRequest({ request }: { request: PluginRequestData }) {
+    download(format) {
+      this.$refs.table.download(format)
+    },
+    clipboard() {
+      this.$refs.table.clipboard()
+    },
+    clipboardJson() {
+      // eslint-disable-next-line
+      // @ts-ignore
+      const data = this.$refs.table.clipboard('json')
+    },
+    clipboardMarkdown() {
+      // eslint-disable-next-line
+      // @ts-ignore
+      const data = this.$refs.table.clipboard('md')
+    },
+    async handleRequest({ request, modifyResult, after }: OnViewRequestListenerParams) {
+
       switch (request.name) {
+        case "runQuery": {
+          const queryStartTime = new Date()
+
+          this.isRunningQuery = true;
+
+          after((response) => {
+            const queryEndTime = new Date()
+            const result = response.result as RunQueryResponse
+            if (request.name === "runQuery") {
+              this.isRunningQuery = false;
+              this.executeTime = queryEndTime - queryStartTime;
+              this.results = result.results ?? [];
+            }
+          })
+
+          break;
+        }
         case "expandTableResult": {
-          this.expandTableResult();
+          await this.expandTableResult();
           this.results = request.args.results;
           break;
         }
@@ -175,6 +244,15 @@ export default Vue.extend({
             throw new Error("Tab title is required");
           }
           this.tab.title = request.args.title;
+          await this.$store.dispatch('tabs/save', this.tab)
+          break;
+        }
+        case "getViewState": {
+          modifyResult(() => this.tab.context.state)
+          break;
+        }
+        case "setViewState": {
+          this.tab.context.state = request.args.state;
           await this.$store.dispatch('tabs/save', this.tab)
           break;
         }
@@ -195,8 +273,24 @@ export default Vue.extend({
       if (!this.split) return;
 
       this.split.setSizes([60, 40]);
+      this.isTablePanelVisible = true;
       await this.$nextTick();
       this.tableHeight = this.$refs.bottomPanel?.clientHeight || 0;
+    },
+    async collapseTableResult() {
+      if (!this.split) return;
+
+      this.split.setSizes([100, 0]);
+      this.isTablePanelVisible = false;
+      await this.$nextTick();
+      this.tableHeight = this.$refs.bottomPanel?.clientHeight || 0;
+    },
+    async toggleTablePanel() {
+      if (this.isTablePanelVisible) {
+        await this.collapseTableResult();
+      } else {
+        await this.expandTableResult();
+      }
     },
   },
   async mounted() {
