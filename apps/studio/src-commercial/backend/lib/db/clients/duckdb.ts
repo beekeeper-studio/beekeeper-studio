@@ -258,7 +258,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   async disconnect(): Promise<void> {
     await super.disconnect();
-    this.connectionInstance.disconnect();
+    this.connectionInstance.closeSync();
+    this.databaseInstance.closeSync();
   }
 
   async query(queryText: string, options?: any): Promise<CancelableQuery> {
