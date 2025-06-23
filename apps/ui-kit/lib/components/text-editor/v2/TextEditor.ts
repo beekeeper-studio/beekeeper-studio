@@ -110,6 +110,12 @@ export class TextEditor {
         }
       }
     }
+
+    if (update.selectionSet) {
+      if (this.config.onSelectionChange) {
+        this.config.onSelectionChange(this.getSelection());
+      }
+    }
   }
 
   setReadOnly(readOnly: boolean) {
@@ -179,7 +185,7 @@ export class TextEditor {
   }
 
   getSelection(): string {
-    return this.view.state.selection.main.toString();
+    return this.view.state.sliceDoc(this.view.state.selection.main.from, this.view.state.selection.main.to);
   }
 
   getLsHelpers(): LanguageServerHelpers {

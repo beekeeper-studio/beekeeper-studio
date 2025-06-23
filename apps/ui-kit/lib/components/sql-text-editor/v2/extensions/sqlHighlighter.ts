@@ -1,4 +1,3 @@
-import { syntaxTree } from "@codemirror/language";
 import { Decoration, ViewPlugin, DecorationSet, ViewUpdate, EditorView } from "@codemirror/view";
 
 // This plugin will decorate alias identifiers in SQL

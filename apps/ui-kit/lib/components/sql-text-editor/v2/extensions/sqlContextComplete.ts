@@ -62,7 +62,7 @@ function sqlContextComplete(): Extension {
         let spaceInserted = false;
 
         update.changes.iterChanges(
-          (fromA: any, toA: any, fromB: any, toB: any, inserted: any) => {
+          (_fromA: any, _toA: any, _fromB: any, _toB: any, inserted: any) => {
             if (inserted.length === 1 && inserted.text[0] === " ") {
               spaceInserted = true;
             }
@@ -248,7 +248,7 @@ function getTablesFromContext(
   // Add tables from aliases
   if (aliases) {
     for (const [_, tablePath] of Object.entries(aliases)) {
-      if (tablePath?.length > 0) {
+      if (Array.isArray(tablePath) && tablePath.length > 0) {
         tables.add(tablePath[0]);
       }
     }

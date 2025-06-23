@@ -64,6 +64,7 @@ export type TextEditorConfiguration = Configuration | ConfigurationWithLS;
 type Configuration = ExtensionConfiguration & {
   parent: HTMLElement;
   onValueChange: (value: string) => void;
+  onSelectionChange?: (value: string) => void;
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
   onLspReady?: (capabilities: object) => void;
@@ -119,6 +120,10 @@ export type TextEditorValueChangeEvent = CustomEvent<{
   value: string;
 }>;
 
+export type TextEditorSelectionChangeEvent = CustomEvent<{
+  value: string;
+}>;
+
 export type TextEditorFocusEvent = FocusEvent;
 
 export type TextEditorBlurEvent = FocusEvent;
@@ -129,6 +134,7 @@ export type TextEditorLSPReadyEvent = CustomEvent<{
 
 export interface TextEditorEventMap extends HTMLElementEventMap {
   "bks-value-change": TextEditorValueChangeEvent;
+  "bks-selection-change": TextEditorSelectionChangeEvent;
   "bks-focus": TextEditorFocusEvent;
   "bks-blur": TextEditorFocusEvent;
   "bks-lsp-ready": TextEditorLSPReadyEvent;

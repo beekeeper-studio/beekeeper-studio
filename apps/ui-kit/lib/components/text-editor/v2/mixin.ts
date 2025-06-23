@@ -7,7 +7,7 @@ import {
   useCustomMenuItems,
 } from "../../context-menu";
 import { readClipboard, writeClipboard } from "../../../utils";
-import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorValueChangeEvent } from "./types";
+import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorSelectionChangeEvent, TextEditorValueChangeEvent } from "./types";
 
 export default {
   props,
@@ -150,6 +150,9 @@ export default {
         parent: this.$refs.editor,
         onValueChange: (value) => {
           this.$emit("bks-value-change", { value } as TextEditorValueChangeEvent['detail']);
+        },
+        onSelectionChange: (value) => {
+          this.$emit("bks-selection-change", { value } as TextEditorSelectionChangeEvent['detail']);
         },
         onFocus: (event) => {
           this.$emit("bks-focus", event as TextEditorFocusEvent);
