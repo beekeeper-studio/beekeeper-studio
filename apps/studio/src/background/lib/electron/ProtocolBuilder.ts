@@ -75,12 +75,12 @@ export const ProtocolBuilder = {
     protocol.registerBufferProtocol("plugin", (request, respond) => {
       // Removes the leading "plugin://" and the query string
       const url = new URL(request.url);
-      const pathName = path.join(url.host, url.pathname);
+      const pluginId = url.host;
+      const pathName = path.join(pluginId, url.pathname);
       const normalized = path.normalize(pathName)
       const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
       log.debug("resolving", pathName, 'to', fullPath)
-      console.log("plugin", pathName, fullPath, {host:url.host})
-      if (bksConfig.get(`plugins.${url.host}.enabled`) === false) {
+      if (bksConfig.get(`plugins.${pluginId}.enabled`) === false) {
         respond({ error: -20 }) // blocked by client
         return;
       }
