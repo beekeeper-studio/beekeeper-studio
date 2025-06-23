@@ -42,7 +42,7 @@ export const TabModule: Module<State, RootState> = {
           return false;
         }
         if (tab.type === "plugin-shell") {
-          return window.bksConfig.get(`plugins.${tab.pluginId}.enabled`) === true;
+          return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
         }
         return true;
       })
