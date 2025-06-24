@@ -67,6 +67,7 @@
   import { tabulatorForTableData } from '@/common/tabulator';
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
+  import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -477,8 +478,8 @@
         this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
       handleRangeChange(ranges) {
-        const row = ranges[0].getRows()[0]
-        this.selectedRowData = this.dataToJson(row.getData(), true)
+        const parsedData = parseRowDataForJsonViewer(ranges[0].getRows()[0].getData(), this.tableColumns)
+        this.selectedRowData = this.dataToJson(parsedData, true)
         this.selectedRowPosition = row.getPosition()
         this.updateJsonViewerSidebar()
       },
