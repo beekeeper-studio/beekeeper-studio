@@ -19,7 +19,7 @@ import {
   HighlightStyle,
 } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import {
   autocompletion,
@@ -138,6 +138,7 @@ export function extensions(config: ExtensionConfiguration) {
       ...completionKeymap,
       ...lintKeymap,
       { key: "Tab", run: acceptCompletion },
+      indentWithTab,
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
