@@ -36,10 +36,13 @@ export const TabModule: Module<State, RootState> = {
     ],
   }),
   getters: {
-    tabTypeConfigs(state, _getters, rootState) {
+    tabTypeConfigs(state, _getters, _rootState, rootGetters) {
       return state.allTabTypeConfigs.filter((tab) => {
-        if (tab.type === "shell" && !rootState.dialectData?.disabledFeatures?.shell) {
+        if (tab.type === "shell" && rootGetters.dialectData?.disabledFeatures?.shell) {
           return false;
+        }
+        if (tab.type === "plugin-shell") {
+          return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
         }
         return true;
       })
