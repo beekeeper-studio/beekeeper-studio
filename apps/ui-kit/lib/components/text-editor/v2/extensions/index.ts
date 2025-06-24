@@ -23,6 +23,7 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import {
   autocompletion,
+  acceptCompletion,
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap,
@@ -136,6 +137,7 @@ export function extensions(config: ExtensionConfiguration) {
       ...foldKeymap,
       ...completionKeymap,
       ...lintKeymap,
+      { key: "Tab", run: acceptCompletion },
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
