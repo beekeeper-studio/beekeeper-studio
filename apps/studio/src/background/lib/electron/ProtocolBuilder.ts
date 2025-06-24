@@ -80,7 +80,7 @@ export const ProtocolBuilder = {
       const normalized = path.normalize(pathName)
       const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
       log.debug("resolving", pathName, 'to', fullPath)
-      if (bksConfig.get(`plugins.${pluginId}.enabled`) === false) {
+      if (bksConfig.get(`plugins.${pluginId}.disabled`)) {
         respond({ error: -20 }) // blocked by client
         return;
       }

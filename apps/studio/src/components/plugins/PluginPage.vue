@@ -71,7 +71,7 @@
       >
         {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
-      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.enabled === false">
+      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
         <i class="material-icons-outlined">info</i>
         <div>This plugin has been disabled via configuration</div>
       </div>
