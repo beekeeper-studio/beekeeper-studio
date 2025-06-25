@@ -35,6 +35,7 @@ import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
+import { UserManagementModule } from './modules/UserManagementModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 
 
@@ -73,9 +74,6 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean
-  hasAdminPrivileges: boolean,
-  users: [],
-  selectedUser: null,
 }
 
 Vue.use(Vuex)
@@ -97,6 +95,7 @@ const store = new Vuex.Store<State>({
     imports: ImportStoreModule,
     backups: BackupModule,
     sidebar: SidebarModule,
+    userManagement: UserManagementModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -130,9 +129,6 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
-    hasAdminPrivileges: false,
-    users: [],
-    selectedUser: null,
   },
 
   getters: {
@@ -255,15 +251,6 @@ const store = new Vuex.Store<State>({
     },
   },
   mutations: {
-    setSelectedUser(state, user) {
-      state.selectedUser = user;
-    },
-    setAdminPermissions(state, adminPrivileges: boolean) {
-      state.hasAdminPrivileges = adminPrivileges;
-    },
-    setUsers(state, users) {
-      state.users = users;
-    },
     storeInitialized(state, b: boolean) {
       state.storeInitialized = b
     },
@@ -398,41 +385,6 @@ const store = new Vuex.Store<State>({
     },
   },
   actions: {
-
-    updateSelectedUser({ commit }, user) {
-      commit('setSelectedUser', user);
-    },
-
-    async checkAdminPermissions({ commit, state }) {
-      try {
-        const result = await state.connection.hasAdminPermission();
-        commit('setAdminPermissions', result);
-      } catch {
-        commit('setAdminPermissions', false);
-      }
-    },
-
-    async updateUsersList({ dispatch }) {
-      try {
-        await dispatch('fetchUsers');
-      } catch (error) {
-        log.error('Failed to update user list:', error);
-      }
-    },
-
-    async fetchUsers({ commit, state }) {
-      try {
-        const users = await state.connection.getListOfUsers();
-        const formattedUsers = users.map((user) => ({
-          user: user.user || 'anonymous',
-          host: user.host || 'localhost',
-        }));
-        commit('setUsers', formattedUsers);
-      } catch (error) {
-        log.error('Failed to fetch users:', error);
-      }
-    },
-
     async test(context, config: IConnection) {
       await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
     },

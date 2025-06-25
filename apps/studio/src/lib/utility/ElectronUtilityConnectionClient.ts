@@ -1,8 +1,9 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, AdminPermission, User, UserAuthenticationDetails, UserPrivileges, UserResourceLimits, ApplyUserChangesResult, Schema } from "../db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, AdminPermission, User, UserAuthenticationDetails, UserPrivileges, UserResourceLimits, Schema } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
+import { UserChange } from '@/lib/db/models';
 
 
 export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
@@ -140,7 +141,7 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return grants;
   }
 
-  async applyUserChanges(changes: any[]): Promise <ApplyUserChangesResult> {
+  async applyUserChanges(changes: UserChange[]): Promise <void> {
     return await Vue.prototype.$util.send('conn/applyUserChanges', { changes });
   }
 

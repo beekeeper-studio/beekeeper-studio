@@ -979,13 +979,8 @@ export default Vue.extend({
         unsavedChanges: false,
       };
 
-      const existing = this.tabItems.find(
-        (t) => t.tabType === 'user-management'
-      );
-      if (existing) {
-        this.setActiveTab(existing);
-        return;
-      }
+      const existing = this.tabItems.find((t) => matches(t, tab));
+      if (existing) return this.$store.dispatch('tabs/setActive', existing);
       this.addTab(tab);
     },
     openTableBuilder() {

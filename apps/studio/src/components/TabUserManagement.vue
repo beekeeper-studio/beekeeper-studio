@@ -1,10 +1,14 @@
 <template>
-  <div class="scrollable-tab-container">
-    <div class="user-management-container">
-      <div class="header">
-        <h1><i class="material-icons">people</i> Users and Privileges</h1>
-      </div>
+  <div class="table-properties">
+    <div class="table-properties-header">
+      <h1>
+        <i class="material-icons">people</i>
+        Users and Privileges
+      </h1>
+    </div>
+    <div class="table-properties-divider"></div>
 
+    <div class="table-properties-wrap">
       <user-list
         v-if="!selectedUser"
         :users="users"
@@ -34,7 +38,8 @@ const log = rawLog.scope("TabUserManagement")
 
 export default {
   computed: {
-    ...mapState(['connection', 'users', 'selectedUser']),
+    ...mapState(['connection']),
+    ...mapState('userManagement', ['users', 'selectedUser']),
   },
   components: {
     UserList: TabUserManagementUserList,
@@ -47,11 +52,11 @@ export default {
   },
   mounted() {
     if (!this.selectedUser) {
-      this.$store.dispatch('updateUsersList');
+      this.$store.dispatch('userManagement/updateUsersList');
     }
   },
   methods: {
-    ...mapActions(['updateSelectedUser']),
+    ...mapActions('userManagement', ['updateSelectedUser']),
     selectUser(user) {
       this.updateSelectedUser(user);
     },
@@ -59,7 +64,7 @@ export default {
       try {
         newUser.isNew = true;
         this.updateSelectedUser(newUser);
-        await this.$store.dispatch('updateUsersList');
+        await this.$store.dispatch('userManagement/updateUsersList');
       } catch (error) {
         log.error('Failed to add user:', error);
         this.$noty.error(`Failed to add user: ${error.message}`);
@@ -70,7 +75,7 @@ export default {
       try {
         await this.connection.deleteUser(this.selectedUser.user, this.selectedUser.host);
         this.$noty.success(`User ${this.selectedUser.user} deleted successfully`);
-        this.$store.dispatch('updateUsersList');
+        this.$store.dispatch('userManagement/updateUsersList');
         this.$modal.hide('delete-user-modal');
         this.updateSelectedUser(null);
       } catch (error) {
@@ -114,42 +119,17 @@ export default {
 </script>
 
 <style scoped>
-.scrollable-tab-container {
-  height: 100%;
-  overflow-y: auto;
-  padding: 15px;
-  background-color: #f5f7fa;
-}
 
-.user-management-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  overflow: hidden;
-}
-
-.header {
+.table-properties-header {
   padding: 20px;
-  background: linear-gradient(135deg, #fbbc05 0%, #ea4335 100%);
-  color: black;
+  flex-shrink: 0;
 }
 
-.header h1, .header h2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.table-properties-divider {
+  height: 1px;
+  background: var(--bk-border-color, #e0e0e0);
+  margin: 0 20px;
+  flex-shrink: 0;
 }
 
-.header h1 {
-  font-size: 1.5em;
-  margin-bottom: 5px;
-}
-
-.header h2 {
-  font-size: 1.2em;
-  margin-top: 0;
-  font-weight: 400;
-}
 </style>

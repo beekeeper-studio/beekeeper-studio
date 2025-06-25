@@ -1,4 +1,5 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, AdminPermission, User, UserAuthenticationDetails, UserPrivileges, UserResourceLimits, ApplyUserChangesResult, Schema } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, AdminPermission, User, UserAuthenticationDetails, UserPrivileges, UserResourceLimits, Schema } from '../models';
+import { UserChange } from '@/lib/db/models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -645,8 +646,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return [];
   }
 
-  async applyUserChanges(changes: any[][]): Promise<ApplyUserChangesResult> {
-    return { success: false };
+  async applyUserChanges(changes: UserChange[]): Promise<void> {
+    return;
   }
 
   async getSchemas(): Promise<Schema[]> {

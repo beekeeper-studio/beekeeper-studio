@@ -53,7 +53,7 @@
           class="form-control"
           placeholder="••••••••"
         >
-        <button class="btn-icon ml-1" @click="$emit('toggle-password', 'password')" title="Toggle visibility">
+        <button type="button" class="btn-icon" @click="$emit('toggle-password')">
           <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
         </button>
       </div>
@@ -71,7 +71,7 @@
           class="form-control"
           placeholder="••••••••"
         >
-        <button class="btn-icon ml-1" @click="$emit('toggle-password', 'confirmPassword')" title="Toggle visibility">
+        <button class="btn-icon ml-1" @click="$emit('toggle-confirm-password')" title="Toggle visibility">
           <i class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
         </button>
       </div>

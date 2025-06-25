@@ -2,7 +2,6 @@ import _ from "lodash";
 import { Module } from "vuex";
 import { State as RootState } from "../index";
 import { SmartLocalStorage } from "@/common/LocalStorage";
-import Vue from "vue";
 
 export interface SidebarTab {
   id: string;
@@ -19,7 +18,6 @@ interface State {
   secondarySidebarOpen: boolean;
   secondaryActiveTabId?: string;
   globalSidebarActiveItem: "tables" | "history" | "queries";
-  hasAdminPrivileges: boolean;
 }
 
 const PRIMARY_SIDEBAR_OPEN_KEY = 'primarySidebarOpen-v2'
@@ -39,7 +37,6 @@ export const SidebarModule: Module<State, RootState> = {
         label: "JSON Viewer",
       },
     ],
-    hasAdminPrivileges: false,
 
     // PRIMARY SIDEBAR
     primarySidebarOpen: SmartLocalStorage.getBool(PRIMARY_SIDEBAR_OPEN_KEY, true),
@@ -55,9 +52,6 @@ export const SidebarModule: Module<State, RootState> = {
   getters: {
   },
   mutations: {
-    setHasAdminPrivileges(state, hasAdminPrivileges: boolean) {
-      state.hasAdminPrivileges = hasAdminPrivileges;
-    },
     // PRIMARY SIDEBAR
     primarySidebarOpen(state, value: boolean) {
       state.primarySidebarOpen = value
@@ -87,10 +81,6 @@ export const SidebarModule: Module<State, RootState> = {
     },
   },
   actions: {
-    async setHasAdminPrivileges(context) {
-      const result = await Vue.prototype.$util.send('conn/hasAdminPermission', {});
-      context.commit('setHasAdminPrivileges', result);
-    },
     // PRIMARY SIDEBAR
     setPrimarySidebarOpen(context, open: boolean) {
       SmartLocalStorage.setBool(PRIMARY_SIDEBAR_OPEN_KEY, open)

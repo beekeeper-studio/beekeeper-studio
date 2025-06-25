@@ -72,6 +72,7 @@ import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
+import { UserChange } from '@/lib/db/models';
 
 type ResultType = {
   tableName?: string
@@ -1633,15 +1634,19 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return userPrivileges;
   }
   
-  async applyUserChanges(changes: any[]): Promise<{ success: boolean; error?: string }> {
+  async applyUserChanges(changes: UserChange[]): Promise<void> {
     const statements: string[] = [];
 
     for (const change of changes) {
+      // Extract common values that might be present in the change object
+      const { user, host } = change;
+      // Pre-escape common values when they exist
+      const escapedUser = user ? escapeString(user) : null;
+      const escapedHost = host ? escapeString(host) : null;
+      
       switch (change.type) {
         case 'CREATE': {
-          const { user, host, password, authType } = change;
-          const escapedUser = escapeString(user);
-          const escapedHost = escapeString(host);
+          const { password, authType } = change;
           const escapedPassword = escapeString(password);
           const escapedAuth = escapeString(authType);
 
@@ -1654,18 +1659,19 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
 
         case 'UPDATE_USER_HOST': {
-          const { oldUser, user, oldHost, host } = change;
+          const { oldUser, oldHost } = change;
+          const escapedOldUser = escapeString(oldUser);
+          const escapedOldHost = escapeString(oldHost);
+          
           statements.push(
-            `RENAME USER '${escapeString(oldUser)}'@'${escapeString(oldHost)}' TO '${escapeString(user)}'@'${escapeString(host)}'`
+            `RENAME USER '${escapedOldUser}'@'${escapedOldHost}' TO '${escapedUser}'@'${escapedHost}'`
           );
           break;
         }
 
         case 'UPDATE_AUTH': {
-          const { user, host, password, authType } = change;
-          const escapedUser = escapeString(user);
-          const escapedHost = escapeString(host);
-          const escapedPassword = escapeString(password);
+          const { password, authType } = change;
+          const escapedPassword = password ? escapeString(password) : null;
           const escapedAuth = escapeString(authType);
 
           const auth = password === undefined
@@ -1679,9 +1685,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
 
         case 'UPDATE_LIMITS': {
-          const { user, host, maxQueries, maxUpdates, maxConnections, maxUserConnections } = change;
-          const escapedUser = escapeString(user);
-          const escapedHost = escapeString(host);
+          const { maxQueries, maxUpdates, maxConnections, maxUserConnections } = change;
 
           statements.push(`UPDATE mysql.user SET` +
             ` max_questions = ${maxQueries},` +
@@ -1693,9 +1697,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         }
 
         case 'UPDATE_PRIVILEGES': {
-          const { user, host, schemas } = change;
-          const escapedUser = escapeString(user);
-          const escapedHost = escapeString(host);
+          const { schemas } = change;
 
           for (const schema of schemas) {
             const escapedSchema = escapeString(schema.name);
@@ -1723,12 +1725,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       }
     }
 
-    try {
       await this.driverExecuteMultiple(statements.join('; '));
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message };
-    }
+      return;
   }
 
   async getSchemas(): Promise<Schema[]> {
@@ -1763,7 +1761,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async revokeAllPrivileges(user: string, host: string): Promise<void> {
     const sql = `REVOKE ALL PRIVILEGES, GRANT OPTION FROM '${escapeString(user)}'@'${escapeString(host)}'`;
-   
+  
     await this.driverExecuteSingle(sql);
   }
 }

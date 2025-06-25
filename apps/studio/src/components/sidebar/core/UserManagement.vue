@@ -39,27 +39,29 @@
           </div>
         </div>
 
-        <nav class="list-body" ref="wrapper">
-          <template v-if="filteredUsers.length">
-            <user-management-list-item
-              v-for="user in filteredUsers"
-              :key="`${user.user}@${user.host}`"
-              :item="user"
-              :selected="selectedUser && selectedUser.user === user.user && selectedUser.host === user.host"
-              @select="selectUser"
-              @open="openUserTab"
-              @all_settings="openAllSettingsTab"
-              @rename="showRenameModal"
-              @delete="showDeleteModal"
-              @contextmenu.prevent="openContextMenu(user, $event)"
-            />
-          </template>
-          <template v-else>
-            <div style="padding: 24px; color: #888; text-align: center; font-size: 1em;">
-              <i class="material-icons" style="font-size: 2em;">info</i>
-              <div>No users found</div>
-            </div>
-          </template>
+        <nav class="list-group" ref="wrapper">
+          <div class="list-body">
+            <template v-if="filteredUsers.length">
+              <user-management-list-item
+                v-for="user in filteredUsers"
+                :key="`${user.user}@${user.host}`"
+                :item="user"
+                :selected="selectedUser && selectedUser.user === user.user && selectedUser.host === user.host"
+                @select="selectUser"
+                @open="openUserTab"
+                @all_settings="openAllSettingsTab"
+                @rename="showRenameModal"
+                @delete="showDeleteModal"
+                @contextmenu.prevent="openContextMenu(user, $event)"
+              />
+            </template>
+            <template v-else>
+              <div class="empty">
+                <i class="material-icons">info</i>
+                <div>No users found</div>
+              </div>
+            </template>
+          </div>
         </nav>
       </div>
     </div>
@@ -147,7 +149,8 @@ export default {
     };
   },
   computed: {
-    ...mapState(['connection', 'users', 'selectedUser']),
+    ...mapState(['connection']),
+    ...mapState('userManagement', ['users', 'selectedUser']),
     filteredUsers() {
       if (!this.filterQuery) return this.users;
       return this.users.filter(user =>
@@ -157,10 +160,10 @@ export default {
     }
   },
   mounted() {
-    this.$store.dispatch('updateUsersList');
+    this.$store.dispatch('userManagement/updateUsersList');
   },
   methods: {
-    ...mapActions(['updateSelectedUser']),
+    ...mapActions('userManagement', ['updateSelectedUser']),
     openSettingsTab() {
       this.updateSelectedUser(null);
       this.$root.$emit('userManagementOpen');
@@ -192,7 +195,7 @@ export default {
       try {
         await this.connection.renameUser(this.selectedUser.user, this.selectedUser.host, this.newUsername);
         this.$noty.success(`User ${this.selectedUser.user} renamed to ${this.newUsername}`);
-        this.$store.dispatch('updateUsersList');
+        this.$store.dispatch('userManagement/updateUsersList');
         this.$modal.hide('rename-user-modal');
         this.updateSelectedUser(null);
       } catch (error) {
@@ -205,7 +208,7 @@ export default {
       try {
         await this.connection.deleteUser(this.selectedUser.user, this.selectedUser.host);
         this.$noty.success(`User ${this.selectedUser.user} deleted successfully`);
-        this.$store.dispatch('updateUsersList');
+        this.$store.dispatch('userManagement/updateUsersList');
         this.$modal.hide('delete-user-modal');
         this.updateSelectedUser(null);
       } catch (error) {
@@ -231,6 +234,7 @@ export default {
 </script>
 
 <style scoped>
+
 .dialog-buttons {
   display: flex;
   justify-content: flex-end;
@@ -238,29 +242,4 @@ export default {
   margin-top: 16px;
 }
 
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-control {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.dialog-content ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.dialog-content li {
-  padding: 8px 16px;
-  cursor: pointer;
-}
-
-.dialog-content li:hover {
-  background-color: #f5f5f5;
-}
 </style>

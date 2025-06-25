@@ -13,6 +13,7 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
+import { UserChange } from '@/lib/db/models';
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -125,7 +126,7 @@ export interface IConnectionHandlers {
   'conn/getUserPrivileges': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<UserPrivileges[]>,
   'conn/getUserResourceLimits': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<UserResourceLimits>,
   'conn/showGrants': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<UserPrivileges[]>,
-  'conn/applyUserChanges': ({ sId, changes }: { sId: string, changes: any[] }) => Promise<{ success: boolean, error?: string }>,
+  'conn/applyUserChanges': ({ sId, changes }: { sId: string, changes: UserChange[] }) => Promise<void>,
   'conn/getSchemas': ({ sId }: { sId: string }) => Promise<Schema[]>,
   'conn/revokeAllPrivileges': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<void>,
   'conn/deleteUser': ({ sId, user, host }: { sId: string, user: string, host: string }) => Promise<void>,
@@ -597,7 +598,7 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.showGrantsForUser(user, host);
   },
 
-  'conn/applyUserChanges': async function({ sId, changes }: { sId: string, changes: any[] }) {
+  'conn/applyUserChanges': async function({ sId, changes }: { sId: string, changes: UserChange[] }) {
     checkConnection(sId);
     return await state(sId).connection.applyUserChanges(changes);
   },

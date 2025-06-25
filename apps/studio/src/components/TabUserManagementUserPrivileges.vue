@@ -1,17 +1,17 @@
 <template>
-  <div>
+  <div v-on="$listeners">
     <h4 class="mb-2 flex align-center schema-priv-title" style="gap: 6px;">
       <i class="material-icons">storage</i> Schema Privileges
     </h4>
 
-    <div class="privilege-categories" v-if="newSchema.name" style="justify-content: center;">
+    <div class="card privilege-categories" v-if="newSchema.name">
       <div class="privilege-category">
         <div class="privilege-options">
           <label v-for="priv in allPrivileges" :key="priv">
-            <input 
-              type="checkbox" 
-              :checked="newSchema.privileges[priv]" 
-              @change="$emit('update-privilege', priv, $event.target.checked)"
+            <input
+              type="checkbox"
+              :checked="newSchema.privileges[priv]"
+              @change="$emit('update-privilege', { privilege: priv, value: $event.target.checked })"
             >
             {{ priv }}
           </label>
@@ -91,17 +91,11 @@ export default {
   gap: 20px;
   margin-top: 20px;
   margin-bottom: 20px;
+  padding: 16px;
+  /* .card provides background and border using theme */
 }
 .privilege-category {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
   padding: 15px;
-  background: #fafbfc;
-}
-.privilege-category h5 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #4285f4;
 }
 .privilege-options {
   display: grid;
@@ -115,10 +109,8 @@ export default {
   font-size: 0.95em;
 }
 .table {
-  background: #fafbfc;
-  border-radius: 8px;
-  overflow: hidden;
   width: 100%;
+  border-radius: 8px;
   border-collapse: separate;
   border-spacing: 0 12px;
 }
@@ -127,14 +119,11 @@ export default {
   vertical-align: middle;
 }
 .priv-row {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-  border: 1px solid #ececec;
+  /* Remove custom background/border so theme can style */
 }
 .chip {
-  background-color: #e0e0e0;
-  color: #333;
+  background: var(--bk-badge-bg, rgba(0,0,0,0.07));
+  color: inherit;
   padding: 5px 14px;
   border-radius: 14px;
   font-size: 1em;
@@ -146,7 +135,7 @@ export default {
 .btn-icon {
   border-radius: 50%;
   border: none;
-  background: #f5f5f7;
+  background: var(--bk-bg-card, transparent);
   width: 36px;
   height: 36px;
   display: flex;
@@ -156,18 +145,16 @@ export default {
   font-size: 1.2em;
   margin: 0 auto;
 }
+.btn-icon i {
+  color: var(--bk-icon-color, #888);
+  transition: color 0.2s;
+}
 .btn-icon:hover {
-  background: #e0e0e0;
+  background: var(--bk-border-color, #e0e0e0);
 }
-.bg-light {
-  background: #f3f6fa;
+.btn-icon:hover i {
+  color: var(--bk-icon-color-active, #222);
 }
-
-.flex.justify-center,
-.justify-center {
-  justify-content: center;
-}
-
 .select-buttons-row {
   margin-bottom: 32px !important;
 }

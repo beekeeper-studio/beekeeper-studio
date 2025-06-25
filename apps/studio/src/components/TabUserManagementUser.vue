@@ -10,53 +10,41 @@
       </h3>
     </div>
 
-    <div class="bk-tabs">
-      <button 
-        class="bk-tab" 
-        :class="{ 'bk-tab-active': activeTab === 'login' }"
-        @click="activeTab = 'login'"
-      >
-        <i class="material-icons">vpn_key</i> Login
-      </button>
-      <button 
-        class="bk-tab" 
-        :class="{ 'bk-tab-active': activeTab === 'limits' }"
-        @click="activeTab = 'limits'"
-      >
-        <i class="material-icons">speed</i> Account Limits
-      </button>
-      <button 
-        class="bk-tab" 
-        :class="{ 'bk-tab-active': activeTab === 'privileges' }"
-        @click="activeTab = 'privileges'"
-      >
-        <i class="material-icons">storage</i> Schema Privileges
-      </button>
-    </div>
-
     <div class="bk-card">
-      <TabUserManagementUserLogin
-        v-if="activeTab === 'login'"
-        :localUser="localUser"
-        :showPassword="showPassword"
-        :showConfirmPassword="showConfirmPassword"
-        :passwordsMatch="passwordsMatch"
-        @toggle-password="togglePassword"
-      />
-      <TabUserManagementUserLimits
-        v-if="activeTab === 'limits'"
-        :localUser="localUser"
-      />
-      <TabUserManagementUserPrivileges
-        v-if="activeTab === 'privileges'"
-        :localUser="localUser"
-        :allPrivileges="allPrivileges"
-        :newSchema="newSchema"
-        @edit-schema="editSchema"
-        @select-all-privileges="selectAllPrivileges"
-        @unselect-all-privileges="unselectAllPrivileges"
-        @update-privilege="updatePrivilege"
-      />
+      <div class="table-properties">
+        <div class="table-properties-header">
+          <div class="nav-pills">
+            <a
+              v-for="pill in pills"
+              :key="pill.id"
+              class="nav-pill"
+              :class="{active: pill.id === activePill}"
+              @click.prevent="activePill = pill.id"
+            >
+              <i class="material-icons" style="margin-right: 6px;">{{ pill.icon }}</i>
+              {{ pill.name }}
+            </a>
+          </div>
+        </div>
+        <div class="table-properties-wrap">
+          <component
+            :is="activePillComponent"
+            :local-user="localUser"
+            :all-privileges="allPrivileges"
+            :new-schema="newSchema"
+            :show-password="showPassword"
+            :show-confirm-password="showConfirmPassword"
+            :passwords-match="passwordsMatch"
+            @update="onUpdate"
+            @toggle-password="togglePassword('password')"
+            @toggle-confirm-password="togglePassword('confirmPassword')"
+            @edit-schema="editSchema"
+            @select-all-privileges="selectAllPrivileges"
+            @unselect-all-privileges="unselectAllPrivileges"
+            @update-privilege="updatePrivilege"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -96,30 +84,24 @@
     </modal>
 
     <StatusBar :active="true">
-      <div class="statusbar-actions flex-right">
-        <button class="btn danger" @click="showDeleteModal()">
-          <i class="material-icons">delete</i> Delete Account
-        </button>
-        <button
-          class="btn"
-          @click="expirePassword"
-          v-if="!localUser.isNew"
-        >
-          <i class="material-icons">timer_off</i> Expire Password
-        </button>
-        <button
-          class="btn"
-          @click="revokeAllPrivileges"
-          v-if="!localUser.isNew"
-        >
-          <i class="material-icons">block</i> Revoke All Privileges
-        </button>
-        <button class="btn" @click="revertChanges">
-          <i class="material-icons">undo</i> Revert Changes
-        </button>
-        <button class="btn success" @click="showApplyModal()">
-          <i class="material-icons">check</i> Apply Changes
-        </button>
+      <div class="flex flex-middle statusbar-actions">
+        <x-buttons>
+          <x-button class="btn btn-flat danger" @click="showDeleteModal()">
+            <i class="material-icons">delete</i> Delete Account
+          </x-button>
+          <x-button class="btn btn-flat" @click="expirePassword" v-if="!localUser.isNew">
+            <i class="material-icons">timer_off</i> Expire Password
+          </x-button>
+          <x-button class="btn btn-flat" @click="revokeAllPrivileges" v-if="!localUser.isNew">
+            <i class="material-icons">block</i> Revoke All Privileges
+          </x-button>
+          <x-button class="btn btn-flat" @click="revertChanges">
+            <i class="material-icons">undo</i> Revert Changes
+          </x-button>
+          <x-button class="btn btn-flat success" @click="showApplyModal()">
+            <i class="material-icons">check</i> Apply Changes
+          </x-button>
+        </x-buttons>
       </div>
     </StatusBar>
   </div>
@@ -132,43 +114,9 @@ import TabUserManagementUserLogin from './TabUserManagementUserLogin.vue'
 import TabUserManagementUserLimits from './TabUserManagementUserLimits.vue'
 import TabUserManagementUserPrivileges from './TabUserManagementUserPrivileges.vue'
 import StatusBar from '@/components/common/StatusBar.vue'
+import { UserChangeType, UserChange, UserSchema, UserSchemaPrivileges } from '@/lib/db/models'
 
 const log = rawLog.scope("TabUserManagementUser")
-
-export enum UserChangeType {
-  CREATE = 'CREATE',
-  UPDATE_USER_HOST = 'UPDATE_USER_HOST',
-  UPDATE_AUTH = 'UPDATE_AUTH',
-  UPDATE_LIMITS = 'UPDATE_LIMITS',
-  UPDATE_PRIVILEGES = 'UPDATE_PRIVILEGES'
-}
-
-export interface UserChange {
-  type: UserChangeType;
-  user: string;
-  host: string;
-  password?: string;
-  authType?: string;
-  oldUser?: string;
-  oldHost?: string;
-  maxQueries?: number;
-  maxUpdates?: number;
-  maxConnections?: number;
-  maxUserConnections?: number;
-  schemaName?: string;
-  schemaHost?: string;
-  schemas?: UserSchema[];
-}
-
-export interface UserSchemaPrivileges {
-  [privilege: string]: boolean;
-}
-
-export interface UserSchema {
-  name: string;
-  host?: string;
-  privileges: UserSchemaPrivileges;
-}
 
 export default {
   props: {
@@ -198,14 +146,21 @@ export default {
       },
       showPassword: false,
       showConfirmPassword: false,
-      activeTab: 'login'
+      activeTab: 'login',
+      pills: [
+        { id: 'login', name: 'Login', icon: 'vpn_key', component: TabUserManagementUserLogin },
+        { id: 'limits', name: 'Account Limits', icon: 'speed', component: TabUserManagementUserLimits },
+        { id: 'privileges', name: 'Schema Privileges', icon: 'list_alt', component: TabUserManagementUserPrivileges },
+      ],
+      activePill: 'login',
     }
   },
   created() {
     this.resetNewSchemaPrivileges();
   },
   computed: {
-    ...mapState(['connection', 'selectedUser']),
+    ...mapState(['connection']),
+    ...mapState('userManagement', ['selectedUser']),
     displayUserName() {
       return this.localUser?.user || 'anonymous'
     },
@@ -216,9 +171,13 @@ export default {
         this.localUser.password === this.localUser.confirmPassword
       );
     },
+    activePillComponent() {
+      const pill = this.pills.find(p => p.id === this.activePill)
+      return pill ? pill.component : null
+    }
   },
   methods: {
-      ...mapMutations(['setSelectedUser']),
+      ...mapMutations('userManagement', ['setSelectedUser']),
       
       editSchema(index) {
         const schema = this.localUser.schemas[index];
@@ -276,11 +235,7 @@ export default {
         grants.forEach(grant => {
           Object.keys(grant).forEach(key => {
             if (!key.match(/schema|host|grantOptionPrivilege/i)) {
-              const privName = key.replace(/Privilege$/i, '')
-                                .replace(/([A-Z])/g, ' $1')  
-                                .replace(/_/g, ' ')
-                                .trim()
-                                .toUpperCase();
+              const privName = this.formatPrivilegeName(key);
               privilegeNames.add(privName);
             }
           });
@@ -308,11 +263,7 @@ export default {
           
           Object.keys(grant).forEach(key => {
             if (!key.match(/schema|host|grantOptionPrivilege/i)) {
-              const privName = key.replace(/Privilege$/i, '')
-                                .replace(/([A-Z])/g, ' $1')
-                                .replace(/_/g, ' ')
-                                .trim()
-                                .toUpperCase();
+              const privName = this.formatPrivilegeName(key);
               if (this.allPrivileges.includes(privName)) {
                 schemaGrantsMap[schemaName].privileges[privName] = grant[key] || false;
               }
@@ -509,25 +460,21 @@ export default {
         return;
       }
 
-      const result = await this.connection.applyUserChanges(changes);
-
-      if (result.success) {
+      try {
+        await this.connection.applyUserChanges(changes);
         this.$emit('user-updated', this.localUser);
         if (this.localUser.isNew) {
           this.$noty.success(`User ${this.localUser.user} created successfully.`);
           this.localUser.isNew = false;
-
           await this.getAccountDetails();
           await this.getUserResourceLimits();
           await this.loadUserGrants();
         } else {
           this.$noty.success(`User changes applied successfully.`);
         }
-
-        this.$store.dispatch('updateSelectedUser', this.localUser);
-        this.$store.dispatch('updateUsersList');
-      
-      } else {
+        this.$store.dispatch('userManagement/updateSelectedUser', this.localUser);
+        this.$store.dispatch('userManagement/updateUsersList');
+      } catch (error) {
         if (this.localUser.isNew) {
           this.$noty.error(`Failed to create user`);
         } else {
@@ -537,23 +484,26 @@ export default {
     },
     selectAllPrivileges() {
       this.allPrivileges.forEach(priv => {
-        this.updatePrivilege(priv, true);
+        this.updatePrivilege({ privilege: priv, value: true });
       });
     },
     
     unselectAllPrivileges() {
       this.allPrivileges.forEach(priv => {
-        this.updatePrivilege(priv, false);
+        this.updatePrivilege({ privilege: priv, value: false });
       });
     },
     
-    updatePrivilege(privilege, value) {
-      this.$set(this.newSchema.privileges, privilege, value); 
+    updatePrivilege({ privilege, value }) {
+      this.$set(this.newSchema.privileges, privilege, value);
+
       const schemaIndex = this.localUser.schemas.findIndex(
         schema => schema.name === this.newSchema.name && schema.host === this.newSchema.host
       );
+
       if (schemaIndex !== -1) {
-        this.$set(this.localUser.schemas[schemaIndex].privileges, privilege, value);
+        const updatedPrivileges = { ...this.localUser.schemas[schemaIndex].privileges, [privilege]: value };
+        this.$set(this.localUser.schemas[schemaIndex], 'privileges', updatedPrivileges);
       }
     },
 
@@ -562,7 +512,7 @@ export default {
       try {
         await this.connection.deleteUser(this.localUser.user, this.localUser.host);
         this.$noty.success(`User ${this.localUser.user} deleted successfully`);
-        this.$store.dispatch('updateUsersList');
+        this.$store.dispatch('userManagement/updateUsersList');
         this.$modal.hide('delete-user-modal');
         this.setSelectedUser(null);
       } catch (error) {
@@ -584,6 +534,17 @@ export default {
         this.$noty.error(`Failed to apply changes: ${error.message}`);
       }
     },
+    onUpdate(payload) {
+      this.$emit('update', payload)
+    },
+    formatPrivilegeName(key) {
+      return key
+        .replace(/Privilege$/i, '')
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/_/g, ' ')
+        .trim()
+        .toUpperCase();
+    }
   },
   watch: {
     selectedUser: {
@@ -593,6 +554,15 @@ export default {
 
         this.localUser = { 
           ...newVal
+        };
+        
+        this.activePill = 'login';
+        
+        // Necessary for when we are editing privileges and then change user
+        this.newSchema = {
+          name: '',
+          host: '%',
+          privileges: {}
         };
 
         this.loadUserGrants();
@@ -634,101 +604,8 @@ export default {
   margin-bottom: 24px;
 }
 
-.bk-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-}
-
-.bk-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--bk-border-color, #e0e0e0);
-  margin-bottom: 24px;
-}
-
-.bk-tab {
-  padding: 10px 20px;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--bk-text-secondary, #555);
-  font-weight: 500;
-  transition: color 0.2s, border-bottom-color 0.2s;
-}
-
-.bk-tab:hover {
-  color: var(--bk-primary, #333);
-  background-color: var(--bk-bg-hover, #f8f9fa);
-}
-
-.bk-tab-active {
-  color: var(--bk-primary, #333);
-  border-bottom-color: var(--bk-primary, #333);
-}
-
-.bk-card {
-  background: var(--bk-bg-card, #fff);
-  border-radius: 8px;
-  border: 1px solid var(--bk-border-color, #e0e0e0);
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.statusbar-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-  padding: 0 16px;
-}
-.flex-right {
-  justify-content: flex-end;
-}
-
-.btn {
-  padding: 8px 18px;
-  border: none;
-  border-radius: 4px;
-  background: #eee;
-  color: #333;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.2s, color 0.2s;
-}
-
-.btn.danger {
-  background: #e53935;
-  color: #fff;
-}
-
-.btn.success {
-  background: #43a047;
-  color: #fff;
-}
-
-.btn.btn-flat {
-  background: transparent;
-  color: #4285f4;
-}
-
-.btn:hover {
-  background: #e0e0e0;
-}
-
-.btn.danger:hover {
-  background: #b71c1c;
-}
-
 .btn.success:hover {
-  background: #2e7031;
+  background: var(--bk-btn-success-hover, #2e7031);
 }
 
 .bk-dialog-actions {
@@ -736,6 +613,12 @@ export default {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 16px;
+}
+
+/* Temporary fix for the same height as the connection button on the left (RodrigoPerestrelo) */
+.statusbar-actions x-button{
+  min-height: 40px;
+  box-sizing: border-box;
 }
 
 </style>

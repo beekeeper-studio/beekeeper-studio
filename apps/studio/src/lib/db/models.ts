@@ -425,11 +425,6 @@ export interface UserResourceLimits {
   maxUserConnections: number;
 }
 
-export interface ApplyUserChangesResult {
-  success: boolean;
-  error?: string;
-}
-
 export interface Schema {
   schemaName: string;
 }
@@ -452,4 +447,39 @@ export function createNewTabUser(): TabUser_UserManagementList {
     confirmPassword: '',
     isNew: true,
   };
+}
+
+export enum UserChangeType {
+  CREATE = 'CREATE',
+  UPDATE_USER_HOST = 'UPDATE_USER_HOST',
+  UPDATE_AUTH = 'UPDATE_AUTH',
+  UPDATE_LIMITS = 'UPDATE_LIMITS',
+  UPDATE_PRIVILEGES = 'UPDATE_PRIVILEGES'
+}
+
+export interface UserChange {
+  type: UserChangeType;
+  user: string;
+  host: string;
+  password?: string;
+  authType?: string;
+  oldUser?: string;
+  oldHost?: string;
+  maxQueries?: number;
+  maxUpdates?: number;
+  maxConnections?: number;
+  maxUserConnections?: number;
+  schemaName?: string;
+  schemaHost?: string;
+  schemas?: UserSchema[];
+}
+
+export interface UserSchemaPrivileges {
+  [privilege: string]: boolean;
+}
+
+export interface UserSchema {
+  name: string;
+  host?: string;
+  privileges: UserSchemaPrivileges;
 }

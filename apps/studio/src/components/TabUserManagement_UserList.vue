@@ -130,9 +130,9 @@ export default {
 }
 
 .table-info-table-wrap {
-  background: var(--bk-bg-card, #fff);
+  background: var(--bk-bg-card, inherit);
   border-radius: 8px;
-  border: 1px solid var(--bk-border-color, #e0e0e0);
+  border: 1px solid var(--bk-border-color, transparent);
   padding: 0;
   margin-top: 10px;
 }
@@ -144,15 +144,15 @@ export default {
 }
 
 .bk-user-host {
-  color: var(--bk-user-color, #666);
+  color: var(--bk-user-color, inherit);
 }
 
 .btn {
   padding: 8px 18px;
   border: none;
   border-radius: 4px;
-  background: #eee;
-  color: #333;
+  background: var(--bk-btn-bg, transparent);
+  color: var(--bk-btn-text, inherit);
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -162,11 +162,11 @@ export default {
 }
 
 .btn-primary {
-  background: #4285f4;
-  color: #fff;
+  background: var(--bk-btn-primary-bg, #4285f4);
+  color: var(--bk-btn-primary-text, #fff);
 }
 
 .btn-primary:hover {
-  background: #3367d6;
+  background: var(--bk-btn-primary-hover-bg, #3367d6);
 }
 </style>

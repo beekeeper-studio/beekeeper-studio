@@ -50,14 +50,14 @@
     props: ['activeItem'],
     components: { CoreAccountButton },
     computed: {
-      ...mapState(['hasAdminPrivileges']),
+      ...mapState('userManagement', ['hasAdminPrivileges']),
     },
     mounted() {
       this.checkAdminPermissions()
     },
     methods: {
       checkAdminPermissions() {
-        this.$store.dispatch('checkAdminPermissions');
+        this.$store.dispatch('userManagement/setHasAdminPrivileges');
       },
     },
   }
