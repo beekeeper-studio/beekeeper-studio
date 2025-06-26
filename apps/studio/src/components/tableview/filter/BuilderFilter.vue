@@ -49,6 +49,7 @@
               ? `Enter values separated by comma, eg: foo,bar`
               : 'Enter Value'
           "
+          @contextmenu.stop.prevent="onContextMenu($event)"
         >
         <button
           v-if="!isNullFilter"
@@ -60,17 +61,51 @@
         </button>
       </div>
     </div>
+    <ContextMenu
+      v-if="showContextMenu"
+      :options="contextMenuOptions"
+      :event="contextMenuEvent"
+      @close="showContextMenu = false"
+    />
   </div>
-
 </template>
 <script lang="js">
 import { TableFilterSymbols } from '@/lib/db/types';
+import ContextMenu from '@/components/common/ContextMenu.vue';
 
 export default {
+  components: { ContextMenu },
   props: ['filter', 'columns', 'index'],
-  data: () => ({
-    filterTypes: TableFilterSymbols
-  }),
+  data: () => {
+    return {
+        filterTypes: TableFilterSymbols,
+        searchQuery: '',
+        columns: [],
+        showContextMenu: false,
+        contextMenuEvent: null,
+        contextMenuOptions: [
+          {
+            name: 'Cut',
+            handler: () => document.execCommand('cut'),
+          },
+          {
+            name: 'Copy',
+            handler: () => document.execCommand('copy'),
+          },
+          {
+            name: 'Paste',
+            handler: () => document.execCommand('paste'),
+          },
+            /*{
+            name: 'Select All',
+            handler: (ctx) => {
+              ctx.event.target.focus();
+              ctx.event.target.select();
+            },
+          },*/
+        ],
+      }
+  },
   watch: {
     filter: {
       deep: true,
@@ -91,6 +126,10 @@ export default {
         this.$set(this.filter, 'value', null)
       }
     },
+    onContextMenu(event) {
+    this.contextMenuEvent = event;
+    this.showContextMenu = true;
+  },
   }
 }
 
