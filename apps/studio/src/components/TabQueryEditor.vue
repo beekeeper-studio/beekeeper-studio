@@ -966,7 +966,7 @@
           }
 
           if(lastQuery && isDuplicate){
-            queryObj.createdAt = new Date();
+            queryObj.updatedAt = new Date();
             queryObj.id = lastQuery.id;
           }
           
