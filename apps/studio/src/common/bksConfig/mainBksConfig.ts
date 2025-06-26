@@ -33,6 +33,12 @@ export function checkUnrecognized(
   function traverse(obj: Record<string, any>, parentPath = "") {
     for (const key of Object.keys(obj)) {
       const path = parentPath ? `${parentPath}.${key}` : key;
+      
+      // Skip validation for plugin configurations (plugins and plugins.[plugin-id])
+      if (path === 'plugins' || /^plugins\.[^.]+/.test(path)) {
+        continue;
+      }
+      
       const unrecognized = !_.has(defaultConfig, path);
       const value = obj[key];
 
