@@ -1,4 +1,4 @@
-import { Entity } from "../../types";
+import { Entity, TableEntity } from "../../types";
 import { Completion } from "@codemirror/autocomplete";
 import getAliases from "./getAliases";
 
@@ -8,10 +8,11 @@ export { getAliases };
  * Convert column names to auto completion options
  */
 export function columnsToCompletions(columns: string[]): Completion[] {
-  return columns.map((column) => ({ 
+  return columns.map((column) => ({
     label: column,
     type: "column", // This will become the class name
-    apply: column
+    apply: column,
+    boost: 10 // Higher than keywords/tables
   }));
 }
 
@@ -48,7 +49,7 @@ export function buildSchema(
   return tables;
 }
 
-export function isTableLikeEntity(entity: Entity): boolean {
+export function isTableLikeEntity(entity: Entity): entity is TableEntity {
   if (!entity.entityType) return true;
   return ["table", "view", "materialized-view"].includes(entity.entityType);
 }

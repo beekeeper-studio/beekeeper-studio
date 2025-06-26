@@ -41,6 +41,9 @@ export const TabModule: Module<State, RootState> = {
         if (tab.type === "shell" && rootGetters.dialectData?.disabledFeatures?.shell) {
           return false;
         }
+        if (tab.type === "plugin-shell") {
+          return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
+        }
         return true;
       })
     },

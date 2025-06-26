@@ -51,6 +51,7 @@
         :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
+        @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
       />
@@ -764,6 +765,9 @@
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
         })
+      },
+      handleEditorSelectionChange(detail) {
+        this.editor.selection = detail.value
       },
       saveTab: _.debounce(function() {
         this.$store.dispatch('tabs/save', this.tab)

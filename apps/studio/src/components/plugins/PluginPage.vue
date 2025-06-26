@@ -63,14 +63,17 @@
           }}</x-label>
         </x-button>
       </div>
-      <div class="update-indicator">
-        <template
-          v-if="
-            !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
-          "
-        >
-          {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
-        </template>
+      <div
+        v-if="
+          !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
+        "
+        class="update-indicator"
+      >
+        {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
+      </div>
+      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
+        <i class="material-icons-outlined">info</i>
+        <div>This plugin has been disabled via configuration</div>
       </div>
     </div>
     <div class="markdown-content">

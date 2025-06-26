@@ -56,6 +56,7 @@
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
+        :fold-gutters="true"
       />
     </div>
     <div class="empty-state" v-show="empty">
