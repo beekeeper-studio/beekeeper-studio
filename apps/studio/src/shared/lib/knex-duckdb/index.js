@@ -80,7 +80,7 @@ class Client_DuckDB extends Client {
   }
 
   async destroyRawConnection(connection) {
-    const close = promisify((cb) => connection.close(cb));
+    const close = promisify((cb) => connection.closeSync(cb));
     return close();
   }
 
