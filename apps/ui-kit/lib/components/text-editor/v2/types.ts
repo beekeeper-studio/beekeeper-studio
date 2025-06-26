@@ -88,6 +88,7 @@ export interface ExtensionConfiguration {
   keybindings?: Keybindings;
   markers?: EditorMarker[];
   lineGutters?: LineGutter[];
+  foldGutters?: boolean;
 }
 
 export type LanguageId = "json" | "html" | "javascript";

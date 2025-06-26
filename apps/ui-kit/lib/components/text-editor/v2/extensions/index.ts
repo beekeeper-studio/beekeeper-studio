@@ -19,10 +19,11 @@ import {
   HighlightStyle,
 } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import {
   autocompletion,
+  acceptCompletion,
   completionKeymap,
   closeBrackets,
   closeBracketsKeymap,
@@ -102,14 +103,18 @@ export function extensions(config: ExtensionConfiguration) {
     highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
-    foldGutter({
-      markerDOM(open) {
-        const i = document.createElement("i");
-        i.classList.add("material-icons", "cm-foldgutter");
-        i.textContent = open ? "keyboard_arrow_down" : "keyboard_arrow_right";
-        return i;
-      }
-    }),
+    config.foldGutters
+      ? foldGutter({
+        markerDOM(open) {
+          const i = document.createElement("i");
+          i.classList.add("material-icons", "cm-foldgutter");
+          i.textContent = open
+            ? "keyboard_arrow_down"
+            : "keyboard_arrow_right";
+          return i;
+        },
+      })
+      : [],
     drawSelection(),
     dropCursor(),
     EditorState.allowMultipleSelections.of(true),
@@ -136,6 +141,8 @@ export function extensions(config: ExtensionConfiguration) {
       ...foldKeymap,
       ...completionKeymap,
       ...lintKeymap,
+      { key: "Tab", run: acceptCompletion },
+      indentWithTab,
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
