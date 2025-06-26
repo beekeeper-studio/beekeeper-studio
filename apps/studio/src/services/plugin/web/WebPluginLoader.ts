@@ -159,6 +159,10 @@ export default class WebPluginLoader {
         case "setViewState":
           // Directly handled by the view components
           break;
+        case "openExternal":
+          // FIXME maybe we should ask user permission first before opening?
+          window.main.openExternally(request.args.link);
+          break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);
