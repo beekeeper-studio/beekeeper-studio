@@ -26,6 +26,12 @@
         >
           <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
         </x-menuitem>
+        <x-menuitem
+          @click.prevent="reconnect()"
+          class="red"
+        >
+          <x-label><i class="material-icons">sync</i>Reconnect</x-label>
+        </x-menuitem>
         <x-menuitem @click.prevent="$modal.show('config-save-modal')">
           <x-label v-if="config.id">
             <i class="material-icons">edit</i>Edit Connection
@@ -248,6 +254,14 @@ export default {
         this.$modal.show('running-exports-modal')
       } else {
         this.$store.dispatch('disconnect')
+      }
+    },
+    async reconnect(){
+      try{
+        await this.$store.dispatch('reconnect')
+        this.$noty.success("Reconnected successfully.")
+      } catch(error){
+        this.$noty.error("Unable to reconnect.")
       }
     },
     async syncDatabase() {
