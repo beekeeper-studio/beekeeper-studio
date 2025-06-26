@@ -1,5 +1,5 @@
 ---
-title: Creating Plugins
+title: Creating Your First Plugin
 summary: "Step-by-step guide to creating your first Beekeeper Studio plugin."
 icon: material/hammer-wrench
 ---
@@ -23,7 +23,6 @@ A simple plugin that:
 
 -   Basic knowledge of HTML, CSS, and JavaScript
 -   Node.js and npm installed
--   Text editor
 -   Beekeeper Studio installed
 
 ## Development Setup
@@ -32,45 +31,51 @@ A simple plugin that:
 
 Navigate to the plugins directory for your operating system:
 
-**Linux:**
-```bash
-~/.config/beekeeper-studio/plugins/
-```
+=== "Linux"
+    ```bash
+    ~/.config/beekeeper-studio/plugins/
+    ```
 
-**Windows:**
-```bash
-%APPDATA%/beekeeper-studio/plugins/
-# Usually: C:\Users\YourUsername\AppData\Roaming\beekeeper-studio\plugins\
-```
+=== "macOS"
+    ```bash
+    ~/Library/Application Support/beekeeper-studio/plugins/
+    ```
 
-**macOS:**
-```bash
-~/Library/Application Support/beekeeper-studio/plugins/
-```
+=== "Windows"
+    ```bash
+    %APPDATA%/beekeeper-studio/plugins/
+    # Usually: C:\Users\YourUsername\AppData\Roaming\beekeeper-studio\plugins\
+    ```
+
+=== "Portable Version"
+    For portable installations, the plugins directory is located in the same folder as the executable:
+    ```
+    /path/to/beekeeper-studio/beekeeper-studio-data/plugins/
+    ```
 
 ### Step 2: Create your plugin directory
 
 Create a new folder for your plugin:
 
-**Linux:**
-```bash
-mkdir ~/.config/beekeeper-studio/plugins/hello-world-plugin
-```
+=== "Linux"
+    ```bash
+    mkdir ~/.config/beekeeper-studio/plugins/hello-world-plugin
+    ```
 
-**Windows (Command Prompt):**
-```cmd
-mkdir "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin"
-```
+=== "macOS"
+    ```bash
+    mkdir "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
+    ```
 
-**Windows (PowerShell):**
-```powershell
-mkdir "$env:APPDATA\beekeeper-studio\plugins\hello-world-plugin"
-```
+=== "Windows"
+    ```cmd
+    mkdir "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin"
+    ```
 
-**macOS:**
-```bash
-mkdir "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
-```
+=== "Portable Version"
+    ```bash
+    mkdir /path/to/beekeeper-studio/beekeeper-studio-data/plugins/hello-world-plugin
+    ```
 
 ### Step 3: Create the manifest file
 
@@ -135,7 +140,7 @@ hello-world-plugin/
 1. Open Beekeeper Studio
 2. Go to **Tools > Manage Plugins**
 3. Look for "Hello World Plugin" in the plugin list
-4. If you see it, your plugin is successfully installed
+4. If you see it, your plugin is successfully installed! :tada:
 
 ![Plugin Manager showing installed plugin](../../assets/images/plugin-manager.png)
 
@@ -163,22 +168,23 @@ During development, you can reload your plugin without restarting Beekeeper Stud
 
 ![Right-click context menu for plugin reload](../../assets/images/plugin-tab-reload-menu.png)
 
-## Next Steps
+## Interacting with the Main App
 
 ### Install `@beekeeperstudio/plugin`
 
-The `@beekeeperstudio/plugin` package is a TypeScript wrapper library that enables communication between your plugin and the main Beekeeper Studio application. It provides essential functions for:
-
--   **`request()`** - Interact with Beekeeper Studio (get database tables, run SQL queries, etc.)
--   **`notify()`** - Send notifications to the application
--   **`addNotificationListener()`** - Listen for events like theme changes
--   **Event forwarding** - Prevent iframe event trapping for better user experience
+Next step is we want to be able to interact with the main app. The `@beekeeperstudio/plugin` package is a TypeScript wrapper library that enables communication between your plugin and the main Beekeeper Studio application.
 
 Install the plugin package:
 
-```bash
-npm install github:beekeeper-studio/plugin
-```
+=== "npm"
+    ```bash
+    npm install @beekeeperstudio/plugin
+    ```
+
+=== "yarn"
+    ```bash
+    yarn add @beekeeperstudio/plugin
+    ```
 
 ### Adding Interactivity
 
@@ -216,6 +222,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 ![Plugin with interactive button](../../assets/images/interactive-plugin.png)
 
 ### Syncing with Beekeeper Studio Theme
+
+!!! note "Future Enhancement"
+    Theme syncing with Beekeeper Studio is planned to be automated.
 
 To make your plugin automatically adapt to Beekeeper Studio's theme, add theme synchronization:
 
@@ -263,7 +272,7 @@ Add this to your CSS:
 
 This is how your `index.html` and `main.js` should look like after following this guide:
 
-### Final `index.html`
+### `index.html`
 
 ```html
 <!DOCTYPE html>
@@ -303,7 +312,7 @@ This is how your `index.html` and `main.js` should look like after following thi
 </html>
 ```
 
-### Final `main.js`
+### `main.js`
 
 ```javascript
 import "./node_modules/@beekeeperstudio/plugin/dist/eventForwarder.js"; // IMPORTANT! Enables keyboard/mouse event forwarding from iframe to parent
