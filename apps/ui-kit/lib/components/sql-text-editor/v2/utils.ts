@@ -8,10 +8,11 @@ export { getAliases };
  * Convert column names to auto completion options
  */
 export function columnsToCompletions(columns: string[]): Completion[] {
-  return columns.map((column) => ({ 
+  return columns.map((column) => ({
     label: column,
     type: "column", // This will become the class name
-    apply: column
+    apply: column,
+    boost: 10 // Higher than keywords/tables
   }));
 }
 
