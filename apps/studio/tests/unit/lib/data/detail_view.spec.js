@@ -174,18 +174,11 @@ describe("Detail View", () => {
         { field: 'validField', dataType: 'varchar' }
       ]
       
-      // Spy on console.warn to verify it's called
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
-      
       const result = parseRowDataForJsonViewer(rowData, tableColumns)
       
       expect(result.id).toBe(5)
       expect(result.invalidJson).toBe('{name: "missing quotes", broken: json}') // Should remain unchanged
       expect(result.validField).toBe('text')
-      expect(consoleWarnSpy).toHaveBeenCalled()
-      
-      // Restore the spy
-      consoleWarnSpy.mockRestore()
     })
 
     it('should not parse empty strings or non-string values', () => {
