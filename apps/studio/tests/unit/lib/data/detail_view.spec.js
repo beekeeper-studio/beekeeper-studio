@@ -173,9 +173,9 @@ describe("Detail View", () => {
         { field: 'invalidJson', dataType: 'JSON' },
         { field: 'validField', dataType: 'varchar' }
       ]
-      
+
       const result = parseRowDataForJsonViewer(rowData, tableColumns)
-      
+
       expect(result.id).toBe(5)
       expect(result.invalidJson).toBe('{name: "missing quotes", broken: json}') // Should remain unchanged
       expect(result.validField).toBe('text')

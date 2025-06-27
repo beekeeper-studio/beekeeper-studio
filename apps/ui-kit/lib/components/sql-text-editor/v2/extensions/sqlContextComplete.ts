@@ -108,7 +108,7 @@ async function sqlCompletionSource(
 
   if (dotColumns) {
     columns = dotColumns;
-  } else if (context.explicit) {
+  } else {
     let foundColumns = await loadColumnsFromQueryContext(context.state, cursor);
     if (foundColumns) {
       columns = foundColumns;
@@ -214,11 +214,11 @@ async function loadColumnsFromQueryContext(
  */
 function isColumnCompletionPosition(textBeforeCursor: string): boolean {
   const completionPatterns = [
-    /\bSELECT\s+$/i, // After SELECT
-    /\bSELECT.+,\s*$/i, // After comma in SELECT
-    /\b(WHERE|AND|OR)\s+$/i, // After WHERE/AND/OR
-    /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+$/i, // After ORDER BY/GROUP BY/HAVING
-    /\bJOIN.+\bON\s+$/i, // After JOIN...ON
+    /\bSELECT\s+/i, // After SELECT (with or without trailing content)
+    /\bSELECT.+,\s*/i, // After comma in SELECT
+    /\b(WHERE|AND|OR)\s+/i, // After WHERE/AND/OR
+    /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+/i, // After ORDER BY/GROUP BY/HAVING
+    /\bJOIN.+\bON\s+/i, // After JOIN...ON
   ];
 
   return completionPatterns.some((pattern) => pattern.test(textBeforeCursor));

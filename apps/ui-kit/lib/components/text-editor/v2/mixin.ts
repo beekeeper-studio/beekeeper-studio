@@ -176,6 +176,7 @@ export default {
         keybindings: this.keybindings,
         markers: this.markers,
         lineGutters: this.lineGutters,
+        foldGutters: this.foldGutters,
       });
 
       this.textEditor = textEditor;
