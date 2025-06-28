@@ -172,50 +172,54 @@ export class AzureAuthService {
   }
 
   private async getAzureCLIToken(options: AzureAuthOptions): Promise<AuthConfig> {
-
-    if(!options?.cliPath){
-      throw new Error('AZ command not specified')
+    if (!options?.cliPath) {
+      throw new Error('AZ command not specified');
     }
 
-
     return new Promise<AuthConfig>((resolve, reject) => {
-      const proc = spawn(options?.cliPath, [
-      'account',
-      'get-access-token',
-      '--resource',
-      BksConfig.azure.azSQLLoginScope,
-      '--output',
-      'json'
-    ]);
+      const proc = spawn(options.cliPath, [
+        'account',
+        'get-access-token',
+        '--resource',
+        BksConfig.azure.azSQLLoginScope,
+        '--output',
+        'json'
+      ]);
+
+      let stdout = '';
+      let stderr = '';
 
       proc.stdout.on('data', (chunk) => {
-        if (chunk) {
-          const data: string = chunk.toString().trim();
-          const tokenData = JSON.parse(data);
-          resolve( {
-            type: 'azure-active-directory-default',
-            options: {
-              token: tokenData.accessToken,
-              clientId: globals.clientId
-            }
-          });
-        }
+        stdout += chunk.toString();
       });
 
       proc.stderr.on('data', (chunk) => {
-        reject(chunk.toString());
-      })
+        stderr += chunk.toString();
+      });
 
       proc.on('error', (err) => {
         reject(err);
-      })
+      });
 
       proc.on('close', (code) => {
-        if (code != 0) {
-          reject('ERROR: Command exited with errors');
+        if (code === 0) {
+          try {
+            const tokenData = JSON.parse(stdout);
+            resolve({
+              type: 'azure-active-directory-default',
+              options: {
+                token: tokenData.accessToken,
+                clientId: globals.clientId
+              }
+            });
+          } catch (err) {
+            reject(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
+          }
+        } else {
+          reject(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
         }
-      })
-    })
+      });
+    });
   }
 
   private async accessToken(): Promise<AuthConfig> {

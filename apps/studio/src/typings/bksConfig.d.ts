@@ -123,9 +123,9 @@ declare interface IBksConfig {
         tableTriggers: {
             maxColumnWidth: number;
         };
-        azure: {
-          azSQLLoginScope: string;
-        }
     };
-};
+    azure: {
+      azSQLLoginScope: string;
+    }
+}
 
