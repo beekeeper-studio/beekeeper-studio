@@ -36,6 +36,7 @@
               @blur="updateMinimalModeByFilterRaw"
               ref="valueInput"
               placeholder="Enter condition, eg: name like 'Matthew%'"
+              @contextmenu.stop.prevent="onContextMenu($event)"
             >
             <button
               type="button"
@@ -181,7 +182,13 @@
     </form>
     <div class="filter-drag-icon">
       <i class="material-icons">drag_handle</i>
-    </div>
+  </div>
+    <ContextMenu
+      v-if="showContextMenu"
+      :options="contextMenuOptions"
+      :event="contextMenuEvent"
+      @close="showContextMenu = false"
+    />
   </div>
 </template>
 
@@ -193,12 +200,13 @@ import { mapGetters, mapState } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
 import _ from 'lodash';
 import BuilderFilter from "./filter/BuilderFilter.vue";
+import ContextMenu from '@/components/common/ContextMenu.vue';
 
 const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
-  components: { BuilderFilter },
+  components: { BuilderFilter, ContextMenu },
   props: ["columns", "reactiveFilters"],
   data() {
     return {
@@ -209,6 +217,29 @@ export default Vue.extend({
       submittedWithEmptyValue: false,
       RAW,
       BUILDER,
+      showContextMenu: false,
+      contextMenuEvent: null,
+      contextMenuOptions: [
+        {
+          name: 'Cut',
+          handler: () => document.execCommand('cut'),
+        },
+        {
+          name: 'Copy',
+          handler: () => document.execCommand('copy'),
+        },
+        {
+          name: 'Paste',
+          handler: () => document.execCommand('paste'),
+        },
+          /*{
+          name: 'Select All',
+          handler: (ctx) => {
+            ctx.event.target.focus();
+            ctx.event.target.select();
+          },
+        },*/
+      ],
     };
   },
   computed: {
@@ -239,6 +270,10 @@ export default Vue.extend({
       updated[index] = filter
       this.filters = updated
     },
+    onContextMenu(event) {
+    this.contextMenuEvent = event;
+    this.showContextMenu = true;
+  },
 
     focusOnInput() {
       if (this.filterMode === RAW) this.$refs.valueInput.focus();
