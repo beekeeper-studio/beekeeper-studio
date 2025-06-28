@@ -11,7 +11,10 @@
         </template>
         <template v-else>{{ plugin.author }}</template>
       </div>
-      <a :href="`https://github.com/${plugin.repo}`">
+      <a
+        v-if="plugin.repo"
+        :href="`https://github.com/${plugin.repo}`"
+      >
         <span class="flex">
           <i class="material-icons">link</i>
           <span>&nbsp;</span>
@@ -22,7 +25,8 @@
         {{ plugin.description }}
       </div>
       <div class="actions">
-        <template v-if="plugin.installed">
+        <template v-if="!plugin.repo" />
+        <template v-else-if="plugin.installed">
           <x-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
