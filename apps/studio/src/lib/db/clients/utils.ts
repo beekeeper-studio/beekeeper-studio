@@ -14,6 +14,7 @@ import {RedshiftOptions} from "@/lib/db/types";
 import {AuthOptions} from "@/lib/db/authentication/azure";
 import platformInfo from "@/common/platform_info";
 import {spawn} from "child_process";
+import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
 const log = logRaw.scope('db/util')
 
@@ -398,7 +399,9 @@ export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): P
 }
 
 export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
-  const {awsProfile, awsRegion: region, accessKeyId, secretAccessKey} = redshiftOptions
+  const {awsProfile, accessKeyId, secretAccessKey} = redshiftOptions
+  let {awsRegion: region} = redshiftOptions
+
   let credentials: {
     profile?: string,
     accessKeyId?: string,
@@ -407,8 +410,17 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
     profile: awsProfile || "default"
   }
 
+  if (!region) {
+    const { configFile } = await loadSharedConfigFiles();
+    region = configFile[awsProfile || "default"]?.region;
+    if (!region) {
+      throw new Error(`Region not found in profile "${awsProfile}" and no region explicitly provided.`);
+    }
+  }
+
   if(accessKeyId && secretAccessKey) {
     credentials = {
+      profile: awsProfile || "default",
       accessKeyId,
       secretAccessKey
     }
@@ -417,8 +429,8 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
   const nodeProviderChainCredentials = fromIni(credentials);
   const signer = new Signer({
     credentials: nodeProviderChainCredentials,
-    region,
     hostname,
+    region,
     port,
     username,
   });
@@ -427,6 +439,7 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
 
 let resolvedPw: string | undefined;
 let tokenExpiryTime: number | null = null;
+let redshiftOptionsCheck: RedshiftOptions | null = null
 
 export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, server: any, port: number): Promise<string> {
   if(!redshiftOptions?.iamAuthenticationEnabled){
@@ -435,7 +448,8 @@ export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, ser
 
   const now = Date.now();
 
-  if (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime) { // Refresh 2 minutes before expiry
+  if (redshiftOptionsCheck != redshiftOptions || (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime)) { // Refresh 2 minutes before expiry
+    redshiftOptionsCheck = redshiftOptions
     log.info("Refreshing IAM token...");
     resolvedPw = await getIAMPassword(
       redshiftOptions,

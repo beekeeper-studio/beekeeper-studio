@@ -68,7 +68,15 @@
     }
   }
 
-  .text-editor {
+  .BksTextEditor {
+    --bks-text-editor-bg-color: #{$theme-bg};
+    --bks-text-editor-gutter-bg-color: #{$theme-bg};
+    --bks-text-editor-propertyName-fg-color: #{color.adjust($theme-primary, $lightness: -20%)};
+    --bks-text-editor-string-fg-color: #{$text-dark};
+    --bks-text-editor-number-fg-color: #{$text-dark};
+    --bks-text-editor-bool-fg-color: #{$text-dark};
+    --bks-text-editor-null-fg-color: #{$text-dark};
+
     width: 100%;
     height: auto;
     padding-left: 1rem;
@@ -80,14 +88,6 @@
     .CodeMirror-dialog.CodeMirror-dialog-top {
       margin-left: 1rem;
       padding: 0.5rem 1rem;
-    }
-
-    .CodeMirror-line [role=presentation] > span:not(.cm-property) {
-      color: $text-dark;
-    }
-
-    .CodeMirror-code .CodeMirror-line .cm-property {
-      color: #{color.adjust($theme-primary, $lightness: -20%)};
     }
   }
 
@@ -163,7 +163,7 @@
     height: 100%;
     position:relative;
 
-    .text-editor {
+    .BksTextEditor {
       position: absolute;
       top: 0;
       bottom: 0;
@@ -172,4 +172,20 @@
       height: 100%
     }
   }
+}
+
+.truncatable-value .more {
+  @include btn;
+  @include btn-flat;
+  margin-left: 0.5rem;
+  min-width: fit-content;
+  font-size: 0.85rem;
+  font-weight: normal;
+  cursor: pointer;
+  height: 1.3rem;
+  padding: 0 0.5rem;
+  margin-left: 0.25rem;
+  text-decoration: none;
+  user-select: none;
+  border-radius: 0.25rem;
 }

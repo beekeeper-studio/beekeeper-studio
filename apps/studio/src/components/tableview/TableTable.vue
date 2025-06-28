@@ -334,7 +334,7 @@ import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import { ExpandablePath } from '@/lib/data/jsonViewer'
+import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
@@ -1355,7 +1355,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
@@ -1823,9 +1823,13 @@ export default Vue.extend({
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
       this.selectedRow = row
+
+      // Clean the data first
+      let cleanedData = this.$bks.cleanData(data, this.tableColumns)
+
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
-      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({

@@ -34,7 +34,12 @@ export default Vue.extend({
   methods: {
     // TextEditor overrides
     constructTextEditor() {
-      return new SqlTextEditor();
+      return new SqlTextEditor({
+        identiferDialect: this.identifierDialect,
+        onQuerySelectionChange: (params) => {
+          this.$emit("bks-query-selection-change", params)
+        },
+      });
     },
     initialized() {
       this.applyCompletionSource();

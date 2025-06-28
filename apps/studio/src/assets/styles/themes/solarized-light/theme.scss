@@ -15,9 +15,9 @@ $codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
 $row-highlight:            color.adjust($query-editor-bg, $lightness: -3%);
-$row-add:                  $insertedGreen;
+$row-add:                  color.mix($query-editor-bg, $brand-success, 70%);
 $row-delete:               $removedRed;
-$row-error:                #F9B8B7;
+$row-error:                color.mix($query-editor-bg, $brand-danger, 70%);
 
 $cell-edited:              #EDDFA1;
 $cell-error:               $row-error;
@@ -696,3 +696,44 @@ x-switch {
   }
 }
 
+.json-viewer .BksTextEditor {
+  --bks-text-editor-propertyName-fg-color: #{color.adjust($theme-primary, $lightness: 0%)};
+}
+
+& {
+  --bks-text-editor-bg-color: #{$query-editor-bg};
+  --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
+  --bks-text-editor-error-fg-color: #{$brand-danger};
+  --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-focused-outline-color: transparent;
+  --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.6)};
+  --bks-text-editor-foldgutter-fg-color-hover: #{$text-dark};
+  --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-gutter-border-color: transparent;
+  --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
+  --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-attributeName-fg-color: #{$brand-info};
+  --bks-text-editor-variableName-fg-color: #{$text-dark};
+  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
+  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};
+  --bks-text-editor-number-fg-color: #{$brand-primary};
+  --bks-text-editor-string-fg-color: #{$brand-primary};
+  --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-bracket-fg-color: #{$text};
+  --bks-text-editor-name-fg-color: #{$text-dark};
+  --bks-text-editor-typeName-fg-color: #{$text-dark};
+  --bks-text-editor-sql-alias-fg-color: #{$text-dark};
+  --bks-text-editor-sql-field-fg-color: #{$brand-secondary};
+  --bks-text-editor-operator-fg-color: #{$text-dark};
+  --bks-text-editor-punctuation-fg-color: #{$text-dark};
+  --bks-text-editor-separator-fg-color: #{$text-dark};
+  --bks-text-editor-type-fg-color: #{$text-dark};
+
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
+  --bks-text-editor-context-menu-fg-color: #{$text-dark};
+  --bks-text-editor-context-menu-item-bg-color-active: #{color.adjust($theme-secondary, $lightness: -25%)};
+  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+}

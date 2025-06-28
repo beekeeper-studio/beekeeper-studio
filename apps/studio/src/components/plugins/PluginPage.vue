@@ -23,22 +23,6 @@
       </div>
       <div class="actions">
         <template v-if="plugin.installed">
-          <!-- TODO we dont support disabling yet -->
-          <!-- <x-button -->
-          <!--   v-if="plugin.enabled" -->
-          <!--   @click.prevent="$emit('disable')" -->
-          <!--   disabled -->
-          <!--   class="btn btn-primary" -->
-          <!-- > -->
-          <!--   <x-label>Disable</x-label> -->
-          <!-- </x-button> -->
-          <!-- <x-button -->
-          <!--   v-else -->
-          <!--   @click.prevent="$emit('enable')" -->
-          <!--   class="btn btn-primary" -->
-          <!-- > -->
-          <!--   <x-label>Enable</x-label> -->
-          <!-- </x-button> -->
           <x-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
@@ -62,7 +46,7 @@
           <label class="checkbox-group">
             <input
               type="checkbox"
-              :value="autoUpdateEnabled"
+              :checked="autoUpdateEnabled"
               @change="toggleAutoUpdate"
             />
             <span>Auto-update</span>
@@ -79,14 +63,17 @@
           }}</x-label>
         </x-button>
       </div>
-      <div class="update-indicator">
-        <template
-          v-if="
-            !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
-          "
-        >
-          {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
-        </template>
+      <div
+        v-if="
+          !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
+        "
+        class="update-indicator"
+      >
+        {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
+      </div>
+      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
+        <i class="material-icons-outlined">info</i>
+        <div>This plugin has been disabled via configuration</div>
       </div>
     </div>
     <div class="markdown-content">

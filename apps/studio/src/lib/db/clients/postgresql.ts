@@ -475,14 +475,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
              i.indisunique,
              i.indisprimary,
              ${supportedFeatures.indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
-        coalesce(a.attname,
-                  (('{' || pg_get_expr(
-                              i.indexprs,
-                              i.indrelid
-                          )
-                        || '}')::text[]
-                  )[k.i]
-                ) AS index_column,
+        coalesce(a.attname, pg_get_indexdef(i.indexrelid, k.i, false)) AS index_column,
         i.indoption[k.i - 1] = 0 AS ascending
       FROM pg_index i
         CROSS JOIN LATERAL (SELECT unnest(i.indkey), generate_subscripts(i.indkey, 1) + 1) AS k(attnum, i)
@@ -567,7 +560,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
-      SELECT 
+      SELECT
         tc.constraint_name,
         kcu.column_name,
         kcu.table_schema AS from_schema,
@@ -578,8 +571,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         rc.update_rule,
         rc.delete_rule,
         kcu.ordinal_position
-      FROM 
-        information_schema.table_constraints AS tc 
+      FROM
+        information_schema.table_constraints AS tc
         JOIN information_schema.key_column_usage AS kcu
           ON tc.constraint_name = kcu.constraint_name
           AND tc.table_schema = kcu.table_schema
@@ -605,13 +598,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     ];
 
     const { rows } = await this.driverExecuteSingle(sql, { params });
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -627,8 +620,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           onDelete: row.delete_rule,
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
@@ -1008,7 +1001,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   wrapIdentifier(value: string): string {
-    if (value === '*') return value;
+    if (!value || value === '*') return value;
     const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
     if (matched) return this.wrapIdentifier(matched[1]) + matched[2];
     return `"${value.replaceAll(/"/g, '""')}"`;
@@ -1042,7 +1035,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
-    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+    // Schemas are top-level objects and don't need schema prefixing
+    const sql = typeOfElement === DatabaseElement.SCHEMA
+      ? `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(elementName)}`
+      : `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
@@ -1657,7 +1653,7 @@ pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // 
 pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 export function wrapIdentifier(value: string): string {
-  if (value === '*') return value;
+  if (!value || value === '*') return value;
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;
