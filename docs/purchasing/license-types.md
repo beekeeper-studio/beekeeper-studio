@@ -11,7 +11,7 @@ This works great for 99% of users, but sometimes online validation of a license 
 
 ![Trial ended by mistake](../assets/images/trial-ended.png)
 
-To solve this problem, if you purchased a yearly professional license or team license you can download the key for 100% offline validation.
+To solve this problem, if you purchased a yearly business license or team license you can download the key for 100% offline validation.
 
 ## How to use an offline license
 
