@@ -3,7 +3,7 @@ import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 
-export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-shell'
+export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-shell' | 'user-management'
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
@@ -146,6 +146,8 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
       return obj.tabType === 'import-table' &&
       obj.tableName === other.tableName &&
       (obj.schemaName || null) === (other.schemaName || null);
+    case 'user-management':
+      return obj.tabType === 'user-management';
     default:
       return false
   }
