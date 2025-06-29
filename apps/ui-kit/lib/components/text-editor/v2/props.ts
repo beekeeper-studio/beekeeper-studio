@@ -71,6 +71,8 @@ export default {
     type: Array as PropType<LineGutter[]>,
     default: () => [],
   },
+  /** Enable fold gutter. */
+  foldGutters: Boolean,
   // cursor: String,
   // initialized: Boolean,
   // autoFocus: Boolean,

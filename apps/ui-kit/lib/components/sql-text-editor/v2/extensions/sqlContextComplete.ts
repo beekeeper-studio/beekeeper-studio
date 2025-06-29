@@ -62,7 +62,7 @@ function sqlContextComplete(): Extension {
         let spaceInserted = false;
 
         update.changes.iterChanges(
-          (fromA: any, toA: any, fromB: any, toB: any, inserted: any) => {
+          (_fromA: any, _toA: any, _fromB: any, _toB: any, inserted: any) => {
             if (inserted.length === 1 && inserted.text[0] === " ") {
               spaceInserted = true;
             }
@@ -108,7 +108,7 @@ async function sqlCompletionSource(
 
   if (dotColumns) {
     columns = dotColumns;
-  } else if (context.explicit) {
+  } else {
     let foundColumns = await loadColumnsFromQueryContext(context.state, cursor);
     if (foundColumns) {
       columns = foundColumns;
@@ -214,11 +214,11 @@ async function loadColumnsFromQueryContext(
  */
 function isColumnCompletionPosition(textBeforeCursor: string): boolean {
   const completionPatterns = [
-    /\bSELECT\s+$/i, // After SELECT
-    /\bSELECT.+,\s*$/i, // After comma in SELECT
-    /\b(WHERE|AND|OR)\s+$/i, // After WHERE/AND/OR
-    /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+$/i, // After ORDER BY/GROUP BY/HAVING
-    /\bJOIN.+\bON\s+$/i, // After JOIN...ON
+    /\bSELECT\s+/i, // After SELECT (with or without trailing content)
+    /\bSELECT.+,\s*/i, // After comma in SELECT
+    /\b(WHERE|AND|OR)\s+/i, // After WHERE/AND/OR
+    /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+/i, // After ORDER BY/GROUP BY/HAVING
+    /\bJOIN.+\bON\s+/i, // After JOIN...ON
   ];
 
   return completionPatterns.some((pattern) => pattern.test(textBeforeCursor));
@@ -248,7 +248,7 @@ function getTablesFromContext(
   // Add tables from aliases
   if (aliases) {
     for (const [_, tablePath] of Object.entries(aliases)) {
-      if (tablePath?.length > 0) {
+      if (Array.isArray(tablePath) && tablePath.length > 0) {
         tables.add(tablePath[0]);
       }
     }
