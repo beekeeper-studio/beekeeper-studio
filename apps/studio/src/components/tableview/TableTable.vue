@@ -1686,7 +1686,6 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-            console.log(`this.database ${this.database}`)
             // lets just make column selection a front-end only thing
             const selects = ['*']
             const response = await this.connection.selectTop(

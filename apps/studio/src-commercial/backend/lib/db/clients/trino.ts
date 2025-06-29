@@ -92,18 +92,18 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       // log.info('client query result', result)
   
       for await (const r of result) {
-        // log.info('!!RESULT!!', r)
+        log.info('!!driverExecuteSingle RESULT!!', r)
         columns = r.columns
   
         if (r.data) rows.push(...r.data)
       }
 
       if (rows.length === 0) {
-        log.info('driverExecuteSingle response no rows:', {
-          columns: [],
-          rows: this.rowsToObject(columns, rows),
-          arrayMode: false
-        })
+        // log.info('driverExecuteSingle response no rows:', {
+        //   columns: [],
+        //   rows: this.rowsToObject(columns, rows),
+        //   arrayMode: false
+        // })
         return {
           columns,
           rows,
@@ -111,11 +111,11 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         }
       }
   
-      log.info('driverExecuteSingle response:', {
-        columns,
-        rows: this.rowsToObject(columns, rows),
-        arrayMode: false
-      })
+      // log.info('driverExecuteSingle response:', {
+      //   columns,
+      //   rows: this.rowsToObject(columns, rows),
+      //   arrayMode: false
+      // })
   
       return {
         columns,
@@ -203,8 +203,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       // select all columns with the column names instead of *
       selectFields = columns.map((v) => v.columnName);
     }
-
-
     
     const queries = TrinoClient.buildSelectTopQuery(
       table,
@@ -392,12 +390,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
-    log.info('I am in the query section!')
     let queryId = uuidv4();
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
     return {
       execute: async (): Promise<NgQueryResult[]> => {
         try {
+          log.info('queryText query', queryText)
           const data = await Promise.race([
             cancelable.wait(),
             this.executeQuery(queryText, { queryId }),
@@ -414,11 +412,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         }
       },
       cancel: async (): Promise<void> => {
-        // FIXME (azmi): If you are killing a query in ClickHouse Cloud or in
-        // a self-managed cluster, then be sure to use the ON CLUSTER
-        // [cluster-name] option, in order to ensure the query is killed on
-        // all replicas:::
-        // See https://clickhouse.com/docs/en/sql-reference/statements/kill
         await this.driverExecuteSingle(
           `KILL QUERY WHERE query_id='${queryId}'`
         );
@@ -434,9 +427,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     } catch (ex) {
       log.error("Unable to identify query", ex)
     }
-
-    log.info('indentification in driverExecuteMultiple', identification)
-    log.info('identification typeof', typeof identification)
 
     const results = await Promise.all(
       identification.map(async query => {
@@ -456,7 +446,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       })
     )
 
-    log.info('driverExecuteMultiple results', results)
+    // log.info('driverExecuteMultiple results', results)
 
     return results
   }
@@ -475,6 +465,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     const results = await this.driverExecuteMultiple(queryText);
     const ret = [];
     for (const result of results) {
+      log.info('executeQuery', result)
       const fields = this.parseFields(result.columns)
       const data = result.rows
       // const data =
@@ -490,7 +481,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
           affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
           command: 'SELECT',
           rows: [],
-          rowCount: 0
+          rowCount: 0,
+          queryId: ''
         });
         continue;
       }
@@ -512,6 +504,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         command: 'select',
         rows: data,
         rowCount: data.length,
+        queryId: ''
       });
     }
     return ret;
@@ -737,12 +730,13 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     schema,
     database
   ) {
-    log.debug("building selectTop for", table, offset, limit, orderBy, selects, schema, database)
+    log.info("building selectTop for", table, offset, limit, orderBy, selects, schema, database)
 
     // Ensure sane defaults
     const safeOffset = Number.isFinite(offset) ? offset : 0
     const safeLimit = Number.isFinite(limit) ? limit : 100
     const usePagination = Number.isFinite(limit)
+    const selectsArr = !Array.isArray(selects) || selects.length === 0 ? ['*'] : selects
 
     let rowNumberOrderClause = ""
 
@@ -770,7 +764,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       fullFilterString = filterBlob.fullFilterString
     }
 
-    const wrappedSelects = selects.map((s) => TrinoData.wrapIdentifier(s)).join(", ")
+    const wrappedSelects = selectsArr.map((s) => s === '*' ? s : TrinoData.wrapIdentifier(s)).join(", ")
     const wrappedTable = `${TrinoData.wrapIdentifier(database)}.${TrinoData.wrapIdentifier(schema)}.${TrinoData.wrapIdentifier(table)}`
 
     // Count query remains simple

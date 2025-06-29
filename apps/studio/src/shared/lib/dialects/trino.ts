@@ -91,5 +91,5 @@ export const TrinoData: DialectData = {
     tableTable: 'Editing records is currently disabled for Trino, It\'s not really recommend to do so anyway.',
     infoRelations: 'Please reference your core database for relation information'
   },
-  usesOffsetPagination: false
+  usesOffsetPagination: true
 }
