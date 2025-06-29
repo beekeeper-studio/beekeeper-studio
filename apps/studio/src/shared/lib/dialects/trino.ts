@@ -81,7 +81,6 @@ export const TrinoData: DialectData = {
     transactions: true,
     chunkSizeStream: true,
     binaryColumn: true,
-    initialSort: true,
     sqlCreate: true,
     compositeKeys: true,    // Whether composite keys are supported
     schemaValidation: true  // Whether schema validation features are disabled

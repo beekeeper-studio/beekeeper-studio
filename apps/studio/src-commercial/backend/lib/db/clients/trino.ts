@@ -88,12 +88,11 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       let columns: ResultColumn[] = []
       const rows: any[] = []
       
-      log.info('!!sql!!', sql)
-      log.info('client query result', result)
+      // log.info('!!sql!!', sql)
+      // log.info('client query result', result)
   
       for await (const r of result) {
-        console.log('RESULT YO')
-        console.log(r)
+        // log.info('!!RESULT!!', r)
         columns = r.columns
   
         if (r.data) rows.push(...r.data)
@@ -738,68 +737,75 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     schema,
     database
   ) {
-    log.debug("building selectTop for", table, offset, limit, orderBy, selects, schema, database);
-    let orderByString = "";
+    log.debug("building selectTop for", table, offset, limit, orderBy, selects, schema, database)
+
+    // Ensure sane defaults
+    const safeOffset = Number.isFinite(offset) ? offset : 0
+    const safeLimit = Number.isFinite(limit) ? limit : 100
+    const usePagination = Number.isFinite(limit)
+
+    let rowNumberOrderClause = ""
 
     if (orderBy && orderBy.length > 0) {
-      orderByString =
-        "ORDER BY " +
-        orderBy
-          .map((item: any) => {
-            if (_.isObject(item)) {
-              return `${TrinoData.wrapIdentifier(item["field"])} ${item[
-                "dir"
-              ].toUpperCase()}`;
-            } else {
-              return TrinoData.wrapIdentifier(item);
-            }
-          })
-          .join(",");
-    }
-    let filterString = "";
-    let fullFilterString = "";
-    if (_.isString(filters)) {
-      filterString = fullFilterString = `WHERE ${filters}`;
+      const orderByParts = orderBy.map((item: any) => {
+        if (_.isObject(item)) {
+          return `${TrinoData.wrapIdentifier(item["field"])} ${item["dir"].toUpperCase()}`
+        } else {
+          return TrinoData.wrapIdentifier(item)
+        }
+      })
+
+      rowNumberOrderClause = "ORDER BY " + orderByParts.join(", ")
     } else {
-      const filterBlob = TrinoClient.buildFilterString(filters, columns);
-      filterString = filterBlob.fullFilterString;
-      fullFilterString = filterBlob.fullFilterString;
+      rowNumberOrderClause = "ORDER BY 1" // Fallback for ROW_NUMBER
     }
 
-    const selectSQL = `SELECT ${selects
-      .map((s) => TrinoData.wrapIdentifier(s))
-      .join(", ")}`;
-    const baseSQL = `
-      FROM ${TrinoData.wrapIdentifier(database)}.${TrinoData.wrapIdentifier(schema)}.${TrinoData.wrapIdentifier(table)}
-      ${filterString}
-    `;
-    const baseFullSQL = `
-      FROM ${TrinoData.wrapIdentifier(table)}
-      ${fullFilterString}
-    `;
-    const countSQL = `
-      select count(*) as ${countTitle} ${baseSQL}
-    `;
-    const sql = `
-      ${selectSQL} ${baseSQL}
-      ${orderByString}
-      ${_.isNumber(limit) ? `LIMIT ${limit}` : ""}
-      ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
-    `;
-    const fullSql = `
-      ${selectSQL} ${baseFullSQL}
-      ${orderByString}
-      ${_.isNumber(limit) ? `LIMIT ${limit}` : ""}
-      ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
-    `;
+    let filterString = ""
+    let fullFilterString = ""
+    if (_.isString(filters)) {
+      filterString = fullFilterString = `WHERE ${filters}`
+    } else {
+      const filterBlob = TrinoClient.buildFilterString(filters, columns)
+      filterString = filterBlob.fullFilterString
+      fullFilterString = filterBlob.fullFilterString
+    }
 
+    const wrappedSelects = selects.map((s) => TrinoData.wrapIdentifier(s)).join(", ")
+    const wrappedTable = `${TrinoData.wrapIdentifier(database)}.${TrinoData.wrapIdentifier(schema)}.${TrinoData.wrapIdentifier(table)}`
+
+    // Count query remains simple
+    const countSQL = `
+      SELECT COUNT(*) AS ${countTitle}
+      FROM ${wrappedTable}
+      ${filterString}
+    `
+
+    // Helper to build a query with optional pagination WHERE clause
+    const buildPaginatedQuery = (tableRef: string, filter: string) => `
+      WITH ranked AS (
+        SELECT 
+          ${wrappedSelects},
+          ROW_NUMBER() OVER (${rowNumberOrderClause}) AS rownum
+        FROM ${tableRef}
+        ${filter}
+      )
+      SELECT *
+      FROM ranked
+      ${usePagination ? `WHERE rownum > ${safeOffset} AND rownum <= ${safeOffset + safeLimit}` : ""}
+    `
+    const paginatedSQL = buildPaginatedQuery(wrappedTable, filterString)
+    const fullSql = buildPaginatedQuery(TrinoData.wrapIdentifier(table), fullFilterString)
+    
+    log.info('!!sql!!', paginatedSQL)
     return {
-      query: sql,
+      query: paginatedSQL,
       fullQuery: fullSql,
       countQuery: countSQL,
       params: {},
-    };
+    }
   }
+
+
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
     return (

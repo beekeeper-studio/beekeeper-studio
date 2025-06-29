@@ -1608,6 +1608,7 @@ export default Vue.extend({
       this.trigger(AppEvent.beginImport, { table: this.table })
     },
     openQueryTab() {
+      console.log('~~~ Open Query Tab Called ~~~')
       const page = this.tabulator.getPage();
       const orderBy = [
         _.pick(this.tabulator.getSorters()[0], ["field", "dir"]),
