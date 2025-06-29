@@ -2,7 +2,7 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
-import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery } from "@/common/transport";
+import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportPluginData, TransportUsedQuery } from "@/common/transport";
 import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
@@ -20,6 +20,7 @@ import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import rawLog from "@bksLogger"
+import { PluginData } from "@/common/appdb/models/PluginData";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -122,6 +123,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
+  ...handlersFor<TransportPluginData>('pluginData', PluginData),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

@@ -10,6 +10,7 @@ import {
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
+import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -29,7 +30,8 @@ export default class WebPluginLoader {
 
   constructor(
     public readonly manifest: Manifest,
-    private pluginStore: PluginStoreService
+    private pluginStore: PluginStoreService,
+    private utilityConnection: UtilityConnection
   ) {
     this.handleMessage = this.handleMessage.bind(this);
     this.log = rawLog.scope(`WebPluginLoader:${manifest.id}`);
@@ -136,11 +138,41 @@ export default class WebPluginLoader {
         case "getAllTabs":
           response.result = this.pluginStore.getAllTabs();
           break;
+        case "getData":
+        case "getEncryptedData": {
+          const row = await this.utilityConnection.send(
+            "appdb/pluginData/findOne",
+            { pluginId: this.manifest.id }
+          );
+          const str = request.name === "getEncryptedData"
+            ? row?.encryptedData
+            : row?.data;
+          if (str) {
+            response.result = JSON.parse(str);
+          }
+          break;
+        }
 
         // ======== WRITE ACTIONS ===========
         case "runQuery":
           response.result = await this.pluginStore.runQuery(request.args.query);
           break;
+        case "setData":
+        case "setEncryptedData": {
+          const str = JSON.stringify(request.args)
+          const row = await this.utilityConnection.send(
+            "appdb/pluginData/findOne",
+            { pluginId: this.manifest.id }
+          )
+          const id = row?.id
+          const obj = {
+            id,
+            pluginId: this.manifest.id,
+            [request.name === "setEncryptedData" ? 'encryptedData' : 'data']: str
+          }
+          await this.utilityConnection.send("appdb/pluginData/save", { obj });
+          break;
+        }
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
@@ -203,6 +235,10 @@ export default class WebPluginLoader {
           )
         );
 
+        break;
+      }
+      case "pluginError": {
+        this.log.error(`Received plugin error: ${notification.args.message}`, notification.args);
         break;
       }
 
