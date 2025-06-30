@@ -2,13 +2,17 @@ import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from "lodash";
 import rawLog from "@bksLogger";
+import { EncryptTransformer } from "../transformers/Transformers";
+import { loadEncryptionKey } from "@/common/encryption_key";
 
 const log = rawLog.scope("PluginData");
 
-@Entity({ name: "plugin_data" })
-export class PluginData extends ApplicationEntity {
+const encrypt = new EncryptTransformer(loadEncryptionKey());
+
+@Entity({ name: "encrypted_plugin_data" })
+export class EncryptedPluginData extends ApplicationEntity {
   withProps(props: any) {
-    if (props) PluginData.merge(this, props);
+    if (props) EncryptedPluginData.merge(this, props);
     return this;
   }
 
@@ -18,7 +22,7 @@ export class PluginData extends ApplicationEntity {
   @Column({ type: "varchar", nullable: false })
   key: string;
 
-  @Column({ type: "varchar", nullable: false })
+  @Column({ type: "varchar", nullable: false, transformer: [encrypt] })
   value: string;
 
   static async get(pluginId: string, key: string = "default"): Promise<string | null> {

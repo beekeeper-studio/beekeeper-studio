@@ -30,12 +30,6 @@ export interface TransportLicenseKey extends Transport {
   maxAllowedAppRelease: { tagName: string } | null
 }
 
-export interface TransportPluginData extends Transport {
-  pluginId: string;
-  data: string | null;
-  encryptedData: string | null;
-}
-
 export interface TransportPinnedConn extends Transport {
   position: number;
   connectionId: number;

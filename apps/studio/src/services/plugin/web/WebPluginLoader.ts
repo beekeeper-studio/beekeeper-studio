@@ -140,16 +140,13 @@ export default class WebPluginLoader {
           break;
         case "getData":
         case "getEncryptedData": {
-          const row = await this.utilityConnection.send(
-            "appdb/pluginData/findOne",
-            { pluginId: this.manifest.id }
+          const value = await this.utilityConnection.send(
+            request.name === "getEncryptedData"
+              ? "plugin/getEncryptedData"
+              : "plugin/getData",
+            { manifest: this.manifest, key: request.args.key }
           );
-          const str = request.name === "getEncryptedData"
-            ? row?.encryptedData
-            : row?.data;
-          if (str) {
-            response.result = JSON.parse(str);
-          }
+          response.result = value;
           break;
         }
 
@@ -159,18 +156,12 @@ export default class WebPluginLoader {
           break;
         case "setData":
         case "setEncryptedData": {
-          const str = JSON.stringify(request.args)
-          const row = await this.utilityConnection.send(
-            "appdb/pluginData/findOne",
-            { pluginId: this.manifest.id }
+          await this.utilityConnection.send(
+            request.name === "setEncryptedData"
+              ? "plugin/setEncryptedData"
+              : "plugin/setData",
+            { manifest: this.manifest, key: request.args.key, value: request.args.value }
           )
-          const id = row?.id
-          const obj = {
-            id,
-            pluginId: this.manifest.id,
-            [request.name === "setEncryptedData" ? 'encryptedData' : 'data']: str
-          }
-          await this.utilityConnection.send("appdb/pluginData/save", { obj });
           break;
         }
 
