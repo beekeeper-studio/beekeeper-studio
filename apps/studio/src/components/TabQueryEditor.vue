@@ -34,7 +34,7 @@
       <sql-text-editor
         :value="unsavedText"
         :read-only="editor.readOnly"
-        :focus="focusingElement === 'text-editor'"
+        :is-focused="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
         :identifier-dialect="identifierDialect"

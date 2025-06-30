@@ -38,7 +38,7 @@ export default {
       if (!this.textEditor) return;
       this.applyReadOnly();
     },
-    focus() {
+    isFocused() {
       if (!this.textEditor) return;
       this.applyFocus();
     },
@@ -103,7 +103,7 @@ export default {
       this.textEditor.setReadOnly(this.readOnly);
     },
     applyFocus() {
-      if (this.focus) {
+      if (this.isFocused) {
         this.textEditor.focus();
       }
     },
@@ -167,7 +167,7 @@ export default {
         replaceExtensions: this.replaceExtensions,
         lsConfig: this.lsConfig,
         initialValue: this.value,
-        focus: this.focus,
+        focus: this.isFocused,
         readOnly: this.readOnly,
         keymap: this.keymap,
         vimOptions: this.vimOptions,
