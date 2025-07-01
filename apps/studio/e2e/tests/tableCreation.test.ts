@@ -51,11 +51,8 @@ test.describe("Table creation", () => {
         await userAttemptsTo.writeAQuery(CREATE_TABLE_QUERY);
         await userAttemptsTo.runQuery();
 
-        // Wait for table creation and sidebar refresh
-        await window.waitForTimeout(2000);
-        
         const tableSideBarButton = await tablesSideBar.tableSideBarButton(newTableName);
-        await expect(tableSideBarButton).toBeVisible({ timeout: 15000 });
+        await expect(tableSideBarButton).toBeVisible();
     });
 
 });
