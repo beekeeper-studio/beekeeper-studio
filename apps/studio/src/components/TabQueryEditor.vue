@@ -911,7 +911,7 @@
             const extracted = extractVariablesAndCleanQuery(rawQuery);
             variables = extracted.variables;
             cleanedQuery = extracted.cleanedQuery;
-            queryWithVariables = substituteVariables(cleanedQuery, variables);
+            queryWithVariables = substituteVariables(cleanedQuery, variables, this.identifyDialect);
           } catch (err) {
             this.error = err instanceof Error ? err.message : String(err);
             this.$bksNotify?.error?.(`Error preparing query: ${this.error}`);

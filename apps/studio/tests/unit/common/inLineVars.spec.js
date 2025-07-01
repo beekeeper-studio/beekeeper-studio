@@ -156,3 +156,69 @@ describe("Inline Variables", () => {
   });
 
 });
+
+describe('Variable substitution across dialects', () => {
+  const inputSQL = `
+-- %name% = Alice
+-- %age% = 42
+-- %city% = Paris
+-- %json% = {"foo": "bar"}
+-- %list% = (1, 2, 3)
+-- %number% = 123.45
+-- %null_value% = null
+
+SELECT
+  'Hello %name%',
+  'Age is %age%',
+  'JSON literal: %json%',
+  'List literal: %list%',
+  'Number literal: %number%',
+  'Null literal: %null_value%',
+  
+  $$Dollar says %name%$$,
+
+  "Hello %name%",
+
+  %name% AS name_col,
+  %age% AS age_col,
+  %city% AS city_col,
+  %json% AS json_col,
+  %list% AS list_col,
+  %number% AS number_col,
+  %null_value% AS null_col;
+`;
+
+const expectedSQL = `
+SELECT
+  'Hello %name%',
+  'Age is %age%',
+  'JSON literal: %json%',
+  'List literal: %list%',
+  'Number literal: %number%',
+  'Null literal: %null_value%',
+  
+  $$Dollar says 'Alice'$$,
+
+  "Hello 'Alice'",
+
+  'Alice' AS name_col,
+  42 AS age_col,
+  'Paris' AS city_col,
+  {"foo": "bar"} AS json_col,
+  (1, 2, 3) AS list_col,
+  123.45 AS number_col,
+  null AS null_col;
+`.trim();
+
+
+  const dialects = ['sqlite', 'bigquery', 'generic'];
+
+  dialects.forEach(dialect => {
+    test(`Dialect: ${dialect}`, () => {
+      const { variables, cleanedQuery } = extractVariablesAndCleanQuery(inputSQL);
+      const substituted = substituteVariables(cleanedQuery, variables, dialect);
+
+      expect(substituted.trim()).toBe(expectedSQL);
+    });
+  });
+});
