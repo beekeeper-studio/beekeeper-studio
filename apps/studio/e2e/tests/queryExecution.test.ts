@@ -11,7 +11,6 @@ let queryTab;
 let resultPane;
 let userAttemptsTo;
 const testQueryPrefix = `SELECT * FROM actor`;
-const visibleTimeout = 15000;
 
 test.describe("Postgres query execution", () => {
 
@@ -34,12 +33,12 @@ test.describe("Postgres query execution", () => {
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.connectWithDatabase();
 
-        await expect(queryTab.queryTabTextArea).toBeVisible({ timeout: visibleTimeout });
+        await expect(queryTab.queryTabTextArea).toBeVisible();
 
         await userAttemptsTo.writeAQuery(postgresQuery);
         await userAttemptsTo.runQuery();
 
-        await expect(resultPane.resultFirstRow).toBeVisible({ timeout: visibleTimeout });
+        await expect(resultPane.resultFirstRow).toBeVisible();
     });
 
     test("postgres query with WHERE and 2 results", async () => {
