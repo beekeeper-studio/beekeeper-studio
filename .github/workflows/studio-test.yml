@@ -157,13 +157,7 @@ jobs:
         run: docker compose up psql15 -d
 
       - name: Serve + Run Tests
-        run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
-          yarn run electron:serve > server.log 2>&1 &
-            sleep 15
-            cat server.log  # (Optional: see if it launched correctly)
-            yarn workspace beekeeper-studio test:e2e:ci
-          '
+        run: yarn workspace beekeeper-studio run test:e2e:ci
         env: 
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
