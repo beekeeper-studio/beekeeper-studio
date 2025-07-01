@@ -1,5 +1,5 @@
 import rawLog from "@bksLogger";
-import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
+import { IDbConnectionDatabase } from "@/lib/db/types";
 import {
   Trino as TrinoNodeClient,
   BasicAuth,
@@ -14,7 +14,6 @@ import {
   // ExecutionContext,
   // QueryLogOptions,
 } from "@/lib/db/clients/BasicDatabaseClient";
-// import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 // import knexlib from "knex";
 import {
   BksField,
@@ -60,7 +59,11 @@ interface ResultColumn {
   type: string
 }
 
-type Result = BaseQueryResult;
+interface TrinoResult extends BaseQueryResult {
+  queryId?: string
+}
+
+type Result = TrinoResult;
 
 const log = rawLog.scope("trino");
 const knex = null
@@ -88,34 +91,22 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       let columns: ResultColumn[] = []
       const rows: any[] = []
       
-      // log.info('!!sql!!', sql)
-      // log.info('client query result', result)
-  
       for await (const r of result) {
-        log.info('!!driverExecuteSingle RESULT!!', r)
-        columns = r.columns
+        const { data: resultData, columns: resultColumns } = r
+        // log.info('!!driverExecuteSingle RESULT!!', r)
+        columns = resultColumns
   
-        if (r.data) rows.push(...r.data)
+        if (resultData) rows.push(...resultData)
       }
 
       if (rows.length === 0) {
-        // log.info('driverExecuteSingle response no rows:', {
-        //   columns: [],
-        //   rows: this.rowsToObject(columns, rows),
-        //   arrayMode: false
-        // })
         return {
           columns,
-          rows,
-          arrayMode: false
+          rows: [],
+          arrayMode: false,
+          queryId: ''
         }
       }
-  
-      // log.info('driverExecuteSingle response:', {
-      //   columns,
-      //   rows: this.rowsToObject(columns, rows),
-      //   arrayMode: false
-      // })
   
       return {
         columns,
@@ -173,17 +164,17 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async alterTable(_change: AlterTableSpec): Promise<void> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
   async getPrimaryKeys(): Promise<PrimaryKeyColumn[]> {
-    log.error("Trino doesn't support primary keys")
+    log.info("Trino doesn't support primary keys")
     return await []
   }
 
   async getPrimaryKey(_table: string, _schema?: string): Promise<string | null> {
-    log.error("Trino doesn't support primary keys")
+    log.info("Trino doesn't support primary keys")
     return null
   }
 
@@ -259,7 +250,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     _table: string,
     _schema?: string
   ): Promise<TableProperties> {
-    log.error("Trino doesn't support table properties for all databases")
+    log.info("Trino doesn't support table properties for all databases")
     return null
   }
 
@@ -279,24 +270,24 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     _table: string,
     _schema?: string
   ): Promise<TableIndex[]> {
-    log.error("Trino doesn't support table indexes in all databases it supports")
+    log.info("Trino doesn't support table indexes in all databases it supports")
     return null
   }
 
   async listViews(
     _filter: FilterOptions = { schema: "public" }
   ): Promise<TableOrView[]> {
-    log.error("Trino doesn't support views")
+    log.info("Trino doesn't support views")
     return []
   }
 
   async executeApplyChanges(_changes: TableChanges): Promise<any[]> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
   async dropElement(): Promise<void> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
@@ -360,32 +351,32 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async createDatabase(): Promise<string> {
-    log.error("Trino doesn't support creating databases")
+    log.info("Trino doesn't support creating databases")
     return null
   }
 
   async truncateElementSql() {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
   async duplicateTable(): Promise<void> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
   async duplicateTableSql(): Promise<string> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
   async setElementNameSql(): Promise<string> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
   async getBuilder(_table: string, _schema?: string): Promise<ChangeBuilderBase> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
@@ -395,7 +386,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return {
       execute: async (): Promise<NgQueryResult[]> => {
         try {
-          log.info('queryText query', queryText)
           const data = await Promise.race([
             cancelable.wait(),
             this.executeQuery(queryText, { queryId }),
@@ -445,9 +435,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         }
       })
     )
-
-    // log.info('driverExecuteMultiple results', results)
-
     return results
   }
 
@@ -465,7 +452,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     const results = await this.driverExecuteMultiple(queryText);
     const ret = [];
     for (const result of results) {
-      log.info('executeQuery', result)
       const fields = this.parseFields(result.columns)
       const data = result.rows
       // const data =
@@ -512,7 +498,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
 
   async rawExecuteQuery(_query: string): Promise<Result[]> {
     // TODO: Still need this?
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
@@ -532,12 +518,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
-    // Clickhouse doesn't support routines
+    log.info("Trino doesn't support reoutines")
     return [];
   }
 
   async listMaterializedViewColumns(): Promise<TableColumn[]> {
-    log.error("Trino doesn't support materialized views")
+    log.info("Trino doesn't support materialized views")
     return []
   }
 
@@ -545,7 +531,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     _table: string,
     _schema?: string
   ): Promise<string[]> {
-    // Trino does not support foreign keys.
+    log.info("Trino doesn't support foreign keys")
     return [];
   }
 
@@ -560,7 +546,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
-    log.error("Trino doesn't support materialized views")
+    log.info("Trino doesn't support materialized views")
     return []
   }
 
@@ -581,12 +567,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async getTableCreateScript(_table: string, _schema?: string): Promise<string> {
-    log.error("Trino doesn't support creating tables")
+    log.info("Trino doesn't support creating tables")
     return null
   }
 
   async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
-    log.error("Trino doesn't support view creatinon")
+    log.info("Trino doesn't support view creatinon")
     return null
   }
 
@@ -595,12 +581,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async setTableDescription(): Promise<string> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
   async truncateAllTables(_schema?: string): Promise<void> {
-    log.error("Trino doesn't support changing data")
+    log.info("Trino doesn't support changing data")
     return null
   }
 
@@ -618,7 +604,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     table: string,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
-    chunkSize: number,
+    _chunkSize: number,
     schema: string,
     database: string
   ): Promise<StreamResults> {
@@ -634,18 +620,10 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       schema,
       database
     );
-    const result = await this.driverExecuteSingle(qs.countQuery, {
-      params: qs.params,
-    });
+    const result = await this.driverExecuteSingle(qs.countQuery);
     const json = result.data as ResponseJSON<{ total: number }>;
     const totalRows = Number(json.data[0].total) || 0;
-    const columns = await this.listTableColumns(table, schema);
-    const cursor = new ClickHouseCursor({
-      query: qs.query,
-      params: qs.params,
-      client: this.client,
-      chunkSize,
-    });
+    const columns = await this.listTableColumns(table, schema, database);
     return { totalRows, columns, cursor };
   }
 
@@ -798,8 +776,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       params: {},
     }
   }
-
-
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
     return (

@@ -76,7 +76,6 @@ export const TrinoData: DialectData = {
       sql: true
     },
     schema: true,
-    multipleDatabases: true,
     generatedColumns: true,
     transactions: true,
     chunkSizeStream: true,
