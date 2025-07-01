@@ -160,7 +160,7 @@ jobs:
         run: |
           xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
           yarn run electron:serve > server.log 2>&1 &
-            sleep 30
+            sleep 15
             cat server.log  # (Optional: see if it launched correctly)
             yarn workspace beekeeper-studio test:e2e:ci
           '

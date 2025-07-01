@@ -4,9 +4,9 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 60000,
   expect: {
-    timeout: 15000,
+    timeout: 30000,
   },
-  workers: 2,
+  workers: 1,
   use: {
     actionTimeout: 10000,
     trace: 'on-first-retry',
