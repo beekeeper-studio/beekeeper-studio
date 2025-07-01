@@ -1,6 +1,10 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
 import { friendlyJsonObject } from '@/common/utils';
+import rawLog from '@bksLogger';
+
+const log = rawLog.scope('data/tools')
+
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
 function dec28bits(num: any): string {
@@ -102,6 +106,12 @@ export const Mutators = {
   /** Stringify json data for MySQL column */
   jsonMutator(value: any): JsonFriendly {
     if(!_.isObject(value)) return value;
-    return friendlyJsonObject(value)
+    try {
+      return friendlyJsonObject(value)
+    } catch (e) {
+      // the errors should be harmless. avoid throwing it cause it'll break our table.
+      log.debug(`error stringifying json: ${e}`, value)
+      return value
+    }
   },
 }

@@ -14,7 +14,7 @@
         :vim-keymaps="vimKeymaps"
         :keymap="userKeymap"
         :output="mongoOutputResult"
-        :focus="focusingElement === 'text-editor'"
+        :is-focused="focusingElement === 'text-editor'"
         :auto-focus="true"
         :extensions="extensions"
         :promptSymbol="promptSymbol"

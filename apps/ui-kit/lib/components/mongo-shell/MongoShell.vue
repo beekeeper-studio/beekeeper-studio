@@ -41,6 +41,10 @@ export default {
       if (!this.textEditor) return;
       this.applyLineWrapping();
     },
+    isFocused() {
+      if (!this.textEditor) return;
+      this.applyFocus();
+    },
     promptSymbol(value) {
       if (this.textEditor) {
         this.textEditor.dispatchChange({
@@ -188,6 +192,11 @@ export default {
     },
     applyKeymap() {
       this.textEditor.setKeymap(this.keymap, this.vimOptions);
+    },
+    applyFocus() {
+      if (this.isFocused) {
+        this.textEditor.focus();
+      }
     },
     getPromptText(promptSymbol) {
       if (promptSymbol.length <= this.maxPromptSymbolLength) return promptSymbol;

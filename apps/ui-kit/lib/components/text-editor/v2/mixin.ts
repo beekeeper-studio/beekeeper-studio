@@ -7,7 +7,7 @@ import {
   useCustomMenuItems,
 } from "../../context-menu";
 import { readClipboard, writeClipboard } from "../../../utils";
-import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorValueChangeEvent } from "./types";
+import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorSelectionChangeEvent, TextEditorValueChangeEvent } from "./types";
 
 export default {
   props,
@@ -38,7 +38,7 @@ export default {
       if (!this.textEditor) return;
       this.applyReadOnly();
     },
-    focus() {
+    isFocused() {
       if (!this.textEditor) return;
       this.applyFocus();
     },
@@ -103,7 +103,7 @@ export default {
       this.textEditor.setReadOnly(this.readOnly);
     },
     applyFocus() {
-      if (this.focus) {
+      if (this.isFocused) {
         this.textEditor.focus();
       }
     },
@@ -151,6 +151,9 @@ export default {
         onValueChange: (value) => {
           this.$emit("bks-value-change", { value } as TextEditorValueChangeEvent['detail']);
         },
+        onSelectionChange: (value) => {
+          this.$emit("bks-selection-change", { value } as TextEditorSelectionChangeEvent['detail']);
+        },
         onFocus: (event) => {
           this.$emit("bks-focus", event as TextEditorFocusEvent);
         },
@@ -164,7 +167,7 @@ export default {
         replaceExtensions: this.replaceExtensions,
         lsConfig: this.lsConfig,
         initialValue: this.value,
-        focus: this.focus,
+        focus: this.isFocused,
         readOnly: this.readOnly,
         keymap: this.keymap,
         vimOptions: this.vimOptions,
@@ -173,6 +176,7 @@ export default {
         keybindings: this.keybindings,
         markers: this.markers,
         lineGutters: this.lineGutters,
+        foldGutters: this.foldGutters,
       });
 
       this.textEditor = textEditor;

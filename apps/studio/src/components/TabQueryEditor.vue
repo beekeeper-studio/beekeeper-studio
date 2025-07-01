@@ -34,7 +34,7 @@
       <sql-text-editor
         :value="unsavedText"
         :read-only="editor.readOnly"
-        :focus="focusingElement === 'text-editor'"
+        :is-focused="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
         :identifier-dialect="identifierDialect"
@@ -51,6 +51,7 @@
         :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
+        @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
       />
@@ -768,6 +769,9 @@
           this.updateEditorHeight()
         })
       },
+      handleEditorSelectionChange(detail) {
+        this.editor.selection = detail.value
+      },
       saveTab: _.debounce(function() {
         this.$store.dispatch('tabs/save', this.tab)
       }, 1000),
@@ -982,7 +986,23 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
+          const lastQuery = this.$store.state['data/usedQueries']?.items?.[0]
+          const isDuplicate = lastQuery?.text?.trim() === query?.trim()
+
+          const queryObj = { 
+            text: query, 
+            numberOfRecords: totalRows, 
+            queryId: this.query?.id, 
+            connectionId: this.usedConfig.id 
+          }
+
+          if(lastQuery && isDuplicate){
+            queryObj.updatedAt = new Date();
+            queryObj.id = lastQuery.id;
+          }
+          
+          this.$store.dispatch('data/usedQueries/save', queryObj)
+          
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'

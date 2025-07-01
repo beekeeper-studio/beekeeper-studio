@@ -472,8 +472,9 @@ const store = new Vuex.Store<State>({
       }
     },
     async disconnect(context) {
-      const server = context.state.server
-      server?.disconnect()
+      if (context.state.connection) {
+        await context.state.connection.disconnect();
+      }
 
       window.main.disableConnectionMenuItems();
 
