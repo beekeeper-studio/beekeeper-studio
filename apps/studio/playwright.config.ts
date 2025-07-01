@@ -6,6 +6,7 @@ export default defineConfig({
   expect: {
     timeout: 30000,
   },
+  fullyParallel: false,
   workers: 1,
   use: {
     actionTimeout: 10000,
