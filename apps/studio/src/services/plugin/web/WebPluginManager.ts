@@ -143,7 +143,7 @@ export default class WebPluginManager {
       return this.loaders.get(manifest.id);
     }
 
-    const loader = new WebPluginLoader(manifest, this.pluginStore);
+    const loader = new WebPluginLoader(manifest, this.pluginStore, this.utilityConnection);
     await loader.load();
     this.loaders.set(manifest.id, loader);
     return loader;
