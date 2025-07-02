@@ -62,6 +62,8 @@ import addContextToTabs from "./20250527_add_context_to_tabs"
 import addPluginSettings from "./20250529_add_plugin_settings"
 import addPrivacyModeSetting from "./20250618_add_privacy_mode_setting"
 import createUserPins from './20250604_create_user_pins'
+import createPluginData from './20250630_create_plugin_data'
+import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
 
 import ultimate from './ultimate/index'
 
@@ -98,6 +100,7 @@ const realMigrations = [
   addInstallationId,
   sqlAnywhereOptions,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
+  createPluginData, createEncryptedPluginData,
 ]
 
 // fixtures require the models
