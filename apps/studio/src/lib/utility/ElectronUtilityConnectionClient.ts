@@ -1,8 +1,9 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, AdminPermission, User, UserAuthenticationDetails, UserPrivileges, UserResourceLimits, Schema } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
+import { UserChange } from '@/lib/db/models';
 
 
 export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
@@ -108,6 +109,60 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     return await Vue.prototype.$util.send('conn/executeQuery', { queryText, options });
+  }
+
+  async hasAdminPermission(): Promise<AdminPermission> {
+    return await Vue.prototype.$util.send('conn/hasAdminPermission');
+  }
+
+  async getListOfUsers(): Promise<User[]> {
+    const users = await Vue.prototype.$util.send('conn/getListOfUsers');
+    return users;
+  }
+
+  async getUserAuthenticationDetails(user: string, host: string): Promise<UserAuthenticationDetails> {
+    const authDetails = await Vue.prototype.$util.send('conn/getUserAuthenticationDetails', {user, host});
+    return authDetails;
+  }
+
+  async getUserPrivileges(user: string, host: string): Promise<UserPrivileges[]> {
+    const privileges = await Vue.prototype.$util.send('conn/getUserPrivileges', {user, host});
+    return privileges;
+  }
+
+  async getUserResourceLimits(user: string, host: string): Promise<UserResourceLimits> {
+    const resourceLimits = await Vue.prototype.$util.send('conn/getUserResourceLimits', {user, host});
+    return resourceLimits;
+  }
+
+  // Each row in the result represents a Schema and its corresponding privileges for the user
+  async showGrantsForUser(user: string, host: string): Promise<UserPrivileges[]> {
+    const grants = await Vue.prototype.$util.send('conn/showGrants', {user, host});
+    return grants;
+  }
+
+  async applyUserChanges(changes: UserChange[]): Promise <void> {
+    return await Vue.prototype.$util.send('conn/applyUserChanges', { changes });
+  }
+
+  async getSchemas(): Promise<Schema[]> {
+    return await Vue.prototype.$util.send('conn/getSchemas');
+  }
+
+  async deleteUser(user: string, host: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/deleteUser', { user, host });
+  }
+
+  async renameUser(user: string, host: string, newName: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/renameUser', { user, host, newName});
+  }
+
+  async expireUserPassword(user: string, host: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/expireUserPassword', { user, host });
+  }
+
+  async revokeAllPrivileges(user: string, host: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/revokeAllPrivileges', { user, host });
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
