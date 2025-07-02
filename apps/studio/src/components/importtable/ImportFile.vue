@@ -2,7 +2,7 @@
   <div class="import mini-wrap">
     <form class="import-section-wrapper card-flat padding">
       <h3 class="card-title">
-        Import Data Into Table '{{ stepperProps.table }}'
+        Choose file
       </h3>
       <div class="form-group">
         <label for="fileName">Select File To Import (.csv, .xlsx, .json, .jsonl only)</label>
@@ -173,9 +173,10 @@
           <button
             class="btn btn-primary btn-icon"
             type="button"
+            :disabled="!this.fileName"
             @click.prevent="$emit('finish')"
           >
-            <span>Map To Table</span>
+            <span>Map to Table</span>
             <span class="material-icons">
               keyboard_arrow_right
             </span>
@@ -212,8 +213,9 @@
         type: Object,
         required: true,
         default: () => ({
-          schema: '',
-          table: ''
+          schema: null,
+          table: null,
+          tabId: null
         })
       }
     },
@@ -236,7 +238,9 @@
       }
     },
     computed: {
-      ...mapGetters(['schemaTables']),
+      ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
+      ...mapState('imports', {'tablesToImport': 'tablesToImport'}),
+      ...mapState(['defaultSchema', 'connection']),
       filePickerOptions() {
         return {
           filters: [
@@ -254,14 +258,10 @@
       async fileName () {
         const importOptions = {
           fileName: this.fileName,
-          fileType: this.fileType,
+          fileType: this.fileType
         }
 
-        this.table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', this.table)
-        importOptions.table = this.table
-
-        this.importerId = await this.$util.send('import/init', { options: importOptions, table: this.table })
+        this.importerId = await this.$util.send('import/init', { options: importOptions })
         this.tabulator = null
         this.isAutodetect = true
         this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerId })
@@ -277,10 +277,6 @@
       }
     },
     methods: {
-      tableKey() {
-        const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
-        return `${schema}${this.stepperProps.table}`
-      },
       async setXLSX() {
         this.sheets = await this.$util.send('import/excel/getSheets', { id: this.importerId })
         this.sheetSelected = this.sheets[0]
@@ -298,10 +294,6 @@
           useHeaders: true
         }
 
-        this.table = this.getTable()
-        await this.$store.dispatch('updateTableColumns', this.table)
-
-        importOptions.table = this.table
         await this.$util.send('import/setOptions', { id: this.importerId, options: importOptions })
         const { data, columns } = await this.$util.send('import/getFilePreview', { id: this.importerId })
         const tableColumns = columns.map(column =>
@@ -343,21 +335,20 @@
           }
         }
       },
+      importKey() {
+        return `new-import-${this.stepperProps.tabId}`
+      },
       canContinue() {
         return Boolean(this.fileName)
       },
-      getTable() {
-        let foundSchema = ''
-        if (this.schemaTables.length > 1) {
-          foundSchema = this.schemaTables.find(s => s.schema === this.stepperProps.schema)
-        } else {
-          foundSchema = this.schemaTables[0]
-        }
-        return foundSchema.tables.find(t => t.name === this.stepperProps.table)
-      },
       async onNext() {
+        if (!this.importerId) {
+          return
+        }
+        
+        const storeOptions = await this.tablesToImport.get(this.importKey())
         const importData = {
-          table: this.tableKey(),
+          table: `new-import-${this.stepperProps.tabId}`,
           importProcessId: this.importerId,
           importOptions: {
             fileName: this.fileName,
@@ -369,7 +360,8 @@
             trimWhitespaces: this.trimWhitespaces,
             useHeaders: true,
             fileType: this.fileType,
-            table: this.table
+            table: storeOptions.table,
+            createNewTable: storeOptions.createNewTable
           }
         }
 
