@@ -248,6 +248,7 @@ jobs:
         if: matrix.os.type == 'windows'
         env:
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+          KEYVAULT_AUTH_SECRET: "${{ secrets.keyvault_auth_secret }}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{'$PYTHON_PATH' }}"
           PYTHONPATH: "${{ '$PYTHONPATH' }}"

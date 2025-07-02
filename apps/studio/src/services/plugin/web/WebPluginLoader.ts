@@ -149,6 +149,9 @@ export default class WebPluginLoader {
           response.result = value;
           break;
         }
+        case "clipboard.readText":
+          response.result = window.main.readTextFromClipboard()
+          break;
 
         // ======== WRITE ACTIONS ===========
         case "runQuery":
@@ -164,6 +167,9 @@ export default class WebPluginLoader {
           )
           break;
         }
+        case "clipboard.writeText":
+          window.main.writeTextToClipboard(request.args.text)
+          break;
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
