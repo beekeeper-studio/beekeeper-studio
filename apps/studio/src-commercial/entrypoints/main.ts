@@ -26,6 +26,7 @@ import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
+import {whichTool} from "@/lib/db/clients/utils";
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 
@@ -171,6 +172,15 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+ipcMain.handle('which-tool', async (_event, toolName: string) => {
+  try {
+    const path = await whichTool({ toolName });
+    return { success: true, path };
+  } catch (error) {
+    return { success: false, error: error.toString() };
+  }
+});
 
 ipcMain.handle('platformInfo', () => {
   return platformInfo;

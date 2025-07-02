@@ -9,7 +9,7 @@
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="!iamAuthenticationEnabled" :config="config" />
+    <common-server-inputs v-show="showServerInputs" :config="config" />
 
     <div v-show="iamAuthenticationEnabled" class="host-port-user-password">
       <div class="row gutter">
@@ -37,6 +37,7 @@
     </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
+    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
   </div>
 </template>
 
@@ -45,19 +46,24 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import CommonIam from './CommonIam.vue'
+import CommonEntraId from './CommonEntraId.vue'
 import {AppEvent} from "@/common/AppEvent";
 import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import _ from "lodash";
 import { mapGetters } from 'vuex';
 
 export default {
-  components: {CommonServerInputs, CommonAdvanced, CommonIam},
+  components: {CommonEntraId, CommonServerInputs, CommonAdvanced, CommonIam},
   props: ['config'],
+  mounted() {
+    this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+  },
   data() {
     return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
-      authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
+      azureAuthEnabled: !!this.config?.azureAuthOptions?.azureAuthEnabled,
+      iamAuthenticationEnabled: !!this.config.redshiftOptions?.iamAuthenticationEnabled,
+      authType: this.config.redshiftOptions?.authType || this.config.azureAuthOptions?.azureAuthType || 'default',
+      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes.filter(auth => auth.value === AzureAuthType.CLI)],
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
@@ -65,12 +71,16 @@ export default {
   },
   computed: {
     ...mapGetters(['isCommunity']),
+    showServerInputs() {
+      return !this.azureAuthEnabled && !this.iamAuthenticationEnabled
+    }
   },
   watch: {
     async authType() {
       console.log("Auth type changed", this.authType, 'community?', this.$config.isCommunity)
       if (this.authType === 'default') {
         this.iamAuthenticationEnabled = false
+        this.azureAuthEnabled = false
       } else {
         if (this.isCommunity) {
           // we want to display a modal
@@ -78,16 +88,21 @@ export default {
           this.authType = 'default'
         } else {
           this.config.redshiftOptions.authType = this.authType
-          this.iamAuthenticationEnabled = this.authType.includes('iam')
+          this.config.azureAuthOptions.azureAuthType = this.authType
+          this.azureAuthEnabled = this.authType === AzureAuthType.CLI
+          this.iamAuthenticationEnabled = typeof this.authType === 'string' && this.authType.includes('iam')
         }
       }
 
       const authId = this.config.azureAuthOptions?.authId || this.config?.authId
-      if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
+      if (this.authType === AzureAuthType.CLI && !_.isNil(authId)) {
         this.accountName = await this.connection.azureGetAccountName(authId);
       } else {
         this.accountName = null
       }
+    },
+    azureAuthEnabled() {
+      this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
     },
     iamAuthenticationEnabled() {
       this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
