@@ -358,7 +358,7 @@
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
-  import { monokai } from '@uiw/codemirror-theme-monokai';
+  import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
   const editorDefault = "\n\n\n\n\n\n\n\n\n\n"
