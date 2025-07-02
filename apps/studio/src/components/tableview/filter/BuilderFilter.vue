@@ -37,18 +37,15 @@
           class="form-control filter-value"
           :class="{ 'disabled-input': isNullFilter }"
           type="text"
-          ref="filterInputs"
           v-model="filter.value"
           @blur="$emit('blur')"
           :disabled="isNullFilter"
-          :title="isNullFilter ?
-            'You cannot provide a comparison value when checking for NULL or NOT NULL' :
-            ''"
-          :placeholder="
-            filter.type === 'in'
-              ? `Enter values separated by comma, eg: foo,bar`
-              : 'Enter Value'
-          "
+          :title="isNullFilter
+            ? 'You cannot provide a comparison value when checking for NULL or NOT NULL'
+            : ''"
+          :placeholder="filter.type === 'in'
+            ? 'Enter values separated by comma, eg: foo,bar'
+            : 'Enter Value'"
           @contextmenu.stop.prevent="onContextMenu($event)"
         >
         <button
@@ -61,76 +58,48 @@
         </button>
       </div>
     </div>
-    <ContextMenu
-      v-if="showContextMenu"
-      :options="contextMenuOptions"
-      :event="contextMenuEvent"
-      @close="showContextMenu = false"
-    />
   </div>
 </template>
-<script lang="js">
+
+<script>
 import { TableFilterSymbols } from '@/lib/db/types';
-import ContextMenu from '@/components/common/ContextMenu.vue';
+import { getClipboardMenuOptions } from '@/lib/menu/clipboardMenuOptions.ts';
 
 export default {
-  components: { ContextMenu },
   props: ['filter', 'columns', 'index'],
-  data: () => {
+  data() {
     return {
-        filterTypes: TableFilterSymbols,
-        searchQuery: '',
-        columns: [],
-        showContextMenu: false,
-        contextMenuEvent: null,
-        contextMenuOptions: [
-          {
-            name: 'Cut',
-            handler: () => document.execCommand('cut'),
-          },
-          {
-            name: 'Copy',
-            handler: () => document.execCommand('copy'),
-          },
-          {
-            name: 'Paste',
-            handler: () => document.execCommand('paste'),
-          },
-            /*{
-            name: 'Select All',
-            handler: (ctx) => {
-              ctx.event.target.focus();
-              ctx.event.target.select();
-            },
-          },*/
-        ],
-      }
+      filterTypes: TableFilterSymbols,
+    };
+  },
+  computed: {
+    isNullFilter() {
+      const typeOptions = this.filterTypes.find(f => f.value === this.filter.type);
+      return !!typeOptions.nullOnly;
+    },
   },
   watch: {
     filter: {
       deep: true,
       handler() {
-        this.$emit('changed', this.index, this.filter)
-      }
-    }
-  },
-  computed: {
-    isNullFilter() {
-      const typeOptions = this.filterTypes.find((f) => f.value === this.filter.type)
-      return !!typeOptions.nullOnly
-    }
+        this.$emit('changed', this.index, this.filter);
+      },
+    },
   },
   methods: {
     maybeClearValue() {
       if (this.isNullFilter) {
-        this.$set(this.filter, 'value', null)
+        this.$set(this.filter, 'value', null);
       }
     },
     onContextMenu(event) {
-    this.contextMenuEvent = event;
-    this.showContextMenu = true;
+      event.preventDefault();
+      const options = getClipboardMenuOptions(event, this.$native.clipboard);
+      this.$bks.openMenu({
+        options,
+        event,
+      });
+    },
   },
-  }
-}
-
+};
 </script>

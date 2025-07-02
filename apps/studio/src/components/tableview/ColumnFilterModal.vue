@@ -27,7 +27,7 @@
                 type="text"
                 placeholder="Filter"
                 v-model="searchQuery"
-                @contextmenu.prevent="onFilterInputContextMenu($event)"
+                @contextmenu.prevent="onContextMenu($event)"
               >
               <span
                 class="clear"
@@ -113,12 +113,6 @@
       </form>
     </modal>
   </portal>
-  <ContextMenu
-      v-if="showContextMenu"
-      :options="contextMenuOptions"
-      :event="contextMenuEvent"
-      @close="showContextMenu = false"
-    />
   </div>
 </template>
 
@@ -128,10 +122,9 @@
 
 <script lang="ts">
   import _ from 'lodash'
-  import ContextMenu from '@/components/common/ContextMenu.vue'
+  import { getClipboardMenuOptions } from '@/lib/menu/clipboardMenuOptions.ts';
 
   export default {
-    components: { ContextMenu },
     props: ['modalName', 'columnsWithFilterAndOrder', 'hasPendingChanges'],
     data() {
       return {
@@ -139,27 +132,6 @@
         columns: [],
         showContextMenu: false,
         contextMenuEvent: null,
-        contextMenuOptions: [
-          {
-            name: 'Cut',
-            handler: () => document.execCommand('cut'),
-          },
-          {
-            name: 'Copy',
-            handler: () => document.execCommand('copy'),
-          },
-          {
-            name: 'Paste',
-            handler: () => document.execCommand('paste'),
-          },
-            /*{
-            name: 'Select All',
-            handler: (ctx) => {
-              ctx.event.target.focus();
-              ctx.event.target.select();
-            },
-          },*/
-        ],
       }
     },
     computed: {
@@ -175,14 +147,21 @@
       searchedColumns() {
         return this.columns.filter(({name}) => name.toLowerCase().includes(this.searchQuery))
       },
+      contextMenuOptions() {
+        return getClipboardMenuOptions(this.contextMenuEvent, this.$native.clipboard);
+  }
     },
     methods: {
       toggleSelectColumn(column) {
         column.filter = !column.filter
       },
-      onFilterInputContextMenu(event) {
-        this.contextMenuEvent = event
-        this.showContextMenu = true
+      onContextMenu(event) {
+        event.preventDefault();
+        const options = getClipboardMenuOptions(event, this.$native.clipboard);
+        this.$bks.openMenu({
+          options,
+          event,
+        });
       },
       toggleSelectAllColumn() {
         const mustSelect = !this.allSelected

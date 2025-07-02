@@ -182,13 +182,7 @@
     </form>
     <div class="filter-drag-icon">
       <i class="material-icons">drag_handle</i>
-  </div>
-    <ContextMenu
-      v-if="showContextMenu"
-      :options="contextMenuOptions"
-      :event="contextMenuEvent"
-      @close="showContextMenu = false"
-    />
+    </div>
   </div>
 </template>
 
@@ -200,13 +194,13 @@ import { mapGetters, mapState } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
 import _ from 'lodash';
 import BuilderFilter from "./filter/BuilderFilter.vue";
-import ContextMenu from '@/components/common/ContextMenu.vue';
+import { getClipboardMenuOptions } from '@/lib/menu/clipboardMenuOptions.ts';
 
 const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
-  components: { BuilderFilter, ContextMenu },
+  components: { BuilderFilter},
   props: ["columns", "reactiveFilters"],
   data() {
     return {
@@ -219,27 +213,6 @@ export default Vue.extend({
       BUILDER,
       showContextMenu: false,
       contextMenuEvent: null,
-      contextMenuOptions: [
-        {
-          name: 'Cut',
-          handler: () => document.execCommand('cut'),
-        },
-        {
-          name: 'Copy',
-          handler: () => document.execCommand('copy'),
-        },
-        {
-          name: 'Paste',
-          handler: () => document.execCommand('paste'),
-        },
-          /*{
-          name: 'Select All',
-          handler: (ctx) => {
-            ctx.event.target.focus();
-            ctx.event.target.select();
-          },
-        },*/
-      ],
     };
   },
   computed: {
@@ -262,7 +235,10 @@ export default Vue.extend({
     },
     canRawFilter() {
       return !this.dialectData?.disabledFeatures?.rawFilters;
-    }
+    },
+    contextMenuOptions() {
+      return getClipboardMenuOptions(this.contextMenuEvent, this.$native.clipboard);
+  }
   },
   methods: {
     singleFilterChanged(index, filter) {
@@ -271,9 +247,13 @@ export default Vue.extend({
       this.filters = updated
     },
     onContextMenu(event) {
-    this.contextMenuEvent = event;
-    this.showContextMenu = true;
-  },
+      event.preventDefault();
+      const options = getClipboardMenuOptions(event, this.$native.clipboard);
+      this.$bks.openMenu({
+        options,
+        event,
+      });
+    },
 
     focusOnInput() {
       if (this.filterMode === RAW) this.$refs.valueInput.focus();
