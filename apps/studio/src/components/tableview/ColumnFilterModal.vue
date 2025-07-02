@@ -1,4 +1,5 @@
 <template>
+  <div>
   <portal to="modals">
     <modal
       class="vue-dialog beekeeper-modal"
@@ -26,6 +27,7 @@
                 type="text"
                 placeholder="Filter"
                 v-model="searchQuery"
+                @contextmenu.prevent="onContextMenu($event)"
               >
               <span
                 class="clear"
@@ -111,6 +113,7 @@
       </form>
     </modal>
   </portal>
+  </div>
 </template>
 
 <style lang="scss">
@@ -119,6 +122,7 @@
 
 <script lang="ts">
   import _ from 'lodash'
+  import { getClipboardMenuOptions } from '@/lib/menu/clipboardMenuOptions.ts';
 
   export default {
     props: ['modalName', 'columnsWithFilterAndOrder', 'hasPendingChanges'],
@@ -126,6 +130,8 @@
       return {
         searchQuery: '',
         columns: [],
+        showContextMenu: false,
+        contextMenuEvent: null,
       }
     },
     computed: {
@@ -141,10 +147,21 @@
       searchedColumns() {
         return this.columns.filter(({name}) => name.toLowerCase().includes(this.searchQuery))
       },
+      contextMenuOptions() {
+        return getClipboardMenuOptions(this.contextMenuEvent, this.$native.clipboard);
+  }
     },
     methods: {
       toggleSelectColumn(column) {
         column.filter = !column.filter
+      },
+      onContextMenu(event) {
+        event.preventDefault();
+        const options = getClipboardMenuOptions(event, this.$native.clipboard);
+        this.$bks.openMenu({
+          options,
+          event,
+        });
       },
       toggleSelectAllColumn() {
         const mustSelect = !this.allSelected
