@@ -164,6 +164,22 @@ module.exports = {
     // when we upgrade Electron we need to check these
     depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libsecret-1-0", "gnupg"]
   },
+  flatpak: {
+    runtime: "org.freedesktop.Platform",
+    runtimeVersion: "23.08",
+    sdk: "org.freedesktop.Sdk",
+    base: "org.electronjs.Electron2.BaseApp",
+    baseVersion: "23.08",
+    finishArgs: [
+      "--share=network",
+      "--socket=x11",
+      "--socket=wayland",
+      "--device=dri",
+      "--socket=pulseaudio",
+      "--filesystem=home",
+      "--talk-name=org.freedesktop.Notifications"
+    ]
+  },
   rpm: {
     publish: [ 'github' ],
     fpm: rpmFpmOptions,

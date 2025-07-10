@@ -4,7 +4,7 @@ import { IGroupedUserSettings } from '../transport/TransportUserSetting'
 import { IPlatformInfo } from '../IPlatformInfo'
 
 export default class extends DefaultMenu {
-  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo) {
+  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo, private bksConfig: IBksConfig) {
     super(settings, handler, platformInfo)
   }
 
@@ -115,7 +115,9 @@ export default class extends DefaultMenu {
         submenu: [
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
-          this.menuItems.exportTables
+          this.menuItems.exportTables,
+          this.menuItems.managePlugins,
+          ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : [])
         ]
       },
       ...windowMenu,

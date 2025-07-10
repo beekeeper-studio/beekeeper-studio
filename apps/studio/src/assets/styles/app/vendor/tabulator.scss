@@ -3,9 +3,9 @@ $errorColor:             $brand-danger;
 $foreign-key-width:      20px;
 
 $row-height:             30px;
-$row-add:                #18855F;
+$row-add:                color.mix($query-editor-bg, $brand-success, 80%);
 $row-delete:             #8A3937;
-$row-error:              #38201F;
+$row-error:              color.mix($query-editor-bg, $brand-danger, 75%);
 
 $cell-edited:            #50492A;
 $cell-error:             $row-error;
@@ -49,6 +49,9 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
       border: 0;
       .tabulator-cell {
         &.primary-key {
+          > * {
+            opacity: initial;
+          }
           &:hover {
             background: rgba($theme-base,0.05);
             cursor: pointer;
@@ -613,8 +616,9 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
 
 }
 
-// Applied when not dragging rows so frozen cells can be transparent
-.tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
+// * Applied when not dragging rows so frozen cells can be transparent
+// * Applied to draggable cells or cells that do not have a tabulator-field attribute
+.tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen:not([tabulator-field]) {
   position: relative;
   &:not(.edited) {
     background-color: $query-editor-bg;
@@ -623,7 +627,6 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     content: '';
     position: absolute;
     inset: 0;
-    background-color: var(--row-bg-color);
     z-index: -10;
     box-shadow: var(--row-box-shadow, none);
   }

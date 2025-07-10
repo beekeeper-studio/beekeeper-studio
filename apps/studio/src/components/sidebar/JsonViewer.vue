@@ -46,18 +46,17 @@
     </div>
     <div class="text-editor-wrapper">
       <text-editor
-        :fold-gutter="true"
+        language-id="json"
         :fold-all="foldAll"
         :unfold-all="unfoldAll"
         :value="text"
-        :mode="mode"
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
-        :plugins="textEditorPlugins"
+        :replaceExtensions="replaceExtensions"
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
-        :extra-keybindings="disableReplaceKeybindings"
+        :fold-gutters="true"
       />
     </div>
     <div class="empty-state" v-show="empty">
@@ -74,21 +73,21 @@
  * dataId:  use this to update the component with new data.
  */
 import Vue from "vue";
-import TextEditor from "@/components/common/texteditor/TextEditor.vue";
+import TextEditor from "@beekeeperstudio/ui-kit/vue/text-editor"
 import {
   ExpandablePath,
   findKeyPosition,
   findValueInfo,
-  createExpandableElement,
-  createTruncatableElement,
+  createExpandableTextDecoration,
+  createTruncatableTextDecoration,
   deepFilterObjectProps,
   getPaths,
   eachPaths,
 } from "@/lib/data/jsonViewer";
 import { mapGetters } from "vuex";
-import { EditorMarker, LineGutter } from "@/lib/editor/utils";
-import { persistJsonFold } from "@/lib/editor/plugins/persistJsonFold";
-import PartialReadOnlyPlugin from "@/lib/editor/plugins/PartialReadOnlyPlugin";
+import { EditorMarker, LineGutter } from "@beekeeperstudio/ui-kit";
+import { persistJsonFold } from "@/lib/editor/extensions/persistJsonFold";
+import { partialReadonly } from "@/lib/editor/extensions/partialReadOnly";
 import JsonViewerUpsell from '@/components/upsell/JsonViewerSidebarUpsell.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
@@ -96,6 +95,7 @@ import globals from '@/common/globals'
 import JsonSourceMap from "json-source-map";
 import JsonPointer from "json-pointer";
 import { typedArrayToString } from '@/common/utils'
+import { monokai } from "@uiw/codemirror-theme-monokai";
 
 const log = rawLog.scope("json-viewer");
 
@@ -138,11 +138,9 @@ export default Vue.extend({
       unfoldAll: 0,
       restoredTruncatedPaths: [],
       editableRangeErrors: [],
-      disableReplaceKeybindings: {
-        [this.cmCtrlOrCmd("R")]: () => false,
-        [this.cmCtrlOrCmd("Shift-R")]: () => false,
-      },
       wrapText: false,
+      persistJsonFold: persistJsonFold(),
+      partialReadonly: partialReadonly(),
     };
   },
   watch: {
@@ -159,6 +157,14 @@ export default Vue.extend({
         });
       }
     },
+    async text() {
+      this.persistJsonFold.save()
+      await this.$nextTick()
+      setTimeout(() => this.persistJsonFold.apply())
+    },
+    editableRanges() {
+      this.partialReadonly.setEditableRanges(this.editableRanges)
+    },
   },
   computed: {
     sidebarTitle() {
@@ -166,12 +172,6 @@ export default Vue.extend({
     },
     empty() {
       return _.isEmpty(this.value);
-    },
-    mode() {
-      if (!this.value) {
-        return null;
-      }
-      return { name: "javascript", json: true };
     },
     text() {
       if (this.empty) {
@@ -236,16 +236,14 @@ export default Vue.extend({
         try {
           const line = findKeyPosition(this.text, expandablePath.path);
           const { from, to, value } = findValueInfo(this.lines[line]);
-          const element = createExpandableElement(value);
-          const onClick = (_event) => {
+          const onClick = () => {
             this.expandPath(expandablePath);
           };
           markers.push({
             type: "custom",
             from: { line, ch: from },
             to: { line, ch: to },
-            onClick,
-            element,
+            decoration: createExpandableTextDecoration(value, onClick),
           });
         } catch (e) {
           log.warn("Failed to mark expandable path", expandablePath);
@@ -260,18 +258,14 @@ export default Vue.extend({
         try {
           const line = findKeyPosition(this.text, path.split("."));
           const { from, to, value } = findValueInfo(this.lines[line]);
-          const element = createTruncatableElement(value);
           const onClick = async () => {
             this.restoredTruncatedPaths.push(path)
-            await this.$nextTick()
-            this.reinitializeTextEditor++
           }
           markers.push({
             type: "custom",
             from: { line, ch: from },
             to: { line, ch: to },
-            onClick,
-            element,
+            decoration: createTruncatableTextDecoration(value, onClick),
           });
         } catch (e) {
           log.warn("Failed to mark truncated path", path);
@@ -368,12 +362,6 @@ export default Vue.extend({
 
       ]
     },
-    textEditorPlugins() {
-      return [
-        persistJsonFold,
-        new PartialReadOnlyPlugin(this.editableRanges, this.handleEditableRangeChange),
-      ]
-    },
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
@@ -393,6 +381,14 @@ export default Vue.extend({
     setFilter(filter: string) {
       this.$emit("bks-filter-change", { filter });
     },
+    replaceExtensions(extensions) {
+      return [
+        extensions,
+        monokai,
+        this.persistJsonFold.extensions,
+        this.partialReadonly.extensions(this.editableRanges),
+      ]
+    },
     handleEditableRangeChange: _.debounce(function (range, value) {
       this.editableRangeErrors = []
       try {
@@ -402,6 +398,12 @@ export default Vue.extend({
         this.editableRangeErrors.push({ id: range.id, error, from: range.from, to: range.to })
       }
     }, 250),
+  },
+  mounted() {
+    this.partialReadonly.addListener("change", this.handleEditableRangeChange)
+  },
+  beforeDestroy() {
+    this.partialReadonly.removeListener("change", this.handleEditableRangeChange)
   },
 });
 </script>

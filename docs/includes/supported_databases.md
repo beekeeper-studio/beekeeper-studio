@@ -1,5 +1,5 @@
 
-| Database                                                 | Support                      | Community | Ultimate |                             Beekeeper Links |
+| Database                                                 | Support                      | Community | Paid Editions |                             Beekeeper Links |
 | :------------------------------------------------------- | :--------------------------- | :-------: | :------: | -----------------------------------------: |
 | [PostgreSQL](https://postgresql.org)                     | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/postgres-client) |
 | [MySQL](https://www.mysql.com/)                          | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/mysql-client)|
@@ -14,9 +14,10 @@
 | [Cassandra](http://cassandra.apache.org/)                | ⭐ Full Support              |           |    ✅    |   [Features](https://beekeeperstudio.io/db/cassandra-client) |
 | [Firebird](https://firebirdsql.org/)                     | ⭐ Full Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
 | [LibSQL](https://libsql.org/)                            | ⭐ Full Support               |           |    ✅    |      [Features](https://beekeeperstudio.io/db/libsql-client) |
-| [ClickHouse](https://clickhouse.tech/)                   | ⭐ Full Support                |           |    ✅    |  -- |
-| [DuckDB](https://duckdb.org/)                            | ⭐ Full Support                |           |    ✅    |      -- |
-| [MongoDB](https://www.mongodb.com/)                      | 🧪 Alpha Support (5.1+)               |           |    ✅    |     -- |
+| [ClickHouse](https://clickhouse.tech/)                   | ⭐ Full Support                |           |    ✅    |  [Features](https://www.beekeeperstudio.io/db/clickhouse-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse) |
+| [DuckDB](https://duckdb.org/)                            | ⭐ Full Support                |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/duckdb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
+| [SQL Anywhere](https://www.sap.com/products/technology-platform/sql-anywhere.html)                            | ⭐ Full Support                |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/sql-anywhere-client/) |
+| [MongoDB](https://www.mongodb.com/)                      | ⭐ Full Support               |           |    ✅    |     [Features](https://www.beekeeperstudio.io/db/mongodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
 | [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
 | [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⏳ Coming Soon                |           |    ✅    |      -- |
 | [Redis](https://redis.io/)                               | 🗓️ Planned               |           |    ✅    |       -- |
