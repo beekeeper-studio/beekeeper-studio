@@ -1,4 +1,4 @@
-import { AnyAuth, Surreal, Token } from "surrealdb";
+import { AnyAuth, RecordId, Surreal, Token } from "surrealdb";
 import { BaseV1DatabaseClient } from "@/lib/db/clients/BaseV1DatabaseClient";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
@@ -8,8 +8,36 @@ import rawLog from '@bksLogger';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
+import { SurrealDBRecordTranscoder, Transcoder } from "@/lib/db/serialization/transcoders";
+import { SurrealDBCursor } from "./surrealdb/SurrealDBCursor";
 
 const log = rawLog.scope('SurrealDB');
+
+// NOTE (@day): The structure clause that we receive this info from was originally internal,
+// and as such, is subject to change without notification. So if things break, look into this structure (This goes for any query that ends in `STRUCTURE`). But it was either that
+// or parse define statements with sketchy regex
+export interface SurrealFieldInfo {
+  flex: boolean, // not sure what this is for, I think flexible schema?
+  kind: string, // type
+  name: string,
+  permissions: {
+    create: boolean,
+    delete: boolean,
+    select: boolean,
+    update: boolean
+  },
+  readonly: boolean,
+  default: string, // default value on insert
+  value: string, // set every time an update is made to the record
+  what: string // the table this is on
+}
+
+export interface SurrealDBFunctionInfo {
+  args: any[][],
+  block: string,
+  name: string,
+  permissions: boolean
+}
 
 // TODO (@day): are both of these necessary?
 export interface SurrealDBResult {
@@ -37,6 +65,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   version: SurrealDBResult;
   conn: Surreal;
   connectionString: string;
+  transcoders: Transcoder<any, any>[] = [SurrealDBRecordTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, surrealContext, server, database);
@@ -141,20 +170,15 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   async listTables(_filter?: FilterOptions): Promise<TableOrView[]> {
-    try {
-      const result = await this.driverExecuteSingle('INFO FOR DB;');
+    const result = await this.driverExecuteSingle('INFO FOR DB STRUCTURE;');
 
-      const tables = result.rows[0]?.tables;
+    const tables = result.rows[0]?.tables;
 
-      if (tables) {
-        return Object.keys(tables).map(name => ({ name } as TableOrView))
-      }
-
-      return [];
-    } catch (error) {
-      log.error('Failed to list tables: ', error);
-      return [];
-    }
+    return tables.map((tableInfo) => ({
+      name: tableInfo.name,
+      entityType: 'table',
+      tableType: tableInfo.kind.kind
+    }))
   }
 
   async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -163,18 +187,25 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
-    const result = await this.driverExecuteSingle('INFO FOR DB;');
+    const result = await this.driverExecuteSingle('INFO FOR DB STRUCTURE;');
 
-    const functions = result.rows[0]?.functions;
+    const functions = result.rows[0]?.functions as SurrealDBFunctionInfo[];
 
-    if (functions) {
-      return Object.keys(functions).map(id => ({
-        id,
-        type: 'function'
-      } as Routine))
-    }
+    return functions.map((func) => {
+      const args = func.args[0]?.map((a) => ({
+        name: a,
+        type: 'any'
+      })) || [];
 
-    return [];
+      return {
+        id: func.name,
+        name: func.name,
+        entityType: 'routine',
+        type: 'function',
+        returnType: 'any',
+        routineParams: args
+      }
+    })
   }
 
   async listMaterializedViewColumns(_table: string, _schema?: string): Promise<TableColumn[]> {
@@ -195,21 +226,37 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     }
 
     try {
+      // TODO (@day): this only works for schemafull tables
       // get general info for table
       const result = await this.driverExecuteSingle(`INFO FOR TABLE ${table} STRUCTURE`);
-      const tableFields = result?.rows[0]?.fields as any[];
+      const tableFields = result?.rows[0]?.fields as SurrealFieldInfo[];
+      let ordinalPosition = 1;
+      const parentFields = [];
 
-      return tableFields.map((fieldInfo, index) => {
+      return tableFields.map((fieldInfo: SurrealFieldInfo) => {
+        if (fieldInfo.kind.startsWith('array<') || fieldInfo.kind.startsWith('object')) {
+          parentFields.push(fieldInfo.name)
+        }
+        const isObjectOrArrayChild = parentFields.some((v) => {
+          return fieldInfo.name.startsWith(`${v}.`) ||
+            fieldInfo.name.startsWith(`${v}[*]`);
+        });
+        if (isObjectOrArrayChild) {
+          // These are just typings for subobjects, which we don't currently support returning
+          // metadata for, so we just skip them
+          return null;
+        }
         return {
           tableName: table,
           columnName: fieldInfo.name,
           dataType: fieldInfo.kind,
           defaultValue: fieldInfo.default,
-          ordinalPosition: index + 1,
+          ordinalPosition: ordinalPosition++,
           hasDefault: !!fieldInfo.default,
-          generated: false
+          generated: false,
+          bksField: this.parseTableColumn(fieldInfo)
         } as ExtendedTableColumn;
-      })
+      }).filter((v) => !!v)
     } catch (err) {
       log.error(`Error extracting table columns for ${table}`, err);
       throw err;
@@ -247,7 +294,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     return [];
   }
 
-  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const columns = await this.listTableColumns(table);
     const keys: TableKey[] = [];
 
@@ -376,6 +423,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
     const sql = await this.selectTopSql(table, offset, limit, orderBy, filters, _schema, selects);
+    log.info('SQL: ', sql)
     const result = await this.driverExecuteSingle(sql);
     const fields = this.parseQueryResultColumns(result);
     const rows = await this.serializeQueryResult(result, fields);
@@ -397,8 +445,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
       } else {
         const filterClauses = filters.map(filter => {
           const escapedField = this.wrapIdentifier(filter.field);
-          const escapedValue = surrealEscapeValue(filter.value);
-          return `${escapedField} ${filter.type === '=' ? '==' : filter.type} ${escapedValue}`;
+          return `${escapedField} ${filter.type} ${filter.value}`;
         });
         query += ` WHERE ${filterClauses.join(' AND ')}`;
       }
@@ -422,12 +469,62 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     return query;
   }
 
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
+    const sql = await this.selectTopSql(table, 0, 0, orderBy, filters, schema);
+    const totalRows = await this.getTableLength(table, schema);
+    const columns = await this.listTableColumns(table, schema);
+    
+    const cursor = new SurrealDBCursor({
+      query: sql,
+      conn: this.conn,
+      chunkSize
+    });
+    
+    return {
+      totalRows,
+      columns,
+      cursor
+    };
   }
 
-  queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    // For query streaming, we need to estimate total rows and columns
+    // This is a simplified implementation
+    const cursor = new SurrealDBCursor({
+      query,
+      conn: this.conn,
+      chunkSize
+    });
+    
+    // Try to get a sample to determine columns
+    let columns: TableColumn[] = [];
+    let totalRows = 0;
+    
+    try {
+      // Execute a small sample to get column info
+      const sampleQuery = query.includes('LIMIT') ? query : `${query} LIMIT 1`;
+      const sampleResult = await this.driverExecuteSingle(sampleQuery);
+      
+      if (sampleResult.columns) {
+        columns = sampleResult.columns.map(col => ({
+          columnName: col.name,
+          dataType: 'unknown',
+          tableName: ''
+        }));
+      }
+      
+      // For total rows, we'd need to run a count query, but that's complex
+      // for arbitrary queries, so we'll set it to -1 to indicate unknown
+      totalRows = -1;
+    } catch (error) {
+      log.warn('Could not determine columns for query stream:', error);
+    }
+    
+    return {
+      totalRows,
+      columns,
+      cursor
+    };
   }
 
   // TODO (@day): this may not cover all instances
@@ -470,13 +567,22 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
       throw err;
     }
   }
-  protected parseTableColumn(column: any): BksField {
-    throw new Error("Method not implemented.");
+  protected parseTableColumn(column: SurrealFieldInfo): BksField {
+    const isRecord = column.kind.startsWith('record<') || column.name === 'id';
+    return {
+      name: column.name,
+      bksType: isRecord ? 'SURREALID' : 'UNKNOWN'
+    }
   }
 
   parseQueryResultColumns(qr: SurrealDBQueryResult): BksField[] {
+    const row = qr.rows[0];
     return qr.columns.map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';
+
+      if (row[column.name] instanceof RecordId) {
+        bksType = 'SURREALID';
+      }
       // TODO (@day): may need to do some analysis here
       return { name: column.name, bksType }
     })
