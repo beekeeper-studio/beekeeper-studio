@@ -1,6 +1,11 @@
 import Surreal, { ConnectionStatus, ConnectOptions } from "surrealdb";
 import rawLog from "@bksLogger";
 import { uuidv4 } from "@/lib/uuid";
+import ws from "ws";
+
+// HACK (@day): this is so websockets can work in a node process (smh surreal)
+// @ts-ignore
+globalThis.WebSocket = ws;
 
 const log = rawLog.scope('SurrealDBPool');
 

@@ -11,6 +11,8 @@ import { SurrealDBCursor } from "./surrealdb/SurrealDBCursor";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
+import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
+import { uuidv4 } from "@/lib/uuid";
 
 const log = rawLog.scope('SurrealDB');
 
@@ -610,21 +612,58 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
   async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
     let results: TableUpdateResult[] = [];
+    const sql = ['BEGIN'];
+    let allBindings = {};
 
-    await this.runWithTransaction(async (connection) => {
-      log.debug('Applying changes', changes);
+    log.debug('Applying changes', changes);
+    try {
       if (changes.inserts) {
-        await this.insertRows(changes.inserts, connection);
+        const result = await this.insertRows(changes.inserts);
+        sql.push(...result.map((r) => r.query));
+        allBindings = {
+          ...allBindings,
+          ...result.map((r) => r.bindings).reduce((p, c) => ({
+            ...p,
+            ...c
+          }), {})
+        };
       }
 
       if (changes.updates) {
-        results = await this.updateValues(changes.updates, connection);
+        const result = await this.updateValues(changes.updates);
+        sql.push(...result.map((r) => r.query));
+        allBindings = {
+          ...allBindings,
+          ...result.map((r) => r.bindings).reduce((p, c) => ({
+            ...p,
+            ...c
+          }), {})
+        };
       }
 
       if (changes.deletes) {
-        await this.deleteRows(changes.deletes, connection);
+        sql.push(...await this.deleteRows(changes.deletes));
       }
-    })
+
+      sql.push('COMMIT');
+
+      await this.driverExecuteSingle(sql.join(';'), { bindings: allBindings });
+
+      if (changes.updates) {
+        const queries = changes.updates.map(update => {
+          // may need to sanitize this
+          return `SELECT * FROM ${update.primaryKeys[0].value}`;
+        })
+
+        for (const query of queries) {
+          const result = await this.driverExecuteSingle(query);
+          if (result.rows[0]) results.push(result.rows[0]);
+        }
+      }
+    } catch (ex) {
+      log.error('Query Exception: ', ex);
+      throw ex;
+    }
 
     return results;
   }
@@ -657,10 +696,13 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     throw new Error("Method not implemented.");
   }
 
-  protected async rawExecuteQuery(q: string, options: { multiple: boolean, connection?: SurrealConn}): Promise<SurrealDBQueryResult | SurrealDBQueryResult[]> {
+  protected async rawExecuteQuery(q: string, options: { multiple: boolean, connection?: SurrealConn, bindings?: any }): Promise<SurrealDBQueryResult | SurrealDBQueryResult[]> {
     try {
       const conn = options?.connection ? options.connection : await this.pool.connect();
-      const result = await conn.query(q);
+      const bindings = options?.bindings ? options.bindings : {}
+      log.info('RUNNING QUERY: ', q)
+      log.info('BINDINGS: ', bindings)
+      const result = await conn.query(q, bindings);
 
       const results = result.map((queryResult) => {
         const rows = Array.isArray(queryResult) ? queryResult : [queryResult];
@@ -697,21 +739,6 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     }
   }
 
-  private async runWithTransaction<T>(child: (c: SurrealConn) => Promise<T>): Promise<T> {
-    return await this.runWithConnection(async (connection) => {
-      await this.driverExecuteSingle('BEGIN TRANSACTION', { connection });
-      try {
-        const result = await child(connection);
-        await this.driverExecuteSingle('COMMIT', { connection });
-        return result;
-      } catch (ex) {
-        log.warn("Pool connection - rolling back ", ex.message);
-        await this.driverExecuteSingle('CANCEL', { connection });
-        throw ex;
-      }
-    });
-  }
-
   protected parseTableColumn(column: SurrealFieldInfo): BksField {
     const isRecord = column.kind.startsWith('record<') || column.name === 'id';
     return {
@@ -734,13 +761,14 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
-    if ((column.dataType.startsWith('array<') || column.dataType.startsWith('object')) && _.isString(value)) {
-      return JSON.parse(value);
+    if (column.dataType === 'string' && _.isString(value)) {
+      return surrealEscapeValue(value)
     }
     return value;
   }
 
-  private async insertRows(rawInserts: TableInsert[], connection: SurrealConn) {
+  private async insertRows(rawInserts: TableInsert[]): Promise<{ query: string, bindings: any }[]> {
+    const sql = [];
     const columnsList = await Promise.all(rawInserts.map((insert) => {
       return this.listTableColumns(insert.table);
     }));
@@ -751,7 +779,12 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       result.data = result.data.map((obj) => {
         return _.mapValues(obj, (value, key) => {
           const column = columns.find((c) => c.columnName === key);
-          return this.normalizeValue(value, column);
+          // if (column.columnName != 'id') {
+
+            // return this.normalizeValue(value, column);
+          // }
+
+          return value;
         })
       })
       return result;
@@ -760,46 +793,62 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       for (const d of insert.data) {
         log.info('CREATING: ', insert);
         log.info('DATA: ', d)
-        let id: string | RecordId | StringRecordId = insert.table;
+        let id: string = insert.table;
         if (d['id'] && _.isString()) {
-          id = new RecordId(insert.table, d['id']);
+          id = new RecordId(insert.table, d['id']).toString();
         } else if (d['id']) {
-          id = d['id'];
+          id = d['id'].toString();
         }
         log.info('ID: ', id)
-        // Typescript hates me, but trust. This works
-        connection.create(id as any, d as any)
-        // const data = Object.entries(d).map(([fieldName, fieldData]) => {
-        //   return `${this.wrapIdentifier(fieldName)} = ${fieldData}`
-        // })
+        d['id'] = undefined;
+        const bindings = {};
+        const data = Object.entries(d).map(([fieldName, fieldData]) => {
+          const varName = `v_${uuidv4().replace(/-/g, '_')}`;
+          bindings[varName] = fieldData
+          return `${this.wrapIdentifier(fieldName)} = $${varName}`
+        })
 
-        // const query = `
-        //   CREATE ${insert.table} SET
-        //     ${data.join(',\n')};
-        // `;
+        const query = `
+          CREATE ${id} SET
+            ${data.join(',\n')}
+        `;
 
-        // await this.driverExecuteSingle(query, { connection });
+        sql.push({ query, bindings })
       }
     }
+
+    return sql;
   }
 
-  private async updateValues(updates: TableUpdate[], connection: SurrealConn): Promise<TableUpdateResult[]> {
-    let results = [];
+  // TODO (@day): may need to normalize values here
+  private async updateValues(updates: TableUpdate[]): Promise<{ query: string, bindings: any}[]> {
+    const sql = [];
     for (const update of updates) {
+      // TODO (@day): may need to sanitize the id
       // Surreal only has the id for primary keys, so it will always be there
-      const result = connection.update(update.primaryKeys[0].value, {
-        [update.column]: update.value
+      const varName = `v_${uuidv4().replace(/-/g, '_')}`;
+      sql.push({
+        query: `
+          UPDATE ${update.primaryKeys[0].value} SET
+            ${update.column} = $${varName}
+        `,
+        bindings: {
+          [varName]: update.value
+        }
       });
-      results.push(result);
     }
-    return results;
+    return sql;
   }
 
-  private async deleteRows(deletes: TableDelete[], connection: SurrealConn) {
+  private async deleteRows(deletes: TableDelete[]): Promise<string[]> {
+    const sql = [];
     for (const del of deletes) {
       log.debug('DELETING: ', del.primaryKeys[0].value)
-      connection.delete(del.primaryKeys[0].value);
-    } 
+      // TODO (@day): we need to sanitize this
+      sql.push(`DELETE ${del.primaryKeys[0].value}`)
+    }
+
+    return sql;
   }
 
 }
