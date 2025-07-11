@@ -1,12 +1,12 @@
-import { Surreal } from "surrealdb";
 import { BeeCursor } from "@/lib/db/models";
 import rawLog from '@bksLogger';
+import { SurrealConn, SurrealPool } from "./SurrealDBPool";
 
 const log = rawLog.scope('surrealdb/cursor');
 
 interface CursorOptions {
   query: string;
-  conn: Surreal;
+  conn: SurrealPool;
   chunkSize: number;
 }
 
@@ -15,6 +15,7 @@ export class SurrealDBCursor extends BeeCursor {
   private offset = 0;
   private hasMoreData = true;
   private error?: Error;
+  private client?: SurrealConn;
 
   constructor(options: CursorOptions) {
     super(options.chunkSize);
@@ -24,6 +25,7 @@ export class SurrealDBCursor extends BeeCursor {
   async start(): Promise<void> {
     // SurrealDB doesn't have native cursor support, so we'll simulate it
     // by tracking offset and using LIMIT/START clauses
+    this.client = await this.options.conn.connect();
     this.offset = 0;
     this.hasMoreData = true;
   }
@@ -70,6 +72,7 @@ export class SurrealDBCursor extends BeeCursor {
     // SurrealDB doesn't have built-in query cancellation
     // We'll just mark as cancelled
     this.hasMoreData = false;
+    this.client?.release();
     log.debug('SurrealDB cursor cancelled');
   }
 

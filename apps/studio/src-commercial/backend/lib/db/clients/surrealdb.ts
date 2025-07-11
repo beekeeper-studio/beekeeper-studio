@@ -1,15 +1,15 @@
-import { AnyAuth, RecordId, Surreal, Token } from "surrealdb";
-import { BaseV1DatabaseClient } from "@/lib/db/clients/BaseV1DatabaseClient";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType } from "@/lib/db/models";
+import { AnyAuth, ConnectionStatus, RecordId, Token } from "surrealdb";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
-import { IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
+import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
 import rawLog from '@bksLogger';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
-import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { SurrealDBRecordTranscoder, Transcoder } from "@/lib/db/serialization/transcoders";
 import { SurrealDBCursor } from "./surrealdb/SurrealDBCursor";
+import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
+import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 
 const log = rawLog.scope('SurrealDB');
 
@@ -61,9 +61,9 @@ const surrealContext = {
   }
 }
 
-export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> {
+export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   version: SurrealDBResult;
-  conn: Surreal;
+  pool: SurrealPool;
   connectionString: string;
   transcoders: Transcoder<any, any>[] = [SurrealDBRecordTranscoder];
 
@@ -71,26 +71,30 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     super(null, surrealContext, server, database);
 
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.conn = new Surreal();
   }
 
   async connect(): Promise<void> {
     await super.connect();
 
     const config = this.configDatabase();
-
     log.info('CONNECTION STRING: ', this.connectionString);
     log.info('DATABASE: ', this.db)
+
     // TODO (@day): possibly temporary. We may want to make it so that namespaces essentially function like databases, and databases function like schemata in postgres
-    await this.conn.connect(this.connectionString, {
+    this.pool = new SurrealPool(this.connectionString, {
       namespace: this.server.config.surrealDbOptions.namespace,
       database: this.db,
       auth: config,
       reconnect: true
     });
 
+    // Test the pool
+    const conn = await this.pool.connect();
+    if (conn.status === ConnectionStatus.Disconnected || conn.status === ConnectionStatus.Error) {
+      throw new Error('Error connecting to database');
+    }
 
-    await this.conn.ready;
+    await conn.release()
   }
 
   configDatabase(): AnyAuth | Token {
@@ -137,8 +141,8 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
 
   async disconnect(): Promise<void> {
     try {
-      if (this.conn) {
-        await this.conn.close();
+      if (this.pool) {
+        await this.pool.disconnect();
       }
     } catch (err) {
       log.error('Error disconnecting from SurrealDB:', err);
@@ -161,11 +165,14 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
   }
 
   async versionString(): Promise<string> {
+    const conn = await this.pool.connect();
     try {
-      const result = await this.conn.version();
+      const result = await conn.version();
       return result || 'Unknown';
     } catch (error) {
       log.error('Failed to get version: ', error);
+    } finally {
+      conn.release();
     }
   }
 
@@ -476,7 +483,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     
     const cursor = new SurrealDBCursor({
       query: sql,
-      conn: this.conn,
+      conn: this.pool,
       chunkSize
     });
     
@@ -492,7 +499,7 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
     // This is a simplified implementation
     const cursor = new SurrealDBCursor({
       query,
-      conn: this.conn,
+      conn: this.pool,
       chunkSize
     });
     
@@ -542,9 +549,100 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
       return `\`${escaped}\``;
   }
 
-  protected async rawExecuteQuery(q: string, options: any): Promise<SurrealDBQueryResult | SurrealDBQueryResult[]> {
+  getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
+      throw new Error("Method not implemented.");
+  }
+
+  async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<string> {
+    await this.driverExecuteSingle(`DEFINE DATABASE ${databaseName}`);
+    return databaseName;
+  }
+
+  createDatabaseSQL(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+
+  async getTableCreateScript(table: string, _schema?: string): Promise<string> {
+    const dbInfo = await this.driverExecuteSingle(`INFO FOR DB`);
+    const tableInfo = await this.driverExecuteSingle(`INFO FOR TABLE ${table}`);
+
+    const tableDefine = dbInfo.rows[0]?.tables?.[table];
+    const fields = tableInfo.rows[0]?.fields;
+    const indexes = tableInfo.rows[0]?.indexes;
+
+    let query = '';
+
+    if (tableDefine) {
+      query += `${tableDefine};\n`;
+    }
+
+    if (fields) {
+      query += Object.values(fields).reduce((q, f) => {
+        return `${q}${f};\n`;
+      }, '');
+    }
+
+    if (indexes) {
+      query += Object.values(indexes).reduce((q, i) => {
+        return `${q}${i};\n`;
+      })
+    }
+
+    return query;
+  }
+
+  async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
+    return [];
+  }
+
+  async getRoutineCreateScript(routine: string, _type: string, _schema?: string): Promise<string[]> {
+    const dbInfo = await this.driverExecuteSingle(`INFO FOR DB`);
+
+    const functions = dbInfo?.rows?.[0]?.functions;
+
+    let funcDef
+    if (functions) {
+      funcDef = functions[routine];
+    }
+    return funcDef ? [funcDef] : []
+  }
+
+  executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
+    throw new Error("Method not implemented.");
+  }
+
+  setTableDescription(table: string, description: string, schema?: string): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+
+  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+
+  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+
+  truncateAllTables(schema?: string): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+  duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+
+  protected async rawExecuteQuery(q: string, options: { multiple: boolean, connection?: SurrealConn}): Promise<SurrealDBQueryResult | SurrealDBQueryResult[]> {
     try {
-      const result = await this.conn.query(q);
+      const conn = options?.connection ? options.connection : await this.pool.connect();
+      const result = await conn.query(q);
 
       const results = result.map((queryResult) => {
         const rows = Array.isArray(queryResult) ? queryResult : [queryResult];
@@ -560,6 +658,10 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
           arrayMode: false
         }
       });
+
+      if (!options.connection) {
+        conn.release();
+      }
 
       return options.multiple ? results : results[0];
     } catch (err) {
@@ -587,4 +689,22 @@ export class SurrealDBClient extends BaseV1DatabaseClient<SurrealDBQueryResult> 
       return { name: column.name, bksType }
     })
   }
+
+  private async insertRows(inserts: TableInsert[]) {
+    for (const insert of inserts) {
+      for (const d in insert.data) {
+        const data = Object.entries(d).map(([fieldName, fieldData]) => {
+          return `${this.wrapIdentifier(fieldName)} = ${fieldData}`
+        })
+
+        const query = `
+          CREATE ${insert.table} SET
+            ${data.join(',\n')};
+        `;
+
+        await this.driverExecuteSingle(query)
+      }
+    }
+  }
+
 }
