@@ -157,7 +157,7 @@ import { mapState } from 'vuex'
           { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
           { name: "Copy Entity Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
-          ...(window.platformInfo.isDevelopment && devOptions),
+          ...(window.platformInfo.isDevelopment ? devOptions : []),
         ];
       },
       modalName() {
