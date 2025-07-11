@@ -84,6 +84,7 @@ export interface TableProperties {
   partitions?: TablePartition[]
   owner?: string,
   createdAt?: string
+  permissionWarnings?: string[]
 }
 
 export interface TableColumn {
