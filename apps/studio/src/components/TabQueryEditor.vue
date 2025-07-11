@@ -359,6 +359,7 @@
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+  import { surrealql } from '@surrealdb/codemirror';
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -612,6 +613,15 @@
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
       },
+      languageExtensions() {
+        const languages = [];
+
+        if (this.dialect === 'surrealdb') {
+          languages.push(surrealql());
+        }
+
+        return languages;
+      },
       replaceExtensions() {
         return (extensions) => {
           return [
@@ -622,6 +632,7 @@
                 selectionMatch: "",
               },
             }),
+            this.languageExtensions,
             this.queryMagic.extensions,
           ]
         }
