@@ -10,6 +10,14 @@ const supportsLength = [];
 export const BigQueryData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
+  importDataType: {
+    stringType: 'string',
+    dateType: 'date',
+    booleanType: 'bool',
+    integerType: 'int64',
+    numberType: 'float64',
+    defaultType: 'string'
+  },
   wrapIdentifier: (id: string) => {
     if (id) {
       // Escape backticks and backslashes
