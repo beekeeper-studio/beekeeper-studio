@@ -1,6 +1,7 @@
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { PluginRepository, PluginRegistryEntry } from "./types";
+import { BksError, PluginSystemErrorCode } from "@/lib/errors";
 
 const log = rawLog.scope("PluginRegistry");
 
@@ -38,7 +39,10 @@ export default class PluginRegistry {
     const entry = entries.find((entry) => entry.id === pluginId);
 
     if (!entry) {
-      throw new Error(`Plugin "${pluginId}" not found in registry.`);
+      throw new BksError(
+        `Plugin "${pluginId}" not found in registry.`,
+        PluginSystemErrorCode.PLUGIN_NOT_FOUND
+      );
     }
 
     log.debug(
