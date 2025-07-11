@@ -1,4 +1,5 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, AdminPermission, User, UserAuthenticationDetails, UserPrivileges, UserResourceLimits, Schema } from '../models';
+import { UserChange } from '@/lib/db/models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -611,6 +612,58 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return queryBuilder.toString()
       .split("where")[1]
       .trim();
+  }
+
+  async hasAdminPermission(): Promise<AdminPermission> {
+    return { hasPermission: false };
+  }
+
+  async getListOfUsers(): Promise<User[]> {
+    return [];
+  }
+
+  async getUserAuthenticationDetails(user: string, host: string): Promise<UserAuthenticationDetails> {
+    return {
+      authenticationType: '',
+      authenticationString: ''
+    };
+  }
+
+  async getUserPrivileges(user: string, host: string): Promise<UserPrivileges[]> {
+    return [];
+  }
+
+  async getUserResourceLimits(user: string, host: string): Promise<UserResourceLimits> {
+    return {
+      maxQuestions: 0,
+      maxUpdates: 0,
+      maxConnections: 0,
+      maxUserConnections: 0
+    };
+  }
+  
+  async showGrantsForUser(user: string, host: string): Promise<UserPrivileges[]> {
+    return [];
+  }
+
+  async applyUserChanges(changes: UserChange[]): Promise<void> {
+    return;
+  }
+
+  async getSchemas(): Promise<Schema[]> {
+    return [];
+  }
+
+  async deleteUser(user: string, host: string): Promise<void> {
+  }
+
+  async renameUser(user: string, host: string, newName: string): Promise<void> {
+  }
+
+  async expireUserPassword(user: string, host: string): Promise<void> {
+  }
+
+  async revokeAllPrivileges(user: string, host: string): Promise<void> {
   }
 
 }
