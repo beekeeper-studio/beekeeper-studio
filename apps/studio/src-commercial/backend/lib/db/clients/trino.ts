@@ -1,20 +1,16 @@
-import rawLog from "@bksLogger";
-import { IDbConnectionDatabase } from "@/lib/db/types";
+import rawLog from "@bksLogger"
+import { IDbConnectionDatabase } from "@/lib/db/types"
 import {
   Trino as TrinoNodeClient,
   BasicAuth,
   QueryResult,
-  ConnectionOptions as TrinoConnectionOptions,
-  // QueryData
+  ConnectionOptions as TrinoConnectionOptions
 } from 'trino-client'
-import { identify } from "sql-query-identifier";
+import { identify } from "sql-query-identifier"
 import {
   BaseQueryResult,
-  BasicDatabaseClient,
-  // ExecutionContext,
-  // QueryLogOptions,
-} from "@/lib/db/clients/BasicDatabaseClient";
-// import knexlib from "knex";
+  BasicDatabaseClient
+} from "@/lib/db/clients/BasicDatabaseClient"
 import {
   BksField,
   BksFieldType,
@@ -37,25 +33,25 @@ import {
   TableProperties,
   TableResult,
   TableTrigger
-} from "@/lib/db/models";
-import { TrinoData } from "@shared/lib/dialects/trino";
-import _ from "lodash";
+} from "@/lib/db/models"
+import { TrinoData } from "@shared/lib/dialects/trino"
+import _ from "lodash"
 import {
   createCancelablePromise,
   joinFilters
-} from "@/common/utils";
+} from "@/common/utils"
 import {
   AlterTableSpec,
   TableKey
-} from "@shared/lib/dialects/models";
-import { IdentifyResult } from "sql-query-identifier/lib/defines";
-import { uuidv4 } from "@/lib/uuid";
-import { errors } from "@/lib/errors";
-import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
+} from "@shared/lib/dialects/models"
+import { IdentifyResult } from "sql-query-identifier/lib/defines"
+import { uuidv4 } from "@/lib/uuid"
+import { errors } from "@/lib/errors"
+import { IDbConnectionServer } from "@/lib/db/backendTypes"
+import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
 
 interface ResultColumn {
-  name: string;
+  name: string
   type: string
 }
 
@@ -63,20 +59,20 @@ interface TrinoResult extends BaseQueryResult {
   queryId?: string
 }
 
-type Result = TrinoResult;
+type Result = TrinoResult
 
-const log = rawLog.scope("trino");
+const log = rawLog.scope("trino")
 const knex = null
 
 export class TrinoClient extends BasicDatabaseClient<Result> {
-  version: string;
-  client: any;
-  supportsTransaction: boolean;
+  version: string
+  client: any
+  supportsTransaction: boolean
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, null, server, database);
-    this.dialect = "generic";
-    this.readOnlyMode = server?.config?.readOnlyMode || false;
+    super(knex, null, server, database)
+    this.dialect = "generic"
+    this.readOnlyMode = server?.config?.readOnlyMode || false
   }
 
   rowsToObject(columns: ResultColumn[] = [], rows: any[][]= [[]]) {
@@ -119,19 +115,19 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async connect(): Promise<void> {
-    await super.connect();
+    await super.connect()
 
-    let url: string;
+    let url: string
     let connectionObj = {} as TrinoConnectionOptions
 
     if (this.server.config.url) {
       url = this.server.config.url
     } else {
-      const urlObj = new URL('http://example.com/');
-      urlObj.hostname = this.server.config.host;
-      urlObj.port = this.server.config.port.toString();
-      urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
-      url = urlObj.toString();
+      const urlObj = new URL('http://example.com/')
+      urlObj.hostname = this.server.config.host
+      urlObj.port = this.server.config.port.toString()
+      urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:'
+      url = urlObj.toString()
     }
 
     connectionObj = {
@@ -145,22 +141,22 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       connectionObj.auth = new BasicAuth(this.server.config.user, this.server.config.password)
     }
 
-    this.client = TrinoNodeClient.create(connectionObj);
+    this.client = TrinoNodeClient.create(connectionObj)
     const result = await this.driverExecuteSingle(
       "SELECT version()"
-    );
+    )
 
     this.version = result.rows[0]['_col0']
     this.supportsTransaction = false
   }
 
   async disconnect(): Promise<void> {
-    await this.client.close();
-    await super.disconnect();
+    await this.client.close()
+    await super.disconnect()
   }
 
   async versionString(): Promise<string> {
-    return this.version;
+    return this.version
   }
 
   async alterTable(_change: AlterTableSpec): Promise<void> {
@@ -188,11 +184,11 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     selects: string[],
     database: string
   ): Promise<TableResult> {
-    const columns = await this.listTableColumns(table, schema, database);
+    const columns = await this.listTableColumns(table, schema, database)
     let selectFields = [...selects]
     if (!selects || selects?.length === 0 || (selects?.length === 1 && selects[0] === '*')) {
       // select all columns with the column names instead of *
-      selectFields = columns.map((v) => v.columnName);
+      selectFields = columns.map((v) => v.columnName)
     }
     
     const queries = TrinoClient.buildSelectTopQuery(
@@ -206,10 +202,10 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       selectFields,
       schema,
       database
-    );
+    )
 
-    const { query } = queries;
-    const result = await this.driverExecuteSingle(query);
+    const { query } = queries
+    const result = await this.driverExecuteSingle(query)
     const fields = result.columns.map(c => ({
       name: c.name,
       bksType: 'UNKNOWN' as BksFieldType
@@ -217,7 +213,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return {
       result: result.rows,
       fields
-    };
+    }
   }
 
   async selectTopSql(
@@ -230,7 +226,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     selects: string[],
     database: string
   ): Promise<string> {
-    const columns = await this.listTableColumns(table, schema, database);
+    const columns = await this.listTableColumns(table, schema, database)
     const { query } = TrinoClient.buildSelectTopQuery(
       table,
       offset,
@@ -242,8 +238,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       selects,
       schema,
       database
-    );
-    return query;
+    )
+    return query
   }
 
   async getTableProperties(
@@ -255,7 +251,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
-    return await [];
+    return await []
   }
 
   async listTableTriggers(
@@ -263,7 +259,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     _schema?: string
   ): Promise<TableTrigger[]> {
     // Not supported
-    return [];
+    return []
   }
 
   async listTableIndexes(
@@ -292,32 +288,32 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const sql = "show catalogs";
-    const result = await this.driverExecuteSingle(sql);
+    const sql = "show catalogs"
+    const result = await this.driverExecuteSingle(sql)
 
-    return result.rows.map((row) => row.Catalog);
+    return result.rows.map((row) => row.Catalog)
   }
 
   async listSchemas(filter: SchemaFilterOptions): Promise<string[]> {
     log.info('filters in listSchemas', filter)
     if (filter.database == null) return []
     const sql = `show schemas from ${filter.database}`
-    const result = await this.driverExecuteSingle(sql);
+    const result = await this.driverExecuteSingle(sql)
 
-    return result.rows.map((row) => row.Schema);
+    return result.rows.map((row) => row.Schema)
   }
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
     if (filter.database == null || filter.database == null) return []
     const sql = `select * from ${filter.database}.information_schema.tables`
-    const result = await this.driverExecuteSingle(sql);
+    const result = await this.driverExecuteSingle(sql)
 
     return result.rows.map((row) => ({
       schema: row['table_schema'],
       name: row['table_name'],
       entityType: 'table' as const
-    }));
+    }))
   }
 
   async listTableColumns(table: string, schema: string, catalog: string): Promise<ExtendedTableColumn[]> {
@@ -329,10 +325,10 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         AND table_name = '${table}'
       ORDER BY ordinal_position
     `
-    const result = await this.driverExecuteSingle(sql);
+    const result = await this.driverExecuteSingle(sql)
     return result.rows.map((row) => {
       // Empty string if it is not defined.
-      const hasDefault = row.column_default != null;
+      const hasDefault = row.column_default != null
 
       return {
         schemaName: row.table_schema,
@@ -346,8 +342,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         primaryKey: false,
         nullable: row.is_nullable,
         bksField: this.parseTableColumn(row),
-      };
-    });
+      }
+    })
   }
 
   async createDatabase(): Promise<string> {
@@ -381,33 +377,33 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
-    let queryId = uuidv4();
-    const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
+    let queryId = uuidv4()
+    const cancelable = createCancelablePromise(errors.CANCELED_BY_USER)
     return {
       execute: async (): Promise<NgQueryResult[]> => {
         try {
           const data = await Promise.race([
             cancelable.wait(),
             this.executeQuery(queryText, { queryId }),
-          ]);
-          if (!data) return [];
-          return data;
+          ])
+          if (!data) return []
+          return data
         } catch (err) {
           if (cancelable.canceled) {
-            err.sqlectronError = "CANCELED_BY_USER";
+            err.sqlectronError = "CANCELED_BY_USER"
           }
-          throw err;
+          throw err
         } finally {
-          cancelable.discard();
+          cancelable.discard()
         }
       },
       cancel: async (): Promise<void> => {
         await this.driverExecuteSingle(
           `KILL QUERY WHERE query_id='${queryId}'`
-        );
-        cancelable.cancel();
+        )
+        cancelable.cancel()
       },
-    };
+    }
   }
 
   async driverExecuteMultiple(queryText: string): Promise<BaseQueryResult[]> {
@@ -449,17 +445,17 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   async executeQuery(
     queryText: string
   ): Promise<NgQueryResult[]> {
-    const results = await this.driverExecuteMultiple(queryText);
-    const ret = [];
+    const results = await this.driverExecuteMultiple(queryText)
+    const ret = []
     for (const result of results) {
       const fields = this.parseFields(result.columns)
       const data = result.rows
       // const data =
       //   result.resultType === "stream"
       //     ? await streamToString(result.data)
-      //     : result.data;
+      //     : result.data
 
-      const isEmptyResult = !data;
+      const isEmptyResult = !data
 
       if (isEmptyResult) {
         ret.push({
@@ -469,8 +465,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
           rows: [],
           rowCount: 0,
           queryId: ''
-        });
-        continue;
+        })
+        continue
       }
 
       // if (_.isString(data)) {
@@ -480,20 +476,20 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       //     command: 'select',
       //     rows: data,
       //     rowCount: data.length,
-      //   });
-      //   continue;
+      //   })
+      //   continue
       // }
 
       ret.push({
         fields,
-        affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
+        affectedRows: 0, // Trino doesn't typically (well you just shouldn't because you have actual databases for that) do write operations. No need to have anything other than 0 here
         command: 'select',
         rows: data,
         rowCount: data.length,
         queryId: ''
-      });
+      })
     }
-    return ret;
+    return ret
   }
 
   async rawExecuteQuery(_query: string): Promise<Result[]> {
@@ -514,12 +510,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: this.supportsTransaction
-    };
+    }
   }
 
   async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
     log.info("Trino doesn't support reoutines")
-    return [];
+    return []
   }
 
   async listMaterializedViewColumns(): Promise<TableColumn[]> {
@@ -532,7 +528,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     _schema?: string
   ): Promise<string[]> {
     log.info("Trino doesn't support foreign keys")
-    return [];
+    return []
   }
 
   async getQuerySelectTop(
@@ -542,7 +538,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   ): Promise<string> {
     return `SELECT * FROM ${TrinoData.wrapIdentifier(
       table
-    )} LIMIT ${limit}`;
+    )} LIMIT ${limit}`
   }
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -551,52 +547,51 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async listCharsets(): Promise<string[]> {
-    return [];
+    return []
   }
 
   async getDefaultCharset(): Promise<string> {
-    return "";
+    return ""
   }
 
   async listCollations(_charset: string): Promise<string[]> {
-    return [];
+    return []
   }
 
   async createDatabaseSQL(): Promise<string> {
-    throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.")
   }
 
   async getTableCreateScript(_table: string, _schema?: string): Promise<string> {
     log.info("Trino doesn't support creating tables")
-    return null
+    return ''
   }
 
   async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
     log.info("Trino doesn't support view creatinon")
-    return null
+    return []
   }
 
   async getRoutineCreateScript(): Promise<string[]> {
-    return [];
+    return []
   }
 
   async setTableDescription(): Promise<string> {
     log.info("Trino doesn't support changing data")
-    return null
+    return ''
   }
 
   async truncateAllTables(_schema?: string): Promise<void> {
     log.info("Trino doesn't support changing data")
-    return null
   }
 
   async getTableLength(table: string, schema: string, database: string): Promise<number> {
     const result = await this.driverExecuteSingle(
       `SELECT count(*) as count FROM ${this.wrapIdentifier(database)}.${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`
-    );
+    )
 
     const [row] = result.rows as { count: number }[]
-    return row.count;
+    return row.count
   }
 
   // TODO: ALL THE STREAMING!
@@ -619,31 +614,33 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       null,
       schema,
       database
-    );
-    const result = await this.driverExecuteSingle(qs.countQuery);
-    const json = result.data as ResponseJSON<{ total: number }>;
-    const totalRows = Number(json.data[0].total) || 0;
-    const columns = await this.listTableColumns(table, schema, database);
-    return { totalRows, columns, cursor };
+    )
+    // in a way, it kind of already does streaming because it returns data one row at a time that you then create your return from
+    // 
+    const result = await this.driverExecuteSingle(qs.countQuery)
+    const json = result.data as ResponseJSON<{ total: number }>
+    const totalRows = Number(json.data[0].total) || 0
+    const columns = await this.listTableColumns(table, schema, database)
+    return { totalRows, columns, cursor }
   }
 
   queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+    throw new Error("Method not implemented.")
   }
 
   wrapIdentifier(value: string): string {
-    return TrinoData.wrapIdentifier(value);
+    return TrinoData.wrapIdentifier(value)
   }
 
   static wrapDynamicLiteral(value: any): string {
-    if (value == null) return 'NULL';
+    if (value == null) return 'NULL'
     if (typeof value === 'number' || /^[+-]?([0-9]*[.])?[0-9]+$/.test(value)) {
-      return value.toString();
+      return value.toString()
     }
     if (typeof value === 'boolean') {
-      return value ? 'TRUE' : 'FALSE';
+      return value ? 'TRUE' : 'FALSE'
     }
-    return `'${value.toString().replace(/'/g, "''")}'`;
+    return `'${value.toString().replace(/'/g, "''")}'`
   }
 
 
@@ -781,10 +778,10 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return (
       super.violatesReadOnly(statements, options) ||
       (this.readOnlyMode && options.insert)
-    );
+    )
   }
 
   parseTableColumn(column: TableColumn): BksField {
-    return { name: column.columnName, bksType: "UNKNOWN" };
+    return { name: column.columnName, bksType: "UNKNOWN" }
   }
 }

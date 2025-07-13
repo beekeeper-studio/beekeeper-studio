@@ -61,7 +61,6 @@ export const TrinoData: DialectData = {
     nullable: true,
     createIndex: true,
     comments: true,
-    filterWithOR: true,
     backup: true,
     truncateElement: true,
     exportTable: true,
