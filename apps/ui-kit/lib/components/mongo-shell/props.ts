@@ -1,7 +1,7 @@
 import { PropType } from "vue";
 import { Keybindings, Keymap } from "../text-editor";
 import { CustomMenuItems } from "../context-menu";
-import { Clipboard, Config } from "../text-editor/v2/extensions/vim";
+import { Clipboard, Config } from "../text-editor/extensions/vim";
 import { Extension } from "@codemirror/state";
 
 export default {
@@ -32,5 +32,5 @@ export default {
   },
   output: Object,
   extensions: [Array, Function] as PropType<Extension>,
-  
+
 }
