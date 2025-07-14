@@ -10,6 +10,7 @@ import {
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
+import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -29,7 +30,8 @@ export default class WebPluginLoader {
 
   constructor(
     public readonly manifest: Manifest,
-    private pluginStore: PluginStoreService
+    private pluginStore: PluginStoreService,
+    private utilityConnection: UtilityConnection
   ) {
     this.handleMessage = this.handleMessage.bind(this);
     this.log = rawLog.scope(`WebPluginLoader:${manifest.id}`);
@@ -136,11 +138,32 @@ export default class WebPluginLoader {
         case "getAllTabs":
           response.result = this.pluginStore.getAllTabs();
           break;
+        case "getData":
+        case "getEncryptedData": {
+          const value = await this.utilityConnection.send(
+            request.name === "getEncryptedData"
+              ? "plugin/getEncryptedData"
+              : "plugin/getData",
+            { manifest: this.manifest, key: request.args.key }
+          );
+          response.result = value;
+          break;
+        }
 
         // ======== WRITE ACTIONS ===========
         case "runQuery":
           response.result = await this.pluginStore.runQuery(request.args.query);
           break;
+        case "setData":
+        case "setEncryptedData": {
+          await this.utilityConnection.send(
+            request.name === "setEncryptedData"
+              ? "plugin/setEncryptedData"
+              : "plugin/setData",
+            { manifest: this.manifest, key: request.args.key, value: request.args.value }
+          )
+          break;
+        }
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
@@ -203,6 +226,10 @@ export default class WebPluginLoader {
           )
         );
 
+        break;
+      }
+      case "pluginError": {
+        this.log.error(`Received plugin error: ${notification.args.message}`, notification.args);
         break;
       }
 
