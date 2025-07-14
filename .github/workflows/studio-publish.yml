@@ -66,7 +66,7 @@ jobs:
             setup_python: true
             setup_ruby: true
             setup_flatpak: true
-          - name: windows-2019
+          - name: windows-2022
             arch: x64
             type: windows
             setup_python: true
