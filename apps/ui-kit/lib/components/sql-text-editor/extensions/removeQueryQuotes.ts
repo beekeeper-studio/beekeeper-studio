@@ -5,7 +5,7 @@
 import { StateEffect, StateField } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { Dialect } from "sql-query-identifier";
-import { removeQueryQuotes } from "../../../../utils";
+import { removeQueryQuotes } from "../../../utils";
 
 const setDialect = StateEffect.define<Dialect>();
 

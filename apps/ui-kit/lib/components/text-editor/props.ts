@@ -1,4 +1,4 @@
-import type { CustomMenuItems } from "../../context-menu";
+import type { CustomMenuItems } from "../context-menu";
 import { PropType } from "vue";
 import { Keybindings, Keymap, LanguageServerConfiguration, EditorMarker, LineGutter } from "./types";
 import { Extension } from "@codemirror/state";
