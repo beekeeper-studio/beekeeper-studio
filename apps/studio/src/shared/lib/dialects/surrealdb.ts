@@ -70,7 +70,6 @@ export const SurrealDBData: DialectData = {
     backup: true,
     collations: true,
     schema: true,
-    multipleDatabases: false,
     transactions: true, // look into this
     createTable: true,
     dropTable: true,

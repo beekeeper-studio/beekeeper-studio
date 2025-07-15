@@ -85,7 +85,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
     // TODO (@day): possibly temporary. We may want to make it so that namespaces essentially function like databases, and databases function like schemata in postgres
     this.pool = new SurrealPool(this.connectionString, {
-      namespace: this.server.config.surrealDbOptions.namespace,
+      namespace: this.database.namespace,
       database: this.db,
       auth: config,
       reconnect: true
@@ -108,6 +108,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       password,
       surrealDbOptions
     } = this.server.config;
+    const { namespace } = this.database;
 
     const protocol = surrealDbOptions?.protocol || 'wss';
     this.connectionString = `${protocol}://${host || 'localhost'}:${port || 8000}/rpc`;
@@ -120,13 +121,13 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
         };
       case SurrealAuthType.Namespace:
         return {
-          namespace: surrealDbOptions.namespace,
+          namespace,
           username: user,
           password
         };
       case SurrealAuthType.Database:
         return {
-          namespace: surrealDbOptions.namespace,
+          namespace,
           database: this.db,
           username: user,
           password
@@ -294,9 +295,12 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     })
   }
 
-  // TODO (@day): perhaps we should use this for namespaces
+  // NOTE (@day): this is only really available for root users, so we will restrict it as such
   async listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
-    return [];
+    const result = await this.driverExecuteSingle(`INFO FOR ROOT STRUCTURE`);
+    const namespaces = result?.rows[0]?.namespaces as any[];
+
+    return namespaces.map((namespace) => namespace.name);
   }
 
   // we don't seem to use this anywhere
@@ -359,8 +363,23 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     }));
   }
 
-  async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    const result = await this.driverExecuteSingle('INFO FOR NS STRUCTURE');
+  async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
+    let result: SurrealDBQueryResult;
+
+    if (filter && filter.namespace) {
+      const results = await this.driverExecuteMultiple(`
+        USE NS ${filter.namespace};
+        INFO FOR NS STRUCTURE;
+      `);
+      if (results && results.length === 2) {
+        result = results[1];
+      } else {
+        return [];
+      }
+    } else {
+      result = await this.driverExecuteSingle('INFO FOR NS STRUCTURE');
+    }
+    
     const nsInfo = result.rows[0];
 
     if (nsInfo && nsInfo.databases) {
@@ -697,8 +716,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   protected async rawExecuteQuery(q: string, options: { multiple: boolean, connection?: SurrealConn, bindings?: any }): Promise<SurrealDBQueryResult | SurrealDBQueryResult[]> {
+    const conn = options?.connection ? options.connection : await this.pool.connect();
     try {
-      const conn = options?.connection ? options.connection : await this.pool.connect();
       const bindings = options?.bindings ? options.bindings : {}
       log.info('RUNNING QUERY: ', q)
       log.info('BINDINGS: ', bindings)
@@ -708,7 +727,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
         const rows = Array.isArray(queryResult) ? queryResult : [queryResult];
 
         // TODO (@day): this isn't reliable at all
-        const columns = rows.length > 0
+        const columns = rows && rows.length > 0 && rows[0]
           ? Object.keys(rows[0]).map(name => ({ name }))
           : [];
 
@@ -719,18 +738,19 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
         }
       });
 
-      if (!options.connection) {
-        conn.release();
-      }
 
       return options.multiple ? results : results[0];
     } catch (err) {
       log.error('ERROR running query: ', err);
       throw err;
+    } finally {
+      if (!options.connection) {
+        conn.release();
+      }
     }
   }
 
-  private async runWithConnection<T>(child: (c: SurrealConn) => Promise<T>): Promise<T> {
+  async runWithConnection<T>(child: (c: SurrealConn) => Promise<T>): Promise<T> {
     const connection = await this.pool.connect();
     try {
       return await child(connection);

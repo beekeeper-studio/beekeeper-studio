@@ -119,6 +119,9 @@ export interface DatabaseFilterOptions {
   database?: string;
   only?: string[];
   ignore?: string[];
+
+  // surrealdb only
+  namespace?: string;
 }
 
 export interface SchemaFilterOptions {

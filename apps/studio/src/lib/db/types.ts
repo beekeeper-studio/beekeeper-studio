@@ -150,6 +150,8 @@ export interface IDbConnectionDatabase {
   database: string,
   connected: Nullable<boolean>,
   connecting: boolean,
+  // Only used for surrealdb
+  namespace: string
 }
 
 export interface IDbConnectionServerSSHConfig {
