@@ -1,4 +1,5 @@
 import { ColumnType, defaultConstraintActions, DialectData } from "./models";
+import _ from 'lodash';
 
 const types = [
   'string', 'text', 'number', 'int', 'float', 'decimal', 'bool', 'boolean',
@@ -19,23 +20,64 @@ const defaultLength = (t: string) => {
 // TODO (@day): not sure this properly covers all cases
 const UNWRAPPER = /^`(.*)`$/;
 
-export function surrealEscapeString(value: string, quote?: boolean): string {
-  if (!value) return null;
+export const RECORD_ID_REGEX = /^(?:[a-zA-Z_][a-zA-Z0-9_\-]*|⟨[^⟩]+⟩):.+$/;
 
-  const result = `${value.toString().replaceAll(/'/g, "''")}`;
+export function surrealEscapeString(value: string, quote?: boolean): string {
+  if (!value) return 'NULL';
+
+  const result = value.replace(/'/g, "''");
   return quote ? `'${result}'` : result;
 }
 
 export function surrealWrapLiteral(str: string): string {
-  return str ? str.replaceAll(/;/g, '') : '';
+  return str ? str.replace(/;/g, '') : '';
+}
+
+// Utility to coerce string values to native types
+function coerceValue(value: string): any {
+  // Handle null/undefined
+  if (value == null) return null;
+
+  // Unquoted record IDs (leave untouched)
+  if (RECORD_ID_REGEX.test(value)) return value;
+
+  // Try to parse JSON object/array
+  if ((value.startsWith('{') && value.endsWith('}')) ||
+      (value.startsWith('[') && value.endsWith(']'))) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      // Fall through
+    }
+  }
+
+  // Try to parse boolean
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+
+  // Try to parse number
+  if (!isNaN(value as any)) return Number(value);
+
+  // Default: treat as string
+  return value;
 }
 
 export function surrealEscapeValue(value: any): string {
-  if (value === null || value === undefined) {
-    return 'NULL';
-  }
+  if (value === null || value === undefined) return 'NULL';
 
+  // If it's a string, try coercing to appropriate type
   if (typeof value === 'string') {
+    const coerced = coerceValue(value);
+
+    // Re-run with coerced value (if it changed type)
+    if (typeof coerced !== 'string') {
+      return surrealEscapeValue(coerced);
+    }
+
+    // If it's a record ID, leave unquoted
+    if (RECORD_ID_REGEX.test(value)) return value;
+
+    // Otherwise, escape as a string
     return surrealEscapeString(value, true);
   }
 
@@ -44,9 +86,10 @@ export function surrealEscapeValue(value: any): string {
   }
 
   if (typeof value === 'object') {
-    return JSON.stringify(value);
+    return surrealEscapeString(JSON.stringify(value), true);
   }
 
+  // Fallback for any other type
   return surrealEscapeString(String(value), true);
 }
 
@@ -74,7 +117,6 @@ export const SurrealDBData: DialectData = {
     createTable: true,
     dropTable: true,
     compositeKeys: true,
-    sqlCreate: true, // there aren't traditional create table statements, but we may still be able to provide a define schema statement for this.
   },
   boolean: {
     true: true,

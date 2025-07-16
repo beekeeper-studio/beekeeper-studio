@@ -9,6 +9,7 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db
 import { SurrealDBRecordTranscoder, Transcoder } from "@/lib/db/serialization/transcoders";
 import { SurrealDBCursor } from "./surrealdb/SurrealDBCursor";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
+import { SurrealDBChangeBuilder } from "@/shared/lib/sql/change_builder/SurrealDBChangeBuilder";
 import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
@@ -285,12 +286,13 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
     return tableIndexes.map((indexInfo) => {
       const columns = indexInfo.cols.split(',').map((name) => ({ name }));
+      const unique = indexInfo.index === 'UNIQUE';
       return {
         id: indexInfo.name,
         table,
         name: indexInfo.name,
         columns,
-        unique: !!indexInfo.unique
+        unique
       } as TableIndex
     })
   }
@@ -313,7 +315,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     const keys: TableKey[] = [];
 
     for (const col of columns) {
-      const match = col.dataType.match(/\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+      const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
       if (match) {
         const targetTables = match[1]
           .split(',')
@@ -350,7 +352,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
-    const results = options.multiple
+    const results = options?.multiple || false
       ? await this.driverExecuteMultiple(queryText, options)
       : [await this.driverExecuteSingle(queryText, options)];
 
@@ -474,7 +476,17 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       } else {
         const filterClauses = filters.map(filter => {
           const escapedField = this.wrapIdentifier(filter.field);
-          return `${escapedField} ${filter.type} ${filter.value}`;
+          if (filter.type === 'in' && _.isArray(filter.value)) {
+            const values = filter.value.map((v) => {
+              return surrealEscapeValue(v);
+            })
+            return `${escapedField} ${filter.type.toUpperCase()} [${values.join(',')}]`
+          } else if (filter.type === 'is') {
+            return `${escapedField} ${filter.type.toUpperCase()} NULL`;
+          } else {
+            const escapedValue = surrealEscapeValue(filter.value);
+            return `${escapedField} ${filter.type} ${escapedValue}`;
+          }
         });
         query += ` WHERE ${filterClauses.join(' AND ')}`;
       }
@@ -572,7 +584,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
-      throw new Error("Method not implemented.");
+    return new SurrealDBChangeBuilder(table, schema);
   }
 
   async createDatabase(databaseName: string, _charset: string, _collation: string): Promise<string> {
@@ -607,7 +619,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     if (indexes) {
       query += Object.values(indexes).reduce((q, i) => {
         return `${q}${i};\n`;
-      })
+      }, '')
     }
 
     return query;
