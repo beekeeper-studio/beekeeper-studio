@@ -895,7 +895,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
     const { data } = await this.driverExecuteSingle(sql)
 
-    return data.recordset.map((row) => row.routine_definition)
+    return data.recordset.map((row) => row.definition)
   }
 
   async setTableDescription(table: string, desc: string, schema: string) {
