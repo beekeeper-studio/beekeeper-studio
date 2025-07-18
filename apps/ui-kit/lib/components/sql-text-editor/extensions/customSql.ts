@@ -8,7 +8,7 @@ import { sql, SQLConfig } from "@codemirror/lang-sql";
 import { CompletionSource } from "@codemirror/autocomplete";
 import { buildSchema } from "../utils";
 import { EditorView } from "@codemirror/view";
-import { Entity } from "../../../types";
+import { Entity } from "../../types";
 import { Compartment } from "@codemirror/state";
 
 const sqlCompartment = new Compartment();

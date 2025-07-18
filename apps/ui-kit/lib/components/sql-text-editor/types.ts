@@ -1,4 +1,4 @@
-import { TextEditorEventMap } from "../../text-editor";
+import { TextEditorEventMap } from "../text-editor";
 import type { QuerySelectionChangeParams } from "./extensions";
 
 export interface SqlTextEditorEventMap extends TextEditorEventMap {
