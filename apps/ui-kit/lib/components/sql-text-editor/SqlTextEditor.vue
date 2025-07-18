@@ -3,16 +3,16 @@
 </template>
 
 <script lang="ts">
-import mixin from "../../text-editor/v2/mixin";
+import mixin from "../text-editor/mixin";
 import props from "./props";
 import { SqlTextEditor } from "./SqlTextEditor";
-import { Entity } from "../../types";
+import { Entity } from "../types";
 import {
   divider,
   InternalContextItem,
-} from "../../context-menu";
+} from "../context-menu";
 import { format } from "sql-formatter";
-import ProxyEmit from "../../mixins/ProxyEmit";
+import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";
 
 export default Vue.extend({
