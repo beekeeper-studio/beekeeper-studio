@@ -96,11 +96,9 @@ export const ProtocolBuilder = {
         }
 
         const headers = {}
-        if (platformInfo.isDevelopment) {
-          headers['Cache-Control'] = 'no-cache'
-          headers['Pragma'] = 'no-cache'
-          headers['Expires'] = '0'
-        }
+        headers['Cache-Control'] = 'no-cache'
+        headers['Pragma'] = 'no-cache'
+        headers['Expires'] = '0'
 
         const response: any = {
           mimeType: mimeTypeOf(pathName),
