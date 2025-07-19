@@ -5,8 +5,8 @@ import {
   InternalContextItem,
   openMenu,
   useCustomMenuItems,
-} from "../../context-menu";
-import { readClipboard, writeClipboard } from "../../../utils";
+} from "../context-menu";
+import { readClipboard, writeClipboard } from "../../utils";
 import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorSelectionChangeEvent, TextEditorValueChangeEvent } from "./types";
 
 export default {

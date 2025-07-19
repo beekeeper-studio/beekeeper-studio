@@ -23,7 +23,7 @@ That's easy -- a whole bunch of useful features are only available in the paid v
 
 For example, the full version includes a **JSON row viewer** and more comprehensive import/export options.
 
-![JSON row viewer](../../assets/images/json-row-view.png)
+![JSON row viewer](../assets/images/json-row-view.png)
 
 There are a lot more awesome features in the full version of Beekeeper Studio, you can see them all [on the pricing page](https://beekeeperstudio.io/pricing).
 

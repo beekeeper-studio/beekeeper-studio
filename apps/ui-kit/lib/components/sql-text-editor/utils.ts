@@ -1,4 +1,4 @@
-import { Entity, TableEntity } from "../../types";
+import { Entity, TableEntity } from "../types";
 import { Completion } from "@codemirror/autocomplete";
 import getAliases from "./getAliases";
 
