@@ -85,6 +85,7 @@
       /* eslint-enable */
     },
     computed: {
+      ...mapState(['usedConfig']),
       ...mapGetters(['minimalMode']),
       ...mapState("sidebar", [
         "primarySidebarOpen",
@@ -115,6 +116,9 @@
       },
     },
     watch: {
+      async usedConfig(){
+        await this.$store.dispatch('pins/loadPins');
+      },
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
@@ -166,7 +170,6 @@
       },
     },
     mounted() {
-      this.$store.dispatch('pins/loadPins')
       this.$store.dispatch('hideEntities/load')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {

@@ -1,8 +1,8 @@
-import { Entity } from "../../types";
+import { Entity } from "../types";
 import { PropType } from "vue";
 import { FormatOptions } from "sql-formatter";
 import { Options } from "sql-query-identifier";
-import props from "../../text-editor/v2/props";
+import props from "../text-editor/props";
 
 export default {
   /** Entities for autocompletion */
