@@ -151,7 +151,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async disconnect(): Promise<void> {
-    await this.client.close()
+    // Trino client doesn't have a close method, just clean up the reference
+    this.client = null
     await super.disconnect()
   }
 
@@ -206,12 +207,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
 
     const { query } = queries
     const result = await this.driverExecuteSingle(query)
-    const fields = result.columns.map(c => ({
+    const fields = result.columns ? result.columns.map(c => ({
       name: c.name,
       bksType: 'UNKNOWN' as BksFieldType
-    }))
+    })) : []
     return {
-      result: result.rows,
+      result: result.rows || [],
       fields
     }
   }
@@ -300,12 +301,12 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     const sql = `show schemas from ${filter.database}`
     const result = await this.driverExecuteSingle(sql)
 
-    return result.rows.map((row) => row.Schema)
+    return result?.rows ? result.rows.map((row) => row.Schema) : []
   }
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
-    if (filter.database == null || filter.database == null) return []
+    if (!filter || filter.database == null) return []
     const sql = `select * from ${filter.database}.information_schema.tables`
     const result = await this.driverExecuteSingle(sql)
 
