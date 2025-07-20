@@ -49,13 +49,14 @@
   <i
     v-else
     class="material-icons item-icon"
-  >new_releases</i>
+  >{{ tabTypeConfig?.icon || 'new_releases' }}</i>
 </template>
 <script lang="ts">
 import Vue, { PropType } from 'vue'
 import TableIcon from '../common/TableIcon.vue'
 import LoadingSpinner from '../common/loading/LoadingSpinner.vue'
 import { OpenTab } from '@/common/appdb/models/OpenTab'
+import { mapGetters } from 'vuex'
 
 export default Vue.extend({
   components: { TableIcon, LoadingSpinner },
@@ -69,10 +70,21 @@ export default Vue.extend({
     }
   },
   computed: {
+    ...mapGetters({
+      'tabTypeConfigs': 'tabs/tabTypeConfigs',
+    }),
     iconClass() {
       const result = {}
       result[`${this.tab.entityType}-icon`] = true
       return result
+    },
+    tabTypeConfig() {
+      return this.tabTypeConfigs.find((config) => {
+        return (
+          config.type === this.tab.tabType &&
+          config.pluginId === this.tab.context.pluginId
+        );
+      });
     },
   }
 })

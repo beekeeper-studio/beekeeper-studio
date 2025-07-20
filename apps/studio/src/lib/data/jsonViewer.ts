@@ -1,7 +1,10 @@
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from "lodash";
+import rawLog from "@bksLogger";
 import globals from '@/common/globals'
 import { LineGutter } from "../editor/utils";
+import { toRegexSafe } from "@/common/utils";
+import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 
 export interface UpdateOptions {
   dataId: number | string;
@@ -10,6 +13,9 @@ export interface UpdateOptions {
   signs: Record<string, LineGutter["type"]>;
   editablePaths: string[];
 }
+
+const log = rawLog.scope("jsonViewer");
+
 
 export interface ExpandablePath {
   path: string[];
@@ -52,7 +58,7 @@ export function findKeyPosition(jsonStr: string, path: (string | number)[]) {
   return -1;
 }
 
-export function createExpandableElement(text: string) {
+function createExpandableElement(text: string) {
   const element = document.createElement("a");
   element.classList.add("expandable-value");
   element.innerText = text;
@@ -67,14 +73,14 @@ export function createExpandableElement(text: string) {
 }
 
 // FIXME this works with string values only
-export function createTruncatableElement(text: string) {
+function createTruncatableElement(text: string) {
   const element = document.createElement("a");
   element.classList.add("truncatable-value", "bks-tooltip-wrapper");
   element.innerText = text.slice(0, -1);
 
   const more = document.createElement("span");
   more.classList.add("more");
-  more.innerText = "...";
+  more.innerText ="Show more";
 
   element.appendChild(more);
   element.appendChild(document.createTextNode('"'))
@@ -99,9 +105,11 @@ export function deepFilterObjectProps(
   filter: string,
   paths?: string[]
 ) {
+  const regex = toRegexSafe(filter);
+
   if (!paths) paths = getPaths(obj);
   const filteredPaths = paths.filter((path) =>
-    path.toLowerCase().includes(filter)
+    regex ? regex.test(path) : path.toLowerCase().includes(filter)
   );
   return _.pick(obj, filteredPaths);
 }
@@ -144,5 +152,95 @@ export function eachPaths(
       // Apply the callback function on the current path and value
       fn(newPath, value);
     }
+  }
+}
+
+/** Mutate the row data to replace JSON columns with parsed JSON objects */
+export function parseRowDataForJsonViewer(data: Record<string, any>, tableColumns: { field: string, dataType: string }[]) {
+  tableColumns.forEach(column => {
+    const columnValue = data[column.field]
+
+    // Check if the column is a JSON column
+    let isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+    // If the column is not a JSON column, check if it is a JSON string
+    if (!isJsonColumn) {
+      const isColumnHasStringAndNotEmpty = typeof columnValue === 'string' && columnValue.trim() !== ''
+
+      if (isColumnHasStringAndNotEmpty) {
+        const trimmedValue = columnValue.trim()
+        const isJsonObjectString = trimmedValue.startsWith('{') && trimmedValue.endsWith('}')
+        const isJsonArrayString = trimmedValue.startsWith('[') && trimmedValue.endsWith(']')
+
+        if (isJsonObjectString || isJsonArrayString) {
+          isJsonColumn = true
+        }
+      }
+    }
+
+    if (isJsonColumn) {
+      try {
+        data[column.field] = JSON.parse(data[column.field])
+      } catch (e) {
+        log.warn(`Failed to parse JSON for column ${column.field}:`, e)
+      }
+    }
+  })
+  return data
+}
+
+export function createTruncatableTextDecoration(
+  text: string,
+  onClick: () => void
+): Decoration {
+  return Decoration.replace({
+    widget: new TruncatableTextWidget(text, onClick),
+  });
+}
+
+class TruncatableTextWidget extends WidgetType {
+  constructor(
+    private readonly text: string,
+    private readonly onClick: () => void
+  ) {
+    super();
+  }
+
+  toDOM(): HTMLElement {
+    const element = createTruncatableElement(this.text);
+    element.addEventListener("click", this.onClick);
+    return element;
+  }
+
+  destroy(dom: HTMLElement) {
+    dom.removeEventListener('click', this.onClick);
+  }
+}
+
+export function createExpandableTextDecoration(
+  text: string,
+  onClick: () => void
+): Decoration {
+  return Decoration.replace({
+    widget: new ExpandableTextWidget(text, onClick),
+  });
+}
+
+class ExpandableTextWidget extends WidgetType {
+  constructor(
+    private readonly text: string,
+    private readonly onClick: () => void
+  ) {
+    super();
+  }
+
+  toDOM(): HTMLElement {
+    const element = createExpandableElement(this.text);
+    element.addEventListener("click", this.onClick);
+    return element;
+  }
+
+  destroy(dom: HTMLElement) {
+    dom.removeEventListener('click', this.onClick);
   }
 }

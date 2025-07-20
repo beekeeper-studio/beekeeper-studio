@@ -133,7 +133,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
     await this.settings.theme.save()
     getActiveWindows().forEach( window => {
-      window.send(AppEvent.settingsChanged)
+      window.send(AppEvent.settingsChanged, 'theme')
     })
   }
 
@@ -195,5 +195,13 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
     setAllowBeta(this.settings.useBeta.value as boolean);
     autoUpdater.checkForUpdates();
+  }
+
+  managePlugins = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openPluginManager);
+  }
+
+  updatePin = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.updatePin)
   }
 }

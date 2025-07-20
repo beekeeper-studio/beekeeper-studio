@@ -1,11 +1,13 @@
 <template>
   <div
     class="result-table"
+    :class="{ 'hidden-filter': hiddenFilter }"
     v-hotkey="keymap"
   >
     <form
       class="table-search-wrapper table-filter"
       @submit.prevent="searchHandler"
+      v-hotkey="tableFilterKeymap"
     >
       <div class="input-wrapper filter">
         <input
@@ -31,6 +33,13 @@
       >
         <i class="material-icons">search</i>
       </button>
+      <button
+        class="close-btn btn btn-flat btn-fab"
+        title="Close filter"
+        @click="closeTableFilter"
+      >
+        <i class="material-icons">close</i>
+      </button>
     </form>
     <div
       ref="tabulator"
@@ -53,11 +62,12 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
+  import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -68,6 +78,7 @@
         selectedRowData: {},
         filterValue: '',
         selectedRowPosition: -1,
+        hiddenFilter: true,
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
@@ -103,7 +114,12 @@
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
-          'tableTable.focusOnFilterInput': this.focusOnFilterInput.bind(this)
+          'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
+        });
+      },
+      tableFilterKeymap() {
+        return this.$vHotkeyKeymap({
+          'queryEditor.closeTableFilter': this.closeTableFilter.bind(this),
         });
       },
       tableData() {
@@ -115,12 +131,23 @@
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
+        const filterMenuItem = {
+          label: createMenuItem("Search results"),
+          action: () => {
+            this.focusOnFilterInput()
+          }
+        }
+
         const cellMenu = (_e, cell) => {
-          return copyActionsMenu({
-            ranges: cell.getRanges(),
-            table: this.result.tableName,
-            schema: this.defaultSchema,
-          })
+          return [
+            ...copyActionsMenu({
+              ranges: cell.getRanges(),
+              table: this.result.tableName,
+              schema: this.defaultSchema,
+            }),
+            { separator: true },
+            filterMenuItem,
+          ]
         }
 
         const columnMenu = (_e, column) => {
@@ -132,6 +159,8 @@
             }),
             { separator: true },
             ...commonColumnMenu,
+            { separator: true },
+            filterMenuItem,
           ]
         }
 
@@ -261,7 +290,14 @@
         });
       },
       focusOnFilterInput() {
-        this.$refs.filterInput.focus()
+        this.hiddenFilter = false
+        this.$nextTick(() => {
+          this.$refs.filterInput.focus()
+        })
+      },
+      closeTableFilter() {
+        this.hiddenFilter = true
+        this.triggerFocus()
       },
       searchHandler() {
         this.tabulator.clearFilter()
@@ -279,10 +315,12 @@
         this.filterValue = ''
         this.tabulator.clearFilter()
       },
-      copySelection() {
+      checkTableFocus() {
         const classes = [...document.activeElement.classList.values()];
-        const isFocusingTable = classes.some(c => c.startsWith('tabulator'));
-
+        return classes.some(c => c.startsWith('tabulator'));
+      },
+      copySelection() {
+        const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
         copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
       },
@@ -440,8 +478,8 @@
         this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
       handleRangeChange(ranges) {
-        const row = ranges[0].getRows()[0]
-        this.selectedRowData = this.dataToJson(row.getData(), true)
+        const parsedData = parseRowDataForJsonViewer(ranges[0].getRows()[0].getData(), this.tableColumns)
+        this.selectedRowData = this.dataToJson(parsedData, true)
         this.selectedRowPosition = row.getPosition()
         this.updateJsonViewerSidebar()
       },
@@ -458,19 +496,64 @@
 </script>
 
 <style lang="scss" scoped>
-  .table-search-wrapper {
+  @import '@/assets/styles/app/mixins';
+
+  .result-table {
+    position: relative;
+
+    &.hidden-filter .table-search-wrapper {
+      display: none;
+    }
+
+    &::v-deep:not(.hidden-filter) {
+      .tabulator-tableholder {
+        padding-bottom: 5rem;
+      }
+    }
+  }
+
+  .table-search-wrapper.table-filter {
     display: flex;
-    padding: 1rem;
+    padding: 0.8rem 1rem;
     justify-content: space-between;
+    width: auto;
+    position: absolute;
+    bottom: 1rem;
+    right: 1.5rem;
+    z-index: 10;
+    align-items: center;
+    background-color: var(--query-editor-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    @include card-shadow;
+
+    .btn-fab {
+      min-width: auto;
+      width: 1.6rem;
+      height: 1.5rem;
+      margin-left: 0.4rem;
+
+      &[type=submit] {
+        margin-left: 0.75rem;
+      }
+
+      .material-icons {
+        font-size: 1.2rem;
+      }
+    }
   }
 
   .input-wrapper {
-    width: 97%;
+    width: 17rem;
     position: relative;
     .clear {
+      visibility: hidden;
       position: absolute;
       right: 0;
       top: 5px;
+    }
+    &:hover .clear {
+      visibility: visible;
     }
   }
 </style>

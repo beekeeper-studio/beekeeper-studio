@@ -78,6 +78,10 @@ export class OpenTab extends ApplicationEntity {
   filters?: string
   isRunning = false;
 
+  @Column({type: 'json', nullable: true})
+  /** Context is a generic object. It can be used to store anything. */
+  context: any
+
   @Column({type: 'datetime', nullable: true})
   lastActive?: Date
 

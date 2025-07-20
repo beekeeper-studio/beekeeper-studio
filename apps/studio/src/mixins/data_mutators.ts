@@ -17,9 +17,6 @@ export function emptyResult(value: any) {
   if (_.isString(value) && _.isEmpty(value)) {
     return buildNullValue('EMPTY')
   }
-  if (_.isArray(value) && value.length === 0) {
-    return buildNullValue('NULL')
-  }
 
   return null
 }

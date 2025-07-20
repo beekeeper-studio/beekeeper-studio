@@ -5,6 +5,7 @@ import * as fs from 'fs'
 import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
+import bksConfig from "@/common/bksConfig";
 
 const log = rawLog.scope('ProtocolBuilder')
 
@@ -72,10 +73,17 @@ export const ProtocolBuilder = {
   },
   createPluginProtocol: () => {
     protocol.registerBufferProtocol("plugin", (request, respond) => {
-      const pathName = request.url.replace("plugin://", "")
+      // Removes the leading "plugin://" and the query string
+      const url = new URL(request.url);
+      const pluginId = url.host;
+      const pathName = path.join(pluginId, url.pathname);
       const normalized = path.normalize(pathName)
       const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
       log.debug("resolving", pathName, 'to', fullPath)
+      if (bksConfig.get(`plugins.${pluginId}.disabled`)) {
+        respond({ error: -20 }) // blocked by client
+        return;
+      }
       readFile(fullPath, (error, data) => {
         if (error) {
           log.error("error loading plugin file", pathName, error)
@@ -87,10 +95,19 @@ export const ProtocolBuilder = {
           return
         }
 
-        respond({
+        const headers = {}
+        headers['Cache-Control'] = 'no-cache'
+        headers['Pragma'] = 'no-cache'
+        headers['Expires'] = '0'
+
+        const response: any = {
           mimeType: mimeTypeOf(pathName),
           data,
-        })
+        };
+        if (Object.keys(headers).length > 0) {
+          response.headers = headers;
+        }
+        respond(response);
       })
     });
   }
