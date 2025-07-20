@@ -111,6 +111,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       }
     } catch (err) {
       log.error(err)
+      throw err
     }
   }
 
@@ -449,6 +450,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     const results = await this.driverExecuteMultiple(queryText)
     const ret = []
     for (const result of results) {
+      console.log(result)
       const fields = this.parseFields(result.columns)
       const data = result.rows
       // const data =

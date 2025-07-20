@@ -998,12 +998,9 @@ export default Vue.extend({
     async initialize() {
       this.initialized = true
       this.resetPendingChanges()
-      console.log('updating table columns')
       await this.$store.dispatch('updateTableColumns', this.table)
-      console.log('getting table keys')
       await this.getTableKeys();
 
-      console.log('setting up tabulator?')
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
         schema: this.table.schema,
@@ -1612,7 +1609,6 @@ export default Vue.extend({
       this.trigger(AppEvent.beginImport, { table: this.table })
     },
     openQueryTab() {
-      console.log('~~~ Open Query Tab Called ~~~')
       const page = this.tabulator.getPage();
       const orderBy = [
         _.pick(this.tabulator.getSorters()[0], ["field", "dir"]),
