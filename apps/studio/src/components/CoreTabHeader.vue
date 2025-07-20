@@ -11,6 +11,7 @@
       <a
         class="nav-link"
         @mousedown="mousedown"
+        @dblclick="handleDoubleClick"
         @click.middle.prevent="maybeClose"
         @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
         :class="{ active: selected }"
@@ -23,7 +24,7 @@
           v-if="scope && !$store.getters.minimalMode"
           class="tab-title-scope"
         >{{ scope }}</span></span>
-        <div class="tab-action">
+        <div class="tab-action"> 
           <span
             class="tab-close"
             @mouseenter="hover=true"
@@ -93,7 +94,7 @@ import { mapState } from 'vuex'
         unsaved: false,
         hover: false,
         sureOpen: false,
-        lastFocused: null
+        lastFocused: null,
       }
     },
     methods: {
@@ -128,7 +129,20 @@ import { mapState } from 'vuex'
         if (e.which === 1) {
           this.$emit('click', this.tab)
         }
-      }
+      },
+      handleDoubleClick(e) {
+        if (e.which === 1 || e.button === 0) {
+          if (this.tab.tabType === 'table') {
+            // Set loading indicator state
+            this.tab.isRunning = true;
+            setTimeout(() => {
+              this.tab.isRunning = false;
+            }, 1000);
+            // Emit dbclick signal to CoreTabs
+            this.$emit('dblclick', this.tab);
+          }
+        }
+      },
     },
     watch: {
       activeTab() {
@@ -217,3 +231,63 @@ import { mapState } from 'vuex'
   }
 
 </script>
+
+<style scoped>
+
+.nav-item {
+  position: relative;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.nav-item:hover {
+  transform: scale(1.1);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Change the position and size of the loading indicator */
+.spinner-svg {
+  margin-right: 17px;
+  margin-top: 10px;
+  width: 10px;
+  height: 10px;
+  animation: rotate 2s linear infinite;
+}
+
+/* Change the color of the loading indicator */
+.spinner-path {
+  stroke: #ffffff;
+  stroke-linecap: round;
+  stroke-dasharray: 90, 150;
+  stroke-dashoffset: 0;
+  transform-origin: center;
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+</style>

@@ -319,7 +319,7 @@ import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
-import {AppEvent} from '../../common/AppEvent';
+import { AppEvent, AppEventMixin } from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
@@ -344,7 +344,7 @@ let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
-  mixins: [data_converter, DataMutators, FkLinkMixin],
+  mixins: [data_converter, DataMutators, FkLinkMixin, AppEventMixin],
   props: ["active", 'tab', 'table'],
   data() {
     return {
@@ -595,6 +595,7 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+        { event: AppEvent.refreshActiveTable, handler: this.refreshActiveTable },
       ]
     },
     /** This tells which fields have been modified */
@@ -727,6 +728,40 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    refreshActiveTable(tabId) {
+      // Create a deep copy of the current table data for comparison
+      const originalTable = {
+        table: _.cloneDeep(this.table),
+        rows: _.cloneDeep(this.tabulator.getData()), // Fetch rows from tabulator
+      }
+
+      if (this.tab.id === tabId) {
+        this.refreshTable();
+      } else {
+        this.$noty.error('Tab id does not exist');
+        return;
+      }
+
+      setTimeout(() => {
+        // Create a deep copy of the updated table data
+        const updatedTable = {
+          table: _.cloneDeep(this.table),
+          rows: _.cloneDeep(this.tabulator.getData()),
+        }
+
+        // Compare whole table and columns separately
+        const equalTable = _.isEqual(originalTable.table, updatedTable.table);
+        const equalRows = _.isEqual(originalTable.rows, updatedTable.rows);
+
+        if (equalTable && equalRows) {
+          this.$noty.warning('Table already up to date!');
+        } else if (!updatedTable) {
+          this.$noty.error('Failed to refresh the table!');
+        } else {
+          this.$noty.success('Table refreshed successfully!');
+        }
+      }, 1000);
+    },
     createColumnFromProps(column) {
       // 1. add a column for a real column
       // if a FK, add another column with the link
