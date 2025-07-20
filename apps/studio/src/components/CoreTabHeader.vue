@@ -7,8 +7,6 @@
       class="nav-item"
       :title="title + scope"
       @contextmenu="$emit('contextmenu', $event)"
-      @mouseenter="showTooltip('Double click to refresh')"
-      @mouseleave="hideTooltip"
     >
       <a
         class="nav-link"
@@ -26,12 +24,7 @@
           v-if="scope && !$store.getters.minimalMode"
           class="tab-title-scope"
         >{{ scope }}</span></span>
-        <div class="tab-action">
-          <span v-if="isLoading" class="loading-spinner">
-            <svg class="spinner-svg" viewBox="0 0 50 50">
-              <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke-width="4"/>
-            </svg>
-          </span>
+        <div class="tab-action"> 
           <span
             class="tab-close"
             @mouseenter="hover=true"
@@ -51,12 +44,6 @@
         </div>
       </a>
     </li>
-    <div 
-      v-if="tooltip.visible"
-      class="tooltip"
-    >
-      {{ tooltip.message }}
-    </div>
     <portal to="modals">
       <modal
         :name="modalName"
@@ -108,36 +95,9 @@ import { mapState } from 'vuex'
         hover: false,
         sureOpen: false,
         lastFocused: null,
-        isLoading: false,
-        tooltip: {
-          visible: false,
-          timeout: null,
-          message: '',
-        },
       }
     },
     methods: {
-      showTooltip(message) {
-        this.tooltipTimeout = setTimeout(() => {
-          if (this.tab.tabType === 'table') {
-            this.tooltip.visible = true;
-            this.tooltip.message = message;
-
-            this.$nextTick(() => {
-              const tooltipElement = document.querySelector('.tooltip');
-              const rect = this.$el.getBoundingClientRect(); // Get the position of the tab header
-
-              // Dynamically set the tooltip's position to align with the center of the tab header
-              tooltipElement.style.top = `${rect.top - tooltipElement.offsetHeight}px`;
-              tooltipElement.style.left = `${rect.left + rect.width / 2 - tooltipElement.offsetWidth / 2}px`;
-            });
-          }
-        }, 1000);
-      },
-      hideTooltip() {
-        clearTimeout(this.tooltipTimeout);
-        this.tooltip.visible = false;
-      },
       beforeOpened() {
         this.lastFocused = document.activeElement
       },
@@ -174,10 +134,9 @@ import { mapState } from 'vuex'
         if (e.which === 1 || e.button === 0) {
           if (this.tab.tabType === 'table') {
             // Set loading indicator state
-            this.isLoading = true;
+            this.tab.isRunning = true;
             setTimeout(() => {
-              // Reset loading indicator state after a time period
-              this.isLoading = false;
+              this.tab.isRunning = false;
             }, 1000);
             // Emit dbclick signal to CoreTabs
             this.$emit('dblclick', this.tab);
@@ -277,19 +236,6 @@ import { mapState } from 'vuex'
 .nav-item:hover {
   transform: scale(1.1);
   background-color: rgba(255, 255, 255, 0.2);
-}
-
-.tooltip {
-  position: fixed;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  padding: 5px 7px 5px 8px;
-  border-radius: 10px 10px 0 0;
-  font-size: 0.8em;
-  white-space: nowrap;
-  z-index: 1000;
-  pointer-events: none;
-  text-align: center;
 }
 
 @keyframes fadeIn {
