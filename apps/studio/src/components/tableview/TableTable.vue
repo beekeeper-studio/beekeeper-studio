@@ -304,7 +304,7 @@ import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import globals from '@/common/globals';
-import {AppEvent} from '../../common/AppEvent';
+import { AppEvent, AppEventMixin } from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
@@ -329,7 +329,7 @@ let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
-  mixins: [data_converter, DataMutators, FkLinkMixin],
+  mixins: [data_converter, DataMutators, FkLinkMixin, AppEventMixin],
   props: ["active", 'tab', 'table'],
   data() {
     return {
@@ -378,10 +378,6 @@ export default Vue.extend({
       selectedRowData: {},
       expandablePaths: [],
     };
-  },
-  created() {
-    // Listen for the 'refresh-active-table' event
-    this.$root.$on('refresh-active-table', this.refreshActiveTable);
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
@@ -577,6 +573,7 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+        { event: AppEvent.refreshActiveTable, handler: this.refreshActiveTable },
       ]
     },
     /** This tells which fields have been modified */
@@ -690,7 +687,6 @@ export default Vue.extend({
     },
   },
   beforeDestroy() {
-    this.$root.$off('refresh-active-table', this.refreshActiveTable);
     this.handleTabInactive()
     if(this.interval) clearInterval(this.interval)
     if (this.tabulator) {

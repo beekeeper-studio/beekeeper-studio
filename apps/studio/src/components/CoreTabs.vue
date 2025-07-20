@@ -472,7 +472,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
 
       // Send global signal for refresh-active-table 
-      this.$root.$emit('refresh-active-table', tab.id);
+      this.trigger(AppEvent.refreshActiveTable, tab.id);
 
       // Add visual cue
       const tabElement = document.querySelector(`[data-tab-id="${tab.id}"]`);
