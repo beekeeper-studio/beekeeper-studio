@@ -203,6 +203,7 @@ export default class PluginManager {
 
   /**
    * Loads the list of disabled auto-update plugins from the database
+   * @todo all plugin settings should be loaded and saved from the config files
    */
   private async loadPluginSettings() {
     const setting = await UserSetting.get(PluginManager.PLUGIN_SETTINGS);

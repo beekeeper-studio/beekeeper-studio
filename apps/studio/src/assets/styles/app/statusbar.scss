@@ -13,6 +13,7 @@ $button-height:     $statusbar-height * 0.72;
 
   > .vue-portal-target {
     flex-grow: 1;
+    height: 100%;
   }
 
   .statusbar {

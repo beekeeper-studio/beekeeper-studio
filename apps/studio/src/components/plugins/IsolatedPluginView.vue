@@ -1,7 +1,11 @@
 <template>
   <div class="isolated-plugin-view">
+    <div v-if="$bksConfig.plugins?.[pluginId]?.disabled" class="alert">
+      <i class="material-icons-outlined">info</i>
+      <div>This plugin ({{ pluginId }}) has been disabled via configuration</div>
+    </div>
     <iframe
-      v-if="visible || loaded"
+      v-else-if="visible || loaded"
       :src="baseUrl"
       sandbox="allow-scripts allow-same-origin allow-forms"
       allow="clipboard-read; clipboard-write;"

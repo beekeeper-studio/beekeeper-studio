@@ -22,6 +22,7 @@ import {
   Decoration,
   DecorationSet,
   ViewPlugin,
+  PluginValue,
 } from "@codemirror/view";
 import { EditorRange } from "../utils";
 import rawLog from "@bksLogger";
@@ -259,21 +260,30 @@ const partialReadOnlyFilter = (editInRangeListener: EditInRangeListener) =>
       validChanges.forEach(({ rangeId, from, to, inserted }) => {
         const range = state.ranges.get(rangeId);
         if (range) {
-          // Calculate the correct range end position after this change
+          // Calculate the range boundaries in the original document (before the change)
           try {
-            const rangeFrom = tr.state.doc.line(range.from.line + 1).from + range.from.ch;
-            const oldRangeTo = tr.state.doc.line(range.to.line + 1).from + range.to.ch;
+            const rangeFrom = tr.startState.doc.line(range.from.line + 1).from + range.from.ch;
+            const oldRangeTo = tr.startState.doc.line(range.to.line + 1).from + range.to.ch;
 
             // Calculate the length change for this specific change
             const lengthDiff = inserted.length - (to - from);
             const newRangeTo = oldRangeTo + lengthDiff;
 
+            // Get the new value from the final document state
             const newValue = tr.state.doc.sliceString(rangeFrom, newRangeTo);
             editInRangeListener(range, newValue);
           } catch (e) {
-            // Fallback to inserted text if range calculation fails
-            const newValue = inserted.toString();
-            editInRangeListener(range, newValue);
+            // Fallback: try to get the current range value from the final state
+            try {
+              const rangeFrom = tr.state.doc.line(range.from.line + 1).from + range.from.ch;
+              const rangeTo = tr.state.doc.line(range.to.line + 1).from + range.to.ch;
+              const newValue = tr.state.doc.sliceString(rangeFrom, rangeTo);
+              editInRangeListener(range, newValue);
+            } catch (e2) {
+              // Final fallback to inserted text
+              const newValue = inserted.toString();
+              editInRangeListener(range, newValue);
+            }
           }
         }
       });
@@ -282,14 +292,79 @@ const partialReadOnlyFilter = (editInRangeListener: EditInRangeListener) =>
     return tr;
   });
 
+// Helper function to get range ID at mouse position
+function getRangeIdAtPosition(view: EditorView, pos: number): string | null {
+  const state = view.state.field(partialReadonlyState);
+
+  for (const [rangeId, range] of state.ranges) {
+    try {
+      const from = view.state.doc.line(range.from.line + 1).from + range.from.ch;
+      const to = view.state.doc.line(range.to.line + 1).from + range.to.ch;
+
+      if (pos >= from && pos <= to) {
+        return rangeId;
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+// Mouse hover plugin to handle marker hover detection
+const hoverPlugin = ViewPlugin.fromClass(class implements PluginValue {
+  constructor(private view: EditorView) {
+    this.view.dom.addEventListener('mousemove', this.onMouseMove);
+    this.view.dom.addEventListener('mouseleave', this.onMouseLeave);
+  }
+
+  destroy() {
+    this.view.dom.removeEventListener('mousemove', this.onMouseMove);
+    this.view.dom.removeEventListener('mouseleave', this.onMouseLeave);
+  }
+
+  private onMouseMove = (event: MouseEvent) => {
+    const pos = this.view.posAtCoords({ x: event.clientX, y: event.clientY });
+    if (pos !== null) {
+      const rangeId = getRangeIdAtPosition(this.view, pos);
+      const state = this.view.state.field(partialReadonlyState);
+
+      if (rangeId !== state.highlightedRangeId) {
+        const effects = [];
+        if (state.highlightedRangeId) {
+          effects.push(unhighlightRangeEffect.of(state.highlightedRangeId));
+        }
+        if (rangeId) {
+          effects.push(highlightRangeEffect.of(rangeId));
+        }
+
+        if (effects.length > 0) {
+          this.view.dispatch({ effects });
+        }
+      }
+    }
+  }
+
+  private onMouseLeave = () => {
+    const state = this.view.state.field(partialReadonlyState);
+    if (state.highlightedRangeId) {
+      this.view.dispatch({
+        effects: unhighlightRangeEffect.of(state.highlightedRangeId)
+      });
+    }
+  }
+});
+
 // Update listener to handle selection changes and range updates
 const updateExtension = EditorView.updateListener.of((update) => {
-  // Handle selection changes for highlighting
+  // Handle selection changes for highlighting (only if not hovering)
   if (update.selectionSet) {
     const state = update.state.field(partialReadonlyState);
     const cursor = update.state.selection.main.head;
     const activeRangeId = isPositionInEditableRange(update.state, cursor);
 
+    // Only update selection-based highlighting if we're not already hovering a range
     if (activeRangeId !== state.highlightedRangeId) {
       const effects = [];
       if (state.highlightedRangeId) {
@@ -404,6 +479,7 @@ export function partialReadonly() {
       EditorView.editorAttributes.of({ class: PARTIAL_READ_ONLY_CLASSNAME }),
       editableRangeDecorations,
       updateExtension,
+      hoverPlugin,
       partialReadOnlyFilter((range, value) => {
         changeListener.forEach((listener) => listener(range, value));
       }),
