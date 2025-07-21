@@ -478,7 +478,8 @@
         this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
       handleRangeChange(ranges) {
-        const parsedData = parseRowDataForJsonViewer(ranges[0].getRows()[0].getData(), this.tableColumns)
+        const row = ranges[0].getRows()[0];
+        const parsedData = parseRowDataForJsonViewer(row.getData(), this.tableColumns)
         this.selectedRowData = this.dataToJson(parsedData, true)
         this.selectedRowPosition = row.getPosition()
         this.updateJsonViewerSidebar()
