@@ -16,7 +16,7 @@ extra:
   generator: false
 theme:
   logo: assets/bks.svg
-  favicon: assets/favicon.ico
+  favicon: assets/favicon-96x96.png
   name: material
   icon:
     repo: fontawesome/brands/github
