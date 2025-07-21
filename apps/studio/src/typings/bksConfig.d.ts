@@ -85,6 +85,11 @@ declare interface IBksConfig {
             previousPage: string;
         };
     };
+    plugins: {
+        "bks-ai-shell": {
+            enabled: boolean;
+        };
+    };
     ui: {
         export: {
             errorNoticeTimeout: number;
