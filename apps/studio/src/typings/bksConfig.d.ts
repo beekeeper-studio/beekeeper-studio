@@ -123,6 +123,11 @@ declare interface IBksConfig {
             previousPage: string;
         };
     };
+    plugins: {
+        "bks-ai-shell": {
+            enabled: boolean;
+        };
+    };
     security: {
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
