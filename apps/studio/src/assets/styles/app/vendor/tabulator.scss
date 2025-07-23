@@ -618,9 +618,10 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
 
 // * Applied when not dragging rows so frozen cells can be transparent
 // * Applied to draggable cells or cells that do not have a tabulator-field attribute
+// * Honestly, i forget what this is all about :D
 .tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen:not([tabulator-field]) {
   position: relative;
-  &:not(.edited) {
+  &:not(.edited):not(:has(.tabulator-row-handle-box)) {
     background-color: $query-editor-bg;
   }
   &::before {
