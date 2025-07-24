@@ -205,7 +205,6 @@ export default {
         ...this.internalActionsKeymap
       ]
 
-      console.log("keys", keys)
       return keys
     },
 

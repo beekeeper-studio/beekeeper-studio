@@ -133,7 +133,9 @@ export function extensions(config: ExtensionConfiguration) {
     crosshairCursor(),
     highlightActiveLine(),
     highlightSelectionMatches(),
-    search(),
+    search({
+      top: true,
+    }),
     keymap.of([
       ...closeBracketsKeymap,
       ...defaultKeymap,
