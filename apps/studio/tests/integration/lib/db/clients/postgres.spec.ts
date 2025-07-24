@@ -11,6 +11,7 @@ import { PostgresTestDriver } from './postgres/container'
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { DatabaseElement } from '../../../../../src/lib/db/types';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -125,6 +126,24 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           PRIMARY KEY (first_key, second_key)
         );
       `)
+
+      const jsonbCol = dockerTag === '9.3' ? '' : `,\n data jsonb NOT NULL DEFAULT '{"a": {"b": ["foo", "bar"]}}'::jsonb`;
+      const jsonbIndex = dockerTag === '9.3' ? '' : `CREATE INDEX expression_with_jsonb_operator ON test_indexes ((data #>> '{a,b,1}'));`
+
+      await util.knex.raw(`
+        CREATE TABLE public.test_indexes (
+          first_name text NOT NULL,
+          last_name text NOT NULL${jsonbCol}
+        );
+
+        CREATE INDEX single_column ON test_indexes (first_name);
+        CREATE INDEX multi_column ON test_indexes (first_name, last_name);
+        CREATE INDEX single_expression ON test_indexes (lower(first_name));
+        CREATE INDEX multi_expression ON test_indexes (lower(first_name), lower(last_name));
+        CREATE INDEX expression_with_comma ON test_indexes ((lower(first_name) || ', ' || lower(last_name)));
+        CREATE INDEX expression_with_double_quote ON test_indexes (('"' || first_name));
+        ${jsonbIndex}
+      `);
     })
 
     afterAll(async () => {
@@ -449,24 +468,24 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         }
       ])
     })
-    
+
     it("should filter foreign keys by schema when calling getTableKeys", async () => {
       // Create two schemas with the same table name in each
       await util.knex.raw(`
         CREATE SCHEMA schema_test_1;
         CREATE SCHEMA schema_test_2;
-        
+
         -- Create parent tables in both schemas
         CREATE TABLE schema_test_1.parent (
           id INTEGER PRIMARY KEY,
           name VARCHAR(100)
         );
-        
+
         CREATE TABLE schema_test_2.parent (
           id INTEGER PRIMARY KEY,
           name VARCHAR(100)
         );
-        
+
         -- Create child tables with the same name in both schemas
         CREATE TABLE schema_test_1.child (
           id INTEGER PRIMARY KEY,
@@ -474,7 +493,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           description VARCHAR(100),
           FOREIGN KEY (parent_id) REFERENCES schema_test_1.parent(id)
         );
-        
+
         CREATE TABLE schema_test_2.child (
           id INTEGER PRIMARY KEY,
           parent_id INTEGER,
@@ -482,30 +501,52 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           FOREIGN KEY (parent_id) REFERENCES schema_test_2.parent(id)
         );
       `);
-      
+
       // Get foreign keys from schema_test_1
       const keys1 = await util.connection.getTableKeys('child', 'schema_test_1');
-      
+
       // Get foreign keys from schema_test_2
       const keys2 = await util.connection.getTableKeys('child', 'schema_test_2');
-      
+
       // Verify foreign keys from schema_test_1 refer to the correct parent table
       expect(keys1.length).toBe(1);
       expect(keys1[0].fromSchema).toBe('schema_test_1');
       expect(keys1[0].fromTable).toBe('child');
       expect(keys1[0].toSchema).toBe('schema_test_1');
       expect(keys1[0].toTable).toBe('parent');
-      
+
       // Verify foreign keys from schema_test_2 refer to the correct parent table
       expect(keys2.length).toBe(1);
       expect(keys2[0].fromSchema).toBe('schema_test_2');
       expect(keys2[0].fromTable).toBe('child');
       expect(keys2[0].toSchema).toBe('schema_test_2');
       expect(keys2[0].toTable).toBe('parent');
-      
+
       // Verify no cross-schema references (schema_test_1.child shouldn't reference schema_test_2.parent)
       expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
       expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
+    })
+
+    // Regression test for #3260 "BUG: dropping a PostgreSQL schema results in error"
+    it("should be able to drop a schema without error", async () => {
+      // Skip in read-only mode since we can't create/drop schemas
+      if (util.connection.readOnlyMode) return;
+
+      const testSchemaName = 'test_schema_drop';
+
+      // Create a test schema
+      await util.knex.raw(`CREATE SCHEMA ${testSchemaName};`);
+      
+      // Verify the schema was created
+      const schemasBeforeDrop = await util.connection.listSchemas();
+      expect(schemasBeforeDrop).toContain(testSchemaName);
+
+      // Drop the schema using the dropElement method (this should not throw an error)
+      await util.connection.dropElement(testSchemaName, DatabaseElement.SCHEMA);
+
+      // Verify the schema was dropped
+      const schemasAfterDrop = await util.connection.listSchemas();
+      expect(schemasAfterDrop).not.toContain(testSchemaName);
     })
 
     it("should be able to define array column correctly", async () => {
@@ -520,6 +561,20 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(arrayColumn.array).toBeTruthy()
       expect(enumColumn.array).toBeFalsy()
       expect(enumArrayColumn.array).toBeTruthy()
+    })
+
+    it("should be able to list basic indexes", async () => {
+      const indexes = await util.connection.listTableIndexes('test_indexes')
+      expect(indexes.length).toBe(dockerTag === "9.3" ? 6 : 7)
+      expect(indexes.find((idx) => idx.name === 'single_column').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'multi_column').columns.length).toBe(2)
+      expect(indexes.find((idx) => idx.name === 'single_expression').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'multi_expression').columns.length).toBe(2)
+      expect(indexes.find((idx) => idx.name === 'expression_with_comma').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'expression_with_double_quote').columns.length).toBe(1)
+      if (dockerTag !== "9.3") {
+        expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
+      }
     })
 
     it("Should be able to add comments to columns and retrieve them", async () => {

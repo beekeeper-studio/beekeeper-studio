@@ -31,6 +31,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   fullscreen = () => send('fullscreen')
   about = () => send('about')
   devtools = () => send('devtools')
+  restart = () => send('restart')
   opendocs = () => send('opendocs')
   contactSupport = () => send('contactSupport')
   newWindow = () => send('newWindow')
@@ -58,4 +59,6 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   toggleBeta = (menuItem) => {
     send('toggleBeta', menuItem);
   }
+  updatePin = () => send('updatePin')
+  managePlugins = () => send("managePlugins")
 }

@@ -4,167 +4,161 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Beekeeper Studio is a cross-platform SQL editor and database manager, available for Linux, Mac, and Windows. It supports numerous database systems including PostgreSQL, MySQL, SQLite, SQL Server, and more.
+Beekeeper Studio is a cross-platform SQL editor and database manager built with Electron, Vue.js 2, and TypeScript. It supports 15+ databases and offers both community (GPLv3) and paid editions.
 
-## Project Structure
+## Architecture
 
-This is a monorepo organized as follows:
+### Monorepo Structure
+- **`apps/studio/`** - Main Electron application
+- **`apps/ui-kit/`** - Reusable UI components library (`@beekeeperstudio/ui-kit`)
+- **`apps/sqltools/`** - Currently unused workspace
 
-- `/apps/studio/` - The main Beekeeper Studio application
-- `/apps/ui-kit/` - Shared UI component library
-- `/shared/` - Shared code used across different packages
+### Technology Stack
+- **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management
+- **Desktop**: Electron 31.7.3
+- **Build**: ESBuild (main process), Vite (renderer process)
+- **Testing**: Jest, Playwright
+- **Styling**: SCSS with multiple themes
 
-### Main Application Structure
+### Key Entry Points
+All entrypoints are listed under src-commercial/entrypoints
+- **Main Process**: `src-commercial/entrypoints/main.ts` (Electron main)
+- **Renderer Process**: `src-commercial/entrypoints/renderer.ts` & `src/App.vue` (Vue application)
+- **Preload Script**: `src-commercial/entrypoints/preload.ts`
+- **Utility Process*: `src-commercial/entrypoints/utility.ts`
 
-Inside `/apps/studio/src/`:
+### Core Interfaces
+- **ConnectionInterface** - Database connection screen
+- **CoreInterface** - Main database interaction interface (when connected)
 
-- `src/background/` - Electron-side code (main process)
-- `src/components/` - Vue components
-- `src/lib/` - Core business logic and database drivers
-- `src/common/` - Shared utilities and interfaces
-- `src/store/` - Vuex store modules
-- `src/assets/` - Static assets (styles, fonts, etc.)
-- `src/frontend/` - Frontend-only helpers
-- `src/handlers/` - Message handlers for IPC communication
-- `src/migration/` - Database migration scripts for local app storage
+## Development Commands
 
-### Main Screens/Components
+**Package Manager**: This project uses Yarn (not npm).
 
-- `ConnectionInterface.vue` - The connection screen for connecting to databases
-- `CoreInterface.vue` - The main database interaction screen
-- App entry points:
-  - `background.js` - Electron main process
-  - `main.js` - Vue application entry point
+### Root-level Commands (from project root)
+```bash
+# Development
+yarn bks:dev              # Start development server (builds lib + starts electron)
+yarn electron:serve       # Alias for bks:dev
+
+# Building
+yarn bks:build            # Build complete app (lib + electron)
+yarn electron:build       # Alias for bks:build
+yarn lib:build            # Build UI kit library only
+yarn lib:dev              # Start UI kit in development/watch mode
+
+# Testing
+yarn test:unit            # Unit tests with Jest
+yarn test:integration     # Integration tests
+yarn test:e2e             # End-to-end tests with Playwright
+yarn test:ci              # CI-specific test configuration
+yarn test:codemirror      # CodeMirror-specific tests
+
+# Linting
+yarn all:lint             # Lint all workspaces
+```
+
+### Studio App Commands (from apps/studio/)
+```bash
+# Development
+yarn electron:serve       # Start development with hot reload
+yarn dev:esbuild          # Watch main process (ESBuild)
+yarn dev:vite             # Watch renderer process (Vite)
+
+# Building
+yarn build                # Build both main and renderer processes
+yarn build:esbuild        # Build main process only
+yarn build:vite           # Build renderer process only
+yarn electron:build       # Full production build with electron-builder
+
+# Test Build (Agents - use this to test the build, also good for CI)
+yarn run electron:build --linux AppImage  # Create Linux AppImage for testing
+
+# Testing
+yarn test:unit            # Unit tests
+yarn test:integration     # Integration tests
+yarn test:e2e             # E2E tests
+yarn lint                 # ESLint
+```
+
+## Code Architecture
+
+### Source Structure (apps/studio/src/)
+```
+components/          # Vue components organized by feature
+├── common/         # Shared/reusable components
+├── connection/     # Database connection forms
+├── editor/         # Query editor components
+├── export/         # Data export functionality
+├── sidebar/        # Sidebar navigation components
+└── ...
+
+lib/                # Core business logic
+├── db/            # Database clients and connection logic
+├── editor/        # Text editor functionality (CodeMirror)
+├── export/        # Data export functionality
+├── cloud/         # Cloud/workspace features
+└── ...
+
+background/         # Electron main process code
+common/            # Shared utilities and models
+store/             # Vuex store modules
+migration/         # Database migration scripts
+assets/            # Styles, fonts, images
+```
+
+### Database Client Architecture
+- Supports 15+ database types through unified client interface
+- Database-specific clients in `src/lib/db/`
+- Connection pooling and SSH tunneling support
+- TypeORM used for app's internal SQLite database
+
+### License Model
+- Community features: GPLv3 license
+- Paid features: Commercial EULA (code in `src-commercial/`)
+- Both editions share the same codebase
+
+### Plugin System
+- Extensible architecture for third-party plugins
+- Plugin manager with install/update capabilities
+- Plugin code in `src/services/plugin/`
+
+## Key Configuration Files
+
+- **ESBuild**: `apps/studio/esbuild.mjs` (main process build)
+- **Vite**: `apps/studio/vite.config.mjs` (renderer process build)
+- **TypeScript**: `apps/studio/tsconfig.json`
+- **Jest**: `apps/studio/jest.config.js` (plus specialized configs)
+- **Electron Builder**: `apps/studio/electron-builder-config.js`
+
+## Running Tests
+
+Always run tests from the appropriate directory:
+- From root: `yarn test:unit`, `yarn test:integration`, `yarn test:e2e`
+- From apps/studio: `yarn test:unit`, `yarn test:integration`, `yarn test:e2e`
+
+Test files are organized in `apps/studio/tests/`:
+- `unit/` - Unit tests
+- `integration/` - Integration tests
+- `e2e/` - End-to-end tests with Playwright
 
 ## Development Workflow
 
-### Building and Running
+1. **Setup**: `yarn install` from root
+2. **Start development**: `yarn bks:dev` (from root) or `yarn electron:serve` (from apps/studio)
+3. **Run tests**: `yarn test:unit` before committing
+4. **Build**: `yarn bks:build` for production build
 
-```bash
-# Install dependencies
-yarn install
+## Path Aliases (Vite/TypeScript)
 
-# Development mode
-yarn electron:serve
-
-# Build application
-yarn build
-
-# Build and package as an electron app
-yarn electron:build
+```typescript
+"@" -> "./src"
+"@commercial" -> "./src-commercial"
+"@shared" -> "./src/shared"
+"assets" -> "./src/assets"
+"@bksLogger" -> "./src/lib/log/rendererLogger"
 ```
 
-### Code Conventions
+## Database Support
 
-1. **TypeScript**
-   - All new code should be written in TypeScript
-   - Properly define interfaces for data structures
-   - Use proper type annotations for function parameters and return values
-
-2. **Vue Components**
-   - Use Vue Class Component style for new components
-   - Keep components small and focused on a single responsibility
-   - Prefer computed properties over methods for derived data
-   - Use props with proper validation
-
-3. **Error Handling**
-   - Use friendly error messages for common user errors
-   - Implement appropriate error handling patterns
-   - Use the FriendlyErrorHelper for database connection errors
-
-4. **Database Operations**
-   - Keep database-specific code in the appropriate client folders
-   - Handle transaction management properly
-
-5. **Styling**
-   - Use SCSS for styling
-   - Follow the existing naming conventions for CSS classes
-   - Use the existing variables in `_variables.scss`
-
-## Testing Structure
-
-### Test Types
-
-1. **Unit Tests**
-   - Located in `/apps/studio/tests/unit/`
-   - Focus on testing individual components, utilities, and functions in isolation
-   - Do not require a database or external dependencies
-   - Run with `yarn test:unit` or `cd apps/studio && yarn test:unit`
-   - For testing a specific file: `cd apps/studio && yarn test:unit path/to/test.spec.ts`
-
-2. **Integration Tests**
-   - Located in `/apps/studio/tests/integration/`
-   - Test interactions between components or with databases
-   - Require Docker containers for database testing (using testcontainers)
-   - Run with `yarn test:integration` or `cd apps/studio && yarn test:integration`
-   - For testing a specific file: `cd apps/studio && yarn test:integration path/to/test.spec.ts`
-
-3. **CodeMirror Tests**
-   - Specialized tests for the CodeMirror editor integration
-   - Run with `yarn test:codemirror` or `cd apps/studio && yarn test:codemirror`
-
-### Test Naming and Structure
-
-- Test files should be named with `.spec.js` or `.spec.ts` extension
-- Tests use Jest as the testing framework
-- Use `describe` blocks to group related tests
-- Use `it` or `test` for individual test cases
-- Mirror the source file structure in the test directory
-
-### Test Utilities
-
-- `/apps/studio/tests/lib/` contains testing utilities and helpers
-
-### Creating New Tests
-
-1. Match the directory structure of the source file you're testing
-2. Follow existing test patterns and conventions
-3. Use `expect()` assertions for validation
-4. Mock dependencies when necessary
-
-### Running Tests
-
-- Run all tests: `yarn test`
-- Run unit tests: `yarn test:unit`
-- Run integration tests: `yarn test:integration`
-- Run a specific test file: `yarn test:unit path/to/test.spec.ts`
-- Run tests with a specific name pattern: `yarn test:unit -t "pattern"`
-
-## Common Development Tasks
-
-### Linting and Type Checking
-
-```bash
-# Run linter
-cd apps/studio && yarn lint
-
-# Check TypeScript types
-tsc --noEmit
-```
-
-### Adding Support for a New Database
-
-1. Create a new client in `src/lib/db/clients/`
-2. Add the database to the list in `src/lib/db/types.ts`
-3. Create UI components for connection in `src/components/connection/`
-4. Update documentation and supported database list
-
-### IPC Communication Pattern
-
-Beekeeper Studio uses an IPC (Inter-Process Communication) pattern where:
-- Front-end components send messages via `this.$util.send('channel', payload)`
-- Background process handles these in the appropriate handler in `src/handlers/`
-- Responses are sent back to the front-end
-
-### Community vs Ultimate Features
-
-Beekeeper has community (free) and ultimate (paid) editions:
-- Community features are available to all users
-- Ultimate features require a license
-- Use `isUltimate` and `isUltimateType` checks for feature gating
-
-## Additional Resources
-
-- [Documentation](https://docs.beekeeperstudio.io)
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Code of Conduct](code_of_conduct.md)
+The app supports 15+ databases including PostgreSQL, MySQL, SQLite, SQL Server, Oracle, BigQuery, MongoDB, and more. Database-specific connection logic is in `src/components/connection/` with corresponding client implementations in `src/lib/db/`.

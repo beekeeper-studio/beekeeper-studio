@@ -21,6 +21,7 @@ export interface IMenuActionHandler {
   fullscreen: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  restart: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   contactSupport: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -42,4 +43,6 @@ export interface IMenuActionHandler {
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
 }

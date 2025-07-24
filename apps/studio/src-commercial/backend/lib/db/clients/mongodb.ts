@@ -1058,6 +1058,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       "=": "$eq",
       "!=": "$ne",
       "like": "$regex", // special case for regex
+      "not like": "$not", // special case for not regex
       "<": "$lt",
       "<=": "$lte",
       ">": "$gt",
@@ -1101,6 +1102,16 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           [filter.field]: {
             [mongoOp]: reg,
             $options: "i" // case-insensitive
+          }
+        };
+      } else if (filter.type === "not like" && _.isString(filter.value)) {
+        const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
+        condition = {
+          [filter.field]: {
+            $not: {
+              $regex: reg,
+              $options: "i" // case-insensitive
+            }
           }
         };
       } else if (filter.type.includes('is')) {

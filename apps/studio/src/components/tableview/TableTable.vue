@@ -86,6 +86,13 @@
         <div class="flex-center flex-middle flex">
           <a
             v-if="(this.page > 1)"
+            @click="page = 1"
+            v-tooltip="$bksConfig.keybindings.tableTable.firstPage"
+          ><i
+            class="material-icons"
+          >first_page</i></a>
+          <a
+            v-if="(this.page > 1)"
             @click="page = page - 1"
             v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
           ><i
@@ -96,9 +103,17 @@
             v-model="page"
           >
           <a
+            v-if="hasNextPage"
             @click="page = page + 1"
             v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
+          <a
+            v-if="hasNextPage && canJumpToLastPage"
+            @click="jumpToLastPage"
+            v-tooltip="$bksConfig.keybindings.tableTable.lastPage"
+          >
+            <i class="material-icons">last_page</i>
+          </a>
         </div>
       </div>
 
@@ -319,7 +334,7 @@ import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import { ExpandablePath } from '@/lib/data/jsonViewer'
+import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
@@ -340,6 +355,7 @@ export default Vue.extend({
       columnsSet: false,
       tabulator: null,
       loading: false,
+      hasNextPage: false,
 
       // table data
       data: null, // array of data
@@ -382,6 +398,10 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    canJumpToLastPage() {
+      const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+      return this.$bksConfig.db[dbType].allowSkipToLastPage;
+    },
     limit() {
       return this.$bksConfig.ui.tableTable.pageSize
     },
@@ -442,7 +462,9 @@ export default Vue.extend({
         'general.cloneSelection': this.cloneSelection.bind(this),
         'general.deleteSelection': this.deleteTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
+        'tableTable.lastPage': this.navigatePage.bind(this, 'last'),
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
+        'tableTable.firstPage': this.navigatePage.bind(this, 'first'),
         'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
       })
     },
@@ -904,11 +926,18 @@ export default Vue.extend({
       log.debug('tab pressed')
 
     },
-    navigatePage (dir: 'next' | 'prev') {
+    async navigatePage (dir: 'next' | 'prev' | 'first' | 'last') {
       const focusingTable = this.tabulator.element.contains(document.activeElement)
       if (!focusingTable) {
-        if (dir === 'next') this.page++
-        else this.page--
+        if (dir === 'next') {
+          this.page++
+        } else if (dir === 'prev') {
+          this.page--
+        } else if (dir === 'first') {
+          this.page = 1
+        } else if (dir === 'last') {
+          await this.jumpToLastPage()
+        }
       }
     },
     copySelection() {
@@ -1330,7 +1359,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
@@ -1662,7 +1691,7 @@ export default Vue.extend({
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
-              this.limit,
+              this.limit + 1, // +1 to check if there is a next page
               orderBy,
               filters,
               this.table.schema,
@@ -1682,6 +1711,13 @@ export default Vue.extend({
             //  // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
             //  { allowFilter: this.isCassandra }
             //);
+
+            this.hasNextPage = response.result.length > this.limit
+
+            if (this.hasNextPage) {
+              response.result.pop()
+            }
+            this.data = response.result
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1748,6 +1784,18 @@ export default Vue.extend({
     clearQueryError() {
       this.queryError = null
     },
+    async jumpToLastPage() {
+      try {
+        const totalRows = await this.connection.getTableLength(this.table.name, this.table.schema); // -> SELECT (*) FROM table
+
+        const lastPage = Math.ceil(totalRows / this.limit);
+
+        this.page = lastPage;
+
+      } catch (error) {
+        console.error("Error jumping to the last page:", error);
+      }
+    },
     async getTableKeys() {
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
@@ -1779,9 +1827,13 @@ export default Vue.extend({
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
       this.selectedRow = row
+
+      // Clean the data first
+      let cleanedData = this.$bks.cleanData(data, this.tableColumns)
+
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
-      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
