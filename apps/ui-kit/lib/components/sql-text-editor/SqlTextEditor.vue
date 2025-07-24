@@ -15,6 +15,15 @@ import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";
 
 export default Vue.extend({
+  data() {
+    return {
+      internalActionsKeymap: [{
+        key: "Mod-Shift-f",
+        // @ts-ignore this does exist ts you moron
+        run: this.formatSql
+      }]
+    }
+  },
   mixins: [mixin, ProxyEmit],
 
   props,
@@ -82,13 +91,6 @@ export default Vue.extend({
 
   mounted() {
     this.internalContextMenuItems = this.contextMenuItemsModifier;
-
-    this.internalActionsKeymap = [{
-      key: "Mod-F",
-      run: () => {
-        this.formatSql
-      }
-    }]
   },
 });
 </script>
