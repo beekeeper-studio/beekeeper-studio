@@ -256,12 +256,7 @@ export default {
             id: "text-paste",
             handler: async () => {
               const clipboard = await readClipboard();
-              if (this.textEditor.getSelection()) {
-                this.textEditor.replaceSelection(clipboard, "around");
-              } else {
-                const cursor = this.textEditor.getCursor();
-                this.textEditor.replaceRange(clipboard, cursor);
-              }
+              this.textEditor.replaceSelection(clipboard);
             },
             shortcut: "Control+V",
             write: true,

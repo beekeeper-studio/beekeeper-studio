@@ -251,6 +251,16 @@ export class TextEditor {
     unfoldAll(this.view);
   }
 
+  replaceSelection(value: string) {
+    this.view.dispatch({
+      changes: {
+        from: this.view.state.selection.main.from,
+        to: this.view.state.selection.main.to,
+        insert: value,
+      },
+    });
+  }
+
   destroy() {
     this.view.destroy();
   }
