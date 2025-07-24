@@ -71,6 +71,7 @@ type Configuration = ExtensionConfiguration & {
   initialValue?: string;
   focus?: boolean;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);
+  actionsKeymap?: any[]
 }
 
 type ConfigurationWithLS = Configuration & {
@@ -89,6 +90,7 @@ export interface ExtensionConfiguration {
   markers?: EditorMarker[];
   lineGutters?: LineGutter[];
   foldGutters?: boolean;
+  actionsKeymap?: any[];
 }
 
 export type LanguageId = "json" | "html" | "javascript";
