@@ -39,7 +39,7 @@ export default defineConfig({
       ],
       input: {
         style: resolve(__dirname, "lib/style.scss"),
-        index: resolve(__dirname, "lib/components/define.ts"),
+        index: resolve(__dirname, "lib/index.ts"),
         table: resolve(__dirname, "lib/components/table/define.ts"),
         "entity-list": resolve(
           __dirname,
