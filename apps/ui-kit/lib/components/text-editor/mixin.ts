@@ -290,7 +290,7 @@ export default {
             handler: () => {
               this.textEditor.execCommand("find");
             },
-            shortcut: "Control+R",
+            shortcut: "Control+F",
           }
         ],
         event,
