@@ -283,7 +283,7 @@ export default {
             label: "Find & Replace",
             id: "text-find",
             handler: () => {
-              this.textEditor.execCommand("find");
+              this.textEditor.execCommand("findAndReplace");
             },
             shortcut: "Control+F",
           }
