@@ -1,7 +1,7 @@
 import { BksConfig, BksConfigSource } from '@/common/bksConfig/BksConfigProvider';
 import { IPlatformInfo } from '@/common/IPlatformInfo';
 import { WebPluginManager } from '@/services/plugin/web';
-import { api } from '../../src-commercial/entrypoints/preload';
+import { api } from '../preload';
 
 declare global {
   interface Window {
