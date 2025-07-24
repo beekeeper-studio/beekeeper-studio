@@ -8,7 +8,6 @@ import props from "./props";
 import { SqlTextEditor } from "./SqlTextEditor";
 import { Entity } from "../types";
 import {
-  divider,
   InternalContextItem,
 } from "../context-menu";
 import { format } from "sql-formatter";
@@ -61,17 +60,14 @@ export default Vue.extend({
       }
     },
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
-      const pivot = items.findIndex((o) => o.id === "find");
       return [
-        ...items.slice(0, pivot),
+        ...items,
         {
           label: `Format Query`,
           id: "text-format",
           handler: this.formatSql,
-          shortcut: "Shift+F",
-        },
-        divider,
-        ...items.slice(pivot),
+          shortcut: "Control+Shift+F",
+        }
       ];
     },
 
@@ -86,6 +82,13 @@ export default Vue.extend({
 
   mounted() {
     this.internalContextMenuItems = this.contextMenuItemsModifier;
+
+    this.internalActionsKeymap = [{
+      key: "Mod-F",
+      run: () => {
+        this.formatSql
+      }
+    }]
   },
 });
 </script>
