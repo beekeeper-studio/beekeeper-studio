@@ -232,8 +232,9 @@ function testWith(dockerTag: string, readonly: boolean) {
 
       await util.knex.raw(query);
 
-      const script = await util.connection.getRoutineCreateScript(routineName);
-      expect(script.length).toBeGreaterThan(4000);
+      const result = await util.connection.getRoutineCreateScript(routineName);
+      const scriptStr = Array.isArray(result) ? result[0] : result;
+      expect(scriptStr.length).toBeGreaterThan(4000);
     })
   })
 }
