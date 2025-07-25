@@ -7,6 +7,7 @@ import { TableFilter, TableOrView, Routine, TableColumn } from '@/lib/db/models'
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
 import type { Stream } from 'stream';
+import type { Dialect } from '../shared/lib/dialects/models';
 
 export function camelCaseObjectKeys(data) {
   if (_.isPlainObject(data)) {
@@ -322,3 +323,170 @@ export function toRegexSafe(input: string) {
     return null;
   }
 }
+
+type Range = { start: number, end: number };
+
+export function extractVariablesAndCleanQuery(query: string) {
+  const variables: Record<string, string> = {};
+
+  // Expression for valid lines: -- %var% = valor
+  const linePattern = /^[ \t]*--[ \t]*%(\w+)%[ \t]*=[ \t]*(.+)$/gm;
+
+  // Expression for invalid lines: -- %var% = (no value)
+  const invalidLinePattern = /^\s*--\s*%(.*?)%\s*=\s*$/gm;
+  const invalidMatch = query.match(invalidLinePattern);
+  if (invalidMatch) {
+    throw new Error(`Malformed variable: "${invalidMatch[0]}"`);
+  }
+
+  let match;
+  while ((match = linePattern.exec(query)) !== null) {
+    const [_, name, value] = match;
+    if (!name || !value || value.trim() === '') {
+      throw new Error(`Malformed variable: "${match[0]}"`);
+    }
+    variables[name] = value.trim();
+  }
+
+   // Bloco /* VARS: */
+  const blockPattern = /\/\*\s*VARS:(.*?)\*\//gs;
+  let blockMatch;
+  while ((blockMatch = blockPattern.exec(query)) !== null) {
+    const blockContent = blockMatch[1];
+    const lines = blockContent.split(/\r?\n/);
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue; // Ignora linhas vazias
+
+      const match = trimmed.match(/^%(\w+)%\s*=\s*(.+)$/);
+      if (!match || match[2].trim() === '') {
+        throw new Error(`Malformed variable: "${line}"`);
+      }
+
+      const [, name, value] = match;
+      variables[name] = value.trim();
+    }
+  }
+
+  // Remove variable definitions from the query
+  const cleanedQuery = query
+    .replace(linePattern, '')
+    .replace(blockPattern, '')
+    .trim();
+
+  return { variables, cleanedQuery };
+}
+
+export function substituteVariables(query: string, variables: Record<string, string>, dialect?: string): string {
+  return substituteVariablesSafely(query, variables, dialect);
+}
+
+export function substituteVariablesSafely(query: string, variables: Record<string, string>, dialect: string = 'generic'): string {
+  const stringRanges = getStringLiteralRanges(query, dialect);
+  let result = '';
+  let i = 0;
+
+  while (i < query.length) {
+    const variableMatch = query.slice(i).match(/^%(\w+)%/);
+
+    if (variableMatch && !isInString(i, stringRanges)) {
+      const varName = variableMatch[1];
+      const rawValue = variables[varName];
+
+      if (rawValue === undefined) {
+        // Variable not defined, leave it unchanged
+        result += `%${varName}%`;
+        i += varName.length + 2;
+        continue;
+      }
+
+      let value = rawValue.trim();
+      let isJSON = false;
+
+      try {
+        const parsed = JSON.parse(value);
+        isJSON = typeof parsed === 'object';
+      } catch {
+        // not JSON
+      }
+
+      const isList = value.startsWith('(') && value.endsWith(')');
+      const delimiters = getStringDelimitersForDialect(dialect as Dialect);
+      const isQuoted = delimiters.some(delim =>
+        value.startsWith(delim) && value.endsWith(delim)
+      );     
+      const isNull = value.toLowerCase() === 'null';
+      const isNumber = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(value);
+
+      if (!isJSON && !isList && !isQuoted && !isNull && !isNumber) {
+        value = `'${value}'`;
+      }
+
+      result += value;
+      i += varName.length + 2;
+    } else {
+      result += query[i];
+      i++;
+    }
+  }
+
+  return result;
+}
+
+export function getStringLiteralRanges(query: string, dialect: string): Range[] {
+  const ranges: Range[] = [];
+
+  const addMatches = (regex: RegExp) => {
+    let match;
+    while ((match = regex.exec(query)) !== null) {
+      ranges.push({ start: match.index, end: match.index + match[0].length });
+    }
+  };
+
+ if (dialect === 'postgres') {
+    // Single quotes, dollar quotes, and E-prefixed escaped strings
+    addMatches(/'([^']|'')*'/g);         // 'text'
+    addMatches(/\$\$[^]*?\$\$/g);        // $$dollar-quoted$$
+    addMatches(/E'([^'\\]|\\.)*'/g);     // E'text\n'
+  } else if (dialect === 'mysql') {
+    addMatches(/'([^']|'')*'/g);         // 'text'
+    addMatches(/"([^"]|"")*"/g);         // "text"
+  } else if (dialect === 'sqlite') {
+    addMatches(/'([^']|'')*'/g);         
+  } else {
+    // Fallback: just standard single-quoted strings
+    addMatches(/'([^']|'')*'/g);
+  }
+
+  return ranges;
+}
+
+export function isInString(index: number, ranges: Range[]): boolean {
+  return ranges.some(r => index >= r.start && index < r.end);
+}
+
+export function getStringDelimitersForDialect(dialect: Dialect): string[] {
+  switch (dialect) {
+    case 'postgresql':
+    case 'redshift':
+      return [`'`, `$$`]; 
+    case 'mysql':
+    case 'sqlite':
+    case 'sqlserver':
+    case 'oracle':
+    case 'firebird':
+    case 'duckdb':
+    case 'sqlanywhere':
+    case 'cassandra':
+      return [`'`]; 
+    case 'bigquery':
+    case 'clickhouse':
+      return [`'`, `"`]; 
+    case 'mongodb':
+      return [`"`]; // JSON style
+    default:
+      return [`'`, `"`]; // Safe Fallback 
+  }
+}
+

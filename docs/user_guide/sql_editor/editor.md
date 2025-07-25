@@ -51,7 +51,37 @@ select * from table where foo = $1 and bar = $2
 ```
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-13.gif)
 
+## Inline Variables
 
+If you're writing queries that you want to test and tweak frequently, Beekeeper Studio supports *inline variables* that make your queries more flexible and readable.
+
+Inline variables allow you to define temporary values that are substituted before the query is run, without using SQL engine-specific parameter syntax.
+
+### Defining Inline Variables
+
+You can define inline variables in two ways:
+
+#### 1. Line Comments (`--`)
+
+```sql
+-- %limit% = 10
+-- %status% = 'active'
+
+SELECT * FROM users WHERE status = %status% LIMIT %limit%;
+```
+#### 2. Block Comment (`/* VARS: */`)
+
+Alternatively, you can define multiple variables using a single block comment. This helps reduce clutter when working with many variables:
+
+```sql
+/* VARS:
+%limit% = 10
+%status% = 'active'
+%sort% = 'name'
+*/
+
+SELECT * FROM users WHERE status = %status% ORDER BY %sort% LIMIT %limit%;
+```
 ## Downloading Results
 
 When you run a query, the results will appear right underneath the SQL editor, simple!

@@ -359,6 +359,8 @@
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+  import { extractVariablesAndCleanQuery, substituteVariables } from '@/common/utils'
+
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -895,16 +897,29 @@
         if(this.running && this.runningQuery){
           await this.cancelQuery();
         }
-
+        let variables, cleanedQuery, queryWithVariables;
+          try {
+            const extracted = extractVariablesAndCleanQuery(rawQuery);
+            variables = extracted.variables;
+            cleanedQuery = extracted.cleanedQuery;
+            queryWithVariables = substituteVariables(cleanedQuery, variables, this.identifyDialect);
+          } catch (err) {
+            this.error = err instanceof Error ? err.message : String(err);
+            this.$bksNotify?.error?.(`Error preparing query: ${this.error}`);
+            this.results = [];
+            this.running = false;
+            this.tab.isRunning = false;
+            return;
+          }
         this.tab.isRunning = true
         this.running = true
         this.error = null
-        this.queryForExecution = rawQuery
+        this.queryForExecution = queryWithVariables;
         this.results = []
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+          identification = identify(queryWithVariables, { strict: false, dialect: this.identifyDialect, identifyTables: true })
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -915,7 +930,7 @@
             return
           }
 
-          const query = this.deparameterizedQuery
+          const query = this.queryForExecution;
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
