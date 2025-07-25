@@ -48,6 +48,7 @@ export default class extends DefaultMenu {
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
         this.menuItems.about,
+        this.menuItems.restart,
       ]
     };
 

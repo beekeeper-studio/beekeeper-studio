@@ -17,8 +17,8 @@
     "lib/components/types.ts",
     "lib/components/table/types.ts",
     "lib/components/entity-list/types.ts",
-    "lib/components/text-editor/v2/types.ts",
-    "lib/components/sql-text-editor/v2/types.ts",
+    "lib/components/text-editor/types.ts",
+    "lib/components/sql-text-editor/types.ts",
     "lib/components/data-editor/types.ts",
     "lib/components/surreal-text-editor/types.ts"
   ],

@@ -108,7 +108,7 @@
             v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
           <a
-            v-if="hasNextPage"
+            v-if="hasNextPage && canJumpToLastPage"
             @click="jumpToLastPage"
             v-tooltip="$bksConfig.keybindings.tableTable.lastPage"
           >
@@ -398,6 +398,10 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    canJumpToLastPage() {
+      const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+      return this.$bksConfig.db[dbType].allowSkipToLastPage;
+    },
     limit() {
       return this.$bksConfig.ui.tableTable.pageSize
     },
