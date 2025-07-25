@@ -42,13 +42,13 @@ export class SurrealDBCursor extends BeeCursor {
     try {
       // Modify the query to add LIMIT and START clauses
       const paginatedQuery = this.addPaginationToQuery(this.options.query, this.offset, this.chunkSize);
-      
-      const result = await this.options.conn.query(paginatedQuery);
-      
+
+      const result = await this.client.query(paginatedQuery);
+
       // Extract rows from the result
       const queryResult = result[0];
       const rows = Array.isArray(queryResult) ? queryResult : [queryResult];
-      
+
       // Convert to array format (similar to other cursor implementations)
       const arrayRows: any[][] = rows.map(row => {
         if (typeof row === 'object' && row !== null) {
@@ -79,7 +79,7 @@ export class SurrealDBCursor extends BeeCursor {
   private addPaginationToQuery(query: string, offset: number, limit: number): string {
     // Remove existing LIMIT and START clauses if they exist
     const cleanQuery = query.replace(/\s+LIMIT\s+\d+/gi, '').replace(/\s+START\s+\d+/gi, '');
-    
+
     // Add our pagination
     let paginatedQuery = cleanQuery;
     if (limit > 0) {
@@ -88,7 +88,7 @@ export class SurrealDBCursor extends BeeCursor {
         paginatedQuery += ` START ${offset}`;
       }
     }
-    
+
     return paginatedQuery;
   }
 }

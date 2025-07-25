@@ -131,7 +131,7 @@ describe('SurrealDB Integration Tests', () => {
     it('should list tables', async () => {
       const tables: TableOrView[] = await connection.listTables()
       const tableNames = tables.map(t => t.name)
-      
+
       expect(tables.length).toBeGreaterThanOrEqual(3)
       expect(tableNames).toContain('person')
       expect(tableNames).toContain('product')
@@ -141,7 +141,7 @@ describe('SurrealDB Integration Tests', () => {
     it('should list table columns', async () => {
       const columns = await connection.listTableColumns('person')
       const columnNames = columns.map(c => c.columnName)
-      
+
       expect(columns.length).toBeGreaterThan(0)
       expect(columnNames).toContain('id')
       expect(columnNames).toContain('name')
@@ -152,22 +152,22 @@ describe('SurrealDB Integration Tests', () => {
     it('should list table indexes', async () => {
       const indexes = await connection.listTableIndexes('person')
       const indexNames = indexes.map(i => i.name)
-      
+
       expect(indexes.length).toBeGreaterThan(0)
       expect(indexNames).toContain('idx_person_email')
-      
+
       const emailIndex = indexes.find(i => i.name === 'idx_person_email')
       expect(emailIndex.unique).toBe(true)
     })
 
     it('should get table keys (relationships)', async () => {
       const keys = await connection.getTableKeys('orders')
-      
+
       expect(keys.length).toBeGreaterThan(0)
-      
+
       const customerKey = keys.find(k => k.fromColumn === 'customer')
       const productKey = keys.find(k => k.fromColumn === 'product')
-      
+
       expect(customerKey).toBeDefined()
       expect(customerKey.toTable).toBe('person')
       expect(productKey).toBeDefined()
@@ -176,7 +176,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should get table properties', async () => {
       const properties = await connection.getTableProperties('person')
-      
+
       expect(properties).toBeDefined()
       expect(properties.size).toBeGreaterThan(0)
       expect(properties.indexes).toBeDefined()
@@ -185,7 +185,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should get table create script', async () => {
       const script = await connection.getTableCreateScript('person')
-      
+
       expect(script).toBeTruthy()
       expect(script).toContain('DEFINE')
       expect(script).toContain('person')
@@ -195,7 +195,7 @@ describe('SurrealDB Integration Tests', () => {
   describe('Data Retrieval', () => {
     it('should retrieve data from a table', async () => {
       const result = await connection.selectTop('person', 0, 10, [], [])
-      
+
       expect(result.result).toBeDefined()
       expect(result.result.length).toBe(5)
       expect(result.fields).toBeDefined()
@@ -204,7 +204,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should handle record IDs properly', async () => {
       const result = await connection.selectTop('person', 0, 5, [], [])
-      
+
       expect(result.result.length).toBeGreaterThan(0)
 
       const RECORD_ID_REGEX = /^(?:[a-zA-Z_][a-zA-Z0-9_\-]*|⟨[^⟩]+⟩):.+$/;
@@ -220,7 +220,7 @@ describe('SurrealDB Integration Tests', () => {
       let result = await connection.selectTop('person', 0, 10, [{ field: 'age', dir: 'ASC' }], [])
       const agesAsc = result.result.map((r: any) => r.age)
       expect(agesAsc).toEqual([25, 30, 35, 40, 45])
-      
+
       // Test descending sort
       result = await connection.selectTop('person', 0, 10, [{ field: 'age', dir: 'DESC' }], [])
       const agesDesc = result.result.map((r: any) => r.age)
@@ -231,11 +231,11 @@ describe('SurrealDB Integration Tests', () => {
       // Page 1 (first 3 items)
       let result = await connection.selectTop('person', 0, 3, [{ field: 'age', dir: 'ASC' }], [])
       expect(result.result.length).toBe(3)
-      
+
       // Page 2 (next 2 items)
       result = await connection.selectTop('person', 3, 2, [{ field: 'age', dir: 'ASC' }], [])
       expect(result.result.length).toBe(2)
-      
+
       // Verify different pages return different ages
       const ages = result.result.map((r: any) => r.age)
       expect(ages).toEqual([40, 45])
@@ -246,7 +246,7 @@ describe('SurrealDB Integration Tests', () => {
       let result = await connection.selectTop('person', 0, 5, [], [])
       const allColumns = Object.keys(result.result[0])
       expect(allColumns.length).toBeGreaterThan(2)
-      
+
       // Get only specific columns
       result = await connection.selectTop('person', 0, 5, [], [], null, ['name', 'age'])
       const filteredColumns = Object.keys(result.result[0])
@@ -258,7 +258,7 @@ describe('SurrealDB Integration Tests', () => {
       let result = await connection.selectTop('person', 0, 10, [], [{ field: 'name', type: '=', value: 'Alice Smith' }])
       expect(result.result.length).toBe(1)
       expect(result.result[0].name).toBe('Alice Smith')
-      
+
       // Filter by age
       result = await connection.selectTop('person', 0, 10, [], [{ field: 'age', type: '>', value: '30' }])
       expect(result.result.length).toBe(3) // Charlie (35), David (40), Eve (45)
@@ -267,7 +267,7 @@ describe('SurrealDB Integration Tests', () => {
     it('should execute SurrealDB queries', async () => {
       const query = await connection.query('SELECT * FROM person WHERE age > 30')
       const result = await query.execute()
-      
+
       expect(result).toBeDefined()
       expect(result.length).toBeGreaterThan(0)
       expect(result[0].rows).toBeDefined()
@@ -282,7 +282,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should insert data', async () => {
       const testTable = getTestTableName('insert')
-      
+
       try {
         // Create test table
         await connection.executeQuery(`
@@ -291,13 +291,13 @@ describe('SurrealDB Integration Tests', () => {
           DEFINE FIELD name ON TABLE ${testTable} TYPE string;
           DEFINE FIELD value ON TABLE ${testTable} TYPE number;
         `)
-        
+
         const testData = [
           { name: 'Test 1', value: 100 },
           { name: 'Test 2', value: 200 },
           { name: 'Test 3', value: 300 }
         ]
-        
+
         // Insert data
         await connection.executeApplyChanges({
           updates: [],
@@ -307,11 +307,11 @@ describe('SurrealDB Integration Tests', () => {
             data: testData
           }]
         })
-        
+
         // Verify data was inserted
         const result = await connection.selectTop(testTable, 0, 10, [], [])
         expect(result.result.length).toBe(3)
-        
+
         const names = result.result.map((r: any) => r.name)
         expect(names).toContain('Test 1')
         expect(names).toContain('Test 2')
@@ -328,7 +328,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should update data', async () => {
       const testTable = getTestTableName('update')
-      
+
       try {
         // Create test table and insert data
         await connection.executeQuery(`
@@ -337,11 +337,11 @@ describe('SurrealDB Integration Tests', () => {
           DEFINE FIELD name ON TABLE ${testTable} TYPE string;
           DEFINE FIELD status ON TABLE ${testTable} TYPE string;
         `)
-        
+
         await connection.executeQuery(`
           CREATE ${testTable}:test1 SET name = 'Update Test', status = 'pending';
         `)
-        
+
         // Update the record
         await connection.executeApplyChanges({
           inserts: [],
@@ -353,7 +353,7 @@ describe('SurrealDB Integration Tests', () => {
             primaryKeys: [{ column: 'id', value: `${testTable}:test1` }]
           }]
         })
-        
+
         // Verify the update
         const result = await connection.selectTop(testTable, 0, 10, [], [])
         expect(result.result.length).toBe(1)
@@ -371,7 +371,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should delete data', async () => {
       const testTable = getTestTableName('delete')
-      
+
       try {
         // Create test table and insert data
         await connection.executeQuery(`
@@ -379,12 +379,12 @@ describe('SurrealDB Integration Tests', () => {
           DEFINE FIELD id ON TABLE ${testTable} TYPE record<${testTable}>;
           DEFINE FIELD name ON TABLE ${testTable} TYPE string;
         `)
-        
+
         await connection.executeQuery(`
           CREATE ${testTable}:test1 SET name = 'Delete Test 1';
           CREATE ${testTable}:test2 SET name = 'Delete Test 2';
         `)
-        
+
         // Delete one record
         await connection.executeApplyChanges({
           updates: [],
@@ -394,7 +394,7 @@ describe('SurrealDB Integration Tests', () => {
             primaryKeys: [{ column: 'id', value: `${testTable}:test1` }]
           }]
         })
-        
+
         // Verify deletion
         const result = await connection.selectTop(testTable, 0, 10, [], [])
         expect(result.result.length).toBe(1)
@@ -411,7 +411,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should handle mixed operations (insert, update, delete)', async () => {
       const testTable = getTestTableName('mixed')
-      
+
       try {
         // Create test table
         await connection.executeQuery(`
@@ -420,14 +420,14 @@ describe('SurrealDB Integration Tests', () => {
           DEFINE FIELD name ON TABLE ${testTable} TYPE string;
           DEFINE FIELD value ON TABLE ${testTable} TYPE number;
         `)
-        
+
         // Insert initial data
         await connection.executeQuery(`
           CREATE ${testTable}:existing SET name = 'Existing', value = 100;
           CREATE ${testTable}:toupdate SET name = 'To Update', value = 200;
           CREATE ${testTable}:todelete SET name = 'To Delete', value = 300;
         `)
-        
+
         // Apply mixed changes
         await connection.executeApplyChanges({
           inserts: [{
@@ -445,17 +445,17 @@ describe('SurrealDB Integration Tests', () => {
             primaryKeys: [{ column: 'id', value: `${testTable}:todelete` }]
           }]
         })
-        
+
         // Verify results
         const result = await connection.selectTop(testTable, 0, 10, [], [])
         expect(result.result.length).toBe(3) // existing + updated + new
-        
+
         const names = result.result.map((r: any) => r.name)
         expect(names).toContain('Existing')
         expect(names).toContain('To Update')
         expect(names).toContain('New Record')
         expect(names).not.toContain('To Delete')
-        
+
         // Check updated value
         const updatedRecord = result.result.find((r: any) => r.name === 'To Update')
         expect(updatedRecord.value).toBe(250)
@@ -472,35 +472,35 @@ describe('SurrealDB Integration Tests', () => {
 
   describe('Schema Operations', () => {
     it('should test change builder functionality', async () => {
-      const builder = connection.getBuilder('person')
+      const builder = await connection.getBuilder('person')
       expect(builder).toBeDefined()
-      
+
       // Test basic identifier wrapping
       expect(builder.wrapIdentifier('test')).toBe('`test`')
       expect(builder.wrapIdentifier('test[0]')).toBe('`test`[0]')
-      
+
       // Test SurrealDB-specific operations
       const addFieldSQL = builder.addColumn({
         columnName: 'new_field',
         dataType: 'string',
         nullable: true
       })
-      
+
       expect(addFieldSQL).toContain('DEFINE FIELD')
       expect(addFieldSQL).toContain('new_field')
       expect(addFieldSQL).toContain('string')
-      
+
       const dropFieldSQL = builder.dropColumn('old_field')
       expect(dropFieldSQL).toContain('REMOVE FIELD')
       expect(dropFieldSQL).toContain('old_field')
-      
+
       // Test index creation
       const createIndexSQL = builder.singleIndex({
         name: 'test_index',
         columns: [{ name: 'name', order: 'ASC' }],
         unique: false
       })
-      
+
       expect(createIndexSQL).toContain('DEFINE INDEX')
       expect(createIndexSQL).toContain('test_index')
       expect(createIndexSQL).toContain('name')
@@ -508,7 +508,7 @@ describe('SurrealDB Integration Tests', () => {
 
     it('should handle SurrealDB-specific data types', async () => {
       const testTable = `complex_data_${Date.now()}`
-      
+
       try {
         await connection.executeQuery(`
           DEFINE TABLE ${testTable} SCHEMAFULL;
@@ -517,12 +517,12 @@ describe('SurrealDB Integration Tests', () => {
           DEFINE FIELD tags ON TABLE ${testTable} TYPE array<string>;
           DEFINE FIELD coordinates ON TABLE ${testTable} TYPE geometry<point>;
         `)
-        
+
         const columns = await connection.listTableColumns(testTable)
         const metadataCol = columns.find(c => c.columnName === 'metadata')
         const tagsCol = columns.find(c => c.columnName === 'tags')
         const coordinatesCol = columns.find(c => c.columnName === 'coordinates')
-        
+
         expect(metadataCol).toBeDefined()
         expect(metadataCol.dataType).toBe('object')
         expect(tagsCol).toBeDefined()
@@ -543,10 +543,10 @@ describe('SurrealDB Integration Tests', () => {
   describe('Database Operations', () => {
     it('should create and list databases', async () => {
       const dbName = `test_db_${Date.now()}`
-      
+
       try {
         await connection.createDatabase(dbName, '', '')
-        
+
         const databases = await connection.listDatabases()
         expect(databases).toContain(dbName)
       } finally {
@@ -568,42 +568,45 @@ describe('SurrealDB Integration Tests', () => {
   describe('Advanced Features', () => {
     it('should handle streaming data', async () => {
       const stream = await connection.selectTopStream('person', [], [], 2)
-      
+
+
       expect(stream.totalRows).toBeGreaterThan(0)
       expect(stream.columns).toBeDefined()
       expect(stream.cursor).toBeDefined()
-      
+
+      await stream.cursor.start()
       // Read first chunk
       const chunk1 = await stream.cursor.read()
-      expect(chunk1.rows.length).toBeLessThanOrEqual(2)
-      
+      expect(chunk1.length).toBeLessThanOrEqual(2)
+
       // Read second chunk
       const chunk2 = await stream.cursor.read()
-      expect(chunk2.rows.length).toBeLessThanOrEqual(2)
-      
+      expect(chunk2.length).toBeLessThanOrEqual(2)
+
       await stream.cursor.close()
     })
 
     it('should handle query streaming', async () => {
       const stream = await connection.queryStream('SELECT * FROM person WHERE age > 30', 1)
-      
+
       expect(stream.columns).toBeDefined()
       expect(stream.cursor).toBeDefined()
-      
+
+      await stream.cursor.start()
       // Read chunks
       const chunk = await stream.cursor.read()
-      expect(chunk.rows.length).toBeLessThanOrEqual(1)
-      
+      expect(chunk.length).toBeLessThanOrEqual(1)
+
       await stream.cursor.close()
     })
 
     it('should handle complex SurrealDB queries', async () => {
       const query = await connection.query(`
-        SELECT name, age, 
+        SELECT name, age,
                (SELECT name FROM product WHERE id = $parent.customer) as customer_name
         FROM orders
       `)
-      
+
       const result = await query.execute()
       expect(result).toBeDefined()
       expect(result.length).toBeGreaterThan(0)
