@@ -9,6 +9,7 @@ import props from "./props";
 import ProxyEmit from "../mixins/ProxyEmit";
 import { divider, InternalContextItem } from "../context-menu";
 import { SurrealTextEditor } from "./SurrealTextEditor";
+import { Entity } from "../types";
 
 export default Vue.extend({
   mixins: [mixin, ProxyEmit],
@@ -29,19 +30,19 @@ export default Vue.extend({
       this.applyRequestColumnsListener();
     },
     applyCompletionSource() {
-      //this.textEditor.setCompletionSource({
-      //  defaultSchema: null,
-      //  entities: this.entities,
-      //});
+      this.textEditor.setCompletionSource({
+        defaultSchema: null,
+        entities: this.entities,
+      });
     },
     applyRequestColumnsListener() {
-      //if (this.columnsGetter) {
-      //  this.textEditor.setRequestColumnsListener((entity: Entity) =>
-      //    this.columnsGetter(entity.name)
-      //  );
-      //} else {
-      //  this.textEditor.setRequestColumnsListener(null);
-      //}
+      if (this.columnsGetter) {
+        this.textEditor.setRequestColumnsListener((entity: Entity) =>
+          this.columnsGetter(entity.name)
+        );
+      } else {
+        this.textEditor.setRequestColumnsListener(null);
+      }
     },
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
       const pivot = items.findIndex((o) => o.id === "find");
