@@ -1,6 +1,6 @@
 import { Extension } from "@codemirror/state";
 import { ExtensionConfiguration } from "../text-editor";
-import { TextEditor } from "../text-editor/v2/TextEditor";
+import { TextEditor } from "../text-editor/TextEditor";
 import { extensions as surrealExtensions } from "./extensions";
 
 export class SurrealTextEditor extends TextEditor {

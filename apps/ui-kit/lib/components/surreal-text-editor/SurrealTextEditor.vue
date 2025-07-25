@@ -4,10 +4,9 @@
 
 <script lang="ts">
 import Vue from "vue";
-import mixin from "../text-editor/v2/mixin";
+import mixin from "../text-editor/mixin";
 import props from "./props";
 import ProxyEmit from "../mixins/ProxyEmit";
-import { Entity } from "../types";
 import { divider, InternalContextItem } from "../context-menu";
 import { SurrealTextEditor } from "./SurrealTextEditor";
 
