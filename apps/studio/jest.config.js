@@ -21,7 +21,7 @@ module.exports = {
     'vue',
     'ts',
   ],
-  transformIgnorePatterns: ['node_modules/(?!uuid)/'],
+  transformIgnorePatterns: ['node_modules/(?!(uuid|bson|mongodb))'],
   modulePathIgnorePatterns: [
     '<rootDir>/dist/',
     '<rootDir>/dist_electron/',
