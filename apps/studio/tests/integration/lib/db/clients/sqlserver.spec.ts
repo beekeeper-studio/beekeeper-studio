@@ -2,6 +2,8 @@ import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
+import fs from 'fs';
+import path from 'path';
 
 // SQL Server testing policy:
 // We test against SQL Server until it leaves mainstream support
@@ -105,27 +107,27 @@ function testWith(dockerTag: string, readonly: boolean) {
         expect(result.result.length).toBe(1)
         expect(result.fields.length).toBe(2)
       })
-      
+
       it("should properly filter foreign keys by schema", async () => {
         // Skip in read-only mode
         if (readonly) return;
-        
+
         // Create test schemas and tables with separate statements
         await util.knex.raw(`CREATE SCHEMA schema_test_1`);
         await util.knex.raw(`CREATE SCHEMA schema_test_2`);
-        
+
         await util.knex.raw(`
           CREATE TABLE schema_test_1.parent (
             id INT PRIMARY KEY
           )
         `);
-        
+
         await util.knex.raw(`
           CREATE TABLE schema_test_2.parent (
             id INT PRIMARY KEY
           )
         `);
-        
+
         await util.knex.raw(`
           CREATE TABLE schema_test_1.child (
             id INT PRIMARY KEY,
@@ -133,7 +135,7 @@ function testWith(dockerTag: string, readonly: boolean) {
             CONSTRAINT FK_Child_Parent_1 FOREIGN KEY (parent_id) REFERENCES schema_test_1.parent(id)
           )
         `);
-        
+
         await util.knex.raw(`
           CREATE TABLE schema_test_2.child (
             id INT PRIMARY KEY,
@@ -141,31 +143,31 @@ function testWith(dockerTag: string, readonly: boolean) {
             CONSTRAINT FK_Child_Parent_2 FOREIGN KEY (parent_id) REFERENCES schema_test_2.parent(id)
           )
         `);
-        
+
         // Get foreign keys from schema_test_1
         const keys1 = await util.connection.getTableKeys('child', 'schema_test_1');
-        
+
         // Get foreign keys from schema_test_2
         const keys2 = await util.connection.getTableKeys('child', 'schema_test_2');
-        
+
         // Verify foreign keys from schema_test_1 refer to the correct parent table
         expect(keys1.length).toBe(1);
         expect(keys1[0].fromSchema).toBe('schema_test_1');
         expect(keys1[0].fromTable).toBe('child');
         expect(keys1[0].toSchema).toBe('schema_test_1');
         expect(keys1[0].toTable).toBe('parent');
-        
+
         // Verify foreign keys from schema_test_2 refer to the correct parent table
         expect(keys2.length).toBe(1);
         expect(keys2[0].fromSchema).toBe('schema_test_2');
         expect(keys2[0].fromTable).toBe('child');
         expect(keys2[0].toSchema).toBe('schema_test_2');
         expect(keys2[0].toTable).toBe('parent');
-        
+
         // Verify no cross-schema references
         expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
         expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
-        
+
         // Clean up created schemas and tables (in reverse order of creation)
         try {
           await util.knex.raw(`DROP TABLE schema_test_1.child`);
@@ -219,6 +221,20 @@ function testWith(dockerTag: string, readonly: boolean) {
         id: 2,
         bitcol: true
       })
+    })
+
+    // Regression test for #2476 -> routine create script truncates large procedures
+    it("Should be able to get routine create script", async () => {
+      if (readonly) return;
+
+      const routineName = 'sp_test_routine';
+      const query = fs.readFileSync(path.resolve(__dirname, './scripts/large-stored-proc.sqlserver.sql'), 'utf-8');
+
+      await util.knex.raw(query);
+
+      const result = await util.connection.getRoutineCreateScript(routineName);
+      const scriptStr = Array.isArray(result) ? result[0] : result;
+      expect(scriptStr.length).toBeGreaterThan(4000);
     })
   })
 }
