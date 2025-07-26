@@ -14,8 +14,30 @@
             credentials.
             <a
               href="https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html"
-            >Amazon Docs</a> - <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rdb">Beekeeper Docs</a>
+            >Amazon Docs</a> - <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rds">Beekeeper Docs</a>
           </div>
+        </div>
+      </div>
+      <div class="form-group col">
+        <div v-show="showCli" class="form-group">
+          <label for="cliPath">AWS Tool
+            <i
+              class="material-icons"
+              style="padding-left: 0.25rem"
+              v-tooltip="{
+                content:
+                  'You are signing in using the <code>\'AWS CLI\' Beekeeper Studio will attempt to use the AWS CLI tool in path specified.</code>',
+                html: true,
+              }">help_outlined</i></label>
+          <div class="alert alert-danger" v-show="!config.azureAuthOptions.cliPath">
+            <i class="material-icons-outlined">warning</i>
+            <div>
+              NO CLI FOUND, Please refer to our
+              <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rds">Beekeeper Docs</a>
+              for more information
+            </div>
+          </div>
+          <input name="cliPath" type="text" class="form-control" v-model="config.redshiftOptions.cliPath" />
         </div>
       </div>
       <div v-show="isRedshift" class="flex flex-middle mb-3">
@@ -114,6 +136,9 @@ export default {
     isRedshift(){
       return this.config.connectionType === 'redshift'
     },
+    showCli() {
+      return this.authType === 'iam_cli';
+    },
     isKeyAuth() {
       return this.authType === 'iam_key';
     },
@@ -130,6 +155,23 @@ export default {
     toggleServerless() {
       this.config.redshiftOptions.isServerless = !this.config.redshiftOptions.isServerless
     },
-  }
+    async tryFindAWSCli() {
+      if (!this.config.redshiftOptions.cliPath) {
+        try {
+          const result = await window.main.whichTool("aws");
+          if (result.success) {
+            this.config.redshiftOptions.cliPath = result.path;
+          } else {
+            this.config.redshiftOptions.cliPath = null;
+          }
+        } catch (e) {
+          this.config.redshiftOptions.cliPath = null;
+        }
+      }
+    },
+  },
+  mounted() {
+    this.tryFindAWSCli();
+  },
 }
 </script>

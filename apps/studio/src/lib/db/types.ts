@@ -58,7 +58,8 @@ export enum AzureAuthType {
 
 export const IamAuthTypes = [
   { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
-  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' },
+  { name: 'AWS CLI Authentication', value: 'iam_cli' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -83,6 +84,7 @@ export interface RedshiftOptions {
   tokenDurationSeconds?: number;
   isServerless?: boolean;
   authType?: string;
+  cliPath?: string;
 }
 
 export interface CassandraOptions {

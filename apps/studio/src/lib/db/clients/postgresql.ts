@@ -37,6 +37,7 @@ import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { getAWSCLIToken } from '../authentication/amazon-redshift';
 
 const PD = PostgresData
 
@@ -1328,10 +1329,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
+    let awsCLIToken = undefined;
+    if( server.config.redshiftOptions.authType === 'iam_cli') {
+      awsCLIToken = await getAWSCLIToken(server.config, server.config.redshiftOptions);
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
+      password: awsCLIToken || await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,

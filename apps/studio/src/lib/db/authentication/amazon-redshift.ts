@@ -1,6 +1,8 @@
 import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-redshift';
 import { RedshiftServerlessClient, GetCredentialsCommand } from "@aws-sdk/client-redshift-serverless";
+import {spawn} from "child_process";
 import rawLog from '@bksLogger';
+import { IDbConnectionServerConfig, RedshiftOptions } from '../types';
 
 // The number of minutes to consider credentials expired *before* their actual expiration.
 // This accounts for potential client clock drift.
@@ -29,6 +31,58 @@ export interface TemporaryClusterCredentials {
     dbPassword: string;
     expiration: Date;
 }
+
+  export async function getAWSCLIToken(server: IDbConnectionServerConfig, options: RedshiftOptions): Promise<string> {
+    if (!options?.cliPath) {
+      throw new Error('AZ command not specified');
+    }
+
+    return new Promise<string>((resolve, reject) => {
+      const proc = spawn(options.cliPath, [
+        'rds',
+        'generate-db-auth-token',
+        '--hostname',
+        server.host,
+        '--port',
+        server.port.toString(),
+        '--region',
+        options.awsRegion,
+        '--username',
+        server.user
+      ]);
+
+      let stdout = '';
+      let stderr = '';
+
+      proc.stdout.on('data', (chunk) => {
+        stdout += chunk.toString();
+      });
+
+      proc.stderr.on('data', (chunk) => {
+        stderr += chunk.toString();
+      });
+
+      proc.on('error', (err) => {
+        console.error(`Error executing AWS CLI command: ${err}`);
+        reject(err);
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          try {
+            console.log(stdout)
+            resolve(stdout.trim());
+          } catch (err) {
+            console.error(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
+            reject(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
+          }
+        } else {
+          console.error(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
+          reject(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
+        }
+      });
+    });
+  }
 
 /**
  * RedshiftCredentialResolver provides the ability to use temporary cluster credentials to access

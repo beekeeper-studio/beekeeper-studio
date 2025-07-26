@@ -65,6 +65,7 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { getAWSCLIToken } from "../authentication/amazon-redshift";
 
 type ResultType = {
   tableName?: string
@@ -133,6 +134,11 @@ async function configDatabase(
   database: IDbConnectionDatabase
 ): Promise<mysql.PoolOptions> {
 
+  let awsCLIToken = undefined;
+  if( server.config.redshiftOptions.authType === 'iam_cli') {
+    awsCLIToken = await getAWSCLIToken(server.config, server.config.redshiftOptions);
+  }
+
   const config: mysql.PoolOptions = {
     authPlugins: {
       'client_ed25519': ed25519AuthPlugin(),
@@ -140,7 +146,7 @@ async function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
+    password: awsCLIToken || await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -730,13 +736,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const params = [table];
 
     const { rows } = await this.driverExecuteSingle(sql, { params });
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -754,8 +760,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           fromSchema: "",
           isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {

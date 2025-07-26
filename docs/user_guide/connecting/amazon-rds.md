@@ -49,3 +49,24 @@ Below is an example config in Beekeeper Studio once IAM permissions are setup, y
 - [AWS IAM Policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html)
 - [AWS IAM User](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html)
 - [AWS IAM Roles](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html)
+
+### 1. AWS CLI Authentication (PostgreSQL, MS SQL)
+
+Uses your local AWS CLI session to retrieve an access token.
+
+![AWS IAM CLI](../../assets/images/aws-iam-cli.png)
+
+[Install AWS CLI From Amazon](https://aws.amazon.com/cli/)
+
+**Steps:**
+1. Make sure AWS Credentials arne set
+2. In the application, select **AWS CLI Authentication**.
+3. Provide:
+   - **Host**
+   - **Database**
+   - **Username**
+   - **AWS Region**
+
+> Postgres requires a database to be provided otherwise it defaults to username
+
+> ✅ The application will use your active CLI session to authenticate securely.
