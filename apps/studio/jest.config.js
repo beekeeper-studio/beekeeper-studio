@@ -5,12 +5,6 @@ const { resolve } = require('path')
 
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
-  moduleNameMapper: {
-    '^@shared/(.*)': resolve(__dirname, './src/shared/$1'),
-    '^@/(.*)': resolve(__dirname, './src/$1'),
-    "^axios$": "axios/dist/node/axios.cjs",
-    '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
-  },
   maxWorkers: 1,
 
   moduleFileExtensions: [
@@ -21,13 +15,14 @@ module.exports = {
     'vue',
     'ts',
   ],
-  transformIgnorePatterns: ['node_modules/(?!(uuid|bson|mongodb))'],
+  transformIgnorePatterns: ['node_modules/(?!uuid)/'],
   modulePathIgnorePatterns: [
     '<rootDir>/dist/',
     '<rootDir>/dist_electron/',
   ],
   // support the same @ -> src alias mapping in source code
   moduleNameMapper: {
+    '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared(.*)$': '<rootDir>/src/shared/$1',
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',
