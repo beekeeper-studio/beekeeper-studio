@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # Beekeeper Studio LOcal windows install.
+=======
+## Beekeeper Studio LOcal windows install.
+>>>>>>> 6d493739be1f588bed98764ad87b5c3ea2f2cc8c
 
 ```bash
 # First: Install NodeJS 20, NPM, and Yarn
@@ -17,7 +21,11 @@ cd apps/studio
 yarn dev:vite
 
 # Open New powershell terminal 
+<<<<<<< HEAD
 cd beekeeper-studio\apps\studio
+=======
+cd apps/studio 
+>>>>>>> 6d493739be1f588bed98764ad87b5c3ea2f2cc8c
 node esbuild.js watch
 
 # Use node esbuild.mjs watch, if above doesn't work. 
