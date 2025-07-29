@@ -25,42 +25,9 @@ export default Vue.extend({
       }
     }
   },
-  computed: {
-    ...mapGetters({
-      'isCommunity': 'isCommunity',
-    })
-  },
-  watch: {
-    isCommunity() {
-      this.initNotifyInterval()
-    }
-  },
   methods: {
-    initNotifyInterval() {
-      const intervalTime = 1000 * 60 * 60 * 3
-      if (this.notificationInterval) {
-        clearInterval(this.notificationInterval)
-        this.notificationInterval = null
-      }
-      if (this.timeoutID) {
-        clearTimeout(this.timeoutID)
-        this.timeoutID = null
-      }
-      if (!this.isCommunity) { 
-        return
-      }
-
-      this.notificationInterval = setInterval(() => {
-        new Noty(this.upsellNotificationOptions).show()
-      }, intervalTime)
-
-      this.timeoutID = setTimeout(() => {
-        new Noty(this.upsellNotificationOptions).show()
-      }, 1000 * 60 * 5)
-    }
   },
   mounted() {
-    this.initNotifyInterval()
   }
 })
 </script>

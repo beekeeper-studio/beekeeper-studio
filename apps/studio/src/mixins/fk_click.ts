@@ -136,14 +136,6 @@ export const FkLinkMixin = {
       });
 
       let openJsonViewer = true
-      if (this.$store.getters.isCommunity) {
-        const lastOpen = SmartLocalStorage.getDate('openJSONViewerViaFK__community')
-        if (!lastOpen || lastOpen < monthAgo()) {
-          SmartLocalStorage.setDate('openJSONViewerViaFK__community', new Date())
-        } else {
-          openJsonViewer = false
-        }
-      }
 
       const payload = {
         table, filters, titleScope: values.join(','),
