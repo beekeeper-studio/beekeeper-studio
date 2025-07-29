@@ -2,7 +2,7 @@ import {
   convertKeybinding,
   BksConfigProvider,
 } from "@/common/bksConfig/BksConfigProvider";
-import { parseIni } from "../../src/config/helpers";
+import { parseIni } from "../../src/config/helpers.mjs";
 import _ from "lodash";
 import { checkConflicts, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
 
