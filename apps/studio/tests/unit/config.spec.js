@@ -2,7 +2,7 @@ import {
   convertKeybinding,
   BksConfigProvider,
 } from "@/common/bksConfig/BksConfigProvider";
-import { parseIni } from "../../src/config/helpers.mjs";
+import { parseIni, processRawConfig } from "../../src/config/helpers.mjs";
 import _ from "lodash";
 import { checkConflicts, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
 
@@ -158,4 +158,74 @@ submitAllQuery = ctrlOrCmd+shift+enter
       },
     ];
   });
+
+  it("Should create defaults for [db.default] for all connection types", () => {
+    const rawConfig = parseIni(`
+[db.default]
+initialSort = false
+    `);
+
+    const processedConfig = processRawConfig(rawConfig);
+
+    const expected = {
+      db: {
+        default: {
+          initialSort: false
+        },
+        sqlite: {
+          initialSort: false
+        },
+        sqlserver: {
+          initialSort: false
+        },
+        redshift: {
+          initialSort: false
+        },
+        cockroachdb: {
+          initialSort: false
+        },
+        mysql: {
+          initialSort: false
+        },
+        postgres: {
+          initialSort: false
+        },
+        mariadb: {
+          initialSort: false
+        },
+        cassandra: {
+          initialSort: false
+        },
+        oracle: {
+          initialSort: false
+        },
+        bigquery: {
+          initialSort: false
+        },
+        firebird: {
+          initialSort: false
+        },
+        tidb: {
+          initialSort: false
+        },
+        libsql: {
+          initialSort: false
+        },
+        clickhouse: {
+          initialSort: false
+        },
+        duckdb: {
+          initialSort: false
+        },
+        mongodb: {
+          initialSort: false
+        },
+        sqlanywhere: {
+          initialSort: false
+        },
+      }
+    };
+
+    expect(processedConfig).toMatchObject(expected);
+  })
 });
