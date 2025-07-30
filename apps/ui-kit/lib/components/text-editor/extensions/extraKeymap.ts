@@ -24,6 +24,7 @@ export function applyKeybindings(view: EditorView, keybindings: Keybindings) {
 }
 
 function buildKeymap(keybindings: Keybindings) {
+  if (!keybindings) return [];
   return Object.keys(keybindings).map((key) => ({
     key,
     run: () => {

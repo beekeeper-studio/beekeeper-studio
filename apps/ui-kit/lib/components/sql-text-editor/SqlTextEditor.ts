@@ -3,7 +3,6 @@ import { TextEditor } from "../text-editor/TextEditor";
 import { Entity } from "../types";
 import { Dialect } from "sql-query-identifier";
 import {
-  applySqlExtension,
   applyDialect,
   applyEntities,
   applyColumnsGetter,
@@ -29,11 +28,11 @@ export class SqlTextEditor extends TextEditor {
    * Sets the completion source with entities and schema information
    */
   setCompletionSource(completionSource: CompletionSource) {
-    applyEntities(this.view, completionSource.entities);
-    applySqlExtension(this.view, {
-      defaultSchema: completionSource.defaultSchema,
-      entities: completionSource.entities,
-    });
+    applyEntities(
+      this.view,
+      completionSource.entities,
+      completionSource.defaultSchema
+    );
   }
 
   setQueryIdentifierDialect(dialect: Dialect) {
