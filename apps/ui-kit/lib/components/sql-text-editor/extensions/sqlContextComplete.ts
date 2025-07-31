@@ -8,7 +8,7 @@
  *
  *   // Register the extensions
  *   const extensions = [
- *    customSql(),
+ *    sql(),
  *    sqlContextComplete(),
  *   ]
  */
