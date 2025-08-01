@@ -21,10 +21,10 @@ const log = rawLog.scope('SurrealDB');
 // and as such, is subject to change without notification. So if things break, look into this structure (This goes for any query that ends in `STRUCTURE`). But it was either that
 // or parse define statements with sketchy regex
 export interface SurrealFieldInfo {
-  flex: boolean, // not sure what this is for, I think flexible schema?
+  flex: boolean,
   kind: string, // type
   name: string,
-  permissions: {
+  permissions?: {
     create: boolean,
     delete: boolean,
     select: boolean,
@@ -238,12 +238,52 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     }
 
     try {
-      // TODO (@day): this only works for schemafull tables
       // get general info for table
       const result = await this.driverExecuteSingle(`INFO FOR TABLE ${table} STRUCTURE`);
-      const tableFields = result?.rows[0]?.fields as SurrealFieldInfo[];
+      const tableFields = result?.rows[0]?.fields as SurrealFieldInfo[] || [];
       let ordinalPosition = 1;
       const parentFields = [];
+
+      // This means it's a schemaless table, so we'll have to guess
+      if (!tableFields || tableFields.length == 0) {
+        const results = await this.driverExecuteSingle(`SELECT * FROM ${table} LIMIT 10`);
+        const existingFields = new Set<string>();
+        results.rows.forEach((row) => {
+          Object.entries(row).forEach(([field, value]) => {
+            let type: string = typeof value;
+
+            if (_.isArray(value)) {
+              type = 'array'
+            }
+
+            if (value instanceof RecordId) {
+              if (value.tb === table) {
+                type = 'string'
+              } else {
+                type = `record<${value.tb}>`
+              }
+            }
+
+            if (!existingFields.has(field)) {
+              existingFields.add(field);
+              tableFields.push({
+                flex: false,
+                kind: type,
+                name: field,
+                readonly: false,
+                default: null,
+                value: null,
+                what: table
+              });
+            } else {
+              const fieldIndex = tableFields.findIndex((v) => v.name == field);
+              if (tableFields[fieldIndex].kind != type) {
+                tableFields[fieldIndex].kind = 'any';
+              }
+            }
+          })
+        })
+      }
 
       return tableFields.map((fieldInfo: SurrealFieldInfo) => {
         if (fieldInfo.kind.startsWith('array<') || fieldInfo.kind.startsWith('object')) {
@@ -258,6 +298,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
           // metadata for, so we just skip them
           return null;
         }
+
         return {
           tableName: table,
           columnName: fieldInfo.name,
@@ -381,7 +422,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     } else {
       result = await this.driverExecuteSingle('INFO FOR NS STRUCTURE');
     }
-    
+
     const nsInfo = result.rows[0];
 
     if (nsInfo && nsInfo.databases) {
@@ -454,7 +495,6 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
     const sql = await this.selectTopSql(table, offset, limit, orderBy, filters, _schema, selects);
-    log.info('SQL: ', sql)
     const result = await this.driverExecuteSingle(sql);
     const fields = this.parseQueryResultColumns(result);
     const rows = await this.serializeQueryResult(result, fields);
@@ -514,13 +554,13 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     const sql = await this.selectTopSql(table, 0, 0, orderBy, filters, schema);
     const totalRows = await this.getTableLength(table, schema);
     const columns = await this.listTableColumns(table, schema);
-    
+
     const cursor = new SurrealDBCursor({
       query: sql,
       conn: this.pool,
       chunkSize
     });
-    
+
     return {
       totalRows,
       columns,
@@ -536,16 +576,16 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       conn: this.pool,
       chunkSize
     });
-    
+
     // Try to get a sample to determine columns
     let columns: TableColumn[] = [];
     let totalRows = 0;
-    
+
     try {
       // Execute a small sample to get column info
       const sampleQuery = query.includes('LIMIT') ? query : `${query} LIMIT 1`;
       const sampleResult = await this.driverExecuteSingle(sampleQuery);
-      
+
       if (sampleResult.columns) {
         columns = sampleResult.columns.map(col => ({
           columnName: col.name,
@@ -553,14 +593,14 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
           tableName: ''
         }));
       }
-      
+
       // For total rows, we'd need to run a count query, but that's complex
       // for arbitrary queries, so we'll set it to -1 to indicate unknown
       totalRows = -1;
     } catch (error) {
       log.warn('Could not determine columns for query stream:', error);
     }
-    
+
     return {
       totalRows,
       columns,
