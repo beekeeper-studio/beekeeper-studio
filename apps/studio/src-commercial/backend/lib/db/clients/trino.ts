@@ -89,7 +89,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       
       for await (const r of result) {
         const { data: resultData, columns: resultColumns } = r
-        // log.info('!!driverExecuteSingle RESULT!!', r)
         columns = resultColumns
   
         if (resultData) rows.push(...resultData)
@@ -192,6 +191,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       // select all columns with the column names instead of *
       selectFields = columns.map((v) => v.columnName)
     }
+
+    console.log('here first')
     
     const queries = TrinoClient.buildSelectTopQuery(
       table,
@@ -379,14 +380,13 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
-    let queryId = uuidv4()
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER)
     return {
       execute: async (): Promise<NgQueryResult[]> => {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, { queryId }),
+            this.executeQuery(queryText),
           ])
           if (!data) return []
           return data
@@ -400,10 +400,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         }
       },
       cancel: async (): Promise<void> => {
-        await this.driverExecuteSingle(
-          `KILL QUERY WHERE query_id='${queryId}'`
-        )
-        cancelable.cancel()
+       // TODO: How to cancel - would need to switch to a client.execute vs client.query and have a mechanism to connect the running query to the queryId returned during the lifecycle of the query
       },
     }
   }
@@ -450,14 +447,8 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     const results = await this.driverExecuteMultiple(queryText)
     const ret = []
     for (const result of results) {
-      console.log(result)
       const fields = this.parseFields(result.columns)
       const data = result.rows
-      // const data =
-      //   result.resultType === "stream"
-      //     ? await streamToString(result.data)
-      //     : result.data
-
       const isEmptyResult = !data
 
       if (isEmptyResult) {
@@ -471,17 +462,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
         })
         continue
       }
-
-      // if (_.isString(data)) {
-      //   ret.push({
-      //     fields: result.columns,
-      //     affectedRows: 0, // TODO (azmi): implement affectedRows
-      //     command: 'select',
-      //     rows: data,
-      //     rowCount: data.length,
-      //   })
-      //   continue
-      // }
 
       ret.push({
         fields,
@@ -598,6 +578,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
   // TODO: ALL THE STREAMING!
+  // No exports right now so.... is this needed?
   async selectTopStream(
     table: string,
     orderBy: OrderBy[],
@@ -743,7 +724,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     }
 
     const wrappedSelects = selectsArr.map((s) => s === '*' ? s : TrinoData.wrapIdentifier(s)).join(", ")
-    const wrappedTable = `${TrinoData.wrapIdentifier(database)}.${TrinoData.wrapIdentifier(schema)}.${TrinoData.wrapIdentifier(table)}`
+    const wrappedTable = `${TrinoData.wrapIdentifier(schema)}.${TrinoData.wrapIdentifier(table)}`
 
     // Count query remains simple
     const countSQL = `
@@ -753,22 +734,21 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     `
 
     // Helper to build a query with optional pagination WHERE clause
-    const buildPaginatedQuery = (tableRef: string, filter: string) => `
+    const buildPaginatedQuery = (databaseRef: string, tableRef: string, filter: string) => `
       WITH ranked AS (
         SELECT 
           ${wrappedSelects},
           ROW_NUMBER() OVER (${rowNumberOrderClause}) AS rownum
-        FROM ${tableRef}
+        FROM ${databaseRef}.${tableRef}
         ${filter}
       )
       SELECT *
       FROM ranked
       ${usePagination ? `WHERE rownum > ${safeOffset} AND rownum <= ${safeOffset + safeLimit}` : ""}
     `
-    const paginatedSQL = buildPaginatedQuery(wrappedTable, filterString)
-    const fullSql = buildPaginatedQuery(TrinoData.wrapIdentifier(table), fullFilterString)
+    const paginatedSQL = buildPaginatedQuery(database, wrappedTable, filterString)
+    const fullSql = buildPaginatedQuery(database, TrinoData.wrapIdentifier(table), fullFilterString)
     
-    log.info('!!sql!!', paginatedSQL)
     return {
       query: paginatedSQL,
       fullQuery: fullSql,

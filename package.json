@@ -18,6 +18,7 @@
     "sqltools:dev": "yarn workspace sqltools serve",
     "electron:build": "yarn bks:build",
     "electron:serve": "yarn bks:dev",
+    "trino": "docker compose up -d mysql psql trino",
     "docs:serve": "yarn workspace beekeeper-studio docs:serve",
     "web:serve": "yarn sqltools:dev",
     "test:e2e": "yarn workspace beekeeper-studio test:e2e",

@@ -60,7 +60,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite'
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
@@ -70,6 +70,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
   if (d === 'duckdb') return 'sql'
+  if (d === 'trino') return 'trino'
   return 'mysql' // we want this as the default
 }
 
