@@ -1,14 +1,16 @@
 ---
 title: SurrealDB
-summary: "SurrealDBD support is currently in early alpha"
+summary: "SurrealDB support is currently in early alpha"
 icon: simple/surrealdb
 description: "Connecting to SurrealDB over websocket or http"
 ---
 
 # How to Connect to SurrealDB
+
 Connecting to a SurrealDB instance is simple. Select SurrealDB from the dropdown, and fill in the protocol, host, port, username, and password fields, then click Connect.
 
 ## SurrealDB Connection Details
+
 To connect to a SurrealDB instance, you'll need the following information:
 
 - Protocol: The protocol you wish to communicate over. We currently support ws, wss, http, and https.
