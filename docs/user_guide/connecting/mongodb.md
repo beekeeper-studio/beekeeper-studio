@@ -18,10 +18,9 @@ Super excited to have MongoDB support here for you all. Please bear in mind that
 - Table structure view
 - Entity sidebar
 - Editing data
-- Running queries in some sort of REPL
+- Running queries a mongosh REPL
 - Writing SQL against Mongo
-- Import/Export
-- Backup/Restore
+- Export
 - Schema editing
 - Read only mode
 
@@ -29,3 +28,5 @@ Super excited to have MongoDB support here for you all. Please bear in mind that
 ## Still TBD
 
 - SSH tunneling
+- Import
+- Backup/Restore
