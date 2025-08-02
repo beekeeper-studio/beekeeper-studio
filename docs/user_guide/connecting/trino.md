@@ -1,6 +1,6 @@
 ---
 title: Trino
-summary: "Trnio support is currently in early alpha"
+summary: "Trino support is currently in early alpha"
 icon: simple/trino
 description: "Connect to a Trino coordinator to run queries by using Beekeeper Studio"
 ---
@@ -18,7 +18,7 @@ Support has been limited to basically a "read only" state since any form of writ
 - Table data view
 - Table data sorting, filtering
 - Table structure view
-- Export results as JSON, CSV, or Markdown
+- Export query results as JSON, CSV, or Markdown
 
 ## Still TBD
 
