@@ -83,6 +83,7 @@
         >
       </div>
     </div>
+    <common-advanced :config="config" />
   </div>
 </template>
 
@@ -90,11 +91,12 @@
 import Vue from 'vue';
 import { SurrealAuthType, SurrealAuthTypes } from '../../lib/db/types';
 import CommonServerInputs from './CommonServerInputs.vue'
+import CommonAdvanced from './CommonAdvanced.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
 import { mapState } from 'vuex';
 
 export default Vue.extend({
-  components: { CommonServerInputs, MaskedInput },
+  components: { CommonServerInputs, MaskedInput, CommonAdvanced },
   props: ['config'],
   data() {
     return {

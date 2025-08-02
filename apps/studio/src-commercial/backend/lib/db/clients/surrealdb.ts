@@ -103,13 +103,19 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
   configDatabase(): AnyAuth | Token {
     const {
-      host,
-      port,
       user,
       password,
       surrealDbOptions
     } = this.server.config;
     const { namespace } = this.database;
+
+    let host = this.server.config.host;
+    let port = this.server.config.port;
+
+    if (this.server.sshTunnel) {
+      host = this.server.config.localHost;
+      port = this.server.config.localPort;
+    }
 
     const protocol = surrealDbOptions?.protocol || 'wss';
     this.connectionString = `${protocol}://${host || 'localhost'}:${port || 8000}/rpc`;
