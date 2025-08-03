@@ -117,6 +117,7 @@ export const SurrealDBData: DialectData = {
     createTable: true,
     dropTable: true,
     compositeKeys: true,
+    importFromFile: true,
   },
   boolean: {
     true: true,

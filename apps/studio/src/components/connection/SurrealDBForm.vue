@@ -1,5 +1,13 @@
 <template>
   <div class="with-connection-type">
+    <div class="alert alert-warning">
+      <i class="material-icons">warning</i>
+      <span>
+        SurrealDB support is in alpha.
+        <a href="https://docs.beekeeperstudio.io/user_guide/connecting/surrealdb">Supported features</a>,
+        <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">report an issue</a>.
+      </span>
+    </div>
     <div class="host-port-user-password">
       <div class="form-group col">
         <label for="protocol">Protocol</label>
