@@ -550,20 +550,11 @@
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
       keybindings() {
-        const keybindings: any = {
-          "Shift-Ctrl-Enter": this.submitCurrentQuery,
-          "Shift-Cmd-Enter": this.submitCurrentQuery,
-          "Ctrl-Enter": this.submitTabQuery,
-          "Cmd-Enter": this.submitTabQuery,
-          "Ctrl-S": this.triggerSave,
-          "Cmd-S": this.triggerSave,
-          "F5": this.submitTabQuery,
-          "Shift-F5": this.submitCurrentQuery,
-          "Ctrl+I": this.submitQueryToFile,
-          "Cmd+I": this.submitQueryToFile,
-          "Shift+Ctrl+I": this.submitCurrentQueryToFile,
-          "Shift+Cmd+I": this.submitCurrentQueryToFile,
-        }
+        const keybindings = this.$CMKeymap({
+          'general.save': this.triggerSave,
+          'queryEditor.submitCurrentQuery': this.submitCurrentQuery,
+          'queryEditor.submitTabQuery': this.submitTabQuery,
+        })
 
         if(this.userKeymap === "vim") {
           keybindings["Ctrl-Esc"] = this.cancelQuery
