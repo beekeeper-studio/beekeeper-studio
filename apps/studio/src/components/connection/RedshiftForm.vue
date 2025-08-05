@@ -27,7 +27,7 @@ export default {
   components: {CommonIam, CommonServerInputs, CommonAdvanced },
   data() {
     return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.authType?.includes('iam'),
+      iamAuthenticationEnabled: this.config.redshiftOptions?.authType?.includes?.('iam'),
       authType: this.config.redshiftOptions?.authType || 'default',
       authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes]
     }
