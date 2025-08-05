@@ -43,6 +43,9 @@ function removeQueryQuotesExtension() {
               to: view.state.selection.main.to,
               insert: modifiedText,
             },
+            selection: {
+              anchor: view.state.selection.main.from + modifiedText.length,
+            },
           });
         }
       },
