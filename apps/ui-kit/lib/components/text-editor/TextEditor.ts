@@ -113,10 +113,8 @@ export class TextEditor {
       }
     }
 
-    if (update.selectionSet) {
-      if (this.config.onSelectionChange) {
-        this.config.onSelectionChange(this.getSelection());
-      }
+    if (this.config.onSelectionChange) {
+      this.config.onSelectionChange(this.getSelection());
     }
   }
 
