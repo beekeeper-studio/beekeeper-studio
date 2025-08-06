@@ -1,4 +1,4 @@
-import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy } from "@/common/utils"
+import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType } from "@/common/utils"
 import { PostgresData } from '@/shared/lib/dialects/postgresql'
 import { MysqlData } from '@/shared/lib/dialects/mysql'
 import { SqliteData } from '@/shared/lib/dialects/sqlite'
@@ -177,4 +177,41 @@ describe("removeUnsortableColumnsFromSortBy", () => {
       expect(result).toEqual(sortParams)
     })
 
+})
+
+describe.only("isNumericDataType", () => {
+  it("should all be numeric types", () => {
+    expect(isNumericDataType('int2(16,0)')).toBe(true)
+    expect(isNumericDataType('numeric(4,2)')).toBe(true)
+    expect(isNumericDataType('int4(16,0)')).toBe(true)
+    expect(isNumericDataType('decimal(2,12)')).toBe(true)
+    expect(isNumericDataType('smallint')).toBe(true)
+  })
+
+  it("should not be numeric types", () => {
+    expect(isNumericDataType('blerns')).toBe(false)
+    expect(isNumericDataType('varchar(255)')).toBe(false)
+    expect(isNumericDataType('date')).toBe(false)
+    expect(isNumericDataType('text')).toBe(false)
+  })
+})
+
+describe.only("isDateDataType", () => {
+  it("should all be date types", () => {
+    expect(isDateDataType('timestamp with time zone')).toBe(true)
+    expect(isDateDataType('date')).toBe(true)
+    expect(isDateDataType('interval year to month')).toBe(true)
+    expect(isDateDataType('DATETIME')).toBe(true)
+    expect(isDateDataType('TIMESTAMP')).toBe(true)
+    expect(isDateDataType('TIMESTAMP WITH LOCAL TIME ZONE')).toBe(true)
+    expect(isDateDataType('DATETIMEOFFSET')).toBe(true)
+    expect(isDateDataType('INTERVAL')).toBe(true)
+    expect(isDateDataType('TIMETZ')).toBe(true)
+  })
+
+  it("should not be date types", () => {
+    expect(isDateDataType('int2(16,0)')).toBe(false)
+    expect(isDateDataType('varchar(255)')).toBe(false)
+    expect(isDateDataType('text')).toBe(false)
+  })
 })
