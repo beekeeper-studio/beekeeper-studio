@@ -179,7 +179,7 @@ describe("removeUnsortableColumnsFromSortBy", () => {
 
 })
 
-describe.only("isNumericDataType", () => {
+describe("isNumericDataType", () => {
   it("should all be numeric types", () => {
     expect(isNumericDataType('int2(16,0)')).toBe(true)
     expect(isNumericDataType('numeric(4,2)')).toBe(true)
@@ -196,7 +196,7 @@ describe.only("isNumericDataType", () => {
   })
 })
 
-describe.only("isDateDataType", () => {
+describe("isDateDataType", () => {
   it("should all be date types", () => {
     expect(isDateDataType('timestamp with time zone')).toBe(true)
     expect(isDateDataType('date')).toBe(true)
