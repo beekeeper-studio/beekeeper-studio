@@ -854,8 +854,6 @@ export default Vue.extend({
         cssClass += ' text-right'
       }
 
-      console.log('~~~ LOOK HERE ~~~')
-      console.log(column)
       if (column.generated) {
         cssClass += ' generated-column';
       }
