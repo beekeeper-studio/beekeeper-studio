@@ -57,6 +57,9 @@ declare interface IBksConfig {
         sqlserver: {
             allowSkipToLastPage: boolean;
         };
+        surrealdb: {
+            allowSkipToLastPage: boolean;
+        };
         tidb: {
             allowSkipToLastPage: boolean;
         };

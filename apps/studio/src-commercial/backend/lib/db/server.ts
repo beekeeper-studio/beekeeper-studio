@@ -65,8 +65,14 @@ export function createServer(config: IDbConnectionServerConfig): IDbConnectionPu
         dbName = 'postgres'
       }
 
+      let namespace: string = undefined;
+      if (config.client === 'surrealdb') {
+        [namespace, dbName] = dbName.split("::");
+      }
+
       const database = {
         database: dbName,
+        namespace,
         connection: null,
         connecting: false,
       };

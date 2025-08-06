@@ -59,6 +59,10 @@ module.exports = {
       to: ".",
       filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
     },
+    {
+      from: "node_modules/ws",
+      to: "node_modules/ws"
+    }
   ],
   fileAssociations: [
     {
