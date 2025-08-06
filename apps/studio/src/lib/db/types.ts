@@ -1,4 +1,6 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import {AzureAuthService} from "@/lib/db/authentication/azure";
+import {getEntraOptions} from "@/lib/db/clients/utils";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere'] as const
@@ -50,12 +52,14 @@ export enum AzureAuthType {
   Password,
   AccessToken,
   MSIVM,
-  ServicePrincipalSecret
+  ServicePrincipalSecret,
+  CLI
 }
 
 export const IamAuthTypes = [
   { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
-  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' },
+  { name: 'AWS CLI Authentication', value: 'iam_cli' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -65,7 +69,8 @@ export const AzureAuthTypes = [
   { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
   // This may be reactivated when we move to client server architecture
   // { name: 'MSI VM', value: AzureAuthType.MSIVM },
-  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
+  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret },
+  { name: 'Azure CLI Authentication', value: AzureAuthType.CLI }
 ];
 
 export interface RedshiftOptions {
@@ -79,6 +84,7 @@ export interface RedshiftOptions {
   tokenDurationSeconds?: number;
   isServerless?: boolean;
   authType?: string;
+  cliPath?: string;
 }
 
 export interface CassandraOptions {
@@ -97,6 +103,7 @@ export interface AzureAuthOptions {
   tenantId?: string;
   clientSecret?: string;
   msiEndpoint?: string;
+  cliPath?: string;
 }
 export interface LibSQLOptions {
   mode: 'url' | 'file';

@@ -10,7 +10,17 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
+import {
+  buildDatabaseFilter,
+  buildDeleteQueries,
+  buildInsertQueries,
+  buildSchemaFilter,
+  buildSelectQueriesFromUpdates,
+  buildUpdateQueries,
+  escapeString,
+  refreshTokenIfNeeded,
+  joinQueries
+} from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
@@ -26,6 +36,8 @@ import { defaultCreateScript, postgres10CreateScript } from './postgresql/script
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
+import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { getAWSCLIToken } from '../authentication/amazon-redshift';
 
 const PD = PostgresData
 
@@ -1317,15 +1329,26 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
+    let awsCLIToken = undefined;
+    if( server.config.redshiftOptions.authType === 'iam_cli') {
+      awsCLIToken = await getAWSCLIToken(server.config, server.config.redshiftOptions);
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
+      password: awsCLIToken || await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };
+
+    if (server.config.azureAuthOptions?.azureAuthEnabled) {
+      const authService = new AzureAuthService();
+      config.user = server.config.user
+      return authService.configDB(server, config)
+    }
 
     if (
       server.config.client === "postgresql" &&
