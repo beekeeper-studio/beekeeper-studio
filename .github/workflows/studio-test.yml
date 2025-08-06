@@ -65,6 +65,9 @@ jobs:
       - name: Non-DB Integration Tests
         run: yarn workspace beekeeper-studio run test:ci --ci --silent
 
+      - name: Unit Tests (UI Kit)
+        run: yarn workspace ui-kit run test --ci --silent
+
 
   integration:
     name: 🥞 ${{ matrix.chunk[0] }}
