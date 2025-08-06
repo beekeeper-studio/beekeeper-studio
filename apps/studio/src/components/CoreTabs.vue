@@ -128,6 +128,13 @@
           :tab="tab"
           :tab-id="tab.id"
         />
+        <TabUserManagement
+          v-if="tab.tabType === 'user-management'"
+          :tab="tab"
+          :user-id="tab.userId"
+          :active="activeTab.id === tab.id"
+          :selected-user="tab.selectedUser"
+        />
         <ImportExportDatabase
           v-if="tab.tabType === 'import-export-database'"
           :schema="tab.schemaName"
@@ -315,6 +322,7 @@ import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import Shell from './TabShell.vue'
 import { TabTypeConfig } from "@/store/modules/TabModule";
+import TabUserManagement from './TabUserManagement.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TransportOpenTab, TransportPluginShellTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
@@ -327,6 +335,7 @@ export default Vue.extend({
     CoreTabHeader,
     TableTable,
     TableProperties,
+    TabUserManagement,
     ImportExportDatabase,
     ImportTable,
     Draggable,
@@ -439,6 +448,7 @@ export default Vue.extend({
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
+        { event: AppEvent.userManagementOpen, handler: this.userManagementOpen },
       ]
     },
     lastTab() {
@@ -963,6 +973,18 @@ export default Vue.extend({
     },
     switchUserKeymap(value) {
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+    },
+    userManagementOpen() {
+      const tab = {
+        tabType: 'user-management',
+        title: 'User Management',
+        userId: 'user-management',
+        unsavedChanges: false,
+      };
+
+      const existing = this.tabItems.find((t) => matches(t, tab));
+      if (existing) return this.$store.dispatch('tabs/setActive', existing);
+      this.addTab(tab);
     },
     openTableBuilder() {
       if (this.connectionType === 'mongodb') {
