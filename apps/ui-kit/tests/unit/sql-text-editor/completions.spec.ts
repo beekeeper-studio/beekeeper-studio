@@ -2,12 +2,12 @@
 // Distributed under an MIT license: https://github.com/codemirror/lang-sql/blob/main/LICENSE
 
 import {EditorState} from "@codemirror/state"
-import {CompletionContext, CompletionResult, CompletionSource} from "@codemirror/autocomplete"
+import {CompletionContext, CompletionSource} from "@codemirror/autocomplete"
 import {PostgreSQL, MySQL, SQLConfig, SQLDialect} from "@codemirror/lang-sql"
 import theIst from "ist"
-import { extensions as sql } from "../../../lib/components/sql-text-editor/extensions"
+import { extensions as sql, SQLExtensionsConfig } from "../../../lib/components/sql-text-editor/extensions"
 
-function get(doc: string, conf: SQLConfig & {explicit?: boolean, keywords?: boolean} = {}) {
+function get(doc: string, conf: SQLExtensionsConfig & {explicit?: boolean, keywords?: boolean} = {}) {
   let cur = doc.indexOf("|"), dialect = conf.dialect || PostgreSQL
   doc = doc.slice(0, cur) + doc.slice(cur + 1)
   let state = EditorState.create({
@@ -77,6 +77,15 @@ describe("SQL completion", () => {
 
   it("completes column names", () => {
     ist(str(get("select users.|", {schema: schema1})), "address, id, name")
+  })
+
+  it("completes column names (dynamically)", () => {
+    ist(str(get("select users.|", {schema: schema1, columnsGetter: () => ["apple", "banana"]})), "apple, banana, address, id, name")
+  })
+
+  it("completes column names when table is specified after from", async () => {
+    const list = get("select | from users", {schema: schema1, explicit: true, columnsGetter: (entity) => entity.name === "users" ? ["apple", "banana"] : []})
+    ist(await str(list), "apple, banana, products, users")
   })
 
   it("completes quoted column names", () => {

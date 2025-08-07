@@ -1,5 +1,5 @@
 import { keywordCompletionSource, SQLConfig, StandardSQL } from "@codemirror/lang-sql"
-import { completeFromSchema } from "./complete"
+import { completeFromSchema, completionLevels } from "./complete"
 import { Extension } from "@codemirror/state"
 import { CompletionSource } from "@codemirror/autocomplete"
 import { LanguageSupport } from "@codemirror/language"
@@ -14,9 +14,9 @@ export function schemaCompletionSource(config: SQLConfig): CompletionSource {
 }
 
 function schemaCompletion(config: SQLConfig): Extension {
-  return config.schema ? (config.dialect || StandardSQL).language.data.of({
+  return config.schema ? [completionLevels, (config.dialect || StandardSQL).language.data.of({
     autocomplete: schemaCompletionSource(config)
-  }) : []
+  })] : []
 }
 
 /// SQL language support for the given SQL dialect, with keyword

@@ -1,5 +1,5 @@
 import {Completion, CompletionContext, CompletionSource} from "@codemirror/autocomplete"
-import {EditorState, Facet, Text} from "@codemirror/state"
+import {EditorState, Facet, StateEffect, StateField, Text} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
 import {SyntaxNode} from "@lezer/common"
 import {type SQLDialect, SQLNamespace} from "@codemirror/lang-sql"
@@ -8,14 +8,7 @@ import {type SQLDialect, SQLNamespace} from "@codemirror/lang-sql"
 export const schemaCompletionFilter = Facet.define<typeof optionsFilter>()
 async function optionsFilter(
   context: CompletionContext,
-  source: ReturnType<typeof sourceContext> & {
-    schema: SQLNamespace;
-    tables?: readonly Completion[];
-    schemas?: readonly Completion[];
-    defaultTableName?: string;
-    defaultSchemaName?: string;
-    dialect?: SQLDialect;
-  },
+  source: ReturnType<typeof sourceContext>,
   options: Completion[]
 ) {
   for (let filter of context.state.facet(schemaCompletionFilter)) options = await filter(context, source, options)
@@ -177,14 +170,10 @@ function nameCompletion(label: string, type: string, idQuote: string, idCaseInse
   return {label, type, apply: idQuote + label + idQuote}
 }
 
-// Some of this is more gnarly than it has to be because we're also
-// supporting the deprecated, not-so-well-considered style of
-// supplying the schema (dotted property names for schemas, separate
-// `tables` and `schemas` completions).
-export function completeFromSchema(schema: SQLNamespace,
+export function buildCompletionLevels(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
-                                   dialect?: SQLDialect): CompletionSource {
+                                   dialect?: SQLDialect) {
   let idQuote = dialect?.spec.identifierQuotes?.[0] || '"'
   let top = new CompletionLevel(idQuote, !!dialect?.spec.caseInsensitiveIdentifiers)
   let defaultSchema = defaultSchemaName ? top.child(defaultSchemaName) : null
@@ -193,10 +182,50 @@ export function completeFromSchema(schema: SQLNamespace,
   if (schemas) top.addCompletions(schemas)
   if (defaultSchema) top.addCompletions(defaultSchema.list)
   if (defaultTableName) top.addCompletions((defaultSchema || top).child(defaultTableName).list)
+  return {top, defaultSchema}
+}
 
+export const setSchema = StateEffect.define<SQLNamespace>();
+
+export const completionLevels = StateField.define<{use: boolean; top: CompletionLevel; defaultSchema: CompletionLevel | null}>({
+  create() {
+    return {
+      ...buildCompletionLevels({}),
+      use: false,
+    };
+  },
+  update(value, tr) {
+    for (let e of tr.effects) {
+      if (e.is(setSchema)) {
+        return {
+          ...buildCompletionLevels(e.value),
+          // HACK: Use when setSchema is triggered
+          use: true,
+        }
+      }
+    }
+    return value;
+  },
+});
+
+// Some of this is more gnarly than it has to be because we're also
+// supporting the deprecated, not-so-well-considered style of
+// supplying the schema (dotted property names for schemas, separate
+// `tables` and `schemas` completions).
+export function completeFromSchema(schema: SQLNamespace,
+                                   tables?: readonly Completion[], schemas?: readonly Completion[],
+                                   defaultTableName?: string, defaultSchemaName?: string,
+                                   dialect?: SQLDialect): CompletionSource {
+  let {top, defaultSchema} = buildCompletionLevels(schema, tables, schemas, defaultTableName, defaultSchemaName, dialect)
   return async (context: CompletionContext) => {
     let {parents, from, quoted, empty, aliases} = sourceContext(context.state, context.pos)
     if (empty && !context.explicit) return null
+
+    const {top: topState, defaultSchema: defaultSchemaState, use} = context.state.field(completionLevels)
+    if (use) {
+      top = topState
+      defaultSchema = defaultSchemaState
+    }
 
     if (aliases && parents.length == 1) parents = aliases[parents[0]] || parents
     let level = top
@@ -215,12 +244,7 @@ export function completeFromSchema(schema: SQLNamespace,
     if (level == top && aliases)
       options = options.concat(Object.keys(aliases).map(name => ({label: name, type: "constant"})))
 
-    // ==== BEGIN CUSTOM PATCH ====
-    options = await optionsFilter(context, {
-      parents, from, quoted, empty, aliases,
-      schema, tables, schemas, defaultTableName, defaultSchemaName, dialect
-    }, options);
-    // ==== END CUSTOM PATCH ====
+    options = await optionsFilter(context, { parents, from, quoted, empty, aliases }, options);
 
     return {
       from,

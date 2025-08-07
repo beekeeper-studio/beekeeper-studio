@@ -47,26 +47,19 @@ export default Vue.extend({
         onQuerySelectionChange: (params) => {
           this.$emit("bks-query-selection-change", params)
         },
+        columnsGetter: (entity: Entity) => {
+          return this.columnsGetter?.(entity.name) || [];
+        },
       });
     },
     initialized() {
       this.applyCompletionSource();
-      this.applyRequestColumnsListener();
     },
     applyCompletionSource() {
       this.textEditor.setCompletionSource({
         defaultSchema: this.defaultSchema,
         entities: this.entities,
       });
-    },
-    applyRequestColumnsListener() {
-      if (this.columnsGetter) {
-        this.textEditor.setRequestColumnsListener((entity: Entity) =>
-          this.columnsGetter(entity.name)
-        );
-      } else {
-        this.textEditor.setRequestColumnsListener(null);
-      }
     },
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
       return [

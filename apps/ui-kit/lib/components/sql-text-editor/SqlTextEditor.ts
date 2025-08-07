@@ -5,9 +5,7 @@ import { Dialect } from "sql-query-identifier";
 import {
   applyDialect,
   applyEntities,
-  applyColumnsGetter,
   extensions as sqlExtensions,
-  ColumnsGetter,
   SQLExtensionsConfig,
 } from "./extensions";
 import { ExtensionConfiguration } from "../text-editor/types";
@@ -44,13 +42,6 @@ export class SqlTextEditor extends TextEditor {
 
   setQueryIdentifierDialect(dialect: Dialect) {
     applyDialect(this.view, dialect);
-  }
-
-  /**
-   * Sets the listener that will be called to fetch columns for a table
-   */
-  setRequestColumnsListener(listener?: ColumnsGetter) {
-    applyColumnsGetter(this.view, listener);
   }
 
   // --- Editor Setup ---
