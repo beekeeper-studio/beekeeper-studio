@@ -46,7 +46,7 @@ const dialectState = StateField.define<Options["dialect"]>({
   update: (value, tr) => {
     for (const effect of tr.effects) {
       if (effect.is(setDialectEffect)) {
-        return effect.value;
+        return effect.value || "generic";
       }
     }
     return value;
@@ -186,8 +186,8 @@ const querySelectionState = StateField.define<QuerySelectionState>({
 
 // Extension factory function
 export function querySelection(
-  dialect: Options["dialect"],
-  onQuerySelectionChange: (params: QuerySelectionChangeParams) => void
+  dialect?: Options["dialect"],
+  onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void
 ): Extension {
   return [
     dialectState,
