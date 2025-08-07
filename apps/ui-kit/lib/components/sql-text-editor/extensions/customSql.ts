@@ -1,27 +1,18 @@
-import {
-  keywordCompletionSource,
-  SQLConfig as CMSQLConfig,
-  StandardSQL,
-} from "@codemirror/lang-sql";
-import { LanguageSupport } from "@codemirror/language";
-import { Compartment, Facet, StateEffect, StateField } from "@codemirror/state";
+import { SQLConfig as CMSQLConfig } from "@codemirror/lang-sql";
+import { Facet, StateEffect, StateField } from "@codemirror/state";
 import { Entity } from "@/components/types";
 import { EditorView } from "@codemirror/view";
-import { buildSchema } from "../utils";
-import { CompletionSource } from "@codemirror/autocomplete";
-import { completeFromSchema } from "./vendor/@codemirror/lang-sql/src/complete";
+import { buildSchema, columnsToCompletions } from "../utils";
+import { schemaCompletionFilter } from "./vendor/@codemirror/lang-sql/src/complete";
+import { sql } from "./vendor/@codemirror/lang-sql/src/sql";
 
-type SQLConfig = {
+type SQLConfig = CMSQLConfig & {
   disableSchemaCompletion?: boolean;
   disableKeywordCompletion?: boolean;
-  /** Configuration passed to CodeMirror’s {@link SQLConfig} */
-  sqlConfig?: CMSQLConfig;
 };
-
 
 type ColumnsGetter = (entity: Entity) => string[] | Promise<string[]>;
 
-const sqlCompartment = new Compartment();
 const setEntities = StateEffect.define<Entity[]>();
 const setSchema = StateEffect.define<ReturnType<typeof buildSchema>>();
 const entities = StateField.define<Entity[]>({
@@ -65,16 +56,15 @@ const setColumnsGetter = StateEffect.define<ColumnsGetter>();
 /**
  * Get all base SQL extensions
  */
-function extendedSql(config: SQLConfig = {}) {
+function customSql(config: SQLConfig = {}) {
   return [
     // we regiter entities so it can be used by other sql extensions like sqlContextComplete
     entities,
     schema,
     configFacet.of(config),
     columnsGetter,
-    // FIXME this is possible without compartment. Just use the statefields
-    // inside the completeFromSchema
-    sqlCompartment.of(createLangWithCompletion(config)),
+    sql(config),
+    columnsCompletions,
   ];
 }
 
@@ -88,61 +78,73 @@ function applyEntities(
   defaultSchema?: string
 ) {
   const schema = buildSchema(entities, defaultSchema);
-  const config = {
-    ...view.state.facet(configFacet),
-    sqlConfig: { ...view.state.facet(configFacet).sqlConfig, schema },
-  };
-
   view.dispatch({
-    effects: [
-      setEntities.of(entities),
-      setSchema.of(schema),
-      sqlCompartment.reconfigure(
-        createLangWithCompletion(config)
-      ),
-    ],
+    effects: [setEntities.of(entities), setSchema.of(schema)],
   });
 }
 
-export function schemaCompletionSource(config: CMSQLConfig): CompletionSource {
-  return config.schema
-    ? completeFromSchema(
-      config.schema,
-      config.tables,
-      config.schemas,
-      config.defaultTable,
-      config.defaultSchema,
-      config.dialect || StandardSQL
-    )
-    : () => null;
-}
+/** We add our custom columns getter here. */
+const columnsCompletions = schemaCompletionFilter.of(
+  async (context, source, options) => {
+    return options;
+    const { parents, aliases, defaultSchemaName } = source;
+    if (parents.length >= 1) {
+      // Get last segment (table or alias)
+      const last = parents[parents.length - 1];
+      const path = aliases?.[last];
+      let table = last;
+      let schema: string | undefined;
+      // let alias: string | undefined;
 
-function createLangWithCompletion(config: SQLConfig = {}): LanguageSupport {
-  const langExtensions = [];
-  const sqlConfig = config.sqlConfig || {};
-  const lang = sqlConfig.dialect || StandardSQL;
+      if (path) {
+        // Resolve alias
+        // alias = last;
+        if (path.length === 2) {
+          schema = path[0];
+          table = path[1];
+        } else {
+          table = path[0];
+        }
+      }
 
-  if (!config.disableSchemaCompletion) {
-    langExtensions.push(
-      lang.language.data.of({
-        autocomplete: schemaCompletionSource(sqlConfig),
-      })
-    );
+      const entity: Entity = context.state.field(entities).find((e) => {
+        if (
+          e.entityType !== "table" &&
+          e.entityType !== "view" &&
+          e.entityType !== "materialized-view"
+        ) {
+          return false;
+        }
+
+        // Filter out tables from other schemas
+        if (!schema && defaultSchemaName && e.schema !== defaultSchemaName) {
+          return false;
+        }
+
+        return e.name === table;
+      }) ?? { schema, entityType: "table", name: table };
+
+      const columnsGetterFunc = context.state.field(columnsGetter);
+      if (columnsGetterFunc) {
+        try {
+          const columns = await columnsGetterFunc(entity);
+          options = options.concat(columnsToCompletions(columns));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    return options;
   }
+);
 
-  if (!config.disableKeywordCompletion) {
-    langExtensions.push(
-      lang.language.data.of({
-        autocomplete: keywordCompletionSource(
-          lang,
-          config.sqlConfig?.upperCaseKeywords,
-          config.sqlConfig?.keywordCompletion
-        ),
-      })
-    );
-  }
-
-  return new LanguageSupport(lang.language, langExtensions);
-}
-
-export { entities, schema, applyEntities, applyColumnsGetter, extendedSql as sql, SQLConfig, ColumnsGetter };
+export {
+  entities,
+  schema,
+  applyEntities,
+  applyColumnsGetter,
+  customSql as sql,
+  SQLConfig,
+  ColumnsGetter,
+};

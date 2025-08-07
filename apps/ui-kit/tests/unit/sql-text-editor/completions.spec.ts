@@ -1,10 +1,10 @@
-// Fork from https://github.com/codemirror/lang-sql/blob/main/test/test-complete.ts
+// "forked" from https://github.com/codemirror/lang-sql/blob/main/test/test-complete.ts
 // Distributed under an MIT license: https://github.com/codemirror/lang-sql/blob/main/LICENSE
 
 import {EditorState} from "@codemirror/state"
 import {CompletionContext, CompletionResult, CompletionSource} from "@codemirror/autocomplete"
 import {PostgreSQL, MySQL, SQLConfig, SQLDialect} from "@codemirror/lang-sql"
-import ist from "ist"
+import theIst from "ist"
 import { extensions as sql } from "../../../lib/components/sql-text-editor/extensions"
 
 function get(doc: string, conf: SQLConfig & {explicit?: boolean, keywords?: boolean} = {}) {
@@ -15,21 +15,33 @@ function get(doc: string, conf: SQLConfig & {explicit?: boolean, keywords?: bool
     selection: {anchor: cur},
     extensions: [
       sql({
+        ...conf,
         disableKeywordCompletion: !conf.keywords,
         disableSchemaCompletion: conf.keywords,
-        sqlConfig: { ...conf, dialect },
+        dialect,
       }),
     ]
   })
   let result = state.languageDataAt<CompletionSource>("autocomplete", cur)[0](new CompletionContext(state, cur, !!conf.explicit))
-  return result as CompletionResult | null
+  return result
 }
 
-function str(result: CompletionResult | null) {
+async function str(result: ReturnType<typeof get>) {
+  result = await result
   return !result ? "" : result.options.slice()
     .sort((a, b) => (b.boost || 0) - (a.boost || 0) || (a.label < b.label ? -1 : 1))
     .map(o => o.apply || o.label)
     .join(", ")
+}
+
+function ist(...args) {
+  if (args[0]?.then) {
+    args[0].then((x) => {
+      theIst(x, ...args.slice(1))
+    })
+  } else {
+    theIst(...args)
+  }
 }
 
 let schema1 = {
@@ -132,18 +144,18 @@ describe("SQL completion", () => {
     ist(str(get('select a| from a.b as ab join auto au', {schema: schema2})), "ab, au, other, public")
   })
 
-  it("includes closing quote in completion", () => {
-    let r = get('select "u|"', {schema: schema1})
+  it("includes closing quote in completion", async () => {
+    let r = await get('select "u|"', {schema: schema1})
     ist(r!.to, 10)
   })
 
-  it("keeps extra table completion properties", () => {
-    let r = get("select u|", {schema: {users: ["id"]}, tables: [{label: "users", type: "keyword"}]})
+  it("keeps extra table completion properties", async () => {
+    let r = await get("select u|", {schema: {users: ["id"]}, tables: [{label: "users", type: "keyword"}]})
     ist(r!.options[0].type, "keyword")
   })
 
-  it("keeps extra column completion properties", () => {
-    let r = get("select users.|", {schema: {users: [{label: "id", type: "keyword"}]}})
+  it("keeps extra column completion properties", async () => {
+    let r = await get("select users.|", {schema: {users: [{label: "id", type: "keyword"}]}})
     ist(r!.options[0].type, "keyword")
   })
 
@@ -205,7 +217,7 @@ describe("SQL completion", () => {
     ist(str(get("public.users.e|", s)), "email, id")
   })
 
-  it("supports self fields to specify table/schema completions", () => {
+  it("supports self fields to specify table/schema completions", async () => {
     let s: SQLConfig = {schema: {
       foo: {
         self: {label: "foo", type: "keyword"},
@@ -217,20 +229,20 @@ describe("SQL completion", () => {
         }
       }
     }}
-    ist(get("select f|", s)!.options[0].type, "keyword")
-    ist(get("select foo.|", s)!.options[0].type, "constant")
-    ist(get("select foo.|", s)!.options.length, 1)
+    ist((await get("select f|", s))!.options[0].type, "keyword")
+    ist((await get("select foo.|", s))!.options[0].type, "constant")
+    ist((await get("select foo.|", s))!.options.length, 1)
   })
 
-  it("can complete keywords", () => {
-    ist(get("s|", {keywords: true})!.options.some(c => c.label == "select"))
+  it("can complete keywords", async () => {
+    ist((await get("s|", {keywords: true}))!.options.some(c => c.label == "select"))
   })
 
-  it("can complete upper-case keywords", () => {
-    ist(get("s|", {keywords: true, upperCaseKeywords: true})!.options.some(c => c.label == "SELECT"))
+  it("can complete upper-case keywords", async () => {
+    ist((await get("s|", {keywords: true, upperCaseKeywords: true}))!.options.some(c => c.label == "SELECT"))
   })
 
-  it("can transform keyword completions", () => {
-    ist(get("s|", {keywords: true, keywordCompletion: l => ({label: l, type: "x"})})!.options.every(c => c.type == "x"))
+  it("can transform keyword completions", async () => {
+    ist((await get("s|", {keywords: true, keywordCompletion: l => ({label: l, type: "x"})}))!.options.every(c => c.type == "x"))
   })
 })

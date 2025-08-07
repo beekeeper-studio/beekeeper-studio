@@ -1,12 +1,27 @@
-import {Completion, CompletionContext, CompletionSource, completeFromList, ifNotIn} from "@codemirror/autocomplete"
-import {EditorState, Text} from "@codemirror/state"
+import {Completion, CompletionContext, CompletionSource} from "@codemirror/autocomplete"
+import {EditorState, Facet, Text} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
 import {SyntaxNode} from "@lezer/common"
-import {Type, Keyword} from "./sql.grammar.terms"
 import {type SQLDialect, SQLNamespace} from "@codemirror/lang-sql"
-import { Entity } from "@/components/types"
-import { columnsGetter, entities } from "@/components/sql-text-editor/extensions/customSql"
-import { columnsToCompletions } from "@/components/sql-text-editor/utils"
+
+// ==== BEGIN CUSTOM PATCH ====
+export const schemaCompletionFilter = Facet.define<typeof optionsFilter>()
+async function optionsFilter(
+  context: CompletionContext,
+  source: ReturnType<typeof sourceContext> & {
+    schema: SQLNamespace;
+    tables?: readonly Completion[];
+    schemas?: readonly Completion[];
+    defaultTableName?: string;
+    defaultSchemaName?: string;
+    dialect?: SQLDialect;
+  },
+  options: Completion[]
+) {
+  for (let filter of context.state.facet(schemaCompletionFilter)) options = await filter(context, source, options)
+  return options
+}
+// ==== END CUSTOM PATCH ====
 
 function tokenBefore(tree: SyntaxNode) {
   let cursor = tree.cursor().moveTo(tree.from, -1)
@@ -200,48 +215,11 @@ export function completeFromSchema(schema: SQLNamespace,
     if (level == top && aliases)
       options = options.concat(Object.keys(aliases).map(name => ({label: name, type: "constant"})))
 
-    // ==== BEGIN CUSTOM PATCH: Notify host when columns for a table/alias are needed ====
-    if (parents.length >= 1) {
-      // Get last segment (table or alias)
-      const last = parents[parents.length - 1];
-      const path = aliases?.[last];
-      let table = last;
-      let schema: string | undefined;
-      // let alias: string | undefined;
-
-      if (path) {
-        // Resolve alias
-        // alias = last;
-        if (path.length === 2) {
-          schema = path[0];
-          table = path[1];
-        } else {
-          table = path[0];
-        }
-      }
-
-      const entity: Entity = context.state.field(entities).find((e) => {
-        if (
-          e.entityType !== "table" &&
-          e.entityType !== "view" &&
-          e.entityType !== "materialized-view"
-        ) {
-          return false;
-        }
-
-        // Filter out tables from other schemas
-        if (!schema && defaultSchemaName && e.schema !== defaultSchemaName) {
-          return false;
-        }
-
-        return e.name === table;
-      }) ?? { schema, entityType: "table", name: table };
-
-      if (context.state.field(columnsGetter)) {
-        const columns = await (context.state.field(columnsGetter))(entity);
-        options = options.concat(columnsToCompletions(columns));
-      }
-    }
+    // ==== BEGIN CUSTOM PATCH ====
+    options = await optionsFilter(context, {
+      parents, from, quoted, empty, aliases,
+      schema, tables, schemas, defaultTableName, defaultSchemaName, dialect
+    }, options);
     // ==== END CUSTOM PATCH ====
 
     return {
@@ -251,16 +229,4 @@ export function completeFromSchema(schema: SQLNamespace,
       validFor: quoted ? QuotedSpan : Span
     }
   }
-}
-
-function completionType(tokenType: number) {
-  return tokenType == Type ? "type" : tokenType == Keyword ? "keyword" : "variable"
-}
-
-export function completeKeywords(keywords: {[name: string]: number}, upperCase: boolean,
-                                 build: (name: string, type: string) => Completion) {
-  let completions =  Object.keys(keywords)
-    .map(keyword => build(upperCase ? keyword.toUpperCase() : keyword, completionType(keywords[keyword])))
-  return ifNotIn(["QuotedIdentifier", "String", "LineComment", "BlockComment", "."],
-                 completeFromList(completions))
 }

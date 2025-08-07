@@ -18,7 +18,7 @@ export type SQLExtensionsConfig = {
 /**
  * Get all base SQL extensions
  */
-export function extensions(config: SQLExtensionsConfig) {
+export function extensions(config: SQLExtensionsConfig & SQLConfig) {
   return [
     sql(config),
     sqlHighlighter,

@@ -1,5 +1,4 @@
 import { EditorView } from "@codemirror/view";
-import { startCompletion, completionStatus, CompletionResult } from "@codemirror/autocomplete";
 import { SqlTextEditor } from "../../../lib/components/sql-text-editor/SqlTextEditor";
 import { ColumnsGetter } from "../../../lib/components/sql-text-editor/extensions";
 import { Entity } from "../../../lib/components/types";

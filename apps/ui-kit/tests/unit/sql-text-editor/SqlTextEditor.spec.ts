@@ -1,8 +1,8 @@
 import { EditorSelection } from "@codemirror/state";
-import { SqlTextEditor } from "../../lib/components/sql-text-editor/SqlTextEditor";
-import { TextEditor } from "../../lib/components/text-editor/TextEditor";
-import { TextEditorConfiguration } from "../../lib/components/text-editor/types";
-import { setClipboard } from "../../lib/utils";
+import { SqlTextEditor } from "../../../lib/components/sql-text-editor/SqlTextEditor";
+import { TextEditor } from "../../../lib/components/text-editor/TextEditor";
+import { TextEditorConfiguration } from "../../../lib/components/text-editor/types";
+import { setClipboard } from "../../../lib/utils";
 
 function createEditor(config?: Partial<TextEditorConfiguration>) {
   const editor = new SqlTextEditor();
