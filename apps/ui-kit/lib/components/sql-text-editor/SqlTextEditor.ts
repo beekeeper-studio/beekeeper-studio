@@ -18,8 +18,15 @@ export interface CompletionSource {
 }
 
 export class SqlTextEditor extends TextEditor {
-  constructor(private extensionsConfig: SQLExtensionsConfig){
+  private extensionsConfig: SQLExtensionsConfig;
+
+  constructor(extensionsConfig?: SQLExtensionsConfig){
     super();
+    this.extensionsConfig = {
+      identiferDialect: "generic",
+      onQuerySelectionChange: () => {},
+      ...extensionsConfig,
+    };
   }
 
   // --- Public API ---

@@ -10,11 +10,10 @@ export { applyEntities, applyColumnsGetter, ColumnsGetter } from "./customSql";
 export { applyDialect } from "./removeQueryQuotes";
 export type { QuerySelectionChangeParams };
 
-export type SQLExtensionsConfig = SQLConfig & {
-  /** Default to "generic" */
+export type SQLExtensionsConfig = {
   identiferDialect?: Options["dialect"];
-  onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void;
-};
+  onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void
+}
 
 /**
  * Get all base SQL extensions
