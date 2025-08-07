@@ -146,7 +146,7 @@ export function extensions(config: ExtensionConfiguration) {
       ...lintKeymap,
       { key: "Tab", run: acceptCompletion },
       indentWithTab,
-      ...config.actionsKeymap
+      ...(config.actionsKeymap || []),
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),

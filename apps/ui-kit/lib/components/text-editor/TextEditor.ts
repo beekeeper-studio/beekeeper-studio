@@ -37,7 +37,8 @@ import { openSearchPanel } from "@codemirror/search";
 export const exposeMethods = ["ls"] as const;
 
 export class TextEditor {
-  protected view: EditorView;
+  public view: EditorView;
+
   private config: TextEditorConfiguration;
   private ls: ReturnType<typeof ls> | null;
 
@@ -97,7 +98,7 @@ export class TextEditor {
   private handleUpdate(update: ViewUpdate) {
     if (update.docChanged) {
       const newValue = update.state.doc.toString();
-      this.config.onValueChange(newValue);
+      this.config.onValueChange?.(newValue);
     }
 
     // Handle focus changes

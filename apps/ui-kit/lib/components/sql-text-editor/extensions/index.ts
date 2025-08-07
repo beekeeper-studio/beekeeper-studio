@@ -13,8 +13,8 @@ export { applyDialect } from "./removeQueryQuotes";
 export type { QuerySelectionChangeParams };
 
 export type SQLExtensionsConfig = {
-  identiferDialect: Options["dialect"];
-  onQuerySelectionChange: (params: QuerySelectionChangeParams) => void
+  identiferDialect?: Options["dialect"];
+  onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void
 }
 
 /**
