@@ -81,7 +81,7 @@ export default Vue.extend({
   },
   data() {
     return {
-      snap: "https://docs.beekeeperstudio.io/pages/troubleshooting#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive",
+      snap: "https://docs.beekeeperstudio.io/support/troubleshooting/#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive",
       loadExtensionFileType: this.$config.isMac ? "dylib" : this.$config.isWindows ? "dll" : "so"
     }
   },

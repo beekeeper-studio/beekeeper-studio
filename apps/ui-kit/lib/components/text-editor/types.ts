@@ -63,7 +63,7 @@ export type TextEditorConfiguration = Configuration | ConfigurationWithLS;
 
 type Configuration = ExtensionConfiguration & {
   parent: HTMLElement;
-  onValueChange: (value: string) => void;
+  onValueChange?: (value: string) => void;
   onSelectionChange?: (value: string) => void;
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;

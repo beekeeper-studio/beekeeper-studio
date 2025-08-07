@@ -39,10 +39,13 @@ export default class WebPluginLoader {
 
   /** Starts the plugin */
   async load(manifest?: Manifest) {
+    // FIXME dont load manifest this way. probably make a new method `setManifest`
     if (manifest) {
       // @ts-ignore
       this.manifest = manifest;
     }
+
+    this.log.info("Loading plugin", this.manifest);
 
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
@@ -246,10 +249,12 @@ export default class WebPluginLoader {
 
   registerIframe(iframe: HTMLIFrameElement) {
     this.iframes.push(iframe);
-    this.postMessage({
-      name: "themeChanged",
-      args: this.pluginStore.getTheme(),
-    });
+    iframe.onload = () => {
+      this.postMessage({
+        name: "themeChanged",
+        args: this.pluginStore.getTheme(),
+      });
+    };
   }
 
   unregisterIframe(iframe: HTMLIFrameElement) {
