@@ -35,15 +35,32 @@ async function str(result: ReturnType<typeof get>) {
 }
 
 function ist(...args) {
+  const err = {};
+  Error.captureStackTrace(err, ist); // exclude ist() from the stack trace
+
   if (args[0]?.then) {
-    args[0].then((x) => {
-      theIst(x, ...args.slice(1))
-    })
+    args[0]
+      .then((x) => {
+        try {
+          theIst(x, ...args.slice(1));
+        } catch (e) {
+          e.stack += '\nAsync call captured at:\n' + err.stack;
+          throw e;
+        }
+      })
+      .catch((e) => {
+        e.stack += '\nAsync call captured at:\n' + err.stack;
+        throw e;
+      });
   } else {
-    theIst(...args)
+    try {
+      theIst(...args);
+    } catch (e) {
+      e.stack += '\nCall captured at:\n' + err.stack;
+      throw e;
+    }
   }
 }
-
 let schema1 = {
   users: ["name", "id", "address"],
   products: ["name", "cost", "description"]

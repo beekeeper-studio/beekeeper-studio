@@ -23,6 +23,8 @@ export class SqlTextEditor extends TextEditor {
     this.extensionsConfig = {
       identiferDialect: "generic",
       onQuerySelectionChange: () => {},
+      // HACK: always turn on schema completion
+      schema: {},
       ...extensionsConfig,
     };
   }

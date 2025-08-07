@@ -42,11 +42,7 @@ function customSql(config: SQLConfig = {}) {
     // we regiter entities so it can be used by other sql extensions like sqlContextComplete
     entities,
     configFacet.of(config),
-    sql({
-      ...config,
-      // Enable schema completion
-      schema: {},
-    }),
+    sql(config),
   ];
 }
 
