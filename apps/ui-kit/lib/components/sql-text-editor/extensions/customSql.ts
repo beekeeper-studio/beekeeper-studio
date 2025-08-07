@@ -1,3 +1,8 @@
+/**
+ * A thin wrapper around the sql() extension that lets you swap in a custom
+ * schema at runtime with applyEntities().
+ */
+
 import { SQLConfig as CMSQLConfig } from "@codemirror/lang-sql";
 import { Facet, StateEffect, StateField } from "@codemirror/state";
 import { Entity } from "../../types";

@@ -1,15 +1,23 @@
 /**
+ * A CodeMirror extension that provides SQL-aware autocomplete suggestions.
+ * – Triggers completion after typing SQL keywords like SELECT, FROM, JOIN, etc.
+ * – Offers column names based on the current query context or table aliases.
+ * – Allows you to inject a custom columnsGetter to lazy load columns.
  * A CodeMirror extension that triggers completion after typing SQL keywords
  * like SELECT, FROM, JOIN, etc.
  *
  * Usage:
  *   import { sql } from "./customSql";
+ *   import { sqlContextComplete, sqlCompletionSource } from "./sqlContextComplete";
  *   import { sqlContextComplete } from "./sqlContextComplete";
  *
  *   // Register the extensions
  *   const extensions = [
- *    sql(),
- *    sqlContextComplete(),
+ *    sql(), // NOTE: must use sql extension from ./customSql.ts
+ *    sqlContextComplete(), // trigger completion while typing
+ *    sqlCompletionSource((entity) => {
+ *      return ["column1", "column2", "column3"];
+ *    }) // custom columnsGetter
  *   ]
  */
 
