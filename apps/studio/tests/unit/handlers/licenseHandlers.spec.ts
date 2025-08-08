@@ -16,7 +16,7 @@ describe("LicenseHandlers", () => {
   beforeEach(async () => {
     await TestOrmConnection.connect();
     // Clean up any existing licenses
-    await LicenseKey.delete({});
+    await LicenseKey.clear();
     
     // Reset the mock
     jest.clearAllMocks();

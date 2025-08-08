@@ -1,7 +1,7 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'trino'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -21,7 +21,8 @@ export const ConnectionTypes = [
   { name: 'DuckDB', value: 'duckdb' },
   { name: 'ClickHouse', value: 'clickhouse' },
   { name: 'MongoDB', value: 'mongodb' },
-  { name: 'SqlAnywhere', value: 'sqlanywhere' }
+  { name: 'SqlAnywhere', value: 'sqlanywhere' },
+  { name: 'Trino', value: 'trino' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -189,7 +190,7 @@ export interface IBasicDatabaseClient {
   listViews(filter?: FilterOptions): Promise<TableOrView[]>,
   listRoutines(filter?: FilterOptions): Promise<Routine[]>,
   listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>,
-  listTableColumns(table: string, schema?: string): Promise<ExtendedTableColumn[]>,
+  listTableColumns(table: string, schema?: string, database?: string): Promise<ExtendedTableColumn[]>,
   listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>,
   listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>,
   listSchemas(filter?: SchemaFilterOptions): Promise<string[]>,
@@ -201,7 +202,7 @@ export interface IBasicDatabaseClient {
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
-  getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>,
+  getQuerySelectTop(table: string, limit: number, schema?: string, database?: string): Promise<string>,
   listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>,
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,
   getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
@@ -234,10 +235,10 @@ export interface IBasicDatabaseClient {
   truncateAllTables(schema?: string): Promise<void>
 
 
-  getTableLength(table: string, schema?: string): Promise<number>,
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
-  selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>
+  getTableLength(table: string, schema?: string, database?: string): Promise<number>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<TableResult>,
+  selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<string>,
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, database?: string): Promise<StreamResults>
 
   queryStream(query: string, chunkSize: number): Promise<StreamResults>
 

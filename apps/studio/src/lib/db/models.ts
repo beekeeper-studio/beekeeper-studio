@@ -109,6 +109,7 @@ export interface PrimaryKeyColumn {
 }
 
 export interface FilterOptions {
+  database?: Nullable<string>
   schema: Nullable<string>;
   only?: string[];
   ignore?: string[];
@@ -122,6 +123,7 @@ export interface DatabaseFilterOptions {
 }
 
 export interface SchemaFilterOptions {
+  database?: string;
   schema?: string;
   only?: string[];
   ignore?: string[];

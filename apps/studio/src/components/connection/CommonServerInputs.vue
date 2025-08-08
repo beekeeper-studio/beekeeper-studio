@@ -1,6 +1,6 @@
 <template>
   <div class="host-port-user-password">
-    <slot name="header"></slot>
+    <slot name="header" />
     <div class="row">
       <div
         class="form-group col"
@@ -39,7 +39,7 @@
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacyMode="privacyMode"
+          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
         />
@@ -53,7 +53,7 @@
         <label for="Host">Host</label>
         <masked-input
           :value="config.host"
-          :privacyMode="privacyMode"
+          :privacy-mode="privacyMode"
           @input="val => config.host = val"
         />
       </div>
@@ -61,7 +61,7 @@
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacyMode="privacyMode"
+          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
         />
@@ -170,7 +170,7 @@
         <label for="user">User</label>
         <masked-input
           :value="config.username"
-          :privacyMode="privacyMode"
+          :privacy-mode="privacyMode"
           @input="val => config.username = val"
         />
       </div>
@@ -192,7 +192,7 @@
       <label
         v-if="config.connectionType !== 'cassandra'"
         for="defaultDatabase"
-      >Default Database</label>
+      >Default {{ topLevelEntityName }}</label>
       <label
         v-else
         for="defaultDatabase"
@@ -258,6 +258,9 @@ export default {
     supportsSocketPathWithCustomPort() {
       return findClient(this.config.connectionType).supportsSocketPathWithCustomPort
     },
+    topLevelEntityName() {
+      return findClient(this.config.connectionType).topLevelEntity || 'Database'
+    }
   },
   methods: {
     async onPaste(event) {
