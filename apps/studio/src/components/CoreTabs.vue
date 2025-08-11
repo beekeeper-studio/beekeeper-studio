@@ -367,6 +367,9 @@ export default Vue.extend({
   watch: {
     async usedConfig() {
       await this.$store.dispatch('tabs/load')
+      if (!this.tabItems?.length) {
+        this.createQuery()
+      }
     }
   },
   filters: {
@@ -1156,10 +1159,6 @@ export default Vue.extend({
   },
 
   async mounted() {
-    await this.$store.dispatch('tabs/load')
-    if (!this.tabItems?.length) {
-      this.createQuery()
-    }
     this.registerHandlers(this.rootBindings)
   }
 })

@@ -1,1 +1,7 @@
-@use "./v2/sql-text-editor.scss";
+@use "../text-editor/text-editor.scss";
+
+.BksSqlTextEditor {
+  .cm-query-highlight {
+    font-weight: bold;
+  }
+}

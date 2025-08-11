@@ -22,7 +22,9 @@ export interface ConfigEntryDetailWarning {
   path: string;
 }
 
-type ConfigValue = string | number | IniArray | undefined;
+type IniValue = string | number | boolean | IniArray | undefined;
+
+type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
@@ -37,6 +39,26 @@ interface IBksConfigDebugInfo {
 }
 
 const log = rawLog.scope("BksConfigProvider");
+
+const codeMirrorModifierMap = {
+  CTRL: "Ctrl",
+  CMD: "Cmd",
+  CTRLORCMD: "Mod",
+  CMDORCTRL: "Mod",
+  CONTROL: "Ctrl",
+  COMMAND: "Cmd",
+  CONTROLORCOMMAND: "Mod",
+  COMMANDORCONTROL: "Mod",
+  SHIFT: "Shift",
+  ALT: "Alt",
+  OPTION: "Option",
+  ALTGR: "AltGraph",
+  SUPER: "Meta",
+  META: "Meta",
+  WINDOWS: "Meta",
+  ENTER: "Enter",
+  F5: "F5"
+} as const;
 
 const electronModifierMap = {
   CTRL: "Control",
@@ -75,12 +97,29 @@ const vHotkeyModifierMap = {
 } as const;
 
 export function convertKeybinding(
-  target: "electron" | "v-hotkey",
+  target: "electron" | "v-hotkey" | "codemirror",
   keybinding: string,
   platform: "windows" | "mac" | "linux"
 ) {
-  const modifierMap =
-    target === "electron" ? electronModifierMap : vHotkeyModifierMap;
+
+  let modifierMap;
+  let joinChar = '+'
+
+  switch (target) {
+    case "electron":
+      modifierMap = electronModifierMap;
+      break;
+    case "v-hotkey":
+      modifierMap = vHotkeyModifierMap;
+      break;
+    case "codemirror":
+      modifierMap = codeMirrorModifierMap;
+      joinChar = '-'
+      break;
+    default:
+      log.error("Unrecognized target for keybinding conversion: ", target)
+      return;
+  }
 
   const combination: string[] = [];
   for (const _key of keybinding.split("+")) {
@@ -95,10 +134,14 @@ export function convertKeybinding(
       }
     }
 
+    if (target === "codemirror" && !modifierMap[key]) {
+      mod = mod.toLowerCase();
+    }
+
     combination.push(mod);
   }
 
-  return combination.join("+");
+  return combination.join(joinChar);
 }
 
 /**
@@ -211,7 +254,7 @@ export class BksConfigProvider {
     return getDebugAll(this.mergedConfig);
   }
 
-  getKeybindings(target: "electron" | "v-hotkey", path: KeybindingPath) {
+  getKeybindings(target: "electron" | "v-hotkey" | "codemirror", path: KeybindingPath) {
     const keybindings = this.get(`keybindings.${path}`);
 
     if (isIniArray(keybindings)) {

@@ -16,7 +16,7 @@ extra:
   generator: false
 theme:
   logo: assets/bks.svg
-  favicon: assets/favicon.ico
+  favicon: assets/favicon-96x96.png
   name: material
   icon:
     repo: fontawesome/brands/github
@@ -55,8 +55,12 @@ plugins:
 #        background_color: "#2c2c2c"
 #        color: "#ffffff"
 #        font_family: Rubik
-
+  - ini-includer:
+      base_path: ../apps/studio
+      config_file: default.config.ini
 markdown_extensions:
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -68,7 +72,6 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
   - tables
   - abbr
   - attr_list
@@ -101,6 +104,7 @@ nav:
 
   - Features:
     - user_guide/sql_editor/editor.md
+    - user_guide/sql-ai-shell.md
     - user_guide/editing-data.md
     - user_guide/modify-tables.md
     - user_guide/sql_editor/saving_queries.md
@@ -110,7 +114,7 @@ nav:
     - Diagrams: user_guide/entity-relationship-diagrams-erd.md
     - user_guide/backup-restore.md
     - Cloud Sync: user_guide/cloud-storage-team-workspaces.md
-    - user_guide/privacy-mode.md
+    - user_guide/security.md
     - Plugins: user_guide/plugins.md
     - Configuration: user_guide/configuration.md
   - Plugin Development:

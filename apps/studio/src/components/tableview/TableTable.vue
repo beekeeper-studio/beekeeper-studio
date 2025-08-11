@@ -108,7 +108,7 @@
             v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
           <a
-            v-if="hasNextPage"
+            v-if="hasNextPage && canJumpToLastPage"
             @click="jumpToLastPage"
             v-tooltip="$bksConfig.keybindings.tableTable.lastPage"
           >
@@ -323,18 +323,18 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
-import { mapGetters, mapState, mapActions } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import { ExpandablePath } from '@/lib/data/jsonViewer'
+import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
@@ -398,6 +398,10 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    canJumpToLastPage() {
+      const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+      return this.$bksConfig.db[dbType].allowSkipToLastPage;
+    },
     limit() {
       return this.$bksConfig.ui.tableTable.pageSize
     },
@@ -846,7 +850,10 @@ export default Vue.extend({
         cssClass += ' primary-key';
       } else if (hasKeyDatas) {
         cssClass += ' foreign-key';
+      } else if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
+        cssClass += ' text-right'
       }
+
       if (column.generated) {
         cssClass += ' generated-column';
       }
@@ -1823,9 +1830,13 @@ export default Vue.extend({
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
       this.selectedRow = row
+
+      // Clean the data first
+      let cleanedData = this.$bks.cleanData(data, this.tableColumns)
+
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
-      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({

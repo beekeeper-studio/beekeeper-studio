@@ -39,7 +39,7 @@ export default defineConfig({
       ],
       input: {
         style: resolve(__dirname, "lib/style.scss"),
-        index: resolve(__dirname, "lib/components/define.ts"),
+        index: resolve(__dirname, "lib/index.ts"),
         table: resolve(__dirname, "lib/components/table/define.ts"),
         "entity-list": resolve(
           __dirname,
@@ -72,7 +72,7 @@ export default defineConfig({
         ),
         "vue/sql-text-editor": resolve(
           __dirname,
-          "lib/components/sql-text-editor/v2/SqlTextEditor.vue"
+          "lib/components/sql-text-editor/SqlTextEditor.vue"
         ),
         "vue/mongo-shell": resolve(
           __dirname,
@@ -84,7 +84,7 @@ export default defineConfig({
         ),
         "vue/text-editor": resolve(
           __dirname,
-          "lib/components/text-editor/v2/TextEditor.vue"
+          "lib/components/text-editor/TextEditor.vue"
         ),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
