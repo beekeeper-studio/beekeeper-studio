@@ -545,7 +545,7 @@ const store = new Vuex.Store<State>({
 
         // FIXME (matthew): We're doing another loop here for no reason
         // so we're looping n*2 times
-        // Also this is a little duplicated from ``, but it doesn't make sense
+        // Also this is a little duplicated from `updateTableColumns`, but it doesn't make sense
         // to dispatch that separately as it causes blinking tabletable state.
         for (const table of tables) {
           const match = context.state.tables.find((st) => tablesMatch(st, table))

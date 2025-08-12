@@ -56,7 +56,7 @@ export const NoOpContextProvider: AppContextProvider = {
 };
 
 export interface BaseQueryResult {
-  columns: { name: string }[]
+  columns: { name: string, type?: string }[]
   rows: any[][] | Record<string, any>[];
   arrayMode: boolean;
 }

@@ -1,9 +1,11 @@
 import _ from "lodash";
 import { ColumnType, defaultEscapeString, DialectData, friendlyNormalizedIdentifier } from "./models";
 
-// TODO: find what these should be!
+// https://trino.io/docs/current/language/types.html
 const types = [
-  'array', 'bignumeric', 'bool', 'bytes', 'date', 'datetime', 'float64', 'geography', 'int64', 'interval', 'json', 'numeric', 'string', 'struct', 'time', 'timestamp'
+  'BOOLEAN', 'TINYINT', 'SMALLINT', 'INTEGER or INT', 'BIGINT', 'REAL', 'DOUBLE', 'DECIMAL', 'VARCHAR', 'CHAR', 'VARBINARY', 'JSON', 'DATE', 'TIME', 'TIME(P)', 'TIME WITH TIME ZONE',
+  'TIMESTAMP', 'TIMESTAMP(P)', 'TIMESTAMP WITH TIME ZONE', 'TIMESTAMP(P) WITH TIME ZONE', 'INTERVAL YEAR TO MONTH', 'INTERVAL DAY TO SECOND',
+  'ARRAY', 'MAP', 'ROW', 'IPADDRESS', 'UUID', 'HyperLogLog', 'P4HyperLogLog', 'SetDigest', 'QDigest', 'TDigest', 
 ];
 
 const supportsLength = [];

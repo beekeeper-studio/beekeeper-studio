@@ -6,7 +6,6 @@ import {
   QueryResult,
   ConnectionOptions as TrinoConnectionOptions
 } from 'trino-client'
-import { identify } from "sql-query-identifier"
 import {
   BaseQueryResult,
   BasicDatabaseClient
@@ -45,7 +44,6 @@ import {
   TableKey
 } from "@shared/lib/dialects/models"
 import { IdentifyResult } from "sql-query-identifier/lib/defines"
-import { uuidv4 } from "@/lib/uuid"
 import { errors } from "@/lib/errors"
 import { IDbConnectionServer } from "@/lib/db/backendTypes"
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
@@ -56,15 +54,15 @@ interface ResultColumn {
 }
 
 interface TrinoResult extends BaseQueryResult {
+  info?: any,
+  length?: number,
   queryId?: string
 }
-
-type Result = TrinoResult
 
 const log = rawLog.scope("trino")
 const knex = null
 
-export class TrinoClient extends BasicDatabaseClient<Result> {
+export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   version: string
   client: any
   supportsTransaction: boolean
@@ -78,40 +76,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   rowsToObject(columns: ResultColumn[] = [], rows: any[][]= [[]]) {
     const keys = columns.map(col => col?.name).filter(c => c != null)
     return rows.map(row => _.zipObject(keys, row))
-  }
-
-  async driverExecuteSingle(sql): Promise<Result> {
-    try {
-      const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
-      
-      let columns: ResultColumn[] = []
-      const rows: any[] = []
-      
-      for await (const r of result) {
-        const { data: resultData, columns: resultColumns } = r
-        columns = resultColumns
-  
-        if (resultData) rows.push(...resultData)
-      }
-
-      if (rows.length === 0) {
-        return {
-          columns,
-          rows: [],
-          arrayMode: false,
-          queryId: ''
-        }
-      }
-  
-      return {
-        columns,
-        rows: this.rowsToObject(columns, rows),
-        arrayMode: false
-      }
-    } catch (err) {
-      log.error(err)
-      throw err
-    }
   }
 
   async connect(): Promise<void> {
@@ -194,7 +158,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
 
     console.log('here first')
     
-    const queries = TrinoClient.buildSelectTopQuery(
+    const queries = this.buildSelectTopQuery(
       table,
       offset,
       limit,
@@ -230,7 +194,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     database: string
   ): Promise<string> {
     const columns = await this.listTableColumns(table, schema, database)
-    const { query } = TrinoClient.buildSelectTopQuery(
+    const { query } = this.buildSelectTopQuery(
       table,
       offset,
       limit,
@@ -405,34 +369,6 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     }
   }
 
-  async driverExecuteMultiple(queryText: string): Promise<BaseQueryResult[]> {
-    let identification
-    try {
-      identification = identify(queryText, { strict: false, dialect: 'generic', identifyTables: false })
-    } catch (ex) {
-      log.error("Unable to identify query", ex)
-    }
-
-    const results = await Promise.all(
-      identification.map(async query => {
-        let queryText = query.text.trim()
-
-        if (queryText.endsWith(';')) {
-          queryText = queryText.slice(0, -1)
-        }
-
-        try {
-          const queryResult = await this.driverExecuteSingle(queryText) 
-          
-          return queryResult
-        } catch (err) {
-          throw new Error(err)
-        }
-      })
-    )
-    return results
-  }
-
   parseFields(fields: any[]) {
     return fields.map(column => ({
       dataType: column.type,
@@ -475,10 +411,38 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return ret
   }
 
-  async rawExecuteQuery(_query: string): Promise<Result[]> {
-    // TODO: Still need this?
-    log.info("Trino doesn't support changing data")
-    return null
+  async rawExecuteQuery(sql: string): Promise<TrinoResult> {
+    try {
+      const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
+      
+      let columns: ResultColumn[] = []
+      const rows: any[] = []
+      
+      for await (const r of result) {
+        const { data: resultData, columns: resultColumns } = r
+        columns = resultColumns
+  
+        if (resultData) rows.push(...resultData)
+      }
+
+      if (rows.length === 0) {
+        return {
+          columns,
+          rows: [],
+          arrayMode: false,
+          queryId: ''
+        }
+      }
+  
+      return {
+        columns,
+        rows: this.rowsToObject(columns, rows),
+        arrayMode: false
+      }
+    } catch (err) {
+      log.error(err)
+      throw err
+    }
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
@@ -577,35 +541,13 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return row.count
   }
 
-  // TODO: ALL THE STREAMING!
-  // No exports right now so.... is this needed?
-  async selectTopStream(
-    table: string,
-    orderBy: OrderBy[],
-    filters: string | TableFilter[],
-    _chunkSize: number,
-    schema: string,
-    database: string
-  ): Promise<StreamResults> {
-    const qs = TrinoClient.buildSelectTopQuery(
-      table,
-      null,
-      null,
-      orderBy,
-      filters,
-      "total",
-      null,
-      null,
-      schema,
-      database
-    )
-    // in a way, it kind of already does streaming because it returns data one row at a time that you then create your return from
-    // 
-    const result = await this.driverExecuteSingle(qs.countQuery)
-    const json = result.data as ResponseJSON<{ total: number }>
-    const totalRows = Number(json.data[0].total) || 0
-    const columns = await this.listTableColumns(table, schema, database)
-    return { totalRows, columns, cursor }
+  // No exports of stuff since I don't think tables will be exported. Result sets, sure. Not tables
+  async selectTopStream(): Promise<StreamResults> {
+    return {
+      columns: [],
+      totalRows: 0,
+      cursor: null
+    }
   }
 
   queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
@@ -616,7 +558,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     return TrinoData.wrapIdentifier(value)
   }
 
-  static wrapDynamicLiteral(value: any): string {
+  wrapDynamicLiteral(value: any): string {
     if (value == null) return 'NULL'
     if (typeof value === 'number' || /^[+-]?([0-9]*[.])?[0-9]+$/.test(value)) {
       return value.toString()
@@ -628,7 +570,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
   }
 
 
-  static buildFilterString(filters: TableFilter[], columns = []) {
+  buildFilterString(filters: TableFilter[], columns = []) {
     let fullFilterString = ""
 
     if (filters && Array.isArray(filters) && filters.length > 0) {
@@ -677,7 +619,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     }
   }
 
-  static buildSelectTopQuery(
+  buildSelectTopQuery(
     table: string,
     offset: number,
     limit: number,
@@ -718,7 +660,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
     if (_.isString(filters)) {
       filterString = fullFilterString = `WHERE ${filters}`
     } else {
-      const filterBlob = TrinoClient.buildFilterString(filters, columns)
+      const filterBlob = this.buildFilterString(filters, columns)
       filterString = filterBlob.fullFilterString
       fullFilterString = filterBlob.fullFilterString
     }
@@ -733,8 +675,19 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       ${filterString}
     `
 
-    // Helper to build a query with optional pagination WHERE clause
-    const buildPaginatedQuery = (databaseRef: string, tableRef: string, filter: string) => `
+    const paginatedSQL = this.buildPaginatedQuery(database, wrappedTable, filterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
+    const fullSql = this.buildPaginatedQuery(database, TrinoData.wrapIdentifier(table), fullFilterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
+    
+    return {
+      query: paginatedSQL,
+      fullQuery: fullSql,
+      countQuery: countSQL,
+      params: {},
+    }
+  }
+
+  buildPaginatedQuery(databaseRef: string, tableRef: string, filter: string, wrappedSelects: string, rowNumberOrderClause: string, usePagination: boolean, safeOffset: number, safeLimit: number): string {
+    return `
       WITH ranked AS (
         SELECT 
           ${wrappedSelects},
@@ -746,16 +699,7 @@ export class TrinoClient extends BasicDatabaseClient<Result> {
       FROM ranked
       ${usePagination ? `WHERE rownum > ${safeOffset} AND rownum <= ${safeOffset + safeLimit}` : ""}
     `
-    const paginatedSQL = buildPaginatedQuery(database, wrappedTable, filterString)
-    const fullSql = buildPaginatedQuery(database, TrinoData.wrapIdentifier(table), fullFilterString)
-    
-    return {
-      query: paginatedSQL,
-      fullQuery: fullSql,
-      countQuery: countSQL,
-      params: {},
-    }
-  }
+  } 
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
     return (
