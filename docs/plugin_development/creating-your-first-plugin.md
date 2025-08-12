@@ -44,7 +44,6 @@ Navigate to the plugins directory for your operating system:
 === "Windows"
     ```bash
     %APPDATA%/beekeeper-studio/plugins/
-    # Usually: C:\Users\YourUsername\AppData\Roaming\beekeeper-studio\plugins\
     ```
 
 === "Portable Version"
@@ -89,16 +88,14 @@ Create `manifest.json` to define your plugin's metadata:
     "description": "A simple Hello World plugin demonstrating basic plugin structure",
     "version": "1.0.0",
     "capabilities": {
-        "views": {
-            "tabTypes": [
-                {
-                    "id": "hello-world-tab",
-                    "name": "Hello World",
-                    "kind": "shell",
-                    "entry": "index.html"
-                }
-            ]
-        }
+        "views": [
+            {
+                "id": "hello-world-tab",
+                "name": "Hello World",
+                "type": "shell-tab",
+                "entry": "index.html"
+            }
+        ]
     }
 }
 ```
@@ -155,16 +152,9 @@ hello-world-plugin/
 
 ![Plugin tab running](../../assets/images/plugin-tab.png)
 
-## Development Workflow
+## Reloading the plugin
 
-### Reloading
-
-During development, you can reload your plugin without restarting Beekeeper Studio:
-
-1. Edit your plugin files
-2. Right-click on your plugin tab
-3. Select **"[DEV] Reload Plugin View"**
-4. Your changes will appear immediately
+During development, you can reload your plugin without restarting Beekeeper Studio. You can do so by right-clicking your plugin tab and selecting **"[DEV] Reload Plugin View"**.
 
 ![Right-click context menu for plugin reload](../../assets/images/plugin-tab-reload-menu.png)
 
@@ -194,10 +184,10 @@ You can add JavaScript to interact with the database. First, create a separate J
 
 ```javascript
 import "./node_modules/@beekeeperstudio/plugin/dist/eventForwarder.js"; // IMPORTANT! Enables keyboard/mouse event forwarding from iframe to parent
-import { request } from "./node_modules/@beekeeperstudio/plugin/dist/index.js";
+import { getTables } from "./node_modules/@beekeeperstudio/plugin/dist/index.js";
 
 async function showTables() {
-    const tables = await request("getTables");
+    const tables = await getTables();
     document.querySelector(".tables").innerHTML = tables
         .map((table) => table.name)
         .join(", ");
@@ -317,12 +307,12 @@ This is how your `index.html` and `main.js` should look like after following thi
 ```javascript
 import "./node_modules/@beekeeperstudio/plugin/dist/eventForwarder.js"; // IMPORTANT! Enables keyboard/mouse event forwarding from iframe to parent
 import {
-    request,
+    getTables,
     addNotificationListener,
 } from "./node_modules/@beekeeperstudio/plugin/dist/index.js";
 
 async function showTables() {
-    const tables = await request("getTables");
+    const tables = await getTables();
     document.querySelector(".tables").innerHTML = tables
         .map((table) => table.name)
         .join(", ");

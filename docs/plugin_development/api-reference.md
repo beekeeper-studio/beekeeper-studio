@@ -44,7 +44,7 @@ Enable debug logging to see all communication between your plugin and Beekeeper 
 setDebugComms(true);
 
 // Now all communication will be logged to the browser console
-const tables = await request('getTables');
+const tables = await getTables();
 
 // Disable debug logging
 setDebugComms(false);
@@ -67,10 +67,10 @@ Get a list of tables from the current database.
 **Usage:**
 ```javascript
 // Get all tables
-const tables = await request('getTables');
+const tables = await getTables();
 
 // Get tables from specific schema
-const tables = await request('getTables', { schema: 'public' });
+const tables = await getTables({ schema: 'public' });
 ```
 
 **Example Response:**
@@ -103,7 +103,7 @@ Get column information for a specific table.
 
 **Usage:**
 ```javascript
-const columns = await request('getColumns', {
+const columns = await getColumns({
   table: 'users',
   schema: 'public'
 });
@@ -142,7 +142,7 @@ Execute a SQL query against the current database.
 
 **Usage:**
 ```javascript
-const result = await request('runQuery', {
+const result = await runQuery({
   query: 'SELECT * FROM users WHERE active = true LIMIT 10'
 });
 ```
@@ -187,7 +187,7 @@ Get information about the current database connection.
 
 **Usage:**
 ```javascript
-const connectionInfo = await request('getConnectionInfo');
+const connectionInfo = await getConnectionInfo();
 ```
 
 **Example Response:**
@@ -235,7 +235,7 @@ Get information about all open tabs.
 
 **Usage:**
 ```javascript
-const tabs = await request('getAllTabs');
+const tabs = await getAllTabs();
 ```
 
 **Example Response:**
@@ -269,7 +269,7 @@ Set the title of the current plugin tab.
 
 **Usage:**
 ```javascript
-await request('setTabTitle', { title: 'Data Analysis Tool' });
+await setTabTitle({ title: 'Data Analysis Tool' });
 ```
 
 **Arguments Schema:**
@@ -283,7 +283,7 @@ Display query results in the bottom table panel (shell-type tabs only).
 
 **Usage:**
 ```javascript
-await request('expandTableResult', {
+await expandTableResult({
   results: [
     {
       fields: [
@@ -320,7 +320,7 @@ Get the current state of your view instance.
 
 **Usage:**
 ```javascript
-const state = await request('getViewState');
+const state = await getViewState();
 console.log('Current state:', state);
 ```
 
@@ -337,7 +337,7 @@ Store state for your view instance.
 
 **Usage:**
 ```javascript
-await request('setViewState', {
+await setViewState({
   state: {
     selectedTable: 'users',
     filters: ['active = true']

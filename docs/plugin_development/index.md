@@ -57,13 +57,7 @@ Plugins communicate with Beekeeper Studio using `postMessage`. This system suppo
 
 - A **notification** sends data without expecting a reply. For instance, when the theme changes, Beekeeper Studio notifies the plugin via a `themeChanged` notification.
 
-The [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plugin) package provides helper functions for handling communication:
-
-- `request(name, args)` – An async function for sending requests and receiving responses.
-
-- `addNotificationListener(name, handler)` – Register a handler for incoming notifications.
-
-- `notify(name, args)` – Send a notification to Beekeeper Studio. Currently, plugins don’t need to use this, as the app doesn’t handle any incoming plugin notifications yet.
+The [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plugin) package provides helper functions for handling communication such as `getTables()`, `runQuery()`, etc.
 
 ### 5. UI Integration
 
@@ -71,4 +65,4 @@ Plugins declare their views (tabs or sidebars) in the manifest file. Beekeeper S
 
 ## Next Step
 
--   **[Start Building](creating-plugins.md)** - Create your first plugin
+-   **[Start Building](creating-your-first-plugin.md)** - Create your first plugin

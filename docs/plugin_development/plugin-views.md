@@ -119,7 +119,7 @@ For example, if the user creates two tabs form AI Shell, each tab will maintain 
 
 ```javascript
 // Save state when user interacts
-await request('setViewState', {
+await setViewState({
     conversations: [
         "Ai: Hello, how can I help you today?",
         "Human: Make a plain sandwich recipe using SQL.",
@@ -127,7 +127,7 @@ await request('setViewState', {
 });
 
 // Restore state when view loads
-const state = await request('getViewState');
+const state = await getViewState();
 if (state) {
     setConversations(state.conversations);
 }
