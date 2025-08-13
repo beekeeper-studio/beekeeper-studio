@@ -57,7 +57,7 @@ function sqlContextComplete(): Extension {
           const textBefore = line.text.slice(0, cursor - line.from);
 
           // Check if we just typed a space after FROM or JOIN
-          if (/\b(SELECT|FROM|JOIN|WHERE|AND|OR)\s$/i.test(textBefore)) {
+          if (/\b(FROM|JOIN)\s$/i.test(textBefore)) {
             // Trigger autocomplete
             startCompletion(update.view);
           }
