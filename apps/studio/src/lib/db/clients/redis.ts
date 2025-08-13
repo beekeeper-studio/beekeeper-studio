@@ -9,16 +9,24 @@ import {
   CancelableQuery,
   ExtendedTableColumn,
 } from "../models";
-import { AppContextProvider, BaseQueryResult, BasicDatabaseClient, DataStoreValue } from "./BasicDatabaseClient";
+import {
+  AppContextProvider,
+  BaseQueryResult,
+  BasicDatabaseClient,
+  DataStoreValue,
+} from "./BasicDatabaseClient";
 import Redis, { RedisOptions } from "ioredis";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { Dialect, SchemaItem } from "@shared/lib/dialects/models";
 import splitargs from "redis-splitargs";
-import _ from 'lodash';
+import _ from "lodash";
+import rawLog from "@bksLogger";
 
 type RedisQueryResult = BaseQueryResult;
+
+const log = rawLog.scope("redis");
 
 const redisContext: AppContextProvider = {
   getExecutionContext() {
@@ -46,7 +54,7 @@ type RedisTableRow = {
   type: RedisKeyType;
   ttl: number;
   memory: number;
-}
+};
 
 function makeQueryResult(command: string, result: unknown): NgQueryResult {
   return {
@@ -163,7 +171,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async getDataStoreValue(table: string, rowData: RedisTableRow): Promise<DataStoreValue> {
+  async getDataStoreValue(
+    table: string,
+    rowData: RedisTableRow
+  ): Promise<DataStoreValue> {
     if (table === "keys") {
       let value: unknown;
 
@@ -186,19 +197,29 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           // it comes as a flat list of [<member>, <score>, <member>, <score>, ...]
           // convert it to object where keys are scores (sorted from low to high), and values are arrays of members (sorted lexically)
           // so it's easier to read
-          const result = await this.redis.zrange(rowData.key, 0, -1, 'WITHSCORES');
-          const pairs = _.chunk(result, 2).map(([member, score]) => ({ member, score: Number(score) }))
-          const grouped = _.groupBy(pairs, item => item.score);
-          value = _.mapValues(grouped, group => group.map(item => item.member).sort());
+          const result = await this.redis.zrange(
+            rowData.key,
+            0,
+            -1,
+            "WITHSCORES"
+          );
+          const pairs = _.chunk(result, 2).map(([member, score]) => ({
+            member,
+            score: Number(score),
+          }));
+          const grouped = _.groupBy(pairs, (item) => item.score);
+          value = _.mapValues(grouped, (group) =>
+            group.map((item) => item.member).sort()
+          );
           break;
         }
         case "ReJSON-RL": {
-          const result = await this.redis.call('JSON.GET', rowData.key, '$');
+          const result = await this.redis.call("JSON.GET", rowData.key, "$");
           value = JSON.parse(String(result));
         }
       }
 
-      return  {
+      return {
         key: rowData.key, // TODO: use this.redis.rename(...)
         ttl: rowData.ttl, // TODO: use this.redis.expire(...)
 
@@ -211,8 +232,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
         // You'll need to use redis operations specific to each data type to edit the value
         value,
-      }
-
+      };
     }
 
     // fallback to regular json viewer behavior for server info
@@ -470,10 +490,9 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     throw new Error("Not implemented");
   }
 
-  async rawExecuteQuery(
-    _query: string
-  ): Promise<never> {
-    throw new Error("Where is this called from?");
+  async rawExecuteQuery(_query: string): Promise<null> {
+    log.error("Redis does not support querying");
+    return null;
   }
 
   async truncateAllTables(): Promise<void> {
