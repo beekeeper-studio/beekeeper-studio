@@ -7,13 +7,12 @@ import {
   DownloaderReport,
 } from "nodejs-file-downloader";
 import { Manifest, Release } from "./types";
-import platformInfo from "@/common/platform_info";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
 export type PluginFileManagerOptions = {
   downloadDirectory?: string;
-  pluginsDirectory?: string;
+  pluginsDirectory: string;
 }
 
 const log = rawLog.scope("PluginFileManager");
@@ -88,11 +87,7 @@ async function extractArchive(
 }
 
 export default class PluginFileManager {
-  constructor(private options: PluginFileManagerOptions = {}) {}
-
-  get pluginsDirectory() {
-    return this.options.pluginsDirectory || platformInfo.pluginsDirectory;
-  }
+  constructor(private readonly options: PluginFileManagerOptions) {}
 
   /** Download plugin source archive to `directory` and extract it */
   async download(
@@ -231,21 +226,21 @@ export default class PluginFileManager {
   scanPlugins(): Manifest[] {
     const manifests: Manifest[] = [];
 
-    if (!fs.existsSync(this.pluginsDirectory)) {
-      fs.mkdirSync(this.pluginsDirectory, { recursive: true });
+    if (!fs.existsSync(this.options.pluginsDirectory)) {
+      fs.mkdirSync(this.options.pluginsDirectory, { recursive: true });
     }
 
-    for (const dir of fs.readdirSync(this.pluginsDirectory)) {
+    for (const dir of fs.readdirSync(this.options.pluginsDirectory)) {
       if (
         !fs
-          .statSync(path.join(this.pluginsDirectory, dir))
+          .statSync(path.join(this.options.pluginsDirectory, dir))
           .isDirectory()
       ) {
         continue;
       }
 
       const manifestPath = path.join(
-        this.pluginsDirectory,
+        this.options.pluginsDirectory,
         dir,
         PLUGIN_MANIFEST_FILENAME
       );
@@ -279,12 +274,12 @@ export default class PluginFileManager {
   }
 
   getDirectoryOf(id: string) {
-    return path.join(this.pluginsDirectory, id);
+    return path.join(this.options.pluginsDirectory, id);
   }
 
   readAsset(manifest: Manifest, filename: string): string {
     const filePath = path.join(
-      this.pluginsDirectory,
+      this.options.pluginsDirectory,
       manifest.id,
       path.normalize(filename)
     );

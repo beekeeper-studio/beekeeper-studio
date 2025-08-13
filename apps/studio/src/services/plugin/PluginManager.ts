@@ -9,6 +9,7 @@ import {
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
+import platformInfo from "@/common/platform_info";
 
 const log = rawLog.scope("PluginManager");
 
@@ -34,7 +35,9 @@ export default class PluginManager {
 
   constructor(readonly options: PluginManagerOptions = {}) {
     this.pluginRepositoryService = new PluginRepositoryService();
-    this.fileManager = options.fileManager || new PluginFileManager();
+    this.fileManager = options.fileManager || new PluginFileManager({
+      pluginsDirectory: platformInfo.pluginsDirectory,
+    });
     this.registry = new PluginRegistry(this.pluginRepositoryService);
   }
 
