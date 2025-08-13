@@ -142,7 +142,10 @@ async function loadColumnsFromQueryContext(
   // Request columns for all tables and combine results
   const columns = [];
   for (const tableName of tables) {
-    columns.push(...(await columnsGetter(getEntity(state, tableName), [])));
+    const gotColumns = await columnsGetter(getEntity(state, tableName), []);
+    if (gotColumns) {
+      columns.push(...gotColumns);
+    }
   }
   return columns;
 }
