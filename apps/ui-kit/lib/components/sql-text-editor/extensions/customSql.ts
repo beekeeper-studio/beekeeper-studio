@@ -3,15 +3,21 @@
  * schema at runtime with applyEntities().
  */
 
-import { Extension, Facet, StateEffect, StateField } from "@codemirror/state";
-import { sql, SQLConfig } from "@codemirror/lang-sql";
-import { CompletionSource } from "@codemirror/autocomplete";
-import { buildSchema } from "../utils";
-import { EditorView } from "@codemirror/view";
+import { SQLConfig as CMSQLConfig } from "@codemirror/lang-sql";
+import { Facet, StateEffect, StateField } from "@codemirror/state";
 import { Entity } from "../../types";
-import { Compartment } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { buildSchema } from "../utils";
+import { sql } from "./vendor/@codemirror/lang-sql/src/sql";
+import { ColumnsGetter } from "./sqlContextComplete";
+import { setSchema } from "./vendor/@codemirror/lang-sql/src/complete";
 
-const sqlCompartment = new Compartment();
+type SQLConfig = CMSQLConfig & {
+  disableSchemaCompletion?: boolean;
+  disableKeywordCompletion?: boolean;
+  columnsGetter?: ColumnsGetter;
+};
+
 const setEntities = StateEffect.define<Entity[]>();
 const entities = StateField.define<Entity[]>({
   create() {
@@ -24,64 +30,34 @@ const entities = StateField.define<Entity[]>({
     return value;
   },
 });
-
-const additionalCompletionSourceFacet = Facet.define<
-  CompletionSource,
-  CompletionSource
->({
+export const configFacet = Facet.define<SQLConfig, SQLConfig>({
   combine: (values) => values[0],
 });
 
-function extendedSql(
-  config?: SQLConfig,
-  additionalCompletionSource?: CompletionSource
-): Extension {
-  const sqlExtension = sql(config);
+/**
+ * Get all base SQL extensions
+ */
+function customSql(config: SQLConfig = {}) {
   return [
+    // we regiter entities so it can be used by other sql extensions like sqlContextComplete
     entities,
-    additionalCompletionSourceFacet.of(additionalCompletionSource),
-    sqlCompartment.of([
-      sqlExtension,
-      // Add autocompletion support with our custom source
-      sqlExtension.language.data.of({
-        autocomplete: additionalCompletionSource,
-      }),
-    ]),
+    configFacet.of(config),
+    sql(config),
   ];
 }
 
-/**
- * Apply SQL extension with schema information
- */
-function applySqlExtension(
+function applyEntities(
   view: EditorView,
-  options?: {
-    defaultSchema?: string;
-    entities?: Entity[];
-  }
+  entities: Entity[] = [],
+  defaultSchema?: string
 ) {
-  const sqlExtension = sql({
-    defaultSchema: options?.defaultSchema,
-    schema: options?.entities
-      ? buildSchema(options.entities, options.defaultSchema)
-      : undefined,
-  });
-
+  const schema = buildSchema(entities, defaultSchema);
   view.dispatch({
-    effects: sqlCompartment.reconfigure([
-      sqlExtension,
-      // Add autocompletion support with our custom source
-      sqlExtension.language.data.of({
-        autocomplete: view.state.facet(additionalCompletionSourceFacet),
-      }),
-    ]),
+    effects: [
+      setEntities.of(entities),
+      setSchema.of(schema),
+    ],
   });
 }
 
-function applyEntities(view: EditorView, entities: Entity[]) {
-  view.dispatch({
-    effects: setEntities.of(entities),
-  });
-}
-
-export { entities, applySqlExtension, applyEntities, extendedSql as sql };
+export { entities, applyEntities, customSql as sql, SQLConfig };
