@@ -19,6 +19,10 @@ export type PluginManagerInitializeOptions = {
   onSetPluginSettings?: (pluginSettings: PluginSettings) => void;
 }
 
+export type PluginManagerOptions = {
+  fileManager?: PluginFileManager;
+}
+
 export default class PluginManager {
   private initialized = false;
   private pluginRepositoryService: PluginRepositoryService;
@@ -29,9 +33,9 @@ export default class PluginManager {
   private pluginLocks: string[] = [];
   private onSavePluginSettings?: (pluginSettings: PluginSettings) => void;
 
-  constructor() {
+  constructor(readonly options: PluginManagerOptions = {}) {
     this.pluginRepositoryService = new PluginRepositoryService();
-    this.fileManager = new PluginFileManager(this.pluginRepositoryService);
+    this.fileManager = options.fileManager || new PluginFileManager();
     this.registry = new PluginRegistry(this.pluginRepositoryService);
   }
 

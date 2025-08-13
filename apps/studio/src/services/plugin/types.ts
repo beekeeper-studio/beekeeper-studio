@@ -15,10 +15,10 @@ export interface Manifest {
   author: string;
   description: string;
   version: string;
-  minAppVersion: string;
+  minAppVersion?: string;
   /** Material UI icon name. https://fonts.google.com/icons?icon.set=Material+Icons */
   icon?: string;
-  capabilities: {
+  capabilities?: {
     views: {
       sidebars?: {
         id: string;
@@ -38,14 +38,14 @@ export interface Manifest {
   };
   /** The path to the plugin's root directory. This is helpful when you use a bundler to build the project to a `dist/` directory for example. */
   pluginEntryDir?: string;
-  settings: {
-    id: string;
-    name: string;
-    type: "string" | "number" | "boolean";
-    description: string;
-    default: string | number | boolean;
-  }[];
-  permissions: unknown[];
+  // settings?: {
+  //   id: string;
+  //   name: string;
+  //   type: "string" | "number" | "boolean";
+  //   description: string;
+  //   default: string | number | boolean;
+  // }[];
+  permissions?: unknown[];
 }
 
 export type PluginRegistryEntry = Pick<

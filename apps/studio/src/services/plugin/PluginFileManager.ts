@@ -6,12 +6,15 @@ import {
   DownloaderConfig,
   DownloaderReport,
 } from "nodejs-file-downloader";
-import { Manifest, PluginRegistryEntry, Release } from "./types";
+import { Manifest, Release } from "./types";
 import platformInfo from "@/common/platform_info";
-import PluginRepositoryService from "./PluginRepositoryService";
 import extract from "extract-zip";
-import * as tar from "tar";
 import { tmpdir } from "os";
+
+export type PluginFileManagerOptions = {
+  downloadDirectory?: string;
+  pluginsDirectory?: string;
+}
 
 const log = rawLog.scope("PluginFileManager");
 
@@ -85,7 +88,11 @@ async function extractArchive(
 }
 
 export default class PluginFileManager {
-  constructor(private readonly repositoryService: PluginRepositoryService) {}
+  constructor(private options: PluginFileManagerOptions = {}) {}
+
+  get pluginsDirectory() {
+    return this.options.pluginsDirectory || platformInfo.pluginsDirectory;
+  }
 
   /** Download plugin source archive to `directory` and extract it */
   async download(
@@ -98,10 +105,9 @@ export default class PluginFileManager {
     } = {}
   ) {
     const directory = this.getDirectoryOf(pluginId);
-    const tmpDirectory = path.join(
-      tmpdir(),
-      `beekeeper-plugin-${pluginId}-${Date.now()}`
-    );
+    const tmpDirectory =
+      this.options?.downloadDirectory ||
+      path.join(tmpdir(), `beekeeper-plugin-${pluginId}-${Date.now()}`);
 
     try {
       // Create temp directory for initial download
@@ -225,21 +231,21 @@ export default class PluginFileManager {
   scanPlugins(): Manifest[] {
     const manifests: Manifest[] = [];
 
-    if (!fs.existsSync(platformInfo.pluginsDirectory)) {
-      fs.mkdirSync(platformInfo.pluginsDirectory, { recursive: true });
+    if (!fs.existsSync(this.pluginsDirectory)) {
+      fs.mkdirSync(this.pluginsDirectory, { recursive: true });
     }
 
-    for (const dir of fs.readdirSync(platformInfo.pluginsDirectory)) {
+    for (const dir of fs.readdirSync(this.pluginsDirectory)) {
       if (
         !fs
-          .statSync(path.join(platformInfo.pluginsDirectory, dir))
+          .statSync(path.join(this.pluginsDirectory, dir))
           .isDirectory()
       ) {
         continue;
       }
 
       const manifestPath = path.join(
-        platformInfo.pluginsDirectory,
+        this.pluginsDirectory,
         dir,
         PLUGIN_MANIFEST_FILENAME
       );
@@ -273,12 +279,12 @@ export default class PluginFileManager {
   }
 
   getDirectoryOf(id: string) {
-    return path.join(platformInfo.pluginsDirectory, id);
+    return path.join(this.pluginsDirectory, id);
   }
 
   readAsset(manifest: Manifest, filename: string): string {
     const filePath = path.join(
-      platformInfo.pluginsDirectory,
+      this.pluginsDirectory,
       manifest.id,
       path.normalize(filename)
     );
