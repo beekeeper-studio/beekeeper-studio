@@ -106,6 +106,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async connect(): Promise<void> {
+    await super.connect();
+
     const config: RedisOptions = {
       host: this.server.config.host || "localhost",
       port: this.server.config.port || 6379,
