@@ -48,21 +48,22 @@ describe("Basic Plugin Management", () => {
 });
 
 describe("Preinstalled Plugins", () => {
-  let pluginsDirectory: string;
-  let downloadDirectory: string;
-  let fileManager: PluginFileManager;
+  const pluginsDirectory = tmpDir();
+  const downloadDirectory = tmpDir();
+
   let pluginSettings = {};
 
-  mockPluginServer();
-
-  beforeAll(async () => {
-    pluginsDirectory = tmpDir();
-    downloadDirectory = tmpDir();
-    fileManager = new PluginFileManager({
-      downloadDirectory,
-      pluginsDirectory,
+  function createPluginManager() {
+    return new PluginManager({
+      fileManager: new PluginFileManager({
+        downloadDirectory,
+        pluginsDirectory,
+      }),
+      onSetPluginSettings: (settings) => (pluginSettings = settings),
     });
-  });
+  }
+
+  mockPluginServer();
 
   afterEach(async () => {
     cleanTmpDir(pluginsDirectory);
@@ -71,57 +72,43 @@ describe("Preinstalled Plugins", () => {
   });
 
   it("can preinstall plugins", async () => {
-    const manager = new PluginManager({ fileManager });
+    const manager = createPluginManager();
     await manager.initialize({
       preinstalledPlugins: ["test-plugin"],
       pluginSettings,
-      onSetPluginSettings(settings) {
-        pluginSettings = settings;
-      },
     });
     const plugins = await manager.getEnabledPlugins();
     expect(plugins).toHaveLength(1);
     expect(plugins[0].name).toBe("Test Plugin");
+    expect(pluginSettings).toHaveProperty("test-plugin");
   });
 
   it("should not install preinstalled plugins twice", async () => {
-    await new PluginManager({ fileManager }).initialize({
+    await createPluginManager().initialize({
       preinstalledPlugins: ["test-plugin"],
       pluginSettings,
-      onSetPluginSettings(settings) {
-        pluginSettings = settings;
-      },
     });
-    const manager = new PluginManager({ fileManager });
+    const manager = createPluginManager();
     await manager.initialize({
       preinstalledPlugins: ["test-plugin"],
       pluginSettings,
-      onSetPluginSettings(settings) {
-        pluginSettings = settings;
-      },
     });
     const plugins = await manager.getEnabledPlugins();
     expect(plugins).toHaveLength(1);
   });
 
   it("should not install preinstalled plugins if it has been uninstalled", async () => {
-    const manager = new PluginManager({ fileManager });
+    const manager = createPluginManager();
     await manager.initialize({
       preinstalledPlugins: ["test-plugin"],
       pluginSettings,
-      onSetPluginSettings(settings) {
-        pluginSettings = settings;
-      },
     });
     await manager.uninstallPlugin("test-plugin");
 
-    const manager2 = new PluginManager({ fileManager });
+    const manager2 = createPluginManager();
     await manager2.initialize({
       preinstalledPlugins: ["test-plugin"],
       pluginSettings,
-      onSetPluginSettings(settings) {
-        pluginSettings = settings;
-      },
     });
     const plugins = await manager2.getEnabledPlugins();
     expect(plugins).toHaveLength(0);

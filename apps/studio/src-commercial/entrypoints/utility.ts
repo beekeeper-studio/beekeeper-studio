@@ -34,7 +34,9 @@ if (platformInfo.env.development || platformInfo.env.test) {
 }
 
 let ormConnection: ORMConnection;
-const pluginManager = new PluginManager();
+const pluginManager = new PluginManager({
+  onSetPluginSettings: handleSetPluginSettings,
+});
 
 interface Reply {
   id: string,
@@ -188,7 +190,6 @@ async function init() {
         "bks-ai-shell",
       ],
       pluginSettings: await loadPluginSettings(),
-      onSetPluginSettings: handleSetPluginSettings,
     });
   } catch (e) {
     log.error("Error initializing plugin manager", e);

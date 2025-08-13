@@ -16,11 +16,11 @@ export type PluginManagerInitializeOptions = {
   /** These plugins will be installed automatically. Users should be able to uninstall them later. */
   preinstalledPlugins?: Manifest['id'][];
   pluginSettings?: PluginSettings;
-  onSetPluginSettings?: (pluginSettings: PluginSettings) => void;
 }
 
 export type PluginManagerOptions = {
   fileManager?: PluginFileManager;
+  onSetPluginSettings?: (pluginSettings: PluginSettings) => void;
 }
 
 export default class PluginManager {
@@ -31,7 +31,6 @@ export default class PluginManager {
   private installedPlugins: Manifest[] = [];
   private pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
-  private onSavePluginSettings?: (pluginSettings: PluginSettings) => void;
 
   constructor(readonly options: PluginManagerOptions = {}) {
     this.pluginRepositoryService = new PluginRepositoryService();
@@ -47,7 +46,7 @@ export default class PluginManager {
 
     this.installedPlugins = this.fileManager.scanPlugins();
 
-    this.pluginSettings = options.pluginSettings || {};
+    this.pluginSettings = _.cloneDeep(options.pluginSettings) || {};
 
     this.initialized = true;
 
@@ -116,7 +115,7 @@ export default class PluginManager {
           autoUpdate: true,
         };
       }
-      this.onSavePluginSettings?.(this.pluginSettings);
+      this.options?.onSetPluginSettings?.(this.pluginSettings);
 
       log.debug(`Plugin "${id}" installed!`);
 
@@ -210,7 +209,7 @@ export default class PluginManager {
    */
   async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
     this.pluginSettings[id].autoUpdate = enabled;
-    this.onSavePluginSettings?.(this.pluginSettings);
+    this.options?.onSetPluginSettings?.(this.pluginSettings);
   }
 
   /**
