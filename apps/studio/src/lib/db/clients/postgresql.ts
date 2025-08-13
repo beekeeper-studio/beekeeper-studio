@@ -1334,10 +1334,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       awsCLIToken = await getAWSCLIToken(server.config, server.config.redshiftOptions);
     }
 
+    if(server.config.redshiftOptions?.iamAuthenticationEnabled){
+      awsCLIToken = await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432)
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: awsCLIToken || await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
+      password: awsCLIToken || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,

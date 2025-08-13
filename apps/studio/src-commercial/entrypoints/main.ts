@@ -173,15 +173,6 @@ app.on('window-all-closed', () => {
   }
 })
 
-ipcMain.handle('which-tool', async (_event, toolName: string) => {
-  try {
-    const path = await whichTool({ toolName });
-    return { success: true, path };
-  } catch (error) {
-    return { success: false, error: error.toString() };
-  }
-});
-
 ipcMain.handle('platformInfo', () => {
   return platformInfo;
 })

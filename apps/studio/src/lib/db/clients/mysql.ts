@@ -139,6 +139,10 @@ async function configDatabase(
     awsCLIToken = await getAWSCLIToken(server.config, server.config.redshiftOptions);
   }
 
+  if(server.config.redshiftOptions?.iamAuthenticationEnabled){
+      awsCLIToken = await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432)
+  }
+
   const config: mysql.PoolOptions = {
     authPlugins: {
       'client_ed25519': ed25519AuthPlugin(),
@@ -146,7 +150,7 @@ async function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: awsCLIToken || await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
+    password: awsCLIToken || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,

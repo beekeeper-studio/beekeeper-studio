@@ -143,7 +143,7 @@ export default {
       return this.authType === 'iam_key';
     },
     isProfileAuth() {
-      return this.authType === 'iam_file';
+      return ['iam_cli', 'iam_file'].includes(this.authType);
     }
   },
   methods: {
@@ -158,9 +158,9 @@ export default {
     async tryFindAWSCli() {
       if (!this.config.redshiftOptions.cliPath) {
         try {
-          const result = await window.main.whichTool("aws");
-          if (result.success) {
-            this.config.redshiftOptions.cliPath = result.path;
+          const result = await this.$util.send('backup/whichDumpTool', {toolName: "aws"});
+          if (result) {
+            this.config.redshiftOptions.cliPath = result;
           } else {
             this.config.redshiftOptions.cliPath = null;
           }

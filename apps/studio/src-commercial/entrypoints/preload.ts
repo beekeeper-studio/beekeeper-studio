@@ -9,7 +9,6 @@ import username from 'username';
 import { execSync } from 'child_process';
 import 'electron-log/preload';
 import pluralize from 'pluralize';
-import * as utility from './utility'
 
 const electron = require('@electron/remote');
 
@@ -38,13 +37,6 @@ export const api = {
   },
   isReady() {
     ipcRenderer.send('ready');
-  },
-  whichTool(toolName: string) {
-    return ipcRenderer.invoke('which-tool', toolName);
-  },
-  invoke(event: AppEvent, name: string, arg?: any) {
-    if (!Object.values<string>(AppEvent).includes(event)) return;
-    ipcRenderer.invoke(event, name, arg)
   },
   enableConnectionMenuItems(){
     ipcRenderer.send("enable-connection-menu-items");

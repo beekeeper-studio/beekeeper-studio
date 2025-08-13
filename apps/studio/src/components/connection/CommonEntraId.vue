@@ -108,7 +108,7 @@
         <label for="password">Password</label>
         <input
           name="password"
-          type="text"
+          type="password"
           class="form-control"
           v-model="config.password"
         />
@@ -129,7 +129,7 @@
         </label>
         <input
           name="tenantId"
-          type="text"
+          type="password"
           class="form-control"
           v-model="config.azureAuthOptions.tenantId"
         />
@@ -138,7 +138,7 @@
         <label for="clientSecret">Client Secret</label>
         <input
           name="clientSecret"
-          type="text"
+          type="password"
           class="form-control"
           v-model="config.azureAuthOptions.clientSecret"
         />
@@ -147,7 +147,7 @@
         <label for="msiEndpoint">MSI Endpoint</label>
         <input
           name="msiEndpoint"
-          type="text"
+          type="password"
           class="form-control"
           v-model="config.azureAuthOptions.msiEndpoint"
         />
@@ -187,7 +187,7 @@ export default {
       );
     },
     showPassword() {
-      return [AzureAuthType.Password].includes(this.authType);
+      return AzureAuthType.Password === this.authType;
     },
     showTenantId() {
       return [
@@ -196,13 +196,13 @@ export default {
       ].includes(this.authType);
     },
     showClientSecret() {
-      return [AzureAuthType.ServicePrincipalSecret].includes(this.authType);
+      return AzureAuthType.ServicePrincipalSecret === this.authType;
     },
     showMsiEndpoint() {
-      return [AzureAuthType.MSIVM].includes(this.authType);
+      return AzureAuthType.MSIVM === this.authType;
     },
     showCli() {
-      return [AzureAuthType.CLI].includes(this.authType);
+      return AzureAuthType.CLI === this.authType;
     },
     hasAccessTokenCache() {
       return Boolean(this.accountName);
@@ -243,9 +243,9 @@ export default {
     async tryFindAzCli() {
       if (!this.config.azureAuthOptions.cliPath) {
         try {
-          const result = await window.main.whichTool("az");
-          if (result.success) {
-            this.config.azureAuthOptions.cliPath = result.path;
+          const result = await this.$util.send('backup/whichDumpTool', {toolName: "az"});
+          if (result) {
+            this.config.azureAuthOptions.cliPath = result;
           } else {
             this.config.azureAuthOptions.cliPath = null;
           }

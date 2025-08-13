@@ -37,6 +37,12 @@ export interface TemporaryClusterCredentials {
       throw new Error('AZ command not specified');
     }
 
+    const extraArgs = []
+
+    if(options.awsProfile){
+      extraArgs.push('--profile', options.awsProfile)
+    }
+
     return new Promise<string>((resolve, reject) => {
       const proc = spawn(options.cliPath, [
         'rds',
@@ -48,7 +54,8 @@ export interface TemporaryClusterCredentials {
         '--region',
         options.awsRegion,
         '--username',
-        server.user
+        server.user,
+        ...extraArgs
       ]);
 
       let stdout = '';
