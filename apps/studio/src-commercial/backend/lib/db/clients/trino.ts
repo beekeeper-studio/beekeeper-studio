@@ -8,7 +8,9 @@ import {
 } from 'trino-client'
 import {
   BaseQueryResult,
-  BasicDatabaseClient
+  BasicDatabaseClient,
+  ExecutionContext,
+  QueryLogOptions
 } from "@/lib/db/clients/BasicDatabaseClient"
 import {
   BksField,
@@ -61,6 +63,14 @@ interface TrinoResult extends BaseQueryResult {
 
 const log = rawLog.scope("trino")
 const knex = null
+const trinoContext = {
+  getExecutionContext(): ExecutionContext {
+    return null;
+  },
+  logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
+    return null
+  }
+}
 
 export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   version: string
@@ -68,7 +78,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   supportsTransaction: boolean
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(knex, null, server, database)
+    super(knex, trinoContext, server, database)
     this.dialect = "generic"
     this.readOnlyMode = server?.config?.readOnlyMode || false
   }
