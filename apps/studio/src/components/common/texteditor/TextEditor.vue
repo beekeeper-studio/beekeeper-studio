@@ -31,8 +31,6 @@ import "codemirror/mode/xml/xml";
 import "codemirror/mode/diff/diff";
 import "@/vendor/sql-hint";
 import "@/vendor/show-hint";
-import "@/vendor/redis-mode";
-import "@/vendor/redis-hint";
 import "@/lib/editor/CodeMirrorDefinitions";
 import "codemirror/addon/merge/merge";
 import CodeMirror, { TextMarker } from "codemirror";
