@@ -10,7 +10,7 @@ import {
   getCommandNames,
   getOptionNames,
   getCommandDescription,
-  getOptionDescription
+  getOptionDescription,
 } from "../../../../../studio/src/shared/lib/redis/redis-commands";
 
 // Get command and option names as arrays
@@ -18,8 +18,8 @@ const commandNames = getCommandNames();
 const optionNames = getOptionNames();
 
 // Create sets for faster lookup
-const commandSet = new Set(commandNames.map(cmd => cmd.toUpperCase()));
-const optionSet = new Set(optionNames.map(opt => opt.toUpperCase()));
+const commandSet = new Set(commandNames.map((cmd) => cmd.toUpperCase()));
+const optionSet = new Set(optionNames.map((opt) => opt.toUpperCase()));
 
 // Stream parser for Redis syntax
 const redisStreamParser = StreamLanguage.define({
@@ -87,13 +87,14 @@ const redisStreamParser = StreamLanguage.define({
   languageData: {
     commentTokens: { line: "#" },
     closeBrackets: { brackets: ["(", "[", "{", "'", '"'] },
-  }
+  },
 });
 
 // Autocompletion function
 function redisCompletion(context: CompletionContext) {
   const word = context.matchBefore(/\w*/);
-  if (word === null || (word.from === word.to && !context.explicit)) return null;
+  if (word === null || (word.from === word.to && !context.explicit))
+    return null;
 
   const wordUpper = word.text.toUpperCase();
   const options = [];
@@ -105,7 +106,7 @@ function redisCompletion(context: CompletionContext) {
         label: cmd,
         type: "keyword",
         info: getCommandDescription(cmd) || `Redis ${cmd} command`,
-        boost: cmd.length < 5 ? 10 : 0 // Boost short, common commands
+        boost: cmd.length < 5 ? 10 : 0, // Boost short, common commands
       });
     }
   }
@@ -117,25 +118,30 @@ function redisCompletion(context: CompletionContext) {
         label: opt,
         type: "keyword",
         info: getOptionDescription(opt) || `Redis ${opt} option`,
-        boost: -1 // Lower priority for options
+        boost: -1, // Lower priority for options
       });
     }
   }
 
-  return options.length ? {
-    from: word.from,
-    options: options.slice(0, 50)
-  } : null;
+  return options.length
+    ? {
+        from: word.from,
+        options: options.slice(0, 50),
+      }
+    : null;
 }
 
 // Export Redis language support
 export function redis() {
   return new LanguageSupport(redisStreamParser, [
     redisStreamParser.data.of({
-      autocomplete: redisCompletion
-    })
+      autocomplete: redisCompletion,
+    }),
   ]);
 }
 
 // Export command lists for external use
-export { commandNames as REDIS_COMMAND_NAMES, optionNames as REDIS_OPTION_NAMES };
+export {
+  commandNames as REDIS_COMMAND_NAMES,
+  optionNames as REDIS_OPTION_NAMES,
+};
