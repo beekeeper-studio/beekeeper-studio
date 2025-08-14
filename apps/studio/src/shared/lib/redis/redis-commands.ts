@@ -1,6 +1,6 @@
 /**
  * Redis Commands and Options - Centralized definitions
- * 
+ *
  * Used by both CodeMirror 5 vendor files and CodeMirror 6 UI-kit implementation
  */
 
@@ -8,7 +8,7 @@
 export const REDIS_COMMANDS = {
   // String commands
   GET: "Get the value of a key",
-  SET: "Set the string value of a key", 
+  SET: "Set the string value of a key",
   MGET: "Get the values of multiple keys",
   MSET: "Set multiple keys to multiple values",
   INCR: "Increment the integer value of a key by one",
@@ -26,7 +26,7 @@ export const REDIS_COMMANDS = {
   // Hash commands
   HGET: "Get the value of a hash field",
   HSET: "Set the string value of a hash field",
-  HMGET: "Get the values of multiple hash fields", 
+  HMGET: "Get the values of multiple hash fields",
   HMSET: "Set multiple hash fields to multiple values",
   HGETALL: "Get all the fields and values in a hash",
   HKEYS: "Get all the fields in a hash",
@@ -141,7 +141,7 @@ export const REDIS_COMMANDS = {
 
   // JSON commands (Redis JSON module)
   "JSON.SET": "Set JSON value at path",
-  "JSON.GET": "Get JSON value at path", 
+  "JSON.GET": "Get JSON value at path",
   "JSON.DEL": "Delete JSON value at path",
   "JSON.TYPE": "Get type of JSON value at path",
   "JSON.NUMINCRBY": "Increment number in JSON document",
@@ -151,10 +151,13 @@ export const REDIS_COMMANDS = {
   "JSON.ARRPOP": "Remove and return element from JSON array",
 } as const;
 
+
+export const REDIS_COMMAND_NAMES = Object.keys(REDIS_COMMANDS);
+
 // Command options/modifiers with descriptions
 export const REDIS_OPTIONS = {
   EX: "Set expiration in seconds",
-  PX: "Set expiration in milliseconds", 
+  PX: "Set expiration in milliseconds",
   EXAT: "Set expiration as Unix timestamp in seconds",
   PXAT: "Set expiration as Unix timestamp in milliseconds",
   KEEPTTL: "Retain the time to live associated with the key",
@@ -178,8 +181,8 @@ export const REDIS_OPTIONS = {
   TYPE: "Filter by type",
 } as const;
 
-// Helper functions to get command/option names and descriptions
-export const getCommandNames = () => Object.keys(REDIS_COMMANDS);
-export const getOptionNames = () => Object.keys(REDIS_OPTIONS);
+export const REDIS_OPTION_NAMES = Object.keys(REDIS_OPTIONS);
+
+// Helper functions to get descriptions
 export const getCommandDescription = (cmd: string) => REDIS_COMMANDS[cmd as keyof typeof REDIS_COMMANDS];
 export const getOptionDescription = (opt: string) => REDIS_OPTIONS[opt as keyof typeof REDIS_OPTIONS];
