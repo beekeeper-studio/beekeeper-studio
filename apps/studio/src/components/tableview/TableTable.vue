@@ -614,7 +614,11 @@ export default Vue.extend({
 
       const paths = []
       for (const column of this.table.columns) {
-        if(this.isPrimaryKey(column.columnName) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
+        const isPrimaryKey = this.isPrimaryKey(column.columnName);
+        // Allow primary key editing for dialects that don't have read-only primary keys (e.g., Redis key renaming)
+        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+        
+        if((isPrimaryKey && !canEditPrimaryKeys) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
         }
         paths.push(column.columnName)
