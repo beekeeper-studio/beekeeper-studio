@@ -47,7 +47,7 @@
     "dev": "vite -c vite.config.dev.ts",
     "lib:dev": "vite build -c vite.config.ts --watch --mode development",
     "lib:types": "tsc -p ./tsconfig.types.json",
-    "test": "vitest",
+    "test": "vitest run",
     "build": "vite build -c vite.config.ts --mode production && yarn lib:types",
     "preview": "vite preview"
   },
@@ -81,10 +81,10 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "ansi-to-html": "^0.7.2",
     "@marimo-team/codemirror-languageserver": "^1.15.13",
     "@replit/codemirror-emacs": "^6.1.0",
-    "@replit/codemirror-vim": "^6.3.0"
+    "@replit/codemirror-vim": "^6.3.0",
+    "ansi-to-html": "^0.7.2"
   },
   "devDependencies": {
     "@open-rpc/client-js": "^1.8.1",
@@ -97,6 +97,8 @@
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
+    "ist": "^1.1.7",
+    "happy-dom": "^18.0.1",
     "lodash": "^4.17.21",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
@@ -111,7 +113,7 @@
     "typescript": "~5.8.3",
     "vite": "~5.4.19",
     "vite-plugin-vue2": "^2.0.3",
-    "vitest": "^3.0.5",
+    "vitest": "~3.0.5",
     "vue": "^2.7.16",
     "vue-js-modal": "^2.0.1",
     "vue-tsc": "^2.1.10",
