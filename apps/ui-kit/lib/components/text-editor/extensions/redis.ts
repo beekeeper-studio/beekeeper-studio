@@ -7,19 +7,14 @@
 import { LanguageSupport, StreamLanguage } from "@codemirror/language";
 import { CompletionContext } from "@codemirror/autocomplete";
 import {
-  getCommandNames,
-  getOptionNames,
+  REDIS_COMMANDS,
+  REDIS_OPTIONS,
+  REDIS_COMMAND_NAMES,
+  REDIS_OPTION_NAMES,
   getCommandDescription,
   getOptionDescription,
 } from "../../../../../studio/src/shared/lib/redis/redis-commands";
 
-// Get command and option names as arrays
-const commandNames = getCommandNames();
-const optionNames = getOptionNames();
-
-// Create sets for faster lookup
-const commandSet = new Set(commandNames.map((cmd) => cmd.toUpperCase()));
-const optionSet = new Set(optionNames.map((opt) => opt.toUpperCase()));
 
 // Stream parser for Redis syntax
 const redisStreamParser = StreamLanguage.define({
@@ -68,11 +63,11 @@ const redisStreamParser = StreamLanguage.define({
     if (stream.match(/^\w+(\.\w+)?/)) {
       const token = stream.current().toUpperCase();
 
-      if (commandSet.has(token)) {
+      if (REDIS_COMMANDS[token]) {
         return "keyword";
       }
 
-      if (optionSet.has(token)) {
+      if (REDIS_OPTIONS[token]) {
         return "keyword";
       }
 
@@ -100,7 +95,7 @@ function redisCompletion(context: CompletionContext) {
   const options = [];
 
   // Add matching commands
-  for (const cmd of commandNames) {
+  for (const cmd of REDIS_COMMAND_NAMES) {
     if (cmd.startsWith(wordUpper)) {
       options.push({
         label: cmd,
@@ -112,7 +107,7 @@ function redisCompletion(context: CompletionContext) {
   }
 
   // Add matching options
-  for (const opt of optionNames) {
+  for (const opt of REDIS_OPTION_NAMES) {
     if (opt.startsWith(wordUpper)) {
       options.push({
         label: opt,
@@ -139,9 +134,3 @@ export function redis() {
     }),
   ]);
 }
-
-// Export command lists for external use
-export {
-  commandNames as REDIS_COMMAND_NAMES,
-  optionNames as REDIS_OPTION_NAMES,
-};
