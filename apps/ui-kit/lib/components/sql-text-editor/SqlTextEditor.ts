@@ -3,12 +3,9 @@ import { TextEditor } from "../text-editor/TextEditor";
 import { Entity } from "../types";
 import { Dialect } from "sql-query-identifier";
 import {
-  applySqlExtension,
   applyDialect,
   applyEntities,
-  applyColumnsGetter,
   extensions as sqlExtensions,
-  ColumnsGetter,
   SQLExtensionsConfig,
 } from "./extensions";
 import { ExtensionConfiguration } from "../text-editor/types";
@@ -19,8 +16,17 @@ export interface CompletionSource {
 }
 
 export class SqlTextEditor extends TextEditor {
-  constructor(private extensionsConfig: SQLExtensionsConfig){
+  private extensionsConfig: SQLExtensionsConfig;
+
+  constructor(extensionsConfig?: SQLExtensionsConfig){
     super();
+    this.extensionsConfig = {
+      identiferDialect: "generic",
+      onQuerySelectionChange: () => {},
+      // HACK: always turn on schema completion
+      schema: {},
+      ...extensionsConfig,
+    };
   }
 
   // --- Public API ---
@@ -29,22 +35,15 @@ export class SqlTextEditor extends TextEditor {
    * Sets the completion source with entities and schema information
    */
   setCompletionSource(completionSource: CompletionSource) {
-    applyEntities(this.view, completionSource.entities);
-    applySqlExtension(this.view, {
-      defaultSchema: completionSource.defaultSchema,
-      entities: completionSource.entities,
-    });
+    applyEntities(
+      this.view,
+      completionSource.entities,
+      completionSource.defaultSchema
+    );
   }
 
   setQueryIdentifierDialect(dialect: Dialect) {
     applyDialect(this.view, dialect);
-  }
-
-  /**
-   * Sets the listener that will be called to fetch columns for a table
-   */
-  setRequestColumnsListener(listener?: ColumnsGetter) {
-    applyColumnsGetter(this.view, listener);
   }
 
   // --- Editor Setup ---

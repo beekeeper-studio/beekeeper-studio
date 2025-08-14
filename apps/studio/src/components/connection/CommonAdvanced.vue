@@ -217,7 +217,7 @@ export default {
   },
   data() {
     return {
-      enableSshLink: "https://docs.beekeeperstudio.io/pages/linux#ssh-key-access-for-the-snap",
+      enableSshLink: "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap",
       sshModeOptions: [
         { label: "Key File", mode: 'keyfile' },
         { label: "Username & Password", mode: "userpass" },
