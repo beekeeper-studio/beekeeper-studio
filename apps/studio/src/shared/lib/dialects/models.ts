@@ -173,6 +173,7 @@ export interface DialectData {
     sqlCreate?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
+    readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
   },
   notices?: {
     infoSchema?: string

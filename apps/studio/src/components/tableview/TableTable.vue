@@ -1305,7 +1305,10 @@ export default Vue.extend({
         }))
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
-      return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
+      const isPrimaryKey = this.isPrimaryKey(cell.getField());
+      // i know, the logic is a bit awkward (disable the disabling of editing the primary keys)
+      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+      return this.editable && (!isPrimaryKey || canEditPrimaryKeys) && !pendingDelete;
     },
     insertionCellCheck(cell: CellComponent) {
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
@@ -1357,10 +1360,12 @@ export default Vue.extend({
         return
       }
 
-      const primaryKeys = pkCells.map((cell) => {
+      const primaryKeys = pkCells.map((pkCell) => {
         return {
-          column: cell.getField(),
-          value: cell.getValue()
+          column: pkCell.getField(),
+          // Use old value if this primary key cell is the one being edited, otherwise current value
+          // This is for redis key renaming to work
+          value: pkCell === cell ? pkCell.getOldValue() : pkCell.getValue()
         }
       })
       if (currentEdit) {
