@@ -13,8 +13,7 @@ import {
   REDIS_OPTION_NAMES,
   getCommandDescription,
   getOptionDescription,
-} from "../../../../../studio/src/shared/lib/redis/redis-commands";
-
+} from "./redisCommands";
 
 // Stream parser for Redis syntax
 const redisStreamParser = StreamLanguage.define({

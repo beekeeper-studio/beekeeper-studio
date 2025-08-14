@@ -1,9 +1,3 @@
-/**
- * Redis Commands and Options - Centralized definitions
- *
- * Used by both CodeMirror 5 vendor files and CodeMirror 6 UI-kit implementation
- */
-
 // Redis commands with their descriptions, organized by category
 export const REDIS_COMMANDS = {
   // String commands
