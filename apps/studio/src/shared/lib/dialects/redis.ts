@@ -6,13 +6,13 @@ export const RedisData: DialectData = {
   queryDialectOverride: 'generic',
   textEditorMode: 'text/x-redis',
   disabledFeatures: {
+    readOnlyPrimaryKeys: true,
     // rawFilters: true, // TODO: how to disable non-raw filters?
     shell: true,
     // queryEditor: true,
     informationSchema: {
       extra: true,
     },
-    tableTable: true,
     indexes: true,
     alter: {
       addColumn: true,

@@ -8,6 +8,8 @@ import {
   NgQueryResult,
   CancelableQuery,
   ExtendedTableColumn,
+  TableChanges,
+  TableUpdateResult,
 } from "../models";
 import {
   AppContextProvider,
@@ -283,6 +285,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           columnName: "type",
           dataType: "TEXT",
           bksField: { bksType: "UNKNOWN", name: "type" },
+          generated: true,
         },
         {
           ordinalPosition: 2,
@@ -299,6 +302,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           columnName: "memory",
           dataType: "INTEGER",
           bksField: { bksType: "UNKNOWN", name: "memory" },
+          generated: true,
         },
       ];
     }
@@ -397,12 +401,16 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return null;
   }
 
-  async getPrimaryKeys(): Promise<any[]> {
+  async getPrimaryKeys(table: string): Promise<any[]> {
+    if (table === "keys") {
+      // Use the key column itself as the primary key, but we'll allow editing it in cellEditCheck
+      return [{ columnName: "key" }];
+    }
     return [];
   }
 
   scanAll = async (match = "*", count = 100, cursor = "0", type?: string) => {
-    console.log("### FUCK", match, count, cursor);
+    log.debug("Scanning Redis keys", { match, count, cursor });
     const keys: string[] = [];
     do {
       const args = [cursor, "MATCH", match, "COUNT", count];
@@ -629,9 +637,72 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     throw new Error("Not supported");
   }
 
-  async applyChanges(): Promise<any[]> {
-    throw new Error("Not supported");
+  async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
+    console.log("Redis executeApplyChanges called with:", changes);
+    log.debug("Redis executeApplyChanges called with:", changes);
+    const results: any[] = [];
+
+    // Handle deletions first
+    for (const deleteOp of changes.deletes || []) {
+      if (deleteOp.table === "keys") {
+        const keyName = deleteOp.primaryKeys.find((pk: any) => pk.column === "key")?.value;
+        if (keyName) {
+          await this.redis.del(keyName);
+          results.push({ key: keyName, operation: "deleted" });
+        }
+      }
+    }
+
+    // Handle updates 
+    for (const updateOp of changes.updates || []) {
+      console.log("Processing update operation:", JSON.stringify(updateOp, null, 2));
+      if (updateOp.table === "keys") {
+        console.log("Primary keys array:", updateOp.primaryKeys);
+        const originalKey = updateOp.primaryKeys.find((pk: any) => pk.column === "key")?.value;
+        const column = updateOp.column;
+        const newValue = updateOp.value;
+        
+        console.log("Update details:", { originalKey, column, newValue, primaryKeys: updateOp.primaryKeys });
+
+        if (column === "key" && originalKey && newValue && originalKey !== newValue) {
+          // Rename key using RENAME command
+          try {
+            await this.redis.rename(originalKey, newValue);
+            results.push({ key: newValue, operation: "renamed", oldKey: originalKey });
+          } catch (error) {
+            throw new Error(`Failed to rename key '${originalKey}' to '${newValue}': ${error.message}`);
+          }
+        } else if (column === "ttl" && originalKey) {
+          // Update TTL using EXPIRE command
+          const ttlValue = parseInt(newValue);
+          if (ttlValue === -1) {
+            // Remove TTL (make key persistent)
+            await this.redis.persist(originalKey);
+            results.push({ key: originalKey, operation: "ttl_removed" });
+          } else if (ttlValue > 0) {
+            // Set TTL in seconds
+            await this.redis.expire(originalKey, ttlValue);
+            results.push({ key: originalKey, operation: "ttl_set", ttl: ttlValue });
+          }
+        }
+      }
+    }
+
+    // Handle inserts (limited support - mainly for creating empty keys)
+    for (const insertOp of changes.inserts || []) {
+      if (insertOp.table === "keys") {
+        const keyName = insertOp.data[0]?.key;
+        if (keyName) {
+          // Create an empty string key by default
+          await this.redis.set(keyName, "");
+          results.push({ key: keyName, operation: "created" });
+        }
+      }
+    }
+
+    return results;
   }
+
 
   async setElementName(): Promise<void> {
     throw new Error("Not supported");
