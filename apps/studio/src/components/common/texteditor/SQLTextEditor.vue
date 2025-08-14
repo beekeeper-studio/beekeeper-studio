@@ -35,10 +35,6 @@ export default Vue.extend({
     ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
     hint() {
-      // @ts-expect-error not fully typed
-      if (this.dialectData.textEditorMode === 'text/x-redis') {
-        return CodeMirror.helpers.hint.redis;
-      }
       return CodeMirror.hint.sql;
     },
     hintOptions() {
