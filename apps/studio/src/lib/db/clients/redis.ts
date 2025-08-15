@@ -10,6 +10,9 @@ import {
   ExtendedTableColumn,
   TableChanges,
   TableUpdateResult,
+  TableInsert,
+  TableUpdate,
+  TableDelete,
 } from "../models";
 import {
   AppContextProvider,
@@ -56,6 +59,7 @@ type RedisTableRow = {
   type: RedisKeyType;
   ttl: number;
   memory: number;
+  encoding: string;
 };
 
 function makeQueryResult(command: string, result: unknown): NgQueryResult {
@@ -178,61 +182,15 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     rowData: RedisTableRow
   ): Promise<DataStoreValue> {
     if (table === "keys") {
-      let value: unknown;
-
-      switch (rowData.type) {
-        // TODO: these operations can be very memory intensive if the key's value contains large amounts of data
-        case "string":
-          // TODO: in case there's a stringified json, it would be nice to display it properly in JSON Viewer
-          value = await this.redis.get(rowData.key);
-          break;
-        case "list":
-          value = await this.redis.lrange(rowData.key, 0, -1);
-          break;
-        case "hash":
-          value = await this.redis.hgetall(rowData.key);
-          break;
-        case "set":
-          value = await this.redis.smembers(rowData.key);
-          break;
-        case "zset": {
-          // it comes as a flat list of [<member>, <score>, <member>, <score>, ...]
-          // convert it to object where keys are scores (sorted from low to high), and values are arrays of members (sorted lexically)
-          // so it's easier to read
-          const result = await this.redis.zrange(
-            rowData.key,
-            0,
-            -1,
-            "WITHSCORES"
-          );
-          const pairs = _.chunk(result, 2).map(([member, score]) => ({
-            member,
-            score: Number(score),
-          }));
-          const grouped = _.groupBy(pairs, (item) => item.score);
-          value = _.mapValues(grouped, (group) =>
-            group.map((item) => item.member).sort()
-          );
-          break;
-        }
-        case "ReJSON-RL": {
-          const result = await this.redis.call("JSON.GET", rowData.key, "$");
-          value = JSON.parse(String(result));
-        }
-      }
+      const value = await this.fetchRedisValue(rowData.key, rowData.type);
 
       return {
-        key: rowData.key, // TODO: use this.redis.rename(...)
-        ttl: rowData.ttl, // TODO: use this.redis.expire(...)
-
-        // TODO: how to mark these two as non editable?
+        kind: "kv",
+        key: rowData.key,
+        ttl: rowData.ttl,
         type: rowData.type,
         memory: rowData.memory,
-
-        // TODO: i'd like to render just value in JSON viewer, but ideally this needs its own viewer
-        //  that supports binary types, encodings, etc. See Medis client for inspiration (redis-splitargs is actually from its author!)
-
-        // You'll need to use redis operations specific to each data type to edit the value
+        encoding: rowData.encoding,
         value,
       };
     }
@@ -302,6 +260,15 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           columnName: "memory",
           dataType: "INTEGER",
           bksField: { bksType: "UNKNOWN", name: "memory" },
+          generated: true,
+        },
+        {
+          ordinalPosition: 4,
+          schemaName: null,
+          tableName: table,
+          columnName: "encoding",
+          dataType: "TEXT",
+          bksField: { bksType: "UNKNOWN", name: "encoding" },
           generated: true,
         },
       ];
@@ -424,13 +391,56 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   };
 
   getKeyInfo = async (key: string) => {
+    const type = await this.redis.type(key);
+    const memory = (await this.redis.call("MEMORY", "USAGE", key)) as number;
+
+    let encoding = "unknown";
+    try {
+      encoding = (await this.redis.call("OBJECT", "ENCODING", key)) as string;
+    } catch (error) {
+      // Some Redis versions or key types might not support OBJECT ENCODING
+      log.debug(`Could not get encoding for key ${key}:`, error);
+    }
+
     return {
-      type: await this.redis.type(key),
+      type,
       key,
       ttl: await this.redis.ttl(key),
-      memory: await this.redis.call("MEMORY", "USAGE", key),
+      memory,
+      encoding,
     };
   };
+
+  // Centralized Redis value fetching logic
+  private async fetchRedisValue(key: string, type: string): Promise<unknown> {
+    switch (type) {
+      case "string":
+        return await this.redis.get(key);
+      case "list":
+        return await this.redis.lrange(key, 0, -1);
+      case "set":
+        return await this.redis.smembers(key);
+      case "zset": {
+        const result = await this.redis.zrange(key, 0, -1, "WITHSCORES");
+        const pairs = _.chunk(result, 2).map(([member, score]) => ({
+          member,
+          score: Number(score),
+        }));
+        const grouped = _.groupBy(pairs, (item) => item.score);
+        return _.mapValues(grouped, (group) =>
+          group.map((item) => item.member).sort()
+        );
+      }
+      case "hash":
+        return await this.redis.hgetall(key);
+      case "ReJSON-RL": {
+        const result = await this.redis.call("JSON.GET", key, "$");
+        return JSON.parse(String(result));
+      }
+      default:
+        throw new Error(`Unsupported Redis type: ${type}`);
+    }
+  }
 
   async selectTop(
     table: string,
@@ -478,6 +488,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         { name: "type", bksType: "UNKNOWN" },
         { name: "ttl", bksType: "UNKNOWN" },
         { name: "memory", bksType: "UNKNOWN" },
+        { name: "encoding", bksType: "UNKNOWN" },
       ],
     };
   }
@@ -545,10 +556,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async dropElement(): Promise<void> {
-    throw new Error("Not supported");
-  }
-
-  async executeApplyChanges(): Promise<any[]> {
     throw new Error("Not supported");
   }
 
@@ -637,52 +644,38 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     throw new Error("Not supported");
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
-    console.log("Redis executeApplyChanges called with:", changes);
+  private getOpKey(op: TableUpdate | TableDelete): string {
+    return op.primaryKeys.find((pk) => pk.column === "key")!.value;
+  }
+
+  async executeApplyChanges(
+    changes: TableChanges
+  ): Promise<TableUpdateResult[]> {
     log.debug("Redis executeApplyChanges called with:", changes);
-    const results: any[] = [];
 
     // Handle deletions first
     for (const deleteOp of changes.deletes || []) {
       if (deleteOp.table === "keys") {
-        const keyName = deleteOp.primaryKeys.find((pk: any) => pk.column === "key")?.value;
-        if (keyName) {
-          await this.redis.del(keyName);
-          results.push({ key: keyName, operation: "deleted" });
-        }
+        const key = this.getOpKey(deleteOp);
+        await this.redis.del(key);
       }
     }
 
-    // Handle updates 
+    // Handle updates
     for (const updateOp of changes.updates || []) {
-      console.log("Processing update operation:", JSON.stringify(updateOp, null, 2));
       if (updateOp.table === "keys") {
-        console.log("Primary keys array:", updateOp.primaryKeys);
-        const originalKey = updateOp.primaryKeys.find((pk: any) => pk.column === "key")?.value;
+        const originalKey = this.getOpKey(updateOp);
         const column = updateOp.column;
         const newValue = updateOp.value;
-        
-        console.log("Update details:", { originalKey, column, newValue, primaryKeys: updateOp.primaryKeys });
 
-        if (column === "key" && originalKey && newValue && originalKey !== newValue) {
-          // Rename key using RENAME command
-          try {
-            await this.redis.rename(originalKey, newValue);
-            results.push({ key: newValue, operation: "renamed", oldKey: originalKey });
-          } catch (error) {
-            throw new Error(`Failed to rename key '${originalKey}' to '${newValue}': ${error.message}`);
-          }
+        if (column === "key" && newValue && originalKey !== newValue) {
+          await this.redis.rename(originalKey, newValue);
         } else if (column === "ttl" && originalKey) {
-          // Update TTL using EXPIRE command
-          const ttlValue = parseInt(newValue);
+          const ttlValue = parseInt(newValue, 10);
           if (ttlValue === -1) {
-            // Remove TTL (make key persistent)
             await this.redis.persist(originalKey);
-            results.push({ key: originalKey, operation: "ttl_removed" });
           } else if (ttlValue > 0) {
-            // Set TTL in seconds
             await this.redis.expire(originalKey, ttlValue);
-            results.push({ key: originalKey, operation: "ttl_set", ttl: ttlValue });
           }
         }
       }
@@ -693,16 +686,13 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       if (insertOp.table === "keys") {
         const keyName = insertOp.data[0]?.key;
         if (keyName) {
-          // Create an empty string key by default
           await this.redis.set(keyName, "");
-          results.push({ key: keyName, operation: "created" });
         }
       }
     }
 
-    return results;
+    return [];
   }
-
 
   async setElementName(): Promise<void> {
     throw new Error("Not supported");
