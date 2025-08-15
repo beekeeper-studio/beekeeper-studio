@@ -18,13 +18,14 @@ type Plugin = {
 
 /**
  * Create a plugin registry with the given plugins.
- * Use this inside a describe block like so:
+ *
+ * Usage:
  *
  * ```js
  * describe("Plugin Management", () => {
- *   const server = mockPluginServer();
+ *   const server = createPluginServer();
  *   const registry = createRegistry(server, [
- *     // ...
+ *     // the plugins here...
  *   ]);
  *
  *   it("can do it", async () => {
@@ -46,7 +47,9 @@ export function createRegistry(server: MockPluginServer, plugins: Plugin[]) {
         author: `${plugin.id}-author`,
         description: `A cool plugin and stuff named ${plugin.name}`,
       };
+
       registry.entries.push(entry);
+
       const releases = plugin.versions.map((options) => ({
         manifest: {
           id: entry.id,
@@ -58,6 +61,7 @@ export function createRegistry(server: MockPluginServer, plugins: Plugin[]) {
         } as Manifest,
         sourceArchiveUrl: server.formatUrl(options),
       }));
+
       registry.repositories[plugin.id] = {
         releases,
         latestRelease: releases[releases.length - 1],

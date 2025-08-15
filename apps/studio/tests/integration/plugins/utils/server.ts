@@ -3,7 +3,7 @@ import { Manifest } from "@/services/plugin";
 import { createTestManifest, TestManifestOptions } from "./helpers";
 import JSZip from "jszip";
 
-export function mockPluginServer() {
+export function createPluginServer() {
   const server = new MockPluginServer();
 
   beforeAll(async () => {

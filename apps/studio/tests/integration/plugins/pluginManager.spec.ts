@@ -1,19 +1,15 @@
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager from "@/services/plugin/PluginManager";
-import { mockPluginServer } from "./utils/server";
-import {
-  createFileManager,
-  cleanFileManager,
-} from "./utils/fileManagerHelpers";
-import { createRegistry } from "./utils/registryHelpers";
+import { createPluginServer } from "./utils/server";
+import { createFileManager, cleanFileManager } from "./utils/fileManager";
+import { createRegistry } from "./utils/registry";
 import {
   NotFoundPluginError,
   NotSupportedPluginError,
 } from "@commercial/backend/plugin-system/errors";
-import { PluginSettings } from "@/services/plugin";
 
 describe("Basic Plugin Management", () => {
-  const server = mockPluginServer();
+  const server = createPluginServer();
   const registry = createRegistry(server, [
     {
       id: "test-plugin",
@@ -31,10 +27,8 @@ describe("Basic Plugin Management", () => {
 
   let manager: PluginManager;
   let fileManager: PluginFileManager;
-  let pluginSettings: PluginSettings;
 
   beforeEach(async () => {
-    pluginSettings = {};
     fileManager = createFileManager();
     manager = new PluginManager({
       fileManager,
@@ -42,7 +36,7 @@ describe("Basic Plugin Management", () => {
       appVersion: APP_VERSION_SUPPORTS_ALL,
       installDefaults: { autoUpdate: false },
     });
-    await manager.initialize({ pluginSettings });
+    await manager.initialize();
   });
 
   afterEach(async () => {

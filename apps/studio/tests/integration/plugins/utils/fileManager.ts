@@ -4,32 +4,46 @@ import path from "path";
 import { uuidv4 } from "@/lib/uuid";
 import { tmpdir } from "os";
 
-const tracker = new Set<PluginFileManager>();
-
+/**
+ * Create a file manager for plugin manager.
+ *
+ * Usage:
+ *
+ * ```js
+ * import { createFileManager, cleanFileManager } from "./fileManager";
+ *
+ * it("can do it", async () => {
+ *   const fileManager = createFileManager();
+ *
+ *   const manager = new PluginManager({ fileManager });
+ *   await manager.initialize();
+ *
+ *   // tests here ...
+ *
+ *   cleanFileManager(fileManager);
+ * })
+ * ```
+ */
 export function createFileManager(): PluginFileManager {
-  const manager = new PluginFileManager({
+  return new PluginFileManager({
     downloadDirectory: tmpDir(),
     pluginsDirectory: tmpDir(),
   });
-
-  tracker.add(manager);
-
-  return manager;
 }
 
+/** Erase plugins data. */
 export function cleanFileManager(manager: PluginFileManager) {
   cleanTmpDir(manager.options.downloadDirectory);
   cleanTmpDir(manager.options.pluginsDirectory);
-  tracker.delete(manager);
 }
 
-export function tmpDir() {
+function tmpDir() {
   const randomDir = path.join(tmpdir(), uuidv4());
   fs.mkdirSync(randomDir, { recursive: true });
   return randomDir;
 }
 
-export function cleanTmpDir(dir?: string) {
+function cleanTmpDir(dir?: string) {
   if (dir && fs.existsSync(dir)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
