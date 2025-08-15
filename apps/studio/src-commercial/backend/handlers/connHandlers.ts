@@ -41,7 +41,7 @@ export interface IConnectionHandlers {
   'conn/listViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/listRoutines': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<Routine[]>,
   'conn/listMaterializedViewColumns': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableColumn[]>,
-  'conn/listTableColumns': ({ table, schema, database, sId }: { table: string, schema?: string, database?: string, sId: string }) => Promise<ExtendedTableColumn[]>,
+  'conn/listTableColumns': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<ExtendedTableColumn[]>,
   'conn/listTableTriggers': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableTrigger[]>,
   'conn/listTableIndexes': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableIndex[]>,
   'conn/listSchemas': ({ filter, sId }: { filter?: SchemaFilterOptions, sId: string }) => Promise<string[]>,
@@ -55,7 +55,7 @@ export interface IConnectionHandlers {
   'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
   'conn/listDatabases': ({ filter, sId }: { filter?: DatabaseFilterOptions, sId: string }) => Promise<string[]>,
   'conn/getTableProperties': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableProperties | null>,
-  'conn/getQuerySelectTop': ({ table, limit, schema, database, sId }: { table: string, limit: number, schema?: string, database?: string, sId: string }) => Promise<string>,
+  'conn/getQuerySelectTop': ({ table, limit, schema, sId }: { table: string, limit: number, schema?: string, sId: string }) => Promise<string>,
   'conn/listMaterializedViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/getPrimaryKey': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string | null>,
   'conn/getPrimaryKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<PrimaryKeyColumn[]>,
@@ -92,10 +92,10 @@ export interface IConnectionHandlers {
 
 
   // For TableTable *************************************************************
-  'conn/getTableLength': ({ table, schema, database, sId }: { table: string, schema?: string, database?, string, sId: string }) => Promise<number>,
-  'conn/selectTop': ({ table, offset, limit, orderBy, filters, schema, selects, database, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string, sId: string }) => Promise<TableResult>,
-  'conn/selectTopSql': ({ table, offset, limit, orderBy, filters, schema, selects, database, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string, sId: string }) => Promise<string>,
-  'conn/selectTopStream': ({ table, orderBy, filters, chunkSize, schema, database, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, database?: string, sId: string }) => Promise<StreamResults>,
+  'conn/getTableLength': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<number>,
+  'conn/selectTop': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<TableResult>,
+  'conn/selectTopSql': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<string>,
+  'conn/selectTopStream': ({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) => Promise<StreamResults>,
 
 
   // For Export *****************************************************************
@@ -268,9 +268,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.listMaterializedViewColumns(table, schema);
   },
 
-  'conn/listTableColumns': async function({ table, schema, database, sId }: { table: string, schema?: string, database?: string, sId: string }) {
+  'conn/listTableColumns': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.listTableColumns(table, schema, database);
+    return await state(sId).connection.listTableColumns(table, schema);
   },
 
   'conn/listTableTriggers': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
@@ -341,9 +341,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.getTableProperties(table, schema);
   },
 
-  'conn/getQuerySelectTop': async function({ table, limit, schema, database, sId }: { table: string, limit: number, schema?: string, database?: string, sId: string }) {
+  'conn/getQuerySelectTop': async function({ table, limit, schema, sId }: { table: string, limit: number, schema?: string, sId: string }) {
     checkConnection(sId);
-    return state(sId).connection.getQuerySelectTop(table, limit, schema, database);
+    return state(sId).connection.getQuerySelectTop(table, limit, schema);
   },
 
   'conn/listMaterializedViews': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
@@ -481,24 +481,24 @@ export const ConnHandlers: IConnectionHandlers = {
     return state(sId).connection.truncateAllTables(schema);
   },
 
-  'conn/getTableLength': async function({ table, schema, database, sId }: { table: string, schema?: string, database?: string, sId: string }) {
+  'conn/getTableLength': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.getTableLength(table, schema, database);
+    return await state(sId).connection.getTableLength(table, schema);
   },
 
-  'conn/selectTop': async function({ table, offset, limit, orderBy, filters, schema, selects, database, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string, sId: string }) {
+  'conn/selectTop': async function({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.selectTop(table, offset, limit, orderBy, filters, schema, selects, database);
+    return await state(sId).connection.selectTop(table, offset, limit, orderBy, filters, schema, selects);
   },
 
-  'conn/selectTopSql': async function({ table, offset, limit, orderBy, filters, schema, selects, database, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string, sId: string }) {
+  'conn/selectTopSql': async function({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.selectTopSql(table, offset, limit, orderBy, filters, schema, selects, database);
+    return await state(sId).connection.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
   },
 
-  'conn/selectTopStream': async function({ table, orderBy, filters, chunkSize, schema, database, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, database?: string, sId: string }) {
+  'conn/selectTopStream': async function({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.selectTopStream(table, orderBy, filters, chunkSize, schema, database);
+    return await state(sId).connection.selectTopStream(table, orderBy, filters, chunkSize, schema);
   },
 
   'conn/queryStream': async function({ query, chunkSize, sId }: { query: string, chunkSize: number, sId: string }) {

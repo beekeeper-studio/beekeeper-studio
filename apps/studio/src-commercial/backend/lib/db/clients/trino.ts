@@ -157,17 +157,14 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     filters: string | TableFilter[],
     schema: string,
     selects: string[],
-    database: string
   ): Promise<TableResult> {
-    const columns = await this.listTableColumns(table, schema, database)
+    const columns = await this.listTableColumns(table, schema)
     let selectFields = [...selects]
     if (!selects || selects?.length === 0 || (selects?.length === 1 && selects[0] === '*')) {
       // select all columns with the column names instead of *
       selectFields = columns.map((v) => v.columnName)
     }
 
-    console.log('here first')
-    
     const queries = this.buildSelectTopQuery(
       table,
       offset,
@@ -177,8 +174,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       "total",
       columns,
       selectFields,
-      schema,
-      database
+      schema
     )
 
     const { query } = queries
@@ -200,10 +196,9 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     orderBy: OrderBy[],
     filters: string | TableFilter[],
     schema: string,
-    selects: string[],
-    database: string
+    selects: string[]
   ): Promise<string> {
-    const columns = await this.listTableColumns(table, schema, database)
+    const columns = await this.listTableColumns(table, schema)
     const { query } = this.buildSelectTopQuery(
       table,
       offset,
@@ -213,8 +208,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       "total",
       columns,
       selects,
-      schema,
-      database
+      schema
     )
     return query
   }
@@ -273,8 +267,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
   async listSchemas(filter: SchemaFilterOptions): Promise<string[]> {
     log.info('filters in listSchemas', filter)
-    if (filter.database == null) return []
-    const sql = `show schemas from ${filter.database}`
+    const sql = `show schemas from ${this.db}`
     const result = await this.driverExecuteSingle(sql)
 
     return result?.rows ? result.rows.map((row) => row.Schema) : []
@@ -282,8 +275,8 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
-    if (!filter || filter.database == null) return []
-    const sql = `select * from ${filter.database}.information_schema.tables`
+    if (!filter) return []
+    const sql = `select * from ${this.db}.information_schema.tables`
     const result = await this.driverExecuteSingle(sql)
 
     return result.rows.map((row) => ({
@@ -293,11 +286,11 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     }))
   }
 
-  async listTableColumns(table: string, schema: string, catalog: string): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table: string, schema: string): Promise<ExtendedTableColumn[]> {
     const sql = `
       SELECT
         *
-      FROM ${catalog}.information_schema.columns
+      FROM ${this.db}.information_schema.columns
       WHERE table_schema = '${schema}'
         AND table_name = '${table}'
       ORDER BY ordinal_position
@@ -324,32 +317,32 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   }
 
   async createDatabase(): Promise<string> {
-    log.info("Trino doesn't support creating databases")
+    log.debug("Trino doesn't support creating databases")
     return null
   }
 
   async truncateElementSql() {
-    log.info("Trino doesn't support changing data")
+    log.debug("Trino doesn't support changing data")
     return null
   }
 
   async duplicateTable(): Promise<void> {
-    log.info("Trino doesn't support changing data")
+    log.debug("Trino doesn't support changing data")
     return null
   }
 
   async duplicateTableSql(): Promise<string> {
-    log.info("Trino doesn't support changing data")
+    log.debug("Trino doesn't support changing data")
     return null
   }
 
   async setElementNameSql(): Promise<string> {
-    log.info("Trino doesn't support changing data")
+    log.debug("Trino doesn't support changing data")
     return null
   }
 
   async getBuilder(_table: string, _schema?: string): Promise<ChangeBuilderBase> {
-    log.info("Trino doesn't support changing data")
+    log.debug("Trino doesn't support changing data")
     return null
   }
 
@@ -390,40 +383,49 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   async executeQuery(
     queryText: string
   ): Promise<NgQueryResult[]> {
+    console.log('~~~~~~')
+    console.log(queryText)
     const results = await this.driverExecuteMultiple(queryText)
-    const ret = []
-    for (const result of results) {
-      const fields = this.parseFields(result.columns)
-      const data = result.rows
-      const isEmptyResult = !data
+    // const ret = []
+    // console.log('~~~')
+    // console.log(results)
+    // for (const result of results) {
+    //   const fields = this.parseFields(result.columns)
+    //   const data = result.rows
+    //   const isEmptyResult = !data
 
-      if (isEmptyResult) {
-        ret.push({
-          fields: [],
-          affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
-          command: 'SELECT',
-          rows: [],
-          rowCount: 0,
-          queryId: ''
-        })
-        continue
-      }
+    //   if (isEmptyResult) {
+    //     ret.push({
+    //       fields: [],
+    //       affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
+    //       command: 'SELECT',
+    //       rows: [],
+    //       rowCount: 0,
+    //       queryId: ''
+    //     })
+    //     continue
+    //   }
 
-      ret.push({
-        fields,
-        affectedRows: 0, // Trino doesn't typically (well you just shouldn't because you have actual databases for that) do write operations. No need to have anything other than 0 here
-        command: 'select',
-        rows: data,
-        rowCount: data.length,
-        queryId: ''
-      })
-    }
-    return ret
+    //   ret.push({
+    //     fields,
+    //     affectedRows: 0, // Trino doesn't typically (well you just shouldn't because you have actual databases for that) do write operations. No need to have anything other than 0 here
+    //     command: 'select',
+    //     rows: data,
+    //     rowCount: data.length,
+    //     queryId: ''
+    //   })
+    // }
+
+    console.log(results)
+    console.log('%%%%%')
+    return results
   }
 
   async rawExecuteQuery(sql: string): Promise<TrinoResult> {
     try {
-      const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql)
+      console.log('^^^^^')
+      console.log(sql, sql.trim().replace(/;$/, ''))
+      const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql.trim().replace(/;$/, ''))
       
       let columns: ResultColumn[] = []
       const rows: any[] = []
@@ -520,12 +522,12 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   }
 
   async getTableCreateScript(_table: string, _schema?: string): Promise<string> {
-    log.info("Trino doesn't support creating tables")
+    log.debug("Trino doesn't support creating tables")
     return ''
   }
 
   async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
-    log.info("Trino doesn't support view creatinon")
+    log.debug("Trino doesn't support view creatinon")
     return []
   }
 
@@ -534,17 +536,17 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   }
 
   async setTableDescription(): Promise<string> {
-    log.info("Trino doesn't support changing data")
+    log.debug("Trino doesn't support changing data")
     return ''
   }
 
   async truncateAllTables(_schema?: string): Promise<void> {
-    log.info("Trino doesn't support changing data")
+    log.debug("Trino doesn't support changing data")
   }
 
-  async getTableLength(table: string, schema: string, database: string): Promise<number> {
+  async getTableLength(table: string, schema: string): Promise<number> {
     const result = await this.driverExecuteSingle(
-      `SELECT count(*) as count FROM ${this.wrapIdentifier(database)}.${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`
+      `SELECT count(*) as count FROM ${this.wrapIdentifier(this.db)}.${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`
     )
 
     const [row] = result.rows as { count: number }[]
@@ -638,10 +640,9 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     countTitle = "total",
     columns = [],
     selects = ["*"],
-    schema,
-    database
+    schema
   ) {
-    log.info("building selectTop for", table, offset, limit, orderBy, selects, schema, database)
+    log.info("building selectTop for", table, offset, limit, orderBy, selects, schema)
 
     // Ensure sane defaults
     const safeOffset = Number.isFinite(offset) ? offset : 0
@@ -685,8 +686,8 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       ${filterString}
     `
 
-    const paginatedSQL = this.buildPaginatedQuery(database, wrappedTable, filterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
-    const fullSql = this.buildPaginatedQuery(database, TrinoData.wrapIdentifier(table), fullFilterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
+    const paginatedSQL = this.buildPaginatedQuery(wrappedTable, filterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
+    const fullSql = this.buildPaginatedQuery(TrinoData.wrapIdentifier(table), fullFilterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
     
     return {
       query: paginatedSQL,
@@ -696,13 +697,13 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     }
   }
 
-  buildPaginatedQuery(databaseRef: string, tableRef: string, filter: string, wrappedSelects: string, rowNumberOrderClause: string, usePagination: boolean, safeOffset: number, safeLimit: number): string {
+  buildPaginatedQuery(tableRef: string, filter: string, wrappedSelects: string, rowNumberOrderClause: string, usePagination: boolean, safeOffset: number, safeLimit: number): string {
     return `
       WITH ranked AS (
         SELECT 
           ${wrappedSelects},
           ROW_NUMBER() OVER (${rowNumberOrderClause}) AS rownum
-        FROM ${databaseRef}.${tableRef}
+        FROM ${this.db}.${tableRef}
         ${filter}
       )
       SELECT *

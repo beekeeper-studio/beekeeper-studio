@@ -228,7 +228,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection', 'database']),
+    ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
     ...mapGetters(['dialectData', 'dialect']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
@@ -303,7 +303,7 @@ export default {
     async fetchTotalRecords() {
       this.fetchingTotalRecords = true
       try {
-        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema, this.database);
+        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema);
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0

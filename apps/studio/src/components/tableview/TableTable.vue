@@ -1632,8 +1632,7 @@ export default Vue.extend({
         orderBy,
         this.filters,
         this.table.schema,
-        selects,
-        this.database
+        selects
       ).then((query: string) => {
         const language = FormatterDialect(this.queryDialect);
         const formatted = safeSqlFormat(query, { language });
@@ -1698,8 +1697,7 @@ export default Vue.extend({
               orderBy,
               filters,
               this.table.schema,
-              selects,
-              this.database
+              selects
             );
 
             // TODO(@day): it has come to my attention that the below comment does not properly explain my confusion, where is this allowFilter business coming from and WHY
@@ -1790,7 +1788,7 @@ export default Vue.extend({
     },
     async jumpToLastPage() {
       try {
-        const totalRows = await this.connection.getTableLength(this.table.name, this.table.schema, this.database); // -> SELECT (*) FROM table
+        const totalRows = await this.connection.getTableLength(this.table.name, this.table.schema); // -> SELECT (*) FROM table
 
         const lastPage = Math.ceil(totalRows / this.limit);
 
@@ -1930,8 +1928,7 @@ export default Vue.extend({
             value: _.get(this.selectedRowData, path),
           }],
           tableKey.toSchema,
-          ['*'],
-          this.database
+          ['*']
         )
 
         if (table.result.length > 0) {

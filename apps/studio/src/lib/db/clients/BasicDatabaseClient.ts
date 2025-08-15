@@ -163,7 +163,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract listRoutines(filter?: FilterOptions): Promise<Routine[]>;
   abstract listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>;
-  abstract listTableColumns(table?: string, schema?: string, database?: string): Promise<ExtendedTableColumn[]>;
+  abstract listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]>;
   abstract listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>;
   abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
   abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
@@ -182,7 +182,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
-  abstract getQuerySelectTop(table: string, limit: number, schema?: string, database?: string): Promise<string>;
+  abstract getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>;
   abstract listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract getPrimaryKey(table: string, schema?: string): Promise<string | null>;
   abstract getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
@@ -308,10 +308,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   // ****************************************************************************
 
   // For TableTable *************************************************************
-  abstract getTableLength(table: string, schema?: string, database?: string): Promise<number>;
-  abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<TableResult>;
-  abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<string>;
-  abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, database?: string): Promise<StreamResults>;
+  abstract getTableLength(table: string, schema?: string): Promise<number>;
+  abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
+  abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;
+  abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
   // ****************************************************************************
 
   // For Export *****************************************************************

@@ -22,7 +22,7 @@ export default Vue.extend({
     error: null
   }),
   computed: {
-    ...mapState(['connection', 'database']),
+    ...mapState(['connection']),
     hoverTitle() {
       if (this.error) return this.error.message
 
@@ -37,7 +37,7 @@ export default Vue.extend({
       this.fetchingTotalRecords = true
       try {
         this.error = null
-        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema, this.database);
+        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema);
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0
