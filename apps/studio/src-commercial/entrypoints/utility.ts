@@ -37,11 +37,12 @@ if (platformInfo.env.development || platformInfo.env.test) {
 
 let ormConnection: ORMConnection;
 const pluginManager = new PluginManager({
-  onSetPluginSettings: handleSetPluginSettings,
+  onPluginSettingsChange: handleSetPluginSettings,
   appVersion: platformInfo.appVersion,
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
-  })
+  }),
+  installDefaults: bksConfig.plugins.installDefaults,
 });
 
 interface Reply {

@@ -12,20 +12,21 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import semver from "semver";
 import { NotFoundPluginError, NotSupportedPluginError } from "@commercial/backend/plugin-system/errors";
+import bksConfig from "@/common/bksConfig";
+import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 const log = rawLog.scope("PluginManager");
 
 export type PluginManagerInitializeOptions = {
-  /** These plugins will be installed automatically. Users should be able to uninstall them later. */
-  preinstalledPlugins?: Manifest['id'][];
   pluginSettings?: PluginSettings;
 }
 
 export type PluginManagerOptions = {
   fileManager?: PluginFileManager;
   registry?: PluginRegistry;
-  onSetPluginSettings?: (pluginSettings: PluginSettings) => void;
+  onPluginSettingsChange?: (pluginSettings: PluginSettings) => void;
   appVersion: string;
+  installDefaults: BksConfig['plugins']['installDefaults'];
 }
 
 export default class PluginManager {
@@ -49,20 +50,15 @@ export default class PluginManager {
       return;
     }
 
+    await this.reinitialize(options);
+  }
+
+  async reinitialize(options: PluginManagerInitializeOptions = {}) {
     this.installedPlugins = this.fileManager.scanPlugins();
 
     this.pluginSettings = _.cloneDeep(options.pluginSettings) || {};
 
     this.initialized = true;
-
-    for (const id of options.preinstalledPlugins || []) {
-      // have installed `id` before?
-      if (this.pluginSettings[id]) {
-        continue;
-      }
-
-      await this.installPlugin(id);
-    }
 
     const promises = this.installedPlugins.map(async (plugin) => {
       if (
@@ -119,14 +115,20 @@ export default class PluginManager {
   /** Install the latest version of a plugin. If version is specified, install the specified version. */
   async installPlugin(id: string, version?: string): Promise<Manifest> {
     this.initializeGuard();
+
+    let update = false;
+
+    // If plugin is already installed, perform update
     if (this.installedPlugins.find((manifest) => manifest.id === id)) {
-      throw new Error(`Plugin "${id}" is already installed.`);
+      update = true;
     }
 
     return await this.withPluginLock(id, async () => {
-      log.debug(`Installing plugin "${id}"...`);
-
       const info = await this.registry.getRepository(id);
+      if (!info) {
+        throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
+      }
+
       let release: Release;
       if (version) {
         release = info.releases.find((release) => release.manifest.version === version);
@@ -145,17 +147,28 @@ export default class PluginManager {
       } else {
         release = this.findLatestLoadableReleaseAndThrow(info.releases);
       }
-      await this.fileManager.download(id, release);
-      const manifest = this.fileManager.getManifest(id);
-      this.installedPlugins.push(manifest);
-      if (!this.pluginSettings[id]) {
-        this.pluginSettings[id] = {
-          autoUpdate: true,
-        };
-      }
-      this.options?.onSetPluginSettings?.(this.pluginSettings);
 
-      log.debug(`Plugin "${id}" installed!`);
+      log.debug(`Installing plugin "${id}" v${release.manifest.version}...`);
+
+      if (update) {
+        await this.fileManager.update(id, release);
+      } else {
+        await this.fileManager.download(id, release);
+      }
+
+      const manifest = this.fileManager.getManifest(id);
+      const installedPluginIdx = this.installedPlugins.findIndex(
+        (manifest) => manifest.id === id
+      );
+      if (installedPluginIdx === -1) {
+        this.installedPlugins.push(manifest);
+      } else {
+        this.installedPlugins[installedPluginIdx] = manifest;
+      }
+
+      this.fillPluginSettings(id);
+
+      log.info(`Installed plugin "${id}" v${release.manifest.version}`);
 
       return manifest;
     });
@@ -163,44 +176,8 @@ export default class PluginManager {
 
   async updatePlugin(id: string, version?: string): Promise<Manifest> {
     this.initializeGuard();
-    const installedPluginIdx = this.installedPlugins.findIndex(
-      (manifest) => manifest.id === id
-    );
-    if (installedPluginIdx === -1) {
-      throw new Error(`Plugin "${id}" is not installed.`);
-    }
-
-    return await this.withPluginLock(id, async () => {
-      log.debug(`Updating plugin "${id}"...`);
-
-      const info = await this.registry.getRepository(id, { reload: true });
-      let release: Release;
-      if (version) {
-        release = info.releases.find((release) => release.manifest.version === version);
-
-        if (!this.isPluginLoadable(release.manifest)) {
-          throw new NotSupportedPluginError(
-            `This plugin requires app version ${release.manifest.minAppVersion} or higher. ` +
-            `(Plugin version "${version}" does not support app version "${this.options.appVersion}"). ` +
-            `Please update Beekeeper Studio or choose a compatible plugin version.`
-          );
-        }
-
-        if (!release) {
-          throw new NotFoundPluginError(`Version "${version}" is not found.`);
-        }
-      } else {
-        release = this.findLatestLoadableReleaseAndThrow(info.releases);
-      }
-      await this.fileManager.update(id, release);
-
-      const newManifest = this.fileManager.getManifest(id);
-      this.installedPlugins[installedPluginIdx] = newManifest;
-
-      log.debug(`Plugin "${id}" updated!`);
-
-      return newManifest;
-    });
+    await this.registry.reloadRepository(id);
+    return await this.installPlugin(id, version);
   }
 
   async uninstallPlugin(id: string): Promise<void> {
@@ -227,9 +204,8 @@ export default class PluginManager {
       throw new Error(`Plugin "${id}" is not installed.`);
     }
 
-    const head = await this.registry.getRepository(manifest.id, {
-      reload: true,
-    });
+    await this.registry.reloadRepository(manifest.id);
+    const head = await this.registry.getRepository(manifest.id);
 
     return head.latestRelease.manifest.version > manifest.version;
   }
@@ -260,23 +236,39 @@ export default class PluginManager {
     return ret;
   }
 
-  /**
-   * Enable or disable automatic update checks for a specific plugin
-   */
-  async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
-    this.pluginSettings[id].autoUpdate = enabled;
-    this.options?.onSetPluginSettings?.(this.pluginSettings);
+  /** Fill the plugin settings with the default values from the config file. */
+  fillPluginSettings(id: string) {
+    let changed = false;
+    if (!this.pluginSettings[id]) {
+      this.pluginSettings[id] = _.cloneDeep(this.options.installDefaults);
+      changed = true;
+    } else {
+      for (const [key, value] of Object.entries(bksConfig.plugins.installDefaults)) {
+        if (!_.has(this.pluginSettings[id], key)) {
+          this.pluginSettings[id][key] = _.clone(value);
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      this.options?.onPluginSettingsChange?.(this.pluginSettings);
+    }
   }
 
-  /**
-   * Get the current auto-update setting for a specific plugin
-   */
-  getPluginAutoUpdateEnabled(id: string): boolean {
+  changePluginSettings<T extends keyof PluginSettings[string]>(
+    id: string,
+    key: T,
+    value: PluginSettings[string][T]
+  ) {
+    this.pluginSettings[id][key] = value;
+    this.options?.onPluginSettingsChange?.(this.pluginSettings);
+  }
+
+  getPluginSettings(id: string): PluginSettings[string] {
     if (!_.has(this.pluginSettings, id)) {
-      log.warn(`Plugin "${id}" not found in plugin settings.`);
-      return false;
+      throw new NotFoundPluginError(`"${id}" not found in plugin settings.`);
     }
-    return this.pluginSettings[id].autoUpdate;
+    return _.clone(this.pluginSettings[id]);
   }
 
   private initializeGuard() {

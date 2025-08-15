@@ -132,6 +132,9 @@ declare interface IBksConfig {
         general: {
             preinstalled: string[];
         };
+        installDefaults: {
+            autoUpdate: boolean;
+        };
     };
     security: {
         disconnectOnIdle: boolean;

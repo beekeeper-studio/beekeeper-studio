@@ -26,14 +26,16 @@ export default class PluginRegistry {
     return this.entries;
   }
 
-  async getRepository(
-    pluginId: string,
-    options: { reload?: boolean } = {}
-  ): Promise<PluginRepository> {
-    if (!options.reload && Object.hasOwn(this.repositories, pluginId)) {
+  /** Get the info for a specific plugin. The data is always cached. To force
+   * a reload, use `reloadRepository`. */
+  async getRepository(pluginId: string): Promise<PluginRepository> {
+    if (Object.hasOwn(this.repositories, pluginId)) {
       return this.repositories[pluginId];
     }
+    return await this.reloadRepository(pluginId);
+  }
 
+  async reloadRepository(pluginId: string): Promise<PluginRepository> {
     const entries = await this.getEntries();
     const entry = entries.find((entry) => entry.id === pluginId);
 

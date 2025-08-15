@@ -43,10 +43,10 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     return await pluginManager.checkForUpdates(id);
   },
   "plugin/setAutoUpdateEnabled": async ({ id, enabled }) => {
-    await pluginManager.setPluginAutoUpdateEnabled(id, enabled);
+    pluginManager.changePluginSettings(id, "autoUpdate", enabled);
   },
   "plugin/getAutoUpdateEnabled": async ({ id }) => {
-    return pluginManager.getPluginAutoUpdateEnabled(id);
+    return pluginManager.getPluginSettings(id)["autoUpdate"];
   },
 
   "plugin/setData": async ({ manifest, key, value }) => {

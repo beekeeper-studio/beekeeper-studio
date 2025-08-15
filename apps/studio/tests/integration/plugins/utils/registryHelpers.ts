@@ -70,14 +70,8 @@ export function createRegistry(server: MockPluginServer, plugins: Plugin[]) {
 }
 
 class MockPluginRegistry extends PluginRegistry {
-  async getRepository(
-    pluginId: string,
-    options: { reload?: boolean } = {}
-  ): Promise<PluginRepository> {
-    return super.getRepository(pluginId, {
-      ...options,
-      // Do not reload. If this is true, it will fetch github.
-      reload: false,
-    });
+  // Override to skip network fetching and return the cached repository instead
+  async reloadRepository(pluginId: string): Promise<PluginRepository> {
+    return this.repositories[pluginId];
   }
 }
