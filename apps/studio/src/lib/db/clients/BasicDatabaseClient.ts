@@ -55,12 +55,25 @@ export const NoOpContextProvider: AppContextProvider = {
   }
 };
 
-export interface DataStoreValue {
-  // The actual value (string, list, set, json, etc)
-  value?: unknown;
-  // Any additional data (ttl, type, memory, etc)
-  [key: string]: unknown;
+// Discriminated union for different types of editable data
+export type KvStoreValue = {
+  kind: "kv"
+  key: string
+  type: string
+  ttl: number
+  memory: number
+  encoding: string
+  value: unknown
 }
+
+export type CellValue = {
+  kind: "cell"
+  column: string
+  type: string
+  value: unknown
+}
+
+export type DataStoreValue = KvStoreValue | CellValue
 
 export interface BaseQueryResult {
   columns: { name: string }[]
