@@ -60,6 +60,9 @@ declare interface IBksConfig {
         tidb: {
             allowSkipToLastPage: boolean;
         };
+        trino: {
+            allowSkipToLastPage: boolean;
+        };
     };
     general: {
         checkForUpdatesInterval: number;
