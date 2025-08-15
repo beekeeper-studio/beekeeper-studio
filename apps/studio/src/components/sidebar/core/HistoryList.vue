@@ -22,6 +22,10 @@
               </a>
             </div>
           </div>
+          <div class="flex items-center mt-2" title="By default, only the history executed on the current connection are shown.">
+            <input type="checkbox" id="showAllHistoryCheckbox" v-model="showAllHistory"/>
+            <label for="showAllHistoryCheckbox" class="text-md">Show all history</label>
+          </div>
         </div>
         <error-alert
           v-if="error"
@@ -30,7 +34,7 @@
         />
         <sidebar-loading v-else-if="loading" />
         <div
-          v-else-if="!history.length"
+          v-else-if="!currentHistory.length"
           class="empty"
         >
           No recent queries
@@ -42,7 +46,7 @@
           <div
             class="list-item"
             @contextmenu.prevent.stop="openContextMenu($event, item)"
-            v-for="item in history"
+            v-for="item in currentHistory"
             :key="item.id"
           >
             <a
@@ -83,14 +87,23 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
       return {
         checkedHistoryQueries: [],
         timeAgo: new TimeAgo('en-US'),
-        selected: null
+        selected: null,
+        showAllHistory: false
       }
     },
     computed: {
+      ...mapState(['usedConfig']),
       ...mapState('data/usedQueries', { 'history': 'items', 'loading': 'loading', 'error': 'error'},),
       removeTitle() {
         return `Remove ${this.checkedHistoryQueries.length} saved history queries`;
-      }
+      },
+      currentHistory(){
+        if(this.showAllHistory){
+          return this.history;
+        } else {
+          return this.history.filter(item => item.connectionId === this.usedConfig?.id);
+        }
+      },
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)
