@@ -408,8 +408,243 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
       expect(fields).toStrictEqual(expectedBksFields);
       
     })
-  })
 
+    // MySQL User Management Tests
+    if (!readonly && (tag === '5.1' || (tag === '8' && !socket))) {
+      describe('MySQL User Management Tests', () => {
+        let rootConnection;
+
+        beforeAll(async () => {
+          rootConnection = util.connection;
+          
+          // Clean up with version-compatible syntax
+          try {
+            if (tag !== '5.1') {
+              const dropResult1 = await rootConnection.query(`DROP USER IF EXISTS 'test_priv_user'@'%'`);
+              await dropResult1.execute();
+              const dropResult2 = await rootConnection.query(`DROP USER IF EXISTS 'test_user_short'@'%'`);
+              await dropResult2.execute();
+              const dropResult3 = await rootConnection.query(`DROP USER IF EXISTS 'test_user_short'@'localhost'`);
+              await dropResult3.execute();
+            }
+          } catch (error) {
+            // Ignore errors during cleanup
+          }
+          
+          const createDbResult = await rootConnection.query(`CREATE DATABASE IF NOT EXISTS test_priv_schema`);
+          await createDbResult.execute();
+        });
+
+        afterAll(async () => {
+          try {
+            if (tag !== '5.1') {
+              const dropResult1 = await rootConnection.query(`DROP USER IF EXISTS 'test_priv_user'@'%'`);
+              await dropResult1.execute();
+              const dropResult2 = await rootConnection.query(`DROP USER IF EXISTS 'test_user_short'@'%'`);
+              await dropResult2.execute();
+              const dropResult3 = await rootConnection.query(`DROP USER IF EXISTS 'test_user_short'@'localhost'`);
+              await dropResult3.execute();
+              const dropResult4 = await rootConnection.query(`DROP USER IF EXISTS 'test_limits_user'@'%'`);
+              await dropResult4.execute();
+            }
+            const dropDbResult = await rootConnection.query(`DROP DATABASE IF EXISTS test_priv_schema`);
+            await dropDbResult.execute();
+          } catch (error) {
+            // Ignore errors during cleanup
+          }
+        });
+
+        it('should create a user', async () => {
+          const userName = tag === '5.1' ? 'test_priv_user' : 'test_priv_user';
+          const result = await rootConnection.query(`CREATE USER '${userName}'@'%' IDENTIFIED BY 'abc123'`);
+          await result.execute();
+          
+          const queryResult = await rootConnection.query(`SELECT User, Host FROM mysql.user WHERE User='${userName}'`);
+          const rows = await queryResult.execute();
+          expect(rows[0].rows.length).toBeGreaterThan(0);
+        });
+
+        it('should list users', async () => {
+          const userName = tag === '5.1' ? 'test_priv_user' : 'test_priv_user';
+          const queryResult = await rootConnection.query(`SELECT User, Host FROM mysql.user`);
+          const rows = await queryResult.execute();
+          expect(Array.isArray(rows[0].rows)).toBeTruthy();
+          
+          // For MySQL 5.1, check by column index, for newer versions check by property name
+          if (tag === '5.1') {
+            expect(rows[0].rows.some((u) => u.c0 === userName || u.User === userName)).toBeTruthy();
+          } else {
+            expect(rows[0].rows.some((u) => u.User === userName || u.c0 === userName)).toBeTruthy();
+          }
+        });
+
+        it('should get user authentication details', async () => {
+          // Skip this test for MySQL 5.1 as it doesn't have the plugin column
+          if (tag === '5.1') return;
+          
+          const userName = 'test_priv_user';
+          const queryResult = await rootConnection.query(
+            `SELECT plugin AS Authentication_Type, authentication_string FROM mysql.user WHERE User='${userName}' AND Host='%'`
+          );
+          const rows = await queryResult.execute();
+          // Check both property name and column index as MySQL returns differently
+          expect(rows[0].rows[0].Authentication_Type !== undefined || rows[0].rows[0].c0 !== undefined).toBeTruthy();
+        });
+
+        it('should get user resource limits', async () => {
+          const userName = tag === '5.1' ? 'test_priv_user' : 'test_priv_user';
+          const queryResult = await rootConnection.query(
+            `SELECT max_questions, max_updates, max_connections, max_user_connections FROM mysql.user WHERE User='${userName}' AND Host='%'`
+          );
+          const rows = await queryResult.execute();
+          
+          // Check both property names and column indices
+          const row = rows[0].rows[0];
+          expect(row.max_questions !== undefined || row.c0 !== undefined).toBeTruthy();
+          expect(row.max_updates !== undefined || row.c1 !== undefined).toBeTruthy();
+          expect(row.max_connections !== undefined || row.c2 !== undefined).toBeTruthy();
+          expect(row.max_user_connections !== undefined || row.c3 !== undefined).toBeTruthy();
+        });
+
+        it('should get user privileges', async () => {
+          const userName = tag === '5.1' ? 'test_priv_user' : 'test_priv_user';
+          const queryResult = await rootConnection.query(
+            `SELECT Super_priv, Create_priv, Drop_priv, Grant_priv, Insert_priv, Update_priv, Delete_priv FROM mysql.user WHERE User='${userName}' AND Host='%'`
+          );
+          const rows = await queryResult.execute();
+          
+          // Check both property names and column indices
+          const row = rows[0].rows[0];
+          expect(row.Super_priv !== undefined || row.c0 !== undefined).toBeTruthy();
+        });
+
+        it('should show grants for user', async () => {
+          const userName = tag === '5.1' ? 'test_priv_user' : 'test_priv_user';
+          const queryResult = await rootConnection.query(`SHOW GRANTS FOR '${userName}'@'%'`);
+          const rows = await queryResult.execute();
+          expect(Array.isArray(rows[0].rows)).toBeTruthy();
+        });
+
+        it('should set and update password', async () => {
+          // Skip ALTER USER for MySQL 5.1 as it doesn't support this syntax
+          if (tag === '5.1') return;
+          
+          const userName = 'test_priv_user';
+          const updateResult = await rootConnection.query(`ALTER USER '${userName}'@'%' IDENTIFIED BY 'def456'`);
+          await updateResult.execute();
+          
+          const queryResult = await rootConnection.query(
+            `SELECT User, Host, authentication_string FROM mysql.user WHERE User='${userName}'`
+          );
+          const rows = await queryResult.execute();
+          expect(rows[0].rows[0].authentication_string !== null || rows[0].rows[0].c2 !== null).toBeTruthy();
+        });
+
+        it('should change host', async () => {
+          const userName = tag === '5.1' ? 'test_priv_user' : 'test_priv_user';
+          const renameResult = await rootConnection.query(`RENAME USER '${userName}'@'%' TO '${userName}'@'localhost'`);
+          await renameResult.execute();
+          
+          const queryResult = await rootConnection.query(`SELECT User, Host FROM mysql.user WHERE User='${userName}'`);
+          const rows = await queryResult.execute();
+          expect(rows[0].rows[0].Host === 'localhost' || rows[0].rows[0].c1 === 'localhost').toBeTruthy();
+        });
+
+        it('should rename user', async () => {
+          // Use shorter username for MySQL 5.1 (16 char limit)
+          const oldUserName = tag === '5.1' ? 'test_priv_user' : 'test_priv_user';
+          const newUserName = tag === '5.1' ? 'test_user_short' : 'test_user_short';
+          
+          const renameResult = await rootConnection.query(`RENAME USER '${oldUserName}'@'localhost' TO '${newUserName}'@'localhost'`);
+          await renameResult.execute();
+          
+          const queryResult = await rootConnection.query(`SELECT User, Host FROM mysql.user WHERE User='${newUserName}'`);
+          const rows = await queryResult.execute();
+          expect(rows[0].rows[0].User === newUserName || rows[0].rows[0].c0 === newUserName).toBeTruthy();
+        });
+
+        it('should set limits when creating user', async () => {
+          // Skip WITH clause for MySQL 5.1 as it doesn't support this syntax
+          if (tag === '5.1') return;
+          
+          // Clean up any existing user first
+          try {
+            const dropResult = await rootConnection.query(`DROP USER IF EXISTS 'test_limits_user'@'%'`);
+            await dropResult.execute();
+          } catch (error) {
+            // Ignore if user doesn't exist
+          }
+          
+          const createResult = await rootConnection.query(
+            `CREATE USER 'test_limits_user'@'%' IDENTIFIED BY 'password' WITH MAX_QUERIES_PER_HOUR 10 MAX_UPDATES_PER_HOUR 20 MAX_CONNECTIONS_PER_HOUR 30 MAX_USER_CONNECTIONS 40`
+          );
+          await createResult.execute();
+          
+          const queryResult = await rootConnection.query(`SELECT max_questions, max_updates, max_connections, max_user_connections FROM mysql.user WHERE User='test_limits_user'`);
+          const rows = await queryResult.execute();
+          const row = rows[0].rows[0];
+          expect(row.max_questions === 10 || row.c0 === 10).toBeTruthy();
+          expect(row.max_updates === 20 || row.c1 === 20).toBeTruthy();
+          expect(row.max_connections === 30 || row.c2 === 30).toBeTruthy();
+          expect(row.max_user_connections === 40 || row.c3 === 40).toBeTruthy();
+          
+          // Clean up
+          const cleanupResult = await rootConnection.query(`DROP USER 'test_limits_user'@'%'`);
+          await cleanupResult.execute();
+        });
+
+        it('should grant privileges on schema', async () => {
+          const userName = tag === '5.1' ? 'test_user_short' : 'test_user_short';
+          const grantResult = await rootConnection.query(`GRANT SELECT, INSERT ON test_priv_schema.* TO '${userName}'@'localhost'`);
+          await grantResult.execute();
+          
+          const queryResult = await rootConnection.query(`SHOW GRANTS FOR '${userName}'@'localhost'`);
+          const rows = await queryResult.execute();
+          const grants = rows[0].rows.map(row => Object.values(row)[0]);
+          expect(grants.some(grant => grant.includes('SELECT'))).toBeTruthy();
+          expect(grants.some(grant => grant.includes('INSERT'))).toBeTruthy();
+        });
+
+        it('should revoke all privileges', async () => {
+          const userName = tag === '5.1' ? 'test_user_short' : 'test_user_short';
+          const revokeResult = await rootConnection.query(`REVOKE ALL PRIVILEGES, GRANT OPTION FROM '${userName}'@'localhost'`);
+          await revokeResult.execute();
+          
+          const queryResult = await rootConnection.query(`SHOW GRANTS FOR '${userName}'@'localhost'`);
+          const rows = await queryResult.execute();
+          const grants = rows[0].rows.map(row => Object.values(row)[0]);
+          expect(grants.every(grant => grant.startsWith('GRANT USAGE'))).toBeTruthy();
+        });
+
+        it('should expire password', async () => {
+          // Skip password expiration for MySQL 5.1 as it doesn't support ALTER USER
+          if (tag === '5.1') return;
+          
+          const userName = 'test_user_short';
+          const expireResult = await rootConnection.query(`ALTER USER '${userName}'@'localhost' PASSWORD EXPIRE`);
+          await expireResult.execute();
+          
+          const queryResult = await rootConnection.query(
+            `SELECT password_expired FROM mysql.user WHERE User = '${userName}' AND Host = 'localhost'`
+          );
+          const rows = await queryResult.execute();
+          const row = rows[0].rows[0];
+          expect((row.password_expired === 'Y' || row.password_expired === 1) || (row.c0 === 'Y' || row.c0 === 1)).toBeTruthy();
+        });
+
+        it('should delete a user', async () => {
+          const userName = tag === '5.1' ? 'test_user_short' : 'test_user_short';
+          const dropResult = await rootConnection.query(`DROP USER '${userName}'@'localhost'`);
+          await dropResult.execute();
+          
+          const queryResult = await rootConnection.query(`SELECT User, Host FROM mysql.user WHERE User='${userName}'`);
+          const rows = await queryResult.execute();
+          expect(rows[0].rows.length).toBe(0);
+        });
+      });
+    }
+
+  })
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly, image, options }) => testWith(version, socket, readonly, image, options ))
