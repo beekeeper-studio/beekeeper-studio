@@ -134,7 +134,16 @@
           v-model="config.azureAuthOptions.tenantId"
         />
       </div>
-      <div class="form-group" v-show="showClientSecret">
+      <div class="form-group" v-show="isServicePrincipal">
+        <label for="clientSecret">Client ID</label>
+        <input
+          name="clientId"
+          type="password"
+          class="form-control"
+          v-model="config.azureAuthOptions.clientId"
+        />
+      </div>
+      <div class="form-group" v-show="isServicePrincipal">
         <label for="clientSecret">Client Secret</label>
         <input
           name="clientSecret"
@@ -195,7 +204,7 @@ export default {
         AzureAuthType.ServicePrincipalSecret,
       ].includes(this.authType);
     },
-    showClientSecret() {
+    isServicePrincipal() {
       return AzureAuthType.ServicePrincipalSecret === this.authType;
     },
     showMsiEndpoint() {

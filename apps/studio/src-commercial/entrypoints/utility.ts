@@ -16,6 +16,7 @@ import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
+import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
@@ -51,6 +52,7 @@ export const handlers: Handlers = {
   ...ImportHandlers,
   ...AppDbHandlers,
   ...BackupHandlers,
+  ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
   ...TempHandlers,

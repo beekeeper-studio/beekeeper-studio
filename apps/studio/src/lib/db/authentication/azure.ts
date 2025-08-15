@@ -48,6 +48,7 @@ export interface AuthOptions {
   password?: string,
   userName?: string,
   tenantId?: string,
+  clientId?: string,
   msiEndpoint?: string,
   clientSecret?: string
   cliPath?: string,
@@ -133,7 +134,7 @@ export class AzureAuthService {
     return {
       type: 'azure-active-directory-service-principal-secret',
       options: {
-        clientId: globals.clientId,
+        clientId: options.clientId,
         clientSecret: options.clientSecret,
         tenantId: options.tenantId
       }
