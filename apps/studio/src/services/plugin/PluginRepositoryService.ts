@@ -56,6 +56,27 @@ export default class PluginRepositoryService {
     };
   }
 
+  async fetchReleases(owner: string, repo: string): Promise<Release[]> {
+    const response = await this.octokit.request(
+      "GET /repos/{owner}/{repo}/releases",
+      {
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+        owner,
+        repo,
+      }
+    );
+    return response.data.map((release) => {
+      const manifest = JSON.parse(Buffer.from(release.body, "base64").toString("utf-8"));
+      return {
+        manifest,
+        // FIXME rename this, it's not source
+        sourceArchiveUrl: release.assets[0].browser_download_url,
+      };
+    });
+  }
+
   async fetchRegistry() {
     return await this.fetchJson(
       "beekeeper-studio",
@@ -66,8 +87,9 @@ export default class PluginRepositoryService {
 
   async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
     const latestRelease = await this.fetchLatestRelease(owner, repo);
+    const releases = await this.fetchReleases(owner, repo);
     const readme = await this.fetchReadme(owner, repo);
-    return { latestRelease, readme };
+    return { releases, latestRelease, readme };
   }
 
   private async fetchReadme(owner: string, repo: string) {

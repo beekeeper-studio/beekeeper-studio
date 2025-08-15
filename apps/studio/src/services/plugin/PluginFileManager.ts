@@ -87,7 +87,7 @@ async function extractArchive(
 }
 
 export default class PluginFileManager {
-  constructor(private readonly options: PluginFileManagerOptions) {}
+  constructor(readonly options: PluginFileManagerOptions) {}
 
   /** Download plugin source archive to `directory` and extract it */
   async download(

@@ -6,10 +6,12 @@ import {
   PluginRegistryEntry,
   PluginRepository,
   PluginSettings,
+  Release,
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
-import platformInfo from "@/common/platform_info";
+import semver from "semver";
+import { NotFoundPluginError, NotSupportedPluginError } from "@commercial/backend/plugin-system/errors";
 
 const log = rawLog.scope("PluginManager");
 
@@ -21,24 +23,24 @@ export type PluginManagerInitializeOptions = {
 
 export type PluginManagerOptions = {
   fileManager?: PluginFileManager;
+  registry?: PluginRegistry;
   onSetPluginSettings?: (pluginSettings: PluginSettings) => void;
+  appVersion: string;
 }
 
 export default class PluginManager {
   private initialized = false;
-  private pluginRepositoryService: PluginRepositoryService;
   private registry: PluginRegistry;
   private fileManager: PluginFileManager;
   private installedPlugins: Manifest[] = [];
   private pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
-  constructor(readonly options: PluginManagerOptions = {}) {
-    this.pluginRepositoryService = new PluginRepositoryService();
-    this.fileManager = options.fileManager || new PluginFileManager({
-      pluginsDirectory: platformInfo.pluginsDirectory,
-    });
-    this.registry = new PluginRegistry(this.pluginRepositoryService);
+  constructor(readonly options: PluginManagerOptions) {
+    this.fileManager = options.fileManager;
+    this.registry =
+      options.registry ||
+      new PluginRegistry(new PluginRepositoryService());
   }
 
   async initialize(options: PluginManagerInitializeOptions = {}) {
@@ -100,7 +102,22 @@ export default class PluginManager {
     return this.installedPlugins;
   }
 
-  async installPlugin(id: string): Promise<Manifest> {
+  getInstalledPlugins(): Manifest[] {
+    this.initializeGuard();
+    return this.installedPlugins;
+  }
+
+  getLoadablePlugins(): Manifest[] {
+    this.initializeGuard();
+    return this.installedPlugins.filter(this.isPluginLoadable.bind(this));
+  }
+
+  isPluginLoadable(manifest: Manifest): boolean {
+    return semver.lte(manifest.minAppVersion, this.options.appVersion);
+  }
+
+  /** Install the latest version of a plugin. If version is specified, install the specified version. */
+  async installPlugin(id: string, version?: string): Promise<Manifest> {
     this.initializeGuard();
     if (this.installedPlugins.find((manifest) => manifest.id === id)) {
       throw new Error(`Plugin "${id}" is already installed.`);
@@ -110,7 +127,25 @@ export default class PluginManager {
       log.debug(`Installing plugin "${id}"...`);
 
       const info = await this.registry.getRepository(id);
-      await this.fileManager.download(id, info.latestRelease);
+      let release: Release;
+      if (version) {
+        release = info.releases.find((release) => release.manifest.version === version);
+
+        if (!this.isPluginLoadable(release.manifest)) {
+          throw new NotSupportedPluginError(
+            `This plugin requires app version ${release.manifest.minAppVersion} or higher. ` +
+            `(Plugin version "${version}" does not support app version "${this.options.appVersion}"). ` +
+            `Please update Beekeeper Studio or choose a compatible plugin version.`
+          );
+        }
+
+        if (!release) {
+          throw new NotFoundPluginError(`Version "${version}" is not found.`);
+        }
+      } else {
+        release = this.findLatestLoadableReleaseAndThrow(info.releases);
+      }
+      await this.fileManager.download(id, release);
       const manifest = this.fileManager.getManifest(id);
       this.installedPlugins.push(manifest);
       if (!this.pluginSettings[id]) {
@@ -126,7 +161,7 @@ export default class PluginManager {
     });
   }
 
-  async updatePlugin(id: string): Promise<Manifest> {
+  async updatePlugin(id: string, version?: string): Promise<Manifest> {
     this.initializeGuard();
     const installedPluginIdx = this.installedPlugins.findIndex(
       (manifest) => manifest.id === id
@@ -139,7 +174,25 @@ export default class PluginManager {
       log.debug(`Updating plugin "${id}"...`);
 
       const info = await this.registry.getRepository(id, { reload: true });
-      await this.fileManager.update(id, info.latestRelease);
+      let release: Release;
+      if (version) {
+        release = info.releases.find((release) => release.manifest.version === version);
+
+        if (!this.isPluginLoadable(release.manifest)) {
+          throw new NotSupportedPluginError(
+            `This plugin requires app version ${release.manifest.minAppVersion} or higher. ` +
+            `(Plugin version "${version}" does not support app version "${this.options.appVersion}"). ` +
+            `Please update Beekeeper Studio or choose a compatible plugin version.`
+          );
+        }
+
+        if (!release) {
+          throw new NotFoundPluginError(`Version "${version}" is not found.`);
+        }
+      } else {
+        release = this.findLatestLoadableReleaseAndThrow(info.releases);
+      }
+      await this.fileManager.update(id, release);
 
       const newManifest = this.fileManager.getManifest(id);
       this.installedPlugins[installedPluginIdx] = newManifest;
@@ -230,5 +283,25 @@ export default class PluginManager {
     if (!this.initialized) {
       throw new Error("Plugin manager is not initialized.");
     }
+  }
+
+  private findLatestLoadableReleaseAndThrow(releases: Release[]) {
+    const sorted = releases
+      .slice()
+      .sort((a, b) => semver.rcompare(a.manifest.version, b.manifest.version));
+    for (const candidate of sorted) {
+      // if minAppVersion is not set, we assume it works on any version
+      if (!candidate.manifest.minAppVersion) {
+        return candidate;
+      }
+
+      if (this.isPluginLoadable(candidate.manifest)) {
+        return candidate;
+      }
+    }
+    throw new NotSupportedPluginError(
+      `Plugin "${releases[0].manifest.id}" is not compatible with app version "${this.options.appVersion}". ` +
+      `Please upgrade Beekeeper Studio to use this plugin.`
+    );
   }
 }

@@ -61,6 +61,7 @@ export interface Release {
 }
 
 export interface PluginRepository {
+  releases: Release[];
   latestRelease: Release;
   readme: string;
 }

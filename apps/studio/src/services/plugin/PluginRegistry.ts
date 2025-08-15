@@ -6,8 +6,8 @@ const log = rawLog.scope("PluginRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
-  private entries: PluginRegistryEntry[] = [];
-  private repositories: Record<string, PluginRepository> = {};
+  entries: PluginRegistryEntry[] = [];
+  repositories: Record<string, PluginRepository> = {};
 
   constructor(private readonly repositoryService: PluginRepositoryService) {}
 

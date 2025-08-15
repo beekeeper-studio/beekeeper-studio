@@ -28,6 +28,8 @@ import _ from 'lodash';
 
 import * as sms from 'source-map-support'
 import { UserSetting } from '@/common/appdb/models/user_setting';
+import PluginFileManager from '@/services/plugin/PluginFileManager';
+import bksConfig from "@/common/bksConfig";
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -36,6 +38,10 @@ if (platformInfo.env.development || platformInfo.env.test) {
 let ormConnection: ORMConnection;
 const pluginManager = new PluginManager({
   onSetPluginSettings: handleSetPluginSettings,
+  appVersion: platformInfo.appVersion,
+  fileManager: new PluginFileManager({
+    pluginsDirectory: platformInfo.pluginsDirectory,
+  })
 });
 
 interface Reply {
@@ -185,12 +191,13 @@ async function init() {
   await ormConnection.connect();
 
   try {
-    await pluginManager.initialize({
-      preinstalledPlugins: [
-        "bks-ai-shell",
-      ],
-      pluginSettings: await loadPluginSettings(),
-    });
+    const pluginSettings = await loadPluginSettings();
+    await pluginManager.initialize({ pluginSettings });
+    for (const pluginId of bksConfig.plugins.general.preinstalled) {
+      if (!pluginSettings[pluginId]) {
+        pluginManager.installPlugin(pluginId).catch((e) => log.error(e));
+      }
+    }
   } catch (e) {
     log.error("Error initializing plugin manager", e);
   }
