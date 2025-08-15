@@ -84,6 +84,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'cockroachdb':
         port = 26257
         break
+      case 'redshift':
+        port = 5432
+        break
       case 'oracle':
         port = 1521
         break
@@ -98,6 +101,9 @@ export class DbConnectionBase extends ApplicationEntity {
         break
       case 'sqlanywhere':
         port = 2638
+        break
+      case 'clickhouse':
+        port = 8123
         break
       default:
         port = null
@@ -326,24 +332,24 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       let cleanedUrl = url
       let extractedUser = undefined
       let extractedPassword = undefined
-  
+
       if (url.includes('@')) {
         const lastAtIndex = url.lastIndexOf('@')
         let firstDoubleSlash = url.indexOf('//') + 2
         if (firstDoubleSlash === 1) firstDoubleSlash = 0
         const credentials = url.substring(firstDoubleSlash, lastAtIndex)
-  
+
         const [user, ...passwordParts] = credentials.split(':')
         extractedUser = user
         extractedPassword = passwordParts.join(':')
-  
+
         cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
       }
 
       const encodedUrl = encodeURI(cleanedUrl)
       const parsed = new ConnectionString(encodedUrl)
       const parsedUncoded = new ConnectionString(url)
-  
+
       this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
