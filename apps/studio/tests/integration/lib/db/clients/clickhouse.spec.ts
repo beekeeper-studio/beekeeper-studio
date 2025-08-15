@@ -221,6 +221,130 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         );
       });
     });
+
+    describe("Streaming functionality", () => {
+      beforeAll(async () => {
+        // Create test table with sample data for streaming tests
+        await util.knex.schema.raw(`
+          CREATE TABLE stream_test (
+            id UInt32,
+            name String,
+            value Float64
+          ) ENGINE = MergeTree()
+          ORDER BY id
+        `);
+        
+        // Insert test data
+        const values = Array.from({ length: 1000 }, (_, i) => `(${i + 1}, 'name_${i + 1}', ${(i + 1) * 1.5})`).join(',');
+        await util.knex.schema.raw(`INSERT INTO stream_test VALUES ${values}`);
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.raw('DROP TABLE IF EXISTS stream_test');
+      });
+
+      it("should stream query results with queryStream", async () => {
+        const sql = "SELECT * FROM stream_test ORDER BY id LIMIT 100";
+        const { cursor, totalRows, columns } = await util.connection.queryStream(sql, 25);
+
+        expect(columns).toBeDefined();
+        expect(columns.length).toBe(3);
+        expect(columns.map(c => c.columnName)).toEqual(['id', 'name', 'value']);
+
+        await cursor.start();
+        
+        let totalRowsRead = 0;
+        const allRows = [];
+        
+        while (true) {
+          const rows = await cursor.read();
+          if (rows.length === 0) break;
+          
+          allRows.push(...rows);
+          totalRowsRead += rows.length;
+        }
+
+        await cursor.close();
+        
+        expect(totalRowsRead).toBe(100);
+        expect(allRows[0]).toEqual([1, 'name_1', 1.5]);
+        expect(allRows[99]).toEqual([100, 'name_100', 150]);
+      });
+
+      it("should handle streaming with selectTopStream", async () => {
+        const { cursor, totalRows, columns } = await util.connection.selectTopStream('stream_test', [], [], 50);
+
+        expect(totalRows).toBe(1000);
+        expect(columns).toBeDefined();
+        expect(columns.length).toBe(3);
+
+        await cursor.start();
+        
+        const firstChunk = await cursor.read();
+        expect(firstChunk.length).toBe(50);
+        
+        await cursor.close();
+      });
+
+      it("should stream data in specified chunk sizes", async () => {
+        const chunkSize = 37; // Using non-standard chunk size to test
+        const sql = "SELECT * FROM stream_test ORDER BY id LIMIT 200";
+        const { cursor } = await util.connection.queryStream(sql, chunkSize);
+
+        await cursor.start();
+        
+        const firstChunk = await cursor.read();
+        expect(firstChunk.length).toBe(chunkSize);
+        
+        await cursor.close();
+      });
+
+      it("should handle empty results gracefully", async () => {
+        const sql = "SELECT * FROM stream_test WHERE id > 2000";
+        const { cursor, totalRows } = await util.connection.queryStream(sql, 100);
+
+        await cursor.start();
+        
+        const rows = await cursor.read();
+        expect(rows.length).toBe(0);
+        
+        await cursor.close();
+      });
+
+      it("should be able to cancel streaming", async () => {
+        const sql = "SELECT * FROM stream_test ORDER BY id";
+        const { cursor } = await util.connection.queryStream(sql, 100);
+
+        await cursor.start();
+        
+        // Read first chunk
+        const firstChunk = await cursor.read();
+        expect(firstChunk.length).toBe(100);
+        
+        // Cancel the cursor
+        await cursor.cancel();
+        
+        // Verify cursor is cancelled
+        await cursor.close();
+      });
+
+      it("should stream aggregate query results", async () => {
+        const sql = "SELECT COUNT(*) as count, AVG(value) as avg_value FROM stream_test";
+        const { cursor, columns } = await util.connection.queryStream(sql, 10);
+
+        expect(columns).toBeDefined();
+        expect(columns.map(c => c.columnName)).toEqual(['count', 'avg_value']);
+
+        await cursor.start();
+        
+        const rows = await cursor.read();
+        expect(rows.length).toBe(1);
+        expect(rows[0][0]).toBe(1000); // COUNT(*)
+        expect(typeof rows[0][1]).toBe('number'); // AVG(value)
+        
+        await cursor.close();
+      });
+    });
   });
 }
 
