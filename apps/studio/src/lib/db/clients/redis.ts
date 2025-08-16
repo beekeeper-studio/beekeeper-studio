@@ -411,6 +411,111 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     };
   };
 
+  // Centralized Redis value setting logic
+  private async setRedisValue(key: string, type: string, value: string): Promise<void> {
+    switch (type) {
+      case "string":
+        await this.redis.set(key, value);
+        break;
+      case "list": {
+        // For lists, expect JSON array
+        let listItems: string[];
+        try {
+          listItems = JSON.parse(value);
+          if (!Array.isArray(listItems)) {
+            throw new Error("Expected array for list type");
+          }
+        } catch (error) {
+          throw new Error(`Invalid JSON array for list: ${error.message}`);
+        }
+
+        // Replace entire list
+        await this.redis.del(key);
+        if (listItems.length > 0) {
+          await this.redis.lpush(key, ...listItems.reverse()); // lpush adds in reverse order
+        }
+        break;
+      }
+      case "set": {
+        // For sets, expect JSON array
+        let setItems: string[];
+        try {
+          setItems = JSON.parse(value);
+          if (!Array.isArray(setItems)) {
+            throw new Error("Expected array for set type");
+          }
+        } catch (error) {
+          throw new Error(`Invalid JSON array for set: ${error.message}`);
+        }
+
+        // Replace entire set
+        await this.redis.del(key);
+        if (setItems.length > 0) {
+          await this.redis.sadd(key, ...setItems);
+        }
+        break;
+      }
+      case "hash": {
+        // For hashes, expect JSON object
+        let hashData: Record<string, string>;
+        try {
+          hashData = JSON.parse(value);
+          if (typeof hashData !== 'object' || hashData === null || Array.isArray(hashData)) {
+            throw new Error("Expected object for hash type");
+          }
+        } catch (error) {
+          throw new Error(`Invalid JSON object for hash: ${error.message}`);
+        }
+
+        // Replace entire hash
+        await this.redis.del(key);
+        if (Object.keys(hashData).length > 0) {
+          await this.redis.hmset(key, hashData);
+        }
+        break;
+      }
+      case "zset": {
+        // For sorted sets, expect JSON object with score->members mapping
+        let zsetData: Record<string, string[]>;
+        try {
+          zsetData = JSON.parse(value);
+          if (typeof zsetData !== 'object' || zsetData === null || Array.isArray(zsetData)) {
+            throw new Error("Expected object for zset type");
+          }
+        } catch (error) {
+          throw new Error(`Invalid JSON object for zset: ${error.message}`);
+        }
+
+        // Replace entire sorted set
+        await this.redis.del(key);
+        for (const [score, members] of Object.entries(zsetData)) {
+          const scoreNum = Number(score);
+          if (isNaN(scoreNum)) {
+            throw new Error(`Invalid score: ${score}`);
+          }
+          if (Array.isArray(members)) {
+            for (const member of members) {
+              await this.redis.zadd(key, scoreNum, member);
+            }
+          }
+        }
+        break;
+      }
+      case "ReJSON-RL": {
+        // For JSON values, set directly
+        try {
+          JSON.parse(value); // Validate JSON
+          await this.redis.call("JSON.SET", key, "$", value);
+        } catch (error) {
+          throw new Error(`Invalid JSON for ReJSON: ${error.message}`);
+        }
+        break;
+      }
+      default:
+        throw new Error(`Cannot set value for unsupported Redis type: ${type}`);
+    }
+  }
+
   // Centralized Redis value fetching logic
   private async fetchRedisValue(key: string, type: string): Promise<unknown> {
     switch (type) {
@@ -677,6 +782,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           } else if (ttlValue > 0) {
             await this.redis.expire(originalKey, ttlValue);
           }
+        } else if (column === "value" && originalKey) {
+          // Handle value updates from Value Editor
+          const keyType = await this.redis.type(originalKey);
+          await this.setRedisValue(originalKey, keyType, newValue);
         }
       }
     }
