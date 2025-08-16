@@ -315,5 +315,3 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     ...obj
   }
 }
-
-

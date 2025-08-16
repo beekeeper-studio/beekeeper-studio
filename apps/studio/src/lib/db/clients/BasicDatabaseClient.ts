@@ -73,7 +73,7 @@ export type CellValue = {
   value: unknown
 }
 
-export type DataStoreValue = KvStoreValue | CellValue
+export type ValueContext = KvStoreValue | CellValue
 
 export interface BaseQueryResult {
   columns: { name: string }[]
@@ -222,10 +222,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
 
   // Key-value storages (redis, valkey, etc) ************************************
-  async getDataStoreValue(
+  async getValueContext(
     _table: string,
     _rowData: Record<string, unknown>, // selected row (first in range)
-  ): Promise<DataStoreValue | undefined> {
+  ): Promise<ValueContext | undefined> {
     // Noop in relational dbs
     return undefined;
   }
