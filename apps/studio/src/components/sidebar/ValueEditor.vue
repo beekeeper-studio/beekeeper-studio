@@ -71,21 +71,33 @@ export default {
       return "Unknown";
     },
 
-    // Calculate value size for display
+    // Calculate value size for display (based on edited content)
     valueSize() {
-      const value = this.currentValue;
-      if (value === null) return null;
+      if (!this.hasValue) return null;
+      
+      // Use edited value for size calculation
+      const valueText = this.editedValue;
+      if (!valueText) return "0 chars";
 
-      if (typeof value === "string") {
-        return `${value.length} chars`;
+      // For string values, just count characters
+      if (this.valueType === "String") {
+        return `${valueText.length} chars`;
       }
-      if (Array.isArray(value)) {
-        return `${value.length} items`;
+
+      // For structured data, try to parse and count elements
+      try {
+        const parsedValue = JSON.parse(valueText);
+        if (Array.isArray(parsedValue)) {
+          return `${parsedValue.length} items`;
+        }
+        if (typeof parsedValue === "object" && parsedValue !== null) {
+          return `${Object.keys(parsedValue).length} keys`;
+        }
+      } catch {
+        // If parsing fails, fall back to character count
       }
-      if (typeof value === "object") {
-        return `${Object.keys(value).length} keys`;
-      }
-      return null;
+      
+      return `${valueText.length} chars`;
     },
   },
   watch: {
