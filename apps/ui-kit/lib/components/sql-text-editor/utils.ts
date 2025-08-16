@@ -5,15 +5,39 @@ import getAliases from "./getAliases";
 export { getAliases };
 
 /**
+ * Check if a column name needs quoting
+ * @param column - The column name to check
+ * @returns True if the column name needs quoting, false otherwise
+ */
+function needsQuoting(column: string): boolean {
+  const reservedWords = new Set([
+    "user", "select", "order", "group", "table", "where", "from", "join"
+  ]);
+  
+  const needsQuoting =
+    (/^\d/.test(column) || // starts with number
+     /[^a-z0-9_]/.test(column) || // contains special chars (case sensitive)
+     /[A-Z]/.test(column) || // contains uppercase
+     reservedWords.has(column.toLowerCase()) // is a reserved word
+    ) && !/"/.test(column); // not already quoted
+
+  return needsQuoting;
+}
+
+/**
  * Convert column names to auto completion options
  */
 export function columnsToCompletions(columns: string[]): Completion[] {
-  return columns.map((column) => ({
-    label: column,
-    type: "column", // This will become the class name
-    apply: column,
-    boost: 10 // Higher than keywords/tables
-  }));
+  return columns.map((column) => {
+    const quotedColumn = needsQuoting(column) ? `"${column}"` : column;
+    
+    return {
+      label: column,
+      type: "column", // This will become the class name
+      apply: quotedColumn,
+      boost: 10 // Higher than keywords/tables
+    };
+  });
 }
 
 /**
