@@ -71,6 +71,10 @@ export enum AppEvent {
   updatePin = 'updatePin',
   /** The theme has been changed. */
   changedTheme = 'changedTheme',
+  /** Update Value Editor with ValueContext data from TableTable */
+  updateValueEditor = 'updateValueEditor',
+  /** Value editor content has changed (apply to pending changes, don't save immediately) */
+  onValueEditorChange = 'onValueEditorChange',
 }
 
 export interface RootBinding {

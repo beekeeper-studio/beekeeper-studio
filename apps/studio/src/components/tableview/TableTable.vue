@@ -337,6 +337,7 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
+import { ValueContext } from "@/lib/db/clients/BasicDatabaseClient";
 
 const log = rawLog.scope('TableTable')
 
@@ -393,6 +394,7 @@ export default Vue.extend({
       selectedRowPosition: -1,
       selectedRowData: {},
       expandablePaths: [],
+      valueContext: undefined as ValueContext | undefined,
     };
   },
   computed: {
@@ -595,6 +597,7 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
+        { event: AppEvent.onValueEditorChange, handler: this.handleValueEditorChange },
       ]
     },
     /** This tells which fields have been modified */
@@ -612,7 +615,11 @@ export default Vue.extend({
 
       const paths = []
       for (const column of this.table.columns) {
-        if(this.isPrimaryKey(column.columnName) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
+        const isPrimaryKey = this.isPrimaryKey(column.columnName);
+        // Allow primary key editing for dialects that don't have read-only primary keys (e.g., Redis key renaming)
+        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+
+        if((isPrimaryKey && !canEditPrimaryKeys) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
         }
         paths.push(column.columnName)
@@ -1303,7 +1310,10 @@ export default Vue.extend({
         }))
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
-      return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
+      const isPrimaryKey = this.isPrimaryKey(cell.getField());
+      // i know, the logic is a bit awkward (disable the disabling of editing the primary keys)
+      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+      return this.editable && (!isPrimaryKey || canEditPrimaryKeys) && !pendingDelete;
     },
     insertionCellCheck(cell: CellComponent) {
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
@@ -1355,10 +1365,12 @@ export default Vue.extend({
         return
       }
 
-      const primaryKeys = pkCells.map((cell) => {
+      const primaryKeys = pkCells.map((pkCell) => {
         return {
-          column: cell.getField(),
-          value: cell.getValue()
+          column: pkCell.getField(),
+          // Use old value if this primary key cell is the one being edited, otherwise current value
+          // This is for redis key renaming to work
+          value: pkCell === cell ? pkCell.getOldValue() : pkCell.getValue()
         }
       })
       if (currentEdit) {
@@ -1570,10 +1582,10 @@ export default Vue.extend({
             this.tabulator.clearCellEdited()
             this.tabulator.updateData(this.convertUpdateResult(result))
             this.pendingChanges.updates.forEach(edit => {
-              edit.cell.getElement().classList.remove('edited')
-              edit.cell.getElement().classList.add('edit-success')
+              edit.cell?.getElement().classList.remove('edited')
+              edit.cell?.getElement().classList.add('edit-success')
               setTimeout(() => {
-                if (edit.cell.getElement()) {
+                if (edit.cell?.getElement()) {
                   edit.cell.getElement().classList.remove('edit-success')
                 }
               }, 1000)
@@ -1591,7 +1603,7 @@ export default Vue.extend({
 
         } catch (ex) {
           this.pendingChanges.updates.forEach(edit => {
-              edit.cell.getElement().classList.add('edit-error')
+              edit.cell?.getElement().classList.add('edit-error')
           })
 
 
@@ -1841,15 +1853,17 @@ export default Vue.extend({
     positionRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
-    updateJsonViewer(options: { range?: RangeComponent } = {}) {
+    async updateJsonViewer(options: { range?: RangeComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
         this.selectedRow = null
         this.selectedRowPosition = null
         this.selectedRowData = {}
+        this.valueContext = undefined
         return
       }
+      const leftTopCell = range.getCells()[0][0];
       const position = this.positionRowOf(row)
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
@@ -1861,6 +1875,24 @@ export default Vue.extend({
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
       this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
+
+      // TODO: move value editor update logic to a separate method?
+      if (["redis"].includes(this.dialect)) {
+        this.valueContext = await this.connection.getValueContext(this.table.name, this.selectedRowData)
+      } else {
+        console.log({ range })
+        this.valueContext = {
+          kind: "cell",
+          value: leftTopCell.getValue(),
+          column: leftTopCell.getField(),
+          type: leftTopCell.getColumn().getDefinition().dataType,
+        }
+      }
+
+      this.trigger(AppEvent.updateValueEditor, {
+        valueContext: this.valueContext
+      })
+
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
@@ -1980,7 +2012,10 @@ export default Vue.extend({
       this.updateJsonViewerSidebar()
     },
     handleRangeChange(ranges: RangeComponent[]) {
-      this.updateJsonViewer({ range: ranges[0] })
+      // Without setTimeout, cell range data is stale and incorrect value is rendered in ValueEditor
+      setTimeout(() => {
+        this.updateJsonViewer({ range: ranges[0] })
+      })
     },
     handleSwitchedTab(tab) {
       if (tab === this.tab) {
@@ -2016,6 +2051,46 @@ export default Vue.extend({
     },
     handleJsonValueChange({key, value}) {
       this.selectedRow?.getCell(key).setValue(value)
+    },
+    handleValueEditorChange(changeData) {
+      // This will be called by the ValueEditor component when applying changes
+      if (!this.selectedRow) return
+
+      if (changeData.key) {
+        const primaryKeys = Object.keys(this.selectedRowData).filter((k) => this.isPrimaryKey(k))
+          .map((key) => ({
+            column: key,
+            value: this.selectedRowData[key]
+          }))
+
+        const payload = {
+          table: this.table.name,
+          schema: this.table.schema,
+          dataset: this.dialectData.requireDataset ? this.database: null,
+          column: 'value',
+          columnType: undefined,
+          columnObject: null,
+          primaryKeys,
+          value: changeData.newValue
+        }
+
+        // Add to pending changes (don't save immediately)
+        let pendingUpdates = _.reject(this.pendingChanges.updates, (update) =>
+          _.isEqual(update.primaryKeys, primaryKeys) && update.column === 'value'
+        )
+        pendingUpdates.push(payload)
+        this.$set(this.pendingChanges, 'updates', pendingUpdates)
+
+        // Mark the table as having pending changes
+        this.hasChanges = true
+
+      } else if (changeData.column) {
+        // SQL mode: handle like JSON editor - use current selection
+        const targetCell = this.selectedRow?.getCell(changeData.column)
+        if (targetCell) {
+          targetCell.setValue(changeData.newValue)
+        }
+      }
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)

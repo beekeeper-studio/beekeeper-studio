@@ -35,7 +35,6 @@ export default Vue.extend({
     ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
     hint() {
-      // @ts-expect-error not fully typed
       return CodeMirror.hint.sql;
     },
     hintOptions() {

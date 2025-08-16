@@ -4,7 +4,7 @@ import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResul
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
-import ConnectionProvider from '../lib/connection-provider'; 
+import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
@@ -13,6 +13,7 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
+import { ValueContext } from "@/lib/db/clients/BasicDatabaseClient";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -96,6 +97,7 @@ export interface IConnectionHandlers {
   'conn/selectTop': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<TableResult>,
   'conn/selectTopSql': ({ table, offset, limit, orderBy, filters, schema, selects, sId }: { table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], sId: string }) => Promise<string>,
   'conn/selectTopStream': ({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) => Promise<StreamResults>,
+  'conn/getValueContext': ({ table, rowData, sId }: { table: string; rowData: Record<string, unknown>; sId: string }) => Promise<ValueContext>,
 
 
   // For Export *****************************************************************
@@ -499,6 +501,11 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/selectTopStream': async function({ table, orderBy, filters, chunkSize, schema, sId }: { table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.selectTopStream(table, orderBy, filters, chunkSize, schema);
+  },
+
+  'conn/getValueContext': async function({ table, rowData, sId }) {
+    checkConnection(sId);
+    return await state(sId).connection.getValueContext(table, rowData);
   },
 
   'conn/queryStream': async function({ query, chunkSize, sId }: { query: string, chunkSize: number, sId: string }) {
