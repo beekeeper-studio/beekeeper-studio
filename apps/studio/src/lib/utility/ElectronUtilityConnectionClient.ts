@@ -158,8 +158,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/getRoutineCreateScript', { routine, type, schema });
   }
 
-  async getDataStoreValue(table: string, rowData: Record<string, unknown>) {
-    return await Vue.prototype.$util.send('conn/getDataStoreValue', { table, rowData });
+  async getValueContext(table: string, rowData: Record<string, unknown>) {
+    return await Vue.prototype.$util.send('conn/getValueContext', { table, rowData });
   }
 
   async createTable(table: CreateTableSpec): Promise<void> {

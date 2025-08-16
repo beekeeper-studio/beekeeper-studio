@@ -18,7 +18,7 @@ import {
   AppContextProvider,
   BaseQueryResult,
   BasicDatabaseClient,
-  DataStoreValue,
+  ValueContext,
 } from "./BasicDatabaseClient";
 import Redis, { RedisOptions } from "ioredis";
 import { IDbConnectionServer } from "../backendTypes";
@@ -177,10 +177,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async getDataStoreValue(
+  async getValueContext(
     table: string,
     rowData: RedisTableRow
-  ): Promise<DataStoreValue> {
+  ): Promise<ValueContext> {
     if (table === "keys") {
       const value = await this.fetchRedisValue(rowData.key, rowData.type);
 
