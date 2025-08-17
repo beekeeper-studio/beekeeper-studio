@@ -159,7 +159,8 @@ export interface DialectData {
     headerSort?: boolean,
     duplicateTable?: boolean,
     export?: {
-      sql?: boolean
+      sql?: boolean,
+      stream?: boolean
     }
     schema?: boolean
     multipleDatabases?: boolean

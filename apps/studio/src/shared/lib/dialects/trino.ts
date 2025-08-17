@@ -74,7 +74,8 @@ export const TrinoData: DialectData = {
     headerSort: true,
     duplicateTable: true,
     export: {
-      sql: true
+      sql: true,
+      stream: true
     },
     schema: true,
     generatedColumns: true,
