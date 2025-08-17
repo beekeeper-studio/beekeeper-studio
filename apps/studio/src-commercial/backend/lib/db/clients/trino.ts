@@ -383,48 +383,28 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   async executeQuery(
     queryText: string
   ): Promise<NgQueryResult[]> {
-    console.log('~~~~~~')
-    console.log(queryText)
-    const results = await this.driverExecuteMultiple(queryText)
-    // const ret = []
-    // console.log('~~~')
-    // console.log(results)
-    // for (const result of results) {
-    //   const fields = this.parseFields(result.columns)
-    //   const data = result.rows
-    //   const isEmptyResult = !data
-
-    //   if (isEmptyResult) {
-    //     ret.push({
-    //       fields: [],
-    //       affectedRows: 0, // Trino doesn't do write operations. No need to have anything other than 0 here
-    //       command: 'SELECT',
-    //       rows: [],
-    //       rowCount: 0,
-    //       queryId: ''
-    //     })
-    //     continue
-    //   }
-
-    //   ret.push({
-    //     fields,
-    //     affectedRows: 0, // Trino doesn't typically (well you just shouldn't because you have actual databases for that) do write operations. No need to have anything other than 0 here
-    //     command: 'select',
-    //     rows: data,
-    //     rowCount: data.length,
-    //     queryId: ''
-    //   })
-    // }
-
-    console.log(results)
-    console.log('%%%%%')
+    const queries = queryText.trim().split(';')
+    const results: NgQueryResult[] = await Promise.all(
+      queries
+        .filter(q => q.trim() !== '')
+        .map(async q => {
+          const {rows, columns} = await this.driverExecuteSingle(q)
+          const fields = rows.length === 0 ? [] : columns.map(c => ({ ...c, id: c.name }))
+          return {
+            fields,
+            rows,
+            rowCount: rows.length,
+            affectedRows: 0,
+            command: 'SELECT'
+          } satisfies NgQueryResult
+        })
+    )
     return results
   }
 
   async rawExecuteQuery(sql: string): Promise<TrinoResult> {
     try {
-      console.log('^^^^^')
-      console.log(sql, sql.trim().replace(/;$/, ''))
+      // The trino query parser doesn't particularly like semicolons. Who can blame it?
       const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql.trim().replace(/;$/, ''))
       
       let columns: ResultColumn[] = []

@@ -497,7 +497,6 @@ const store = new Vuex.Store<State>({
 
     async updateTableColumns(context, table: TableOrView) {
       log.debug('actions/updateTableColumns', table.name)
-      const database = context.state.database
       try {
         // FIXME: We should record which table we are loading columns for
         //        so that we know where to show this loading message. Not just
@@ -505,7 +504,7 @@ const store = new Vuex.Store<State>({
         context.commit("columnsLoading", "Loading columns...")
         const columns = (table.entityType === 'materialized-view' ?
             await context.state.connection.listMaterializedViewColumns(table.name, table.schema) :
-            await context.state.connection.listTableColumns(table.name, table.schema, database));
+            await context.state.connection.listTableColumns(table.name, table.schema));
         
         const updated = _.xorWith(table.columns, columns, _.isEqual)
         log.debug('Should I update table columns?', updated)
@@ -528,9 +527,8 @@ const store = new Vuex.Store<State>({
       //        Currently: Loads all tables, regardless of schema
       try {
         const schema = null
-        const database = context.state.database
         context.commit("tablesLoading", "Loading tables...")
-        const onlyTables = await context.state.connection.listTables({schema, database});
+        const onlyTables = await context.state.connection.listTables({schema});
         onlyTables.forEach((t) => {
           t.entityType = 'table'
         })
@@ -552,7 +550,7 @@ const store = new Vuex.Store<State>({
           if (match?.columns?.length > 0) {
             table.columns = (table.entityType === 'materialized-view' ?
               await context.state.connection?.listMaterializedViewColumns(table.name, table.schema) :
-              await context.state.connection?.listTableColumns(table.name, table.schema, database)) || []
+              await context.state.connection?.listTableColumns(table.name, table.schema)) || []
           }
         }
         context.commit("tablesLoading", `Loading ${tables.length} tables`)
