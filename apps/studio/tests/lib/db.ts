@@ -139,6 +139,8 @@ export class DBTestUtil {
 
     if (options.knex) {
       this.knex = options.knex
+    } else if (config.client === 'trino') {
+      this.knex = null
     } else if (config.client === 'sqlite' || config.client === 'duckdb') {
       this.knex = knex({
         client: KnexTypes[config.client],
