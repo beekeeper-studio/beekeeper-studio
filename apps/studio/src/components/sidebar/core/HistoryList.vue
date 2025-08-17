@@ -22,10 +22,10 @@
               </a>
             </div>
           </div>
-          <div class="flex items-center mt-2" title="By default, only the history executed on the current connection are shown.">
-            <input type="checkbox" id="showAllHistoryCheckbox" v-model="showAllHistory"/>
-            <label for="showAllHistoryCheckbox" class="text-md">Show all history</label>
-          </div>
+        </div>
+        <div class="show-all-history-container" title="By default, only the history executed on the current connection are shown.">
+          <input type="checkbox" id="show-all-history-checkbox" v-model="showAllHistory"/>
+          <label for="show-all-history-checkbox" class="show-all-history-text">Show all</label>
         </div>
         <error-alert
           v-if="error"
