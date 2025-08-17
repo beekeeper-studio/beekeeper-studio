@@ -1124,9 +1124,29 @@ export default Vue.extend({
       if (this.isPrimaryKey(cell.getField())) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
+    getActionValue(cell: CellComponent, s: string) {
+      const clickedValue = cell.getValue();
+      switch(s) {
+        case 'in': {
+          const ranges = cell.getRanges();
+          const selectedCells = ranges.flatMap(range => range.getCells()).flat();
+          const selectedValues = selectedCells
+            .filter(c => c.getField() === cell.getField())
+            .map(c => c.getValue())
+            .filter(v => v !== null && v !== undefined);
+          return selectedValues.length > 0 ? selectedValues : [clickedValue];
+        }
+        
+        case 'like':
+          return `%${clickedValue}%`;
+        
+        default:
+          return clickedValue;
+      }
+    },
     quickFilterMenuItem(cell: CellComponent) {
       const symbols = [
-        '=', '!=', '<', '<=', '>', '>='
+        '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
         label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
@@ -1136,7 +1156,11 @@ export default Vue.extend({
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
-              const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
+              const newFilter = [{ 
+                field: cell.getField(), 
+                type: s, 
+                value: this.getActionValue(cell, s)
+              }]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
             }
