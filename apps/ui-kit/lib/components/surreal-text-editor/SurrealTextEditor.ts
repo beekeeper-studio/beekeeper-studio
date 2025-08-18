@@ -3,21 +3,27 @@ import { ExtensionConfiguration } from "../text-editor";
 import { TextEditor } from "../text-editor/TextEditor";
 import { extensions as surrealExtensions } from "./extensions";
 import { CompletionSource } from "../sql-text-editor/SqlTextEditor";
-import { applyColumnsGetter, applyEntities, applySqlExtension, ColumnsGetter } from "../sql-text-editor/extensions";
+import { applyEntities, SQLExtensionsConfig } from "../sql-text-editor/extensions";
 
 export class SurrealTextEditor extends TextEditor {
-  // possibly pass in config for extensions
-  //
+  private extensionsConfig: SQLExtensionsConfig;
 
-  setCompletionSource(completionSource: CompletionSource) {
-    applyEntities(this.view, completionSource.entities);
-    applySqlExtension(this.view, {
-      entities: completionSource.entities
-    });
+  constructor(extensionsConfig?: SQLExtensionsConfig) {
+    super();
+    this.extensionsConfig = {
+      identiferDialect: "generic",
+      onQuerySelectionChange: () => {},
+      schema: {},
+      ...extensionsConfig
+    }
   }
 
-  setRequestColumnsListener(listener?: ColumnsGetter) {
-    applyColumnsGetter(this.view, listener);
+  setCompletionSource(completionSource: CompletionSource) {
+    applyEntities(
+      this.view,
+      completionSource.entities,
+      completionSource.defaultSchema
+    );
   }
 
   protected getExtensions(config: ExtensionConfiguration): Extension[] {
@@ -25,7 +31,7 @@ export class SurrealTextEditor extends TextEditor {
     const baseExtensions = super.getExtensions({...config, languageId: undefined});
     return [
       baseExtensions,
-      surrealExtensions(),
+      surrealExtensions(this.extensionsConfig),
     ]
   }
 }

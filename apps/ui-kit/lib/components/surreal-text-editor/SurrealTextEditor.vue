@@ -23,26 +23,20 @@ export default Vue.extend({
   methods: {
     constructTextEditor() {
       // return the surreal text editor
-      return new SurrealTextEditor();
+      return new SurrealTextEditor({
+        columnsGetter: (entity: Entity) => {
+          return this.columnsGetter?.(entity.name) || []
+        }
+      });
     },
     initialized() {
       this.applyCompletionSource();
-      this.applyRequestColumnsListener();
     },
     applyCompletionSource() {
       this.textEditor.setCompletionSource({
         defaultSchema: null,
         entities: this.entities,
       });
-    },
-    applyRequestColumnsListener() {
-      if (this.columnsGetter) {
-        this.textEditor.setRequestColumnsListener((entity: Entity) =>
-          this.columnsGetter(entity.name)
-        );
-      } else {
-        this.textEditor.setRequestColumnsListener(null);
-      }
     },
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
       const pivot = items.findIndex((o) => o.id === "find");
