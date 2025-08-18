@@ -59,6 +59,7 @@ declare interface IBksConfig {
         };
         surrealdb: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
         };
         tidb: {
             allowSkipToLastPage: boolean;

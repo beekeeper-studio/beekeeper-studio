@@ -117,7 +117,7 @@ export default Vue.extend({
   computed: {
     ...mapState('settings', ['privacyMode']),
     togglePasswordIcon() {
-      return this.showPassword ? "visibility_off" : "visibiltiy";
+      return this.showPassword ? "visibility_off" : "visibility";
     },
     togglePasswordInputType() {
       return this.showPassword ? "text" : "password"

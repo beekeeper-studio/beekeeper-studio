@@ -4,7 +4,7 @@ import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResul
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
-import ConnectionProvider from '../lib/connection-provider'; 
+import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
@@ -157,10 +157,10 @@ export const ConnHandlers: IConnectionHandlers = {
 
     let database = config.defaultDatabase || undefined;
 
-    if (config.connectionType === 'surrealdb') {
+    if (config.connectionType === 'surrealdb' && config?.surrealDbOptions?.namespace && database) {
       database = `${config?.surrealDbOptions?.namespace}::${database}`;
     }
-    
+
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
     const connection = server.createConnection(database);
@@ -200,7 +200,7 @@ export const ConnHandlers: IConnectionHandlers = {
 
     let database = config.defaultDatabase || undefined;
 
-    if (config.connectionType === 'surrealdb') {
+    if (config.connectionType === 'surrealdb' && config?.surrealDbOptions?.namespace && database) {
       database = `${config.surrealDbOptions?.namespace}::${database}`;
     }
 

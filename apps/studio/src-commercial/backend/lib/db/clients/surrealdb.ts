@@ -872,7 +872,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
         log.info('CREATING: ', insert);
         log.info('DATA: ', d)
         let id: string = insert.table;
-        if (d['id'] && _.isString()) {
+        if (d['id'] && _.isString(d['id'])) {
           id = new RecordId(insert.table, d['id']).toString();
         } else if (d['id']) {
           id = d['id'].toString();

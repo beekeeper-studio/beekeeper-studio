@@ -52,7 +52,8 @@ export default Vue.extend({
           label: `Format Query`,
           id: "text-format",
           handler: this.formatSql,
-          shortcut: "Shift+F"
+          shortcut: "Shift+F",
+          disabled: true
         },
         divider,
         ...items.slice(pivot),

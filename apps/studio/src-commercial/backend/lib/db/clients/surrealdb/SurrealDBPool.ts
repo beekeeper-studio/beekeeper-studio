@@ -2,6 +2,7 @@ import Surreal, { ConnectionStatus, ConnectOptions } from "surrealdb";
 import rawLog from "@bksLogger";
 import { uuidv4 } from "@/lib/uuid";
 import ws from "ws";
+import BksConfig from "@/common/bksConfig";
 
 // HACK (@day): this is so websockets can work in a node process (smh surreal)
 // @ts-ignore
@@ -58,19 +59,25 @@ export class SurrealPool {
       return newConn;
     }
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       log.info('Waiting for new connection to be available');
+      let timeout: NodeJS.Timeout;
       const interval = setInterval(() => {
         for (const p of this.pool) {
           if (!this.inUse.has(p.id)) {
             log.info('Reusing connection', p.id);
             this.inUse.add(p.id);
             clearInterval(interval);
+            clearTimeout(timeout);
             resolve(p);
             return;
           }
         }
       }, 100);
+      timeout = setTimeout(() => {
+        clearInterval(interval);
+        reject("Timed out waiting for new connection to be available from SurrealDBPool");
+      }, BksConfig.db.surrealdb.connectionTimeout)
     })
   }
 
