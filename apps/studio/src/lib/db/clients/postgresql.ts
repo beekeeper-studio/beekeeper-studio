@@ -551,7 +551,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     const sql = `
       SELECT
         c.conname AS constraint_name,
-        kcu.column_name,
+        a.attname AS column_name,
         n.nspname AS from_schema,
         t.relname AS from_table,
         af.attname AS to_column,
@@ -573,26 +573,23 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN 'd' THEN 'SET DEFAULT'
           ELSE c.confdeltype::text
         END AS delete_rule,
-        kcu.ordinal_position
+        pos AS ordinal_position
       FROM
         pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
         JOIN pg_namespace n ON t.relnamespace = n.oid
-        JOIN information_schema.key_column_usage kcu ON c.conname = kcu.constraint_name
-        AND n.nspname = kcu.table_schema
-        JOIN pg_attribute a ON a.attrelid = t.oid
-        AND a.attnum = ANY (c.confkey)
+        JOIN generate_subscripts(c.conkey, 1) pos ON true
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
         JOIN pg_class tf ON c.confrelid = tf.oid
         JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-        JOIN pg_attribute af ON af.attrelid = tf.oid
-        AND af.attnum = ANY (c.confkey)
+        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
       WHERE
         c.contype = 'f'
         AND n.nspname = $1
         AND t.relname = $2
       ORDER BY
         c.conname,
-        kcu.ordinal_position;
+        pos;
     `;
 
     const params = [
