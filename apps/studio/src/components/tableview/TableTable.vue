@@ -323,11 +323,11 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
-import { mapGetters, mapState, mapActions } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
@@ -850,7 +850,10 @@ export default Vue.extend({
         cssClass += ' primary-key';
       } else if (hasKeyDatas) {
         cssClass += ' foreign-key';
+      } else if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
+        cssClass += ' text-right'
       }
+
       if (column.generated) {
         cssClass += ' generated-column';
       }
@@ -1121,9 +1124,29 @@ export default Vue.extend({
       if (this.isPrimaryKey(cell.getField())) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
+    getActionValue(cell: CellComponent, s: string) {
+      const clickedValue = cell.getValue();
+      switch(s) {
+        case 'in': {
+          const ranges = cell.getRanges();
+          const selectedCells = ranges.flatMap(range => range.getCells()).flat();
+          const selectedValues = selectedCells
+            .filter(c => c.getField() === cell.getField())
+            .map(c => c.getValue())
+            .filter(v => v !== null && v !== undefined);
+          return selectedValues.length > 0 ? selectedValues : [clickedValue];
+        }
+        
+        case 'like':
+          return `%${clickedValue}%`;
+        
+        default:
+          return clickedValue;
+      }
+    },
     quickFilterMenuItem(cell: CellComponent) {
       const symbols = [
-        '=', '!=', '<', '<=', '>', '>='
+        '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
         label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
@@ -1133,7 +1156,11 @@ export default Vue.extend({
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
-              const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
+              const newFilter = [{ 
+                field: cell.getField(), 
+                type: s, 
+                value: this.getActionValue(cell, s)
+              }]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
             }

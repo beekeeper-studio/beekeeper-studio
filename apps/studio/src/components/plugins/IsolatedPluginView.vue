@@ -1,18 +1,9 @@
 <template>
-  <div class="isolated-plugin-view">
+  <div class="isolated-plugin-view" ref="container">
     <div v-if="$bksConfig.plugins?.[pluginId]?.disabled" class="alert">
       <i class="material-icons-outlined">info</i>
       <div>This plugin ({{ pluginId }}) has been disabled via configuration</div>
     </div>
-    <iframe
-      v-else-if="visible || loaded"
-      :src="baseUrl"
-      sandbox="allow-scripts allow-same-origin allow-forms"
-      allow="clipboard-read; clipboard-write;"
-      ref="iframe"
-      @load="handleIframeLoad"
-      @error="handleError"
-    ></iframe>
   </div>
 </template>
 
@@ -43,6 +34,7 @@ export default Vue.extend({
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
       unsubscribe: null,
+      iframe: null,
     };
   },
   computed: {
@@ -50,29 +42,64 @@ export default Vue.extend({
       // FIXME move this somewhere
       return `${this.url}?timestamp=${this.timestamp}`;
     },
+    showIframe() {
+      return this.visible || this.loaded;
+    },
   },
   watch: {
     reload() {
       this.timestamp = Date.now();
     },
+    showIframe: {
+      async handler() {
+        await this.$nextTick();
+        if (this.showIframe) {
+          this.mountIframe();
+        } else {
+          this.unmountIframe();
+        }
+      },
+      immediate: true,
+    },
   },
   methods: {
-    handleIframeLoad() {
-      this.loaded = true;
-      this.$plugin.registerIframe(this.pluginId, this.$refs.iframe);
+    mountIframe() {
+      if (this.iframe) {
+        return;
+      }
+
+      const iframe = document.createElement("iframe");
+      iframe.src = this.baseUrl;
+      iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
+      iframe.allow = "clipboard-read; clipboard-write;";
+
+      this.$plugin.registerIframe(this.pluginId, iframe);
       this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
-        if (args.source === this.$refs.iframe) {
+        if (args.source === iframe) {
           this.onRequest?.(args);
         }
       });
+      this.$refs.container.appendChild(iframe);
+      this.iframe = iframe;
+      this.loaded = true;
+    },
+    unmountIframe() {
+      if (!this.iframe) {
+        return;
+      }
+
+      this.$plugin.unregisterIframe(this.pluginId, this.iframe);
+      this.unsubscribe?.();
+      this.iframe.remove();
+      this.iframe = null;
+      this.loaded = false;
     },
     handleError(e) {
       console.error(`${this.pluginId} iframe error`, e);
     }
   },
   beforeDestroy() {
-    this.$plugin.unregisterIframe(this.pluginId, this.$refs.iframe);
-    this.unsubscribe?.();
+    this.unmountIframe();
   },
 });
 </script>

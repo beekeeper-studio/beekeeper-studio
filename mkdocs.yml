@@ -109,6 +109,7 @@ nav:
     - user_guide/editing-data.md
     - user_guide/modify-tables.md
     - user_guide/sql_editor/saving_queries.md
+    - user_guide/json-sidebar.md
     - user_guide/query-magics.md
     - Data Import: user_guide/importing-data-csv-json-etc.md
     - user_guide/data-export.md

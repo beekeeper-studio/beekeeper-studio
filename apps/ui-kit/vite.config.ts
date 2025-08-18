@@ -15,6 +15,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@codemirror/state", "@codemirror/view"],
   },
+  define: process.env.VITEST ? {} : { global: 'navigator' },
   build: {
     lib: {
       entry: resolve(__dirname, "lib/index.ts"),
