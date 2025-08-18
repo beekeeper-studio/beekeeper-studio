@@ -1,4 +1,5 @@
 import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
+import { SemVer } from "semver";
 
 /**
  * The kind of the tab. There is only one kind currently:
@@ -56,13 +57,13 @@ export type PluginRegistryEntry = Pick<
 };
 
 export interface Release {
-  manifest: Manifest;
+  version: SemVer;
+  beta: boolean;
   sourceArchiveUrl: string;
 }
 
 export interface PluginRepository {
   releases: Release[];
-  latestRelease: Release;
   readme: string;
 }
 

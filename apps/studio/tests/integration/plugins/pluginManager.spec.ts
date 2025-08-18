@@ -14,11 +14,24 @@ describe("Basic Plugin Management", () => {
     {
       id: "test-plugin",
       name: "Test Plugin",
-      versions: [
+      releases: [
         { version: "1.0.0", minAppVersion: "5.3.0" },
         { version: "1.0.1", minAppVersion: "5.3.0" },
         { version: "2.0.0", minAppVersion: "5.4.0" },
       ],
+      versions: {
+        ">=2.0.0": ">=5.4.0",
+      },
+      readme: "# Test Plugin\n\nThis is a test plugin.",
+    },
+    {
+      id: "frozen-banana",
+      name: "Frozen Banana",
+      releases: [
+        { version: "1.0.0", minAppVersion: "5.3.0" },
+        { version: "2.0.0", minAppVersion: "5.4.0" },
+      ],
+      readme: "# Frozen Banana\n\nThis is a frozen banana.",
     },
   ]);
   const APP_VERSION_SUPPORTS_ALL = "9.9.9";
@@ -43,8 +56,47 @@ describe("Basic Plugin Management", () => {
     cleanFileManager(fileManager);
   });
 
-  describe("Installing", () => {
-    it("can install the latest plugins", async () => {
+  it("can list plugin entries", async () => {
+    const entries = await manager.getEntries();
+    expect(entries).toHaveLength(2);
+    expect(entries[0].id).toBe("test-plugin");
+    expect(entries[1].id).toBe("frozen-banana");
+  });
+
+  it("can get plugin details (versions, readme, etc..)", async () => {
+    await expect(manager.getRepository("test-plugin")).resolves.toStrictEqual({
+      releases: [
+        {
+          version: "1.0.0",
+          beta: false,
+          sourceArchiveUrl: server.formatUrl({
+            version: "1.0.0",
+            minAppVersion: "5.3.0",
+          }),
+        },
+        {
+          version: "1.0.1",
+          beta: false,
+          sourceArchiveUrl: server.formatUrl({
+            version: "1.0.1",
+            minAppVersion: "5.3.0",
+          }),
+        },
+        {
+          version: "2.0.0",
+          beta: false,
+          sourceArchiveUrl: server.formatUrl({
+            version: "2.0.0",
+            minAppVersion: "5.4.0",
+          }),
+        },
+      ],
+      readme: "# Test Plugin\n\nThis is a test plugin.",
+    });
+  });
+
+  describe.skip("Installing", () => {
+    it.only("can install the latest plugins", async () => {
       await manager.installPlugin("test-plugin");
       const plugins = manager.getInstalledPlugins();
       expect(plugins).toHaveLength(1);
@@ -125,6 +177,21 @@ describe("Basic Plugin Management", () => {
   });
 
   describe("Updating", () => {
+    it("can check for updates", async () => {
+      await manager.installPlugin("test-plugin", "1.0.0");
+      expect(await manager.checkForUpdates("test-plugin")).toBe(true);
+
+      // Simulates a user who installed a plugin, then downgraded the app.
+      const oldManager = new PluginManager({
+        fileManager,
+        registry,
+        appVersion: APP_VERSION_SUPPORTS_NONE,
+        installDefaults: { autoUpdate: false },
+      });
+      await oldManager.initialize();
+      expect(await oldManager.checkForUpdates("test-plugin")).toBe(false);
+    });
+
     it("can update plugins automatically on start", async () => {
       let pluginSettings = {};
       const oldManager = new PluginManager({

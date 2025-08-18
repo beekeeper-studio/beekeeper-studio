@@ -2,18 +2,21 @@ import {
   Manifest,
   PluginRegistryEntry,
   PluginRepository,
+  Release,
 } from "@/services/plugin";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
+import { SemVer } from "semver";
 
 type Plugin = {
   id: string;
   name: string;
-  versions: {
+  releases: {
     version: string;
     minAppVersion: string;
   }[];
+  readme: string;
 };
 
 /**
@@ -45,27 +48,20 @@ export function createRegistry(server: MockPluginServer, plugins: Plugin[]) {
         name: plugin.name,
         repo: `${plugin.id}/${plugin.id}`,
         author: `${plugin.id}-author`,
-        description: `A cool plugin and stuff named ${plugin.name}`,
+        description: `${plugin.name} description`,
       };
 
       registry.entries.push(entry);
 
-      const releases = plugin.versions.map((options) => ({
-        manifest: {
-          id: entry.id,
-          name: entry.name,
-          version: options.version,
-          author: entry.author,
-          description: entry.description,
-          minAppVersion: options.minAppVersion,
-        } as Manifest,
+      const releases: Release[] = plugin.releases.map((options) => ({
+        version: new SemVer(options.version),
+        beta: false,
         sourceArchiveUrl: server.formatUrl(options),
       }));
 
       registry.repositories[plugin.id] = {
         releases,
-        latestRelease: releases[releases.length - 1],
-        readme: `# ${plugin.name}\n\nThis is a test plugin.`,
+        readme: plugin.readme,
       };
     }
   });

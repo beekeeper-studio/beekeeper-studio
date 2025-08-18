@@ -1,59 +1,19 @@
 import { Octokit } from "@octokit/rest";
-import { Manifest, PluginRepository, Release } from "./types";
+import { PluginRepository, Release } from "./types";
+import rawLog from "@bksLogger";
+import { PluginFetchError } from "@commercial/backend/plugin-system/errors";
+import semver from "semver";
+
+const log = rawLog.scope("PluginRepositoryService");
 
 export default class PluginRepositoryService {
   private octokit: Octokit;
 
-  constructor() {
+  constructor(options: { apiKey?: string } = {}) {
     this.octokit = new Octokit({
       userAgent: "Beekeeper Studio",
+      auth: options.apiKey,
     });
-  }
-
-  async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
-    const response = await this.octokit.request(
-      "GET /repos/{owner}/{repo}/releases/latest",
-      {
-        headers: {
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-        owner,
-        repo,
-      }
-    );
-
-    const manifestAsset = response.data.assets.find((asset) => asset.name === "manifest.json")
-
-    if (!manifestAsset) {
-      throw new Error(`No manifest.json found in the latest release`)
-    }
-
-    const manifestResponse = await this.octokit.request(
-      "GET /repos/{owner}/{repo}/releases/assets/{asset_id}",
-      {
-        headers: {
-          "X-GitHub-Api-Version": "2022-11-28",
-          "accept": "application/octet-stream",
-        },
-        owner,
-        repo,
-        asset_id: manifestAsset.id,
-      }
-    )
-
-    const rawManifest = manifestResponse.data as unknown as ArrayBuffer
-    const manifest: Manifest = JSON.parse(Buffer.from(rawManifest).toString("utf-8"))
-
-    const asset = response.data.assets.find((asset) => asset.name === `${manifest.id}-${manifest.version}.zip`)
-    if (!asset) {
-      throw new Error(`No asset found matching ${manifest.id}-${manifest.version}.zip in the latest release`)
-    }
-
-    return {
-      manifest,
-      // FIXME rename this, it's not source
-      sourceArchiveUrl: asset.browser_download_url,
-    };
   }
 
   async fetchReleases(owner: string, repo: string): Promise<Release[]> {
@@ -67,14 +27,40 @@ export default class PluginRepositoryService {
         repo,
       }
     );
-    return response.data.map((release) => {
-      const manifest = JSON.parse(Buffer.from(release.body, "base64").toString("utf-8"));
-      return {
-        manifest,
-        // FIXME rename this, it's not source
-        sourceArchiveUrl: release.assets[0].browser_download_url,
-      };
-    });
+
+    const releases: Release[] = [];
+
+    for (const release of response.data) {
+      console.log(release);
+      if (release.draft) {
+        continue;
+      }
+
+      if (!semver.valid(release.tag_name)) {
+        log.warn(
+          `Release tag name "${release.tag_name}" is not a valid semver.`
+        );
+        continue;
+      }
+
+      const version = new semver.SemVer(release.tag_name);
+      const pattern = `^.+-${version}\\.zip$`;
+      const regex = new RegExp(pattern);
+      const asset = release.assets.find((asset) => regex.test(asset.name));
+      if (!asset) {
+        throw new PluginFetchError(
+          `No asset found matching pattern ${pattern} in release ${release.tag_name}`
+        );
+      }
+
+      releases.push({
+        version,
+        beta: release.prerelease,
+        sourceArchiveUrl: asset.browser_download_url,
+      });
+    }
+
+    return releases;
   }
 
   async fetchRegistry() {
@@ -86,10 +72,9 @@ export default class PluginRepositoryService {
   }
 
   async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
-    const latestRelease = await this.fetchLatestRelease(owner, repo);
     const releases = await this.fetchReleases(owner, repo);
     const readme = await this.fetchReadme(owner, repo);
-    return { releases, latestRelease, readme };
+    return { releases, readme };
   }
 
   private async fetchReadme(owner: string, repo: string) {

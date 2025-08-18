@@ -131,7 +131,7 @@ export default class PluginManager {
 
       let release: Release;
       if (version) {
-        release = info.releases.find((release) => release.manifest.version === version);
+        release = info.releases.find((release) => release.version.compare(version) === 0);
 
         if (!this.isPluginLoadable(release.manifest)) {
           throw new NotSupportedPluginError(
@@ -148,7 +148,7 @@ export default class PluginManager {
         release = this.findLatestLoadableReleaseAndThrow(info.releases);
       }
 
-      log.debug(`Installing plugin "${id}" v${release.manifest.version}...`);
+      log.debug(`Installing plugin "${id}" ${release.version}...`);
 
       if (update) {
         await this.fileManager.update(id, release);
@@ -204,10 +204,8 @@ export default class PluginManager {
       throw new Error(`Plugin "${id}" is not installed.`);
     }
 
-    await this.registry.reloadRepository(manifest.id);
     const head = await this.registry.getRepository(manifest.id);
-
-    return head.latestRelease.manifest.version > manifest.version;
+    return !!this.findLatestLoadableRelease(head.releases);
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
@@ -277,7 +275,19 @@ export default class PluginManager {
     }
   }
 
-  private findLatestLoadableReleaseAndThrow(releases: Release[]) {
+  /** @throws NotSupportedPluginError */
+  private findLatestLoadableReleaseAndThrow(releases: Release[]): Release {
+    const release = this.findLatestLoadableRelease(releases);
+    if (!release) {
+      throw new NotSupportedPluginError(
+        `Plugin "${releases[0].manifest.id}" is not compatible with app version "${this.options.appVersion}". ` +
+        `Please upgrade Beekeeper Studio to use this plugin.`
+      );
+    }
+    return release;
+  }
+
+  private findLatestLoadableRelease(releases: Release[]): Release | null {
     const sorted = releases
       .slice()
       .sort((a, b) => semver.rcompare(a.manifest.version, b.manifest.version));
@@ -291,9 +301,6 @@ export default class PluginManager {
         return candidate;
       }
     }
-    throw new NotSupportedPluginError(
-      `Plugin "${releases[0].manifest.id}" is not compatible with app version "${this.options.appVersion}". ` +
-      `Please upgrade Beekeeper Studio to use this plugin.`
-    );
+    return null;
   }
 }

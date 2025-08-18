@@ -11,3 +11,10 @@ export const NotFoundPluginError = class extends Error {
     this.name = "NotFoundPluginError";
   }
 };
+
+export const PluginFetchError = class extends Error {
+  constructor(message: string) {
+    super("Plugin fetch error: " + message);
+    this.name = "PluginFetchError";
+  }
+};
