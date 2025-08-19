@@ -189,9 +189,9 @@ export async function copyRanges(options: {
           data: rangeData,
         },
       });
-      break
+      break;
     case "columnName":
-      text = Object.keys(extractedData.data[0]).join(" "); 
+      text = Object.keys(extractedData.data[0]).join(" ");
       break;
   }
   ElectronPlugin.clipboard.writeText(text);
@@ -208,7 +208,7 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
     // Replace column identifiers with column titles
     const columns = ranges[0].getColumns();
     const mappedData = mapColumnIdsToTitles(rangeData, columns);
-    
+
     return {
       data: mappedData,
       sources: [ranges[0]],
@@ -237,7 +237,7 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
     // Replace column identifiers with column titles
     const columns = ranges[0].getColumns();
     const mappedData = mapColumnIdsToTitles(allData, columns);
-    
+
     return {
       data: mappedData,
       sources: ranges,
@@ -255,12 +255,12 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
         });
       }
     }
-    
+
     // Replace column identifiers with column titles
     const allColumns = sorted.reduce((cols, range) => cols.concat(range.getColumns()), []);
     const uniqueColumns = _.uniqBy(allColumns, col => col.getField());
     const mappedData = mapColumnIdsToTitles(rows, uniqueColumns);
-    
+
     return {
       data: mappedData,
       sources: ranges,
@@ -269,11 +269,11 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
 
   const source = _.first(ranges);
   const rangeData = source.getData() as RangeData;
-  
+
   // Replace column identifiers with column titles
   const columns = source.getColumns();
   const mappedData = mapColumnIdsToTitles(rangeData, columns);
-  
+
   return {
     data: mappedData,
     sources: [source],
@@ -333,7 +333,7 @@ export function setCellValue(cell: CellComponent, value: string) {
 // Helper function to map column IDs to column titles
 function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): RangeData {
   if (!data || !data.length || !columns || !columns.length) return data;
-  
+
   const colIdToTitleMap = new Map();
   columns.forEach(col => {
     const field = col.getField();
@@ -341,7 +341,7 @@ function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): Rang
     const title = col.getDefinition().title;
     if (title) colIdToTitleMap.set(field, title);
   });
-  
+
   return data.map(row => {
     const newRow = {};
     Object.entries(row).forEach(([key, value]) => {
