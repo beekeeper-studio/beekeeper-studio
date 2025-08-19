@@ -10,7 +10,6 @@ import {
   ExtendedTableColumn,
   TableChanges,
   TableUpdateResult,
-  TableInsert,
   TableUpdate,
   TableDelete,
 } from "../models";
@@ -376,8 +375,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return keys;
   }
 
-  async getKeyInfo(key: string) {
-    const type = await this.redis.type(key);
+  async getKeyInfo(key: string): Promise<RedisTableRow> {
+    const type = (await this.redis.type(key)) as RedisKeyType;
     const memory = (await this.redis.call("MEMORY", "USAGE", key)) as number;
 
     let encoding = "unknown";
@@ -583,7 +582,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     const keys = await this.scanAll(match);
 
     const result = await Promise.all(
-      keys.slice(offset, offset + limit).map(key => this.getKeyInfo(key))
+      keys.slice(offset, offset + limit).map((key) => this.getKeyInfo(key))
     );
 
     return {
