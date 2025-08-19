@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
+import sql, { config, ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -32,6 +32,7 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/l
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
+import BksConfig from '@/common/bksConfig';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -88,7 +89,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
   version: SQLServerVersion
-  dbConfig: any
+  dbConfig: config
   readOnlyMode: boolean
   logger: any
   pool: ConnectionPool;
@@ -421,13 +422,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     `;
 
     const { data } = await this.driverExecuteSingle(sql);
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(data.recordset, 'name');
-    
+
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -443,8 +444,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           onDelete: row.on_delete,
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite mekey
       const firstPart = keyParts[0];
       return {
@@ -460,7 +461,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         isComposite: true
       };
     });
-    
+
     this.logger().debug("tableKeys result", result);
     return result;
   }
@@ -1098,14 +1099,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
-    const config: any = {
+  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<config> {
+    const config: config = {
       server: server.config.host,
       database: database.database,
       requestTimeout: Infinity,
+      connectionTimeout: BksConfig.db.sqlserver.connectionTimeout,
+      // @ts-ignore
       appName: 'beekeeperstudio',
       pool: {
-        max: 10
+        max: BksConfig.db.sqlserver.maxClient,
+        idleTimeoutMillis: BksConfig.db.sqlserver.idleTimeout
       }
     };
 
@@ -1122,7 +1126,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         signal,
       };
 
-      config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
+      config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options) as any;
 
       config.options = {
         encrypt: true

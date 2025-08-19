@@ -57,6 +57,7 @@ import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import BksConfig from "@/common/bksConfig"
 import globals from "@/common/globals";
 
 type FirebirdResult = {
@@ -275,7 +276,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     log.debug("create driver client for firebird with config %j", config);
 
-    this.pool =  new Pool(globals.firebird.poolSize, config);
+    this.pool = new Pool(BksConfig.db.firebird.maxClient, config);
 
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
@@ -1006,10 +1007,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -1025,8 +1026,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           onDelete: row["ON_DELETE"],
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {

@@ -16,8 +16,9 @@ import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { QueryLeaf } from '@queryleaf/lib'
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
-import { wrapIdentifier } from "@/lib/db/clients/postgresql"; 
+import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
+import BksConfig from '@/common/bksConfig';
 
 const knex = knexlib({ client: 'pg' })
 
@@ -51,7 +52,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    this.conn = new MongoClient(this.server.config.url);
+    this.conn = new MongoClient(this.server.config.url, {
+      connectTimeoutMS: BksConfig.db.mongodb.connectionTimeout,
+      maxPoolSize: BksConfig.db.mongodb.maxClient,
+      maxIdleTimeMS: BksConfig.db.mongodb.idleTimeout
+    });
 
     this.conn.on('connectionCreated', (event) => {
       log.debug('Pool connection %d acquired on %s', event.connectionId, event.address);
@@ -169,7 +174,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
     // TODO (@day): convert 1, -1 to ASC and DESC
     return indexes.map((index) => ({
-      table, 
+      table,
       columns: Object.entries(index.key).map((key) => ({ name: key[0], order: this.convertOrder(key[1])})),
       name: index.name,
       unique: index.unique,
@@ -237,7 +242,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         if (targetCollections.length > 0) {
           throw new Error(`Target collection ${newElementName} already exists`);
         }
-        
+
         // Perform the rename operation
         await db.collection(elementName).rename(newElementName);
       } catch (err) {
@@ -310,7 +315,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
     const convertedOrders = orderBy.length > 0 ? orderBy.reduce((all, ord) => ({
       ...all,
-      [ord.field]: ord.dir.toLowerCase() === 'asc' ? 1 : -1 
+      [ord.field]: ord.dir.toLowerCase() === 'asc' ? 1 : -1
     }), {} as any) : null;
     const convertedFilters = !_.isString() && filters.length > 0 ? this.convertFilters(filters as TableFilter[]) : {};
     let convertedSelects = null;
@@ -384,7 +389,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       return { name: column, bksType };
     })
   }
-  
+
 
   async getPrimaryKeys(_table: string, _schema?: string): Promise<PrimaryKeyColumn[]> {
     return [{
@@ -433,23 +438,23 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
   async insertRows(inserts: TableInsert[], connection: Db) {
     const errors = [];
-    
+
     for (const insert of inserts) {
       try {
         if (!insert.table) {
           throw new Error("Missing table name for insert operation");
         }
-        
+
         const collection = connection.collection(insert.table);
         await collection.insertMany(insert.data);
-        
+
         log.debug(`Inserted ${insert.data.length} documents into ${insert.table}`);
       } catch (err) {
         log.error(`Error inserting into ${insert.table}:`, err);
         errors.push(`Failed to insert into ${insert.table}: ${err.message}`);
       }
     }
-    
+
     if (errors.length > 0) {
       throw new Error(errors.join("; "));
     }
@@ -458,17 +463,17 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   async updateValues(updates: TableUpdate[], connection: Db) {
     let results = [];
     const errors = [];
-    
+
     for (const update of updates) {
       try {
         if (!update.table) {
           throw new Error("Missing table name for update operation");
         }
-        
+
         if (!update.primaryKeys || update.primaryKeys.length === 0) {
           throw new Error(`No primary key provided for update in table ${update.table}`);
         }
-        
+
         // Safely convert ObjectId string to actual ObjectId
         let idValue = update.primaryKeys[0].value;
         try {
@@ -479,12 +484,12 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           log.error(`Error converting ObjectId ${idValue}:`, err);
           // Continue with the original value if conversion fails
         }
-        
+
         const filter = { _id: idValue };
-        
+
         // Handle value conversion for special types if needed
         let fieldValue = update.value;
-        
+
         // Create the update document
         const updateDoc = {
           $set: {
@@ -499,15 +504,15 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         const result = await collection.findOneAndUpdate(
           filter,
           updateDoc,
-          { 
+          {
             returnDocument: 'after',
           }
         );
-        
+
         if (!result) {
           throw new Error(`Failed to update document with _id ${idValue} in ${update.table}`);
         }
-        
+
         results.push(result);
         log.debug(`Updated document in ${update.table} with _id ${idValue}, column: ${update.column}`);
       } catch (err) {
@@ -516,27 +521,27 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         errors.push(`Failed to update ${update.table}: ${err.message}`);
       }
     }
-    
+
     if (errors.length > 0) {
       throw new Error(errors.join("; "));
     }
-    
+
     return results;
   }
 
   async deleteRows(deletes: TableDelete[], connection: Db) {
     const errors = [];
-    
+
     for (const del of deletes) {
       try {
         if (!del.table) {
           throw new Error("Missing table name for delete operation");
         }
-        
+
         if (!del.primaryKeys || del.primaryKeys.length === 0) {
           throw new Error(`No primary key provided for delete in table ${del.table}`);
         }
-        
+
         // Safely convert ObjectId string to actual ObjectId if needed
         let idValue = del.primaryKeys[0].value;
         try {
@@ -554,7 +559,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         const result = await collection.deleteOne({
           _id: idValue
         });
-        
+
         if (result.deletedCount === 0) {
           log.warn(`Failed to delete document with _id ${idValue} in ${del.table}`);
         } else {
@@ -566,7 +571,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         errors.push(`Failed to delete from ${del.table}: ${err.message}`);
       }
     }
-    
+
     if (errors.length > 0) {
       throw new Error(errors.join("; "));
     }
@@ -575,14 +580,14 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   override async alterIndex(changes: IndexAlterations): Promise<void> {
     const errors = [];
     const db = this.conn.db(this.db);
-    
+
     try {
       // Verify collection exists
       const collections = await db.listCollections({ name: changes.table }).toArray();
       if (collections.length === 0) {
         throw new Error(`Collection ${changes.table} does not exist`);
       }
-      
+
       const collection = db.collection(changes.table);
 
       // Process index additions
@@ -593,19 +598,19 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
             ...obj,
             [col.name]: this.convertOrder(col.order)
           }), {});
-          
+
           // Prepare index options
           const indexOptions: any = {
             name: addition.name,
           };
-          
+
           // Add unique option if specified
           if (addition.unique) {
             indexOptions.unique = true;
           }
-          
+
           log.debug(`Creating index ${addition.name} on ${changes.table} with spec:`, indexSpec);
-          
+
           // Create the index
           await collection.createIndex(indexSpec, indexOptions);
           log.debug(`Successfully created index ${addition.name} on ${changes.table}`);
@@ -628,7 +633,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           errors.push(errorMsg);
         }
       }
-      
+
       // If any errors occurred, throw a combined error
       if (errors.length > 0) {
         throw new Error(errors.join('; '));
@@ -939,16 +944,16 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   async getCollectionValidation(collectionName: string): Promise<any> {
     try {
       const db = this.conn.db(this.db);
-      
+
       // Run listCollections with the filter to get the specified collection info
       const collections = await db.listCollections({ name: collectionName }, { nameOnly: false }).toArray();
-      
+
       if (collections.length === 0) {
         throw new Error(`Collection ${collectionName} not found`);
       }
-      
+
       const collectionInfo = collections[0];
-      
+
       // Return the validation information if it exists
       return {
         validator: collectionInfo.options?.validator || null,
@@ -960,7 +965,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       throw err;
     }
   }
-  
+
   async setCollectionValidation(params: {
     collection: string,
     validationLevel: 'off' | 'strict' | 'moderate',
@@ -969,7 +974,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }): Promise<void> {
     try {
       const db = this.conn.db(this.db);
-      
+
       // Create the validator command
       const command = {
         collMod: params.collection,
@@ -977,10 +982,10 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         validationLevel: params.validationLevel,
         validationAction: params.validationAction
       };
-      
+
       // Run the command to modify the collection
       await db.command(command);
-      
+
       log.debug(`Updated validation for collection ${params.collection}`);
     } catch (err) {
       log.error(`Error setting collection validation for ${params.collection}:`, err);
@@ -1003,7 +1008,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       return order;
     }
   }
-  
+
   private async getCollectionCols(collection: Collection<Document>) {
     // Take the last 10 docs from a collection and hope that's an accurate representation of the whole collection lol
     return await collection.aggregate(

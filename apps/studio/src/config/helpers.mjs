@@ -26,14 +26,13 @@ function processRawConfig(config) {
   if (dbObj && _.has(dbObj, "default")) {
     const defaultObj = dbObj.default;
     for (const d of DatabaseTypes) {
-      const section = d === "postgresql" ? "postgres" : d;
-      if (!dbObj[section]) {
-        dbObj[section] = {}
+      if (!dbObj[d]) {
+        dbObj[d] = {}
       }
       for (const key of Object.keys(defaultObj)) {
-        const value = dbObj[section][key];
+        const value = dbObj[d][key];
         if (value === undefined || value === null) {
-          config["db"][section][key] = defaultObj[key];
+          config["db"][d][key] = defaultObj[key];
         }
       }
     }

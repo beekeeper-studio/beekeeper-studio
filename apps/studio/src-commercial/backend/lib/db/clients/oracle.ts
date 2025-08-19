@@ -1,6 +1,6 @@
 import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
-import oracle, { Metadata } from 'oracledb'
+import oracle, { Metadata, poolTimeout } from 'oracledb'
 import _ from 'lodash'
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
@@ -49,6 +49,7 @@ import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderB
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
 import Client_Oracledb from '@shared/lib/knex-oracledb';
+import BksConfig from '@/common/bksConfig';
 
 const log = rawLog.scope('oracle')
 
@@ -133,23 +134,23 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}[], primaryKeys: string[]): string {
     const [PK] = primaryKeys;
     const columnsWithoutPK = _.without(Object.keys(data[0]), PK);
-    
+
     // Use D.wrapIdentifier for proper identifier wrapping
     const wrappedPK = D.wrapIdentifier(PK);
     const wrappedSchema = D.wrapIdentifier(schema);
     const wrappedTable = D.wrapIdentifier(tableName);
-    
+
     const wrappedColumns = columnsWithoutPK.map(col => D.wrapIdentifier(col));
-    
+
     const insertSQL = () => `
       INSERT (${wrappedPK}, ${wrappedColumns.join(', ')})
       VALUES (source.${wrappedPK}, ${columnsWithoutPK.map(cpk => `source.${D.wrapIdentifier(cpk)}`).join(', ')})
     `;
-    
-    const updateSet = () => `${columnsWithoutPK.map(cpk => 
+
+    const updateSet = () => `${columnsWithoutPK.map(cpk =>
       `target.${D.wrapIdentifier(cpk)} = source.${D.wrapIdentifier(cpk)}`
     ).join(', ')}`;
-    
+
     // Use D.escapeString for proper string value escaping
     const formatValue = (val: any): string => {
       if (val === null || val === undefined) {
@@ -166,14 +167,14 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       }
       return D.escapeString(String(val), true);
     };
-    
+
     const usingSQLStatement = data.map((val, idx) => {
       if (idx === 0) {
-        return `SELECT ${formatValue(val[PK])} AS ${wrappedPK}, ${columnsWithoutPK.map(col => 
+        return `SELECT ${formatValue(val[PK])} AS ${wrappedPK}, ${columnsWithoutPK.map(col =>
           `${formatValue(val[col])} AS ${D.wrapIdentifier(col)}`
         ).join(', ')} FROM dual`;
       }
-      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => 
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col =>
         formatValue(val[col])
       ).join(', ')} FROM dual`;
     }).join(' UNION ALL ');
@@ -381,7 +382,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     try {
       // Query to get procedures, functions, and packages
       const query = `
-        SELECT 
+        SELECT
           OBJECT_NAME,
           OBJECT_TYPE,
           OWNER AS SCHEMA_NAME,
@@ -394,17 +395,17 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         ${filter?.schema ? `AND OWNER = ${D.escapeString(filter.schema.toUpperCase(), true)}` : ''}
         ORDER BY OBJECT_TYPE, OBJECT_NAME
       `;
-      
+
       const results = await this.driverExecuteSimple(query);
-      
+
       // Map to the Routine interface expected by the application
       return results.map(row => {
         // Convert Oracle object type to our RoutineType
-        const routineType: RoutineType = 
-          row.OBJECT_TYPE === 'FUNCTION' ? 'function' : 
-          row.OBJECT_TYPE === 'PROCEDURE' ? 'procedure' : 
+        const routineType: RoutineType =
+          row.OBJECT_TYPE === 'FUNCTION' ? 'function' :
+          row.OBJECT_TYPE === 'PROCEDURE' ? 'procedure' :
           'procedure'; // Default for packages etc.
-        
+
         return {
           id: String(row.OBJECT_ID),
           name: row.OBJECT_NAME,
@@ -425,23 +426,23 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     try {
       // First, get the current database name
       const current = await this.getCurrentDatabase();
-      
+
       // Then, query v$database to get additional information
       const dbQuery = `
-        SELECT NAME, OPEN_MODE, DATABASE_ROLE 
+        SELECT NAME, OPEN_MODE, DATABASE_ROLE
         FROM v$database
       `;
-      
+
       // Also query available PDBs (Pluggable Databases) if this is a container database
       const pdbQuery = `
-        SELECT NAME, OPEN_MODE, RESTRICTED 
+        SELECT NAME, OPEN_MODE, RESTRICTED
         FROM v$pdbs
         WHERE OPEN_MODE = ${D.escapeString('READ WRITE', true)}
       `;
-      
+
       // Execute both queries
       let databases = [current];
-      
+
       try {
         // Try to get additional PDBs, but this may fail if we don't have permissions
         const pdbResults = await this.driverExecuteSimple(pdbQuery);
@@ -453,7 +454,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         // Ignore errors if we don't have permission to view PDBs
         log.debug('Unable to query PDBs, listing only current database', error);
       }
-      
+
       return [...new Set(databases)]; // Return unique list
     } catch (error) {
       log.error('Error listing databases:', error);
@@ -561,21 +562,21 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   AND c_pk.constraint_type = 'P'
    AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
    ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
-  ORDER BY 
+  ORDER BY
     a.constraint_name,
     a.position
     `
     const response = await this.driverExecuteSimple(sql)
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // Sort key parts by position to ensure correct column order
       const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (sortedKeyParts.length === 1) {
         const row = sortedKeyParts[0];
@@ -590,8 +591,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           onDelete: row.DELETE_RULE,
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = sortedKeyParts[0];
       return {
@@ -713,7 +714,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     let poolConfig: any = {
       poolIncrement: 1,
       poolMin: 1,
-      poolMax: 4,
+      poolMax: BksConfig.db.oracle.maxClient,
+      connectTimeout: Math.floor(BksConfig.db.oracle.connectionTimeout / 1000),
+      poolTimeout: Math.floor(BksConfig.db.oracle.idleTimeout / 1000)
     }
 
     if (connectionMethod === 'connectionString') {

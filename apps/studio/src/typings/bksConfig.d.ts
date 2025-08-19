@@ -3,15 +3,24 @@ declare interface IBksConfig {
     db: {
         bigquery: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         cassandra: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         clickhouse: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         cockroachdb: {
             allowSkipToLastPage: boolean;
@@ -22,39 +31,62 @@ declare interface IBksConfig {
         };
         default: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         duckdb: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         firebird: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         libsql: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         mariadb: {
             allowSkipToLastPage: boolean;
-            connectTimeout: number;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         mongodb: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         mysql: {
             allowSkipToLastPage: boolean;
             connectTimeout: number;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         oracle: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
-        postgres: {
+        postgresql: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
             idleTimeout: number;
@@ -70,19 +102,31 @@ declare interface IBksConfig {
         };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         sqlite: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         sqlserver: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
         tidb: {
             allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            idleTimeout: number;
             initialSort: boolean;
+            maxClient: number;
         };
     };
     general: {

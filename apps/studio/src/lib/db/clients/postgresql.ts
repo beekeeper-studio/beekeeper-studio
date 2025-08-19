@@ -1322,9 +1322,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       port: server.config.port || undefined,
       password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
-      max: 8, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
-      idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
+      max: BksConfig.db.postgresql.maxClient, // max idle connections per time (30 secs)
+      connectionTimeoutMillis: BksConfig.db.postgresql.connectionTimeout,
+      idleTimeoutMillis: BksConfig.db.postgresql.idleTimeout,
     };
 
     if (

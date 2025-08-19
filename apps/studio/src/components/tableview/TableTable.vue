@@ -399,8 +399,7 @@ export default Vue.extend({
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
     canJumpToLastPage() {
-      const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
-      return this.$bksConfig.db[dbType].allowSkipToLastPage;
+      return this.$bksConfig.db[this.connectionType].allowSkipToLastPage;
     },
     limit() {
       return this.$bksConfig.ui.tableTable.pageSize
@@ -574,7 +573,7 @@ export default Vue.extend({
         return [];
       }
 
-      if (this.dialectData.disabledFeatures?.initialSort) {
+      if (!this.$bksConfig?.db[this.connectionType]?.initialSort) {
         return [];
       }
 

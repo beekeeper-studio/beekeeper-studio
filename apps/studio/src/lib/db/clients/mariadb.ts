@@ -39,7 +39,9 @@ export class MariaDBClient extends MysqlClient {
       dateStrings: true,
       supportBigNumbers: true,
       bigNumberStrings: true,
-      connectTimeout: BksConfig.db.mariadb.connectTimeout,
+      connectTimeout: BksConfig.db.mariadb.connectionTimeout,
+      idleTimeout: BksConfig.db.mariadb.idleTimeout,
+      connectionLimit: BksConfig.db.mariadb.maxClient
     };
 
     if (server.config.socketPathEnabled) {

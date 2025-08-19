@@ -49,7 +49,6 @@ import {
   TableColumn,
   TableDelete,
   BksField,
-  BksFieldType,
   TableFilter,
   TableIndex,
   TableInsert,
@@ -147,7 +146,9 @@ async function configDatabase(
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,
-    connectTimeout: BksConfig.db.mysql.connectTimeout,
+    connectTimeout: BksConfig.db[server.config.client].connectionTimeout,
+    idleTimeout: BksConfig.db[server.config.client].idleTimeout,
+    connectionLimit: BksConfig.db[server.config.client].maxClient
   };
 
   if (server.config.socketPathEnabled) {
@@ -727,13 +728,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const params = [table];
 
     const { rows } = await this.driverExecuteSingle(sql, { params });
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -751,8 +752,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           fromSchema: "",
           isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
