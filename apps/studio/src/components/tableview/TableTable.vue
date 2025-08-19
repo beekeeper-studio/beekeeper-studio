@@ -337,7 +337,6 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
-import { ValueContext } from "@/lib/db/clients/BasicDatabaseClient";
 
 const log = rawLog.scope('TableTable')
 
@@ -394,7 +393,6 @@ export default Vue.extend({
       selectedRowPosition: -1,
       selectedRowData: {},
       expandablePaths: [],
-      valueContext: undefined as ValueContext | undefined,
     };
   },
   computed: {
@@ -597,7 +595,6 @@ export default Vue.extend({
     rootBindings() {
       return [
         { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
-        { event: AppEvent.onValueEditorChange, handler: this.handleValueEditorChange },
       ]
     },
     /** This tells which fields have been modified */
@@ -1860,7 +1857,6 @@ export default Vue.extend({
         this.selectedRow = null
         this.selectedRowPosition = null
         this.selectedRowData = {}
-        this.valueContext = undefined
         return
       }
       const leftTopCell = range.getCells()[0][0];
@@ -1876,22 +1872,6 @@ export default Vue.extend({
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
       this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
 
-      // TODO: move value editor update logic to a separate method?
-      if (["redis"].includes(this.dialect)) {
-        this.valueContext = await this.connection.getValueContext(this.table.name, this.selectedRowData)
-      } else {
-        console.log({ range })
-        this.valueContext = {
-          kind: "cell",
-          value: leftTopCell.getValue(),
-          column: leftTopCell.getField(),
-          type: leftTopCell.getColumn().getDefinition().dataType,
-        }
-      }
-
-      this.trigger(AppEvent.updateValueEditor, {
-        valueContext: this.valueContext
-      })
 
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
@@ -2051,46 +2031,6 @@ export default Vue.extend({
     },
     handleJsonValueChange({key, value}) {
       this.selectedRow?.getCell(key).setValue(value)
-    },
-    handleValueEditorChange(changeData) {
-      // This will be called by the ValueEditor component when applying changes
-      if (!this.selectedRow) return
-
-      if (changeData.key) {
-        const primaryKeys = Object.keys(this.selectedRowData).filter((k) => this.isPrimaryKey(k))
-          .map((key) => ({
-            column: key,
-            value: this.selectedRowData[key]
-          }))
-
-        const payload = {
-          table: this.table.name,
-          schema: this.table.schema,
-          dataset: this.dialectData.requireDataset ? this.database: null,
-          column: 'value',
-          columnType: undefined,
-          columnObject: null,
-          primaryKeys,
-          value: changeData.newValue
-        }
-
-        // Add to pending changes (don't save immediately)
-        let pendingUpdates = _.reject(this.pendingChanges.updates, (update) =>
-          _.isEqual(update.primaryKeys, primaryKeys) && update.column === 'value'
-        )
-        pendingUpdates.push(payload)
-        this.$set(this.pendingChanges, 'updates', pendingUpdates)
-
-        // Mark the table as having pending changes
-        this.hasChanges = true
-
-      } else if (changeData.column) {
-        // SQL mode: handle like JSON editor - use current selection
-        const targetCell = this.selectedRow?.getCell(changeData.column)
-        if (targetCell) {
-          targetCell.setValue(changeData.newValue)
-        }
-      }
     },
     debouncedSaveTab: _.debounce(function(tab) {
       this.$store.dispatch('tabs/save', tab)

@@ -26,14 +26,6 @@
             :key="tab.id"
           />
         </template>
-        <template v-else-if="tab.id === 'value-editor'">
-          <value-editor
-            v-show="secondaryActiveTabId === 'value-editor'"
-            :key="tab.id"
-            :value-context="valueContext"
-            @value-editor-change="handleValueEditorChange"
-          />
-        </template>
         <isolated-plugin-view
           v-else
           :visible="secondaryActiveTabId === tab.id"
@@ -51,10 +43,8 @@
 import Vue from "vue";
 import { mapState, mapActions } from "vuex";
 import JsonViewerSidebar from "./JsonViewerSidebar.vue";
-import ValueEditor from "./ValueEditor.vue";
 import { AppEvent } from "@/common/AppEvent";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
-import { type ValueContext } from "@/lib/db/clients/BasicDatabaseClient";
 
 interface SidebarTab {
   id: string;
@@ -64,12 +54,10 @@ interface SidebarTab {
 
 export default Vue.extend({
   name: "SecondarySidebar",
-  components: { JsonViewerSidebar, ValueEditor, IsolatedPluginView },
+  components: { JsonViewerSidebar, IsolatedPluginView },
   data() {
     return {
       reloaders: {},
-      // Value Editor data (unified for both SQL and NoSQL)
-      valueContext: null,
     };
   },
   computed: {
@@ -80,10 +68,6 @@ export default Vue.extend({
           event: AppEvent.selectSecondarySidebarTab,
           handler: this.setSecondaryActiveTabId,
         },
-        {
-          event: AppEvent.updateValueEditor,
-          handler: this.updateValueEditor,
-        },
       ];
     },
   },
@@ -91,14 +75,6 @@ export default Vue.extend({
     ...mapActions("sidebar", ["setSecondaryActiveTabId"]),
     handleTabClick(event, tab: SidebarTab) {
       this.setSecondaryActiveTabId(tab.id);
-    },
-    updateValueEditor(data: { valueContext: ValueContext }) {
-      // Update value editor with data from TableTable
-      this.valueContext = data.valueContext;
-    },
-    handleValueEditorChange(changeData) {
-      // Send back to TableTable to add to pending changes
-      this.trigger(AppEvent.onValueEditorChange, changeData);
     },
     handleTabRightClick(event, tab: SidebarTab) {
       if (!window.platformInfo.isDevelopment) {

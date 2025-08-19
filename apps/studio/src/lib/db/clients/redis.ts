@@ -18,7 +18,6 @@ import {
   AppContextProvider,
   BaseQueryResult,
   BasicDatabaseClient,
-  ValueContext,
 } from "./BasicDatabaseClient";
 import Redis, { RedisOptions } from "ioredis";
 import { IDbConnectionServer } from "../backendTypes";
@@ -178,27 +177,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async getValueContext(
-    table: string,
-    rowData: RedisTableRow
-  ): Promise<ValueContext> {
-    if (table === "keys") {
-      const value = await this.fetchRedisValue(rowData.key, rowData.type);
-
-      return {
-        kind: "kv",
-        key: rowData.key,
-        ttl: rowData.ttl,
-        type: rowData.type,
-        memory: rowData.memory,
-        encoding: rowData.encoding,
-        value,
-      };
-    }
-
-    // fallback to regular json viewer behavior for server info
-    return undefined;
-  }
 
   async listTables(): Promise<TableOrView[]> {
     return [{ name: "keys", entityType: "table", schema: null }];

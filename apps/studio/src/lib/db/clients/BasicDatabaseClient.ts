@@ -55,25 +55,6 @@ export const NoOpContextProvider: AppContextProvider = {
   }
 };
 
-// Discriminated union for different types of editable data
-export type KvStoreValue = {
-  kind: "kv"
-  key: string
-  type: string
-  ttl: number
-  memory: number
-  encoding: string
-  value: unknown
-}
-
-export type CellValue = {
-  kind: "cell"
-  column: string
-  type: string
-  value: unknown
-}
-
-export type ValueContext = KvStoreValue | CellValue
 
 export interface BaseQueryResult {
   columns: { name: string }[]
@@ -221,14 +202,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   }
   abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
 
-  // Key-value storages (redis, valkey, etc) ************************************
-  async getValueContext(
-    _table: string,
-    _rowData: Record<string, unknown>, // selected row (first in range)
-  ): Promise<ValueContext | undefined> {
-    // Noop in relational dbs
-    return undefined;
-  }
 
   // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
   async createTable(_table: CreateTableSpec): Promise<void> {
