@@ -60,6 +60,7 @@ type RedisTableRow = {
   ttl: number;
   memory: number;
   encoding: string;
+  value: unknown;
 };
 
 function makeQueryResult(command: string, result: unknown): NgQueryResult {
@@ -240,13 +241,30 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           ordinalPosition: 1,
           schemaName: null,
           tableName: table,
+          columnName: "value",
+          dataType: "TEXT",
+          bksField: { bksType: "UNKNOWN", name: "value" },
+        },
+        {
+          ordinalPosition: 2,
+          schemaName: null,
+          tableName: table,
           columnName: "type",
           dataType: "TEXT",
           bksField: { bksType: "UNKNOWN", name: "type" },
           generated: true,
         },
         {
-          ordinalPosition: 2,
+          ordinalPosition: 3,
+          schemaName: null,
+          tableName: table,
+          columnName: "encoding",
+          dataType: "TEXT",
+          bksField: { bksType: "UNKNOWN", name: "encoding" },
+          generated: true,
+        },
+        {
+          ordinalPosition: 4,
           schemaName: null,
           tableName: table,
           columnName: "ttl",
@@ -254,21 +272,12 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           bksField: { bksType: "UNKNOWN", name: "ttl" },
         },
         {
-          ordinalPosition: 3,
+          ordinalPosition: 5,
           schemaName: null,
           tableName: table,
           columnName: "memory",
           dataType: "INTEGER",
           bksField: { bksType: "UNKNOWN", name: "memory" },
-          generated: true,
-        },
-        {
-          ordinalPosition: 4,
-          schemaName: null,
-          tableName: table,
-          columnName: "encoding",
-          dataType: "TEXT",
-          bksField: { bksType: "UNKNOWN", name: "encoding" },
           generated: true,
         },
       ];
@@ -402,17 +411,24 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       log.debug(`Could not get encoding for key ${key}:`, error);
     }
 
+    const value = await this.fetchRedisValue(key, type);
+
     return {
-      type,
       key,
+      value,
+      type,
+      encoding,
       ttl: await this.redis.ttl(key),
       memory,
-      encoding,
     };
   };
 
   // Centralized Redis value setting logic
-  private async setRedisValue(key: string, type: string, value: string): Promise<void> {
+  private async setRedisValue(
+    key: string,
+    type: string,
+    value: string
+  ): Promise<void> {
     switch (type) {
       case "string":
         await this.redis.set(key, value);
@@ -460,7 +476,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         let hashData: Record<string, string>;
         try {
           hashData = JSON.parse(value);
-          if (typeof hashData !== 'object' || hashData === null || Array.isArray(hashData)) {
+          if (
+            typeof hashData !== "object" ||
+            hashData === null ||
+            Array.isArray(hashData)
+          ) {
             throw new Error("Expected object for hash type");
           }
         } catch (error) {
@@ -479,7 +499,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         let zsetData: Record<string, string[]>;
         try {
           zsetData = JSON.parse(value);
-          if (typeof zsetData !== 'object' || zsetData === null || Array.isArray(zsetData)) {
+          if (
+            typeof zsetData !== "object" ||
+            zsetData === null ||
+            Array.isArray(zsetData)
+          ) {
             throw new Error("Expected object for zset type");
           }
         } catch (error) {
@@ -578,7 +602,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     }
 
     match = match.trim();
-    match = match || "*";
+    if (!match.endsWith("*")) match += "*";
 
     const keys = await this.scanAll(match);
 
@@ -590,10 +614,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       result,
       fields: [
         { name: "key", bksType: "UNKNOWN" },
+        { name: "value", bksType: "UNKNOWN" },
         { name: "type", bksType: "UNKNOWN" },
+        { name: "encoding", bksType: "UNKNOWN" },
         { name: "ttl", bksType: "UNKNOWN" },
         { name: "memory", bksType: "UNKNOWN" },
-        { name: "encoding", bksType: "UNKNOWN" },
       ],
     };
   }
