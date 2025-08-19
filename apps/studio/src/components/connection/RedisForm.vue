@@ -111,40 +111,6 @@ export default {
 };
 </script>
 
-<style scoped>
-.redis-form {
-  padding: 1rem 0;
-}
-.form-group {
-  margin-bottom: 1rem;
-}
-.form-group label {
-  display: block;
-  margin-bottom: 0.25rem;
-  font-weight: 500;
-  color: var(--text-light);
-}
-.form-control {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
-}
-.form-control::placeholder {
-  color: var(--text-lighter);
-}
-.form-text {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-}
-.text-muted {
-  color: var(--text-lighter);
-}
+<style>
+
 </style>
