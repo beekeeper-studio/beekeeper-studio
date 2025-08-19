@@ -93,21 +93,6 @@ export default {
       this.showPassword = !this.showPassword
     }
   },
-  created() {
-    // Set default values if not already set
-    if (!this.config.host) {
-      this.$set(this.config, "host", "localhost");
-    }
-    if (!this.config.port) {
-      this.$set(this.config, "port", 6379);
-    }
-    if (!this.config.defaultDatabase) {
-      this.$set(this.config, "defaultDatabase", "0");
-    }
-    if (!this.config.options) {
-      this.$set(this.config, "options", {});
-    }
-  },
 };
 </script>
 
