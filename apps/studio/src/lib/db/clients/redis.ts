@@ -177,7 +177,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-
   async listTables(): Promise<TableOrView[]> {
     return [{ name: "keys", entityType: "table", schema: null }];
   }
@@ -363,7 +362,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  scanAll = async (match = "*", count = 100, cursor = "0", type?: string) => {
+  async scanAll(match = "*", count = 100, cursor = "0", type?: string) {
     log.debug("Scanning Redis keys", { match, count, cursor });
     const keys: string[] = [];
     do {
@@ -375,9 +374,9 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       cursor = newCursor;
     } while (cursor !== "0");
     return keys;
-  };
+  }
 
-  getKeyInfo = async (key: string) => {
+  async getKeyInfo(key: string) {
     const type = await this.redis.type(key);
     const memory = (await this.redis.call("MEMORY", "USAGE", key)) as number;
 
@@ -399,9 +398,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       ttl: await this.redis.ttl(key),
       memory,
     };
-  };
+  }
 
-  // Centralized Redis value setting logic
   private async setRedisValue(
     key: string,
     type: string,
@@ -585,7 +583,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     const keys = await this.scanAll(match);
 
     const result = await Promise.all(
-      keys.slice(offset, offset + limit).map(this.getKeyInfo)
+      keys.slice(offset, offset + limit).map(key => this.getKeyInfo(key))
     );
 
     return {
