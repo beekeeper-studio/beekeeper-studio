@@ -3,24 +3,23 @@
     <!-- Connection Details -->
     <div class="form-group">
       <label for="host">Host</label>
-      <input
-        id="host"
-        v-model="config.host"
-        type="text"
-        class="form-control"
-        placeholder="localhost"
-      >
+      <masked-input
+        :value="config.host"
+        :privacy-mode="privacyMode"
+        @input="val => config.host = val"
+        :placeholder="'localhost'"
+      />
     </div>
 
     <div class="form-group">
       <label for="port">Port</label>
-      <input
-        id="port"
-        v-model.number="config.port"
-        type="number"
-        class="form-control"
-        placeholder="6379"
-      >
+      <masked-input
+        :value="config.port"
+        :privacy-mode="privacyMode"
+        :type="'number'"
+        @input="val => config.port = val"
+        :placeholder="'6379'"
+      />
     </div>
 
     <!-- Authentication -->
@@ -53,8 +52,14 @@
 </template>
 
 <script>
+import MaskedInput from '@/components/MaskedInput.vue'
+import { mapState } from 'vuex'
+
 export default {
   name: "RedisForm",
+  components: {
+    MaskedInput
+  },
   props: {
     config: {
       type: Object,
@@ -64,6 +69,9 @@ export default {
       type: Boolean,
       default: false,
     },
+  },
+  computed: {
+    ...mapState('settings', ['privacyMode']),
   },
   created() {
     // Set default values if not already set
