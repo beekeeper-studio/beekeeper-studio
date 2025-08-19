@@ -1579,10 +1579,10 @@ export default Vue.extend({
             this.tabulator.clearCellEdited()
             this.tabulator.updateData(this.convertUpdateResult(result))
             this.pendingChanges.updates.forEach(edit => {
-              edit.cell?.getElement().classList.remove('edited')
-              edit.cell?.getElement().classList.add('edit-success')
+              edit.cell.getElement().classList.remove('edited')
+              edit.cell.getElement().classList.add('edit-success')
               setTimeout(() => {
-                if (edit.cell?.getElement()) {
+                if (edit.cell.getElement()) {
                   edit.cell.getElement().classList.remove('edit-success')
                 }
               }, 1000)
@@ -1600,7 +1600,7 @@ export default Vue.extend({
 
         } catch (ex) {
           this.pendingChanges.updates.forEach(edit => {
-              edit.cell?.getElement().classList.add('edit-error')
+              edit.cell.getElement().classList.add('edit-error')
           })
 
 
@@ -1850,7 +1850,7 @@ export default Vue.extend({
     positionRowOf(row: RowComponent) {
       return (this.limit * (this.page - 1)) + (row.getPosition() || 0)
     },
-    async updateJsonViewer(options: { range?: RangeComponent } = {}) {
+    updateJsonViewer(options: { range?: RangeComponent } = {}) {
       const range = options.range ?? this.tabulator.getRanges()[0]
       const row = range.getRows()[0]
       if (!row) {
@@ -1859,7 +1859,6 @@ export default Vue.extend({
         this.selectedRowData = {}
         return
       }
-      const leftTopCell = range.getCells()[0][0];
       const position = this.positionRowOf(row)
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
@@ -1871,8 +1870,6 @@ export default Vue.extend({
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
       this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
-
-
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
@@ -1992,10 +1989,7 @@ export default Vue.extend({
       this.updateJsonViewerSidebar()
     },
     handleRangeChange(ranges: RangeComponent[]) {
-      // Without setTimeout, cell range data is stale and incorrect value is rendered in ValueEditor
-      setTimeout(() => {
-        this.updateJsonViewer({ range: ranges[0] })
-      })
+      this.updateJsonViewer({ range: ranges[0] })
     },
     handleSwitchedTab(tab) {
       if (tab === this.tab) {

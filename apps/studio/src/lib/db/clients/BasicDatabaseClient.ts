@@ -55,7 +55,6 @@ export const NoOpContextProvider: AppContextProvider = {
   }
 };
 
-
 export interface BaseQueryResult {
   columns: { name: string }[]
   rows: any[][] | Record<string, any>[];
@@ -66,7 +65,7 @@ export interface BaseQueryResult {
 export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
-  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic" | "redis";
+  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
   server: IDbConnectionServer;
@@ -201,7 +200,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return [];
   }
   abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
-
 
   // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
   async createTable(_table: CreateTableSpec): Promise<void> {
