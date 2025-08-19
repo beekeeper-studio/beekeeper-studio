@@ -89,7 +89,7 @@
                   :testing="testing"
                 />
                 <redis-form
-                  v-else-if="config.connectionType === 'redis' && isUltimate"
+                  v-else-if="config.connectionType === 'redis'"
                   :config="config"
                   :testing="testing"
                 />
