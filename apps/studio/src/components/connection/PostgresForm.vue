@@ -69,8 +69,8 @@ export default {
   data() {
     return {
       azureAuthEnabled: !!this.config?.azureAuthOptions?.azureAuthEnabled,
-      iamAuthenticationEnabled: !!this.config.redshiftOptions?.iamAuthenticationEnabled,
-      authType: this.config.redshiftOptions?.authType || this.config.azureAuthOptions?.azureAuthType || 'default',
+      iamAuthenticationEnabled: !!this.config.iamAuthOptions?.iamAuthenticationEnabled,
+      authType: this.config.iamAuthOptions?.authType || this.config.azureAuthOptions?.azureAuthType || 'default',
       authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes.filter(auth => auth.value === AzureAuthType.CLI)],
       accountName: null,
       signingOut: false,
@@ -94,7 +94,7 @@ export default {
           this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
           this.authType = 'default'
         } else {
-          this.config.redshiftOptions.authType = this.authType
+          this.config.iamAuthOptions.authType = this.authType
           this.iamAuthenticationEnabled = typeof this.authType === 'string' && this.authType.includes('iam')
           this.config.azureAuthOptions.azureAuthType = this.authType
           this.azureAuthEnabled = this.authType === AzureAuthType.CLI
@@ -112,7 +112,7 @@ export default {
       this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
     },
     iamAuthenticationEnabled() {
-      this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
+      this.config.iamAuthOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
     }
   },
   computed: {

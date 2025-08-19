@@ -30,7 +30,6 @@
               }">help_outlined</i>
           </label>
 
-          <!-- FIX: wrong property; use redshiftOptions not azureAuthOptions -->
           <div class="alert alert-danger" v-show="!cliFound">
             <i class="material-icons-outlined">warning</i>
             <div>
@@ -44,7 +43,7 @@
             name="cliPath"
             type="text"
             class="form-control"
-            v-model="config.redshiftOptions.cliPath"
+            v-model="config.iamAuthOptions.cliPath"
           />
         </div>
       </div>
@@ -52,12 +51,12 @@
       <div v-show="isRedshift" class="flex flex-middle mb-3">
         <h4
           class="advanced-heading flex"
-          :class="{enabled: config.redshiftOptions.isServerless}"
+          :class="{enabled: config.iamAuthOptions.isServerless}"
         >
           <span class="expand">Is Serverless Instance</span>
           <x-switch
             @click.prevent="toggleServerless"
-            :toggled="config.redshiftOptions.isServerless"
+            :toggled="config.iamAuthOptions.isServerless"
           />
         </h4>
       </div>
@@ -70,10 +69,10 @@
         <select
           v-if="hasProfiles"
           class="form-control"
-          v-model="config.redshiftOptions.awsProfile"
+          v-model="config.iamAuthOptions.awsProfile"
         >
           <option
-            v-for="option in config.redshiftOptions.profiles"
+            v-for="option in config.iamAuthOptions.profiles"
             :key="option"
             :value="option"
           >
@@ -86,24 +85,24 @@
           type="text"
           class="form-control"
           placeholder="Enter AWS profile name (e.g., default, dev, prod)"
-          v-model="config.redshiftOptions.awsProfile"
+          v-model="config.iamAuthOptions.awsProfile"
         />
       </div>
 
       <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">Access Key ID</label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.accessKeyId">
+          <input type="text" class="form-control" v-model="config.iamAuthOptions.accessKeyId">
         </div>
         <div class="form-group">
           <label for="Secret Access Key">Secret Access Key</label>
-          <input type="password" class="form-control" v-model="config.redshiftOptions.secretAccessKey">
+          <input type="password" class="form-control" v-model="config.iamAuthOptions.secretAccessKey">
         </div>
       </div>
 
       <div class="form-group">
         <label for="AWS Region">AWS Region</label>
-        <input type="text" class="form-control" v-model="config.redshiftOptions.awsRegion">
+        <input type="text" class="form-control" v-model="config.iamAuthOptions.awsRegion">
       </div>
 
       <div v-show="isRedshift">
@@ -129,7 +128,7 @@ export default {
   props: ['config', 'authType'],
   data() {
     return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
+      iamAuthenticationEnabled: this.config.iamAuthOptions?.iamAuthenticationEnabled,
       isServerless: this.config.redshiftOptions?.isServerless,
       cliError: false,
       profilesError: false,
@@ -149,17 +148,17 @@ export default {
       return ['iam_cli', 'iam_file'].includes(this.authType);
     },
     cliFound() {
-      return !!this.config.redshiftOptions?.cliPath && !this.cliError;
+      return !!this.config.iamAuthOptions?.cliPath && !this.cliError;
     },
     hasProfiles() {
-      const p = this.config.redshiftOptions?.profiles;
+      const p = this.config.iamAuthOptions?.profiles;
       return Array.isArray(p) && p.length > 0 && !this.profilesError;
     },
   },
   methods: {
     toggleIAMAuthentication() {
       this.iamAuthenticationEnabled = !this.iamAuthenticationEnabled;
-      this.$set(this.config.redshiftOptions, 'iamAuthenticationEnabled', this.iamAuthenticationEnabled);
+      this.$set(this.config.iamAuthOptions, 'iamAuthenticationEnabled', this.iamAuthenticationEnabled);
     },
     toggleServerless() {
       this.$set(this.config.redshiftOptions, 'isServerless', !this.config.redshiftOptions.isServerless);
@@ -171,16 +170,16 @@ export default {
         // keep your existing IPC name, but fix the state wiring
         const result = await this.$util.send('backup/whichDumpTool', { toolName: 'aws' });
         if (result) {
-          this.$set(this.config.redshiftOptions, 'cliPath', result);
+          this.$set(this.config.iamAuthOptions, 'cliPath', result);
           this.cliError = false;
           return result;
         } else {
-          this.$set(this.config.redshiftOptions, 'cliPath', null);
+          this.$set(this.config.iamAuthOptions, 'cliPath', null);
           this.cliError = true;
           return null;
         }
       } catch (e) {
-        this.$set(this.config.redshiftOptions, 'cliPath', null);
+        this.$set(this.config.iamAuthOptions, 'cliPath', null);
         this.cliError = true;
         return null;
       }
@@ -191,7 +190,7 @@ export default {
       try {
         // If no CLI, don't even try; force textbox
         if (!cliPath) {
-          this.$set(this.config.redshiftOptions, 'profiles', null);
+          this.$set(this.config.iamAuthOptions, 'profiles', null);
           this.profilesError = true;
           return;
         }
@@ -202,19 +201,19 @@ export default {
         if (Array.isArray(result) && result.length > 0) {
           // Normalize to string[]
           const unique = Array.from(new Set(result.map(String)));
-          this.$set(this.config.redshiftOptions, 'profiles', unique);
+          this.$set(this.config.iamAuthOptions, 'profiles', unique);
           this.profilesError = false;
 
-          if (!this.config.redshiftOptions.awsProfile) {
-            this.$set(this.config.redshiftOptions, 'awsProfile', unique[0]);
+          if (!this.config.iamAuthOptions.awsProfile) {
+            this.$set(this.config.iamAuthOptions, 'awsProfile', unique[0]);
           }
         } else {
           // empty -> textbox fallback
-          this.$set(this.config.redshiftOptions, 'profiles', null);
+          this.$set(this.config.iamAuthOptions, 'profiles', null);
           this.profilesError = true;
         }
       } catch (e) {
-        this.$set(this.config.redshiftOptions, 'profiles', null);
+        this.$set(this.config.iamAuthOptions, 'profiles', null);
         this.profilesError = true;
       }
     },

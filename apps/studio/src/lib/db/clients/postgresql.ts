@@ -153,10 +153,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const test = await this.conn.pool.connect()
 
-    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
+    if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
       this.interval = setInterval(async () => {
         try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
+          const newPassword = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 5432);
 
           const newPool = new pg.Pool({
             ...dbConfig,
@@ -1330,12 +1330,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
     let awsCLIToken = undefined;
-    if( server.config.redshiftOptions.authType === 'iam_cli') {
-      awsCLIToken = await getAWSCLIToken(server.config, server.config.redshiftOptions);
+    if( server.config.iamAuthOptions.authType === 'iam_cli') {
+      awsCLIToken = await getAWSCLIToken(server.config, server.config.iamAuthOptions);
     }
 
-    if(server.config.redshiftOptions?.iamAuthenticationEnabled){
-      awsCLIToken = await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432)
+    if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+      awsCLIToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
     }
 
     const config: PoolConfig = {
@@ -1358,7 +1358,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       server.config.client === "postgresql" &&
       // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
       // we only need SSL for iam authentication
-      server.config?.redshiftOptions?.iamAuthenticationEnabled
+      server.config?.iamAuthOptions?.iamAuthenticationEnabled
     ){
       server.config.ssl = true;
     }

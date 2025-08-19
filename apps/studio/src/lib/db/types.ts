@@ -74,14 +74,18 @@ export const AzureAuthTypes = [
 ];
 
 export interface RedshiftOptions {
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+  isServerless?: boolean;
+}
+
+export interface IamAuthOptions {
   awsProfile?: string
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
   awsRegion?: string;
-  clusterIdentifier?: string;
-  databaseGroup?: string;
-  tokenDurationSeconds?: number;
   isServerless?: boolean;
   authType?: string;
   cliPath?: string;
@@ -170,6 +174,7 @@ export interface IDbConnectionServerConfig {
   oracleConfigLocation?: string
   options?: any
   redshiftOptions?: RedshiftOptions
+  iamAuthOptions?: IamAuthOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
   azureAuthOptions?: AzureAuthOptions

@@ -135,12 +135,12 @@ async function configDatabase(
 ): Promise<mysql.PoolOptions> {
 
   let awsCLIToken = undefined;
-  if( server.config.redshiftOptions.authType === 'iam_cli') {
-    awsCLIToken = await getAWSCLIToken(server.config, server.config.redshiftOptions);
+  if( server.config.iamAuthOptions.authType === 'iam_cli') {
+    awsCLIToken = await getAWSCLIToken(server.config, server.config.iamAuthOptions);
   }
 
-  if(server.config.redshiftOptions?.iamAuthenticationEnabled){
-      awsCLIToken = await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432)
+  if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+      awsCLIToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
   }
 
   const config: mysql.PoolOptions = {
@@ -177,7 +177,7 @@ async function configDatabase(
   }
 
   if (
-    server.config.redshiftOptions?.iamAuthenticationEnabled
+    server.config.iamAuthOptions?.iamAuthenticationEnabled
   ){
     server.config.ssl = true
   }
@@ -327,12 +327,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       pool: mysql.createPool(dbConfig),
     };
 
-    if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
+    if(this.server.config.iamAuthOptions?.iamAuthenticationEnabled){
       this.interval = setInterval(async () => {
         try {
           this.conn.pool.getConnection(async (err, connection) => {
             if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 3306)
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 3306)
             connection.release();
             log.info('Token refreshed successfully.')
           });
