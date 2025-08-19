@@ -36,6 +36,13 @@ article {
     a:hover {
         text-decoration: underline;
     }
+    img, video {
+        border: solid 1px rgba(255, 255, 255, 0.20);
+        border-radius: 3px;
+        box-shadow: 3px 3px rgba(0, 0, 0, 0.30);
+        border-right: 0;
+        border-bottom: 0;
+    }
 }
 
 

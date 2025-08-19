@@ -753,6 +753,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableProperties(table: string, schema: string = this._defaultSchema): Promise<TableProperties> {
     const identifier = this.wrapTable(table, schema)
+    const permissionWarnings: string[] = []
 
     const statements = [
       `pg_indexes_size('${identifier}') as index_size`,
@@ -766,10 +767,42 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const sql = `SELECT ${statements.join(",")}`
 
-    const detailsPromise = this.driverExecuteSingle(sql);
+    // Execute each query independently with error handling for read-only connections
+    const detailsPromise = this.driverExecuteSingle(sql).catch(err => {
+      log.warn('Unable to fetch table size/description (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table size and description due to insufficient permissions')
+      return { rows: [{ index_size: 0, table_size: 0, description: null }] }
+    });
 
-    const triggersPromise = this.listTableTriggers(table, schema);
-    const partitionsPromise = this.listTablePartitions(table, schema);
+    const indexesPromise = this.listTableIndexes(table, schema).catch(err => {
+      log.warn('Unable to fetch table indexes (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table indexes due to insufficient permissions')
+      return []
+    });
+
+    const relationsPromise = this.getTableKeys(table, schema).catch(err => {
+      log.warn('Unable to fetch table relations (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table relations due to insufficient permissions')
+      return []
+    });
+
+    const triggersPromise = this.listTableTriggers(table, schema).catch(err => {
+      log.warn('Unable to fetch table triggers (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table triggers due to insufficient permissions')
+      return []
+    });
+
+    const partitionsPromise = this.listTablePartitions(table, schema).catch(err => {
+      log.warn('Unable to fetch table partitions (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table partitions due to insufficient permissions')
+      return []
+    });
+
+    const ownerPromise = this.getTableOwner(table, schema).catch(err => {
+      log.warn('Unable to fetch table owner (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table owner due to insufficient permissions')
+      return null
+    });
 
     const [
       result,
@@ -780,23 +813,24 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(table, schema),
-      this.getTableKeys(table, schema),
+      indexesPromise,
+      relationsPromise,
       triggersPromise,
       partitionsPromise,
-      this.getTableOwner(table, schema)
+      ownerPromise
     ])
 
     const props = result.rows.length > 0 ? result.rows[0] : {}
     return {
       description: props.description,
-      indexSize: Number(props.index_size),
-      size: Number(props.table_size),
+      indexSize: Number(props.index_size || 0),
+      size: Number(props.table_size || 0),
       indexes,
       relations,
       triggers,
       partitions,
-      owner
+      owner,
+      permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
     }
   }
 
