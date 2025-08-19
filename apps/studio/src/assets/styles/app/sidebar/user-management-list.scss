@@ -1,0 +1,46 @@
+.sidebar-user-management {
+  position: relative;
+  .sidebar-list {
+    position: relative;
+    flex: 1 1 auto;
+    height: 0;
+    max-height: -webkit-fill-available;
+    overflow-x: hidden;
+    padding: 0 0 $gutter-h 0;
+  }
+  .list-group {
+    padding: 0 0 $gutter-h 0;
+    min-height: 105px;
+  }
+  .list-item {
+    border-bottom: 1px solid $theme-bg;
+    height: 40px;
+    .badge {
+      min-width: fit-content;
+    }
+  }
+  .item-icon {
+    align-self: center;
+    line-height: 1.4rem;
+    margin-right: 4px;
+  }
+  .list-title {
+    flex-grow: 1;
+    overflow: hidden;
+    padding-right: ($gutter-h * 0.75);
+    .subtitle {
+      font-size: 80%;
+      color: $text-lighter;
+      @include truncate;
+    }
+  }
+  .list-item-btn {
+    position: relative;
+    margin-right: 0;
+    height: 100%;
+    line-height: initial;
+    padding: $gutter-h ($gutter-w * 0.75);
+    display: flex;
+    align-items: center;
+  }
+}

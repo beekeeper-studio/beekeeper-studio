@@ -71,6 +71,8 @@ export enum AppEvent {
   updatePin = 'updatePin',
   /** The theme has been changed. */
   changedTheme = 'changedTheme',
+  /** User Management */
+  userManagementOpen = 'userManagementOpen',
 }
 
 export interface RootBinding {

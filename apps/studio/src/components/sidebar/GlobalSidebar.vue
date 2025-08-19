@@ -27,6 +27,16 @@
     >
       <span class="material-icons">history</span>
     </a>
+    <a
+      v-if="hasAdminPrivileges"
+      href=""
+      @click.prevent="$emit('select', 'user-management')"
+      class="nav-item selectable"
+      :class="{ active: activeItem === 'user-management'}"
+      title="User & Role Management"
+    >
+      <span class="material-icons">group</span>
+    </a>
     <span class="expand" />
     <core-account-button v-if="$store.state.workspaceId > 0" />
   </div>
@@ -34,8 +44,21 @@
 
 <script>
   import CoreAccountButton from './core/CoreAccountButton.vue'
+  import { mapState} from 'vuex'
+
   export default {
     props: ['activeItem'],
     components: { CoreAccountButton },
+    computed: {
+      ...mapState('userManagement', ['hasAdminPrivileges']),
+    },
+    mounted() {
+      this.checkAdminPermissions()
+    },
+    methods: {
+      checkAdminPermissions() {
+        this.$store.dispatch('userManagement/setHasAdminPrivileges');
+      },
+    },
   }
 </script>
