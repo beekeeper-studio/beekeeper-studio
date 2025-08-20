@@ -9,9 +9,20 @@ import {
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
-import { UserSetting } from "@/common/appdb/models/user_setting";
+import platformInfo from "@/common/platform_info";
 
 const log = rawLog.scope("PluginManager");
+
+export type PluginManagerInitializeOptions = {
+  /** These plugins will be installed automatically. Users should be able to uninstall them later. */
+  preinstalledPlugins?: Manifest['id'][];
+  pluginSettings?: PluginSettings;
+}
+
+export type PluginManagerOptions = {
+  fileManager?: PluginFileManager;
+  onSetPluginSettings?: (pluginSettings: PluginSettings) => void;
+}
 
 export default class PluginManager {
   private initialized = false;
@@ -22,20 +33,15 @@ export default class PluginManager {
   private pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
-  /** A Constant for the setting key */
-  private static readonly PLUGIN_SETTINGS = "pluginSettings";
-  /** This is a list of plugins that are preinstalled by default. When the
-   * application starts, these plugins will be installed automatically. The user
-   * should be able to uninstall them later. */
-  private static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell"];
-
-  constructor() {
+  constructor(readonly options: PluginManagerOptions = {}) {
     this.pluginRepositoryService = new PluginRepositoryService();
-    this.fileManager = new PluginFileManager(this.pluginRepositoryService);
+    this.fileManager = options.fileManager || new PluginFileManager({
+      pluginsDirectory: platformInfo.pluginsDirectory,
+    });
     this.registry = new PluginRegistry(this.pluginRepositoryService);
   }
 
-  async initialize() {
+  async initialize(options: PluginManagerInitializeOptions = {}) {
     if (this.initialized) {
       log.warn("Calling initialize when already initialized");
       return;
@@ -43,12 +49,12 @@ export default class PluginManager {
 
     this.installedPlugins = this.fileManager.scanPlugins();
 
-    await this.loadPluginSettings();
+    this.pluginSettings = _.cloneDeep(options.pluginSettings) || {};
 
     this.initialized = true;
 
-    for (const id of PluginManager.PREINSTALLED_PLUGINS) {
-      // have installed before?
+    for (const id of options.preinstalledPlugins || []) {
+      // have installed `id` before?
       if (this.pluginSettings[id]) {
         continue;
       }
@@ -112,7 +118,7 @@ export default class PluginManager {
           autoUpdate: true,
         };
       }
-      await this.savePluginSettings();
+      this.options?.onSetPluginSettings?.(this.pluginSettings);
 
       log.debug(`Plugin "${id}" installed!`);
 
@@ -202,37 +208,11 @@ export default class PluginManager {
   }
 
   /**
-   * Loads the list of disabled auto-update plugins from the database
-   * @todo all plugin settings should be loaded and saved from the config files
-   */
-  private async loadPluginSettings() {
-    const setting = await UserSetting.get(PluginManager.PLUGIN_SETTINGS);
-    if (setting && setting.value) {
-      this.pluginSettings = setting.value as PluginSettings;
-      log.debug(
-        `Loaded plugin settings: ${JSON.stringify(this.pluginSettings)}`
-      );
-    }
-  }
-
-  /**
-   * Saves the current list of disabled auto-update plugins to the database
-   */
-  private async savePluginSettings() {
-    await UserSetting.set(
-      PluginManager.PLUGIN_SETTINGS,
-      JSON.stringify(this.pluginSettings)
-    );
-    log.debug(`Saved plugin settings.`);
-  }
-
-  /**
    * Enable or disable automatic update checks for a specific plugin
    */
   async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
     this.pluginSettings[id].autoUpdate = enabled;
-    // Persist the changes to the database
-    await this.savePluginSettings();
+    this.options?.onSetPluginSettings?.(this.pluginSettings);
   }
 
   /**
