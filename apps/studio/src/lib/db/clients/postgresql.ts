@@ -1364,7 +1364,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
     let awsCLIToken = undefined;
-    if( server.config.iamAuthOptions.authType === 'iam_cli') {
+    if( server.config.iamAuthOptions?.authType === 'iam_cli') {
       awsCLIToken = await getAWSCLIToken(server.config, server.config.iamAuthOptions);
     }
 
