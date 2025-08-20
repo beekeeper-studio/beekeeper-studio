@@ -29,7 +29,6 @@ export const AwsHandlers: IAwsHandlers = {
       proc.on("close", (code) => {
         if (code === 0) {
           const profiles = stdout.trim().split("\n");
-          console.log("AWS Profiles:", profiles);
           resolve(profiles);
         } else {
           console.error(`AWS CLI failed with code ${code}`);

@@ -2,7 +2,7 @@ import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-re
 import { RedshiftServerlessClient, GetCredentialsCommand } from "@aws-sdk/client-redshift-serverless";
 import {spawn} from "child_process";
 import rawLog from '@bksLogger';
-import { IDbConnectionServerConfig, RedshiftOptions } from '../types';
+import { IamAuthOptions, IDbConnectionServerConfig } from '../types';
 
 // The number of minutes to consider credentials expired *before* their actual expiration.
 // This accounts for potential client clock drift.
@@ -32,7 +32,7 @@ export interface TemporaryClusterCredentials {
     expiration: Date;
 }
 
-  export async function getAWSCLIToken(server: IDbConnectionServerConfig, options: RedshiftOptions): Promise<string> {
+  export async function getAWSCLIToken(server: IDbConnectionServerConfig, options: IamAuthOptions): Promise<string> {
     if (!options?.cliPath) {
       throw new Error('AZ command not specified');
     }
@@ -70,21 +70,17 @@ export interface TemporaryClusterCredentials {
       });
 
       proc.on('error', (err) => {
-        console.error(`Error executing AWS CLI command: ${err}`);
         reject(err);
       });
 
       proc.on('close', (code) => {
         if (code === 0) {
           try {
-            console.log(stdout)
             resolve(stdout.trim());
           } catch (err) {
-            console.error(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
             reject(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
           }
         } else {
-          console.error(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
           reject(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
         }
       });

@@ -62,7 +62,7 @@
         </label>
         <input
           name="server"
-          type="text"
+          type="password"
           class="form-control"
           v-model="config.host"
         />

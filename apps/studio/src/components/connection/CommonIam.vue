@@ -92,7 +92,7 @@
       <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">Access Key ID</label>
-          <input type="text" class="form-control" v-model="config.iamAuthOptions.accessKeyId">
+          <input type="password" class="form-control" v-model="config.iamAuthOptions.accessKeyId">
         </div>
         <div class="form-group">
           <label for="Secret Access Key">Secret Access Key</label>
