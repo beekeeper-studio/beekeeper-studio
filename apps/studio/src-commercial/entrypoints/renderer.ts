@@ -1,3 +1,9 @@
+// Uint8Array pollyfills https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/fromBase64
+import 'core-js/actual/typed-array/from-base64'
+import 'core-js/actual/typed-array/from-hex'
+import 'core-js/actual/typed-array/to-base64'
+import 'core-js/actual/typed-array/to-hex'
+
 import Vue from 'vue'
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
@@ -31,10 +37,14 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
+import { WebPluginManager } from '@/services/plugin/web'
+import PluginStoreService from '@/services/plugin/web/PluginStoreService'
+import * as UIKit from '@beekeeperstudio/ui-kit'
 
 (async () => {
 
   await window.main.requestPlatformInfo();
+  await window.main.requestBksConfigSource();
   rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
@@ -65,6 +75,22 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
       }
     });
 
+    UIKit.setClipboard(
+      new (class extends EventTarget implements Clipboard {
+        async writeText(text: string) {
+          window.main.writeTextToClipboard(text)
+        }
+        async readText() {
+          return window.main.readTextFromClipboard()
+        }
+        async read(): Promise<ClipboardItem[]> {
+          throw new Error("Not implemented")
+        }
+        async write(_items: ClipboardItem[]) {
+          throw new Error("Not implemented")
+        }
+      })()
+    );
 
     window.main.setTlsMinVersion("TLSv1");
     TimeAgo.addLocale(en)
@@ -116,7 +142,10 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
 
 
     Vue.config.productionTip = false
-    Vue.use(VueHotkey)
+    Vue.use(VueHotkey, {
+      "pageup": 33,
+      "pagedown": 34
+    })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)
@@ -155,6 +184,25 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
+    try {
+      const webPluginManager = new WebPluginManager(
+        Vue.prototype.$util,
+        new PluginStoreService(store, {
+          emit: (...args) => app.$root.$emit(...args),
+          on: (...args) => app.$root.$on(...args),
+          off: (...args) => app.$root.$off(...args),
+        })
+      )
+      await webPluginManager.initialize()
+      Vue.prototype.$plugin = webPluginManager;
+      if (window.platformInfo.isDevelopment) {
+        window.webPluginManager = webPluginManager; // For debugging
+      }
+    } catch (e) {
+      log.error("Error initializing web plugin manager", e)
+      if (!Vue.prototype.$plugin) Vue.prototype.$plugin = {}
+      Vue.prototype.$plugin.failedToInitialize = true
+    }
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")

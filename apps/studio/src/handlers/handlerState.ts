@@ -32,7 +32,7 @@ class State {
   connectionAbortController: AbortController = null;
 
   // enums
-  enumsInitialized: boolean = false;
+  enumsInitialized = false;
   
   private enumWatcher: FSWatcher = null;
 

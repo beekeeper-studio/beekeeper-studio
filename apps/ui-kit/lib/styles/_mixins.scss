@@ -20,11 +20,6 @@
   transition: box-shadow 0.28s ease-in-out;
 }
 
-@mixin dropdown-shadow {
-  box-shadow: 0 1px 4px rgba(black, 0.37) !important;
-}
-
-
 @mixin btn {
   display: inline-flex;
   align-items: center;
@@ -79,10 +74,10 @@
   font-size: 0.9rem;
   font-weight: normal;
   line-height: $input-height;
-  color: $text;
+  color: var(--bks-text);
   background: transparent;
   border-radius: $input-radius;
-  border: 1px solid $border-color;
+  border: 1px solid var(--bks-border-color);
   outline: none;
   box-shadow: none;
   width: 100%;
@@ -92,15 +87,15 @@
 @mixin bk-form-input {
   @include form-control;
   &:focus {
-    border-color: $input-highlight;
+    border-color: var(--bks-input-highlight);
   }
 }
 
 @mixin btn-flat {
-  color: $theme-base;
-  background: rgba($theme-base, 0.06);
+  color: var(--bks-theme-base);
+  background: rgb(from var(--bks-theme-base) r g b / 6%);
   &:hover, &:focus {
-    background: rgba($theme-base, 0.12);
+    background: rgb(from var(--bks-theme-base) r g b / 12%);
   }
 }
 
@@ -126,12 +121,4 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-@mixin small-wrap {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  max-width: 550px;
-  // max-height: -webkit-fill-available;
 }

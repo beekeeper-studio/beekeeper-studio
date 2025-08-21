@@ -1,3 +1,4 @@
+import { typedArrayToString } from '@/common/utils';
 import _ from 'lodash'
 import {CellComponent} from 'tabulator-tables'
 
@@ -15,6 +16,19 @@ export function escapeHtml(text: string): string | null {
   return text.replace(/[&<>"']/g, function (m) { return htmlMap[m]; });
 }
 
+
+interface KeyData {
+  isComposite: boolean;
+  [key: string]: any;
+}
+
+export interface FormatterParams {
+  fk: KeyData[] | false;
+  fkOnClick: false | ((_e: Event, cell: { [key: string]: any }) => void);
+  isPK: boolean;
+  binaryEncoding: string; // or boolean, depending on actual type
+}
+
 export interface YesNoParams {
   allowEmpty?: boolean
   falseEmpty?: boolean
@@ -27,9 +41,13 @@ function yesNoResult(value: boolean) {
 }
 
 export default {
-  niceString(value: any, truncate = false) {
+  niceString(value: any, truncate = false, binaryEncoding?: 'hex' | 'base64') {
     let cellValue = value.toString();
-    if(_.isArray(value) || (_.isObject(value) && !ArrayBuffer.isView(value))) {
+    if (_.isTypedArray(value)) {
+      cellValue = typedArrayToString(value, binaryEncoding)
+    } else if (_.isTypedArray(value?.buffer)) { // HACK: mongodb sends buffer this way
+      cellValue = typedArrayToString(value.buffer, binaryEncoding)
+    } else if (_.isArray(value) || _.isObject(value)) {
       cellValue = JSON.stringify(value)
     }
     return truncate ? _.truncate(cellValue, { length: 256 }) : cellValue

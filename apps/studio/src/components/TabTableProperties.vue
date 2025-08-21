@@ -86,6 +86,14 @@
                 >
                   <i class="material-icons-outlined">report_problem</i> Read Only
                 </span>
+                <span
+                  class="statusbar-item permission-warning"
+                  v-if="properties && properties.permissionWarnings && properties.permissionWarnings.length > 0"
+                  :title="permissionWarningsTooltip"
+                  @click="showPermissionWarnings"
+                >
+                  <i class="material-icons-outlined">warning</i> Limited Info
+                </span>
               </template>
             </div>
           </template>
@@ -134,6 +142,7 @@ import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import TablePartitionsVue from './tableinfo/TablePartitions.vue'
+import TableSchemaValidationVue from './tableinfo/TableSchemaValidation.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import { AppEvent } from '@/common/AppEvent'
@@ -199,6 +208,15 @@ export default {
           needsPartitions: true,
           component: TablePartitionsVue,
           dirty: false
+        },
+        {
+          id: 'schema-validation',
+          name: 'Schema Validation',
+          tableOnly: true,
+          mongoOnly: true,
+          needsProperties: false,
+          component: TableSchemaValidationVue,
+          dirty: false
         }
       ],
       activePill: 'schema', // the only tab that is always there.
@@ -219,7 +237,7 @@ export default {
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
-    ...mapGetters(['dialectData']),
+    ...mapGetters(['dialectData', 'dialect']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -262,7 +280,11 @@ export default {
           (this.supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
-        if(p.tableOnly) {
+        if (p.mongoOnly && this.dialect !== 'mongodb') {
+          return false
+        }
+        
+        if (p.tableOnly) {
           return isTable
         }
         return true
@@ -273,6 +295,10 @@ export default {
     },
     humanIndexSize() {
       return humanBytes(this.properties.indexSize)
+    },
+    permissionWarningsTooltip() {
+      if (!this.properties?.permissionWarnings?.length) return ''
+      return `Some information couldn't be displayed:\n${this.properties.permissionWarnings.join('\n')}`
     },
   },
   methods: {
@@ -324,6 +350,19 @@ export default {
         this.loading = false
       }
     },
+    showPermissionWarnings() {
+      if (!this.properties?.permissionWarnings?.length) return
+      
+      const warnings = this.properties.permissionWarnings
+      const message = `Some table information couldn't be displayed due to insufficient permissions:\n\n• ${warnings.join('\n• ')}`
+      
+      this.$noty.warning(message, { 
+        timeout: 8000,
+        modal: false,
+        layout: 'center',
+        theme: 'mint'
+      })
+    },
     async openTable() {
       this.$root.$emit("loadTable", { table: this.table })
     }
@@ -333,3 +372,18 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.permission-warning {
+  cursor: pointer;
+  color: #f39c12;
+}
+
+.permission-warning:hover {
+  color: #e67e22;
+}
+
+.permission-warning i {
+  color: inherit !important;
+}
+</style>

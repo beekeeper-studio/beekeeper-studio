@@ -1,20 +1,13 @@
 <template>
-  <div class="BksUiKit BksTextEditor">
-    <textarea
-      name="editor"
-      class="BksTextEditor-textarea editor"
-      ref="editor"
-      id=""
-      cols="30"
-      rows="10"
-    />
+  <div class="BksUiKit BksTextEditor" ref="editor">
   </div>
 </template>
 
 <script lang="ts">
 import mixin from "./mixin";
+import Vue from "vue";
 
-export default {
+export default Vue.extend({
   mixins: [mixin],
-};
+});
 </script>

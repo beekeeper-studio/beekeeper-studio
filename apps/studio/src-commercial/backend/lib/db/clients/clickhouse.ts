@@ -200,7 +200,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         is_in_primary_key,
         position,
         comment,
-        default_expression,
+        default_expression
       FROM system.columns
       WHERE database = currentDatabase()
         ${table ? "AND table = {table: String}" : ""}
@@ -286,6 +286,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     selects?: string[]
   ): Promise<TableResult> {
     const columns = await this.listTableColumns(table);
+    if (!selects || (selects?.length === 1 && selects[0] === '*')) {
+      // select all columns with the column names instead of *
+      selects = columns.map((v) => v.bksField.name);
+    }
     const queries = ClickHouseClient.buildSelectTopQuery(
       table,
       offset,
@@ -415,10 +419,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     _filter: FilterOptions = { schema: "public" }
   ): Promise<TableOrView[]> {
     const sql = `
-      SELECT table_name as name
-      FROM information_schema.views
-      WHERE table_schema = currentDatabase()
-      ORDER BY table_name
+      SELECT name
+      FROM system.tables
+      WHERE database = currentDatabase() AND engine = 'View'
+      ORDER BY name
     `;
     const result = await this.driverExecuteSingle(sql);
     const json = result.data as ResponseJSON<{ name: string }>;
@@ -860,16 +864,16 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   ): Promise<TableColumn[]> {
     const sql = `
       SELECT
-          c.name as name,
-          c.type as type,
-          v.table_name as table_name
-      FROM information_schema.views v
-      JOIN system.columns c
-        ON c.table = v.table_name
-        AND c.database = v.table_schema
-      WHERE v.is_insertable_into = 1
-        AND v.table_name = {table: String}
-        AND v.table_schema = currentDatabase()
+        c.name AS name,
+        c.type AS type,
+        t.name AS table_name
+      FROM system.tables AS t
+      JOIN system.columns AS c
+        ON c.table = t.name
+        AND c.database = t.database
+      WHERE t.database = currentDatabase()
+        AND t.name = {table: String}
+        AND t.engine = 'MaterializedView'
     `;
     const result = await this.driverExecuteSingle(sql, {
       params: { table },
@@ -911,10 +915,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     const sql = `
-      SELECT v.table_name as name
-      FROM information_schema.views v
-      WHERE v.is_insertable_into = 1
-        AND v.table_schema = currentDatabase()
+      SELECT name
+      FROM system.tables
+      WHERE database = currentDatabase()
+        AND engine = 'MaterializedView'
     `;
     const result = await this.driverExecuteSingle(sql);
     const json = result.data as ResponseJSON<{ name: string }>;
@@ -956,14 +960,16 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   async getViewCreateScript(view: string, _schema?: string): Promise<string[]> {
     const result = await this.driverExecuteSingle(
       `
-      SELECT view_definition
-      FROM information_schema.views
-      WHERE table_name = {view: String}
+      SELECT create_table_query
+      FROM system.tables
+      WHERE database = currentDatabase()
+        AND name = {view: String}
+        AND engine = 'View'
     `,
       { params: { view } }
     );
-    const json = result.data as ResponseJSON<{ view_definition: string }>;
-    return json.data.map((row) => row.view_definition);
+    const json = result.data as ResponseJSON<{ create_table_query: string }>;
+    return json.data.map((row) => row.create_table_query);
   }
 
   async getRoutineCreateScript(

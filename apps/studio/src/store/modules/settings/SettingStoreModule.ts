@@ -8,7 +8,8 @@ import config from "@/config";
 
 interface State {
   settings: IGroupedUserSettings,
-  initialized: boolean
+  initialized: boolean,
+  privacyMode: boolean
 }
 
 const M = {
@@ -20,7 +21,8 @@ const SettingStoreModule: Module<State, any> = {
   namespaced: true,
   state: () => ({
     settings: {},
-    initialized: false
+    initialized: false,
+    privacyMode: false
   }),
   mutations: {
     replaceSettings(state, newSettings: TransportUserSetting) {
@@ -34,12 +36,21 @@ const SettingStoreModule: Module<State, any> = {
     },
     setInitialized(state) {
       state.initialized = true;
+    },
+    SET_PRIVACY_MODE(state, value: boolean) {
+      state.privacyMode = value;
     }
   },
   actions: {
     async initializeSettings(context) {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
       context.commit(M.REPLACEALL, settings);
+      
+      const privacyModeSetting = settings.find(s => s.key === 'privacyMode');
+      if (privacyModeSetting) {
+        context.commit('SET_PRIVACY_MODE', privacyModeSetting.value);
+      }
+      
       context.commit('setInitialized');
     },
     async saveSetting(context, setting: TransportUserSetting) {
@@ -47,27 +58,36 @@ const SettingStoreModule: Module<State, any> = {
       context.commit(M.ADD, setting)
     },
     async save(context, { key, value }) {
-      if (!key || !value) return;
+      if (!key || value === undefined) return;
+    
       const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
       setValue(setting, value);
-      setting.key = key
+      setting.key = key;
       const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
       _.merge(setting, newSetting);
-      context.commit(M.ADD, setting)
-    }
+      context.commit(M.ADD, setting);
+    },
+    async togglePrivacyMode({ commit, state, dispatch }) {
+      const newPrivacyMode = !state.privacyMode;
+      commit('SET_PRIVACY_MODE', newPrivacyMode);
+      await dispatch('save', { key: 'privacyMode', value: newPrivacyMode });
+    },
   },
   getters: {
     settings(state) {
       return state.settings
     },
-    themeValue(state, _getters, _rootState, rootGetters) {
+    themeValue(state) {
       const theme = state.settings.theme ? state.settings.theme.value : null;
       if (!theme) return null
-      if (rootGetters.isCommunity && ['system', 'dark', 'light'].includes(theme as string)) {
-        return theme
-      }
-      return rootGetters.isUltimate ? theme : 'system';
+      return theme;
+    },
+    /** is the theme light or dark? */
+    themeType(_state, getters) {
+      if (!getters.themeValue) return 'light'
+      if (getters.themeValue.includes('dark')) return 'dark'
+      return 'light'
     },
     /** The keymap type to be used in text editor */
     userKeymap(state) {

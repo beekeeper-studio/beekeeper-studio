@@ -67,6 +67,8 @@ export const BeekeeperPlugin = {
       return config.defaultDatabase || "./unknown.db"
     } else if (config.connectionType === 'mongodb') {
       return config.url
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -93,6 +95,8 @@ export const BeekeeperPlugin = {
       connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
     } else if (config.connectionType === 'mongodb') {
       return config.url;
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
@@ -113,7 +117,20 @@ export const BeekeeperPlugin = {
       }
     })
     return fixed
-  }
+  },
+  /** If the bksConfig.security.lockMode is 'pin', calling this will prompt the
+  * user for a pin. Otherwise, it will do nothing. */
+  async unlock(): Promise<{ auth?: { input: string; mode: 'pin' }, cancelled: boolean }> {
+    if (window.bksConfig.security.lockMode === 'pin') {
+      return new Promise((resolve) => {
+        Vue.prototype.$modal.show('input-pin-modal', {
+          onSubmit: (pin: string) => resolve({ auth: { input: pin, mode: 'pin' }, cancelled: false }),
+          onCancel: () => resolve({ cancelled: true }),
+        })
+      })
+    }
+    return { cancelled: false }
+  },
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin

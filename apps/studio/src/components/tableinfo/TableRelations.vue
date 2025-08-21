@@ -47,7 +47,7 @@
 
     <div class="expand" />
 
-    <status-bar class="tabulator-footer">
+    <status-bar class="tabulator-footer" :active="active">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
         <x-button
@@ -115,8 +115,10 @@ import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
+import { SelectableCellMixin } from '@/mixins/selectableCell';
 
 export default Vue.extend({
+  mixins: [SelectableCellMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
@@ -139,13 +141,12 @@ export default Vue.extend({
     },
     hotkeys() {
       if (!this.active) return {}
-      const result = {}
-      result['f5'] = () => this.$emit('refresh')
-      result[this.ctrlOrCmd('n')] = this.addRow.bind(this)
-      result[this.ctrlOrCmd('r')] = () => this.$emit('refresh')
-      result[this.ctrlOrCmd('s')] = this.submitApply.bind(this)
-      result[this.ctrlOrCmd('shift+s')] = this.submitSql.bind(this)
-      return result
+      return this.$vHotkeyKeymap({
+        'general.refresh': () => this.$emit('refresh'),
+        'general.addRow': this.addRow.bind(this),
+        'general.save': this.submitApply.bind(this),
+        'general.openInSqlEditor': this.submitSql.bind(this)
+      })
     },
     notice() {
       const results = []
@@ -186,7 +187,7 @@ export default Vue.extend({
           widthGrow: 2,
           editable,
           editor: vueEditor(NullableInputEditorVue),
-
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'fromColumn',
@@ -196,7 +197,8 @@ export default Vue.extend({
           editorParams: {
             // @ts-expect-error Incorrectly typed
             valuesLookup: () => this.table.columns.map((c) => escapeHtml(c.columnName))
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         ...( showSchema ? [{
           field: 'toSchema',
@@ -218,7 +220,8 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getTables
           },
-          cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null)
+          cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null),
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'toColumn',
@@ -229,6 +232,7 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: this.getColumns
           },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'onUpdate',
@@ -238,7 +242,8 @@ export default Vue.extend({
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION'
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
           field: 'onDelete',
@@ -249,7 +254,8 @@ export default Vue.extend({
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION',
-          }
+          },
+          cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
       ]
       return this.canDrop ? [...results, trashButton(this.removeRow)] : results

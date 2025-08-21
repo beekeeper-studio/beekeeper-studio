@@ -32,8 +32,18 @@ export const api = {
     const platformInfo = await ipcRenderer.invoke('platformInfo')
     contextBridge.exposeInMainWorld('platformInfo', platformInfo);
   },
+  async requestBksConfigSource() {
+    const bksConfigSource = await ipcRenderer.invoke('bksConfigSource')
+    contextBridge.exposeInMainWorld('bksConfigSource', bksConfigSource);
+  },
   isReady() {
     ipcRenderer.send('ready');
+  },
+  enableConnectionMenuItems(){
+    ipcRenderer.send("enable-connection-menu-items");
+  },
+  disableConnectionMenuItems(){
+    ipcRenderer.send("disable-connection-menu-items");
   },
   send(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
@@ -82,11 +92,8 @@ export const api = {
 
     return [];
   },
-  async getLastExportPath(filename?: string) {
-    return await SettingsPlugin.get(
-      "lastExportPath",
-      path.join(homedir(), filename)
-    );
+  async defaultExportPath(filename?: string) {
+    return path.join(homedir(), filename);
   },
   showOpenDialogSync(args: any) {
     return electron.dialog.showOpenDialogSync(args);

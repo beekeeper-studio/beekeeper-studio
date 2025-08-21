@@ -4,7 +4,7 @@ import { IGroupedUserSettings } from '../transport/TransportUserSetting'
 import { IPlatformInfo } from '../IPlatformInfo'
 
 export default class extends DefaultMenu {
-  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo) {
+  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo, private bksConfig: IBksConfig) {
     super(settings, handler, platformInfo)
   }
 
@@ -17,7 +17,9 @@ export default class extends DefaultMenu {
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
-        this.menuItems.sidebarToggle,
+        this.menuItems.primarySidebarToggle,
+        this.menuItems.secondarySidebarToggle,
+        this.menuItems.reload,
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]
@@ -46,6 +48,7 @@ export default class extends DefaultMenu {
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
         this.menuItems.about,
+        this.menuItems.restart,
       ]
     };
 
@@ -113,7 +116,9 @@ export default class extends DefaultMenu {
         submenu: [
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
-          this.menuItems.exportTables
+          this.menuItems.exportTables,
+          this.menuItems.managePlugins,
+          ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : [])
         ]
       },
       ...windowMenu,

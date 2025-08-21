@@ -1,18 +1,33 @@
-.text-editor {
-  &.fold-without-line-numbers {
-    margin-left: -2rem;
-    .CodeMirror-linenumber {
-      display: none;
-    }
-  }
+@import "./text-editor-plugins/partial-read-only.scss";
 
+.BksTextEditor {
+  padding: 0.75rem 0;
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;
     }
   }
 
+  .cm-foldgutter {
+    font-weight: normal;
+  }
+
+  .cm-lineGutter-changed {
+    border-left: 2px solid $brand-warning;
+  }
+
   .CodeMirror-guttermaker-subtle {
     color: rgba($theme-base, 0.25);
+  }
+
+  .cm-completionMatchedText {
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .bks-error-marker {
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: rgba($brand-danger, 0.6);
   }
 }

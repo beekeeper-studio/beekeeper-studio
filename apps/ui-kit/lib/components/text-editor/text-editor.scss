@@ -1,16 +1,11 @@
-@use "../../../../../node_modules/codemirror/lib/codemirror";
-@use "../../../../../node_modules/codemirror/addon/hint/show-hint";
-@use "../../../../../node_modules/codemirror/theme/xq-light";
-@use "../../../../../node_modules/codemirror/addon/merge/merge";
-@use "../../../../../node_modules/codemirror/addon/search/matchesonscrollbar";
-@use "../../../../../node_modules/codemirror/addon/fold/foldgutter";
-@use "dialog.scss";
 @use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
-@use "../../styles/base";
+@use '../../styles/base';
+@use 'sass:color';
 
-.BksTextEditor {
-  --bks-text-editor-activeline-bg-color: #373831;
+:root {
+  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.03)};
+  --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.03)};
   --bks-text-editor-atom-fg-color: #ae81ff;
   --bks-text-editor-bg-color: #{$query-editor-bg};
   --bks-text-editor-bracket-fg-color: #{$text};
@@ -21,219 +16,463 @@
   --bks-text-editor-comment-tag-fg-color: #bc6283;
   --bks-text-editor-comment-type-fg-color: #bc6283;
   --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-fatcursor-bg-color: #77ee77;
   --bks-text-editor-def-fg-color: #fd971f;
-  --bks-text-editor-error-bg-color: #f8f8f0;
-  --bks-text-editor-error-fg-color: #f92672;
+  --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
+  --bks-text-editor-error-fg-color: #{$brand-danger};
   --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-focused-outline-color: #{$query-editor-bg};
+  --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.37)};
+  --bks-text-editor-foldgutter-fg-color-hover: #{$text-dark};
   --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-gutter-border-color: #{$query-editor-bg};
   --bks-text-editor-guttermarker-fg-color: #f8f8f2;
   --bks-text-editor-guttermarker-subtle-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-header-fg-color: #ae81ff;
+  --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-link-fg-color: #ae81ff;
-  --bks-text-editor-matchingbracket-fg-color: #ffffff;
+  --bks-text-editor-matchingbracket-fg-color: #999977;
+  --bks-text-editor-matchingbracket-bg-color: rgba(153, 153, 119, 0.2);
   --bks-text-editor-number-fg-color: #{$brand-warning};
   --bks-text-editor-property-fg-color: #a6e22e;
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
-  --bks-text-editor-string-fg-color: #{darken($brand-success, 20%)};
+  --bks-text-editor-matchingselection-bg-color: #{rgba($theme-base, 0.1)};
+  --bks-text-editor-searchmatch-bg-color: rgb(from var(--bks-brand-secondary) r g b / 25%);
+  --bks-text-editor-searchmatch-selected-bg-color: rgb(from var(--bks-brand-info) r g b / 30%);
+  --bks-text-editor-string-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
   --bks-text-editor-tag-fg-color: #f92672;
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-variable-3-fg-color: #66d9ef;
-  --bks-text-editor-variable-fg-color: #f8f8f2;
+  --bks-text-editor-variable-fg-color: #{color.adjust($text-dark, $lightness: -10%)};
+  --bks-text-editor-namespace-fg-color: #7a7a7a;
+  --bks-text-editor-type-fg-color: #{$text-dark};
+  --bks-text-editor-class-fg-color: #4EC9B0;
+  --bks-text-editor-enum-fg-color: #00aa77;
+  --bks-text-editor-interface-fg-color: #00cc88;
+  --bks-text-editor-struct-fg-color: #00bb99;
+  --bks-text-editor-typeParameter-fg-color: #00aaaa;
+  --bks-text-editor-parameter-fg-color: #2288dd;
+  --bks-text-editor-property-fg-color: #9CDCFE;
+  --bks-text-editor-enumMember-fg-color: #4488ff;
+  --bks-text-editor-decorator-fg-color: #cc33cc;
+  --bks-text-editor-event-fg-color: #5555ff;
+  --bks-text-editor-function-fg-color: #{$brand-warning};
+  --bks-text-editor-method-fg-color: #4488ee;
+  --bks-text-editor-macro-fg-color: #8855dd;
+  --bks-text-editor-label-fg-color: #666666;
+  --bks-text-editor-regexp-fg-color: #ee5555;
+  --bks-text-editor-operator-fg-color: #{$text-dark};
+  --bks-text-editor-definition-fg-color: #fd971f;
+  --bks-text-editor-variableName-fg-color: #{$text-dark};
+  --bks-text-editor-bool-fg-color: #ae81ff;
+  --bks-text-editor-null-fg-color: #ae81ff;
+  --bks-text-editor-className-fg-color: #4EC9B0;
+  --bks-text-editor-propertyName-fg-color: #{$brand-info};
+  --bks-text-editor-punctuation-fg-color: #{$text};
+  --bks-text-editor-meta-fg-color: #75715e;
+  --bks-text-editor-typeName-fg-color: #{$text-dark};
+  --bks-text-editor-labelName-fg-color: #C8C8C8;
+  --bks-text-editor-attributeName-fg-color: #{$brand-info};
+  --bks-text-editor-attributeValue-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
+  --bks-text-editor-heading-fg-color: #ae81ff;
+  --bks-text-editor-url-fg-color: #ae81ff;
+  --bks-text-editor-processingInstruction-fg-color: #75715e;
+  --bks-text-editor-special-string-fg-color: #{color.adjust($brand-success, $lightness: -10%)};
+  --bks-text-editor-name-fg-color: #{$text-dark};
+  --bks-text-editor-deleted-fg-color: #f92672;
+  --bks-text-editor-character-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
+  --bks-text-editor-color-fg-color: #ae81ff;
+  --bks-text-editor-standard-fg-color: #66d9ef;
+  --bks-text-editor-separator-fg-color: #{$text};
+  --bks-text-editor-changed-fg-color: #e6db74;
+  --bks-text-editor-annotation-fg-color: #75715e;
+  --bks-text-editor-modifier-fg-color: #66d9ef;
+  --bks-text-editor-self-fg-color: #fd971f;
+  --bks-text-editor-operatorKeyword-fg-color: #{$brand-pink};
+  --bks-text-editor-escape-fg-color: #ae81ff;
+  --bks-text-editor-link-fg-color: #ae81ff;
+  --bks-text-editor-strong-fg-color: #{$text-dark};
+  --bks-text-editor-emphasis-fg-color: #{$text-dark};
+  --bks-text-editor-strikethrough-fg-color: #{$text-light};
+  --bks-text-editor-sql-alias-fg-color: #{$text-dark};
+  --bks-text-editor-sql-field-fg-color: #{$brand-secondary};
 
+  // Panels (E.g. Find and replace)
+  --bks-text-editor-panel-bg-color: var(--bks-query-editor-bg);
+  --bks-text-editor-panel-fg-color: var(--bks-text-dark);
+
+  // Context Menu
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
+  --bks-text-editor-context-menu-fg-color: #{$text-dark};
+  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+}
+
+.BksTextEditor {
   height: 100%;
 
-  .CodeMirror {
+  // Common CodeMirror styles
+  .cm-editor {
     font-family: $font-family-mono;
-    padding: 0.75rem 0;
-    z-index: 1;
     height: 100%;
     background-color: var(--bks-text-editor-bg-color);
     color: var(--bks-text-editor-fg-color);
   }
 
-  div.CodeMirror-selected {
+  .cm-scroller {
+    outline: none;
+    font-family: $font-family-mono;
+  }
+
+  // Semantic token styles for v2 - using distinct colors in 6-digit hex format
+  .cm-semanticToken-namespace { color: var(--bks-text-editor-namespace-fg-color); }
+  .cm-semanticToken-type { color: var(--bks-text-editor-type-fg-color); }
+  .cm-semanticToken-class { color: var(--bks-text-editor-class-fg-color); }
+  .cm-semanticToken-enum { color: var(--bks-text-editor-enum-fg-color); }
+  .cm-semanticToken-interface { color: var(--bks-text-editor-interface-fg-color); }
+  .cm-semanticToken-struct { color: var(--bks-text-editor-struct-fg-color); }
+  .cm-semanticToken-typeParameter { color: var(--bks-text-editor-typeParameter-fg-color); }
+  .cm-semanticToken-parameter { color: var(--bks-text-editor-parameter-fg-color); }
+  .cm-semanticToken-variable { color: var(--bks-text-editor-variable-fg-color); }
+  .cm-semanticToken-property { color: var(--bks-text-editor-property-fg-color); }
+  .cm-semanticToken-enumMember { color: var(--bks-text-editor-enumMember-fg-color); }
+  .cm-semanticToken-event { color: var(--bks-text-editor-event-fg-color); }
+  .cm-semanticToken-function { color: var(--bks-text-editor-function-fg-color); }
+  .cm-semanticToken-method { color: var(--bks-text-editor-method-fg-color); }
+  .cm-semanticToken-macro { color: var(--bks-text-editor-macro-fg-color); }
+  .cm-semanticToken-keyword { color: var(--bks-text-editor-keyword-fg-color); }
+  .cm-semanticToken-comment { color: var(--bks-text-editor-comment-fg-color); }
+  .cm-semanticToken-string { color: var(--bks-text-editor-string-fg-color); }
+  .cm-semanticToken-number { color: var(--bks-text-editor-number-fg-color); }
+  .cm-semanticToken-regexp { color: var(--bks-text-editor-regexp-fg-color); }
+  .cm-semanticToken-operator { color: var(--bks-text-editor-operator-fg-color); }
+  .cm-semanticToken-decorator { color: var(--bks-text-editor-decorator-fg-color); }
+
+  // Token modifiers
+  [class*="cm-semanticToken-"][class*="-static"] { font-style: italic; }
+  [class*="cm-semanticToken-"][class*="-declaration"] { text-decoration: underline; }
+  [class*="cm-semanticToken-"][class*="-deprecated"] { text-decoration: line-through; }
+  [class*="cm-semanticToken-"][class*="-readonly"] { font-style: italic; }
+
+  // CodeMirror 6 basic syntax highlighting classes
+  .cm-keyword { color: var(--bks-text-editor-keyword-fg-color); }
+  .cm-comment { color: var(--bks-text-editor-comment-fg-color); }
+  .cm-string { color: var(--bks-text-editor-string-fg-color); }
+  .cm-variableName { color: var(--bks-text-editor-variableName-fg-color); }
+  .cm-definition { color: var(--bks-text-editor-definition-fg-color); }
+  .cm-function { color: var(--bks-text-editor-function-fg-color); }
+  .cm-number { color: var(--bks-text-editor-number-fg-color); }
+  .cm-bool { color: var(--bks-text-editor-bool-fg-color); }
+  .cm-null { color: var(--bks-text-editor-null-fg-color); }
+  .cm-className { color: var(--bks-text-editor-className-fg-color); }
+  .cm-propertyName { color: var(--bks-text-editor-propertyName-fg-color); }
+  .cm-operator { color: var(--bks-text-editor-operator-fg-color); }
+  .cm-punctuation { color: var(--bks-text-editor-punctuation-fg-color); }
+  .cm-bracket { color: var(--bks-text-editor-bracket-fg-color); }
+  .cm-meta { color: var(--bks-text-editor-meta-fg-color); }
+  .cm-atom { color: var(--bks-text-editor-atom-fg-color); }
+  .cm-typeName { color: var(--bks-text-editor-typeName-fg-color); }
+  .cm-namespace { color: var(--bks-text-editor-namespace-fg-color); }
+  .cm-labelName { color: var(--bks-text-editor-labelName-fg-color); }
+  .cm-attributeName { color: var(--bks-text-editor-attributeName-fg-color); }
+  .cm-attributeValue { color: var(--bks-text-editor-attributeValue-fg-color); }
+  .cm-heading { color: var(--bks-text-editor-heading-fg-color); }
+  .cm-url { color: var(--bks-text-editor-url-fg-color); }
+  .cm-processingInstruction { color: var(--bks-text-editor-processingInstruction-fg-color); }
+  .cm-special-string { color: var(--bks-text-editor-special-string-fg-color); }
+  .cm-name { color: var(--bks-text-editor-name-fg-color); }
+  .cm-sql-alias .cm-name { color: var(--bks-text-editor-sql-alias-fg-color); }
+  .cm-sql-field .cm-name { color: var(--bks-text-editor-sql-field-fg-color); }
+  .cm-deleted { color: var(--bks-text-editor-deleted-fg-color); }
+  .cm-character { color: var(--bks-text-editor-character-fg-color); }
+  .cm-macro { color: var(--bks-text-editor-macro-fg-color); }
+  .cm-color { color: var(--bks-text-editor-color-fg-color); }
+  .cm-standard { color: var(--bks-text-editor-standard-fg-color); }
+  .cm-separator { color: var(--bks-text-editor-separator-fg-color); }
+  .cm-changed { color: var(--bks-text-editor-changed-fg-color); }
+  .cm-annotation { color: var(--bks-text-editor-annotation-fg-color); }
+  .cm-modifier { color: var(--bks-text-editor-modifier-fg-color); }
+  .cm-self { color: var(--bks-text-editor-self-fg-color); }
+  .cm-operatorKeyword { color: var(--bks-text-editor-operatorKeyword-fg-color); }
+  .cm-escape { color: var(--bks-text-editor-escape-fg-color); }
+  .cm-regexp { color: var(--bks-text-editor-regexp-fg-color); }
+  .cm-link { color: var(--bks-text-editor-link-fg-color); }
+  .cm-strong { color: var(--bks-text-editor-strong-fg-color); }
+  .cm-emphasis { color: var(--bks-text-editor-emphasis-fg-color); }
+  .cm-strikethrough { color: var(--bks-text-editor-strikethrough-fg-color); }
+
+  // Selection
+  .cm-selectionBackground,
+  .cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
     background-color: var(--bks-text-editor-selected-bg-color);
   }
+  .cm-selectionMatch {
+    background-color: var(--bks-text-editor-matchingselection-bg-color);
+  }
 
-  .CodeMirror-gutters {
+  // Search
+  .cm-searchMatch { background-color: var(--bks-text-editor-searchmatch-bg-color); }
+  .cm-searchMatch-selected { background-color: var(--bks-text-editor-searchmatch-selected-bg-color); }
+
+  // Gutters and line numbers
+  .cm-gutters {
     background-color: var(--bks-text-editor-gutter-bg-color);
-    border: 0;
+    border-color: var(--bks-text-editor-gutter-border-color);
   }
 
-  .CodeMirror-guttermarker {
-    color: var(--bks-text-editor-guttermarker-fg-color);
+  .cm-foldgutter {
+    font-size: 1.2rem;
+    color: var(--bks-text-editor-foldgutter-fg-color);
+
+    &:hover {
+      color: var(--bks-text-editor-foldgutter-fg-color-hover);
+    }
   }
 
-  .CodeMirror-guttermarker-subtle {
-    color: var(--bks-text-editor-guttermarker-subtle-fg-color);
-  }
-
-  .CodeMirror-linenumber {
+  .cm-lineNumbers .cm-gutterElement {
     color: var(--bks-text-editor-linenumber-fg-color);
   }
 
-  .CodeMirror-cursor {
-    border-left-width: 1px;
-    border-left-style: solid;
+  // Focused state
+  .cm-focused {
+    outline-color: var(--bks-text-editor-focused-outline-color);
+  }
+
+  // Cursor
+  .cm-cursor {
     border-left-color: var(--bks-text-editor-cursor-bg-color);
   }
-
-  .CodeMirror span.cm-comment {
-    color: var(--bks-text-editor-comment-fg-color);
+  .cm-fat-cursor:not(.CodeMirror) {
+    background-color: var(--bks-text-editor-fatcursor-bg-color);
   }
 
-  .CodeMirror span.cm-atom {
-    color: var(--bks-text-editor-atom-fg-color);
-  }
-
-  .CodeMirror span.cm-number {
-    color: var(--bks-text-editor-number-fg-color);
-  }
-
-  .CodeMirror span.cm-comment.cm-attribute {
-    color: var(--bks-text-editor-comment-attribute-fg-color);
-  }
-
-  .CodeMirror span.cm-comment.cm-def {
-    color: var(--bks-text-editor-comment-def-fg-color);
-  }
-
-  .CodeMirror span.cm-comment.cm-tag {
-    color: var(--bks-text-editor-comment-tag-fg-color);
-  }
-
-  .CodeMirror span.cm-comment.cm-type {
-    color: var(--bks-text-editor-comment-type-fg-color);
-  }
-
-  .CodeMirror span.cm-property,
-  .CodeMirror span.cm-attribute {
-    color: var(--bks-text-editor-property-fg-color);
-  }
-
-  .CodeMirror span.cm-keyword {
-    color: var(--bks-text-editor-keyword-fg-color);
-  }
-
-  .CodeMirror span.cm-builtin {
-    color: var(--bks-text-editor-builtin-fg-color);
-  }
-
-  .CodeMirror span.cm-string {
-    color: var(--bks-text-editor-string-fg-color);
-  }
-
-  .CodeMirror span.cm-variable {
-    color: var(--bks-text-editor-variable-fg-color);
-  }
-
-  .CodeMirror span.cm-variable-2 {
-    color: var(--bks-text-editor-variable-2-fg-color);
-  }
-
-  .CodeMirror span.cm-variable-3,
-  .CodeMirror span.cm-type {
-    color: var(--bks-text-editor-variable-3-fg-color);
-  }
-
-  .CodeMirror span.cm-def {
-    color: var(--bks-text-editor-def-fg-color);
-  }
-
-  .CodeMirror span.cm-bracket {
-    color: var(--bks-text-editor-bracket-fg-color);
-  }
-
-  .CodeMirror span.cm-tag {
-    color: var(--bks-text-editor-tag-fg-color);
-  }
-
-  .CodeMirror span.cm-header {
-    color: var(--bks-text-editor-header-fg-color);
-  }
-
-  .CodeMirror span.cm-link {
-    color: var(--bks-text-editor-link-fg-color);
-  }
-
-  .CodeMirror span.cm-error {
-    background-color: var(--bks-text-editor-error-bg-color);
-    color: var(--bks-text-editor-error-fg-color);
-  }
-
-  .CodeMirror-activeline-background {
+  // Active line
+  .cm-activeLine {
     background-color: var(--bks-text-editor-activeline-bg-color);
   }
 
-  .CodeMirror-matchingbracket {
+  .cm-activeLineGutter {
+    background-color: var(--bks-text-editor-activeline-gutter-bg-color);
+  }
+
+  // Matching brackets
+  .cm-focused .cm-matchingBracket {
+    color: var(--bks-text-editor-matchingbracket-fg-color);
+    background-color: var(--bks-text-editor-matchingbracket-bg-color);
     text-decoration: underline;
-    color: var(--bks-text-editor-matchingbracket-fg-color) !important;
   }
 
-  .CodeMirror-focused .CodeMirror-selected {
-    background: var(--bks-text-editor-selected-bg-color);
+  // Marker styles
+  .cm-error {
+    background-color: var(--bks-text-editor-error-bg-color);
+    border-bottom: 2px dashed var(--bks-text-editor-error-fg-color);
+    border-radius: 2px;
   }
 
-  .CodeMirror-foldmarker {
-    color: $brand-primary;
-    text-shadow: none;
+  .cm-highlight {
+    background-color: var(--bks-text-editor-highlight-bg-color);
+    border-radius: 2px;
   }
 
-  .fold-without-line-numbers {
-    margin-left: -2rem;
-    .CodeMirror-linenumber {
-      display: none;
+  .cm-panel {
+    background-color: var(--bks-query-editor-bg);
+    color: var(--bks-text-dark);
+  }
+
+  .cm-textfield {
+    @include bk-form-input;
+    width: 15em;
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    font-size: 12px;
+  }
+
+  .cm-button {
+    @include btn;
+    background-image: none; // reset cm style
+    background-color: var(--bks-text-editor-button-bg-color);
+    text-transform: capitalize;
+  }
+
+  .cm-panel.cm-search {
+    border-bottom: 1px solid var(--bks-border-color);
+
+    button, input, label {
+      margin-top: 0;
+      margin-bottom: 0.4rem;
+      font-family: $font-family;
     }
-  }
 
-  .remove-json-root-brackets .CodeMirror-code {
-    & > div:first-child, & > div:last-child {
-      display: none;
+    label {
+      min-height: 25px;
+      input {
+        margin: 0;
+      }
     }
-  }
 
-  .CodeMirror-code {
-    line-height: 1.3!important;
-  }
+    [name=close] {
+      width: 1.6rem;
+      height: 1.6rem;
+      font-size: 1.3rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      color: inherit;
 
-  .CodeMirror-scrollbar-filler {
-    background-color: transparent;
+      &:hover, &:focus {
+        background: rgb(from var(--bks-theme-base) r g b / 12%);
+      }
+    }
+
+    .cm-button {
+      @include btn-flat;
+    }
+
+    > label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: capitalize;
+    }
   }
 }
 
 .BksTextEditor-hints {
-  --bks-text-editor-context-menu-bg-color: #{darken($theme-bg, 5%)};
-  --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
-  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
-  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
-
   font-family: $font-family-mono;
   padding: $gutter-h 0;
   border: 0;
   border-radius: 6px;
-  background-color: var(--bks-text-editor-context-menu-bg-color);
-  color: var(--bks-text-editor-context-menu-fg-color);
-  @include card-shadow;
-
-  .CodeMirror-hint {
-    padding: ($gutter-h * 0.5) $gutter-h;
-    border-radius: 0;
-    cursor: pointer;
+  &, &.cm-tooltip {
+    background-color: var(--bks-text-editor-context-menu-bg-color);
+    color: var(--bks-text-editor-context-menu-fg-color);
+    @include card-shadow;
   }
 
-  .CodeMirror-hint:hover:not(.CodeMirror-hint-active) {
-    background-color: var(--bks-text-editor-context-menu-item-bg-color-hover);
+  .cm-completionIcon-table::before {
+    font-family: "Material Icons";
+    content: "grid_on"; // Table icon
   }
 
-  li.CodeMirror-hint-active {
+  .cm-completionIcon-view::before, .cm-completionIcon-materialized-view::before {
+    font-family: "Material Icons";
+    content: "grid_on"; // View icon
+  }
+
+  .cm-completionIcon {
+    display: inline-block;
+    font-size: 90%;
+    font-family: 'Material Design Icons';
+    margin-right: 0.5em;
+    width: 0.8em;
+    text-align: center;
+  }
+  &.cm-tooltip-autocomplete ul li[aria-selected] {
     background-color: var(--bks-text-editor-context-menu-item-bg-color-active);
     color: var(--bks-text-editor-context-menu-item-fg-color-active);
   }
+  ul li {
+    padding: ($gutter-h * 0.5) $gutter-h;
+    border-radius: 0;
+    cursor: pointer;
 
-  .CodeMirror-scrollbar-filler {
-    background-color: transparent;
+    &:hover:not([aria-selected]) {
+      background-color: var(--bks-text-editor-context-menu-item-bg-color-hover);
+    }
+
+    // Option type-based styling
+    &.bks-autocomplete-option-keyword {
+      color: var(--bks-text-editor-keyword-fg-color);
+    }
+
+    &.bks-autocomplete-option-function {
+      color: var(--bks-text-editor-function-fg-color);
+    }
+
+    &.bks-autocomplete-option-variable {
+      color: var(--bks-text-editor-variable-fg-color);
+    }
+
+    &.bks-autocomplete-option-type {
+      color: var(--bks-text-editor-type-fg-color);
+    }
+
+    &.bks-autocomplete-option-class {
+      color: var(--bks-text-editor-class-fg-color);
+    }
+
+    &.bks-autocomplete-option-property {
+      color: var(--bks-text-editor-property-fg-color);
+    }
+
+    // SQL specific completion items - table icons
+    &[data-completion="table"]::before,
+    &.cm-completionIcon-table::before,
+    &.cm-completionLabel-table::before {
+      content: "󰓫"; // Table icon
+      margin-right: 6px;
+      font-family: 'Material Design Icons';
+      font-size: 16px;
+      color: #{$brand-primary};
+      vertical-align: middle;
+    }
+
+    &[data-completion="view"]::before,
+    &.cm-completionIcon-view::before,
+    &.cm-completionLabel-view::before {
+      content: "󰯃"; // View icon
+      margin-right: 6px;
+      font-family: 'Material Design Icons';
+      font-size: 16px;
+      color: #{$brand-secondary};
+      vertical-align: middle;
+    }
+
+    &[data-completion="materialized-view"]::before,
+    &.cm-completionIcon-materialized-view::before,
+    &.cm-completionLabel-materialized-view::before {
+      content: "󰅒"; // Materialized view icon
+      margin-right: 6px;
+      font-family: 'Material Design Icons';
+      font-size: 16px;
+      color: #{$brand-info};
+      vertical-align: middle;
+    }
+
+    // Column icon
+    &[data-completion="column"]::before,
+    &.cm-completionIcon-column::before,
+    &.cm-completionLabel-column::before {
+      content: "󰓼"; // Column icon
+      margin-right: 6px;
+      font-family: 'Material Design Icons';
+      font-size: 16px;
+      color: #{$brand-success};
+      vertical-align: middle;
+    }
+
+    // Type-based icons
+    &.cm-completionIcon-keyword::before,
+    &.cm-completionLabel-keyword::before {
+      content: "󰌆"; // Keyword icon
+      margin-right: 6px;
+      font-family: 'Material Design Icons';
+      font-size: 16px;
+      color: var(--bks-text-editor-keyword-fg-color);
+      vertical-align: middle;
+    }
+
+    &.cm-completionIcon-text::before,
+    &.cm-completionLabel-text::before,
+    &.cm-completionIcon-type::before,
+    &.cm-completionLabel-type::before {
+      content: "󰦪"; // Text icon
+      margin-right: 6px;
+      font-family: 'Material Design Icons';
+      font-size: 16px;
+      vertical-align: middle;
+    }
   }
 }

@@ -18,6 +18,7 @@ import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
+import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -26,11 +27,11 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
+import { initializeSecurity } from '@/backend/lib/security'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
-
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -47,7 +48,8 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    bksPlatformInfo: JSON.stringify(platformInfo)
+    bksPlatformInfo: JSON.stringify(platformInfo),
+    bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -113,11 +115,14 @@ let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
 let initialized = false
 
 async function initBasics() {
   // this creates the app:// protocol we use for loading assets
   ProtocolBuilder.createAppProtocol()
+  // this creates the plugin:// protocol we use for loading plugins
+  ProtocolBuilder.createPluginProtocol()
   if (initialized) return settings
   initialized = true
   await ormConnection.connect()
@@ -143,7 +148,7 @@ async function initBasics() {
   }
 
   log.debug("setting up the menu")
-  menuHandler = new MenuHandler(electron, settings)
+  menuHandler = new MenuHandler(electron, settings, bksConfig)
   menuHandler.initialize()
   log.debug("Building the window")
   log.debug("managing updates")
@@ -160,6 +165,8 @@ async function initBasics() {
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
+  ipcMain.emit("disable-connection-menu-items");
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -167,6 +174,10 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('platformInfo', () => {
   return platformInfo;
+})
+
+ipcMain.handle('bksConfigSource', () => {
+  return bksConfig.source;
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {
@@ -215,6 +226,7 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
+      initializeSecurity(app);
       await createUtilityProcess()
 
       await buildWindow(settings)

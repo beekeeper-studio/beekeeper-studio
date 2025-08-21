@@ -1,3 +1,4 @@
+@use "sass:color";
 // Global
 // ------------------------------------
 a {
@@ -69,7 +70,7 @@ hr {
   background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
 }
 ::-webkit-scrollbar-thumb {
-  background: mix($theme-base, $theme-bg, 20%);
+  background: color.mix($theme-base, $theme-bg, 20%);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-button {
@@ -138,7 +139,7 @@ x-buttons > x-button[menu].btn {
   background: $brand-info;
   color: rgba(black, 0.87);
   &:hover, &:focus {
-    background: lighten($brand-info, 8%);
+    background: color.adjust($brand-info, $lightness: 8%);
     color: rgba(black, 0.87);
   }
 }
@@ -201,7 +202,7 @@ x-buttons > x-button.btn-rounded {
       color: rgba(black, 0.87);
     }
     &:hover, &:focus {
-      background: darken($theme-primary, 8%);
+      background: color.adjust($theme-primary, $lightness: -8%);
       .material-icons {
         color: rgba(black, 0.87);
       }
@@ -356,7 +357,7 @@ select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   padding: 0 0.75rem;
   option {
-    background: lighten($theme-bg, 3%);
+    background: color.adjust($theme-bg, $lightness: 3%);
     color: $text;
     &:checked,
     &:hover {
@@ -463,7 +464,7 @@ input[type="radio"] {
   transition: background 0.2s ease-in-out;
   cursor: pointer;
   &:checked{
-    background: darken($theme-primary, 10%);
+    background: color.adjust($theme-primary, $lightness: -10%);
     color: rgba(black, 0.87);
     box-shadow: none;
   }
@@ -510,7 +511,7 @@ input[type=file] {
   color: $brand-info!important;
 }
 .text-danger {
-  color: lighten($brand-danger, 5%)!important;
+  color: color.adjust($brand-danger, $lightness: 5%)!important;
 }
 .text-warning {
   color: $brand-warning!important;
@@ -561,7 +562,7 @@ input[type=file] {
 }
 .item-icon {
   font-size: 12px;
-  color: darken($theme-primary, 15%);
+  color: color.adjust($theme-primary, $lightness: -15%);
   &.schema-icon {
     color: $text-lighter;
   }
@@ -664,7 +665,7 @@ input[type=file] {
   justify-content: flex-end;
 }
 .card {
-  background: lighten($theme-bg, 6%);
+  background: color.adjust($theme-bg, $lightness: 6%);
   @include card-shadow;
 }
 .card-flat {
@@ -782,16 +783,16 @@ input[type=file] {
   }
 }
 .alert-danger {
-  color: lighten($brand-danger, 5%);
+  color: color.adjust($brand-danger, $lightness: 5%);
 }
 .alert-warning {
-  color: lighten($brand-warning, 5%);
+  color: color.adjust($brand-warning, $lightness: 5%);
 }
 .alert-info {
-  color: lighten($brand-info, 5%);
+  color: color.adjust($brand-info, $lightness: 5%);
 }
 .alert-success {
-  color: lighten($brand-success, 5%);
+  color: color.adjust($brand-success, $lightness: 5%);
 }
 
 // Dropdown

@@ -219,5 +219,24 @@ export const CLIENTS: ClientConfig[] = [
   {
     key: 'mongodb',
     name: 'MongoDB'
+  },
+  {
+    key: 'sqlanywhere',
+    name: 'SqlAnywhere',
+    defaultPort: 2638,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath'
+    ]
+  },
+  {
+    key: 'surrealdb',
+    name: 'SurrealDB',
+    defaultPort: 8000,
+    disabledFeatures: [
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'server:ssl'
+    ]
   }
 ];

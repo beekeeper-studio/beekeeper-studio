@@ -10,28 +10,38 @@
     <div
       v-else
       class="interface-wrap row"
+      ref="splitContainer"
     >
+      <global-sidebar
+        v-if="!minimalMode"
+        @select="handleSelectGlobalSidebarItem"
+        :active-item="globalSidebarActiveItem"
+        ref="globalSidebar"
+      />
+
       <sidebar
         ref="sidebar"
-        :class="{hide: !sidebarShown}"
+        class="primary-sidebar"
       >
         <core-sidebar
           @databaseSelected="databaseSelected"
-          @toggleSidebar="toggleSidebar"
-          :sidebar-shown="sidebarShown"
         />
-        <statusbar>
-          <ConnectionButton />
-        </statusbar>
       </sidebar>
+
       <div
         ref="content"
-        class="page-content flex-col"
+        class="page-content flex-col main-content"
         id="page-content"
       >
         <core-tabs />
       </div>
+
+      <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
+    <global-status-bar
+      :connection-button-width="primarySidebarWidth"
+      :connection-button-icon-width="globalSidebarWidth"
+    />
     <quick-search
       v-if="quickSearchShown"
       @close="quickSearchShown=false"
@@ -45,86 +55,137 @@
 <script lang="ts">
   import Sidebar from './common/Sidebar.vue'
   import CoreSidebar from './sidebar/CoreSidebar.vue'
+  import SecondarySidebar from './sidebar/SecondarySidebar.vue'
+  import GlobalSidebar from './sidebar/GlobalSidebar.vue'
   import CoreTabs from './CoreTabs.vue'
   import Split from 'split.js'
-  import Statusbar from './common/StatusBar.vue'
-  import ConnectionButton from './sidebar/core/ConnectionButton.vue'
   import ExportManager from './export/ExportManager.vue'
   import {AppEvent} from '../common/AppEvent'
   import QuickSearch from './quicksearch/QuickSearch.vue'
   import ProgressBar from './editor/ProgressBar.vue'
   import LostConnectionModal from './LostConnectionModal.vue'
+  import GlobalStatusBar from './GlobalStatusBar.vue'
   import Vue from 'vue'
-  import { SmartLocalStorage } from '@/common/LocalStorage'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
-  import { mapGetters } from 'vuex'
+  import { mapGetters, mapActions, mapState } from 'vuex'
+  import _ from "lodash"
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, Statusbar, ConnectionButton, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal },
+    components: { CoreSidebar, CoreTabs, Sidebar, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalStatusBar, GlobalSidebar },
     data() {
       /* eslint-disable */
       return {
         split: null,
-        sidebarShown: true,
         quickSearchShown: false,
-        rootBindings: [
-          // @ts-ignore
-          { event: AppEvent.quickSearch, handler: this.showQuickSearch},
-          // @ts-ignore
-          { event: AppEvent.toggleSidebar, handler: this.toggleSidebar }
-        ],
-        initializing: true
+        initializing: true,
+        resizeObserver: null,
+        primarySidebarWidth: 0,
+        globalSidebarWidth: 0,
       }
       /* eslint-enable */
     },
     computed: {
+      ...mapState(['usedConfig']),
       ...mapGetters(['minimalMode']),
+      ...mapState("sidebar", [
+        "primarySidebarOpen",
+        "primarySidebarSize",
+        "secondarySidebarOpen",
+        "secondarySidebarSize",
+        "globalSidebarActiveItem",
+      ]),
       keymap() {
-        const results = {}
-        results[this.ctrlOrCmd('p')] = () => this.quickSearchShown = true
-        return results
+        const result = this.$vHotkeyKeymap({
+          'general.openQuickSearch': this.showQuickSearch
+        });
+        return result;
       },
       splitElements() {
         return [
-          this.$refs.sidebar.$refs.sidebar,
-          this.$refs.content
+          this.$refs.sidebar.$el,
+          this.$refs.content,
+          this.$refs.secondarySidebar.$el
         ]
-      }
+      },
+      rootBindings() {
+        return [
+          { event: AppEvent.quickSearch, handler: this.showQuickSearch},
+          { event: AppEvent.togglePrimarySidebar, handler: this.handleToggleOpenPrimarySidebar },
+          { event: AppEvent.toggleSecondarySidebar, handler: this.handleToggleOpenSecondarySidebar },
+        ]
+      },
     },
     watch: {
+      async usedConfig(){
+        await this.$store.dispatch('pins/loadPins');
+      },
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const lastSavedSplitSizes = SmartLocalStorage.getItem("interfaceSplitSizes")
-          const splitSizes = lastSavedSplitSizes ? JSON.parse(lastSavedSplitSizes) : [25, 75]
+          const primarySidebarSize = this.primarySidebarOpen ? this.primarySidebarSize : 0
+          const secondarySidebarSize = this.secondarySidebarOpen ? this.secondarySidebarSize : 0
+          const mainContentSize = 100 - (primarySidebarSize + secondarySidebarSize)
+
+          const splitSizes = [
+            primarySidebarSize,
+            mainContentSize,
+            secondarySidebarSize,
+          ]
 
           this.split = Split(this.splitElements, {
-            elementStyle: (_dimension, size) => ({
-                'flex-basis': `calc(${size}%)`,
-            }),
+            snapOffset: [this.$bksConfig.ui.layout.primarySidebarMinWidth, 0, this.$bksConfig.ui.layout.secondarySidebarMinWidth],
             sizes: splitSizes,
-            minSize: [25, 75],
-            expandToMin: true,
+            minSize: [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
             gutterSize: 5,
-            onDragEnd: () => {
-              const splitSizes = this.split.getSizes()
-              SmartLocalStorage.addItem("interfaceSplitSizes", splitSizes)
-            }
+            elementStyle: (_dimension, elementSize) => ({
+              width: `${elementSize}%`,
+            }),
+            gutter: (_index, direction) => {
+                const gutter = document.createElement('div')
+                gutter.className = `gutter gutter-${direction}`
+                return gutter
+            },
+            onDragEnd: ([primarySidebarSize, _mainContentSize, secondarySidebarSize]) => {
+              // Define a very small threshold to detect if sidebar has effectively zero width
+              // Use a tiny value like 1% to account for any rounding errors
+              const COLLAPSE_THRESHOLD = 1
+
+              // Check if sidebars are effectively collapsed
+              const primaryOpen = primarySidebarSize > COLLAPSE_THRESHOLD
+              const secondaryOpen = secondarySidebarSize > COLLAPSE_THRESHOLD
+
+              this.setPrimarySidebarOpen(primaryOpen)
+              this.setSecondarySidebarOpen(secondaryOpen)
+
+              if (primaryOpen) {
+                this.setPrimarySidebarSize(primarySidebarSize)
+              }
+
+              if (secondaryOpen) {
+                this.setSecondarySidebarSize(secondarySidebarSize)
+              }
+            },
           })
         })
       },
-      minimalMode() {
-        if (this.minimalMode) {
-          this.sidebarShown = true
-        }
-      },
     },
     mounted() {
-      this.$store.dispatch('pins/loadPins')
       this.$store.dispatch('hideEntities/load')
       this.registerHandlers(this.rootBindings)
       this.$nextTick(() => {
         this.initializing = false
+        // This is the easiest way to track the width of the primary sidebar
+        // in real time because sidebar can be resized by dragging or clicking
+        // the toggle button. An alternative to this would be assigning the
+        // width on drag and click events.
+        this.resizeObserver = new ResizeObserver((entries) => {
+          const primarySidebar = entries[0]
+          this.primarySidebarWidth = this.globalSidebarWidth + primarySidebar.contentRect.width
+        })
+        this.$nextTick(() => {
+          this.globalSidebarWidth = this.$refs.globalSidebar.$el.offsetWidth
+          this.resizeObserver.observe(this.splitElements[0])
+        })
       })
     },
     beforeDestroy() {
@@ -136,21 +197,124 @@
       if(this.split) {
         this.split.destroy()
       }
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect()
+      }
     },
     methods: {
+      ...mapActions({
+        setPrimarySidebarOpen: "sidebar/setPrimarySidebarOpen",
+        setPrimarySidebarSize: "sidebar/setPrimarySidebarSize",
+        setSecondarySidebarOpen: "sidebar/setSecondarySidebarOpen",
+        setSecondarySidebarSize: "sidebar/setSecondarySidebarSize",
+        setGlobalSidebarActiveItem: "sidebar/setGlobalSidebarActiveItem",
+      }),
       showQuickSearch() {
         this.quickSearchShown = true
       },
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
       },
-      toggleSidebar() {
-        if (this.minimalMode) {
-          // Always show sidebar (table list) in minimal mode
-          this.sidebarShown = true
+      // Normalizes the sizes array to ensure they sum to exactly 100
+      normalizeSizes(sizes: [number, number, number]) {
+        const sum = sizes.reduce((acc, size) => acc + size, 0)
+        if (Math.abs(sum - 100) < 0.001) return sizes // Already very close to 100
+        if (sum === 0) return [0, 100, 0] // Fallback to default distribution
+        return sizes.map((size) => (size / sum) * 100)
+      },
+
+      // Expands a pane to the specified size while respecting minimum widths
+      expandSplitPane(paneIndex: number, targetSize: number) {
+        // size = in percent, width = in pixels
+        const containerSize = this.$refs.splitContainer.offsetWidth
+        const mainContentMinSize = (this.$bksConfig.ui.layout.mainContentMinWidth / containerSize) * 100
+        const primarySidebarMinSize = (this.$bksConfig.ui.layout.primarySidebarMinWidth / containerSize) * 100
+        const secondarySidebarMinSize = (this.$bksConfig.ui.layout.secondarySidebarMinWidth / containerSize) * 100
+
+        // Get current sizes
+        const currentSizes = this.split.getSizes()
+        const updatedSizes = [...currentSizes]
+
+        // Calculate available space and needed space
+        const mainIndex = 1 // Main content is always at index 1
+        const otherPaneIndex = paneIndex === 0 ? 2 : 0 // Other sidebar index
+
+        // Calculate size changes
+        const sizeChange = targetSize - currentSizes[paneIndex]
+        updatedSizes[paneIndex] = targetSize
+
+        // Try to take space from main content first
+        if (currentSizes[mainIndex] - sizeChange >= mainContentMinSize) {
+          // Main content has enough space
+          updatedSizes[mainIndex] = currentSizes[mainIndex] - sizeChange
         } else {
-          this.sidebarShown = !this.sidebarShown
+          // Main content needs to maintain minimum size
+          updatedSizes[mainIndex] = mainContentMinSize
+
+          // Need to take remaining space from other pane
+          const remainingChange = sizeChange - (currentSizes[mainIndex] - mainContentMinSize)
+          const otherPaneMinSize = otherPaneIndex === 0 ? primarySidebarMinSize : secondarySidebarMinSize
+
+          if (currentSizes[otherPaneIndex] - remainingChange >= otherPaneMinSize) {
+            // Other pane has enough space
+            updatedSizes[otherPaneIndex] = currentSizes[otherPaneIndex] - remainingChange
+          } else {
+            // Other pane needs to maintain minimum size
+            updatedSizes[otherPaneIndex] = otherPaneMinSize
+
+            // If we get here, we need to reduce the target pane's size
+            const totalAvailable = 100 - mainContentMinSize - otherPaneMinSize
+            updatedSizes[paneIndex] = totalAvailable
+          }
         }
+
+        // Normalize sizes to ensure they sum to 100
+        const normalizedSizes = this.normalizeSizes(updatedSizes as [number, number, number])
+        this.split.setSizes(normalizedSizes)
+
+        if (this.primarySidebarOpen) {
+          this.setPrimarySidebarSize(normalizedSizes[0])
+        }
+        if (this.secondarySidebarOpen) {
+          this.setSecondarySidebarSize(normalizedSizes[2])
+        }
+      },
+      toggleOpenPrimarySidebar(force?: boolean) {
+        const open = typeof force === 'undefined'
+          ? !this.primarySidebarOpen
+          : force
+
+        if (open) {
+          this.expandSplitPane(0, this.primarySidebarSize)
+        } else {
+          this.split.collapse(0)
+        }
+
+        this.setPrimarySidebarOpen(open)
+      },
+      handleToggleOpenPrimarySidebar() {
+        this.toggleOpenPrimarySidebar()
+      },
+      handleToggleOpenSecondarySidebar(force?: boolean) {
+        const open = typeof force === 'undefined'
+          ? !this.secondarySidebarOpen
+          : force
+
+        if (open) {
+          this.expandSplitPane(2, this.secondarySidebarSize)
+        } else {
+          this.split.collapse(2)
+        }
+
+        this.setSecondarySidebarOpen(open)
+      },
+      handleSelectGlobalSidebarItem(item) {
+        if (this.globalSidebarActiveItem === item) {
+          this.toggleOpenPrimarySidebar()
+        } else if(!this.primarySidebarOpen) {
+          this.toggleOpenPrimarySidebar(true)
+        }
+        this.setGlobalSidebarActiveItem(item);
       },
     }
   })

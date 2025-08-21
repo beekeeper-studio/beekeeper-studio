@@ -135,6 +135,10 @@ export function runCommonTests(getUtil, opts = {}) {
     test("primary key tests", async () => {
       await getUtil().primaryKeyTests()
     })
+    
+    test("composite key tests", async () => {
+      await getUtil().compositeKeyTests()
+    })
 
     describe("Table Structure", () => {
       test("should fetch table properties", async () => {
@@ -402,6 +406,10 @@ export function runCommonTests(getUtil, opts = {}) {
   describe("SQLGenerator", () => {
     test("should generate scripts for creating a primary key with autoincrement", async () => {
       await getUtil().buildCreatePrimaryKeysAndAutoIncrementTests()
+    })
+
+    test("should generate filter query", async () => {
+      await getUtil().getQueryForFilterTest()
     })
   })
 

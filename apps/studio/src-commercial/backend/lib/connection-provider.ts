@@ -50,6 +50,8 @@ export default {
       azureAuthOptions: config.azureAuthOptions,
       authId: config.authId,
       libsqlOptions: config.libsqlOptions,
+      sqlAnywhereOptions: config.sqlAnywhereOptions,
+      surrealDbOptions: config.surrealDbOptions,
       runtimeExtensions: sqliteExtension ? [sqliteExtension] : []
     }
   },

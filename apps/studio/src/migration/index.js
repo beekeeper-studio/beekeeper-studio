@@ -12,6 +12,7 @@ import dev4 from './dev-4'
 import dev5 from './dev-5'
 import dev6 from './dev-6'
 import dev7 from './dev-7'
+import dev8 from './dev-8'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -48,14 +49,29 @@ import lastUsedWorkspace from './20240923_user_settings_default_workspace'
 import userSettingKeymap from './20241017_add_user_setting_keymap'
 import missingUserSettings from './20241017_add_missing_user_settings'
 import useBeta from './20241009_add_beta_toggle'
+import tabHistoryUpdates from './20241116_tab_history_updates'
 import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
 import addNewUrlField from './20250128_add_new_url_field'
+import tabHistoryIndex from './20250211_add_tab_history_index'
+import fixOracleData from './20250225_oracle_default_connection_method'
+import addInstallationId from './20250404_add_installation_id'
+import sqlAnywhereOptions from './20250414_add_anywhere_options'
+import disabledPluginAutoUpdates from './20250522_add_disabled_plugin_auto_updates'
+import preinstalledPlugins from "./20250523_add_preinstalled_plugins"
+import addContextToTabs from "./20250527_add_context_to_tabs"
+import addPluginSettings from "./20250529_add_plugin_settings"
+import addPrivacyModeSetting from "./20250618_add_privacy_mode_setting"
+import createUserPins from './20250604_create_user_pins'
+import createPluginData from './20250630_create_plugin_data'
+import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
+import surrealDbOptions from './20250702_add_surrealdb_options'
 
 import ultimate from './ultimate/index'
 
 import UserSettingsWindowPosition from './20240303_user_settings_window_position'
 
 import rawLog from "@bksLogger";
+import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder'
 
 
 const logger = rawLog.scope('migrations');
@@ -76,7 +92,17 @@ const realMigrations = [
   firebirdConnection, exportPath, UserSettingsWindowPosition,
   demoSetup, minimalMode, tokenCache, libsqlOptions, nameTokenCache, lastUsedWorkspace,
   maxAllowedAppRelease, userSettingKeymap, missingUserSettings,
-  useBeta, deleteDuplicateConnections, addNewUrlField
+  useBeta,
+  deleteDuplicateConnections,
+  tabHistoryUpdates,
+  addNewUrlField,
+  tabHistoryIndex,
+  fixOracleData,
+  addInstallationId,
+  sqlAnywhereOptions,
+  disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
+  createPluginData, createEncryptedPluginData,
+  surrealDbOptions
 ]
 
 // fixtures require the models
@@ -85,7 +111,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3, dev4, dev5, dev6, dev7
+  dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]
@@ -129,10 +155,10 @@ export default class {
     const runner = this.connection.connection.createQueryRunner()
     try {
       await runner.query(setupSQL)
-      for(let i = 0; i < migrations.length; i++) {
+      for (let i = 0; i < migrations.length; i++) {
         const migration = migrations[i]
         logger.debug(`Checking migration ${migration.name}`)
-        if(migration.env && migration.env !== this.env) {
+        if (migration.env && migration.env !== this.env) {
           // env defined, and does not match
           logger.debug(`Skipping ${migration.name} in ${this.env}, required ${migration.env} `)
           continue

@@ -1,6 +1,7 @@
 ---
 title: Firebird
 summary: "How to connect to Firebird 3+ from Beekeeper Studio with Legacy Authentication"
+icon: material/database
 ---
 
 Beekeeper Studio doesn't support the firebird 3+ wire protocol yet, so your firebird server needs to allow legacy connections.

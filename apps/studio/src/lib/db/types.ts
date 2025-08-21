@@ -1,7 +1,7 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -20,7 +20,9 @@ export const ConnectionTypes = [
   { name: 'Firebird', value: 'firebird'},
   { name: 'DuckDB', value: 'duckdb' },
   { name: 'ClickHouse', value: 'clickhouse' },
-  { name: 'MongoDB', value: 'mongodb' }
+  { name: 'MongoDB', value: 'mongodb' },
+  { name: 'SqlAnywhere', value: 'sqlanywhere' },
+  { name: 'SurrealDB', value: 'surrealdb' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -34,6 +36,7 @@ export const TableFilterSymbols = [
   { value: '=', label: 'equals' },
   { value: '!=', label: 'does not equal'},
   { value: 'like', label: 'like' },
+  { value: 'not like', label: 'not like' },
   { value: '<', label: 'less than' },
   { value: '<=', label: 'less than or equal' },
   { value: '>', label: 'greater than'},
@@ -103,6 +106,38 @@ export interface LibSQLOptions {
   syncPeriod?: number;
 }
 
+export interface SQLAnywhereOptions {
+  mode: 'server' | 'file';
+  serverName?: string;
+  databaseFile?: string;
+}
+
+export interface SurrealDBOptions {
+  authType?: SurrealAuthType;
+  protocol?: 'http' | 'https' | 'ws' | 'wss';
+  namespace?: string;
+  token?: string;
+}
+
+export enum SurrealAuthType {
+  Root,
+  Namespace,
+  Database,
+  RecordAccess,
+  Token,
+  Anonymous
+}
+
+export const SurrealAuthTypes = [
+  { name: 'Root', value: SurrealAuthType.Root },
+  { name: 'Namespace', value: SurrealAuthType.Namespace },
+  { name: 'Database', value: SurrealAuthType.Database },
+  { name: 'Record Access', value: SurrealAuthType.RecordAccess },
+  { name: 'Token', value: SurrealAuthType.Token },
+  { name: 'Anonymous', value: SurrealAuthType.Anonymous }
+];
+
+
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
@@ -115,6 +150,8 @@ export interface IDbConnectionDatabase {
   database: string,
   connected: Nullable<boolean>,
   connecting: boolean,
+  // Only used for surrealdb
+  namespace: string
 }
 
 export interface IDbConnectionServerSSHConfig {
@@ -160,6 +197,8 @@ export interface IDbConnectionServerConfig {
   azureAuthOptions?: AzureAuthOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
+  sqlAnywhereOptions?: SQLAnywhereOptions
+  surrealDbOptions?: SurrealDBOptions
   runtimeExtensions?: string[]
 }
 
@@ -170,6 +209,8 @@ export interface IBasicDatabaseClient {
   listCharsets(): Promise<string[]>,
   getDefaultCharset(): Promise<string>,
   listCollations(charset: string): Promise<string[]>,
+  getCompletions(cmd: string): Promise<string[]>,
+  getShellPrompt(): Promise<string>,
 
   connect(): Promise<void>,
   disconnect(): Promise<void>,
@@ -185,6 +226,7 @@ export interface IBasicDatabaseClient {
   getTableReferences(table: string, schema?: string): Promise<string[]>,
   getTableKeys(table: string, schema?: string): Promise<TableKey[]>,
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
+  executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, options?: any): Promise<CancelableQuery>,
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
@@ -200,6 +242,9 @@ export interface IBasicDatabaseClient {
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,
   getMaterializedViewCreateScript(view: string, schema?: string): Promise<string[]>,
   getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>,
+  createTable(table: CreateTableSpec): Promise<void>,
+  getCollectionValidation(collection: string): Promise<any>,
+  setCollectionValidation(params: any): Promise<void>,
 
   alterTableSql(change: AlterTableSpec): Promise<string>,
   alterTable(change: AlterTableSpec): Promise<void>,
@@ -239,4 +284,7 @@ export interface IBasicDatabaseClient {
   importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
   importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
   importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+
+  /** Returns a query for the given filter */
+  getQueryForFilter(filter: TableFilter): Promise<string>
 }

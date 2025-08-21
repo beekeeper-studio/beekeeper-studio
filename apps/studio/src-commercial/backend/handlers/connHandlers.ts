@@ -1,19 +1,22 @@
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult, ImportFuncOptions } from "@/lib/db/models";
+import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
-import { AlterPartitionsSpec, AlterTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
-import ConnectionProvider from '../lib/connection-provider'; 
+import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
+import bksConfig from "@/common/bksConfig";
+import { UserPin } from "@/common/appdb/models/UserPin";
+import { waitPromise } from "@/common/utils";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
-  'conn/create': ({ config, osUser, sId }: {config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/create': ({ config, auth, osUser, sId }: {config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string }) => Promise<void>,
   'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
@@ -45,7 +48,10 @@ export interface IConnectionHandlers {
   'conn/getTableReferences': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
+  'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
   'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
+  'conn/getCompletions': ({ cmd, sId }: { cmd: string, sId: string }) => Promise<string[]>,
+  'conn/getShellPrompt': ({ sId }: { sId: string }) => Promise<string>,
   'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
   'conn/listDatabases': ({ filter, sId }: { filter?: DatabaseFilterOptions, sId: string }) => Promise<string[]>,
   'conn/getTableProperties': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableProperties | null>,
@@ -62,6 +68,9 @@ export interface IConnectionHandlers {
   'conn/getViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getMaterializedViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getRoutineCreateScript': ({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/createTable': ({ table }: { table: CreateTableSpec }) => Promise<void>,
+  'conn/getCollectionValidation': ({ collection, sId }: { collection: string, sId: string }) => Promise<any>,
+  'conn/setCollectionValidation': ({ params, sId }: { params: any, sId: string }) => Promise<void>,
 
 
   // Make Changes ***************************************************************
@@ -106,12 +115,28 @@ export interface IConnectionHandlers {
   'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
   'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
+
+  'conn/getQueryForFilter': ({ filter, sId }: { filter: TableFilter, sId: string }) => Promise<string>,
 }
 
 export const ConnHandlers: IConnectionHandlers = {
-  'conn/create': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string}) {
+  'conn/create': async function({ config, auth, osUser, sId }: { config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string}) {
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
+    }
+
+    if (bksConfig.security.lockMode === "pin") {
+      await waitPromise(1000);
+
+      if (!auth) {
+        throw new Error(`Authentication is required.`);
+      }
+      if (auth.mode !== "pin") {
+        throw new Error(`Invalid authentication mode: ${auth.mode}`);
+      }
+      if(!await UserPin.verifyPin(auth.input)) {
+        throw new Error(`Incorrect pin. Please try again.`);
+      }
     }
 
     if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
@@ -130,9 +155,15 @@ export const ConnHandlers: IConnectionHandlers = {
     const abortController = new AbortController();
     state(sId).connectionAbortController = abortController;
 
+    let database = config.defaultDatabase || undefined;
+
+    if (config.connectionType === 'surrealdb' && config?.surrealDbOptions?.namespace && database) {
+      database = `${config?.surrealDbOptions?.namespace}::${database}`;
+    }
+
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
-    const connection = server.createConnection(config.defaultDatabase || undefined);
+    const connection = server.createConnection(database);
     await connection.connect(abortController.signal);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
@@ -152,6 +183,25 @@ export const ConnHandlers: IConnectionHandlers = {
     // TODO (matthew): fix this mess.
     if (!osUser) {
       throw new Error(errorMessages.noUsername);
+    }
+
+    if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
+      let cache = new TokenCache();
+      cache = await cache.save();
+      config.authId = cache.id;
+      // need to single out saved connections here (this may change when used connections are fixed)
+      if (config.id) {
+        // we do this so any temp configs that the user did aren't saved, just the id
+        const conn = await SavedConnection.findOneBy({ id: config.id });
+        conn.authId = cache.id;
+        conn.save();
+      }
+    }
+
+    let database = config.defaultDatabase || undefined;
+
+    if (config.connectionType === 'surrealdb' && config?.surrealDbOptions?.namespace && database) {
+      database = `${config.surrealDbOptions?.namespace}::${database}`;
     }
 
     const settings = await UserSetting.all();
@@ -265,12 +315,27 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.listTablePartitions(table, schema);
   },
 
+  'conn/executeCommand': async function({ commandText, sId }: { commandText: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.executeCommand(commandText);
+  },
+
   'conn/query': async function({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) {
     checkConnection(sId);
     const query = await state(sId).connection.query(queryText, options);
     const id = uuidv4();
     state(sId).queries.set(id, query);
     return id;
+  },
+
+  'conn/getCompletions': async function({ cmd, sId }: { cmd: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getCompletions(cmd);
+  },
+
+  'conn/getShellPrompt': async function({ sId }: { sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getShellPrompt();
   },
 
   'conn/executeQuery': async function({ queryText, options, sId }: { queryText: string, options?: any, sId: string}) {
@@ -336,6 +401,21 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/getRoutineCreateScript': async function({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.getRoutineCreateScript(routine, type, schema);
+  },
+
+  'conn/createTable': async function({ table, sId }: { table: CreateTableSpec, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.createTable(table);
+  },
+
+  'conn/getCollectionValidation': async function({ collection, sId }: { collection: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getCollectionValidation(collection);
+  },
+
+  'conn/setCollectionValidation': async function({ params, sId }: { params: any, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.setCollectionValidation(params);
   },
 
   'conn/alterTableSql': async function({ change, sId }: { change: AlterTableSpec, sId: string }) {
@@ -477,5 +557,10 @@ export const ConnHandlers: IConnectionHandlers = {
     if (state(sId).usedConfig) {
       state(sId).usedConfig.authId = null
     }
-  }
+  },
+
+  'conn/getQueryForFilter': async function({ filter, sId }: { filter: TableFilter, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getQueryForFilter(filter);
+  },
 }

@@ -1,6 +1,10 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
-import { friendlyUint8Array, uint8ArrayToHex, friendlyJsonObject } from '@/common/utils';
+import { friendlyJsonObject } from '@/common/utils';
+import rawLog from '@bksLogger';
+
+const log = rawLog.scope('data/tools')
+
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
 function dec28bits(num: any): string {
@@ -50,7 +54,7 @@ export const Mutators = {
   genericMutator(value: any, preserveComplex = false): JsonFriendly {
     const mutate = Mutators.genericMutator
     if (ArrayBuffer.isView(value)) {
-      return friendlyUint8Array(value as Uint8Array)
+      return value
     }
     if (_.isDate(value)) return value.toISOString()
     if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
@@ -101,7 +105,13 @@ export const Mutators = {
 
   /** Stringify json data for MySQL column */
   jsonMutator(value: any): JsonFriendly {
-    if (_.isString(value) || _.isNull(value)) return value
-    return friendlyJsonObject(value)
+    if(!_.isObject(value)) return value;
+    try {
+      return friendlyJsonObject(value)
+    } catch (e) {
+      // the errors should be harmless. avoid throwing it cause it'll break our table.
+      log.debug(`error stringifying json: ${e}`, value)
+      return value
+    }
   },
 }

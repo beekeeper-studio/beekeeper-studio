@@ -13,6 +13,7 @@ import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Ro
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
+// FIXME (azmi): use BksConfig
 import globals from '../../../common/globals';
 import { HasPool, VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
@@ -22,6 +23,7 @@ import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
@@ -162,6 +164,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         } catch (err) {
           log.error('Could not refresh token or update connection pool!', err);
         }
+        // FIXME (azmi): use BksConfig
       }, globals.iamRefreshTime);
     }
 
@@ -462,14 +465,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
              i.indisunique,
              i.indisprimary,
              ${supportedFeatures.indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
-        coalesce(a.attname,
-                  (('{' || pg_get_expr(
-                              i.indexprs,
-                              i.indrelid
-                          )
-                        || '}')::text[]
-                  )[k.i]
-                ) AS index_column,
+        coalesce(a.attname, pg_get_indexdef(i.indexrelid, k.i, false)) AS index_column,
         i.indoption[k.i - 1] = 0 AS ascending
       FROM pg_index i
         CROSS JOIN LATERAL (SELECT unnest(i.indkey), generate_subscripts(i.indkey, 1) + 1) AS k(attnum, i)
@@ -555,66 +551,82 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
       SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
-        rc.unique_constraint_schema AS to_schema,
         tc.constraint_name,
+        kcu.column_name,
+        kcu.table_schema AS from_schema,
+        kcu.table_name AS from_table,
+        kcu2.column_name AS to_column,
+        kcu2.table_name AS to_table,
+        rc.unique_constraint_schema AS to_schema,
         rc.update_rule,
         rc.delete_rule,
-        (
-          SELECT STRING_AGG(kcu2.column_name, ',' ORDER BY kcu2.ordinal_position)
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name
-        ) AS to_column,
-        (
-          SELECT kcu2.table_name
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name LIMIT 1
-        ) AS to_table
+        kcu.ordinal_position
       FROM
-        information_schema.key_column_usage AS kcu
-        JOIN
         information_schema.table_constraints AS tc
-      ON
-        tc.constraint_name = kcu.constraint_name
-        JOIN
-        information_schema.referential_constraints AS rc
-        ON
-        rc.constraint_name = kcu.constraint_name
+        JOIN information_schema.key_column_usage AS kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.referential_constraints AS rc
+          ON rc.constraint_name = tc.constraint_name
+          AND rc.constraint_schema = tc.table_schema
+        JOIN information_schema.key_column_usage AS kcu2
+          ON kcu2.constraint_name = rc.unique_constraint_name
+          AND kcu.ordinal_position = kcu2.ordinal_position
+          AND kcu2.constraint_schema = rc.unique_constraint_schema
       WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema NOT LIKE 'pg_%' AND
-        kcu.table_schema = $2 AND
-        kcu.table_name = $1
-      GROUP BY
-        kcu.constraint_schema,
-        kcu.table_name,
-        rc.unique_constraint_schema,
-        rc.unique_constraint_name,
+        tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = $1
+        AND tc.table_name = $2
+      ORDER BY
         tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule;
+        kcu.ordinal_position;
     `;
 
     const params = [
-      table,
       schema,
+      table,
     ];
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const { rows } = await this.driverExecuteSingle(sql, { params });
 
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule
-    }));
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.constraint_name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.column_name,
+          onUpdate: row.update_rule,
+          onDelete: row.delete_rule,
+          isComposite: false
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.constraint_name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.column_name),
+        onUpdate: firstPart.update_rule,
+        onDelete: firstPart.delete_rule,
+        isComposite: true
+      };
+    });
   }
 
   async query(queryText: string, options?: any): Promise<CancelableQuery> {
@@ -759,6 +771,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableProperties(table: string, schema: string = this._defaultSchema): Promise<TableProperties> {
     const identifier = this.wrapTable(table, schema)
+    const permissionWarnings: string[] = []
 
     const statements = [
       `pg_indexes_size('${identifier}') as index_size`,
@@ -772,10 +785,42 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const sql = `SELECT ${statements.join(",")}`
 
-    const detailsPromise = this.driverExecuteSingle(sql);
+    // Execute each query independently with error handling for read-only connections
+    const detailsPromise = this.driverExecuteSingle(sql).catch(err => {
+      log.warn('Unable to fetch table size/description (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table size and description due to insufficient permissions')
+      return { rows: [{ index_size: 0, table_size: 0, description: null }] }
+    });
 
-    const triggersPromise = this.listTableTriggers(table, schema);
-    const partitionsPromise = this.listTablePartitions(table, schema);
+    const indexesPromise = this.listTableIndexes(table, schema).catch(err => {
+      log.warn('Unable to fetch table indexes (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table indexes due to insufficient permissions')
+      return []
+    });
+
+    const relationsPromise = this.getTableKeys(table, schema).catch(err => {
+      log.warn('Unable to fetch table relations (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table relations due to insufficient permissions')
+      return []
+    });
+
+    const triggersPromise = this.listTableTriggers(table, schema).catch(err => {
+      log.warn('Unable to fetch table triggers (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table triggers due to insufficient permissions')
+      return []
+    });
+
+    const partitionsPromise = this.listTablePartitions(table, schema).catch(err => {
+      log.warn('Unable to fetch table partitions (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table partitions due to insufficient permissions')
+      return []
+    });
+
+    const ownerPromise = this.getTableOwner(table, schema).catch(err => {
+      log.warn('Unable to fetch table owner (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table owner due to insufficient permissions')
+      return null
+    });
 
     const [
       result,
@@ -786,23 +831,24 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(table, schema),
-      this.getTableKeys(table, schema),
+      indexesPromise,
+      relationsPromise,
       triggersPromise,
       partitionsPromise,
-      this.getTableOwner(table, schema)
+      ownerPromise
     ])
 
     const props = result.rows.length > 0 ? result.rows[0] : {}
     return {
       description: props.description,
-      indexSize: Number(props.index_size),
-      size: Number(props.table_size),
+      indexSize: Number(props.index_size || 0),
+      size: Number(props.table_size || 0),
       indexes,
       relations,
       triggers,
       partitions,
-      owner
+      owner,
+      permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
     }
   }
 
@@ -1008,7 +1054,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   wrapIdentifier(value: string): string {
-    if (value === '*') return value;
+    if (!value || value === '*') return value;
     const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
     if (matched) return this.wrapIdentifier(matched[1]) + matched[2];
     return `"${value.replaceAll(/"/g, '""')}"`;
@@ -1042,7 +1088,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
-    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+    // Schemas are top-level objects and don't need schema prefixing
+    const sql = typeOfElement === DatabaseElement.SCHEMA
+      ? `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(elementName)}`
+      : `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
@@ -1357,9 +1406,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
       max: 8, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: globals.psqlTimeout,
-      idleTimeoutMillis: globals.psqlIdleTimeout,
-
+      connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
+      idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };
 
     if (
@@ -1671,7 +1719,7 @@ pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // 
 pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 export function wrapIdentifier(value: string): string {
-  if (value === '*') return value;
+  if (!value || value === '*') return value;
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;

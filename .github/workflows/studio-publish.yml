@@ -8,7 +8,7 @@ on:
       - "apps/sqltools/**"
 jobs:
   create_draft_release:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       assets_url: ${{ steps.create_release.outputs.assets_url }}
@@ -36,7 +36,7 @@ jobs:
   # outputs: latest, beta, alpha
   # deb_codename: stable, beta
   identify_channel:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     outputs:
       channel: ${{steps.extract_channel.outputs.channel}}
       deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
@@ -60,13 +60,13 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - name: ubuntu-20.04
+          - name: ubuntu-22.04
             arch: x64
             type: linux
             setup_python: true
             setup_ruby: true
             setup_flatpak: true
-          - name: windows-2019
+          - name: windows-2022
             arch: x64
             type: windows
             setup_python: true
@@ -81,11 +81,6 @@ jobs:
           - name: macos-14
             arch: arm64
             type: macos
-        # macos-13 is Intel, macos-14 is arm (obviously)
-        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-        # os: [ubuntu-20.04, windows-2019, ubuntu-arm64, macos-13, macos-14 ]
-        # os: [macos-13, macos-14 ]
-
     steps:
 
       - name: Check out Git repository
@@ -253,6 +248,7 @@ jobs:
         if: matrix.os.type == 'windows'
         env:
           KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+          KEYVAULT_AUTH_SECRET: "${{ secrets.keyvault_auth_secret }}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{'$PYTHON_PATH' }}"
           PYTHONPATH: "${{ '$PYTHONPATH' }}"
@@ -389,7 +385,7 @@ jobs:
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -397,6 +393,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.0.2
+
+      - name: Install dependencies for rpm deployment
+        run: sudo apt-get update && sudo apt-get install -y createrepo-c
 
       - name: Install deb-s3 from GitHub
         run: |
@@ -431,6 +430,12 @@ jobs:
           AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
           AWS_DEFAULT_REGION: "us-east-1"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
 
       - name: Publish RPM to R2
         if: needs.identify_channel.outputs.channel == 'latest'
@@ -442,3 +447,9 @@ jobs:
           R2_ENDPOINT: ${{secrets.cloudflare_endpoint}}
           AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
           AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED

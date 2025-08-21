@@ -44,7 +44,7 @@
       </div>
     </div>
     <div class="expand" />
-    <status-bar class="tabulator-footer">
+    <status-bar class="tabulator-footer" :active="active">
       <span class="expand" />
       <div class="col flex-right statusbar-actions">
         <x-buttons class="pending-changes">
@@ -126,12 +126,11 @@ export default Vue.extend({
       if (!this.active) {
         return {}
       }
-      const results = {}
-
-      results[this.ctrlOrCmd('s')] = this.create.bind(this)
-      results[this.ctrlOrCmd('shift+s')] = this.sql.bind(this)
-      results[this.ctrlOrCmd('n')] = () => this.$refs.sb.addRow()
-      return results
+      return this.$vHotkeyKeymap({
+        'general.save': this.create.bind(this),
+        'general.openInSqlEditor': this.sql.bind(this),
+        'general.addRow': () => this.$refs.sb.addRow(),
+      })
     },
     fixedSchema(): string | undefined {
       if (_.isNil(this.tableSchema) || _.isEmpty(this.tableSchema)) {

@@ -1,143 +1,89 @@
 <template>
-  <div class="BksUiKit BksTextEditor BksSqlTextEditor">
-    <textarea
-      name="editor"
-      class="BksTextEditor-textarea BksSqlTextEditor-textarea editor"
-      ref="editor"
-      id=""
-      cols="30"
-      rows="10"
-    />
-  </div>
+  <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor"></div>
 </template>
 
 <script lang="ts">
-import _ from "lodash";
-import Vue, { PropType } from "vue";
-import textEditorMixin from "../text-editor/mixin";
-import { format, FormatOptions } from "sql-formatter";
-import { autoquote, autoComplete, autoRemoveQueryQuotes } from "./plugins";
-import { querySelection, QuerySelectionChangeParams } from "./querySelectionPlugin";
-import { Options } from "sql-query-identifier";
-import { BaseTable } from "../types";
-import { ctrlOrCmd } from "../../utils/platform";
+import mixin from "../text-editor/mixin";
+import props from "./props";
+import { SqlTextEditor } from "./SqlTextEditor";
+import { Entity } from "../types";
+import {
+  InternalContextItem,
+} from "../context-menu";
+import { format } from "sql-formatter";
 import ProxyEmit from "../mixins/ProxyEmit";
+import Vue from "vue";
 
 export default Vue.extend({
-  mixins: [textEditorMixin, ProxyEmit],
-  props: {
-    mode: {
-      type: textEditorMixin.props.mode,
-      default: "text/x-sql",
-    },
-    hint: {
-      type: textEditorMixin.props.hint,
-      default: "sql",
-    },
-    contextMenuItems: {
-      type: textEditorMixin.props.contextMenuItems,
-      default() {
-        return this.handleContextMenuItems(...arguments);
-      },
-    },
-    /** Tables for autocompletion */
-    tables: {
-      type: Array as PropType<BaseTable[]>,
-      default() {
-        return [];
-      },
-    },
-    // FIXME routines are not implemented yet
-    routines: {
-      type: Array,
-      default() {
-        return [];
-      },
-    },
-    defaultSchema: {
-      type: String,
-      default: "public",
-    },
-    formatterDialect: {
-      type: String as PropType<FormatOptions['language']>,
-      default: "sql",
-    },
-    identifierDialect: {
-      type: String as PropType<Options['dialect']>,
-      default: "generic",
-    },
-  },
-  computed: {
-    hintOptions() {
-      // We do this so we can order the autocomplete options
-      const firstTables = {};
-      const secondTables = {};
-      const thirdTables = {};
-
-      this.tables.forEach((table) => {
-        const columns = table.columns?.map((c) => c.field) ?? [];
-        // don't add table names that can get in conflict with database schema
-        if (/\./.test(table.name)) return;
-
-        // Previously we had to provide a table: column[] mapping.
-        // we don't need to provide the columns anymore because we fetch them dynamically.
-        if (!table.schema) {
-          firstTables[table.name] = columns;
-          return;
-        }
-
-        if (table.schema === this.defaultSchema) {
-          firstTables[table.name] = columns;
-          secondTables[`${table.schema}.${table.name}`] = columns;
-        } else {
-          thirdTables[`${table.schema}.${table.name}`] = columns;
-        }
-      });
-
-      const sorted = Object.assign(
-        firstTables,
-        Object.assign(secondTables, thirdTables)
-      );
-
-      return { tables: sorted };
+  data() {
+    return {
+      internalActionsKeymap: [{
+        key: "Mod-Shift-f",
+        // @ts-ignore this does exist ts you moron
+        run: this.formatSql
+      }]
     }
   },
+  mixins: [mixin, ProxyEmit],
+
+  props,
+
+  watch: {
+    defaultSchema() {
+      if (!this.textEditor) return;
+      this.applyCompletionSource();
+    },
+    entities() {
+      if (!this.textEditor) return;
+      this.applyCompletionSource();
+    },
+  },
+
   methods: {
+    // TextEditor overrides
+    constructTextEditor() {
+      return new SqlTextEditor({
+        identiferDialect: this.identifierDialect,
+        onQuerySelectionChange: (params) => {
+          this.$emit("bks-query-selection-change", params)
+        },
+        columnsGetter: (entity: Entity) => {
+          return this.columnsGetter?.(entity.name) || [];
+        },
+      });
+    },
+    initialized() {
+      this.applyCompletionSource();
+    },
+    applyCompletionSource() {
+      this.textEditor.setCompletionSource({
+        defaultSchema: this.defaultSchema,
+        entities: this.entities,
+      });
+    },
+    contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
+      return [
+        ...items,
+        {
+          label: `Format Query`,
+          id: "text-format",
+          handler: this.formatSql,
+          shortcut: "Control+Shift+F",
+        }
+      ];
+    },
+
+    // Non-TextEditor overrides
     formatSql() {
       const formatted = format(this.value, {
         language: this.formatterDialect,
       });
-      this.$emit("bks-value-change", formatted);
-    },
-    handleContextMenuItems(_e: unknown, items: any[]) {
-      const pivot = items.findIndex((o) => o.slug === "find");
-      return [
-        ...items.slice(0, pivot),
-        {
-          name: "Format Query",
-          slug: "text-format",
-          handler: this.formatSql,
-          shortcut: ctrlOrCmd("shift+f"),
-        },
-        {
-          type: "divider",
-        },
-        ...items.slice(pivot),
-      ];
-    },
-    handleQuerySelectionChange(params: QuerySelectionChangeParams) {
-      this.$emit("bks-query-selection-change", params);
+      this.$emit("bks-value-change", { value: formatted });
     },
   },
+
   mounted() {
-    this.internalKeybindings["Shift-Ctrl-F"] = this.formatSql;
-    this.internalKeybindings["Shift-Cmd-F"] = this.formatSql;
-    this.plugins = [
-      autoquote,
-      autoComplete,
-      autoRemoveQueryQuotes(this.identifierDialect),
-      querySelection(this.identifierDialect, this.handleQuerySelectionChange),
-    ]
-  }
+    this.internalContextMenuItems = this.contextMenuItemsModifier;
+  },
 });
 </script>

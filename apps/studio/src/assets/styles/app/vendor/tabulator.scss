@@ -1,10 +1,11 @@
+@use "sass:color";
 $errorColor:             $brand-danger;
 $foreign-key-width:      20px;
 
 $row-height:             30px;
-$row-add:                #18855F;
+$row-add:                color.mix($query-editor-bg, $brand-success, 80%);
 $row-delete:             #8A3937;
-$row-error:              #38201F;
+$row-error:              color.mix($query-editor-bg, $brand-danger, 75%);
 
 $cell-edited:            #50492A;
 $cell-error:             $row-error;
@@ -14,10 +15,10 @@ $cell-radius:            2px;
 
 $cell-padding:           $gutter-w;
 
-$header-highlight:       mix($query-editor-bg, $theme-base, 95%);
-$header-selected:        mix($query-editor-bg, $theme-primary, 10%);
+$header-highlight:       color.mix($query-editor-bg, $theme-base, 95%);
+$header-selected:        color.mix($query-editor-bg, $theme-primary, 10%);
 
-$columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
+$columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
 
 // Mixin
 @mixin cell-shadow($bg) {
@@ -48,6 +49,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
       border: 0;
       .tabulator-cell {
         &.primary-key {
+          > * {
+            opacity: initial;
+          }
           &:hover {
             background: rgba($theme-base,0.05);
             cursor: pointer;
@@ -301,19 +305,19 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     &.edited {
       background: $cell-edited;
       &:hover {
-        background: lighten($cell-edited, 3%);
+        background: color.adjust($cell-edited, $lightness: 3%);
       }
     }
     &.edit-error {
       background: $cell-error;
       &:hover {
-        background: lighten($cell-error, 5%);
+        background: color.adjust($cell-error, $lightness: 5%);
       }
     }
     &.edit-success {
       background: $cell-success;
       &:hover {
-        background: lighten($cell-success, 5%);
+        background: color.adjust($cell-success, $lightness: 5%);
       }
     }
     &.edited,
@@ -336,6 +340,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 
   i.fk-link {
     display:none;
+    position: absolute;
+    right: 5px;
+    background-color: $theme-bg;
     cursor: pointer;
     color: $text-light;
     font-size: 14px;
@@ -609,17 +616,18 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 
 }
 
-// Applied when not dragging rows so frozen cells can be transparent
-.tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen {
+// * Applied when not dragging rows so frozen cells can be transparent
+// * Applied to draggable cells or cells that do not have a tabulator-field attribute
+// * Honestly, i forget what this is all about :D
+.tabulator:not(.tabulator-block-select) .tabulator-row .tabulator-frozen:not([tabulator-field]) {
   position: relative;
-  &:not(.edited) {
+  &:not(.edited):not(:has(.tabulator-row-handle-box)) {
     background-color: $query-editor-bg;
   }
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-color: var(--row-bg-color);
     z-index: -10;
     box-shadow: var(--row-box-shadow, none);
   }
@@ -747,7 +755,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 }
 
 .tabulator-menu {
-  background: lighten($theme-bg, 5%);
+  background: color.adjust($theme-bg, $lightness: 5%);
   border: none;
   border-radius: 6px;
   min-width: 150px;
@@ -794,11 +802,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
 
 .tabulator .tabulator-tableholder .tabulator-range-overlay {
   .tabulator-range, .tabulator-range-cell-active {
-    border-color: darken($theme-primary, 20%);
+    border-color: color.adjust($theme-primary, $lightness: -20%);
     border-width: 1px;
   }
   .tabulator-range.tabulator-range-active::after {
-    background-color: darken($theme-primary, 20%);
+    background-color: color.adjust($theme-primary, $lightness: -20%);
   }
   .tabulator-range.copied {
     border-style: dashed;
@@ -819,7 +827,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
           color: black;
         }
         &.foreign-key:before {
-          color: mix($theme-primary, black, 60%);
+          color: color.mix($theme-primary, black, 60%);
         }
         .tabulator-col-content .tabulator-col-title-holder .tabulator-col-title {
           color: inherit;
@@ -833,7 +841,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
             }
           }
           .tabulator-header-popup-button::before, .tabulator-col-sorter.tabulator-col-sorter-element:hover {
-            background-color: darken($header-selected, 10%);
+            background-color: color.adjust($header-selected, $lightness: -10%);
           }
         }
       }
@@ -852,6 +860,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
           & > * {
             display: inline;
           }
+        }
+        &:not(:has(.tabulator-col-sorter)) {
+          flex-direction: row;
         }
         .tabulator-col-sorter.tabulator-col-sorter-element {
           margin-left: auto;
@@ -895,7 +906,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%);
     width: 3px;
     height: 60%;
     transform: translate(0, -50%);
-    background-color: transparentize($columnResizeGuideColor, 0.4);
+    background-color: color.adjust($columnResizeGuideColor, $alpha: -0.4);
     backdrop-filter: invert(100%);
     border-radius: 999px;
   }

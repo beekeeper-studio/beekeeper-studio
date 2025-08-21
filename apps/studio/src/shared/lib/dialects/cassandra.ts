@@ -62,7 +62,9 @@ export const CassandraData: DialectData = {
   requireDataset: false,
   textEditorMode: "text/x-cassandra",
   disabledFeatures: {
+    shell: true,
     defaultValue: true,
+    compositeKeys: true,
     alter: {
       alterColumn: true,
       multiStatement: true,
