@@ -7,7 +7,7 @@ icon: material/hammer-wrench
 # Creating Your First Plugin
 
 !!! warning "Beta Feature"
-    The plugin system is currently in beta. APIs and functionality may change in future releases. Please provide feedback and report issues to help us improve the system.
+    The plugin system is in beta (available in Beekeeper Studio 5.3+). Things might change, but we'd love your feedback!
 
 Let's build a simple "Hello World" plugin! You'll create a new tab that shows "Hello World!" and learn how to interact with databases. Perfect for getting started! 🚀
 
