@@ -232,7 +232,7 @@ export interface IBasicDatabaseClient {
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
-  getQuerySelectTop(table: string, limit: number, schema?: string, database?: string): Promise<string>,
+  getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>,
   listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>,
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,
   getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
@@ -265,10 +265,10 @@ export interface IBasicDatabaseClient {
   truncateAllTables(schema?: string): Promise<void>
 
 
-  getTableLength(table: string, schema?: string, database?: string): Promise<number>,
-  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<TableResult>,
-  selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<string>,
-  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string, database?: string): Promise<StreamResults>
+  getTableLength(table: string, schema?: string): Promise<number>,
+  selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
+  selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
+  selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>
 
   queryStream(query: string, chunkSize: number): Promise<StreamResults>
 
