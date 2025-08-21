@@ -541,7 +541,7 @@ const store = new Vuex.Store<State>({
         const columns = (table.entityType === 'materialized-view' ?
             await context.state.connection.listMaterializedViewColumns(table.name, table.schema) :
             await context.state.connection.listTableColumns(table.name, table.schema));
-        
+
         const updated = _.xorWith(table.columns, columns, _.isEqual)
         log.debug('Should I update table columns?', updated)
         if (updated?.length) {
@@ -570,7 +570,7 @@ const store = new Vuex.Store<State>({
       try {
         const schema = null
         context.commit("tablesLoading", "Loading tables...")
-        const onlyTables = await context.state.connection.listTables({schema});
+        const onlyTables = await context.state.connection.listTables(schema);
         onlyTables.forEach((t) => {
           t.entityType = 'table'
         })
