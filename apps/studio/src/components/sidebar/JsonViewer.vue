@@ -13,7 +13,7 @@
           <input
             class="form-control"
             type="text"
-            placeholder="Filter fields"
+            placeholder="Filter keys by text or /regex/"
             v-model="debouncedFilter"
           >
           <button

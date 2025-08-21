@@ -31,11 +31,14 @@ import {
 } from "./extensions/ls";
 import type * as LSP from "vscode-languageserver-protocol";
 import { VimOptions } from "./extensions/keymap";
+import { redo, selectAll, undo } from "@codemirror/commands";
+import { openSearchPanel } from "@codemirror/search";
 
 export const exposeMethods = ["ls"] as const;
 
 export class TextEditor {
-  protected view: EditorView;
+  public view: EditorView;
+
   private config: TextEditorConfiguration;
   private ls: ReturnType<typeof ls> | null;
 
@@ -95,7 +98,7 @@ export class TextEditor {
   private handleUpdate(update: ViewUpdate) {
     if (update.docChanged) {
       const newValue = update.state.doc.toString();
-      this.config.onValueChange(newValue);
+      this.config.onValueChange?.(newValue);
     }
 
     // Handle focus changes
@@ -111,10 +114,8 @@ export class TextEditor {
       }
     }
 
-    if (update.selectionSet) {
-      if (this.config.onSelectionChange) {
-        this.config.onSelectionChange(this.getSelection());
-      }
+    if (this.config.onSelectionChange) {
+      this.config.onSelectionChange(this.getSelection());
     }
   }
 
@@ -188,6 +189,29 @@ export class TextEditor {
     return this.view.state.sliceDoc(this.view.state.selection.main.from, this.view.state.selection.main.to);
   }
 
+  execCommand(cmd: "undo" | "redo" | "selectAll" | "findAndReplace" ) {
+    const currentState = {
+      state: this.view.state,
+      dispatch: this.view.dispatch
+    }
+    switch (cmd) {
+      case "undo":
+        undo(currentState);
+        break;
+      case "redo":
+        redo(currentState);
+        break;
+      case "selectAll":
+        selectAll(currentState);
+        break;
+      case "findAndReplace":
+        openSearchPanel(this.view);
+        break;
+      default:
+        console.warn("command not supported: ", cmd)
+    }
+  }
+
   getLsHelpers(): LanguageServerHelpers {
     return {
       getClient: () => this.getLsClient(),
@@ -224,6 +248,16 @@ export class TextEditor {
 
   unfoldAll() {
     unfoldAll(this.view);
+  }
+
+  replaceSelection(value: string) {
+    this.view.dispatch({
+      changes: {
+        from: this.view.state.selection.main.from,
+        to: this.view.state.selection.main.to,
+        insert: value,
+      },
+    });
   }
 
   destroy() {

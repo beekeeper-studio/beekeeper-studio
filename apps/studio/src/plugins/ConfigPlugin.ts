@@ -23,6 +23,26 @@ export function createVHotkeyKeymap(
   return keymap;
 }
 
+export function createCodemirroKeymap(
+  obj: Partial<Record<KeybindingPath, any>>
+): Record<string, any> {
+  const keymap = {};
+
+  for (const path of Object.keys(obj) as KeybindingPath[]) {
+    const value = obj[path];
+    const keybindings = window.bksConfig.getKeybindings("codemirror", path);
+    if (typeof keybindings === "string") {
+      keymap[keybindings] = value;
+    } else {
+      keybindings.forEach((keybinding) => {
+        keymap[keybinding] = value;
+      });
+    }
+  }
+
+  return keymap;
+}
+
 export default {
   install(Vue: VueConstructor) {
     const BksConfig = BksConfigProvider.create(window.bksConfigSource, window.platformInfo);
@@ -30,5 +50,6 @@ export default {
     Vue.prototype.$bksConfig = BksConfig;
     Vue.prototype.$config = buildConfig(window.platformInfo);
     Vue.prototype.$vHotkeyKeymap = createVHotkeyKeymap;
+    Vue.prototype.$CMKeymap = createCodemirroKeymap;
   },
 };

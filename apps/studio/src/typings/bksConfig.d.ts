@@ -121,6 +121,10 @@ declare interface IBksConfig {
             initialSort: boolean;
             maxClient: number;
         };
+        surrealdb: {
+            allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+        };
         tidb: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
@@ -153,8 +157,10 @@ declare interface IBksConfig {
             selectEditor: string;
             selectNextResult: string;
             selectPreviousResult: string;
+            submitCurrentQuery: string[];
             submitCurrentQueryToFile: string;
             submitQueryToFile: string;
+            submitTabQuery: string[];
             switchPaneFocus: string;
         };
         quickSearch: {
@@ -189,6 +195,11 @@ declare interface IBksConfig {
             nextPage: string;
             openEditorModal: string;
             previousPage: string;
+        };
+    };
+    plugins: {
+        "bks-ai-shell": {
+            enabled: boolean;
         };
     };
     security: {

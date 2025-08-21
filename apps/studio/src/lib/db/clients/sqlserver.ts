@@ -889,14 +889,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async getRoutineCreateScript(routine: string) {
     const sql = `
-      SELECT routine_definition
-      FROM INFORMATION_SCHEMA.ROUTINES
-      WHERE routine_name = '${routine}'
+      SELECT definition
+      FROM sys.sql_modules
+      WHERE OBJECT_NAME(object_id) = '${routine}'
     `
 
     const { data } = await this.driverExecuteSingle(sql)
 
-    return data.recordset.map((row) => row.routine_definition)
+    return data.recordset.map((row) => row.definition)
   }
 
   async setTableDescription(table: string, desc: string, schema: string) {

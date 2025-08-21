@@ -20,7 +20,7 @@ import {
 } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
+import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
 import {
   autocompletion,
   acceptCompletion,
@@ -95,7 +95,7 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.strikethrough, class: "cm-strikethrough" },
 ]);
 
-export function extensions(config: ExtensionConfiguration) {
+export function extensions(config: ExtensionConfiguration = {}) {
   return [
     specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     extraKeymap({ keybindings: config.keybindings }),
@@ -133,6 +133,9 @@ export function extensions(config: ExtensionConfiguration) {
     crosshairCursor(),
     highlightActiveLine(),
     highlightSelectionMatches(),
+    search({
+      top: true,
+    }),
     keymap.of([
       ...closeBracketsKeymap,
       ...defaultKeymap,
@@ -143,6 +146,7 @@ export function extensions(config: ExtensionConfiguration) {
       ...lintKeymap,
       { key: "Tab", run: acceptCompletion },
       indentWithTab,
+      ...(config.actionsKeymap || []),
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),

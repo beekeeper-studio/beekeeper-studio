@@ -8,7 +8,7 @@ import {
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData, rowHeaderField } from "@/common/utils";
+import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
@@ -112,7 +112,7 @@ export function createMenuItem(label: string, shortcut = "", ultimate = false) {
 
 export async function copyRanges(options: {
   ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown" | "columnName";
+  type: "plain" | "tsv" | "json" | "markdown" | "columnName" | "asIn";
 }): Promise<void>;
 export async function copyRanges(options: {
   ranges: RangeComponent[];
@@ -122,7 +122,7 @@ export async function copyRanges(options: {
 }): Promise<void>;
 export async function copyRanges(options: {
   ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName";
+  type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
   table?: string;
   schema?: string;
 }) {
@@ -166,6 +166,21 @@ export async function copyRanges(options: {
       ]);
       break;
     }
+    case "asIn": {
+      const [colDataType] = Object.keys(rangeData[0])
+      const columns = await Vue.prototype.$util.send("conn/listTableColumns", {
+        table: options.table,
+        schema: options.schema
+      });
+      const dataType = columns.find(c => c.columnName === colDataType)?.dataType
+      const isNumericType = isNumericDataType(dataType)
+      const textArr = rangeData.map(rd => {
+        const [data] = Object.values(rd)
+        return isNumericType ? data : `'${data}'`
+      })
+      text = `(\n${textArr.join(',\n')}\n)`
+      break
+    }
     case "sql":
       text = await Vue.prototype.$util.send("conn/getInsertQuery", {
         tableInsert: {
@@ -174,9 +189,9 @@ export async function copyRanges(options: {
           data: rangeData,
         },
       });
+      break;
     case "columnName":
-      const columnNames = Object.keys(extractedData.data[0]);
-      text = columnNames.join(" "); 
+      text = Object.keys(extractedData.data[0]).join(" ");
       break;
   }
   ElectronPlugin.clipboard.writeText(text);
@@ -193,7 +208,7 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
     // Replace column identifiers with column titles
     const columns = ranges[0].getColumns();
     const mappedData = mapColumnIdsToTitles(rangeData, columns);
-    
+
     return {
       data: mappedData,
       sources: [ranges[0]],
@@ -222,7 +237,7 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
     // Replace column identifiers with column titles
     const columns = ranges[0].getColumns();
     const mappedData = mapColumnIdsToTitles(allData, columns);
-    
+
     return {
       data: mappedData,
       sources: ranges,
@@ -240,12 +255,12 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
         });
       }
     }
-    
+
     // Replace column identifiers with column titles
     const allColumns = sorted.reduce((cols, range) => cols.concat(range.getColumns()), []);
     const uniqueColumns = _.uniqBy(allColumns, col => col.getField());
     const mappedData = mapColumnIdsToTitles(rows, uniqueColumns);
-    
+
     return {
       data: mappedData,
       sources: ranges,
@@ -254,11 +269,11 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
 
   const source = _.first(ranges);
   const rangeData = source.getData() as RangeData;
-  
+
   // Replace column identifiers with column titles
   const columns = source.getColumns();
   const mappedData = mapColumnIdsToTitles(rangeData, columns);
-  
+
   return {
     data: mappedData,
     sources: [source],
@@ -318,7 +333,7 @@ export function setCellValue(cell: CellComponent, value: string) {
 // Helper function to map column IDs to column titles
 function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): RangeData {
   if (!data || !data.length || !columns || !columns.length) return data;
-  
+
   const colIdToTitleMap = new Map();
   columns.forEach(col => {
     const field = col.getField();
@@ -326,7 +341,7 @@ function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): Rang
     const title = col.getDefinition().title;
     if (title) colIdToTitleMap.set(field, title);
   });
-  
+
   return data.map(row => {
     const newRow = {};
     Object.entries(row).forEach(([key, value]) => {
@@ -343,7 +358,8 @@ export function copyActionsMenu(options: {
   schema?: string;
 }) {
   const { ranges, table, schema } = options;
-  return [
+  const columnCount = ranges[0].getColumns().length
+  const copyActions = [
     {
       label: createMenuItem("Copy", "Control+C"),
       action: () => copyRanges({ ranges, type: "plain" }),
@@ -375,6 +391,15 @@ export function copyActionsMenu(options: {
         }),
     },
   ];
+
+  if (columnCount === 1) {
+    copyActions.push({
+      label: createMenuItem("Copy for IN statement"),
+      action: () => copyRanges({ ranges, type: "asIn", table, schema }),
+    })
+  }
+
+  return copyActions
 }
 
 export function pasteActionsMenu(range: RangeComponent) {

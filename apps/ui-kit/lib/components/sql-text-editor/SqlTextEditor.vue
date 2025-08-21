@@ -8,7 +8,6 @@ import props from "./props";
 import { SqlTextEditor } from "./SqlTextEditor";
 import { Entity } from "../types";
 import {
-  divider,
   InternalContextItem,
 } from "../context-menu";
 import { format } from "sql-formatter";
@@ -16,6 +15,15 @@ import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";
 
 export default Vue.extend({
+  data() {
+    return {
+      internalActionsKeymap: [{
+        key: "Mod-Shift-f",
+        // @ts-ignore this does exist ts you moron
+        run: this.formatSql
+      }]
+    }
+  },
   mixins: [mixin, ProxyEmit],
 
   props,
@@ -39,11 +47,13 @@ export default Vue.extend({
         onQuerySelectionChange: (params) => {
           this.$emit("bks-query-selection-change", params)
         },
+        columnsGetter: (entity: Entity) => {
+          return this.columnsGetter?.(entity.name) || [];
+        },
       });
     },
     initialized() {
       this.applyCompletionSource();
-      this.applyRequestColumnsListener();
     },
     applyCompletionSource() {
       this.textEditor.setCompletionSource({
@@ -51,27 +61,15 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    applyRequestColumnsListener() {
-      if (this.columnsGetter) {
-        this.textEditor.setRequestColumnsListener((entity: Entity) =>
-          this.columnsGetter(entity.name)
-        );
-      } else {
-        this.textEditor.setRequestColumnsListener(null);
-      }
-    },
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
-      const pivot = items.findIndex((o) => o.id === "find");
       return [
-        ...items.slice(0, pivot),
+        ...items,
         {
           label: `Format Query`,
           id: "text-format",
           handler: this.formatSql,
-          shortcut: "Shift+F",
-        },
-        divider,
-        ...items.slice(pivot),
+          shortcut: "Control+Shift+F",
+        }
       ];
     },
 

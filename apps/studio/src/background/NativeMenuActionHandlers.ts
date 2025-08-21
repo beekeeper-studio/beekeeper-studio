@@ -100,6 +100,11 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.toggleDevTools()
   }
 
+  restart(): void {
+    app.relaunch();
+    app.quit();
+  }
+
   // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively
   // Having said that, it can accept openoptions too and do it's thing
   newWindow = (options: Electron.MenuItem|OpenOptions = {}): void => {
