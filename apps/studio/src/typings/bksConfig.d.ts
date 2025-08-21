@@ -3,90 +3,71 @@ declare interface IBksConfig {
     db: {
         bigquery: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         cassandra: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         clickhouse: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         cockroachdb: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
             idleTimeout: number;
-            initialSort: boolean;
             maxClient: number;
         };
         default: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         duckdb: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         firebird: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         libsql: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         mariadb: {
             allowSkipToLastPage: boolean;
             connectTimeout: number;
-            initialSort: boolean;
         };
         mongodb: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         mysql: {
             allowSkipToLastPage: boolean;
             connectTimeout: number;
-            initialSort: boolean;
         };
         oracle: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         postgres: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
             idleTimeout: number;
-            initialSort: boolean;
             maxClient: number;
         };
         redshift: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
             idleTimeout: number;
-            initialSort: boolean;
             maxClient: number;
         };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         sqlite: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         sqlserver: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
         surrealdb: {
             allowSkipToLastPage: boolean;
-            connectionTimeout: number;
         };
         tidb: {
             allowSkipToLastPage: boolean;
-            initialSort: boolean;
         };
     };
     general: {
