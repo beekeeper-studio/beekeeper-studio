@@ -15,6 +15,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@codemirror/state", "@codemirror/view"],
   },
+  define: process.env.VITEST ? {} : { global: 'navigator' },
   build: {
     lib: {
       entry: resolve(__dirname, "lib/index.ts"),
@@ -32,7 +33,6 @@ export default defineConfig({
         "@codemirror/lint",
         "@codemirror/lang-sql",
         "@codemirror/autocomplete",
-        "@lezer/highlight",
         "@replit/codemirror-emacs",
         "@replit/codemirror-vim",
         "@marimo-team/codemirror-languageserver",
@@ -56,6 +56,10 @@ export default defineConfig({
         "mongo-shell/state": resolve(
           __dirname,
           "lib/components/mongo-shell/state.ts"
+        ),
+        "surreal-text-editor": resolve(
+          __dirname,
+          "lib/components/surreal-text-editor/define.ts"
         ),
         "data-editor": resolve(
           __dirname,
@@ -85,6 +89,10 @@ export default defineConfig({
         "vue/text-editor": resolve(
           __dirname,
           "lib/components/text-editor/TextEditor.vue"
+        ),
+        "vue/surreal-text-editor": resolve(
+          __dirname,
+          "lib/components/surreal-text-editor/SurrealTextEditor.vue"
         ),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },

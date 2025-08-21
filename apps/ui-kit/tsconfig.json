@@ -18,6 +18,9 @@
     "declaration": true,
     "declarationDir": "dist",
     "sourceMap": true,
-    "emitDeclarationOnly": false
+    "emitDeclarationOnly": false,
+    "paths": {
+      "@/*": ["./lib/*"],
+    }
   }
 }

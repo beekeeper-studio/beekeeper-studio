@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "5.3.2",
+  "version": "5.3.4",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -50,6 +50,7 @@
     "@octokit/rest": "^21.1.1",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@queryleaf/lib": "^0.2.3",
+    "@surrealdb/codemirror": "^1.0.0-beta.21",
     "@types/ini": "^4.1.0",
     "@types/semver": "^7.7.0",
     "@uiw/codemirror-theme-monokai": "^4.23.10",
@@ -121,6 +122,7 @@
     "sql-query-identifier": "^2.8.0",
     "sqlanywhere": "beekeeper-studio/node-sqlanywhere#79af05a4f7f94cf6dd45ad56448ccc54356dee9a",
     "ssh2": "^1.14.0",
+    "surrealdb": "^1.3.2",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
     "typeface-roboto": "^0.0.75",
@@ -140,6 +142,7 @@
     "vuedraggable": "^2.24.2",
     "vuex": "^3.1.1",
     "vuex-persist": "^2.0.1",
+    "ws": "^8.18.3",
     "xel": "beekeeper-studio/xel",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yargs-parser": "^21.0.0"
