@@ -92,11 +92,11 @@
       <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">Access Key ID</label>
-          <input type="password" class="form-control" v-model="config.iamAuthOptions.accessKeyId">
+          <masked-input :value="config.iamAuthOptions.accessKeyId" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" />
         </div>
         <div class="form-group">
           <label for="Secret Access Key">Secret Access Key</label>
-          <input type="password" class="form-control" v-model="config.iamAuthOptions.secretAccessKey">
+          <masked-input :value="config.iamAuthOptions.secretAccessKey" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" />
         </div>
       </div>
 
@@ -124,8 +124,12 @@
 </template>
 
 <script>
+import MaskedInput from '@/components/MaskedInput.vue'
 export default {
   props: ['config', 'authType'],
+  components: {
+    MaskedInput,
+  },
   data() {
     return {
       iamAuthenticationEnabled: this.config.iamAuthOptions?.iamAuthenticationEnabled,

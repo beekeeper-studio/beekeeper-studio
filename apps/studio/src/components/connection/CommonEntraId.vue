@@ -60,12 +60,7 @@
             >help_outlined</i
           >
         </label>
-        <input
-          name="server"
-          type="password"
-          class="form-control"
-          v-model="config.host"
-        />
+        <masked-input :value="config.host" @input="val => config.host = val" />
       </div>
       <div class="form-group">
         <label for="database">Database</label>
@@ -106,12 +101,7 @@
       </div>
       <div class="form-group" v-show="showPassword">
         <label for="password">Password</label>
-        <input
-          name="password"
-          type="password"
-          class="form-control"
-          v-model="config.password"
-        />
+        <masked-input :value="config.password" @input="val => config.password = val" :type="'password'" />
       </div>
       <div class="form-group" v-show="showTenantId">
         <label for="tenantId">
@@ -127,39 +117,19 @@
             >help_outlined</i
           >
         </label>
-        <input
-          name="tenantId"
-          type="password"
-          class="form-control"
-          v-model="config.azureAuthOptions.tenantId"
-        />
+        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientSecret">Client ID</label>
-        <input
-          name="clientId"
-          type="password"
-          class="form-control"
-          v-model="config.azureAuthOptions.clientId"
-        />
+        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientSecret">Client Secret</label>
-        <input
-          name="clientSecret"
-          type="password"
-          class="form-control"
-          v-model="config.azureAuthOptions.clientSecret"
-        />
+        <masked-input :value="config.azureAuthOptions.clientSecret" @input="val => config.azureAuthOptions.clientSecret = val" :type="'password'" />
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
-        <input
-          name="msiEndpoint"
-          type="password"
-          class="form-control"
-          v-model="config.azureAuthOptions.msiEndpoint"
-        />
+        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" />
       </div>
     </div>
   </div>
@@ -169,9 +139,13 @@ import { AzureAuthType } from "@/lib/db/types";
 import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import { onMounted } from "vue";
+import MaskedInput from '@/components/MaskedInput.vue'
 
 export default {
   props: ["config", "authType"],
+  components: {
+    MaskedInput,
+  },
   data() {
     return {
       azureAuthEnabled: this.config.azureAuthOptions?.azureAuthEnabled,
