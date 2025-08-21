@@ -3,59 +3,41 @@
  * – Triggers completion after typing SQL keywords like SELECT, FROM, JOIN, etc.
  * – Offers column names based on the current query context or table aliases.
  * – Allows you to inject a custom columnsGetter to lazy load columns.
+ * A CodeMirror extension that triggers completion after typing SQL keywords
+ * like SELECT, FROM, JOIN, etc.
  *
  * Usage:
  *   import { sql } from "./customSql";
- *   import { sqlContextComplete, sqlContextCompletionSource } from "./sqlContextComplete";
+ *   import { sqlContextComplete, sqlCompletionSource } from "./sqlContextComplete";
+ *   import { sqlContextComplete } from "./sqlContextComplete";
  *
  *   // Register the extensions
  *   const extensions = [
- *    customSql(undefined, sqlContextCompletionSource), // Must have sql() extension from customSql.ts
- *    sqlContextComplete(),
+ *    sql(), // NOTE: must use sql extension from ./customSql.ts
+ *    sqlContextComplete(), // trigger completion while typing
+ *    sqlCompletionSource((entity) => {
+ *      return ["column1", "column2", "column3"];
+ *    }) // custom columnsGetter
  *   ]
  */
 
-import {
-  CompletionContext,
-  CompletionResult,
-  startCompletion,
-} from "@codemirror/autocomplete";
-import { syntaxTree } from "@codemirror/language";
-import {
-  StateEffect,
-  StateField,
-  Extension,
-  Text,
-  EditorState,
-} from "@codemirror/state";
+import { Completion, startCompletion } from "@codemirror/autocomplete";
+import { EditorState, Extension, Text } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { columnsToCompletions } from "../utils";
-import getAliases from "../getAliases";
-import { entities } from "./customSql";
-import { Entity } from "lib/components/types";
+import { schemaCompletionFilter } from "./vendor/@codemirror/lang-sql/src/complete";
+import { Entity } from "../../types";
+import { columnsToCompletions, getAliases } from "../utils";
+import { configFacet, entities } from "./customSql";
+import { syntaxTree } from "@codemirror/language";
+import { matchEntity } from "../../../utils/entity";
 
-type ColumnsGetter = (entity: Entity) => string[] | Promise<string[]>;
-
-const setColumnsGetter = StateEffect.define<ColumnsGetter>();
-const columnsGetter = StateField.define<ColumnsGetter | null>({
-  create() {
-    return null;
-  },
-  update(value, tr) {
-    for (let e of tr.effects) {
-      if (e.is(setColumnsGetter)) return e.value;
-    }
-    return value;
-  },
-});
-
-function applyColumnsGetter(view: EditorView, columnsGetter: ColumnsGetter) {
-  view.dispatch({ effects: setColumnsGetter.of(columnsGetter) });
-}
+type ColumnsGetter = (
+  entity: Entity,
+  options: Completion[]
+) => string[] | Promise<string[]>;
 
 function sqlContextComplete(): Extension {
   return [
-    columnsGetter,
     EditorView.updateListener.of((update) => {
       // Check if typing occurred
       if (update.docChanged) {
@@ -75,7 +57,7 @@ function sqlContextComplete(): Extension {
           const textBefore = line.text.slice(0, cursor - line.from);
 
           // Check if we just typed a space after FROM or JOIN
-          if (/\b(SELECT|FROM|JOIN|WHERE|AND|OR)\s$/i.test(textBefore)) {
+          if (/\b(FROM|JOIN)\s$/i.test(textBefore)) {
             // Trigger autocomplete
             startCompletion(update.view);
           }
@@ -85,97 +67,58 @@ function sqlContextComplete(): Extension {
   ];
 }
 
-/**
- * Handle autocomplete context and provide column completions
- */
-async function sqlCompletionSource(
-  context: CompletionContext
-): Promise<CompletionResult> {
-  const word = context.matchBefore(/\w*/);
-  if (!word) return null;
+function sqlCompletionSource(columnsGetter: ColumnsGetter) {
+  return [
+    schemaCompletionFilter.of(async (context, source, options) => {
+      const { parents, aliases } = source;
 
-  if (!context.state.field(columnsGetter)) {
-    return null;
-  }
+      // If the builtin sql completion can't find the table name
+      if (parents.length === 0) {
+        try {
+          const columns = await loadColumnsFromQueryContext(
+            context.state,
+            context.pos,
+            columnsGetter
+          );
+          options = options.concat(columnsToCompletions(columns));
+        } catch (e) {
+          console.error(e);
+        }
+        return options;
+      }
 
-  const cursor = context.pos;
-  const doc = context.state.doc;
+      // Here, the builtin sql completion found the table name
 
-  // Check for dot completion (table.column)
-  let columns: string[];
+      // Get last segment (table or alias)
+      const last = parents[parents.length - 1];
+      const path = aliases?.[last];
+      let table = last;
+      let schema: string | undefined;
+      // let alias: string | undefined;
 
-  const dotColumns = await getDotCompletionColumns(context, cursor, doc);
+      if (path) {
+        // Resolve alias
+        // alias = last;
+        if (path.length === 2) {
+          schema = path[0];
+          table = path[1];
+        } else {
+          table = path[0];
+        }
+      }
 
-  if (dotColumns) {
-    columns = dotColumns;
-  } else {
-    let foundColumns = await loadColumnsFromQueryContext(context.state, cursor);
-    if (foundColumns) {
-      columns = foundColumns;
-    }
-  }
+      const entity = getEntity(context.state, table, schema);
 
-  if (columns && columns.length) {
-    return {
-      from: word.from,
-      options: columnsToCompletions(columns),
-    };
-  }
+      try {
+        const columns = (await columnsGetter(entity, options)) || [];
+        options = options.concat(columnsToCompletions(columns));
+      } catch (e) {
+        console.error(e);
+      }
 
-  return null;
-}
-
-/**
- * Handle dot completion (e.g., table.column or alias.column)
- */
-async function getDotCompletionColumns(
-  context: CompletionContext,
-  cursor: number,
-  doc: Text
-): Promise<string[] | null> {
-  const line = doc.lineAt(cursor);
-  const textBeforeCursor = line.text.substring(0, cursor - line.from);
-  const lastDotPos = textBeforeCursor.lastIndexOf(".");
-
-  if (lastDotPos < 0) return null;
-
-  const textBeforeDot = textBeforeCursor.substring(0, lastDotPos);
-  const identifierMatch = textBeforeDot.match(/([A-Za-z0-9_]+)$/);
-  if (!identifierMatch || !identifierMatch[1]) return null;
-
-  const identifier = identifierMatch[1];
-  const node = syntaxTree(context.state).resolveInner(cursor, -1);
-  const aliases = getAliases(doc, node);
-
-  // Get table name (either directly or from alias)
-  const tableName =
-    aliases && identifier in aliases && aliases[identifier].length > 0
-      ? aliases[identifier][0]
-      : identifier;
-
-  return await requestColumns(
-    tableName,
-    context.state.field(entities),
-    context.state.field(columnsGetter)
-  );
-}
-
-/**
- * Request columns for a specific table
- */
-async function requestColumns(
-  tableName: string,
-  entities: Entity[],
-  columnsGetter: ColumnsGetter
-): Promise<string[]> {
-  if (!columnsGetter) {
-    return [];
-  }
-  const entity = entities.find((e) => e.name === tableName);
-  if (entity) {
-    return await columnsGetter(entity);
-  }
-  return [];
+      return options;
+    }),
+  ];
 }
 
 /**
@@ -183,7 +126,8 @@ async function requestColumns(
  */
 async function loadColumnsFromQueryContext(
   state: EditorState,
-  cursor: number
+  cursor: number,
+  columnsGetter: ColumnsGetter
 ): Promise<string[]> {
   const doc = state.doc;
   const line = doc.lineAt(cursor);
@@ -198,13 +142,10 @@ async function loadColumnsFromQueryContext(
   // Request columns for all tables and combine results
   const columns = [];
   for (const tableName of tables) {
-    columns.push(
-      ...(await requestColumns(
-        tableName,
-        state.field(entities),
-        state.field(columnsGetter)
-      ))
-    );
+    const gotColumns = await columnsGetter(getEntity(state, tableName), []);
+    if (gotColumns) {
+      columns.push(...gotColumns);
+    }
   }
   return columns;
 }
@@ -278,9 +219,26 @@ function getContextText(doc: Text, startLine: number, endLine: number): string {
   return contextText;
 }
 
-export {
-  ColumnsGetter,
-  applyColumnsGetter,
-  sqlContextComplete,
-  sqlCompletionSource,
-};
+function getEntity(state: EditorState, table: string, schema?: string) {
+  const config = state.facet(configFacet);
+
+  return (
+    state.field(entities).find((e) => {
+      if (
+        e.entityType !== "table" &&
+        e.entityType !== "view" &&
+        e.entityType !== "materialized-view"
+      ) {
+        return false;
+      }
+
+      return matchEntity(
+        e,
+        { entityType: e.entityType, name: table, schema },
+        config.defaultSchema
+      );
+    }) ?? { schema, entityType: "table", name: table }
+  );
+}
+
+export { sqlContextComplete, sqlCompletionSource, ColumnsGetter };

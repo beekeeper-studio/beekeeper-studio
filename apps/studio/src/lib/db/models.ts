@@ -84,6 +84,7 @@ export interface TableProperties {
   partitions?: TablePartition[]
   owner?: string,
   createdAt?: string
+  permissionWarnings?: string[]
 }
 
 export interface TableColumn {
@@ -119,6 +120,9 @@ export interface DatabaseFilterOptions {
   database?: string;
   only?: string[];
   ignore?: string[];
+
+  // surrealdb only
+  namespace?: string;
 }
 
 export interface SchemaFilterOptions {
@@ -159,7 +163,7 @@ export interface BksField {
   bksType: BksFieldType;
 }
 
-export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID';
+export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID' | 'SURREALID';
 
 export interface TableChanges {
   inserts: TableInsert[];

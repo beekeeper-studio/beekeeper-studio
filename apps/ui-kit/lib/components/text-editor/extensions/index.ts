@@ -95,7 +95,7 @@ const customHighlightStyle = HighlightStyle.define([
   { tag: tags.strikethrough, class: "cm-strikethrough" },
 ]);
 
-export function extensions(config: ExtensionConfiguration) {
+export function extensions(config: ExtensionConfiguration = {}) {
   return [
     specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     extraKeymap({ keybindings: config.keybindings }),
@@ -146,7 +146,7 @@ export function extensions(config: ExtensionConfiguration) {
       ...lintKeymap,
       { key: "Tab", run: acceptCompletion },
       indentWithTab,
-      ...config.actionsKeymap
+      ...(config.actionsKeymap || []),
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
     readOnly({ enabled: config.readOnly }),
