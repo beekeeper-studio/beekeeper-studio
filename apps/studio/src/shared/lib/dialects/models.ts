@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'trino'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -45,7 +45,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   clickhouse: "ClickHouse",
   mongodb: "MongoDB",
   sqlanywhere: 'SqlAnywhere',
-  trino: 'Trino'
+  trino: 'Trino',
+  surrealdb: 'SurrealDB'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -71,6 +72,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'cassandra') return 'sql'
   if (d === 'duckdb') return 'sql'
   if (d === 'trino') return 'trino'
+  if (d === 'surrealdb') return 'sql'
   return 'mysql' // we want this as the default
 }
 
@@ -281,7 +283,7 @@ export const AdditionalMongoOrders = [ '2d', '2dsphere', 'text', 'geoHaystack', 
 
 export interface IndexColumn {
   name: string
-  order: 'ASC' | 'DESC' | '2d' | '2dsphere' | 'text' | 'geoHaystack' | 'hashed' | number // after DESC is for mongo only
+  order?: 'ASC' | 'DESC' | '2d' | '2dsphere' | 'text' | 'geoHaystack' | 'hashed' | number // after DESC is for mongo only
   prefix?: number | null // MySQL Only
 }
 

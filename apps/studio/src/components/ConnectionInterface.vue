@@ -86,6 +86,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <surreal-db-form
+                  v-else-if="config.connectionType === 'surrealdb' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
@@ -166,6 +171,7 @@ import MongoDbForm from './connection/MongoDBForm.vue'
 import DuckDbForm from './connection/DuckDBForm.vue'
 import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
 import TrinoForm from './connection/TrinoForm.vue'
+import SurrealDbForm from './connection/SurrealDBForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -188,7 +194,7 @@ const log = rawLog.scope('ConnectionInterface')
 
 export default Vue.extend({
   components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm,
-    ContentPlaceholderHeading,
+    ContentPlaceholderHeading, SurrealDbForm
   },
 
   data() {

@@ -31,7 +31,8 @@
           >Close Tab</a>
         </div>
       </div>
-      <sql-text-editor
+      <component
+        :is="editorComponent"
         :value="unsavedText"
         :read-only="editor.readOnly"
         :is-focused="focusingElement === 'text-editor'"
@@ -350,6 +351,7 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
+  import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -372,7 +374,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -441,6 +443,9 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
+      editorComponent() {
+        return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
+      },
       enabled() {
         return !this.dialectData?.disabledFeatures?.queryEditor;
       },
@@ -974,20 +979,20 @@
           const lastQuery = this.$store.state['data/usedQueries']?.items?.[0]
           const isDuplicate = lastQuery?.text?.trim() === query?.trim()
 
-          const queryObj = { 
-            text: query, 
-            numberOfRecords: totalRows, 
-            queryId: this.query?.id, 
-            connectionId: this.usedConfig.id 
+          const queryObj = {
+            text: query,
+            numberOfRecords: totalRows,
+            queryId: this.query?.id,
+            connectionId: this.usedConfig.id
           }
 
           if(lastQuery && isDuplicate){
             queryObj.updatedAt = new Date();
             queryObj.id = lastQuery.id;
           }
-          
+
           this.$store.dispatch('data/usedQueries/save', queryObj)
-          
+
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'

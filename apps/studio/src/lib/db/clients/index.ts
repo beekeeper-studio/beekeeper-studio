@@ -240,5 +240,15 @@ export const CLIENTS: ClientConfig[] = [
       'server:ssl',
       'server:socketPath'
     ]
+  },
+  {
+    key: 'surrealdb',
+    name: 'SurrealDB',
+    defaultPort: 8000,
+    disabledFeatures: [
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'server:ssl'
+    ]
   }
 ];
