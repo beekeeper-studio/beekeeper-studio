@@ -1,5 +1,4 @@
 import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
-import { SemVer } from "semver";
 
 /**
  * The kind of the tab. There is only one kind currently:

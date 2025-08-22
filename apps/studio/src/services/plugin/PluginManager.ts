@@ -49,10 +49,6 @@ export default class PluginManager {
       return;
     }
 
-    await this.reinitialize(options);
-  }
-
-  async reinitialize(options: PluginManagerInitializeOptions = {}) {
     this.installedPlugins = this.fileManager.scanPlugins();
 
     this.pluginSettings = _.cloneDeep(options.pluginSettings) || {};
