@@ -6,5 +6,6 @@ export * from "./entity-list";
 export * from "./data-editor";
 export * from "./types";
 export * from "./mongo-shell";
+export * from "./surreal-text-editor";
 
 export { TabulatorFull as Tabulator } from "tabulator-tables";

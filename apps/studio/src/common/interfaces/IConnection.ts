@@ -1,4 +1,4 @@
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
@@ -12,7 +12,8 @@ export function isUltimateType(s: ConnectionType) {
     'duckdb',
     'clickhouse',
     'mongodb',
-    'sqlanywhere'
+    'sqlanywhere',
+    'surrealdb'
   ]
   return types.includes(s)
 }
@@ -55,6 +56,7 @@ export interface ISimpleConnection extends Transport {
   authId?: number
   libsqlOptions?: LibSQLOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
+  surrealDbOptions?: SurrealDBOptions
 }
 
 export interface IConnection extends ISimpleConnection {

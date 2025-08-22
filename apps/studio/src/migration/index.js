@@ -64,6 +64,7 @@ import addPrivacyModeSetting from "./20250618_add_privacy_mode_setting"
 import createUserPins from './20250604_create_user_pins'
 import createPluginData from './20250630_create_plugin_data'
 import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
+import surrealDbOptions from './20250702_add_surrealdb_options'
 import addIamAuthOptions from './20250819_add_iamAuthOptions'
 
 import ultimate from './ultimate/index'
@@ -102,6 +103,7 @@ const realMigrations = [
   sqlAnywhereOptions,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
+  surrealDbOptions,
   addIamAuthOptions
 ]
 

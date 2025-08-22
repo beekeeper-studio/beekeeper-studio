@@ -40,6 +40,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.authId = other.authId
       this.libsqlOptions = other.libsqlOptions
       this.sqlAnywhereOptions = other.sqlAnywhereOptions
+      this.surrealDbOptions = other.surrealDbOptions
 
     }
 

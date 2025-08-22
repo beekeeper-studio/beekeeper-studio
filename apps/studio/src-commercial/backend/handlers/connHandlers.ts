@@ -155,9 +155,15 @@ export const ConnHandlers: IConnectionHandlers = {
     const abortController = new AbortController();
     state(sId).connectionAbortController = abortController;
 
+    let database = config.defaultDatabase || undefined;
+
+    if (config.connectionType === 'surrealdb' && config?.surrealDbOptions?.namespace && database) {
+      database = `${config?.surrealDbOptions?.namespace}::${database}`;
+    }
+
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
-    const connection = server.createConnection(config.defaultDatabase || undefined);
+    const connection = server.createConnection(database);
     await connection.connect(abortController.signal);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
@@ -190,6 +196,12 @@ export const ConnHandlers: IConnectionHandlers = {
         conn.authId = cache.id;
         conn.save();
       }
+    }
+
+    let database = config.defaultDatabase || undefined;
+
+    if (config.connectionType === 'surrealdb' && config?.surrealDbOptions?.namespace && database) {
+      database = `${config.surrealDbOptions?.namespace}::${database}`;
     }
 
     const settings = await UserSetting.all();
