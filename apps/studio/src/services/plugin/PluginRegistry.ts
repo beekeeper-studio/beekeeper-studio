@@ -1,13 +1,14 @@
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { PluginRepository, PluginRegistryEntry } from "./types";
+import { NotFoundPluginError } from "@commercial/backend/plugin-system/errors";
 
 const log = rawLog.scope("PluginRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
-  entries: PluginRegistryEntry[] = [];
-  repositories: Record<string, PluginRepository> = {};
+  private entries: PluginRegistryEntry[] = [];
+  private repositories: Record<string, PluginRepository> = {};
 
   constructor(private readonly repositoryService: PluginRepositoryService) {}
 
@@ -40,7 +41,7 @@ export default class PluginRegistry {
     const entry = entries.find((entry) => entry.id === pluginId);
 
     if (!entry) {
-      throw new Error(`Plugin "${pluginId}" not found in registry.`);
+      throw new NotFoundPluginError(`Plugin "${pluginId}" not found in registry.`);
     }
 
     log.debug(
@@ -59,5 +60,10 @@ export default class PluginRegistry {
       log.error(`Failed to fetch info for plugin "${pluginId}"`, e);
       throw e;
     }
+  }
+
+  clearCache() {
+    this.entries = [];
+    this.repositories = {};
   }
 }

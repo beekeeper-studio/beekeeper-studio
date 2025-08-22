@@ -53,7 +53,7 @@ export interface Manifest {
   /** The path to the plugin's root directory. This is helpful when you use a bundler to build the project to a `dist/` directory for example. */
   pluginEntryDir?: string;
   /** @todo not yet implemented. This is a list of settings that can be configured by config files. */
-  settings: {
+  settings?: {
     id: string;
     name: string;
     type: "string" | "number" | "boolean";
@@ -61,7 +61,7 @@ export interface Manifest {
     default: string | number | boolean;
   }[];
   /** @todo not yet implemented */
-  permissions: (
+  permissions?: (
     | "run-custom-queries"
     | "create-entities"
     | "edit-entities"
@@ -76,13 +76,12 @@ export type PluginRegistryEntry = Pick<
 };
 
 export interface Release {
-  version: SemVer;
-  beta: boolean;
+  manifest: Manifest;
   sourceArchiveUrl: string;
 }
 
 export interface PluginRepository {
-  releases: Release[];
+  latestRelease: Release;
   readme: string;
 }
 

@@ -1,20 +1,20 @@
 export const NotSupportedPluginError = class extends Error {
   constructor(message: string) {
-    super("Plugin not supported: " + message);
+    super(message);
     this.name = "NotSupportedPluginError";
   }
 };
 
 export const NotFoundPluginError = class extends Error {
   constructor(message: string) {
-    super("Plugin not found: " + message);
+    super(message);
     this.name = "NotFoundPluginError";
   }
 };
 
 export const PluginFetchError = class extends Error {
   constructor(message: string) {
-    super("Plugin fetch error: " + message);
+    super(message);
     this.name = "PluginFetchError";
   }
 };

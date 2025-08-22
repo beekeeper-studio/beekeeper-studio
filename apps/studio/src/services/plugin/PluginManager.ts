@@ -6,7 +6,6 @@ import {
   PluginRegistryEntry,
   PluginRepository,
   PluginSettings,
-  Release,
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
@@ -112,8 +111,8 @@ export default class PluginManager {
     return semver.lte(manifest.minAppVersion, this.options.appVersion);
   }
 
-  /** Install the latest version of a plugin. If version is specified, install the specified version. */
-  async installPlugin(id: string, version?: string): Promise<Manifest> {
+  /** Install the latest version of a plugin. */
+  async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
 
     let update = false;
@@ -129,31 +128,19 @@ export default class PluginManager {
         throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
       }
 
-      let release: Release;
-      if (version) {
-        release = info.releases.find((release) => release.version.compare(version) === 0);
-
-        if (!this.isPluginLoadable(release.manifest)) {
-          throw new NotSupportedPluginError(
-            `This plugin requires app version ${release.manifest.minAppVersion} or higher. ` +
-            `(Plugin version "${version}" does not support app version "${this.options.appVersion}"). ` +
-            `Please update Beekeeper Studio or choose a compatible plugin version.`
-          );
-        }
-
-        if (!release) {
-          throw new NotFoundPluginError(`Version "${version}" is not found.`);
-        }
-      } else {
-        release = this.findLatestLoadableReleaseAndThrow(info.releases);
+      if (!this.isPluginLoadable(info.latestRelease.manifest)) {
+        throw new NotSupportedPluginError(
+          `Plugin "${info.latestRelease.manifest.id}" is not compatible with app version "${this.options.appVersion}". ` +
+          `Please upgrade Beekeeper Studio to use this plugin.`
+        );
       }
 
-      log.debug(`Installing plugin "${id}" ${release.version}...`);
+      log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
 
       if (update) {
-        await this.fileManager.update(id, release);
+        await this.fileManager.update(id, info.latestRelease);
       } else {
-        await this.fileManager.download(id, release);
+        await this.fileManager.download(id, info.latestRelease);
       }
 
       const manifest = this.fileManager.getManifest(id);
@@ -168,16 +155,16 @@ export default class PluginManager {
 
       this.fillPluginSettings(id);
 
-      log.info(`Installed plugin "${id}" v${release.manifest.version}`);
+      log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
       return manifest;
     });
   }
 
-  async updatePlugin(id: string, version?: string): Promise<Manifest> {
+  async updatePlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
     await this.registry.reloadRepository(id);
-    return await this.installPlugin(id, version);
+    return await this.installPlugin(id);
   }
 
   async uninstallPlugin(id: string): Promise<void> {
@@ -204,8 +191,14 @@ export default class PluginManager {
       throw new Error(`Plugin "${id}" is not installed.`);
     }
 
-    const head = await this.registry.getRepository(manifest.id);
-    return !!this.findLatestLoadableRelease(head.releases);
+    const head = await this.registry.reloadRepository(manifest.id);
+
+    // latest release is not newer
+    if (semver.lte(head.latestRelease.manifest.version, manifest.version)) {
+      return false;
+    }
+
+    return this.isPluginLoadable(head.latestRelease.manifest);
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
@@ -273,34 +266,5 @@ export default class PluginManager {
     if (!this.initialized) {
       throw new Error("Plugin manager is not initialized.");
     }
-  }
-
-  /** @throws NotSupportedPluginError */
-  private findLatestLoadableReleaseAndThrow(releases: Release[]): Release {
-    const release = this.findLatestLoadableRelease(releases);
-    if (!release) {
-      throw new NotSupportedPluginError(
-        `Plugin "${releases[0].manifest.id}" is not compatible with app version "${this.options.appVersion}". ` +
-        `Please upgrade Beekeeper Studio to use this plugin.`
-      );
-    }
-    return release;
-  }
-
-  private findLatestLoadableRelease(releases: Release[]): Release | null {
-    const sorted = releases
-      .slice()
-      .sort((a, b) => semver.rcompare(a.manifest.version, b.manifest.version));
-    for (const candidate of sorted) {
-      // if minAppVersion is not set, we assume it works on any version
-      if (!candidate.manifest.minAppVersion) {
-        return candidate;
-      }
-
-      if (this.isPluginLoadable(candidate.manifest)) {
-        return candidate;
-      }
-    }
-    return null;
   }
 }
