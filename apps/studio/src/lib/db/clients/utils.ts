@@ -11,6 +11,9 @@ import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
+import {AuthOptions} from "@/lib/db/authentication/azure";
+import platformInfo from "@/common/platform_info";
+import {spawn} from "child_process";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
 const log = logRaw.scope('db/util')
@@ -40,6 +43,37 @@ export function joinQueries(queries) {
   return results.join("")
 }
 
+export async function whichTool({ toolName }: { toolName: string }): Promise<string> {
+  const command = platformInfo.isWindows ? 'where' : 'which';
+
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, [toolName], { shell: true });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    proc.on('error', (err) => {
+      reject(err);
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        const path = stdout.trim().split('\n')[0]; // pick first result
+        resolve(path);
+      } else {
+        reject(`whichTool failed (code ${code})\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
+      }
+    });
+  });
+}
 
 export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   if (!filter) return null
@@ -89,6 +123,18 @@ function wrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
+export function getEntraOptions(server, extra): AuthOptions {
+  return {
+    password: server.config?.password,
+    userName: server.config?.user,
+    tenantId: server.config?.azureAuthOptions.tenantId,
+    clientId: server.config?.azureAuthOptions.clientId,
+    clientSecret: server.config?.azureAuthOptions.clientSecret,
+    msiEndpoint: server.config?.azureAuthOptions.msiEndpoint,
+    cliPath: server.config?.azureAuthOptions.cliPath,
+    ...extra
+  };
+}
 
 export function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = ""
