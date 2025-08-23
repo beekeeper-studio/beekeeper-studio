@@ -402,23 +402,15 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   private async setRedisValue(
     key: string,
     type: string,
-    value: string
+    value: unknown
   ): Promise<void> {
     switch (type) {
       case "string":
-        await this.redis.set(key, value);
+        await this.redis.set(key, value as string);
         break;
       case "list": {
-        // For lists, expect JSON array
-        let listItems: string[];
-        try {
-          listItems = JSON.parse(value);
-          if (!Array.isArray(listItems)) {
-            throw new Error("Expected array for list type");
-          }
-        } catch (error) {
-          throw new Error(`Invalid JSON array for list: ${error.message}`);
-        }
+        // For lists, expect array directly
+        const listItems = value as string[];
 
         // Replace entire list
         await this.redis.del(key);
@@ -428,16 +420,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         break;
       }
       case "set": {
-        // For sets, expect JSON array
-        let setItems: string[];
-        try {
-          setItems = JSON.parse(value);
-          if (!Array.isArray(setItems)) {
-            throw new Error("Expected array for set type");
-          }
-        } catch (error) {
-          throw new Error(`Invalid JSON array for set: ${error.message}`);
-        }
+        // For sets, expect array directly
+        const setItems = value as string[];
 
         // Replace entire set
         await this.redis.del(key);
@@ -447,20 +431,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         break;
       }
       case "hash": {
-        // For hashes, expect JSON object
-        let hashData: Record<string, string>;
-        try {
-          hashData = JSON.parse(value);
-          if (
-            typeof hashData !== "object" ||
-            hashData === null ||
-            Array.isArray(hashData)
-          ) {
-            throw new Error("Expected object for hash type");
-          }
-        } catch (error) {
-          throw new Error(`Invalid JSON object for hash: ${error.message}`);
-        }
+        // For hashes, expect object directly
+        const hashData = value as Record<string, string>;
 
         // Replace entire hash
         await this.redis.del(key);
@@ -470,20 +442,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         break;
       }
       case "zset": {
-        // For sorted sets, expect JSON object with score->members mapping
-        let zsetData: Record<string, string[]>;
-        try {
-          zsetData = JSON.parse(value);
-          if (
-            typeof zsetData !== "object" ||
-            zsetData === null ||
-            Array.isArray(zsetData)
-          ) {
-            throw new Error("Expected object for zset type");
-          }
-        } catch (error) {
-          throw new Error(`Invalid JSON object for zset: ${error.message}`);
-        }
+        // For sorted sets, expect object directly
+        const zsetData = value as Record<string, string[]>;
 
         // Replace entire sorted set
         await this.redis.del(key);
@@ -501,13 +461,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         break;
       }
       case "ReJSON-RL": {
-        // For JSON values, set directly
-        try {
-          JSON.parse(value); // Validate JSON
-          await this.redis.call("JSON.SET", key, "$", value);
-        } catch (error) {
-          throw new Error(`Invalid JSON for ReJSON: ${error.message}`);
-        }
+        // For JSON values, expect parsed object that needs to be stringified
+        await this.redis.call("JSON.SET", key, "$", JSON.stringify(value));
         break;
       }
       default:
@@ -519,11 +474,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   private async fetchRedisValue(key: string, type: string): Promise<unknown> {
     switch (type) {
       case "string":
-        return await this.redis.get(key);
+        return this.redis.get(key);
       case "list":
-        return await this.redis.lrange(key, 0, -1);
+        return this.redis.lrange(key, 0, -1);
       case "set":
-        return await this.redis.smembers(key);
+        return this.redis.smembers(key);
       case "zset": {
         const result = await this.redis.zrange(key, 0, -1, "WITHSCORES");
         const pairs = _.chunk(result, 2).map(([member, score]) => ({
@@ -536,7 +491,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         );
       }
       case "hash":
-        return await this.redis.hgetall(key);
+        return this.redis.hgetall(key);
       case "ReJSON-RL": {
         const result = await this.redis.call("JSON.GET", key, "$");
         return JSON.parse(String(result));
