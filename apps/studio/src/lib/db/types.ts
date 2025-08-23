@@ -1,7 +1,7 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -21,7 +21,8 @@ export const ConnectionTypes = [
   { name: 'DuckDB', value: 'duckdb' },
   { name: 'ClickHouse', value: 'clickhouse' },
   { name: 'MongoDB', value: 'mongodb' },
-  { name: 'SqlAnywhere', value: 'sqlanywhere' }
+  { name: 'SqlAnywhere', value: 'sqlanywhere' },
+  { name: 'SurrealDB', value: 'surrealdb' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -111,6 +112,32 @@ export interface SQLAnywhereOptions {
   databaseFile?: string;
 }
 
+export interface SurrealDBOptions {
+  authType?: SurrealAuthType;
+  protocol?: 'http' | 'https' | 'ws' | 'wss';
+  namespace?: string;
+  token?: string;
+}
+
+export enum SurrealAuthType {
+  Root,
+  Namespace,
+  Database,
+  RecordAccess,
+  Token,
+  Anonymous
+}
+
+export const SurrealAuthTypes = [
+  { name: 'Root', value: SurrealAuthType.Root },
+  { name: 'Namespace', value: SurrealAuthType.Namespace },
+  { name: 'Database', value: SurrealAuthType.Database },
+  { name: 'Record Access', value: SurrealAuthType.RecordAccess },
+  { name: 'Token', value: SurrealAuthType.Token },
+  { name: 'Anonymous', value: SurrealAuthType.Anonymous }
+];
+
+
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
@@ -123,6 +150,8 @@ export interface IDbConnectionDatabase {
   database: string,
   connected: Nullable<boolean>,
   connecting: boolean,
+  // Only used for surrealdb
+  namespace: string
 }
 
 export interface IDbConnectionServerSSHConfig {
@@ -169,6 +198,7 @@ export interface IDbConnectionServerConfig {
   authId?: number
   libsqlOptions?: LibSQLOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
+  surrealDbOptions?: SurrealDBOptions
   runtimeExtensions?: string[]
 }
 

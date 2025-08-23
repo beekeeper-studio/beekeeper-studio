@@ -227,3 +227,29 @@ services:
       - CLICKHOUSE_USER=username
       - CLICKHOUSE_PASSWORD=password
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+
+  clickhouse25:
+    image: clickhouse/clickhouse-server:25.6.1
+    ports:
+      - 8124:8123
+    environment:
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    user: "${SURREAL_UID}"
+    command: start --log trace --user root --pass root --allow-all rocksdb:/mydata/surreal.db
+    ports:
+      - 8000:8000
+    volumes:
+      - ./surreal_data:/mydata
+
+  surrealdb-seed:
+    image: surrealdb/surrealdb:latest
+    depends_on:
+      - surrealdb
+    command: import --conn http://surrealdb:8000 --user root --pass root --ns test --db test /seed.surql
+    volumes:
+      - ./dev/docker_surrealdb_init/seed.surql:/seed.surql:ro
