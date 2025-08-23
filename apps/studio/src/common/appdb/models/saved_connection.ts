@@ -100,6 +100,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'sqlanywhere':
         port = 2638
         break
+      case 'redis':
+        port = 6379
+        break
       default:
         port = null
     }

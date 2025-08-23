@@ -93,7 +93,7 @@ export interface ExtensionConfiguration {
   actionsKeymap?: any[];
 }
 
-export type LanguageId = "json" | "html" | "javascript";
+export type LanguageId = "json" | "html" | "javascript" | "redis";
 
 export interface LSContext {
   client: LanguageServerClient;
