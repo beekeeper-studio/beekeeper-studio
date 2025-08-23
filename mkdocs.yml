@@ -118,7 +118,15 @@ nav:
     - user_guide/backup-restore.md
     - Cloud Workspaces: user_guide/cloud-storage-team-workspaces.md
     - user_guide/security.md
+    - Plugins: user_guide/plugins.md
     - Configuration: user_guide/configuration.md
+  # - Plugin Development:
+  #   - Introduction: plugin_development/index.md
+  #   - Creating your first plugin: plugin_development/creating-your-first-plugin.md
+  #   - Plugin Views: plugin_development/plugin-views.md
+  #   - Manifest Reference: plugin_development/manifest.md
+  #   - API Reference: plugin_development/api-reference.md
+  #   - Publishing: plugin_development/publishing-plugins.md
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md

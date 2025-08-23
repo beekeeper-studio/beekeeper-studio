@@ -15,6 +15,7 @@ module.exports = {
     // tell Jest to handle *.vue files
     'vue',
     'ts',
+    'mjs',
   ],
   transformIgnorePatterns: ['node_modules/(?!uuid)/'],
   modulePathIgnorePatterns: [
