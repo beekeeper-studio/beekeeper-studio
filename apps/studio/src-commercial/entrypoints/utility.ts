@@ -42,7 +42,7 @@ const pluginManager = new PluginManager({
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
-  installDefaults: bksConfig.plugins.installDefaults,
+  defaultConfig: bksConfig.plugins.default,
 });
 
 interface Reply {

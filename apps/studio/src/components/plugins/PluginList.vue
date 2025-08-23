@@ -12,6 +12,10 @@
           {{ plugin.name }}
           <span class="badge" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">disabled</span>
         </div>
+        <div class="status-error" v-if="!plugin.loadable">
+          <i class="material-icons">error_outline</i>
+          This plugin requires version {{ plugin.minAppVersion }} or newer.
+        </div>
         <div class="description">
           {{ plugin.description }}
         </div>
@@ -63,9 +67,9 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { CommonPluginInfo } from "@/services/plugin/types";
+import type { PluginRegistryEntry } from "@/services/plugin/types";
 
-interface Plugin extends CommonPluginInfo {
+interface Plugin extends PluginRegistryEntry {
   installing: boolean;
   installed: boolean;
   enabled: boolean;
@@ -80,7 +84,7 @@ export default Vue.extend({
     },
   },
   methods: {
-    handleItemClick(_event: MouseEvent, plugin: CommonPluginInfo) {
+    handleItemClick(_event: MouseEvent, plugin: Plugin) {
       this.$emit("item-click", plugin);
     },
   },

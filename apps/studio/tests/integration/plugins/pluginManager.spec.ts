@@ -43,12 +43,12 @@ describe("Basic Plugin Management", () => {
         typeof appVersionOrOptions === "string"
           ? appVersionOrOptions
           : appVersionOrOptions.appVersion,
-      installDefaults:
+      defaultConfig:
         typeof appVersionOrOptions === "string"
           ? { autoUpdate: false }
           : {
             autoUpdate: false,
-            ...appVersionOrOptions.installDefaults,
+            ...appVersionOrOptions.defaultConfig,
           },
       onPluginSettingsChange:
         typeof appVersionOrOptions === "string"
@@ -123,9 +123,9 @@ describe("Basic Plugin Management", () => {
     it("can install the latest plugins if compatible", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      const plugins = manager.getInstalledPlugins();
+      const plugins = manager.getPlugins();
       expect(plugins).toHaveLength(1);
-      expect(plugins[0].version).toBe("1.0.0");
+      expect(plugins[0].manifest.version).toBe("1.0.0");
     });
 
     it("can not install the latest plugins if not compatible", async () => {
@@ -147,7 +147,7 @@ describe("Basic Plugin Management", () => {
     it("can load compatible plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      expect(manager.getLoadablePlugins()).toHaveLength(1);
+      expect(manager.getPlugins()[0]).toHaveProperty("loadable", true);
     });
 
     // Simulates a user who installed a plugin, then downgraded the app.
@@ -163,7 +163,7 @@ describe("Basic Plugin Management", () => {
       const oldManager = await initPluginManager(AppVer.INCOMPAT);
 
       // 4. The downgraded app should not load incompatible plugins
-      expect(oldManager.getLoadablePlugins()).toHaveLength(0);
+      expect(oldManager.getPlugins()[0]).toHaveProperty("loadable", false);
     });
   });
 
@@ -197,7 +197,7 @@ describe("Basic Plugin Management", () => {
           },
         },
       });
-      expect(manager2.getInstalledPlugins()[0].version).toBe("1.2.0");
+      expect(manager2.getPlugins()[0].manifest.version).toBe("1.2.0");
     });
 
     it("can update plugins manually", async () => {
@@ -208,7 +208,8 @@ describe("Basic Plugin Management", () => {
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
 
       await manager.updatePlugin("test-plugin");
-      expect(manager.getInstalledPlugins()[0].version).toBe("1.2.0");
+      console.log(manager.getPlugins());
+      expect(manager.getPlugins()[0].manifest.version).toBe("1.2.0");
     });
 
     it("can not update plugins if not compatible", async () => {
@@ -239,7 +240,7 @@ describe("Basic Plugin Management", () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
       await manager.uninstallPlugin("test-plugin");
-      expect(manager.getInstalledPlugins()).toHaveLength(0);
+      expect(manager.getPlugins()).toHaveLength(0);
     });
   });
 });

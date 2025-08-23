@@ -3,6 +3,7 @@ import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
   Manifest,
+  PluginContext,
   PluginRegistryEntry,
   PluginRepository,
   PluginSettings,
@@ -11,7 +12,6 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import semver from "semver";
 import { NotFoundPluginError, NotSupportedPluginError } from "@commercial/backend/plugin-system/errors";
-import bksConfig from "@/common/bksConfig";
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 const log = rawLog.scope("PluginManager");
@@ -25,15 +25,15 @@ export type PluginManagerOptions = {
   registry?: PluginRegistry;
   onPluginSettingsChange?: (pluginSettings: PluginSettings) => void;
   appVersion: string;
-  installDefaults: BksConfig['plugins']['installDefaults'];
+  defaultConfig: BksConfig['plugins']['default'];
 }
 
 export default class PluginManager {
   private initialized = false;
   private registry: PluginRegistry;
   private fileManager: PluginFileManager;
-  private installedPlugins: Manifest[] = [];
-  private pluginSettings: PluginSettings = {};
+  private plugins: PluginContext[] = [];
+  pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
   constructor(readonly options: PluginManagerOptions) {
@@ -49,13 +49,18 @@ export default class PluginManager {
       return;
     }
 
-    this.installedPlugins = this.fileManager.scanPlugins();
+    const installedPlugins = this.fileManager.scanPlugins();
 
     this.pluginSettings = _.cloneDeep(options.pluginSettings) || {};
 
+    this.plugins = installedPlugins.map((manifest) => ({
+      manifest,
+      loadable: this.isPluginLoadable(manifest),
+    }));
+
     this.initialized = true;
 
-    const promises = this.installedPlugins.map(async (plugin) => {
+    const promises = installedPlugins.map(async (plugin) => {
       if (
         this.pluginSettings[plugin.id]?.autoUpdate &&
         (await this.checkForUpdates(plugin.id))
@@ -87,24 +92,13 @@ export default class PluginManager {
     return await this.registry.getRepository(pluginId);
   }
 
-  // TODO implement enable/disable plugins
-  async getEnabledPlugins() {
+  getPlugins(): PluginContext[] {
     this.initializeGuard();
-    return this.installedPlugins;
-  }
-
-  getInstalledPlugins(): Manifest[] {
-    this.initializeGuard();
-    return this.installedPlugins;
-  }
-
-  getLoadablePlugins(): Manifest[] {
-    this.initializeGuard();
-    return this.installedPlugins.filter(this.isPluginLoadable.bind(this));
+    return this.plugins;
   }
 
   isPluginLoadable(manifest: Manifest): boolean {
-    return semver.lte(manifest.minAppVersion, this.options.appVersion);
+    return semver.lte(semver.coerce(manifest.minAppVersion), semver.coerce(this.options.appVersion));
   }
 
   /** Install the latest version of a plugin. */
@@ -114,7 +108,7 @@ export default class PluginManager {
     let update = false;
 
     // If plugin is already installed, perform update
-    if (this.installedPlugins.find((manifest) => manifest.id === id)) {
+    if (this.plugins.find(({ manifest }) => manifest.id === id)) {
       update = true;
     }
 
@@ -140,13 +134,17 @@ export default class PluginManager {
       }
 
       const manifest = this.fileManager.getManifest(id);
-      const installedPluginIdx = this.installedPlugins.findIndex(
-        (manifest) => manifest.id === id
+      const installedPluginIdx = this.plugins.findIndex(
+        ({ manifest }) => manifest.id === id
       );
+      const plugin: PluginContext = {
+        manifest,
+        loadable: this.isPluginLoadable(manifest),
+      };
       if (installedPluginIdx === -1) {
-        this.installedPlugins.push(manifest);
+        this.plugins.push(plugin);
       } else {
-        this.installedPlugins[installedPluginIdx] = manifest;
+        this.plugins[installedPluginIdx] = plugin;
       }
 
       this.fillPluginSettings(id);
@@ -169,8 +167,8 @@ export default class PluginManager {
       log.debug(`Uninstalling plugin "${id}"...`);
 
       this.fileManager.remove(id);
-      this.installedPlugins = this.installedPlugins.filter(
-        (manifest) => manifest.id !== id
+      this.plugins = this.plugins.filter(
+        ({ manifest }) => manifest.id !== id
       );
 
       log.debug(`Plugin "${id}" uninstalled!`);
@@ -180,8 +178,8 @@ export default class PluginManager {
   /** if returns true, update is available */
   async checkForUpdates(id: string): Promise<boolean> {
     this.initializeGuard();
-    const manifest = this.installedPlugins.find(
-      (manifest) => manifest.id === id
+    const { manifest } = this.plugins.find(
+      ({ manifest }) => manifest.id === id
     );
     if (!manifest) {
       throw new Error(`Plugin "${id}" is not installed.`);
@@ -190,7 +188,7 @@ export default class PluginManager {
     const head = await this.registry.reloadRepository(manifest.id);
 
     // latest release is not newer
-    if (semver.lte(head.latestRelease.manifest.version, manifest.version)) {
+    if (semver.lte(semver.coerce(head.latestRelease.manifest.version), semver.coerce(manifest.version))) {
       return false;
     }
 
@@ -227,10 +225,10 @@ export default class PluginManager {
   fillPluginSettings(id: string) {
     let changed = false;
     if (!this.pluginSettings[id]) {
-      this.pluginSettings[id] = _.cloneDeep(this.options.installDefaults);
+      this.pluginSettings[id] = _.cloneDeep(this.options.defaultConfig);
       changed = true;
     } else {
-      for (const [key, value] of Object.entries(bksConfig.plugins.installDefaults)) {
+      for (const [key, value] of Object.entries(this.options.defaultConfig)) {
         if (!_.has(this.pluginSettings[id], key)) {
           this.pluginSettings[id][key] = _.clone(value);
           changed = true;
@@ -251,16 +249,13 @@ export default class PluginManager {
     this.options?.onPluginSettingsChange?.(this.pluginSettings);
   }
 
-  getPluginSettings(id: string): PluginSettings[string] {
-    if (!_.has(this.pluginSettings, id)) {
-      throw new NotFoundPluginError(`"${id}" not found in plugin settings.`);
-    }
-    return _.clone(this.pluginSettings[id]);
-  }
-
   private initializeGuard() {
     if (!this.initialized) {
       throw new Error("Plugin manager is not initialized.");
     }
+  }
+
+  get isInitialized() {
+    return this.initialized;
   }
 }

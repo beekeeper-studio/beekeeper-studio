@@ -96,5 +96,13 @@ export type OnViewRequestListenerParams = {
 export type PluginSettings = {
   [pluginId: string]: {
     autoUpdate: boolean;
+    disabled?: boolean;
   }
 }
+
+export type PluginContext = {
+  manifest: Manifest;
+  loadable: boolean;
+}
+
+export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";

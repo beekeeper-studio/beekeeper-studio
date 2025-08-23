@@ -18,3 +18,10 @@ export const PluginFetchError = class extends Error {
     this.name = "PluginFetchError";
   }
 };
+
+export const PluginTimeoutError = class extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PluginTimeoutError";
+  }
+};

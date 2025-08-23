@@ -72,8 +72,14 @@
         {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
       <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
-        <i class="material-icons-outlined">info</i>
+        <i class="material-icons">info_outline</i>
         <div>This plugin has been disabled via configuration</div>
+      </div>
+      <div class="alert alert-danger" v-if="!plugin.loadable">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body expand">
+          <span>This plugin requires version {{ plugin.minAppVersion }} or newer. Please upgrade your Beekeeper Studio or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install</a> a compatible plugin version.</span>
+        </div>
       </div>
     </div>
     <div class="markdown-content">

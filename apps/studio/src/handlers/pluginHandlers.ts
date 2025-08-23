@@ -1,9 +1,10 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
-import { Manifest, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { Manifest, PluginContext, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { PluginTimeoutError } from "@commercial/backend/plugin-system/errors";
 
 interface IPluginHandlers {
-  "plugin/enabledPlugins": () => Promise<Manifest[]>
+  "plugin/plugins": () => Promise<PluginContext[]>
   "plugin/entries": () => Promise<PluginRegistryEntry[]>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
@@ -21,8 +22,27 @@ interface IPluginHandlers {
 }
 
 export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers = (pluginManager) => ({
-  "plugin/enabledPlugins": async () => {
-    return await pluginManager.getEnabledPlugins();
+  "plugin/waitForInit": async () => {
+    if (pluginManager.isInitialized) {
+      return;
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      let duration = 0;
+      const interval = setInterval(() => {
+        duration += 100;
+        if (pluginManager.isInitialized) {
+          clearInterval(interval);
+          resolve();
+        } else if (duration > 30_000) {
+          clearInterval(interval);
+          reject(new PluginTimeoutError("Plugin initialization timed out"));
+        }
+      }, 100);
+    });
+  },
+  "plugin/plugins": async () => {
+    return pluginManager.getPlugins();
   },
   "plugin/entries": async () => {
     return await pluginManager.getEntries();
@@ -46,7 +66,7 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     pluginManager.changePluginSettings(id, "autoUpdate", enabled);
   },
   "plugin/getAutoUpdateEnabled": async ({ id }) => {
-    return pluginManager.getPluginSettings(id)["autoUpdate"];
+    return pluginManager.pluginSettings[id]?.autoUpdate;
   },
 
   "plugin/setData": async ({ manifest, key, value }) => {

@@ -131,13 +131,13 @@ declare interface IBksConfig {
     };
     plugins: {
         "bks-ai-shell": {
-            enabled: boolean;
+            disabled: boolean;
+        };
+        default: {
+            autoUpdate: boolean;
         };
         general: {
             preinstalled: string[];
-        };
-        installDefaults: {
-            autoUpdate: boolean;
         };
     };
     security: {
