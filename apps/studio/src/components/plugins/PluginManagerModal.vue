@@ -122,6 +122,7 @@ export default Vue.extend({
         state.installed = true;
       } catch (e) {
         log.error(e);
+        state.error = e;
         this.$noty.error(`Failed to install plugin: ${e.message}`);
       } finally {
         state.installing = false;
@@ -137,6 +138,7 @@ export default Vue.extend({
         state.updateAvailable = false;
       } catch (e) {
         log.error(e);
+        state.error = e;
         this.$noty.error(`Failed to update plugin: ${e.message}`);
       } finally {
         state.installing = false;
@@ -178,6 +180,7 @@ export default Vue.extend({
         state.installed = false;
       } catch (e) {
         log.error(e);
+        state.error = e;
         this.$noty.error(`Failed to uninstall plugin: ${e.message}`);
       }
     },
