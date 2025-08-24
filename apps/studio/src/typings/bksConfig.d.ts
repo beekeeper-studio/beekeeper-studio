@@ -135,6 +135,7 @@ declare interface IBksConfig {
         };
         default: {
             autoUpdate: boolean;
+            disabled: boolean;
         };
         general: {
             preinstalled: string[];

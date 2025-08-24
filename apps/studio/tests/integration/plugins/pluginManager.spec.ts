@@ -9,7 +9,7 @@ import { MockPluginRepositoryService } from "./utils/registry";
 import {
   NotFoundPluginError,
   NotSupportedPluginError,
-} from "@commercial/backend/plugin-system/errors";
+} from "@/services/plugin/errors";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 
 describe("Basic Plugin Management", () => {

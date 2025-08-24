@@ -11,7 +11,7 @@ import {
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import semver from "semver";
-import { NotFoundPluginError, NotSupportedPluginError } from "@commercial/backend/plugin-system/errors";
+import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 const log = rawLog.scope("PluginManager");

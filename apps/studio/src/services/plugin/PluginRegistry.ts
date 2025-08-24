@@ -1,7 +1,7 @@
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { PluginRepository, PluginRegistryEntry } from "./types";
-import { NotFoundPluginError } from "@commercial/backend/plugin-system/errors";
+import { NotFoundPluginError } from "./errors";
 
 const log = rawLog.scope("PluginRegistry");
 

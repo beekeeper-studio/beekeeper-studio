@@ -1,7 +1,7 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
 import { Manifest, PluginContext, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
-import { PluginTimeoutError } from "@commercial/backend/plugin-system/errors";
+import { PluginTimeoutError } from "@/services/plugin/errors";
 
 interface IPluginHandlers {
   "plugin/plugins": () => Promise<PluginContext[]>
