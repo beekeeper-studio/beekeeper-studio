@@ -23,17 +23,27 @@ import { DevHandlers } from '@/handlers/devHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
-import { PluginManager } from '@/services/plugin';
+import { PluginManager, PluginSettings } from '@/services/plugin';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
+import { UserSetting } from '@/common/appdb/models/user_setting';
+import PluginFileManager from '@/services/plugin/PluginFileManager';
+import bksConfig from "@/common/bksConfig";
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
 
 let ormConnection: ORMConnection;
-const pluginManager = new PluginManager();
+const pluginManager = new PluginManager({
+  onPluginSettingsChange: handleSetPluginSettings,
+  appVersion: platformInfo.appVersion,
+  fileManager: new PluginFileManager({
+    pluginsDirectory: platformInfo.pluginsDirectory,
+  }),
+  defaultConfig: bksConfig.plugins.default,
+});
 
 interface Reply {
   id: string,
@@ -155,12 +165,40 @@ async function initState(sId: string, port: MessagePortMain) {
   state(sId).port.start();
 }
 
+const pluginSettingsKey = 'pluginSettings';
+
+async function handleSetPluginSettings(pluginSettings: PluginSettings) {
+  await UserSetting.set(pluginSettingsKey, JSON.stringify(pluginSettings));
+  log.debug(`Saved plugin settings.`);
+}
+
+/** Loads the list of disabled auto-update plugins from the database.
+ * @todo all plugin settings should be loaded and saved from the config files
+ */
+async function loadPluginSettings(): Promise<PluginSettings> {
+  const setting = await UserSetting.get(pluginSettingsKey);
+  if (setting && setting.value) {
+    const pluginSettings = setting.value as PluginSettings;
+    log.debug(
+      `Loaded plugin settings: ${JSON.stringify(pluginSettings)}`
+    );
+    return pluginSettings;
+  }
+  return {};
+}
+
 async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
   try {
-    await pluginManager.initialize();
+    const pluginSettings = await loadPluginSettings();
+    await pluginManager.initialize({ pluginSettings });
+    for (const pluginId of bksConfig.plugins.general.preinstalled) {
+      if (!pluginSettings[pluginId]) {
+        pluginManager.installPlugin(pluginId).catch((e) => log.error(e));
+      }
+    }
   } catch (e) {
     log.error("Error initializing plugin manager", e);
   }

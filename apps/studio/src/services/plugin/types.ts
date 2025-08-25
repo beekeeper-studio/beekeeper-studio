@@ -32,7 +32,6 @@ export interface Manifest {
   };
   description: string;
   version: string;
-  /** @todo not yet implemented. Should be mandatory once `minAppVersion` is implemented. */
   minAppVersion?: string;
   /** Material UI icon name. https://fonts.google.com/icons?icon.set=Material+Icons */
   icon?: string;
@@ -53,7 +52,7 @@ export interface Manifest {
   /** The path to the plugin's root directory. This is helpful when you use a bundler to build the project to a `dist/` directory for example. */
   pluginEntryDir?: string;
   /** @todo not yet implemented. This is a list of settings that can be configured by config files. */
-  settings: {
+  settings?: {
     id: string;
     name: string;
     type: "string" | "number" | "boolean";
@@ -61,7 +60,7 @@ export interface Manifest {
     default: string | number | boolean;
   }[];
   /** @todo not yet implemented */
-  permissions: (
+  permissions?: (
     | "run-custom-queries"
     | "create-entities"
     | "edit-entities"
@@ -97,5 +96,13 @@ export type OnViewRequestListenerParams = {
 export type PluginSettings = {
   [pluginId: string]: {
     autoUpdate: boolean;
+    disabled?: boolean;
   }
 }
+
+export type PluginContext = {
+  manifest: Manifest;
+  loadable: boolean;
+}
+
+export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";

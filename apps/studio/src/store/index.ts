@@ -36,6 +36,7 @@ import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
+import { WebPluginManagerStatus } from '@/services/plugin'
 
 
 const log = RawLog.scope('store/index')
@@ -77,6 +78,8 @@ export interface State {
   // SurrealDB only
   namespace: Nullable<string>,
   namespaceList: string[],
+
+  pluginManagerStatus: WebPluginManagerStatus,
 }
 
 Vue.use(Vuex)
@@ -132,7 +135,8 @@ const store = new Vuex.Store<State>({
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
     namespace: null,
-    namespaceList: []
+    namespaceList: [],
+    pluginManagerStatus: "initializing",
   },
 
   getters: {
@@ -394,6 +398,9 @@ const store = new Vuex.Store<State>({
     },
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
+    },
+    webPluginManagerStatus(state, status: WebPluginManagerStatus) {
+      state.pluginManagerStatus = status
     },
   },
   actions: {
