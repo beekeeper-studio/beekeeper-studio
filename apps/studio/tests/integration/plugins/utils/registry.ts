@@ -1,14 +1,11 @@
-import { PluginRegistryEntry, Release } from "@/services/plugin";
+import { Manifest, PluginRegistryEntry, Release } from "@/services/plugin";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
 
 type Plugin = {
   id: string;
   name: string;
-  latestRelease: {
-    version: string;
-    minAppVersion: string;
-  };
+  latestRelease: Pick<Manifest, 'version' | 'minAppVersion'>;
   readme: string;
 };
 

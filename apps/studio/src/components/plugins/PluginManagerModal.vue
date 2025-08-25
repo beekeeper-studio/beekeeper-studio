@@ -120,6 +120,8 @@ export default Vue.extend({
         state.installing = true;
         await this.$plugin.install(id);
         state.installed = true;
+        // HACK(azmi): refresh the plugin list or just this item instead
+        state.loadable = true;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -136,6 +138,8 @@ export default Vue.extend({
         const manifest = await this.$plugin.update(id);
         state.version = manifest.version;
         state.updateAvailable = false;
+        // HACK(azmi): refresh the plugin list or just this item instead
+        state.loadable = true;
       } catch (e) {
         log.error(e);
         state.error = e;

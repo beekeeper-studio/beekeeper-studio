@@ -30,7 +30,17 @@ export class MockPluginServer {
     this.server = http.createServer(async (req, res) => {
       try {
         const options = this.parseUrl(req.url);
-        const zipFile = await this.createPluginZip(createTestManifest(options));
+        const zipFile = await this.createPluginZip({
+          id: "test-plugin",
+          name: "Test Plugin",
+          version: options.version,
+          author: "John Doe",
+          description: "This is a test plugin.",
+          minAppVersion: options.minAppVersion,
+          capabilities: {
+            views: [],
+          },
+        });
         res.writeHead(200, {
           "Content-Type": "application/zip",
           "Content-Length": zipFile.length,
@@ -61,7 +71,7 @@ export class MockPluginServer {
     const parts = url.split("/");
     return {
       version: parts[1],
-      minAppVersion: parts[2],
+      minAppVersion: parts[2] === "undefined" ? undefined : parts[2],
     };
   }
 

@@ -98,6 +98,9 @@ export default class PluginManager {
   }
 
   isPluginLoadable(manifest: Manifest): boolean {
+    if (!manifest.minAppVersion) {
+      return true;
+    }
     return semver.lte(semver.coerce(manifest.minAppVersion), semver.coerce(this.options.appVersion));
   }
 

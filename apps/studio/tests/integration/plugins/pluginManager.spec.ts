@@ -45,7 +45,7 @@ describe("Basic Plugin Management", () => {
           : appVersionOrOptions.appVersion,
       defaultConfig:
         typeof appVersionOrOptions === "string"
-          ? { autoUpdate: false }
+          ? { autoUpdate: false, disabled: false }
           : {
             autoUpdate: false,
             ...appVersionOrOptions.defaultConfig,
@@ -74,6 +74,12 @@ describe("Basic Plugin Management", () => {
         latestRelease: { version: "1.0.0", minAppVersion: AppVer.COMPAT },
         readme: "# Frozen Banana\n\nThis is a frozen banana.",
       },
+      {
+        id: "watermelon-sticker",
+        name: "Watermelon Sticker",
+        latestRelease: { version: "1.0.0" },
+        readme: "# Watermelon Sticker\n\nThe sticker for watermelons.",
+      },
     ];
     registry.clearCache();
     fileManager = createFileManager();
@@ -83,13 +89,14 @@ describe("Basic Plugin Management", () => {
     cleanFileManager(fileManager);
   });
 
-  describe("Listing", () => {
+  describe("Discovery", () => {
     it("can list plugin entries", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       const entries = await manager.getEntries();
-      expect(entries).toHaveLength(2);
+      expect(entries).toHaveLength(3);
       expect(entries[0].id).toBe("test-plugin");
       expect(entries[1].id).toBe("frozen-banana");
+      expect(entries[2].id).toBe("watermelon-sticker");
     });
 
     it("can get plugin details (versions, readme, etc..)", async () => {
@@ -148,6 +155,9 @@ describe("Basic Plugin Management", () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
       expect(manager.getPlugins()[0]).toHaveProperty("loadable", true);
+
+      await manager.installPlugin("watermelon-sticker");
+      expect(manager.getPlugins()[1]).toHaveProperty("loadable", true);
     });
 
     // Simulates a user who installed a plugin, then downgraded the app.
@@ -208,7 +218,6 @@ describe("Basic Plugin Management", () => {
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
 
       await manager.updatePlugin("test-plugin");
-      console.log(manager.getPlugins());
       expect(manager.getPlugins()[0].manifest.version).toBe("1.2.0");
     });
 
