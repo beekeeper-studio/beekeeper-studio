@@ -50,23 +50,32 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
-      this.pluginStore.addSidebarTab({
-        id: sidebar.id,
-        label: sidebar.name,
-        url: `plugin://${this.manifest.id}/${this.getEntry(sidebar.entry)}`,
+    if (_.isArray(this.manifest.capabilities.views)) {
+      this.manifest.capabilities.views.forEach((view) => {
+        // Only allow shell tabs
+        if (view.type !== "shell-tab") {
+          return;
+        }
+        this.pluginStore.addTabTypeConfig({
+          pluginId: this.manifest.id,
+          pluginTabTypeId: view.id,
+          name: view.name,
+          kind: "shell",
+          icon: this.manifest.icon,
+        });
       });
-    });
-
-    this.manifest.capabilities.views?.tabTypes?.forEach((tabType) => {
-      this.pluginStore.addTabTypeConfig({
-        pluginId: this.manifest.id,
-        pluginTabTypeId: tabType.id,
-        name: tabType.name,
-        kind: tabType.kind,
-        icon: this.manifest.icon,
+    } else {
+      // FOR BACKWARD COMPATIBILITY
+      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
+        this.pluginStore.addTabTypeConfig({
+          pluginId: this.manifest.id,
+          pluginTabTypeId: tabType.id,
+          name: tabType.name,
+          kind: tabType.kind,
+          icon: this.manifest.icon,
+        });
       });
-    });
+    }
   }
 
   private handleMessage(event: MessageEvent) {
