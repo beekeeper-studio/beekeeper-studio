@@ -21,7 +21,6 @@ export type PluginManagerOptions = {
   fileManager?: PluginFileManager;
   registry?: PluginRegistry;
   appVersion: string;
-  defaultConfig: BksConfig['plugins']['config'];
 }
 
 export default class PluginManager {
@@ -34,6 +33,10 @@ export default class PluginManager {
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
+  /** This is a list of plugins that are preinstalled by default. When the
+   * application starts, these plugins will be installed automatically. The user
+   * should be able to uninstall them later. */
+  static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell"];
 
   constructor(readonly options: PluginManagerOptions) {
     this.fileManager = options.fileManager;
@@ -58,6 +61,16 @@ export default class PluginManager {
     }));
 
     this.initialized = true;
+
+    for (const id of PluginManager.PREINSTALLED_PLUGINS) {
+      // have installed before?
+      if (this.pluginSettings[id]) {
+        continue;
+      }
+
+      await this.installPlugin(id);
+    }
+
 
     for (const plugin of installedPlugins) {
       if (

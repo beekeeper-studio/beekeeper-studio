@@ -23,13 +23,11 @@ import { DevHandlers } from '@/handlers/devHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
-import { PluginManager, PluginSettings } from '@/services/plugin';
+import { PluginManager } from '@/services/plugin';
+import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
-import { UserSetting } from '@/common/appdb/models/user_setting';
-import PluginFileManager from '@/services/plugin/PluginFileManager';
-import bksConfig from "@/common/bksConfig";
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -41,7 +39,6 @@ const pluginManager = new PluginManager({
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
-  defaultConfig: bksConfig.plugins.default,
 });
 
 interface Reply {
@@ -164,35 +161,12 @@ async function initState(sId: string, port: MessagePortMain) {
   state(sId).port.start();
 }
 
-const pluginSettingsKey = 'pluginSettings';
-
-/** Loads the list of disabled auto-update plugins from the database.
- * @todo all plugin settings should be loaded and saved from the config files
- */
-async function loadPluginSettings(): Promise<PluginSettings> {
-  const setting = await UserSetting.get(pluginSettingsKey);
-  if (setting && setting.value) {
-    const pluginSettings = setting.value as PluginSettings;
-    log.debug(
-      `Loaded plugin settings: ${JSON.stringify(pluginSettings)}`
-    );
-    return pluginSettings;
-  }
-  return {};
-}
-
 async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
   try {
-    const pluginSettings = await loadPluginSettings();
     await pluginManager.initialize();
-    for (const pluginId of ["bks-ai-shell"]) {
-      if (!pluginSettings[pluginId]) {
-        pluginManager.installPlugin(pluginId).catch((e) => log.error(e));
-      }
-    }
   } catch (e) {
     log.error("Error initializing plugin manager", e);
   }

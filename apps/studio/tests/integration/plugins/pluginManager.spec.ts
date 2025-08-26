@@ -45,14 +45,8 @@ describe("Basic Plugin Management", () => {
         typeof appVersionOrOptions === "string"
           ? appVersionOrOptions
           : appVersionOrOptions.appVersion,
-      defaultConfig:
-        typeof appVersionOrOptions === "string"
-          ? { autoUpdate: false, disabled: false }
-          : {
-            autoUpdate: false,
-            ...appVersionOrOptions.defaultConfig,
-          },
     };
+
     const manager = new PluginManager(options);
     await manager.initialize();
     return manager;
@@ -70,6 +64,7 @@ describe("Basic Plugin Management", () => {
   });
 
   beforeEach(async () => {
+    PluginManager.PREINSTALLED_PLUGINS = [];
     const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
     setting.userValue = "{}";
     await setting.save();
@@ -158,6 +153,14 @@ describe("Basic Plugin Management", () => {
         NotFoundPluginError
       );
     });
+
+    it("can preinstall plugins", async () => {
+      PluginManager.PREINSTALLED_PLUGINS = ["test-plugin", "frozen-banana"];
+      const manager = await initPluginManager(AppVer.COMPAT);
+      expect(manager.getPlugins()).toHaveLength(2);
+      expect(manager.getPlugins()[0].manifest.id).toBe("test-plugin");
+      expect(manager.getPlugins()[1].manifest.id).toBe("frozen-banana");
+    })
   });
 
   describe("Loading", () => {
