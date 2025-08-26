@@ -409,6 +409,7 @@ addNotificationListener('windowEvent', (args) => {
 | `rows`        | `object[]` | Array of result rows |
 | `fields`      | `Field[]`  | Array of field definitions |
 | `rowCount`    | `number`   | Number of rows returned |
+| `actualRowCount`    | `number`   | Number of rows returned before limit applied. Limit is based on the configuration file `plugin.config.queryResultLimit`  |
 | `affectedRows`| `number`   | Number of rows affected (for INSERT/UPDATE/DELETE) |
 
 ### Field
