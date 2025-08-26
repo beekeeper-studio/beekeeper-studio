@@ -42,7 +42,7 @@ We welcome community contributions!
 | [SQL Anywhere](https://www.sap.com/products/technology-platform/sql-anywhere.html)                            | ⭐ Full Support                |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/sql-anywhere-client/) |
 | [MongoDB](https://www.mongodb.com/)                      | ⭐ Full Support               |           |    ✅    |     [Features](https://www.beekeeperstudio.io/db/mongodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
 | [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
-| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⏳ Coming Soon                |           |    ✅    |      -- |
+| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ Full Support                |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/trino) |
 | [Redis](https://redis.io/)                               | 🗓️ Planned               |           |    ✅    |       -- |
 | [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🗓️ Planned               |           |    ✅    |       -- |
 
