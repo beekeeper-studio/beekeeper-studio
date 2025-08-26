@@ -37,7 +37,6 @@ if (platformInfo.env.development || platformInfo.env.test) {
 
 let ormConnection: ORMConnection;
 const pluginManager = new PluginManager({
-  onPluginSettingsChange: handleSetPluginSettings,
   appVersion: platformInfo.appVersion,
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
@@ -167,11 +166,6 @@ async function initState(sId: string, port: MessagePortMain) {
 
 const pluginSettingsKey = 'pluginSettings';
 
-async function handleSetPluginSettings(pluginSettings: PluginSettings) {
-  await UserSetting.set(pluginSettingsKey, JSON.stringify(pluginSettings));
-  log.debug(`Saved plugin settings.`);
-}
-
 /** Loads the list of disabled auto-update plugins from the database.
  * @todo all plugin settings should be loaded and saved from the config files
  */
@@ -193,8 +187,8 @@ async function init() {
 
   try {
     const pluginSettings = await loadPluginSettings();
-    await pluginManager.initialize({ pluginSettings });
-    for (const pluginId of bksConfig.plugins.general.preinstalled) {
+    await pluginManager.initialize();
+    for (const pluginId of ["bks-ai-shell"]) {
       if (!pluginSettings[pluginId]) {
         pluginManager.installPlugin(pluginId).catch((e) => log.error(e));
       }

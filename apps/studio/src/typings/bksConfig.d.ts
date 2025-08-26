@@ -139,13 +139,6 @@ declare interface IBksConfig {
         "bks-ai-shell": {
             disabled: boolean;
         };
-        default: {
-            autoUpdate: boolean;
-            disabled: boolean;
-        };
-        general: {
-            preinstalled: string[];
-        };
     };
     security: {
         disconnectOnIdle: boolean;

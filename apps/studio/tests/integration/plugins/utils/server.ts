@@ -1,7 +1,8 @@
 import http from "http";
 import { Manifest } from "@/services/plugin";
-import { createTestManifest, TestManifestOptions } from "./helpers";
+import { TestManifestOptions } from "./helpers";
 import JSZip from "jszip";
+import { Plugin } from "./registry";
 
 export function createPluginServer() {
   const server = new MockPluginServer();
@@ -29,18 +30,8 @@ export class MockPluginServer {
 
     this.server = http.createServer(async (req, res) => {
       try {
-        const options = this.parseUrl(req.url);
-        const zipFile = await this.createPluginZip({
-          id: "test-plugin",
-          name: "Test Plugin",
-          version: options.version,
-          author: "John Doe",
-          description: "This is a test plugin.",
-          minAppVersion: options.minAppVersion,
-          capabilities: {
-            views: [],
-          },
-        });
+        const manifest = this.parseUrl(req.url);
+        const zipFile = await this.createPluginZip(manifest);
         res.writeHead(200, {
           "Content-Type": "application/zip",
           "Content-Length": zipFile.length,
@@ -63,16 +54,13 @@ export class MockPluginServer {
     });
   }
 
-  formatUrl(options: TestManifestOptions) {
-    return `http://localhost:${this.port}/${options.version}/${options.minAppVersion}`;
+  formatUrl(options: Manifest) {
+    return `http://localhost:${this.port}/?plugin=${JSON.stringify(options)}`;
   }
 
-  parseUrl(url: string): TestManifestOptions {
-    const parts = url.split("/");
-    return {
-      version: parts[1],
-      minAppVersion: parts[2] === "undefined" ? undefined : parts[2],
-    };
+  parseUrl(url: string): Manifest {
+    const params = new URLSearchParams(url.slice(1));
+    return JSON.parse(params.get("plugin") || "{}");
   }
 
   get port() {

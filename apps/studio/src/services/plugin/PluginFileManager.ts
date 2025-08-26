@@ -18,9 +18,6 @@ export type PluginFileManagerOptions = {
 const log = rawLog.scope("PluginFileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
-// const ARCHIVE_EXTENSION = platformInfo.isWindows ? ".zip" : ".tar.gz";
-const ARCHIVE_EXTENSION = ".zip";
-const ARCHIVE_TMP_FILENAME = `plugin${ARCHIVE_EXTENSION}.tmp`;
 
 class PluginDownloadError extends Error {
   status: "UNKNOWN" | "NOT_FOUND" | "ABORTED" = "UNKNOWN";
@@ -100,6 +97,7 @@ export default class PluginFileManager {
     } = {}
   ) {
     const directory = this.getDirectoryOf(pluginId);
+    const mustCleanup = !this.options?.downloadDirectory;
     const tmpDirectory =
       this.options?.downloadDirectory ||
       path.join(tmpdir(), `beekeeper-plugin-${pluginId}-${Date.now()}`);
@@ -120,7 +118,7 @@ export default class PluginFileManager {
         url: release.sourceArchiveUrl,
         directory: tmpDirectory,
         signal: options.signal,
-        fileName: ARCHIVE_TMP_FILENAME,
+        fileName: `${pluginId}-${release.manifest.version}-${Date.now()}-tmp.zip`,
         headers: {
           "User-Agent": "Beekeeper Studio",
         },
@@ -146,10 +144,14 @@ export default class PluginFileManager {
       this.copyDirectory(tmpDirectory, directory);
 
       // Clean up temp directory
-      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      if (mustCleanup) {
+        fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      }
     } catch (e) {
       // Clean up on error
-      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      if (mustCleanup) {
+        fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      }
       if (!options.tmp) {
         fs.rmSync(directory, { recursive: true, force: true });
       }

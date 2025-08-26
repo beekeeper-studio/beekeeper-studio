@@ -10,22 +10,18 @@ import {
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
+import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 const log = rawLog.scope("PluginManager");
 
-export type PluginManagerInitializeOptions = {
-  pluginSettings?: PluginSettings;
-}
-
 export type PluginManagerOptions = {
   fileManager?: PluginFileManager;
   registry?: PluginRegistry;
-  onPluginSettingsChange?: (pluginSettings: PluginSettings) => void;
   appVersion: string;
-  defaultConfig: BksConfig['plugins']['default'];
+  defaultConfig: BksConfig['plugins']['config'];
 }
 
 export default class PluginManager {
@@ -36,6 +32,9 @@ export default class PluginManager {
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
+  /** A Constant for the setting key */
+  private static readonly PLUGIN_SETTINGS = "pluginSettings";
+
   constructor(readonly options: PluginManagerOptions) {
     this.fileManager = options.fileManager;
     this.registry =
@@ -43,7 +42,7 @@ export default class PluginManager {
       new PluginRegistry(new PluginRepositoryService());
   }
 
-  async initialize(options: PluginManagerInitializeOptions = {}) {
+  async initialize() {
     if (this.initialized) {
       log.warn("Calling initialize when already initialized");
       return;
@@ -51,7 +50,7 @@ export default class PluginManager {
 
     const installedPlugins = this.fileManager.scanPlugins();
 
-    this.pluginSettings = _.cloneDeep(options.pluginSettings) || {};
+    await this.loadPluginSettings();
 
     this.plugins = installedPlugins.map((manifest) => ({
       manifest,
@@ -60,16 +59,14 @@ export default class PluginManager {
 
     this.initialized = true;
 
-    const promises = installedPlugins.map(async (plugin) => {
+    for (const plugin of installedPlugins) {
       if (
         this.pluginSettings[plugin.id]?.autoUpdate &&
         (await this.checkForUpdates(plugin.id))
       ) {
         await this.updatePlugin(plugin.id);
       }
-    });
-
-    await Promise.allSettled(promises);
+    }
   }
 
   async getEntries() {
@@ -150,7 +147,12 @@ export default class PluginManager {
         this.plugins[installedPluginIdx] = plugin;
       }
 
-      this.fillPluginSettings(id);
+      if (!this.pluginSettings[id]) {
+        this.pluginSettings[id] = {
+          autoUpdate: true,
+        };
+      }
+      await this.savePluginSettings();
 
       log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
@@ -224,32 +226,49 @@ export default class PluginManager {
     return ret;
   }
 
-  /** Fill the plugin settings with the default values from the config file. */
-  fillPluginSettings(id: string) {
-    let changed = false;
-    if (!this.pluginSettings[id]) {
-      this.pluginSettings[id] = _.cloneDeep(this.options.defaultConfig);
-      changed = true;
-    } else {
-      for (const [key, value] of Object.entries(this.options.defaultConfig)) {
-        if (!_.has(this.pluginSettings[id], key)) {
-          this.pluginSettings[id][key] = _.clone(value);
-          changed = true;
-        }
-      }
-    }
-    if (changed) {
-      this.options?.onPluginSettingsChange?.(this.pluginSettings);
+  /**
+   * Loads the list of disabled auto-update plugins from the database
+   * @todo all plugin settings should be loaded and saved from the config files
+   */
+  private async loadPluginSettings() {
+    const setting = await UserSetting.get(PluginManager.PLUGIN_SETTINGS);
+    if (setting && setting.value) {
+      this.pluginSettings = setting.value as PluginSettings;
+      log.debug(
+        `Loaded plugin settings: ${JSON.stringify(this.pluginSettings)}`
+      );
     }
   }
 
-  changePluginSettings<T extends keyof PluginSettings[string]>(
-    id: string,
-    key: T,
-    value: PluginSettings[string][T]
-  ) {
-    this.pluginSettings[id][key] = value;
-    this.options?.onPluginSettingsChange?.(this.pluginSettings);
+  /**
+   * Saves the current list of disabled auto-update plugins to the database
+   */
+  private async savePluginSettings() {
+    await UserSetting.set(
+      PluginManager.PLUGIN_SETTINGS,
+      JSON.stringify(this.pluginSettings)
+    );
+    log.debug(`Saved plugin settings.`);
+  }
+
+  /**
+   * Enable or disable automatic update checks for a specific plugin
+   */
+  async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
+    this.pluginSettings[id].autoUpdate = enabled;
+    // Persist the changes to the database
+    await this.savePluginSettings();
+  }
+
+  /**
+   * Get the current auto-update setting for a specific plugin
+   */
+  getPluginAutoUpdateEnabled(id: string): boolean {
+    if (!_.has(this.pluginSettings, id)) {
+      log.warn(`Plugin "${id}" not found in plugin settings.`);
+      return false;
+    }
+    return this.pluginSettings[id].autoUpdate;
   }
 
   private initializeGuard() {

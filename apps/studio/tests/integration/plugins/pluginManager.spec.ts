@@ -1,6 +1,5 @@
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager, {
-  PluginManagerInitializeOptions,
   PluginManagerOptions,
 } from "@/services/plugin/PluginManager";
 import { createPluginServer } from "./utils/server";
@@ -11,6 +10,10 @@ import {
   NotSupportedPluginError,
 } from "@/services/plugin/errors";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
+import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
+import migration from "@/migration/20250529_add_plugin_settings";
+import { Manifest } from "@/services/plugin";
+import { UserSetting } from "@/common/appdb/models/user_setting";
 
 describe("Basic Plugin Management", () => {
   const server = createPluginServer();
@@ -27,8 +30,7 @@ describe("Basic Plugin Management", () => {
   async function initPluginManager(
     appVersionOrOptions:
       | AppVer
-      | (Partial<PluginManagerOptions> & { appVersion: AppVer }),
-    initializeOptions?: Partial<PluginManagerInitializeOptions>
+      | (Partial<PluginManagerOptions> & { appVersion: AppVer })
   ) {
     const options: PluginManagerOptions = {
       fileManager:
@@ -50,17 +52,27 @@ describe("Basic Plugin Management", () => {
             autoUpdate: false,
             ...appVersionOrOptions.defaultConfig,
           },
-      onPluginSettingsChange:
-        typeof appVersionOrOptions === "string"
-          ? undefined
-          : appVersionOrOptions.onPluginSettingsChange,
     };
     const manager = new PluginManager(options);
-    await manager.initialize(initializeOptions);
+    await manager.initialize();
     return manager;
   }
 
-  beforeEach(() => {
+  beforeAll(async () => {
+    await TestOrmConnection.connect();
+    const runner = TestOrmConnection.connection.connection.createQueryRunner();
+    await migration.run(runner);
+    await runner.release();
+  });
+
+  afterAll(async () => {
+    await TestOrmConnection.disconnect();
+  });
+
+  beforeEach(async () => {
+    const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
+    setting.userValue = "{}";
+    await setting.save();
     repositoryService.plugins = [
       {
         id: "test-plugin",
@@ -101,24 +113,22 @@ describe("Basic Plugin Management", () => {
 
     it("can get plugin details (versions, readme, etc..)", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
+      const manifest: Manifest = {
+        id: "test-plugin",
+        name: "Test Plugin",
+        version: "1.0.0",
+        minAppVersion: "5.4.0",
+        author: "test-plugin-author",
+        description: "Test Plugin description",
+        capabilities: {
+          views: [],
+        },
+      };
       await expect(manager.getRepository("test-plugin")).resolves.toStrictEqual(
         {
           latestRelease: {
-            manifest: {
-              id: "test-plugin",
-              name: "Test Plugin",
-              author: "test-plugin-author",
-              version: "1.0.0",
-              minAppVersion: "5.4.0",
-              description: "Test Plugin description",
-              capabilities: {
-                views: [],
-              },
-            },
-            sourceArchiveUrl: server.formatUrl({
-              version: "1.0.0",
-              minAppVersion: "5.4.0",
-            }),
+            manifest,
+            sourceArchiveUrl: server.formatUrl(manifest),
           },
           readme: "# Test Plugin\n\nThis is a test plugin.",
         }
@@ -195,19 +205,35 @@ describe("Basic Plugin Management", () => {
     it("can update plugins automatically on start", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
+      await manager.installPlugin("frozen-banana");
 
-      // Simulate plugin update on the server
+      expect(manager.pluginSettings).toStrictEqual({
+        "test-plugin": { autoUpdate: true },
+        "frozen-banana": { autoUpdate: true },
+      });
+
+      console.log(manager.getPlugins());
+
+      // Simulate plugin updates on the server
+      console.log(repositoryService.plugins);
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
+      repositoryService.plugins[1].latestRelease.version = "1.3.0";
+      console.log(repositoryService.plugins);
 
       // Simulate app restart
-      const manager2 = await initPluginManager(AppVer.COMPAT, {
-        pluginSettings: {
-          "test-plugin": {
-            autoUpdate: true,
-          },
-        },
-      });
-      expect(manager2.getPlugins()[0].manifest.version).toBe("1.2.0");
+      const manager2 = await initPluginManager(AppVer.COMPAT);
+      expect(
+        manager2
+          .getPlugins()
+          .find(({ manifest }) => manifest.id === "test-plugin").manifest
+          .version
+      ).toBe("1.2.0");
+      expect(
+        manager2
+          .getPlugins()
+          .find(({ manifest }) => manifest.id === "frozen-banana").manifest
+          .version
+      ).toBe("1.3.0");
     });
 
     it("can update plugins manually", async () => {

@@ -2,10 +2,10 @@ import { Manifest, PluginRegistryEntry, Release } from "@/services/plugin";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
 
-type Plugin = {
+export type Plugin = {
   id: string;
   name: string;
-  latestRelease: Pick<Manifest, 'version' | 'minAppVersion'>;
+  latestRelease: Pick<Manifest, "version" | "minAppVersion">;
   readme: string;
 };
 
@@ -73,19 +73,20 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
   }
 
   private createLatestRelease(plugin: Plugin) {
-    return {
-      manifest: {
-        id: plugin.id,
-        name: plugin.name,
-        version: plugin.latestRelease.version,
-        minAppVersion: plugin.latestRelease.minAppVersion,
-        author: this.authorStr(plugin),
-        description: this.descriptionStr(plugin),
-        capabilities: {
-          views: [],
-        },
+    const manifest = {
+      id: plugin.id,
+      name: plugin.name,
+      version: plugin.latestRelease.version,
+      minAppVersion: plugin.latestRelease.minAppVersion,
+      author: this.authorStr(plugin),
+      description: this.descriptionStr(plugin),
+      capabilities: {
+        views: [],
       },
-      sourceArchiveUrl: this.server.formatUrl(plugin.latestRelease),
+    };
+    return {
+      manifest,
+      sourceArchiveUrl: this.server.formatUrl(manifest),
     };
   }
 
