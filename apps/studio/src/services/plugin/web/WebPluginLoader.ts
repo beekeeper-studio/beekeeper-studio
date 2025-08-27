@@ -24,6 +24,8 @@ windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
   private iframes: HTMLIFrameElement[] = [];
+  private onReadyListeners: Function[] = [];
+  private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
   private log: ReturnType<typeof rawLog.scope>;
   private listening = false;
@@ -47,12 +49,6 @@ export default class WebPluginLoader {
 
     this.log.info("Loading plugin", this.manifest);
 
-    if (!this.listening) {
-      // Add event listener for messages from iframe
-      window.addEventListener("message", this.handleMessage);
-      this.listening = true;
-    }
-
     this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.addSidebarTab({
         id: sidebar.id,
@@ -70,6 +66,11 @@ export default class WebPluginLoader {
         icon: this.manifest.icon,
       });
     });
+
+    if (!this.listening) {
+      this.registerEvents();
+      this.onReadyListeners.forEach((fn) => fn());
+    }
   }
 
   private handleMessage(event: MessageEvent) {
@@ -313,7 +314,41 @@ export default class WebPluginLoader {
   /** Warn: please dispose only when the plugin is not used anymore, like
    * after uninstalling. */
   dispose() {
+    this.unregisterEvents();
+    this.onDisposeListeners.forEach((fn) => fn());
+  }
+
+  private registerEvents() {
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
+    this.listening = true;
+  }
+
+  private unregisterEvents() {
     window.removeEventListener("message", this.handleMessage);
     this.listening = false;
+  }
+
+  /** Called when the plugin is ready to be used. If the plugin uses iframes,
+   * this should be called before mounting the iframes. */
+  onReady(fn: Function) {
+    if (this.listening) {
+      fn();
+    }
+    this.onReadyListeners.push(fn);
+    return () => {
+      this.onReadyListeners = _.without(this.onReadyListeners, fn);
+    }
+  }
+
+  /** Called when the plugin is disposed. */
+  onDispose(fn: Function) {
+    if (!this.listening) {
+      fn();
+    }
+    this.onDisposeListeners.push(fn);
+    return () => {
+      this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
+    }
   }
 }
