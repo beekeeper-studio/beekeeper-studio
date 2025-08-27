@@ -5,9 +5,10 @@ export const RedisData: DialectData = {
   usesOffsetPagination: true,
   queryDialectOverride: 'generic',
   textEditorMode: 'text/x-redis',
+  rawFilterPlaceholder: 'Search',
   disabledFeatures: {
     readOnlyPrimaryKeys: true,
-    // rawFilters: true, // TODO: how to disable non-raw filters?
+    builderFilters: true,
     shell: true,
     // queryEditor: true,
     informationSchema: {
