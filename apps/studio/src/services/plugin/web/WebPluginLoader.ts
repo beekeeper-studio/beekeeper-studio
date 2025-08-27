@@ -26,7 +26,7 @@ export default class WebPluginLoader {
   private iframes: HTMLIFrameElement[] = [];
   private listeners: OnViewRequestListener[] = [];
   private log: ReturnType<typeof rawLog.scope>;
-
+  private listening = false;
 
   constructor(
     public readonly manifest: Manifest,
@@ -47,8 +47,11 @@ export default class WebPluginLoader {
 
     this.log.info("Loading plugin", this.manifest);
 
-    // Add event listener for messages from iframe
-    window.addEventListener("message", this.handleMessage);
+    if (!this.listening) {
+      // Add event listener for messages from iframe
+      window.addEventListener("message", this.handleMessage);
+      this.listening = true;
+    }
 
     this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.addSidebarTab({
@@ -283,8 +286,6 @@ export default class WebPluginLoader {
   }
 
   async unload() {
-    window.removeEventListener("message", this.handleMessage);
-
     this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.removeSidebarTab(sidebar.id);
     });
@@ -307,5 +308,12 @@ export default class WebPluginLoader {
   checkPermission(data: PluginRequestData) {
     // do nothing on purpose
     // if not permitted, throw error
+  }
+
+  /** Warn: please dispose only when the plugin is not used anymore, like
+   * after uninstalling. */
+  dispose() {
+    window.removeEventListener("message", this.handleMessage);
+    this.listening = false;
   }
 }

@@ -66,6 +66,7 @@ export default class WebPluginManager {
       throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
+    loader.dispose();
     this.loaders.delete(id);
   }
 
