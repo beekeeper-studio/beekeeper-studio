@@ -50,7 +50,7 @@ function makeQueryError(command: string, error?: unknown): NgQueryResult {
   };
 }
 
-type RedisKeyType = "string" | "list" | "hash" | "set" | "zset" | "ReJSON-RL";
+type RedisKeyType = "string" | "list" | "hash" | "set" | "zset" | "stream" | "ReJSON-RL";
 
 type RedisTableRow = {
   key: string;
@@ -460,6 +460,27 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         }
         break;
       }
+      case "stream": {
+        // For streams, expect array of {id, data} objects
+        const streamEntries = value as Array<{id: string, data: Record<string, string>}>;
+
+        // Replace entire stream
+        await this.redis.del(key);
+        
+        // Re-populate stream with entries
+        for (const entry of streamEntries) {
+          const fields = [];
+          for (const [field, fieldValue] of Object.entries(entry.data)) {
+            fields.push(field, fieldValue);
+          }
+          if (fields.length > 0) {
+            // Use the original ID, or * for auto-generation if ID is malformed
+            const entryId = entry.id && entry.id !== "" ? entry.id : "*";
+            await this.redis.xadd(key, entryId, ...fields);
+          }
+        }
+        break;
+      }
       case "ReJSON-RL": {
         // For JSON values, expect parsed object that needs to be stringified
         await this.redis.call("JSON.SET", key, "$", JSON.stringify(value));
@@ -492,6 +513,17 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       }
       case "hash":
         return this.redis.hgetall(key);
+      case "stream": {
+        const result = await this.redis.xrange(key, "-", "+");
+        return result.map(([id, fields]) => {
+          const data = {};
+          // Redis returns fields as flat array: [field1, value1, field2, value2, ...]
+          for (let i = 0; i < fields.length; i += 2) {
+            data[fields[i]] = fields[i + 1];
+          }
+          return { id, data };
+        });
+      }
       case "ReJSON-RL": {
         const result = await this.redis.call("JSON.GET", key, "$");
         return JSON.parse(String(result));
