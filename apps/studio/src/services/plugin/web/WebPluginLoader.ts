@@ -343,9 +343,6 @@ export default class WebPluginLoader {
 
   /** Called when the plugin is disposed. */
   onDispose(fn: Function) {
-    if (!this.listening) {
-      fn();
-    }
     this.onDisposeListeners.push(fn);
     return () => {
       this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
