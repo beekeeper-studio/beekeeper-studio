@@ -3,13 +3,14 @@ import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
-import { AzureCredsEncryptTransformer, EncryptTransformer } from '../transformers/Transformers'
+import { AzureCredsEncryptTransformer, EncryptTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, SQLAnywhereOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
+const surrealEncrypt = new SurrealDbEncryptTransformer(loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
@@ -84,6 +85,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'cockroachdb':
         port = 26257
         break
+      case 'redshift':
+        port = 5432
+        break
       case 'oracle':
         port = 1521
         break
@@ -98,6 +102,12 @@ export class DbConnectionBase extends ApplicationEntity {
         break
       case 'sqlanywhere':
         port = 2638
+        break
+      case 'trino':
+        port = 8080
+        break
+      case 'clickhouse':
+        port = 8123
         break
       default:
         port = null
@@ -210,6 +220,9 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'simple-json', nullable: false })
   sqlAnywhereOptions: SQLAnywhereOptions = { mode: 'server' }
+
+  @Column({ type: 'simple-json', nullable: false, transformer: [surrealEncrypt] })
+  surrealDbOptions: SurrealDBOptions = {};
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })
@@ -326,24 +339,24 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       let cleanedUrl = url
       let extractedUser = undefined
       let extractedPassword = undefined
-  
+
       if (url.includes('@')) {
         const lastAtIndex = url.lastIndexOf('@')
         let firstDoubleSlash = url.indexOf('//') + 2
         if (firstDoubleSlash === 1) firstDoubleSlash = 0
         const credentials = url.substring(firstDoubleSlash, lastAtIndex)
-  
+
         const [user, ...passwordParts] = credentials.split(':')
         extractedUser = user
         extractedPassword = passwordParts.join(':')
-  
+
         cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
       }
 
       const encodedUrl = encodeURI(cleanedUrl)
       const parsed = new ConnectionString(encodedUrl)
       const parsedUncoded = new ConnectionString(url)
-  
+
       this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
