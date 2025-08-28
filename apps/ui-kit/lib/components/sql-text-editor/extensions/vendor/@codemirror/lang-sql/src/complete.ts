@@ -119,21 +119,20 @@ class CompletionLevel {
     let children = this.children || (this.children = Object.create(null))
     let found = children[name]
     if (found) return found
-    
-    // Use Map for O(1) lookups instead of O(n) Array.some()
+
     if (name) {
       if (!this._labelMap) {
         this._labelMap = new Map<string, number>()
         this.list.forEach((item, index) => this._labelMap!.set(item.label, index))
       }
-      
+
       if (!this._labelMap.has(name)) {
         const completion = nameCompletion(name, "type", this.idQuote, this.idCaseInsensitive)
         this._labelMap.set(name, this.list.length)
         this.list.push(completion)
       }
     }
-    
+
     return (children[name] = new CompletionLevel(this.idQuote, this.idCaseInsensitive))
   }
 
@@ -142,12 +141,11 @@ class CompletionLevel {
   }
 
   addCompletion(option: Completion) {
-    // Use Map for O(1) lookups instead of O(n) findIndex
     if (!this._labelMap) {
       this._labelMap = new Map<string, number>()
       this.list.forEach((item, index) => this._labelMap!.set(item.label, index))
     }
-    
+
     let found = this._labelMap.get(option.label)
     if (found !== undefined) {
       this.list[found] = option
@@ -173,22 +171,17 @@ class CompletionLevel {
   }
 
   addNamespaceObject(namespace: {[name: string]: SQLNamespace}) {
-    const keys = Object.keys(namespace)
-    console.log(`Processing namespace with ${keys.length} keys`)
-    const startTime = performance.now()
-    
-    // Use much more efficient iterative approach
+    performance.mark("before-addNamespace")
     this.addNamespaceObjectIterative(namespace)
-    
-    const totalTime = performance.now() - startTime
-    console.log(`addNamespaceObject completed in ${totalTime.toFixed(2)}ms`)
+    performance.mark("after-addNamespace")
+    performance.measure("addNamespace", "before-addNamespace", "after-addNamespace")
   }
 
   private addNamespaceObjectIterative(namespace: {[name: string]: SQLNamespace}) {
     // Pre-compile patterns once
     const dotRegex = /\\?\./g
     const escapedDotRegex = /\\\./g
-    
+
     // Collect all work to do in a flat structure to avoid recursion
     const workQueue: Array<{
       path: string[],
@@ -196,16 +189,17 @@ class CompletionLevel {
       children: SQLNamespace,
       self?: Completion
     }> = []
-    
+    let queueStart = 0
+
     // Initial population of work queue
     for (let name in namespace) {
       let children = namespace[name], self: Completion | undefined = undefined
-      
+
       if (isSelfTag(children)) {
         self = children.self
         children = children.children
       }
-      
+
       // Process path once
       let parts: string[]
       if (name.includes('.')) {
@@ -219,14 +213,14 @@ class CompletionLevel {
       } else {
         parts = [name]
       }
-      
+
       workQueue.push({ path: parts, level: this, children, self })
     }
-    
+
     // Process all work iteratively
-    while (workQueue.length > 0) {
-      const { path, level, children, self } = workQueue.shift()!
-      
+    while (queueStart < workQueue.length) {
+      const { path, level, children, self } = workQueue[queueStart++]
+
       // Navigate to target level
       let currentLevel = level
       for (let i = 0; i < path.length; i++) {
@@ -235,7 +229,7 @@ class CompletionLevel {
         }
         currentLevel = currentLevel.child(path[i])
       }
-      
+
       // Add children to queue if they exist
       if (Array.isArray(children)) {
         currentLevel.addCompletions(children)
@@ -243,12 +237,12 @@ class CompletionLevel {
         // Add nested namespace to work queue instead of recursing
         for (let childName in children) {
           let childChildren = children[childName], childSelf: Completion | undefined = undefined
-          
+
           if (isSelfTag(childChildren)) {
             childSelf = childChildren.self
             childChildren = childChildren.children
           }
-          
+
           let childParts: string[]
           if (childName.includes('.')) {
             childParts = childName.replace(dotRegex, p => p == "." ? "\0" : p).split("\0")
@@ -260,7 +254,7 @@ class CompletionLevel {
           } else {
             childParts = [childName]
           }
-          
+
           workQueue.push({ path: childParts, level: currentLevel, children: childChildren, self: childSelf })
         }
       }
@@ -278,41 +272,25 @@ export function buildCompletionLevels(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
                                    dialect?: SQLDialect) {
-  const startTime = performance.now()
-  
   let idQuote = dialect?.spec.identifierQuotes?.[0] || '"'
   let top = new CompletionLevel(idQuote, !!dialect?.spec.caseInsensitiveIdentifiers)
   let defaultSchema = defaultSchemaName ? top.child(defaultSchemaName) : null
-  
-  console.time('addNamespace')
+
   top.addNamespace(schema)
-  console.timeEnd('addNamespace')
-  
+
   if (tables) {
-    console.time('addCompletions tables')
     ;(defaultSchema || top).addCompletions(tables)
-    console.timeEnd('addCompletions tables')
   }
   if (schemas) {
-    console.time('addCompletions schemas')
     top.addCompletions(schemas)
-    console.timeEnd('addCompletions schemas')
   }
   if (defaultSchema) {
-    console.time('addCompletions defaultSchema.list')
     top.addCompletions(defaultSchema.list)
-    console.timeEnd('addCompletions defaultSchema.list')
   }
   if (defaultTableName) {
-    console.time('addCompletions defaultTable.list')
     top.addCompletions((defaultSchema || top).child(defaultTableName).list)
-    console.timeEnd('addCompletions defaultTable.list')
   }
-  
-  const totalTime = performance.now() - startTime
-  console.log(`buildCompletionLevels total: ${totalTime.toFixed(2)}ms`)
-  console.log(`Schema keys count: ${typeof schema === 'object' && !Array.isArray(schema) ? Object.keys(schema).length : 'N/A'}`)
-  
+
   return {top, defaultSchema}
 }
 
