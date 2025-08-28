@@ -50,7 +50,14 @@ function makeQueryError(command: string, error?: unknown): NgQueryResult {
   };
 }
 
-type RedisKeyType = "string" | "list" | "hash" | "set" | "zset" | "stream" | "ReJSON-RL";
+type RedisKeyType =
+  | "string"
+  | "list"
+  | "hash"
+  | "set"
+  | "zset"
+  | "stream"
+  | "ReJSON-RL";
 
 type RedisTableRow = {
   key: string;
@@ -218,7 +225,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           schemaName: null,
           tableName: table,
           columnName: "value",
-          dataType: "TEXT",
+          dataType: "json",
           bksField: { bksType: "UNKNOWN", name: "value" },
         },
         {
@@ -333,8 +340,15 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async listDatabases() {
-    // TODO: check actual database count from server info?
-    return new Array(16).fill(null).map((_, i) => String(i));
+    try {
+      // Get the actual database count from Redis configuration
+      const config = await this.redis.config('GET', 'databases');
+      const dbCount = parseInt(config[1], 10) || 16;
+      return new Array(dbCount).fill(null).map((_, i) => String(i));
+    } catch (error) {
+      // Fallback to default 16 databases if config command fails
+      return new Array(16).fill(null).map((_, i) => String(i));
+    }
   }
 
   async getTableProperties() {
@@ -399,76 +413,98 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     };
   }
 
+  private preparePrimitive(value: unknown) {
+    return typeof value === "object" && value !== null
+      ? JSON.stringify(value)
+      : String(value);
+  }
+
+  private prepareList(value: unknown) {
+    if (typeof value === "string") value = JSON.parse(value);
+    if (!Array.isArray(value)) throw new Error(`Value should be an array`);
+    return Object.values(value).map(this.preparePrimitive);
+  }
+
+  private prepareHash(value: unknown) {
+    if (typeof value === "string") value = JSON.parse(value);
+    if (!_.isObject(value) || Array.isArray(value))
+      throw new Error(`Value should be an object`);
+    return _.mapValues(value, this.preparePrimitive);
+  }
+
+  private prepareZset(value: unknown) {
+    if (typeof value === "string") value = JSON.parse(value);
+    if (!_.isObject(value) || Array.isArray(value))
+      throw new Error(`Value should be an object`);
+    const zset = _.mapValues(value, this.prepareList);
+    for (const key of Object.keys(zset)) {
+      if (Number.isNaN(Number(key))) throw new Error(`Invalid score: ${key}`);
+    }
+    return zset;
+  }
+
+  private prepareStream(value: unknown) {
+    if (typeof value === "string") value = JSON.parse(value);
+    if (!Array.isArray(value)) throw new Error(`Value should be an array`);
+
+    return value.map((entry) => {
+      if (entry.id === undefined) throw new Error(`Missing id field`);
+      if (entry.data === undefined) throw new Error(`Missing data field`);
+      return {
+        id: this.preparePrimitive(entry.id),
+        data: this.prepareHash(entry.data),
+      };
+    });
+  }
+
   private async setRedisValue(
     key: string,
-    type: string,
+    type: RedisKeyType,
     value: unknown
   ): Promise<void> {
     switch (type) {
       case "string":
-        await this.redis.set(key, value as string);
+        await this.redis.set(key, this.preparePrimitive(value));
         break;
       case "list": {
-        // For lists, expect array directly
-        const listItems = value as string[];
-
-        // Replace entire list
+        const list = this.prepareList(value);
         await this.redis.del(key);
-        if (listItems.length > 0) {
-          await this.redis.lpush(key, ...listItems.reverse()); // lpush adds in reverse order
+        if (list.length > 0) {
+          await this.redis.lpush(key, ...list.reverse()); // lpush adds in reverse order
         }
         break;
       }
       case "set": {
         // For sets, expect array directly
-        const setItems = value as string[];
-
-        // Replace entire set
+        const set = this.prepareList(value);
         await this.redis.del(key);
-        if (setItems.length > 0) {
-          await this.redis.sadd(key, ...setItems);
+        if (set.length > 0) {
+          await this.redis.sadd(key, ...set);
         }
         break;
       }
       case "hash": {
-        // For hashes, expect object directly
-        const hashData = value as Record<string, string>;
-
-        // Replace entire hash
+        const hash = this.prepareHash(value);
         await this.redis.del(key);
-        if (Object.keys(hashData).length > 0) {
-          await this.redis.hmset(key, hashData);
+        if (Object.keys(hash).length > 0) {
+          await this.redis.hmset(key, hash);
         }
         break;
       }
       case "zset": {
-        // For sorted sets, expect object directly
-        const zsetData = value as Record<string, string[]>;
-
-        // Replace entire sorted set
+        const zset = this.prepareZset(value);
         await this.redis.del(key);
-        for (const [score, members] of Object.entries(zsetData)) {
-          const scoreNum = Number(score);
-          if (isNaN(scoreNum)) {
-            throw new Error(`Invalid score: ${score}`);
-          }
-          if (Array.isArray(members)) {
-            for (const member of members) {
-              await this.redis.zadd(key, scoreNum, member);
-            }
+        for (const [score, members] of Object.entries(zset)) {
+          for (const member of members) {
+            await this.redis.zadd(key, Number(score), member);
           }
         }
         break;
       }
       case "stream": {
-        // For streams, expect array of {id, data} objects
-        const streamEntries = value as Array<{id: string, data: Record<string, string>}>;
-
-        // Replace entire stream
+        const stream = this.prepareStream(value);
         await this.redis.del(key);
-        
-        // Re-populate stream with entries
-        for (const entry of streamEntries) {
+        for (const entry of stream) {
           const fields = [];
           for (const [field, fieldValue] of Object.entries(entry.data)) {
             fields.push(field, fieldValue);
@@ -483,7 +519,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       }
       case "ReJSON-RL": {
         // For JSON values, expect parsed object that needs to be stringified
-        await this.redis.call("JSON.SET", key, "$", JSON.stringify(value));
+        await this.redis.call("JSON.SET", key, "$", this.preparePrimitive(value));
         break;
       }
       default:
@@ -611,8 +647,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async getTableLength(): Promise<number> {
-    const dbsize = await this.redis.dbsize();
-    return dbsize;
+    return this.redis.dbsize();
   }
 
   async duplicateTable(): Promise<void> {
@@ -772,7 +807,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         } else if (column === "value" && originalKey) {
           // Handle value updates from Value Editor
           const keyType = await this.redis.type(originalKey);
-          await this.setRedisValue(originalKey, keyType, newValue);
+          await this.setRedisValue(originalKey, keyType as RedisKeyType, newValue);
         }
       }
     }
