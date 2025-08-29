@@ -250,5 +250,15 @@ export const CLIENTS: ClientConfig[] = [
       'server:socketPathWithCustomPort',
       'server:ssl'
     ]
+  },
+  {
+    key: 'bedrock',
+    name: 'Bedrock',
+    defaultPort: 3306,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+      'server:socketPathWithCustomPort',
+    ],
   }
 ];
