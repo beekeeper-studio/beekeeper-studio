@@ -5,7 +5,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
-import { ExtendedTableColumn, TableTrigger, TableIndex, TableKey } from "../models";
+import { ExtendedTableColumn, TableTrigger, TableIndex } from "../models";
 import { IndexColumn, TableKey as SharedTableKey } from "@shared/lib/dialects/models";
 import _ from "lodash";
 
@@ -102,7 +102,7 @@ export class BedrockClient extends MysqlClient {
     }
 
     const allSQL = rows.map((row) => `PRAGMA index_xinfo('${SD.escapeString(row.name)}')`).join(";");
-    const { rows: infoRows } = await this.driverExecuteMultiple(allSQL, { overrideReadonly: true });
+    const { rows: infoRows } = await this.driverExecuteSingle(allSQL, { overrideReadonly: true }) as any;
 
     // Handle case where driverExecuteMultiple returns null or undefined
     const safeInfos = infoRows || [];
@@ -136,12 +136,13 @@ export class BedrockClient extends MysqlClient {
       fromColumn: row.from,
       toColumn: row.to,
       onUpdate: row.on_update,
-      onDelete: row.on_delete
+      onDelete: row.on_delete,
+      isComposite: false // SQLite foreign keys are typically single column
     }));
   }
 
   // We also need to override parseTableColumn - let's use a simplified version
-  private parseTableColumn(row: any): any {
+  parseTableColumn(row: any): any {
     return {
       name: row.name,
       type: row.type,
