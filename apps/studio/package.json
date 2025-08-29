@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "5.3.4",
+  "version": "5.3.4-bedrock.1",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -184,7 +184,7 @@
     "cross-env": "^7.0.3",
     "dts-gen": "0.7.4",
     "electron": "31.7.3",
-    "electron-builder": "~25.1.8",
+    "electron-builder": "26.0.1",
     "esbuild": "^0.21.2",
     "esbuild-node-externals": "^1.13.1",
     "eslint": "^6.7.2",
