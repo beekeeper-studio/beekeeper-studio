@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -25,6 +25,8 @@ export function dialectFor(s: string): Dialect | null {
       return 'sqlite'
     case 'mssql':
       return 'sqlserver'
+    case 'bedrock':
+      return 'sqlite'
     default:
       return Dialects.find((d) => d === s) || null
   }
@@ -46,7 +48,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   mongodb: "MongoDB",
   sqlanywhere: 'SqlAnywhere',
   trino: 'Trino',
-  surrealdb: 'SurrealDB'
+  surrealdb: 'SurrealDB',
+  bedrock: 'Bedrock'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
