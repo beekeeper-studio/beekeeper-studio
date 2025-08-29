@@ -5,7 +5,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
-import { ExtendedTableColumn, TableTrigger, TableIndex } from "../models";
+import { ExtendedTableColumn, TableTrigger, TableIndex, Routine, FilterOptions } from "../models";
 import { IndexColumn, TableKey as SharedTableKey } from "@shared/lib/dialects/models";
 import _ from "lodash";
 
@@ -59,6 +59,11 @@ export class BedrockClient extends MysqlClient {
     const final = _.flatMap(results, (item, _idx) => this.dataToColumns(item?.result?.rows || [], item.tableName));
 
     return final;
+  }
+
+  // sqlite does not have routines
+  async listRoutines(_filter?: FilterOptions): Promise<Routine[]> {
+    return [];
   }
 
   private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {
