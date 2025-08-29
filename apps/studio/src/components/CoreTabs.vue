@@ -47,7 +47,10 @@
               :key="index"
               @click.prevent="createTab(config)"
             >
-              <x-label>{{ config.menuItem.label }}</x-label>
+              <x-label>
+                <i class="material-icons">{{ config.icon }}</i>
+                {{ config.menuItem.label }}
+              </x-label>
               <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
             </x-menuitem>
           </x-menu>
