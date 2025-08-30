@@ -13,6 +13,7 @@ import dev5 from './dev-5'
 import dev6 from './dev-6'
 import dev7 from './dev-7'
 import dev8 from './dev-8'
+import dev9 from './dev-9'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -113,7 +114,7 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8
+  dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8, dev9
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

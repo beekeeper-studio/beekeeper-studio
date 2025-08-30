@@ -1712,7 +1712,6 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-
             // lets just make column selection a front-end only thing
             const selects = ['*']
             const response = await this.connection.selectTop(
@@ -1952,7 +1951,8 @@ export default Vue.extend({
             type: '=',
             value: _.get(this.selectedRowData, path),
           }],
-          tableKey.toSchema
+          tableKey.toSchema,
+          ['*']
         )
 
         if (table.result.length > 0) {

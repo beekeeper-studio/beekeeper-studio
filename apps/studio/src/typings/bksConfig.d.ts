@@ -16,10 +16,16 @@ declare interface IBksConfig {
             idleTimeout: number;
             maxClient: number;
         };
+        default: {
+            allowSkipToLastPage: boolean;
+        };
         duckdb: {
             allowSkipToLastPage: boolean;
         };
         firebird: {
+            allowSkipToLastPage: boolean;
+        };
+        libsql: {
             allowSkipToLastPage: boolean;
         };
         mariadb: {
@@ -62,6 +68,9 @@ declare interface IBksConfig {
             connectionTimeout: number;
         };
         tidb: {
+            allowSkipToLastPage: boolean;
+        };
+        trino: {
             allowSkipToLastPage: boolean;
         };
     };

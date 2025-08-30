@@ -13,6 +13,7 @@ export function isUltimateType(s: ConnectionType) {
     'clickhouse',
     'mongodb',
     'sqlanywhere',
+    'trino',
     'surrealdb'
   ]
   return types.includes(s)

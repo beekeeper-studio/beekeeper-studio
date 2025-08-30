@@ -85,6 +85,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'cockroachdb':
         port = 26257
         break
+      case 'redshift':
+        port = 5432
+        break
       case 'oracle':
         port = 1521
         break
@@ -99,6 +102,12 @@ export class DbConnectionBase extends ApplicationEntity {
         break
       case 'sqlanywhere':
         port = 2638
+        break
+      case 'trino':
+        port = 8080
+        break
+      case 'clickhouse':
+        port = 8123
         break
       default:
         port = null
