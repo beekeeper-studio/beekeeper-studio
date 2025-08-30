@@ -44,7 +44,7 @@
       <input
         id="database"
         v-model="config.defaultDatabase"
-        type="text"
+        type="number"
         class="form-control"
         placeholder="0"
       >
