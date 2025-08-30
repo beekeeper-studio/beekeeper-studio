@@ -22,10 +22,10 @@ import Redis, { RedisOptions } from "ioredis";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { Dialect, SchemaItem } from "@shared/lib/dialects/models";
 import splitargs from "redis-splitargs";
 import _ from "lodash";
 import rawLog from "@bksLogger";
+import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBuilder";
 
 type RedisQueryResult = BaseQueryResult;
 
@@ -78,42 +78,6 @@ function makeQueryResult(command: string, result: unknown): NgQueryResult {
     rowCount: Array.isArray(result) ? result.length : 1,
     affectedRows: 0,
   };
-}
-
-class RedisChangeBuilder extends ChangeBuilderBase {
-  dialect: Dialect = "postgresql";
-
-  wrapIdentifier(value: string): string {
-    return value;
-  }
-
-  wrapLiteral(value: string): string {
-    return value;
-  }
-
-  escapeString(value: string): string {
-    return value;
-  }
-
-  alterType(_column: string, _newType: string): string {
-    throw new Error("Not supported");
-  }
-
-  alterDefault(_column: string, _newDefault: string | null): string {
-    throw new Error("Not supported");
-  }
-
-  alterNullable(_column: string, _nullable: boolean): string {
-    throw new Error("Not supported");
-  }
-
-  addColumn(_item: SchemaItem): string {
-    throw new Error("Not supported");
-  }
-
-  dropColumn(_column: string): string {
-    throw new Error("Not supported");
-  }
 }
 
 const NEWLINE_RG = /[\r\n]+/;
@@ -342,7 +306,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   async listDatabases() {
     try {
       // Get the actual database count from Redis configuration
-      const config = await this.redis.config('GET', 'databases');
+      const config = await this.redis.config("GET", "databases");
       const dbCount = parseInt(config[1], 10) || 16;
       return new Array(dbCount).fill(null).map((_, i) => String(i));
     } catch (error) {
@@ -519,7 +483,12 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       }
       case "ReJSON-RL": {
         // For JSON values, expect parsed object that needs to be stringified
-        await this.redis.call("JSON.SET", key, "$", this.preparePrimitive(value));
+        await this.redis.call(
+          "JSON.SET",
+          key,
+          "$",
+          this.preparePrimitive(value)
+        );
         break;
       }
       default:
@@ -807,7 +776,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         } else if (column === "value" && originalKey) {
           // Handle value updates from Value Editor
           const keyType = await this.redis.type(originalKey);
-          await this.setRedisValue(originalKey, keyType as RedisKeyType, newValue);
+          await this.setRedisValue(
+            originalKey,
+            keyType as RedisKeyType,
+            newValue
+          );
         }
       }
     }
