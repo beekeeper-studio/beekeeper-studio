@@ -11,30 +11,6 @@
     </div>
     <common-server-inputs v-show="showServerInputs" :config="config" />
 
-    <div v-show="iamAuthenticationEnabled" class="host-port-user-password">
-      <div class="row gutter">
-        <div class="form-group col s9">
-          <label for="server">
-            Host
-          </label>
-          <input name="server" type="text" class="form-control" v-model="config.host">
-        </div>
-        <div class="form-group col s3">
-          <label for="database">Port</label>
-          <input type="number" class="form-control" name="port" v-model.number="config.port">
-        </div>
-      </div>
-      <div class="gutter">
-        <div class="form-group">
-          <label for="database">Database</label>
-          <input name="database" type="text" class="form-control" v-model="config.defaultDatabase">
-        </div>
-        <div class="form-group">
-          <label for="user">User</label>
-          <input name="user" type="text" class="form-control" v-model="config.username">
-        </div>
-      </div>
-    </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
@@ -72,7 +48,7 @@ export default {
   computed: {
     ...mapGetters(['isCommunity']),
     showServerInputs() {
-      return !this.azureAuthEnabled && !this.iamAuthenticationEnabled
+      return !this.azureAuthEnabled
     }
   },
   watch: {
