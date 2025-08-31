@@ -7,6 +7,7 @@ export default {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         config TEXT NOT NULL,
+        systemDefault INTEGER NOT NULL DEFAULT 0,
         createdAt DATETIME NOT NULL DEFAULT (datetime('now')),
         updatedAt DATETIME NOT NULL DEFAULT (datetime('now'))
       )
