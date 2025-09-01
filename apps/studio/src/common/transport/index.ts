@@ -1,3 +1,4 @@
+import { FormatterPresetConfig } from "../appdb/models/FormatterPreset";
 import { IConnection } from "../interfaces/IConnection";
 
 // anything that is transferred to the utility process should implement this interface
@@ -6,7 +7,7 @@ export interface Transport {
   id: number | null
   createdAt: Date,
   updatedAt: Date,
-  version: number
+  version?: number
 }
 
 export interface TransportTempFile {
@@ -73,4 +74,10 @@ export interface TransportHiddenEntity extends Transport {
   entityType: 'table' | 'view' | 'routine' | 'materialized-view',
   connectionId: number,
   workspaceId: number
+}
+
+export interface TransportFormatterPreset extends Transport {
+  name: string,
+  config: FormatterPresetConfig,
+  systemDefault: boolean
 }
