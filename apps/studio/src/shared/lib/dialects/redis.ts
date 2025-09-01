@@ -67,7 +67,6 @@ export const RedisData: DialectData = {
     chunkSizeStream: true,
     binaryColumn: true,
     initialSort: true,
-    multipleDatabase: true,
     sqlCreate: true,
     compositeKeys: true,
     schemaValidation: true,

@@ -101,6 +101,7 @@ nav:
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
     - SQLite: user_guide/connecting/sqlite.md
+    - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md
 
   - Features:

@@ -1,23 +1,21 @@
 import _ from 'lodash'
 import { SavedConnection } from '../common/appdb/models/saved_connection'
-import platformInfo from '../common/platform_info'
 
 export default {
-  name: 'dev-9-fixtures',
+  name: 'dev-9-redis-fixture',
   env: 'development',
   dbs: [
     {
-      name: "[DEV] Trino",
-      connectionType: 'trino',
-      port: 8090,
-      username: '',
+      name: '[DEV] Docker Redis',
+      connectionType: 'redis',
+      port: 6379,
+      host: 'localhost',
       password: '',
-      defaultDatabase: 'postgresql'
+      defaultDatabase: '0'
     }
   ],
 
   async run() {
-
     const connections = this.dbs.map(db => {
       const connection = new SavedConnection()
       _.merge(connection, db)
@@ -28,6 +26,5 @@ export default {
       const connection = connections[i];
       await connection.save()
     }
-
   }
 }

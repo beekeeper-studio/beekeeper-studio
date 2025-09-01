@@ -69,6 +69,9 @@
                 <click-house-form v-else-if="config.connectionType === 'clickhouse' && isUltimate" :config="config"
                                   :testing="testing"
                 />
+                <trino-form v-else-if="config.connectionType === 'trino' && isUltimate" :config="config"
+                            :testing="testing"
+                />
                 <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
                               :testing="testing"
                 />
@@ -172,6 +175,7 @@ import OracleForm from './connection/OracleForm.vue'
 import MongoDbForm from './connection/MongoDBForm.vue'
 import DuckDbForm from './connection/DuckDBForm.vue'
 import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
+import TrinoForm from './connection/TrinoForm.vue'
 import SurrealDbForm from './connection/SurrealDBForm.vue'
 import RedisForm from './connection/RedisForm.vue'
 import Split from 'split.js'
@@ -195,7 +199,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
     ContentPlaceholderHeading, SurrealDbForm
   },
 

@@ -125,6 +125,7 @@
     "surrealdb": "^1.3.2",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
+    "trino-client": "^0.2.7",
     "typeface-roboto": "^0.0.75",
     "typeface-source-code-pro": "^1.1.3",
     "typeorm": "^0.3.20",
