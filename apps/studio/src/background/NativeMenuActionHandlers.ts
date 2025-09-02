@@ -9,6 +9,7 @@ import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
 import { DevLicenseState } from '@/lib/license';
 import { setAllowBeta } from './update_manager'
+import { CustomMenuAction } from '@/types'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -208,5 +209,9 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   updatePin = (_1: Electron.MenuItem, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.updatePin)
+  }
+
+  handleAction = (action: Electron.MenuItem | CustomMenuAction, win: ElectronWindow) => {
+    if (win && action && 'event' in action) win.webContents.send(action.event, action.args)
   }
 }

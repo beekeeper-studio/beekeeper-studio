@@ -5,25 +5,13 @@ import MenuBuilder from "@/common/menus/MenuBuilder";
 import ClientMenuActionHandler from "@/lib/menu/ClientMenuActionHandler";
 import config from "@/config";
 import RawLog from "@bksLogger";
-import { AppEvent } from "@/common/AppEvent";
-import { JsonValue } from "@/types";
+import { ExternalMenuItem } from "@/types";
 
 interface State {
   externalMenu: { [menuItemId: string]: ExternalMenuItem };
 }
 
 const log = RawLog.scope("MenuBarModule");
-
-export type ExternalMenuItem = {
-  id: string;
-  parentId: string;
-  label: string;
-  enableWhenConnected?: boolean;
-  action: {
-    event: AppEvent;
-    args?: JsonValue;
-  };
-};
 
 const actionHandler = new ClientMenuActionHandler();
 
@@ -58,9 +46,7 @@ export const MenuBarModule: Module<State, RootState> = {
       const menus = builder.buildTemplate();
 
       for (const externalItem of Object.values(state.externalMenu)) {
-        const parent = menus.find(
-          (item) => item.id === externalItem.parentId
-        );
+        const parent = menus.find((item) => item.id === externalItem.parentId);
 
         if (!parent) {
           log.warn(`Parent menu not found: "${externalItem.parentId}"`);
@@ -70,10 +56,7 @@ export const MenuBarModule: Module<State, RootState> = {
         (parent.submenu as Electron.MenuItemConstructorOptions[]).push({
           label: externalItem.label,
           click: () => {
-            actionHandler.send(
-              externalItem.action.event,
-              externalItem.action.args
-            );
+            actionHandler.handleAction(externalItem.action);
           },
         });
       }

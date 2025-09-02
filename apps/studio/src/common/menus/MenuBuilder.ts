@@ -29,6 +29,7 @@ export default class extends DefaultMenu {
 
   devMenu() {
     return {
+      id: 'dev',
       label: 'Dev',
       submenu: [
         this.menuItems.reload,
@@ -39,6 +40,7 @@ export default class extends DefaultMenu {
 
   helpMenu() {
     const helpMenu = {
+      id: "help",
       label: "Help",
       submenu: [
         this.menuItems.enterLicense,
@@ -76,6 +78,7 @@ export default class extends DefaultMenu {
     }
 
     const fileMenu = {
+      id: 'file',
       label: 'File',
       submenu: [
         this.menuItems.newWindow,
@@ -100,6 +103,7 @@ export default class extends DefaultMenu {
       ...appMenu,
       fileMenu,
       {
+        id: 'edit',
         label: 'Edit',
         submenu: [
           this.menuItems.undo,
