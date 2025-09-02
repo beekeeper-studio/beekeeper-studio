@@ -65,26 +65,20 @@ export const MenuBarModule: Module<State, RootState> = {
     },
   },
   mutations: {
-    externalMenu(state, menu: State["externalMenu"]) {
-      state.externalMenu = menu;
-    },
-  },
-  actions: {
-    add(context, menuItem: ExternalMenuItem): string {
-      if (context.state.externalMenu[menuItem.id]) {
+    add(state, menuItem: ExternalMenuItem) {
+      if (state.externalMenu[menuItem.id]) {
         throw new Error(`Menu item ${menuItem.id} already exists`);
       }
-      context.commit("externalMenu", {
-        ...context.state.externalMenu,
+      state.externalMenu = {
+        ...state.externalMenu,
         [menuItem.id]: menuItem,
-      });
-      return menuItem.id;
+      };
     },
-    remove(context, id: string) {
-      if (!context.state.externalMenu[id]) {
+    remove(state, id: string) {
+      if (!state.externalMenu[id]) {
         throw new Error(`Menu item ${id} does not exist`);
       }
-      context.commit("externalMenu", _.omit(context.state.externalMenu, id));
+      state.externalMenu = _.omit(state.state.externalMenu, id);
     },
   },
 };
