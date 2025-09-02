@@ -54,6 +54,63 @@ Beekeeper Studio automatically checks for plugin updates everytime you start the
 2. Find the plugin
 3. Click **Uninstall**
 
+## Installing a Specific Plugin Version
+
+Sometimes you might need a specific plugin version - maybe the latest plugin requires a newer Beekeeper Studio version than you have, you can't update the app for some reason, or you need to downgrade to an older plugin version. Here's how to manually install any plugin version:
+
+1. **Disable auto-update first**
+    - Go to Tools > Manage Plugins
+    - Find the plugin you want to install a specific version of
+    - Uncheck **Auto-update** (this prevents Beekeeper Studio from updating it back to the latest version)
+
+2. **Find the plugin in Plugin Manager**
+    - Go to Tools > Manage Plugins
+    - Find your plugin and click the **GitHub link**
+
+3. **Navigate to releases**
+    - Go to the **Releases** page on GitHub
+    - Browse available versions
+
+4. **Check version compatibility**
+    - Click on a release to see its assets
+    - Look for `manifest.json` in the release notes or assets
+    - Check the `minAppVersion` field to ensure compatibility with your Beekeeper Studio version
+    - Note the plugin `id` from the manifest
+
+5. **Download the plugin**
+    - Download the ZIP file (e.g., `bks-ai-shell-1.2.0.zip`, not the source code archive)
+
+6. **Install manually**
+    - Navigate to your plugins directory:
+
+        === "Linux"
+            ```bash
+            ~/.config/beekeeper-studio/plugins/
+            ```
+
+        === "macOS"
+            ```bash
+            ~/Library/Application Support/beekeeper-studio/plugins/
+            ```
+
+        === "Windows"
+            ```
+            %APPDATA%\beekeeper-studio\plugins\
+            ```
+
+        === "Portable"
+            ```bash
+            /path/to/beekeeper-studio/beekeeper-studio-data/plugins/
+            ```
+
+    - Find the existing plugin folder and delete it
+    - Create a new folder with the same plugin ID
+    - Extract the downloaded ZIP file contents into this new folder
+
+7. **Restart Beekeeper Studio**
+
+    The specific plugin version should now be installed and ready to use.
+
 ## Feature Requests
 
 Have ideas for new plugins or features? We'd love to hear from you:

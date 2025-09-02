@@ -3,6 +3,7 @@ import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
   Manifest,
+  PluginContext,
   PluginRegistryEntry,
   PluginRepository,
   PluginSettings,
@@ -10,16 +11,24 @@ import {
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
+import semver from "semver";
+import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
+import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 const log = rawLog.scope("PluginManager");
 
+export type PluginManagerOptions = {
+  fileManager?: PluginFileManager;
+  registry?: PluginRegistry;
+  appVersion: string;
+}
+
 export default class PluginManager {
   private initialized = false;
-  private pluginRepositoryService: PluginRepositoryService;
   private registry: PluginRegistry;
   private fileManager: PluginFileManager;
-  private installedPlugins: Manifest[] = [];
-  private pluginSettings: PluginSettings = {};
+  private plugins: PluginContext[] = [];
+  pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
   /** A Constant for the setting key */
@@ -27,12 +36,13 @@ export default class PluginManager {
   /** This is a list of plugins that are preinstalled by default. When the
    * application starts, these plugins will be installed automatically. The user
    * should be able to uninstall them later. */
-  private static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell"];
+  static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell"];
 
-  constructor() {
-    this.pluginRepositoryService = new PluginRepositoryService();
-    this.fileManager = new PluginFileManager(this.pluginRepositoryService);
-    this.registry = new PluginRegistry(this.pluginRepositoryService);
+  constructor(readonly options: PluginManagerOptions) {
+    this.fileManager = options.fileManager;
+    this.registry =
+      options.registry ||
+      new PluginRegistry(new PluginRepositoryService());
   }
 
   async initialize() {
@@ -41,9 +51,14 @@ export default class PluginManager {
       return;
     }
 
-    this.installedPlugins = this.fileManager.scanPlugins();
+    const installedPlugins = this.fileManager.scanPlugins();
 
     await this.loadPluginSettings();
+
+    this.plugins = installedPlugins.map((manifest) => ({
+      manifest,
+      loadable: this.isPluginLoadable(manifest),
+    }));
 
     this.initialized = true;
 
@@ -56,16 +71,15 @@ export default class PluginManager {
       await this.installPlugin(id);
     }
 
-    const promises = this.installedPlugins.map(async (plugin) => {
+
+    for (const plugin of installedPlugins) {
       if (
         this.pluginSettings[plugin.id]?.autoUpdate &&
         (await this.checkForUpdates(plugin.id))
       ) {
         await this.updatePlugin(plugin.id);
       }
-    });
-
-    await Promise.allSettled(promises);
+    }
   }
 
   async getEntries() {
@@ -88,25 +102,64 @@ export default class PluginManager {
     return await this.registry.getRepository(pluginId);
   }
 
-  // TODO implement enable/disable plugins
-  async getEnabledPlugins() {
+  getPlugins(): PluginContext[] {
     this.initializeGuard();
-    return this.installedPlugins;
+    return this.plugins;
   }
 
+  isPluginLoadable(manifest: Manifest): boolean {
+    if (!manifest.minAppVersion) {
+      return true;
+    }
+    return semver.lte(semver.coerce(manifest.minAppVersion), semver.coerce(this.options.appVersion));
+  }
+
+  /** Install the latest version of a plugin. */
   async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
-    if (this.installedPlugins.find((manifest) => manifest.id === id)) {
-      throw new Error(`Plugin "${id}" is already installed.`);
+
+    let update = false;
+
+    // If plugin is already installed, perform update
+    if (this.plugins.find(({ manifest }) => manifest.id === id)) {
+      update = true;
     }
 
     return await this.withPluginLock(id, async () => {
-      log.debug(`Installing plugin "${id}"...`);
-
       const info = await this.registry.getRepository(id);
-      await this.fileManager.download(id, info.latestRelease);
+      if (!info) {
+        throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
+      }
+
+      if (!this.isPluginLoadable(info.latestRelease.manifest)) {
+        throw new NotSupportedPluginError(
+          `Plugin "${info.latestRelease.manifest.id}" is not compatible with app version "${this.options.appVersion}". ` +
+          `Please upgrade Beekeeper Studio to use this plugin.`
+        );
+      }
+
+      log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
+
+      if (update) {
+        await this.fileManager.update(id, info.latestRelease);
+      } else {
+        await this.fileManager.download(id, info.latestRelease);
+      }
+
       const manifest = this.fileManager.getManifest(id);
-      this.installedPlugins.push(manifest);
+      const installedPluginIdx = this.plugins.findIndex(
+        ({ manifest }) => manifest.id === id
+      );
+      const plugin: PluginContext = {
+        manifest,
+        loadable: this.isPluginLoadable(manifest),
+      };
+      if (installedPluginIdx === -1) {
+        this.plugins.push(plugin);
+      } else {
+        this.plugins[installedPluginIdx] = plugin;
+      }
+
       if (!this.pluginSettings[id]) {
         this.pluginSettings[id] = {
           autoUpdate: true,
@@ -114,7 +167,7 @@ export default class PluginManager {
       }
       await this.savePluginSettings();
 
-      log.debug(`Plugin "${id}" installed!`);
+      log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
       return manifest;
     });
@@ -122,26 +175,8 @@ export default class PluginManager {
 
   async updatePlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
-    const installedPluginIdx = this.installedPlugins.findIndex(
-      (manifest) => manifest.id === id
-    );
-    if (installedPluginIdx === -1) {
-      throw new Error(`Plugin "${id}" is not installed.`);
-    }
-
-    return await this.withPluginLock(id, async () => {
-      log.debug(`Updating plugin "${id}"...`);
-
-      const info = await this.registry.getRepository(id, { reload: true });
-      await this.fileManager.update(id, info.latestRelease);
-
-      const newManifest = this.fileManager.getManifest(id);
-      this.installedPlugins[installedPluginIdx] = newManifest;
-
-      log.debug(`Plugin "${id}" updated!`);
-
-      return newManifest;
-    });
+    await this.registry.reloadRepository(id);
+    return await this.installPlugin(id);
   }
 
   async uninstallPlugin(id: string): Promise<void> {
@@ -150,8 +185,8 @@ export default class PluginManager {
       log.debug(`Uninstalling plugin "${id}"...`);
 
       this.fileManager.remove(id);
-      this.installedPlugins = this.installedPlugins.filter(
-        (manifest) => manifest.id !== id
+      this.plugins = this.plugins.filter(
+        ({ manifest }) => manifest.id !== id
       );
 
       log.debug(`Plugin "${id}" uninstalled!`);
@@ -161,18 +196,21 @@ export default class PluginManager {
   /** if returns true, update is available */
   async checkForUpdates(id: string): Promise<boolean> {
     this.initializeGuard();
-    const manifest = this.installedPlugins.find(
-      (manifest) => manifest.id === id
+    const { manifest } = this.plugins.find(
+      ({ manifest }) => manifest.id === id
     );
     if (!manifest) {
       throw new Error(`Plugin "${id}" is not installed.`);
     }
 
-    const head = await this.registry.getRepository(manifest.id, {
-      reload: true,
-    });
+    const head = await this.registry.reloadRepository(manifest.id);
 
-    return head.latestRelease.manifest.version > manifest.version;
+    // latest release is not newer
+    if (semver.lte(semver.coerce(head.latestRelease.manifest.version), semver.coerce(manifest.version))) {
+      return false;
+    }
+
+    return this.isPluginLoadable(head.latestRelease.manifest);
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
@@ -250,5 +288,9 @@ export default class PluginManager {
     if (!this.initialized) {
       throw new Error("Plugin manager is not initialized.");
     }
+  }
+
+  get isInitialized() {
+    return this.initialized;
   }
 }
