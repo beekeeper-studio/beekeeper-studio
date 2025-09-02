@@ -99,7 +99,7 @@ const store = new Vuex.Store<State>({
     imports: ImportStoreModule,
     backups: BackupModule,
     sidebar: SidebarModule,
-    menu: MenuBarModule,
+    menuBar: MenuBarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),

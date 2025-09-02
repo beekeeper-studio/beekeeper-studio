@@ -119,7 +119,7 @@ export default {
     menuElements() {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
     },
-    ...mapGetters('menu', ['menus', 'connectionMenuItems']),
+    ...mapGetters('menuBar', ['menus', 'connectionMenuItems']),
     ...mapState(['connected'])
   },
   watch: {
