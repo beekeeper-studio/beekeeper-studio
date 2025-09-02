@@ -88,7 +88,6 @@ export default {
     return {
       menuBuilder: null,
       actionHandler: new ClientMenuActionHandler(),
-      menus: [],
       menuActive: false,
       selected: null,
       hovered: null,
@@ -101,18 +100,6 @@ export default {
         "Escape": this.closeMenu,
         "Enter": this.clickHovered
       },
-      connectionMenuItems:[
-          "new-query-menu", 
-          "go-to", 
-          "disconnect", 
-          "import-sql-files", 
-          "close-tab", 
-          "menu-toggle-sidebar", 
-          "menu-secondary-sidebar",
-          "backup-database", 
-          "restore-database", 
-          "export-tables"
-      ]
     }
   },
   computed: {
@@ -132,17 +119,10 @@ export default {
     menuElements() {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
     },
-    ...mapGetters({'settings': 'settings/settings'}),
+    ...mapGetters('menu', ['menus', 'connectionMenuItems']),
     ...mapState(['connected'])
   },
   watch: {
-    settings: {
-      deep: true,
-      handler() {
-        this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config, this.$bksConfig)
-        this.menus = this.menuBuilder.buildTemplate()
-      }
-    },
     menuActive() {
       if (!this.menuActive) {
         this.selected = null
@@ -278,8 +258,6 @@ export default {
     }
   },
   async mounted() {
-    this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config, this.$bksConfig)
-    this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
     window.addEventListener('keydown', this.maybeCaptureKeydown, false)
   },

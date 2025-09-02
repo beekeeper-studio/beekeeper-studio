@@ -61,4 +61,6 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   }
   updatePin = () => send('updatePin')
   managePlugins = () => send("managePlugins")
+
+  send = send
 }

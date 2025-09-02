@@ -10,3 +10,5 @@ interface UtilProcOpenExternalMessage {
 export type UtilProcMessage =
   | UtilProcReadyMessage
   | UtilProcOpenExternalMessage;
+
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };

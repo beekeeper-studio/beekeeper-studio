@@ -112,6 +112,7 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
+        id: "tools",
         label: "Tools",
         submenu: [
           this.menuItems.backupDatabase,
