@@ -50,6 +50,7 @@
         :mode="dialectData.textEditorMode"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
+        :context-menu-items="editorContextMenu"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
@@ -443,6 +444,7 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
+      ...mapGetters('popupMenu', ['getExtraPopupMenu']),
       editorComponent() {
         return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
       },
@@ -1095,7 +1097,13 @@
       stopTimer() {
         clearInterval(this.timerInterval);
         this.timerInterval = null;
-      }
+      },
+      editorContextMenu(_event, _context, items) {
+        return [
+          ...items,
+          ...this.getExtraPopupMenu("query-editor", { transform: "ui-kit" }),
+        ];
+      },
     },
     async mounted() {
       if (this.shouldInitialize) {

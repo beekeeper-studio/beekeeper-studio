@@ -111,6 +111,7 @@
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
       ...mapGetters(['isUltimate']),
+      ...mapGetters('popupMenu', ['getExtraPopupMenu']),
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
@@ -147,6 +148,7 @@
             }),
             { separator: true },
             filterMenuItem,
+            ...this.getExtraPopupMenu('result-table.cell', { transform: "tabulator" }),
           ]
         }
 
@@ -161,6 +163,7 @@
             ...commonColumnMenu,
             { separator: true },
             filterMenuItem,
+            ...this.getExtraPopupMenu('result-table.column-header', { transform: "tabulator" }),
           ]
         }
 
@@ -287,6 +290,31 @@
             columnHeaders: true
           },
           onRangeChange: this.handleRangeChange,
+          rowHeader: {
+            contextMenu: (_e, cell) => {
+              return [
+                ...copyActionsMenu({
+                  ranges: cell.getRanges(),
+                  table: this.result.tableName || "mytable",
+                  schema: this.result.schema,
+                }),
+                ...this.getExtraPopupMenu('result-table.row-header', { transform: "tabulator" }),
+              ];
+            },
+            headerContextMenu: (_e, column) => {
+              return [
+                ...copyActionsMenu({
+                  ranges: column.getTable().getRanges(),
+                  table: this.result.tableName || "mytable",
+                  schema: this.result.schema,
+                }),
+                { separator: true },
+                resizeAllColumnsToFitContent,
+                resizeAllColumnsToFixedWidth,
+                ...this.getExtraPopupMenu('result-table.corner', { transform: "tabulator" }),
+              ];
+            },
+          },
         });
       },
       focusOnFilterInput() {
