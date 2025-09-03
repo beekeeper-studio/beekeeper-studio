@@ -2,6 +2,7 @@ import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
+import { JsonValue } from "@/types";
 
 export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-shell'
 
@@ -34,7 +35,13 @@ export type TransportPluginShellTab = TransportOpenTab<{
   pluginTabTypeId: string;
   /** A plugin can save the state of the tab here. For example, an AI plugin
      * can save the chat conversation here */
-  data: any;
+  data: JsonValue;
+  /** The command to execute on the plugin. Plugins cannot change this.
+   * @since 5.4.0 */
+  command?: string;
+  /** Arguments to be passed to the plugin. Plugins cannot change this.
+   * @since 5.4.0 */
+  args?: JsonValue;
 }>
 
 export namespace TabTypeConfig {
@@ -61,7 +68,9 @@ export namespace TabTypeConfig {
   }
 
   export interface PluginShellConfigIdentifiers {
+    /** Use plugin id from the manifest */
     pluginId: string;
+    /** Use view id from the manifest. */
     pluginTabTypeId: string;
   }
 

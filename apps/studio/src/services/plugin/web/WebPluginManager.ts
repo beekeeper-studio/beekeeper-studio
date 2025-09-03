@@ -1,8 +1,9 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginNotificationData } from "../types";
+import { Manifest, OnViewRequestListener, ExternalMenuActionInit, PluginNotificationData } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -138,13 +139,39 @@ export default class WebPluginManager {
     return loader.addListener(listener);
   }
 
+  resolveContextMenuOptions(
+    contextId: "tab-header",
+    options: ContextOption[]
+  ) {
+    const extraOptions = [];
+
+    this.loaders.forEach((loader) => {
+      extraOptions.push(...loader.menu.getContextMenu(contextId));
+    });
+
+    if (extraOptions.length === 0) {
+      return options;
+    }
+
+    return [
+      ...options,
+      { type: "divider" },
+      ...extraOptions,
+    ]
+  }
+
   private async loadPlugin(manifest: Manifest) {
     if (this.loaders.has(manifest.id)) {
       log.warn(`Plugin "${manifest.id}" already loaded. Skipping...`);
       return this.loaders.get(manifest.id);
     }
 
-    const loader = new WebPluginLoader(manifest, this.pluginStore, this.utilityConnection);
+    const loader = new WebPluginLoader({
+      manifest,
+      store: this.pluginStore,
+      utility: this.utilityConnection,
+      log: rawLog.scope(`Plugin:${manifest.id}`),
+    });
     await loader.load();
     this.loaders.set(manifest.id, loader);
     return loader;

@@ -195,9 +195,8 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
       )
       await webPluginManager.initialize()
       Vue.prototype.$plugin = webPluginManager;
-      if (window.platformInfo.isDevelopment) {
-        window.webPluginManager = webPluginManager; // For debugging
-      }
+      Vue.prototype.$bksPlugin = webPluginManager;
+      window.bksPlugin = webPluginManager; // For debugging
     } catch (e) {
       log.error("Error initializing web plugin manager", e)
       if (!Vue.prototype.$plugin) Vue.prototype.$plugin = {}
