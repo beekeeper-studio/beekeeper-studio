@@ -35,9 +35,9 @@ export const MenuBarModule: Module<State, RootState> = {
         "export-tables",
       ];
     },
-    menus(state, _getters, rootState) {
+    menus(state, _getters, _rootState, rootGetters) {
       const builder = new MenuBuilder(
-        rootState["settings/settings"],
+        rootGetters["settings/settings"],
         actionHandler,
         config,
         window.bksConfig
