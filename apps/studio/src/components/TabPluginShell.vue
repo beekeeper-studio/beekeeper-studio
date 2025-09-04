@@ -130,9 +130,12 @@ export default Vue.extend({
     ...mapGetters(["isCommunity"]),
     url() {
       const manifest = this.$plugin.manifestOf(this.tab.context.pluginId);
-      const tabType = manifest.capabilities.views.tabTypes.find(
-        (t) => t.id === this.tab.context.pluginTabTypeId
-      );
+      const tabType =
+        manifest.capabilities.views.find?.(
+          (v) => v.id === this.tab.context.pluginTabTypeId
+        ) || manifest.capabilities.views.tabTypes?.find?.(
+            (t) => t.id === this.tab.context.pluginTabTypeId
+          );
       return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
     },
     shouldInitialize() {

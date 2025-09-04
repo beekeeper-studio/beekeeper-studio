@@ -10,8 +10,7 @@ import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
 export type TabKind = "shell";
 
 export type View = {
-  /** The id of the view.
-   *  NOTE: Don't worry about collisions. Beekeeper Studio prefix this with plugin id internally. */
+  /** The id of the view. */
   id: string;
   /** The name of the view that will be displayed in the UI */
   name: string;
