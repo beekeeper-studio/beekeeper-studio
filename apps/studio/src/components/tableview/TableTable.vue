@@ -1444,9 +1444,19 @@ export default Vue.extend({
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
           const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
+          let value = cell.getValue();
+          if (isBinary) {
+            try {
+              // I don't know if sending arraybuffer to tabulator is correct
+              // lol. We used Buffer.from before.
+              value = stringToTypedArray(value, "hex")
+            } catch (e) {
+              log.debug("failed to convert to hex", pk, value)
+            }
+          }
           primaryKeys.push({
             column: cell.getField(),
-            value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
+            value,
           })
         })
 
