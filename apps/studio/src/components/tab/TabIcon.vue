@@ -55,14 +55,14 @@
 import Vue, { PropType } from 'vue'
 import TableIcon from '../common/TableIcon.vue'
 import LoadingSpinner from '../common/loading/LoadingSpinner.vue'
-import { OpenTab } from '@/common/appdb/models/OpenTab'
 import { mapGetters } from 'vuex'
+import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
 
 export default Vue.extend({
   components: { TableIcon, LoadingSpinner },
   props: {
     tab: {
-      type: Object as PropType<OpenTab>
+      type: Object as PropType<TransportOpenTab>
     },
     forceIcon: {
       type: Boolean,
