@@ -38,7 +38,15 @@ export class LicenseKeyController {
 
 
       // Base64 encode the installation info for the header
-      const encodedInstallationInfo = Buffer.from(JSON.stringify(installationInfo)).toString('base64');
+      const encoder = new TextEncoder();
+      const data = encoder.encode(JSON.stringify(installationInfo))
+      let binaryString = '';
+
+      for (const char of data) {
+        binaryString += String.fromCharCode(char)
+      }
+
+      const encodedInstallationInfo = btoa(binaryString)
 
       // Add the installation info header to the request
       headers['X-Installation-Id'] = encodedInstallationInfo;
