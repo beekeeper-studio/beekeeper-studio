@@ -17,8 +17,8 @@ export type UtilProcMessage =
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export type CustomMenuAction<TabContext = {}> =
-  | { event: AppEvent.newCustomTab; arg: TransportOpenTabInit<TabContext>; }
-  | { event: Exclude<AppEvent, AppEvent.newCustomTab>; arg?: JsonValue; };
+  | { event: AppEvent.newCustomTab; args: TransportOpenTabInit<TabContext>; }
+  | { event: Exclude<AppEvent, AppEvent.newCustomTab>; args?: JsonValue; };
 
 export type ExternalMenuItem<TabContext = {}> = {
   id: string;

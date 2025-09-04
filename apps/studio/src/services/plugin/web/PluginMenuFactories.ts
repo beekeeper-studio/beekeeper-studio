@@ -36,7 +36,7 @@ const pluginMenuFactories: MenuFactories = {
             disableWhenDisconnected: true,
             action: {
               event: AppEvent.newCustomTab,
-              arg: context.store.buildPluginTabArgs({
+              args: context.store.buildPluginTabArgs({
                 manifest: context.manifest,
                 viewId: menuItem.view,
                 command: menuItem.command,

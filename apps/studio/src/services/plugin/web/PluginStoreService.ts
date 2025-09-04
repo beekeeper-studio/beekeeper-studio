@@ -380,12 +380,12 @@ export default class PluginStoreService {
     };
   }
 
-  openTab(options: OpenTabRequest["args"]): void {
+  openTab(options: OpenTabRequest['args']): void {
     if (options.type === "query") {
       if (!options.query) {
-        this.appEventBus.emit(AppEvent.newTab);
+        this.appEventBus.emit(AppEvent.newTab)
       } else {
-        this.appEventBus.emit(AppEvent.newTab, options.query);
+        this.appEventBus.emit(AppEvent.newTab, options.query)
       }
       return;
     }
@@ -424,7 +424,7 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
-  createPluginTabArgs(options: {
+  buildPluginTabArgs(options: {
     manifest: Manifest;
     viewId: string;
     args?: JsonValue;

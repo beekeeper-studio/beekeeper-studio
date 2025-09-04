@@ -212,6 +212,6 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   handleAction = (action: Electron.MenuItem | CustomMenuAction, win: ElectronWindow) => {
-    if (win && action && 'event' in action) win.webContents.send(action.event, action.arg)
+    if (win && action && 'event' in action) win.webContents.send(action.event, action.args)
   }
 }
