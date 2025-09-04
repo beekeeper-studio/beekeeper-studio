@@ -12,7 +12,7 @@ interface State {
   extraPopupMenu: { [menuId: string]: ContextOption[] };
 }
 
-export const PopupMenu: Module<State, RootState> = {
+export const PopupMenuModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
     extraPopupMenu: {},
