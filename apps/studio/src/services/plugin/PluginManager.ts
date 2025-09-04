@@ -43,6 +43,8 @@ export default class PluginManager {
 
     this.installedPlugins = this.fileManager.scanPlugins();
 
+    log.debug(this.installedPlugins);
+
     await this.loadPluginSettings();
 
     this.initialized = true;

@@ -47,7 +47,10 @@
               :key="index"
               @click.prevent="createTab(config)"
             >
-              <x-label>{{ config.menuItem.label }}</x-label>
+              <x-label>
+                <i class="material-icons">{{ config.icon }}</i>
+                {{ config.menuItem.label }}
+              </x-label>
               <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
             </x-menuitem>
           </x-menu>
@@ -418,6 +421,7 @@ export default Vue.extend({
         { event: AppEvent.closeTab, handler: this.closeCurrentTab },
         { event: AppEvent.closeAllTabs, handler: this.closeAll },
         { event: AppEvent.newTab, handler: this.createQuery },
+        { event: AppEvent.newCustomTab, handler: this.addTab },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
         { event: 'historyClick', handler: this.createQueryFromItem },
         { event: AppEvent.loadTable, handler: this.openTable },
