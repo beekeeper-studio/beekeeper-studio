@@ -199,6 +199,9 @@ export default class WebPluginLoader {
           // FIXME maybe we should ask user permission first before opening?
           window.main.openExternally(request.args.link);
           break;
+        case "openTab":
+          this.pluginStore.openTab(request.args);
+          break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);

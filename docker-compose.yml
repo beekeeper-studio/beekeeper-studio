@@ -21,11 +21,13 @@ volumes:
 services:
   anywhere:
     image: jaschweder/sybase
+    platform: linux/amd64
     ports:
       - 2638:2638
 
   mongodb:
     image: mongo
+    platform: linux/amd64
     environment:
       MONGO_INITDB_ROOT_USERNAME: beekeeper
       MONGO_INITDB_ROOT_PASSWORD: example
@@ -37,6 +39,7 @@ services:
 
   oracle18:
     image: gvenzl/oracle-xe:18
+    platform: linux/amd64
     environment:
       ORACLE_PASSWORD: example
       ORACLE_DATABASE: sakila
@@ -50,6 +53,7 @@ services:
 
   psql15-load-test:
     image: postgres:15
+    platform: linux/amd64
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -62,6 +66,7 @@ services:
 
   psql15:
     image: postgres:15
+    platform: linux/amd64
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -74,6 +79,7 @@ services:
 
   psql14:
     image: postgres:14
+    platform: linux/amd64
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -85,6 +91,7 @@ services:
       - 5436:5432
   psql13:
     image: postgres:13
+    platform: linux/amd64
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -94,8 +101,19 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5433:5432
+  trino:
+    image: trinodb/trino:latest
+    platform: linux/amd64
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./dev/docker_trino/catalog:/etc/trino/catalog
+    depends_on:
+      - psql
+      - mysql8
   psql:
     image: postgres:9.6
+    platform: linux/amd64
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
@@ -107,6 +125,7 @@ services:
       - 5432:5432
   mariadb:
     image: mariadb
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: example
@@ -118,6 +137,7 @@ services:
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql8:
     image: mysql:8.0.21
+    platform: linux/amd64
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
     environment:
@@ -130,6 +150,7 @@ services:
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql:
     image: mysql:5.7.22
+    platform: linux/amd64
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
     environment:
@@ -142,11 +163,13 @@ services:
       - ./dev/docker_mysql_init:/docker-entrypoint-initdb.d
   mysql4.1:
     image: vettadock/mysql-old:4.1
+    platform: linux/amd64
     restart: unless-stopped
     ports:
       - 3309:3306
   sqlserver:
     image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
+    platform: linux/amd64
     volumes:
       - mssql:/var/opt/mssql/data
       - ./dev/docker_sqlserver:/docker_init
@@ -160,6 +183,7 @@ services:
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
   sqlserverlatin:
     image: 'mcr.microsoft.com/mssql/server:2017-latest-ubuntu'
+    platform: linux/amd64
     volumes:
       - mssqllatin:/var/opt/mssql/data
       - ./dev/docker_sqlserver:/docker_init
@@ -173,6 +197,7 @@ services:
     command: sh -c ' chmod +x /docker_init/entrypoint.sh; /docker_init/entrypoint.sh & /opt/mssql/bin/sqlservr;'
   cockroachdb:
     image: cockroachdb/cockroach:v22.1.1
+    platform: linux/amd64
     volumes:
       - cockroachdb:/cockroach/cockroach-data
     ports:
@@ -180,6 +205,7 @@ services:
     command: start-single-node --insecure
   cassandra:
     image: cassandra:latest
+    platform: linux/amd64
     entrypoint: [ "/docker-entrypoint.initdb.d/entry.sh" ]
     ports:
       - 9042:9042
@@ -192,6 +218,7 @@ services:
   # Create keyspace https://www.tutorialspoint.com/cassandra/cassandra_create_keyspace.htm
   bigquery:
     image: ghcr.io/goccy/bigquery-emulator:latest
+    platform: linux/amd64
     volumes:
       - ./dev/docker_bigquery:/data
       - ./dev/docker_bigquery:/docker_init
@@ -201,6 +228,7 @@ services:
     entrypoint: sh -c 'chmod +x /docker_init/data.sh; /docker_init/data.sh'
   firebird:
     image: jacobalberty/firebird:v4.0.1
+    platform: linux/amd64
     volumes:
       - ./dev/docker_firebird:/docker_init
     ports:
@@ -221,9 +249,36 @@ services:
       #   - ./dev/docker_libsql:/var/lib/sqld
   clickhouse:
     image: clickhouse/clickhouse-server
+    platform: linux/amd64
     ports:
       - 8123:8123
     environment:
       - CLICKHOUSE_USER=username
       - CLICKHOUSE_PASSWORD=password
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+
+  clickhouse25:
+    image: clickhouse/clickhouse-server:25.6.1
+    ports:
+      - 8124:8123
+    environment:
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    user: "${SURREAL_UID}"
+    command: start --log trace --user root --pass root --allow-all rocksdb:/mydata/surreal.db
+    ports:
+      - 8000:8000
+    volumes:
+      - ./surreal_data:/mydata
+
+  surrealdb-seed:
+    image: surrealdb/surrealdb:latest
+    depends_on:
+      - surrealdb
+    command: import --conn http://surrealdb:8000 --user root --pass root --ns test --db test /seed.surql
+    volumes:
+      - ./dev/docker_surrealdb_init/seed.surql:/seed.surql:ro

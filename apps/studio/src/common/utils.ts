@@ -322,3 +322,48 @@ export function toRegexSafe(input: string) {
     return null;
   }
 }
+
+export function normalizeDataType (dataType) {
+  return dataType.toLowerCase()
+    .replace(/\(.+?\)/g, '')
+    .replace(/\b(unsigned|zerofill)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function isDateDataType (dataType) {
+  const base = normalizeDataType(dataType)
+
+  const dateLikeStarts = [
+    'date',
+    'time',
+    'smalldatetime',
+    'year',
+    'interval'
+  ]
+
+  return dateLikeStarts.some(t => base.startsWith(t))
+}
+
+export function isNumericDataType (dataType) {
+  const base = normalizeDataType(dataType)
+  const numericStarts = [
+    'smallint',
+    'int',
+    'bigint',
+    'serial',
+    'bigserial',
+    'decimal',
+    'numeric',
+    'real',
+    'float',
+    'double',
+    'money',
+    'smallmoney',
+    'tinyint',
+    'mediumint',
+    'bit'
+  ]
+
+  return numericStarts.some(t => base.startsWith(t))
+}

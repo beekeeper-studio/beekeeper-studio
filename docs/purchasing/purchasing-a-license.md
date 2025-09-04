@@ -20,6 +20,16 @@ Suppose you start an annual subscription on March 10, 2021. You'll receive a lif
 
 If you opt for a monthly subscription and complete 12 consecutive months, the same benefit applies. For example, if you begin your monthly subscription on March 10, 2021, and maintain it through March 2022, you'll have lifetime access to versions released during this period, even after you cancel your subscription.
 
+### Lifetime Access Example
+
+- You subscribe to Beekeeper Studio on January 1, 2024
+- Your subscription ends on February 28 2025
+- You can use any version of Beekeeper Studio (with the features you paid for) released until February 28, 2025 forever. No further payments required
+
+![Lifetime access diagram](../assets/images/lifetime-diagram.png)
+
+
+
 ## Why Our Subscribers Stick Around
 
 Our customers are head over heels for the lifetime license, but there's more to Beekeeper Studio that keeps them subscribed:

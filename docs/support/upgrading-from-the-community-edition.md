@@ -23,7 +23,7 @@ That's easy -- a whole bunch of useful features are only available in the paid v
 
 For example, the full version includes a **JSON row viewer** and more comprehensive import/export options.
 
-![JSON row viewer](../../assets/images/json-row-view.png)
+![JSON row viewer](../assets/images/json-row-view.png)
 
 There are a lot more awesome features in the full version of Beekeeper Studio, you can see them all [on the pricing page](https://beekeeperstudio.io/pricing).
 
@@ -39,27 +39,7 @@ This means you can use the version of Beekeeper Studio you purchased forever, ev
 
 We think this is a fair compromise between subscriptions and one-time payments, we hope you do too.
 
-Learn more about lifetime access [on the pricing page](https://beekeeperstudio.io/pricing).
-
-### Lifetime Access Example
-
-- You subscribe to Beekeeper Studio on January 1, 2023
-- Your subscription ends on January 1 2025
-- You can use any version of Beekeeper Studio released between January 1, 2023 and January 1, 2025 forever. No further payments required
-
-If you want software updates past January 1, 2025, simply renew your subscription.
-
-!!! info "Monthly Subscribers"
-    You won't receive lifetime access until you've paid for 12 consecutive months. This is to prevent abuse of the system.
-
-### How to get lifetime access with a single payment
-
-1. Purchase a 1 year subscription
-2. Cancel your subscription from the dashboard
-3. Your subscription will remain active until the end of your billing cycle, and you will have lifetime access to any version of Beekeeper Studio released during that time.
-
-Most customers (95%+) stick with their subscription to maintain access to new features and updates, but if you want to cancel, you can do so at any time.
-
+[Read more about lifetime licenses and how they work](../purchasing/purchasing-a-license.md#lifetime-access)
 
 ## Get Your Boss To Pay
 
