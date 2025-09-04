@@ -1,20 +1,23 @@
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import {
   PluginMenuItem,
+  PluginMenuItemPlacement,
   WebPluginContext,
 } from "@/services/plugin/types";
 import _ from "lodash";
-import { menuHandlers } from "./PluginMenuHandlers";
+import pluginMenuFactories from "./PluginMenuFactories";
 
 type MenuHandler = {
-  add: (params: {
-    context: WebPluginContext;
-    menuItem: PluginMenuItem;
-  }) => void;
-  remove: (params: {
-    context: WebPluginContext;
-    menuItem: PluginMenuItem;
-  }) => void;
+  add: () => void;
+  remove: () => void;
+};
+
+export type MenuFactory = {
+  create: (context: WebPluginContext, menuItem: PluginMenuItem) => MenuHandler;
+};
+
+export type MenuFactories = {
+  [Placement in PluginMenuItemPlacement]: MenuFactory;
 };
 
 export class PluginMenuManager {
@@ -36,7 +39,7 @@ export class PluginMenuManager {
     this.applyMenuItems("remove");
   }
 
-  private applyMenuItems(type: keyof MenuHandler) {
+  private applyMenuItems(handlerType: keyof MenuHandler) {
     const menu = this.context.manifest.capabilities.menu || [];
     const views = this.context.manifest.capabilities.views || [];
 
@@ -61,15 +64,15 @@ export class PluginMenuManager {
         : menuItem.placement;
 
       placement.forEach((placement) => {
-        const handler = menuHandlers[view.type]?.[placement];
-        if (!handler) {
+        const factory = pluginMenuFactories[placement];
+        if (!factory) {
           this.context.log.error(
-            new Error(`Unknown menu placement: ${placement}`)
+            new Error(`Unsupported placement: ${placement}`)
           );
           return;
         }
-        const id = `${this.context.manifest.id}-${menuItem.command}`;
-        handler[type]({ id, context: this.context, menuItem });
+        const handler = factory.create(this.context, menuItem);
+        handler[handlerType]();
       });
     });
   }

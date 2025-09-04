@@ -28,7 +28,7 @@ export type PluginView = {
 export type View = PluginView;
 
 export type PluginMenuItemPlacement =
-  | "new-tab-dropdown" // Shown in the dropdown list when opening a new tab
+  | "newTabDropdown" // Shown in the dropdown list when opening a new tab
   | "menubar.tools" // Shown in the tools menu
   | "editor.query.context" // Context menu inside the query editor
   | "results.cell.context" // Context menu on a cell
@@ -39,9 +39,12 @@ export type PluginMenuItemPlacement =
   | "tableTable.columnHeader.context" // Context menu on a row header
   | "tableTable.rowHeader.context" // Context menu on a column header
   | "tableTable.corner.context" // Context menu on the top left corner
-  | "tab.header.context" // Context menu on the tab header
-  | "entity.context" // Context menu on database/schema/table entries in the sidebar
-  | "structure.statusbar"; // Button rendered in the structure view status bar
+  | "tab.query.header.context" // Context menu on the query tab header
+  | "tab.table.header.context" // Context menu on the table tab header
+  | "entity.table.context" // Context menu on a table
+  | "entity.schema.context" // Context menu on a schema
+  | "entity.routine.context" // Context menu on a routine
+  | "structure.statusbar.menu"; // Button rendered in the structure view status bar
 
 /** A single menu item contributed by a plugin. */
 export interface PluginMenuItem {
