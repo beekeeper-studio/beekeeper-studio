@@ -73,6 +73,17 @@ export interface PluginMenuItem {
   order?: number;
 }
 
+/** @deprecated use `PluginView` instead. Used by earlier versions of AI Shell. */
+type DeprecatedViews = {
+  tabTypes?: {
+    id: string;
+    name: string;
+    kind: TabKind;
+    /** Same as `entry` above. */
+    entry: string;
+  }[];
+}
+
 export interface Manifest {
   id: string;
   name: string;
@@ -90,18 +101,9 @@ export interface Manifest {
   icon?: string;
   /** Provide all extension points here. */
   capabilities: {
-    /** Use `View` object instead of `tabTypes`. `tabTypes` is only for backward compatibility. */
-    views:
-    | PluginView[]
-    | {
-      tabTypes?: {
-        id: string;
-        name: string;
-        kind: TabKind;
-        /** Same as `entry` above. */
-        entry: string;
-      }[];
-    };
+    /** The list of views provided by the plugin. */
+    views: PluginView[] | DeprecatedViews;
+    /** The list of menu items provided by the plugin. */
     menu: PluginMenuItem[];
   };
   /** The path to the plugin's root directory. This is helpful when you use a bundler to build the project to a `dist/` directory for example. */

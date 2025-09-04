@@ -1,8 +1,10 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
 import type {
+  PluginTabContext,
   TabTypeConfig,
   TransportOpenTab,
+  TransportOpenTabInit,
   TransportPluginShellTab,
 } from "@/common/transport/TransportOpenTab";
 import {
@@ -24,7 +26,7 @@ import {
   PluginMenuItem,
   TabKind,
 } from "../types";
-import { JsonValue } from "@/types";
+import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 
 /**
@@ -378,22 +380,57 @@ export default class PluginStoreService {
     };
   }
 
-  addContextMenuItem(menuId: string, item: ContextOption) {
+  openTab(options: OpenTabRequest["args"]): void {
+    if (options.type === "query") {
+      if (!options.query) {
+        this.appEventBus.emit(AppEvent.newTab);
+      } else {
+        this.appEventBus.emit(AppEvent.newTab, options.query);
+      }
+      return;
+    }
+
+    if (options.type === "tableStructure") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.openTableProperties, { table });
+      return;
+    }
+
+    if (options.type === "tableTable") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.loadTable, {
+        table,
+        filters: options.filters,
+      });
+      return;
+    }
+
+    throw new Error(`Unsupported tab type: ${options.type}`);
+  }
+
+  addPopupMenuItem(menuId: string, item: ContextOption) {
     this.store.commit("popupMenu/add", { menuId, item });
   }
 
-  removeContextMenuItem(menuId: string, slug: string) {
+  removePopupMenuItem(menuId: string, slug: string) {
     this.store.commit("popupMenu/remove", { menuId, slug });
   }
 
-  createPluginTab(options: {
+  addMenuBarItem(item: ExternalMenuItem<PluginTabContext>) {
+    this.store.commit("menuBar/add", item);
+  }
+
+  removeMenuBarItem(id: string) {
+    this.store.commit("menuBar/remove", id);
+  }
+
+  createPluginTabArgs(options: {
     manifest: Manifest;
     viewId: string;
-    command: string;
     args?: JsonValue;
-  }) {
+    command: string;
+  }): TransportOpenTabInit<PluginTabContext> {
     // FIXME(azmi): duplicated code from CoreTabs.vue
-
     const tabItems = this.store.getters["tabs/sortedTabs"];
     let title = options.manifest.name;
     let tNum = 0;
@@ -402,9 +439,9 @@ export default class PluginStoreService {
       title = `${options.manifest.name} #${tNum}`;
     } while (tabItems.filter((t) => t.title === title).length > 0);
 
-    this.appEventBus.emit(AppEvent.newCustomTab, {
+    return {
       tabType: "plugin-shell", // FIXME(azmi): We only support shell for now
-      title,
+      title: options.manifest.name,
       unsavedChanges: false,
       context: {
         pluginId: options.manifest.id,
@@ -412,6 +449,6 @@ export default class PluginStoreService {
         args: options.args,
         command: options.command,
       },
-    } as TransportPluginShellTab);
+    };
   }
 }

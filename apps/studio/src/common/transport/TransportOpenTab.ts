@@ -30,19 +30,35 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   context: Context
 }
 
-export type TransportPluginShellTab = TransportOpenTab<{
+/** Used when creating a new tab */
+export type TransportOpenTabInit<Context = {}> = Omit<
+  TransportOpenTab<Context>,
+  | "id"
+  | "createdAt"
+  | "updatedAt"
+  | "version"
+  | "isRunning"
+  | "connectionId"
+  | "alert"
+  | "position"
+  | "active"
+>;
+
+export type TransportPluginShellTab = TransportOpenTab<PluginTabContext>;
+
+export type PluginTabContext = {
   pluginId: string;
   pluginTabTypeId: string;
   /** A plugin can save the state of the tab here. For example, an AI plugin
      * can save the chat conversation here */
-  data: JsonValue;
+  data?: JsonValue;
   /** The command to execute on the plugin. Plugins cannot change this.
    * @since 5.4.0 */
   command?: string;
   /** Arguments to be passed to the plugin. Plugins cannot change this.
    * @since 5.4.0 */
   args?: JsonValue;
-}>
+};
 
 export namespace TabTypeConfig {
   interface BaseTabTypeConfig {

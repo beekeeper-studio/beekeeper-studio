@@ -1,8 +1,9 @@
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
-import { DatabaseEntity } from "@/lib/db/models";
+import type { DatabaseEntity, TableOrView } from "@/lib/db/models";
 import _ from "lodash";
 import { CellComponent } from "tabulator-tables";
 import { MenuFactories } from "./PluginMenuManager";
+import { AppEvent } from "@/common/AppEvent";
 
 const pluginMenuFactories: MenuFactories = {
   newTabDropdown: {
@@ -24,10 +25,26 @@ const pluginMenuFactories: MenuFactories = {
     },
   },
   "menubar.tools": {
-    create(context, _menuItem) {
+    create(context, menuItem) {
+      const id = `${context.manifest.id}-${menuItem.command}`;
       return {
-        add: () => context.log.error("not implemented"),
-        remove: () => context.log.error("not implemented"),
+        add() {
+          context.store.addMenuBarItem({
+            id,
+            label: menuItem.name,
+            parentId: "tools",
+            disableWhenDisconnected: true,
+            action: {
+              event: AppEvent.newCustomTab,
+              arg: context.store.buildPluginTabArgs({
+                manifest: context.manifest,
+                viewId: menuItem.view,
+                command: menuItem.command,
+              }),
+            },
+          });
+        },
+        remove: () => context.store.removeMenuBarItem(id),
       };
     },
   },
@@ -37,27 +54,28 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (...args) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-                args: {
-                  text: "[[TEXT]]",
-                  selectedText: "[[SELECTED_TEXT]]",
-                  selectedQuery: "[[SELECTED_QUERY]]",
-                },
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  args: {
+                    text: "[[TEXT]]",
+                    selectedText: "[[SELECTED_TEXT]]",
+                    selectedQuery: "[[SELECTED_QUERY]]",
+                  },
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -67,22 +85,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -92,22 +111,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -117,22 +137,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -142,22 +163,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -167,22 +189,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -192,22 +215,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -217,22 +241,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -242,22 +267,23 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
               // FIXME send the args
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -267,24 +293,25 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: TransportOpenTab }) => {
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-                args: {
-                  tab: context.store.serializeTab(options.item),
-                },
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  args: {
+                    tab: context.store.serializeTab(options.item),
+                  },
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -294,24 +321,25 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: TransportOpenTab }) => {
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-                args: {
-                  tab: context.store.serializeTab(options.item),
-                },
-              });
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  args: {
+                    tab: context.store.serializeTab(options.item),
+                  },
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -321,28 +349,29 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: DatabaseEntity }) => {
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-                args: {
-                  entity: {
-                    type: "table",
-                    schema: options.item.schema,
-                    name: options.item.name,
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  args: {
+                    entity: {
+                      type: "table",
+                      schema: options.item.schema,
+                      name: options.item.name,
+                    },
                   },
-                },
-              });
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -352,27 +381,28 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: string }) => {
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-                args: {
-                  entity: {
-                    type: "schema",
-                    name: options.item,
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  args: {
+                    entity: {
+                      type: "schema",
+                      name: options.item,
+                    },
                   },
-                },
-              });
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
@@ -382,36 +412,61 @@ const pluginMenuFactories: MenuFactories = {
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
-          context.store.addContextMenuItem(menuId, {
+          context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
             handler: (options: { item: DatabaseEntity }) => {
-              context.store.createPluginTab({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-                args: {
-                  entity: {
-                    type: "routine",
-                    schema: options.item.schema,
-                    name: options.item.name,
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  args: {
+                    entity: {
+                      type: "routine",
+                      schema: options.item.schema,
+                      name: options.item.name,
+                    },
                   },
-                },
-              });
+                })
+              );
             },
           });
         },
-        remove() {
-          context.store.removeContextMenuItem(menuId, slug);
-        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
   "structure.statusbar.menu": {
-    create(context, _menuItem) {
+    create(context, menuItem) {
+      const menuId = "structure.statusbar";
+      const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
-        add: () => context.log.error("not implemented"),
-        remove: () => context.log.error("not implemented"),
+        add() {
+          context.store.addPopupMenuItem(menuId, {
+            name: menuItem.name,
+            slug,
+            handler: (options: { item: TableOrView }) => {
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabArgs({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  args: {
+                    entity: {
+                      type: options.item.entityType,
+                      name: options.item.name,
+                      schema: options.item.schema,
+                    },
+                  },
+                })
+              );
+            },
+          });
+        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
       };
     },
   },
