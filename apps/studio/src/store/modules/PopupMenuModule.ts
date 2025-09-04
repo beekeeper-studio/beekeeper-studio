@@ -5,6 +5,7 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { MenuItem } from "@beekeeperstudio/ui-kit";
 import { CellComponent, ColumnComponent, MenuObject, MenuSeparator, RowComponent } from "tabulator-tables";
 import { createMenuItem } from "@/lib/menu/tableMenu";
+import Vue from "vue";
 
 type TabulatorComponent = RowComponent | ColumnComponent | CellComponent;
 
@@ -67,7 +68,7 @@ export const PopupMenuModule: Module<State, RootState> = {
       }
 
       if (!state.extraPopupMenu[options.menuId]) {
-        state.extraPopupMenu[options.menuId] = [];
+        Vue.set(state.extraPopupMenu, options.menuId, []);
       }
 
       state.extraPopupMenu[options.menuId].push(options.item);
