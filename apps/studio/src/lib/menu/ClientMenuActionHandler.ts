@@ -2,6 +2,7 @@ import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import _ from 'lodash'
 import {AppEvent} from '../../common/AppEvent'
 import rawLog from '@bksLogger'
+import { CustomMenuAction } from '@/types'
 
 const log = rawLog.scope("ClientMenuActionHandler")
 
@@ -61,4 +62,5 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   }
   updatePin = () => send('updatePin')
   managePlugins = () => send("managePlugins")
+  handleAction = (action: CustomMenuAction) => send('handleAction', action)
 }

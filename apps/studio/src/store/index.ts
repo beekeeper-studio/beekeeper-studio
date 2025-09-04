@@ -37,6 +37,7 @@ import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
+import { MenuBarModule } from './modules/MenuBarModule'
 
 
 const log = RawLog.scope('store/index')
@@ -100,6 +101,7 @@ const store = new Vuex.Store<State>({
     backups: BackupModule,
     sidebar: SidebarModule,
     popupMenu: PopupMenuModule,
+    menuBar: MenuBarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
