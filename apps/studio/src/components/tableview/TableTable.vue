@@ -1447,11 +1447,9 @@ export default Vue.extend({
           let value = cell.getValue();
           if (isBinary) {
             try {
-              // I don't know if sending arraybuffer to tabulator is correct
-              // lol. We used Buffer.from before.
               value = stringToTypedArray(value, "hex")
             } catch (e) {
-              log.debug("failed to convert to hex", pk, value)
+              log.error(`Error converting ${value} to typed array. Skipping...`, e)
             }
           }
           primaryKeys.push({
