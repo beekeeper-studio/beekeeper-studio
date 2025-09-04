@@ -1,24 +1,24 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
-import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import type {
+  TabTypeConfig,
+  TransportOpenTab,
+} from "@/common/transport/TransportOpenTab";
 import {
-  CreateQueryTabResponse,
-  GetActiveTabResponse,
   GetAllTabsResponse,
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
-  GetThemeResponse,
   RunQueryResponse,
-  RunQueryTabResponse,
   TabResponse,
-} from "../comm";
+  ThemeChangedNotification,
+} from "@beekeeperstudio/plugin";
 import { findTable } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { TabType } from "@/store/models";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
+import { TabKind } from "../types";
 
 /**
  * Service that provides an interface to the plugin Vuex module
@@ -33,7 +33,7 @@ export default class PluginStoreService {
     }
   ) {}
 
-  getTheme(): GetThemeResponse {
+  getTheme(): ThemeChangedNotification["args"] {
     const cssProps = [
       "--theme-bg",
       "--theme-base",
@@ -61,6 +61,8 @@ export default class PluginStoreService {
       "--selection",
       "--input-highlight",
 
+      "--query-editor-bg",
+
       // BksTextEditor
       "--bks-text-editor-activeline-bg-color",
       "--bks-text-editor-activeline-gutter-bg-color",
@@ -74,14 +76,20 @@ export default class PluginStoreService {
       "--bks-text-editor-comment-tag-fg-color",
       "--bks-text-editor-comment-type-fg-color",
       "--bks-text-editor-cursor-bg-color",
+      "--bks-text-editor-fatcursor-bg-color",
       "--bks-text-editor-def-fg-color",
       "--bks-text-editor-error-bg-color",
       "--bks-text-editor-error-fg-color",
       "--bks-text-editor-fg-color",
+      "--bks-text-editor-focused-outline-color",
+      "--bks-text-editor-foldgutter-fg-color",
+      "--bks-text-editor-foldgutter-fg-color-hover",
       "--bks-text-editor-gutter-bg-color",
+      "--bks-text-editor-gutter-border-color",
       "--bks-text-editor-guttermarker-fg-color",
       "--bks-text-editor-guttermarker-subtle-fg-color",
       "--bks-text-editor-header-fg-color",
+      "--bks-text-editor-highlight-bg-color",
       "--bks-text-editor-keyword-fg-color",
       "--bks-text-editor-linenumber-fg-color",
       "--bks-text-editor-link-fg-color",
@@ -90,6 +98,7 @@ export default class PluginStoreService {
       "--bks-text-editor-number-fg-color",
       "--bks-text-editor-property-fg-color",
       "--bks-text-editor-selected-bg-color",
+      "--bks-text-editor-matchingselection-bg-color",
       "--bks-text-editor-string-fg-color",
       "--bks-text-editor-tag-fg-color",
       "--bks-text-editor-variable-2-fg-color",
@@ -128,6 +137,23 @@ export default class PluginStoreService {
       "--bks-text-editor-url-fg-color",
       "--bks-text-editor-processingInstruction-fg-color",
       "--bks-text-editor-special-string-fg-color",
+      "--bks-text-editor-name-fg-color",
+      "--bks-text-editor-deleted-fg-color",
+      "--bks-text-editor-character-fg-color",
+      "--bks-text-editor-color-fg-color",
+      "--bks-text-editor-standard-fg-color",
+      "--bks-text-editor-separator-fg-color",
+      "--bks-text-editor-changed-fg-color",
+      "--bks-text-editor-annotation-fg-color",
+      "--bks-text-editor-modifier-fg-color",
+      "--bks-text-editor-self-fg-color",
+      "--bks-text-editor-operatorKeyword-fg-color",
+      "--bks-text-editor-escape-fg-color",
+      "--bks-text-editor-strong-fg-color",
+      "--bks-text-editor-emphasis-fg-color",
+      "--bks-text-editor-strikethrough-fg-color",
+      "--bks-text-editor-sql-alias-fg-color",
+      "--bks-text-editor-sql-field-fg-color",
 
       // BksTextEditor context menu
       "--bks-text-editor-context-menu-bg-color",
@@ -165,24 +191,62 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
-  getTables(): GetTablesResponse {
-    return this.store.state.tables.map((t) => t.name);
+  addTabTypeConfig(params: {
+    pluginId: string;
+    pluginTabTypeId: string;
+    name: string;
+    kind: TabKind;
+    icon?: string;
+  }): void {
+    const config: TabTypeConfig.PluginShellConfig = {
+      type: `plugin-${params.kind}` as const,
+      name: params.name,
+      pluginId: params.pluginId,
+      pluginTabTypeId: params.pluginTabTypeId,
+      menuItem: { label: `Add ${params.name}` },
+      icon: params.icon,
+    };
+    this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  async getColumns(tableName: string): Promise<GetColumnsResponse> {
-    let table = this.store.state.tables.find((t) => t.name === tableName);
+  removeTabTypeConfig(identifier: TabTypeConfig.PluginShellConfigIdentifiers): void {
+    this.store.commit("tabs/removeTabTypeConfig", identifier);
+  }
+
+  getTables(): GetTablesResponse {
+    return this.store.state.tables.map((t) => ({
+      name: t.name,
+      schema: t.schema,
+    }));
+  }
+
+  private findTable(name: string, schema?: string) {
+    return this.store.state.tables.find((t) => {
+      if (!schema && this.store.state.defaultSchema) {
+        schema = this.store.state.defaultSchema;
+      }
+      if (schema) {
+        return t.name === name && t.schema === schema;
+      }
+      return t.name === name;
+    });
+  }
+
+  async getColumns(
+    tableName: string,
+    schema?: string
+  ): Promise<GetColumnsResponse> {
+    const table = this.findTable(tableName, schema);
 
     if (!table) {
       throw new Error(`Table ${tableName} not found`);
     }
 
-    if (!table.columns) {
+    if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);
     }
 
-    table = this.store.state.tables.find((t) => t.name === tableName);
-
-    return table.columns.map((c) => ({
+    return this.findTable(tableName, schema).columns.map((c) => ({
       name: c.columnName,
       type: c.dataType,
     }));
@@ -191,7 +255,8 @@ export default class PluginStoreService {
   getConnectionInfo(): GetConnectionInfoResponse {
     return {
       connectionType: this.store.state.connectionType,
-      defaultDatabase: this.store.state.usedConfig.defaultDatabase,
+      databaseName: this.store.state.database,
+      defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
   }
@@ -241,43 +306,6 @@ export default class PluginStoreService {
     };
   }
 
-  async createQueryTab(
-    query: string,
-    title: string
-  ): Promise<CreateQueryTabResponse> {
-    const tab = {
-      tabType: "query",
-      title,
-      unsavedChanges: false,
-      unsavedQueryText: query,
-    } as TransportOpenTab;
-
-    const { id }: { id: number } = await this.store.dispatch("tabs/add", {
-      item: tab,
-      endOfPosition: true,
-    });
-    await this.store.dispatch("tabs/setActive", tab);
-
-    return { id };
-  }
-
-  updateQueryText(tabId: number, query: string): void {
-    const tab = this.store.state.tabs.tabs.find(
-      (t: TransportOpenTab) => t.id === tabId
-    );
-
-    if (!tab) {
-      throw new Error(`Tab with ID ${tabId} not found`);
-    }
-
-    if (tab.tabType !== TabType.query) {
-      throw new Error(`Tab with ID ${tabId} is not a query tab`);
-    }
-
-    // Update the unsaved query text in the tab
-    tab.unsavedQueryText = query;
-  }
-
   private serializeQueryResponse(result: NgQueryResult) {
     return {
       fields: result.fields.map((field) => ({
@@ -286,6 +314,8 @@ export default class PluginStoreService {
         dataType: field.dataType,
       })),
       rows: result.rows,
+      rowCount: result.rowCount,
+      affectedRows: result.affectedRows,
     };
   }
 

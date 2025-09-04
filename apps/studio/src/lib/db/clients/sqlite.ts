@@ -255,7 +255,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
           }
 
           if (err.message?.startsWith('no such column')) {
-            const nuError = new ClientError(`${err.message} - Check that you only use double quotes (") for identifiers, not strings`, "https://docs.beekeeperstudio.io/pages/troubleshooting#no-such-column-x");
+            const nuError = new ClientError(`${err.message} - Check that you only use double quotes (") for identifiers, not strings`, "https://docs.beekeeperstudio.io/support/troubleshooting/#no-such-column-x");
             throw nuError
           }
 
@@ -579,6 +579,17 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // https://github.com/WiseLibs/better-sqlite3/blob/master/docs/integer.md#getting-bigints-from-the-database
     // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
     connection.defaultSafeIntegers(true);
+
+    if (this.server.config.runtimeExtensions && this.server.config.runtimeExtensions.length > 0) {
+      for (const extension of this.server.config.runtimeExtensions) {
+        try {
+          connection.loadExtension(extension)
+        } catch (err) {
+          log.error(`Unable to load extension file ${extension}`)
+          throw err
+        }
+      }
+    }
 
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {

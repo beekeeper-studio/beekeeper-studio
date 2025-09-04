@@ -1,33 +1,53 @@
 import {
   Manifest,
+  OnViewRequestListener,
+} from "../types";
+import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
-} from "../types";
+} from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
+import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
 }
 
-const log = rawLog.scope("WebPluginManager");
+const windowEventMap = new Map();
+windowEventMap.set("MouseEvent", MouseEvent);
+windowEventMap.set("PointerEvent", PointerEvent);
+windowEventMap.set("KeyboardEvent", KeyboardEvent);
+windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
-  private iframe?: HTMLIFrameElement;
+  private iframes: HTMLIFrameElement[] = [];
+  private onReadyListeners: Function[] = [];
+  private onDisposeListeners: Function[] = [];
+  private listeners: OnViewRequestListener[] = [];
+  private log: ReturnType<typeof rawLog.scope>;
+  private listening = false;
 
   constructor(
     public readonly manifest: Manifest,
-    private pluginStore: PluginStoreService
+    private pluginStore: PluginStoreService,
+    private utilityConnection: UtilityConnection
   ) {
     this.handleMessage = this.handleMessage.bind(this);
+    this.log = rawLog.scope(`WebPluginLoader:${manifest.id}`);
   }
 
   /** Starts the plugin */
-  async load() {
-    // Add event listener for messages from iframe
-    window.addEventListener("message", this.handleMessage);
+  async load(manifest?: Manifest) {
+    // FIXME dont load manifest this way. probably make a new method `setManifest`
+    if (manifest) {
+      // @ts-ignore
+      this.manifest = manifest;
+    }
+
+    this.log.info("Loading plugin", this.manifest);
 
     this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.addSidebarTab({
@@ -36,35 +56,78 @@ export default class WebPluginLoader {
         url: `plugin://${this.manifest.id}/${this.getEntry(sidebar.entry)}`,
       });
     });
-  }
 
-  private handleMessage(event: MessageEvent) {
-    if (!this.iframe) return;
-
-    // Check if the message is from our iframe
-    if (event.source === this.iframe.contentWindow) {
-      this.handleViewRequest({
-        id: event.data.id,
-        name: event.data.name,
-        args: event.data.args[0],
+    this.manifest.capabilities.views?.tabTypes?.forEach((tabType) => {
+      this.pluginStore.addTabTypeConfig({
+        pluginId: this.manifest.id,
+        pluginTabTypeId: tabType.id,
+        name: tabType.name,
+        kind: tabType.kind,
+        icon: this.manifest.icon,
       });
+    });
+
+    if (!this.listening) {
+      this.registerEvents();
+      this.onReadyListeners.forEach((fn) => fn());
     }
   }
 
-  private async handleViewRequest(request: PluginRequestData) {
-    this.checkPermission(request);
+  private handleMessage(event: MessageEvent) {
+    const source = this.iframes.find(
+      (iframe) => iframe.contentWindow === event.source
+    );
+
+    // Check if the message is from our iframe
+    if (source) {
+      if (event.data.id) {
+        this.handleViewRequest(
+          {
+            id: event.data.id,
+            name: event.data.name,
+            args: event.data.args,
+          },
+          source
+        );
+      } else {
+        this.handleViewNotification({
+          name: event.data.name,
+          args: event.data.args,
+        });
+      }
+    }
+  }
+
+  private async handleViewRequest(
+    request: PluginRequestData,
+    source: HTMLIFrameElement
+  ) {
+    const afterCallbacks: ((response: PluginResponseData) => void)[] = [];
+    const modifyResultCallbacks: ((result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>)[] = [];
+
+    for (const listener of this.listeners) {
+      await listener({
+        source,
+        request,
+        after: (callback) => {
+          afterCallbacks.push(callback);
+        },
+        modifyResult: (callback) => {
+          modifyResultCallbacks.push(callback);
+        },
+      });
+    }
 
     const response: PluginResponseData = {
       id: request.id,
-      result: {},
+      result: undefined,
     };
 
     try {
+      this.checkPermission(request);
+
       switch (request.name) {
         // ========= READ ACTIONS ===========
-        case "getTheme":
-          response.result = this.pluginStore.getTheme();
-          break;
         case "getTables":
           response.result = this.pluginStore.getTables();
           break;
@@ -82,51 +145,138 @@ export default class WebPluginLoader {
         case "getAllTabs":
           response.result = this.pluginStore.getAllTabs();
           break;
+        case "getData":
+        case "getEncryptedData": {
+          const value = await this.utilityConnection.send(
+            request.name === "getEncryptedData"
+              ? "plugin/getEncryptedData"
+              : "plugin/getData",
+            { manifest: this.manifest, key: request.args.key }
+          );
+          response.result = value;
+          break;
+        }
+        case "clipboard.readText":
+          response.result = window.main.readTextFromClipboard()
+          break;
 
         // ======== WRITE ACTIONS ===========
-        case "createQueryTab": // FIXME not stable yet
-          response.result = await this.pluginStore.createQueryTab(
-            request.args.query,
-            request.args.title
-          );
-          break;
-        case "updateQueryText":
-          response.result = this.pluginStore.updateQueryText(
-            request.args.tabId,
-            request.args.query
-          );
-          break;
         case "runQuery":
           response.result = await this.pluginStore.runQuery(request.args.query);
           break;
-        case "runQueryTab":
-          throw new Error("Not implemented."); // FIXME
-        case "runQueryTabPartially":
-          throw new Error("Not implemented."); // FIXME
-        case "insertSuggestion":
-          // TODO this will add suggestion to the query tab like copilot or cursor
-          throw new Error("Not implemented."); // FIXME
+        case "setData":
+        case "setEncryptedData": {
+          await this.utilityConnection.send(
+            request.name === "setEncryptedData"
+              ? "plugin/setEncryptedData"
+              : "plugin/setData",
+            { manifest: this.manifest, key: request.args.key, value: request.args.value }
+          )
+          break;
+        }
+        case "clipboard.writeText":
+          window.main.writeTextToClipboard(request.args.text)
+          break;
+
+        // ======== UI ACTIONS ===========
+        case "expandTableResult":
+          // Directly handled by the view components
+          break;
+        case "setTabTitle":
+          // Directly handled by the view components
+          break;
+        case "getViewState":
+          // Directly handled by the view components - If the plugin is a tab
+          // plugin, each tab has its own state. To easily access/modify the
+          // state while isolating it, we let each Tab component to intercept
+          // the response by using `modifyResult`. And then the state can be
+          // accessed via `this.tab.context.state`.
+          break;
+        case "setViewState":
+          // Directly handled by the view components
+          break;
+        case "openExternal":
+          // FIXME maybe we should ask user permission first before opening?
+          window.main.openExternally(request.args.link);
+          break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);
+      }
+
+      for (const callback of modifyResultCallbacks) {
+        response.result = await callback(response.result);
       }
     } catch (e) {
       response.error = e;
     }
 
-    this.iframe.contentWindow.postMessage(response, "*");
+    this.postMessage(response);
+
+    afterCallbacks.forEach((callback) => {
+      callback(response);
+    });
   }
 
-  async registerIframe(iframe: HTMLIFrameElement) {
-    this.iframe = iframe;
+  private async handleViewNotification(notification: PluginNotificationData) {
+    switch (notification.name) {
+      case "windowEvent": {
+        const windowEventClass = windowEventMap.get(
+          notification.args.eventClass
+        );
+
+        if (!windowEventClass || typeof windowEventClass !== "function") {
+          this.log.warn(
+            `Invalid or unknown event class: ${notification.args.eventClass}`
+          );
+          return;
+        }
+
+        document.dispatchEvent(
+          new windowEventClass(
+            notification.args.eventType,
+            notification.args.eventInitOptions
+          )
+        );
+
+        break;
+      }
+      case "pluginError": {
+        this.log.error(`Received plugin error: ${notification.args.message}`, notification.args);
+        break;
+      }
+
+      default:
+        this.log.warn(`Unknown notification: ${notification.name}`);
+    }
+  }
+
+  registerIframe(iframe: HTMLIFrameElement) {
+    this.iframes.push(iframe);
+    iframe.onload = () => {
+      this.postMessage({
+        name: "themeChanged",
+        args: this.pluginStore.getTheme(),
+      });
+    };
+  }
+
+  unregisterIframe(iframe: HTMLIFrameElement) {
+    this.iframes = _.without(this.iframes, iframe);
   }
 
   postMessage(data: PluginNotificationData | PluginResponseData) {
-    if (!this.iframe) {
-      log.warn("Cannot post message, iframe not registered.");
+    if (!this.iframes) {
+      this.log.warn("Cannot post message, iframe not registered.");
       return;
     }
-    this.iframe.contentWindow.postMessage(data, "*");
+    this.iframes.forEach((iframe) => {
+      iframe.contentWindow.postMessage(data, "*");
+    });
+  }
+
+  buildEntryUrl(entry: string) {
+    return `plugin://${this.manifest.id}/${this.getEntry(entry)}`;
   }
 
   getEntry(entry: string) {
@@ -137,15 +287,65 @@ export default class WebPluginLoader {
   }
 
   async unload() {
-    window.removeEventListener("message", this.handleMessage);
-
-    this.manifest.capabilities.views?.sidebars.forEach((sidebar) => {
+    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.removeSidebarTab(sidebar.id);
     });
+
+    this.manifest.capabilities.views?.tabTypes?.forEach((tab) => {
+      this.pluginStore.removeTabTypeConfig({
+        pluginId: this.manifest.id,
+        pluginTabTypeId: tab.id,
+      });
+    });
+  }
+
+  addListener(listener: OnViewRequestListener) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = _.without(this.listeners, listener);
+    };
   }
 
   checkPermission(data: PluginRequestData) {
     // do nothing on purpose
     // if not permitted, throw error
+  }
+
+  /** Warn: please dispose only when the plugin is not used anymore, like
+   * after uninstalling. */
+  dispose() {
+    this.unregisterEvents();
+    this.onDisposeListeners.forEach((fn) => fn());
+  }
+
+  private registerEvents() {
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
+    this.listening = true;
+  }
+
+  private unregisterEvents() {
+    window.removeEventListener("message", this.handleMessage);
+    this.listening = false;
+  }
+
+  /** Called when the plugin is ready to be used. If the plugin uses iframes,
+   * this should be called before mounting the iframes. */
+  onReady(fn: Function) {
+    if (this.listening) {
+      fn();
+    }
+    this.onReadyListeners.push(fn);
+    return () => {
+      this.onReadyListeners = _.without(this.onReadyListeners, fn);
+    }
+  }
+
+  /** Called when the plugin is disposed. */
+  onDispose(fn: Function) {
+    this.onDisposeListeners.push(fn);
+    return () => {
+      this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
+    }
   }
 }

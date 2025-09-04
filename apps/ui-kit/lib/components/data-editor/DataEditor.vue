@@ -42,34 +42,18 @@
 
 <script lang="ts">
 import _ from "lodash";
-import Vue, { PropType } from "vue";
+import Vue from "vue";
 import EntityList from "../entity-list/EntityList.vue";
-import SqlTextEditor from "../sql-text-editor/v2/SqlTextEditor.vue";
+import SqlTextEditor from "../sql-text-editor/SqlTextEditor.vue";
 import TableComponent from "../table/Table.vue";
 import Split from "split.js";
 import { Table } from "./types";
 import { Entity } from "../types";
+import { props } from "./data-editor";
 
 export default Vue.extend({
   components: { EntityList, SqlTextEditor, TableComponent },
-  props: {
-    entities: {
-      type: Array as PropType<Table[]>,
-      default: () => [{ columns: [], data: [] }],
-    },
-    entityListProps: {
-      type: Object,
-      default: () => ({}),
-    },
-    sqlTextEditorProps: {
-      type: Object,
-      default: () => ({}),
-    },
-    tableProps: {
-      type: Object,
-      default: () => ({}),
-    },
-  },
+  props,
   data() {
     return {
       sql: "",

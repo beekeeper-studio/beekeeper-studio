@@ -1,1 +1,3 @@
-export * from "./v2/define";
+import { TextEditorElement } from "./index";
+
+window.customElements.define("bks-text-editor", TextEditorElement);

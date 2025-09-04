@@ -7,7 +7,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "private": false,
-  "version": "0.1.3-beta.6",
+  "version": "0.2.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
@@ -24,30 +24,39 @@
   "main": "./dist/index.js",
   "style": "./dist/style.css",
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
     "./style.css": "./dist/style.css",
     "./table": "./dist/table.js",
     "./entity-list": "./dist/entity-list.js",
     "./sql-text-editor": "./dist/sql-text-editor.js",
     "./text-editor": "./dist/text-editor.js",
+    "./mongo-shell": "./dist/mongo-shell.js",
+    "./mongo-shell/state": "./dist/mongo-shell/state.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",
     "./vue/data-editor": "./dist/vue/data-editor.js",
     "./vue/text-editor": "./dist/vue/text-editor.js",
+    "./vue/mongo-shell": "./dist/vue/mongo-shell.js",
     "./config/context-menu": "./dist/config/context-menu.js"
   },
   "scripts": {
     "dev": "vite -c vite.config.dev.ts",
     "lib:dev": "vite build -c vite.config.ts --watch --mode development",
-    "lib:types": "tsc -p ./tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
-    "test": "vitest",
-    "build": "vite build -c vite.config.ts --mode production",
+    "lib:types": "tsc -p ./tsconfig.types.json",
+    "test": "vitest run",
+    "build": "vite build -c vite.config.ts --mode production && yarn lib:types",
     "preview": "vite preview"
   },
   "peerDependencies": {
     "@codemirror/autocomplete": "^6.18.4",
     "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/language": "^6.11.0",
     "@codemirror/lint": "^6.8.4",
@@ -55,13 +64,16 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
+    "@marimo-team/codemirror-languageserver": "azmy60/codemirror-languageserver#b815a92e5f9120a845385ddfb89e85b0fa60fbde",
     "@replit/codemirror-emacs": "^6.1.0",
-    "@replit/codemirror-vim": "^6.3.0",
-    "@marimo-team/codemirror-languageserver": "azmy60/codemirror-languageserver#b815a92e5f9120a845385ddfb89e85b0fa60fbde"
+    "@replit/codemirror-vim": "^6.3.0"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.4",
     "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/language": "^6.11.0",
     "@codemirror/lint": "^6.8.4",
@@ -69,9 +81,10 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
+    "@marimo-team/codemirror-languageserver": "^1.15.13",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
-    "@marimo-team/codemirror-languageserver": "^1.15.13"
+    "ansi-to-html": "^0.7.2"
   },
   "devDependencies": {
     "@open-rpc/client-js": "^1.8.1",
@@ -84,6 +97,8 @@
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
+    "ist": "^1.1.7",
+    "happy-dom": "^18.0.1",
     "lodash": "^4.17.21",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
@@ -95,7 +110,7 @@
     "sql-query-identifier": "^2.8.0",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",
-    "typescript": "~4.3.0",
+    "typescript": "~5.8.3",
     "vite": "~5.4.19",
     "vite-plugin-vue2": "^2.0.3",
     "vitest": "^3.0.5",

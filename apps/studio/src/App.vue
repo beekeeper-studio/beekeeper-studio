@@ -35,8 +35,10 @@
     <workspace-rename-modal />
     <import-queries-modal />
     <import-connections-modal />
+    <plugin-controller />
     <plugin-manager-modal />
     <confirmation-modal-manager />
+    <lock-manager />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
@@ -79,6 +81,8 @@ import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExp
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
+import PluginController from '@/components/plugins/PluginController.vue'
+import LockManager from "@/components/managers/LockManager.vue";
 
 import rawLog from '@bksLogger'
 
@@ -92,7 +96,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
-    PluginManagerModal, ConfigurationWarningModal,
+    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager,
   },
   data() {
     return {
@@ -124,6 +128,7 @@ export default Vue.extend({
     },
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
+      this.trigger(AppEvent.changedTheme, this.themeValue)
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
@@ -164,7 +169,9 @@ export default Vue.extend({
 
     if (this.url) {
       try {
-        await this.$store.dispatch('openUrl', this.url)
+        const { auth, cancelled  } = await this.$bks.unlock();
+        if (cancelled) return;
+        await this.$store.dispatch('openUrl', { url: this.url, auth })
       } catch (error) {
         console.error(error)
         this.$noty.error(`Error opening ${this.url}: ${error}`)

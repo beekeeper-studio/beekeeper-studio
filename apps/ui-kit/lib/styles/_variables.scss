@@ -44,7 +44,8 @@ $row-highlight:             color.adjust($query-editor-bg, $lightness: -3%) !def
 $row-handle-selected:       color.adjust($query-editor-bg, $lightness: -10%) !default;
 $row-add:                   #5ff3c0 !default;
 $row-delete:                #FC8A87 !default;
-$row-error:                 #F9B8B7 !default;
+$row-error:                 color.mix($query-editor-bg, $brand-danger, 70%) !default;
+
 $cell-edited:               #EDDFA1 !default;
 $cell-error:                $row-error !default;
 $cell-success:              $row-add !default;

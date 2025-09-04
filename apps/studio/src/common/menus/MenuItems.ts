@@ -82,7 +82,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
-      accelerator: platformInfo.isMac ? 'Shift+CommandOrControl+F' : 'F11',
+      accelerator: platformInfo.isMac ? 'Command+Control+F' : 'F11',
       click: actionHandler.fullscreen
     },
     // help
@@ -170,7 +170,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     primarySidebarToggle: {
       id: 'menu-toggle-sidebar',
       label: 'Toggle Primary Sidebar',
-      accelerator: "Alt+S",
+      accelerator: platformInfo.isMac? "CommandOrControl+B" : "Alt+S",
       click: actionHandler.togglePrimarySidebar,
       enabled: false,
     },
@@ -240,6 +240,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Export Data',
       click: actionHandler.exportTables,
       enabled: false,
+    },
+    updatePin: {
+      id: 'update-pin',
+      label: 'Update Pin',
+      click: actionHandler.updatePin,
     },
     minimalModeToggle: {
       id: "minimal-mode-toggle",

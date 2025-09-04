@@ -10,6 +10,7 @@
       <div class="info">
         <div class="title">
           {{ plugin.name }}
+          <span class="badge" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">disabled</span>
         </div>
         <div class="description">
           {{ plugin.description }}

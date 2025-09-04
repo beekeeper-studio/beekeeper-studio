@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue2";
+import { resolve } from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,4 +9,9 @@ export default defineConfig({
   define: {
     __PROJECT_ROOT__: JSON.stringify(__dirname),
   },
+  resolve: {
+    alias: {
+      "@": resolve('./lib'),
+    },
+  }
 });

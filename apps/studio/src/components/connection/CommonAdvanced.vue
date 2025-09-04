@@ -20,28 +20,29 @@
       <div class="row gutter">
         <div class="col s9 form-group">
           <label for="sshHost">SSH Hostname</label>
-          <input
-            type="text"
-            v-model="config.sshHost"
-          >
+          <masked-input
+            :value="config.sshHost"
+            :privacyMode="privacyMode"
+            @input="val => config.sshHost = val"
+          />
         </div>
         <div class="col s3 form-group">
           <label for="sshPort">Port</label>
-          <input
-            type="number"
-            v-model.number="config.sshPort"
-          >
+          <masked-input
+            :value="config.sshPort"
+            :privacyMode="privacyMode"
+            @input="val => config.sshPort = val"
+          />
         </div>
       </div>
       <div class="row gutter">
         <div class="col s8 form-group">
           <label for="bastionHost">Bastion Host (Jump Host)</label>
-          <input
-            class="form-control"
-            v-model="config.sshBastionHost"
-            type="text"
-            name="bastionHost"
-          >
+          <masked-input
+            :value="config.sshBastionHost"
+            :privacyMode="privacyMode"
+            @input="val => config.sshBastionHost = val"
+          />
         </div>
         <div class="col s4 form-group">
           <label for="sshKeepaliveInterval">
@@ -81,11 +82,11 @@
       >
         <div class="form-group">
           <label for="sshUsername">SSH Username</label>
-          <input
-            class="form-control"
-            type="text"
-            v-model="config.sshUsername"
-          >
+          <masked-input
+            :value="config.sshUsername"
+            :privacyMode="privacyMode"
+            @input="val => config.sshUsername = val"
+          />
         </div>
         <div
           class="alert alert-warning"
@@ -130,11 +131,11 @@
           <div class="col">
             <div class="form-group">
               <label for="sshUsername">SSH Username</label>
-              <input
-                class="form-control"
-                type="text"
-                v-model="config.sshUsername"
-              >
+              <masked-input
+                :value="config.sshUsername"
+                :privacyMode="privacyMode"
+                @input="val => config.sshUsername = val"
+              />
             </div>
           </div>
         </div>
@@ -177,11 +178,11 @@
         <div class="col s6">
           <div class="form-group">
             <label for="sshUsername">SSH Username</label>
-            <input
-              class="form-control"
-              type="text"
-              v-model="config.sshUsername"
-            >
+            <masked-input
+              :value="config.sshUsername"
+              :privacyMode="privacyMode"
+              @input="val => config.sshUsername = val"
+            />
           </div>
         </div>
         <div class="col s6">
@@ -201,30 +202,34 @@
 <script>
 import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
-
 import ToggleFormArea from '../common/ToggleFormArea.vue'
+import MaskedInput from '@/components/MaskedInput.vue'
+import { mapState } from 'vuex'
 
-  export default {
-    props: ['config'],
-    components: {
+export default {
+  props: ['config'],
+  components: {
     FilePicker, ExternalLink,
-    ToggleFormArea
-},
-    data() {
-      return {
-        enableSshLink: "https://docs.beekeeperstudio.io/pages/linux#ssh-key-access-for-the-snap",
-        sshModeOptions: [
-          { label: "Key File", mode: 'keyfile' },
-          { label: "Username & Password", mode: "userpass" },
-          { label: "SSH Agent", mode: "agent" }
-        ],
-        filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh')
-      }
-    },
-    methods: {
-      setMode(option) {
-        this.config.sshMode = option.mode
-      }
+    ToggleFormArea, MaskedInput
+  },
+  computed: {
+    ...mapState('settings', ['privacyMode']),
+  },
+  data() {
+    return {
+      enableSshLink: "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap",
+      sshModeOptions: [
+        { label: "Key File", mode: 'keyfile' },
+        { label: "Username & Password", mode: "userpass" },
+        { label: "SSH Agent", mode: "agent" }
+      ],
+      filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh')
+    }
+  },
+  methods: {
+    setMode(option) {
+      this.config.sshMode = option.mode
     }
   }
+}
 </script>
