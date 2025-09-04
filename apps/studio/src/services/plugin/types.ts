@@ -90,7 +90,7 @@ export interface Manifest {
   icon?: string;
   /** Provide all extension points here. */
   capabilities: {
-    /** Use `View` object instead of `tabTypes`. `tabTypes` is for backward compatibility. */
+    /** Use `View` object instead of `tabTypes`. `tabTypes` is only for backward compatibility. */
     views:
     | PluginView[]
     | {
@@ -104,8 +104,7 @@ export interface Manifest {
     };
     menu: PluginMenuItem[];
   };
-  /** The path to the plugin's root directory. This is helpful when you use a
-   * bundler to build the project to a `dist/` directory for example. */
+  /** The path to the plugin's root directory. This is helpful when you use a bundler to build the project to a `dist/` directory for example. */
   pluginEntryDir?: string;
   /** @todo not yet implemented. This is a list of settings that can be configured by config files. */
   settings: {
@@ -116,7 +115,11 @@ export interface Manifest {
     default: string | number | boolean;
   }[];
   /** @todo not yet implemented */
-  permissions: ("run-custom-queries" | "create-entities" | "edit-entities")[];
+  permissions: (
+    | "run-custom-queries"
+    | "create-entities"
+    | "edit-entities"
+  )[];
 }
 
 export type PluginRegistryEntry = Pick<
@@ -136,26 +139,20 @@ export interface PluginRepository {
   readme: string;
 }
 
-export type OnViewRequestListener = (
-  params: OnViewRequestListenerParams
-) => void | Promise<void>;
+export type OnViewRequestListener = (params: OnViewRequestListenerParams) => void | Promise<void>;
 
 export type OnViewRequestListenerParams = {
   source: HTMLIFrameElement;
   request: PluginRequestData;
   after: (callback: (response: PluginResponseData) => void) => void;
-  modifyResult: (
-    callback: (
-      result: PluginResponseData["result"]
-    ) => PluginResponseData["result"] | Promise<PluginResponseData["result"]>
-  ) => void;
-};
+  modifyResult: (callback: (result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>) => void;
+}
 
 export type PluginSettings = {
   [pluginId: string]: {
     autoUpdate: boolean;
-  };
-};
+  }
+}
 
 export type WebPluginContext = {
   manifest: Manifest;
