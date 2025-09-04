@@ -148,7 +148,7 @@
             }),
             { separator: true },
             filterMenuItem,
-            ...this.getExtraPopupMenu('result-table.cell', { transform: "tabulator" }),
+            ...this.getExtraPopupMenu('results.cell', { transform: "tabulator" }),
           ]
         }
 
@@ -163,7 +163,7 @@
             ...commonColumnMenu,
             { separator: true },
             filterMenuItem,
-            ...this.getExtraPopupMenu('result-table.column-header', { transform: "tabulator" }),
+            ...this.getExtraPopupMenu('results.columnHeader', { transform: "tabulator" }),
           ]
         }
 
@@ -298,7 +298,7 @@
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
                 }),
-                ...this.getExtraPopupMenu('result-table.row-header', { transform: "tabulator" }),
+                ...this.getExtraPopupMenu('results.rowHeader', { transform: "tabulator" }),
               ];
             },
             headerContextMenu: (_e, column) => {
@@ -311,7 +311,7 @@
                 { separator: true },
                 resizeAllColumnsToFitContent,
                 resizeAllColumnsToFixedWidth,
-                ...this.getExtraPopupMenu('result-table.corner', { transform: "tabulator" }),
+                ...this.getExtraPopupMenu('results.corner', { transform: "tabulator" }),
               ];
             },
           },

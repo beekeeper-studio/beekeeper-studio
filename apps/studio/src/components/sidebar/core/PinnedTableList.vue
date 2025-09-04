@@ -34,7 +34,7 @@
           :force-collapse="allCollapsed"
           @selected="refreshColumns"
           :no-select="true"
-          @contextmenu.prevent.stop="$bks.openMenu({ id: 'entity-list.table', item: p.entity, event: $event, options: tableMenuOptions })"
+          @contextmenu.prevent.stop="$bks.openMenu({ id: 'entity.table', item: p.entity, event: $event, options: tableMenuOptions })"
         />
         <routine-list-item
           v-else
@@ -44,7 +44,7 @@
           :pinned="true"
           :force-expand="allExpanded"
           :force-collapse="allCollapsed"
-          @contextmenu.prevent.stop="$bks.openMenu({ id: 'entity-list.routine', item: p.entity, event: $event, options: routineMenuOptions })"
+          @contextmenu.prevent.stop="$bks.openMenu({ id: 'entity.routine', item: p.entity, event: $event, options: routineMenuOptions })"
         />
       </div>
     </Draggable>

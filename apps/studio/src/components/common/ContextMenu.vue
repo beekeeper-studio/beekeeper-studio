@@ -67,7 +67,7 @@ export default Vue.extend({
     allOptions() {
       return [
         ...this.options,
-        ...(this.getExtraPopupMenu(this.id) || []),
+        ...this.getExtraPopupMenu(this.id),
       ]
     },
   },

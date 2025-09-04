@@ -750,7 +750,7 @@ export default Vue.extend({
             ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
-            ...this.getExtraPopupMenu('table-table.cell', { transform: "tabulator" }),
+            ...this.getExtraPopupMenu('tableTable.cell', { transform: "tabulator" }),
           ]
 
           if (keyDatas?.length > 0) {
@@ -800,7 +800,7 @@ export default Vue.extend({
             action: () => column.getTable().setColumnLayout(this.tableColumns),
           },
           this.openColumnFilterMenuItem,
-          ...this.getExtraPopupMenu('table-table.column-header', { transform: "tabulator" }),
+          ...this.getExtraPopupMenu('tableTable.columnHeader', { transform: "tabulator" }),
         ]
       }
 
@@ -1025,7 +1025,7 @@ export default Vue.extend({
               }),
               { separator: true },
               ...this.rowActionsMenu(range),
-              ...this.getExtraPopupMenu('table-table.row-header', { transform: "tabulator" }),
+              ...this.getExtraPopupMenu('tableTable.rowHeader', { transform: "tabulator" }),
             ]
           },
           headerContextMenu: () => {
@@ -1043,7 +1043,7 @@ export default Vue.extend({
               resizeAllColumnsToFitContent,
               resizeAllColumnsToFixedWidth,
               this.openColumnFilterMenuItem,
-              ...this.getExtraPopupMenu('table-table.corner', { transform: "tabulator" }),
+              ...this.getExtraPopupMenu('tableTable.corner', { transform: "tabulator" }),
             ]
           },
         },

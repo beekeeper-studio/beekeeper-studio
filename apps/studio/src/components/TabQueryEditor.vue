@@ -1101,7 +1101,7 @@
       editorContextMenu(_event, _context, items) {
         return [
           ...items,
-          ...this.getExtraPopupMenu("query-editor", { transform: "ui-kit" }),
+          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
       },
     },

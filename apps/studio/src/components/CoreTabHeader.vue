@@ -143,8 +143,8 @@ import { mapState } from 'vuex'
     computed: {
       ...mapState('tabs', { 'activeTab': 'active' }),
       headerContextMenuId() {
-        // "tab-header.table", "tab-header.table-properties", etc..
-        return `tab-header.${this.tab.tabType}`
+        // "tab.header.table", "tab.header.tableProperties", etc..
+        return `tab.header.${_.camelCase(this.tab.tabType)}`
       },
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
