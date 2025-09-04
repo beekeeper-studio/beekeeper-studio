@@ -20,6 +20,7 @@ import { MongoDBClient } from "./clients/mongodb";
 import { SQLAnywhereClient } from "./clients/anywhere";
 import { TrinoClient } from "./clients/trino";
 import { SurrealDBClient } from "./clients/surrealdb";
+import { BedrockClient } from '@/lib/db/clients/bedrock';
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -40,7 +41,8 @@ const clients = new Map<ConnectionType, any>([
   ['mongodb', MongoDBClient],
   ['sqlanywhere', SQLAnywhereClient],
   ['trino', TrinoClient],
-  ['surrealdb', SurrealDBClient]
+  ['surrealdb', SurrealDBClient],
+  ['bedrock', BedrockClient]
 ], );
 
 
