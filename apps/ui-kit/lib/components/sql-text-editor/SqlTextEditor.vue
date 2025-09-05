@@ -21,7 +21,8 @@ export default Vue.extend({
         key: "Mod-Shift-f",
         // @ts-ignore this does exist ts you moron
         run: this.formatSql
-      }]
+      }],
+      selectedQuery: "",
     }
   },
   mixins: [mixin, ProxyEmit],
@@ -45,6 +46,7 @@ export default Vue.extend({
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
         onQuerySelectionChange: (params) => {
+          this.selectedQuery = params.selectedQuery.text;
           this.$emit("bks-query-selection-change", params)
         },
         columnsGetter: (entity: Entity) => {
@@ -84,6 +86,12 @@ export default Vue.extend({
 
   mounted() {
     this.internalContextMenuItems = this.contextMenuItemsModifier;
+    this.internalMenuContextModifiers.push((context) => {
+      return {
+        ...context,
+        selectedQuery: this.selectedQuery,
+      };
+    });
   },
 });
 </script>

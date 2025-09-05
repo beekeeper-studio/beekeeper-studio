@@ -112,6 +112,16 @@
                 <x-menuitem @click.prevent="openTable">
                   <x-label>View Data</x-label>
                 </x-menuitem>
+                <template v-for="item in extraPopupMenu">
+                  <hr v-if="item.type === 'divider'" :key="item.slug">
+                  <x-menuitem
+                    v-else
+                    :key="item.slug"
+                    @click.prevent="handleExtraStatusbarMenuClick($event, item)"
+                  >
+                    <x-label>{{ item.name }}</x-label>
+                  </x-menuitem>
+                </template>
                 <hr v-if="dev">
                 <x-menuitem
                   v-if="dev"
@@ -238,6 +248,7 @@ export default {
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
     ...mapGetters(['dialectData', 'dialect']),
+    ...mapGetters('popupMenu', ['getExtraPopupMenu']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
       return this.tablesInitialLoaded && this.active && !this.initialized
@@ -299,6 +310,9 @@ export default {
     permissionWarningsTooltip() {
       if (!this.properties?.permissionWarnings?.length) return ''
       return `Some information couldn't be displayed:\n${this.properties.permissionWarnings.join('\n')}`
+    },
+    extraPopupMenu() {
+      return this.getExtraPopupMenu('structure.statusbar');
     },
   },
   methods: {
@@ -365,7 +379,11 @@ export default {
     },
     async openTable() {
       this.$root.$emit("loadTable", { table: this.table })
-    }
+    },
+    /** @param {import('@/plugins/BeekeeperPlugin').ContextOption} item */
+    handleExtraStatusbarMenuClick(event, item) {
+      item.handler({ event, item: this.table });
+    },
   },
   async mounted() {
     if (this.shouldInitialize) this.initialize()
