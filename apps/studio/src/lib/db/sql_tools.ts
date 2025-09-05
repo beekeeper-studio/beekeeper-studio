@@ -2,7 +2,6 @@ import _ from 'lodash'
 import { identify } from 'sql-query-identifier'
 import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
-import { ParamTypes } from 'sql-formatter/lib/src/lexer/TokenizerOptions'
 import { format } from 'sql-formatter'
 import { Dialect, FormatterDialect } from '@/shared/lib/dialects/models'
 import { ParamItems } from 'sql-formatter/lib/src/formatter/Params'
@@ -13,35 +12,6 @@ export function splitQueries(queryText: string, dialect) {
   }
   const result = identify(queryText, { strict: false, dialect })
   return result
-}
-
-export function defaultParamTypesFor(dialect: string): ParamTypes {
-  switch (dialect) {
-    case 'psql':
-      return {
-        numbered: ['$'],
-      };
-    case 'mssql':
-      return {
-        named: [':'],
-      };
-    case 'bigquery':
-      return {
-        positional: true,
-        named: ['@'],
-        quoted: ['@'],
-      };
-    case 'sqlite':
-      return {
-        positional: true,
-        numbered: ['?'],
-        named: [':', '@'],
-      };
-    default:
-      return {
-        positional: true,
-      };
-  }
 }
 
 // can only have positional params OR non-positional
@@ -63,8 +33,9 @@ export function convertParamsForReplacement(placeholders: string[], values: stri
 }
 
 export function deparameterizeQuery(queryText: string, dialect: Dialect, params: ParamItems | string[]) {
-  // TODO (@day): when we support custom param types this will need to be changed
-  const paramTypes = defaultParamTypesFor(dialect);
+  const paramTypes = window.bksConfig.db[dialect].paramTypes;
+  // for if we want custom params in the future
+  // paramTypes.custom = paramTypes.custom.map((reg: string) => ({ regex: reg }));
   const result = format(queryText, {
     language: FormatterDialect(dialect),
     paramTypes,
@@ -75,7 +46,7 @@ export function deparameterizeQuery(queryText: string, dialect: Dialect, params:
 
 export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   const tables = rawTables.filter((table) => {
-    return (table.entityType === 'table' && allFilters.showTables && 
+    return (table.entityType === 'table' && allFilters.showTables &&
       ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
       (table.entityType === 'view' && allFilters.showViews) ||
       (table.entityType === 'materialized-view' && allFilters.showViews) ||
