@@ -2,7 +2,7 @@ import _ from "lodash";
 import { Extension, StateField, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { identify, Options } from "sql-query-identifier";
-import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { IdentifyResult, ParamTypes } from "sql-query-identifier/lib/defines";
 // Utility function from entity-list/sql_tools
 function isTextSelected(
   textStart: number,
@@ -38,6 +38,7 @@ interface QuerySelectionState {
 
 // Effects for updating the state
 const setDialectEffect = StateEffect.define<Options["dialect"]>();
+const setParamTypesEffect = StateEffect.define<Options["paramTypes"]>();
 const setCallbackEffect = StateEffect.define<(params: QuerySelectionChangeParams) => void>();
 
 // State for storing dialect and callback
@@ -52,6 +53,18 @@ const dialectState = StateField.define<Options["dialect"]>({
     return value;
   }
 });
+
+const paramTypeState = StateField.define<Options["paramTypes"]>({
+  create: () => null,
+  update: (value, tr) => {
+    for (const effect of tr.effects) {
+      if (effect.is(setParamTypesEffect)) {
+        return effect.value
+      }
+    }
+    return value;
+  }
+})
 
 const callbackState = StateField.define<((params: QuerySelectionChangeParams) => void) | null>({
   create: () => null,
@@ -107,11 +120,11 @@ function getSelectedQueryIndex(
   return -1;
 }
 
-function splitQueries(queryText: string, dialect: Options["dialect"]) {
+function splitQueries(queryText: string, dialect: Options["dialect"], paramTypes: ParamTypes) {
   if (_.isEmpty(queryText.trim())) {
     return [];
   }
-  const result = identify(queryText, { strict: false, dialect });
+  const result = identify(queryText, { strict: false, dialect, paramTypes });
   return result;
 }
 
@@ -126,6 +139,7 @@ const querySelectionState = StateField.define<QuerySelectionState>({
 
   update: (state, tr) => {
     const dialect = tr.state.field(dialectState);
+    const paramTypes = tr.state.field(paramTypeState);
     const callback = tr.state.field(callbackState);
 
     // Get cursor positions
@@ -134,7 +148,7 @@ const querySelectionState = StateField.define<QuerySelectionState>({
     const cursorIndexAnchor = cursor.anchor;
 
     // Split queries
-    const queries = splitQueries(tr.state.doc.toString(), dialect);
+    const queries = splitQueries(tr.state.doc.toString(), dialect, paramTypes);
     const selectedQueryIndex = getSelectedQueryIndex(
       queries,
       cursorIndex,
@@ -187,10 +201,12 @@ const querySelectionState = StateField.define<QuerySelectionState>({
 // Extension factory function
 export function querySelection(
   dialect?: Options["dialect"],
+  paramTypes?: Options["paramTypes"],
   onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void
 ): Extension {
   return [
     dialectState,
+    paramTypeState,
     callbackState,
     querySelectionState,
     EditorView.updateListener.of((update) => {
@@ -199,6 +215,9 @@ export function querySelection(
         const effects = [];
         if (update.view.state.field(dialectState) !== dialect) {
           effects.push(setDialectEffect.of(dialect));
+        }
+        if (update.view.state.field(paramTypeState) !== paramTypes) {
+          effects.push(setParamTypesEffect.of(paramTypes));
         }
         if (update.view.state.field(callbackState) !== onQuerySelectionChange) {
           effects.push(setCallbackEffect.of(onQuerySelectionChange));

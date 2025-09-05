@@ -25,6 +25,9 @@ export default {
     type: String as PropType<Options["dialect"]>,
     default: "generic",
   },
+  paramTypes: {
+    type: Object as PropType<Options["paramTypes"]>,
+  },
   languageId: {
     type: props.languageId.type,
     default: "sql",
