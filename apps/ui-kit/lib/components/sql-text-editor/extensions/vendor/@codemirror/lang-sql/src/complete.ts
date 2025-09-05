@@ -111,6 +111,7 @@ function isSelfTag(namespace: SQLNamespace): namespace is {self: Completion, chi
 class CompletionLevel {
   list: Completion[] = []
   children: {[name: string]: CompletionLevel} | undefined = undefined
+  private _labelMap?: Map<string, number>
 
   constructor(readonly idQuote: string, readonly idCaseInsensitive: boolean) {}
 
@@ -118,7 +119,20 @@ class CompletionLevel {
     let children = this.children || (this.children = Object.create(null))
     let found = children[name]
     if (found) return found
-    if (name && !this.list.some(c => c.label == name)) this.list.push(nameCompletion(name, "type", this.idQuote, this.idCaseInsensitive))
+
+    if (name) {
+      if (!this._labelMap) {
+        this._labelMap = new Map<string, number>()
+        this.list.forEach((item, index) => this._labelMap!.set(item.label, index))
+      }
+
+      if (!this._labelMap.has(name)) {
+        const completion = nameCompletion(name, "type", this.idQuote, this.idCaseInsensitive)
+        this._labelMap.set(name, this.list.length)
+        this.list.push(completion)
+      }
+    }
+
     return (children[name] = new CompletionLevel(this.idQuote, this.idCaseInsensitive))
   }
 
@@ -127,9 +141,18 @@ class CompletionLevel {
   }
 
   addCompletion(option: Completion) {
-    let found = this.list.findIndex(o => o.label == option.label)
-    if (found > -1) this.list[found] = option
-    else this.list.push(option)
+    if (!this._labelMap) {
+      this._labelMap = new Map<string, number>()
+      this.list.forEach((item, index) => this._labelMap!.set(item.label, index))
+    }
+
+    let found = this._labelMap.get(option.label)
+    if (found !== undefined) {
+      this.list[found] = option
+    } else {
+      this._labelMap.set(option.label, this.list.length)
+      this.list.push(option)
+    }
   }
 
   addCompletions(completions: readonly (Completion | string)[]) {
@@ -148,21 +171,96 @@ class CompletionLevel {
   }
 
   addNamespaceObject(namespace: {[name: string]: SQLNamespace}) {
-    for (let name of Object.keys(namespace)) {
-      let children = namespace[name], self: Completion | null = null
-      let parts = name.replace(/\\?\./g, p => p == "." ? "\0" : p).split("\0")
-      let scope = this
+    performance.mark("before-addNamespace")
+    this.addNamespaceObjectIterative(namespace)
+    performance.mark("after-addNamespace")
+    performance.measure("addNamespace", "before-addNamespace", "after-addNamespace")
+  }
+
+  private addNamespaceObjectIterative(namespace: {[name: string]: SQLNamespace}) {
+    // Pre-compile patterns once
+    const dotRegex = /\\?\./g
+    const escapedDotRegex = /\\\./g
+
+    // Collect all work to do in a flat structure to avoid recursion
+    const workQueue: Array<{
+      path: string[],
+      level: CompletionLevel,
+      children: SQLNamespace,
+      self?: Completion
+    }> = []
+    let queueStart = 0
+
+    // Initial population of work queue
+    for (let name in namespace) {
+      let children = namespace[name], self: Completion | undefined = undefined
+
       if (isSelfTag(children)) {
         self = children.self
         children = children.children
       }
-      for (let i = 0; i < parts.length; i++) {
-        if (self && i == parts.length - 1) scope.addCompletion(self)
-        scope = scope.child(parts[i].replace(/\\\./g, "."))
+
+      // Process path once
+      let parts: string[]
+      if (name.includes('.')) {
+        parts = name.replace(dotRegex, p => p == "." ? "\0" : p).split("\0")
+        // Clean escaped dots once
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i].includes('\\')) {
+            parts[i] = parts[i].replace(escapedDotRegex, ".")
+          }
+        }
+      } else {
+        parts = [name]
       }
-      scope.addNamespace(children)
+
+      workQueue.push({ path: parts, level: this, children, self })
+    }
+
+    // Process all work iteratively
+    while (queueStart < workQueue.length) {
+      const { path, level, children, self } = workQueue[queueStart++]
+
+      // Navigate to target level
+      let currentLevel = level
+      for (let i = 0; i < path.length; i++) {
+        if (self && i === path.length - 1) {
+          currentLevel.addCompletion(self)
+        }
+        currentLevel = currentLevel.child(path[i])
+      }
+
+      // Add children to queue if they exist
+      if (Array.isArray(children)) {
+        currentLevel.addCompletions(children)
+      } else if (typeof children === 'object' && children !== null) {
+        // Add nested namespace to work queue instead of recursing
+        for (let childName in children) {
+          let childChildren = children[childName], childSelf: Completion | undefined = undefined
+
+          if (isSelfTag(childChildren)) {
+            childSelf = childChildren.self
+            childChildren = childChildren.children
+          }
+
+          let childParts: string[]
+          if (childName.includes('.')) {
+            childParts = childName.replace(dotRegex, p => p == "." ? "\0" : p).split("\0")
+            for (let i = 0; i < childParts.length; i++) {
+              if (childParts[i].includes('\\')) {
+                childParts[i] = childParts[i].replace(escapedDotRegex, ".")
+              }
+            }
+          } else {
+            childParts = [childName]
+          }
+
+          workQueue.push({ path: childParts, level: currentLevel, children: childChildren, self: childSelf })
+        }
+      }
     }
   }
+
 }
 
 function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean): Completion {
@@ -177,11 +275,22 @@ export function buildCompletionLevels(schema: SQLNamespace,
   let idQuote = dialect?.spec.identifierQuotes?.[0] || '"'
   let top = new CompletionLevel(idQuote, !!dialect?.spec.caseInsensitiveIdentifiers)
   let defaultSchema = defaultSchemaName ? top.child(defaultSchemaName) : null
+
   top.addNamespace(schema)
-  if (tables) (defaultSchema || top).addCompletions(tables)
-  if (schemas) top.addCompletions(schemas)
-  if (defaultSchema) top.addCompletions(defaultSchema.list)
-  if (defaultTableName) top.addCompletions((defaultSchema || top).child(defaultTableName).list)
+
+  if (tables) {
+    ;(defaultSchema || top).addCompletions(tables)
+  }
+  if (schemas) {
+    top.addCompletions(schemas)
+  }
+  if (defaultSchema) {
+    top.addCompletions(defaultSchema.list)
+  }
+  if (defaultTableName) {
+    top.addCompletions((defaultSchema || top).child(defaultTableName).list)
+  }
+
   return {top, defaultSchema}
 }
 
