@@ -284,9 +284,9 @@ export class DBTestUtil {
         });
 
         await this.knex("composite_child").insert({
-          child_id: 1, 
-          ref_id1: 1, 
-          ref_id2: 2, 
+          child_id: 1,
+          ref_id1: 1,
+          ref_id2: 2,
           description: "child test"
         });
       } else {
@@ -297,9 +297,9 @@ export class DBTestUtil {
         });
 
         await this.knex("COMPOSITE_CHILD").insert({
-          CHILD_ID: 1, 
-          REF_ID1: 1, 
-          REF_ID2: 2, 
+          CHILD_ID: 1,
+          REF_ID1: 1,
+          REF_ID2: 2,
           DESCRIPTION: "Child Test"
         });
       }
@@ -1860,7 +1860,7 @@ export class DBTestUtil {
 
     const fromColumns = (compositeKey.fromColumn as string[]).map((c) => c.toLowerCase());
     const toColumns = (compositeKey.toColumn as string[]).map((c) => c.toLowerCase());
-    
+
     expect(compositeKey.isComposite).toBe(true);
     expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
     expect(Array.isArray(compositeKey.toColumn)).toBe(true);
@@ -1885,7 +1885,7 @@ async paramTest(params: string[]) {
     let placeholders = [params[0]];
     let values = [`'Rose Tyler'`];
     let convertedParams = convertParamsForReplacement(placeholders, values);
-    query = deparameterizeQuery(query, this.dialect, convertedParams);
+    query = deparameterizeQuery(query, this.dialect, convertedParams, null);
     let result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
       { id: 2, data: 'Rose Tyler', is_draft: useBools ? true : 1 },
@@ -1902,7 +1902,7 @@ async paramTest(params: string[]) {
     placeholders = params;
     values = ['5', `'Neo'`, 'false'];
     convertedParams = convertParamsForReplacement(placeholders, values);
-    query = deparameterizeQuery(query, this.dialect, convertedParams);
+    query = deparameterizeQuery(query, this.dialect, convertedParams, null);
     result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
       { id: 5, data: 'Neo', is_draft: useBools ? false : 0 }

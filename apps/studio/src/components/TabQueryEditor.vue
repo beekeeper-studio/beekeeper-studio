@@ -565,7 +565,7 @@
         const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
         const values = Object.values(this.queryParameterValues) as string[];
         const convertedParams = convertParamsForReplacement(placeholders, values);
-        query = deparameterizeQuery(query, this.dialect, convertedParams);
+        query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect].paramTypes);
         return query;
       },
       unsavedChanges() {
