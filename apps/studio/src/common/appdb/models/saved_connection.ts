@@ -109,6 +109,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'clickhouse':
         port = 8123
         break
+      case 'redis':
+        port = 6379
+        break
       default:
         port = null
     }

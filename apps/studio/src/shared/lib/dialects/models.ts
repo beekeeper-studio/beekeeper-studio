@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'redis'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -46,7 +46,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   mongodb: "MongoDB",
   sqlanywhere: 'SqlAnywhere',
   trino: 'Trino',
-  surrealdb: 'SurrealDB'
+  surrealdb: 'SurrealDB',
+  redis: 'Redis'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -109,8 +110,10 @@ export interface DialectData {
   usesOffsetPagination?: boolean
   requireDataset?: boolean,
   disallowedSortColumns?: string[],
+  rawFilterPlaceholder?: string,
   disabledFeatures?: {
     rawFilters?: boolean
+    builderFilters?: boolean
     shell?: boolean
     queryEditor?: boolean
     informationSchema?: {
@@ -174,6 +177,7 @@ export interface DialectData {
     sqlCreate?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
+    readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
   },
   notices?: {
     infoSchema?: string

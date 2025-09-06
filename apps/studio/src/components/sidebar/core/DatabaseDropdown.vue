@@ -122,7 +122,7 @@
       },
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        if (this.dialect.disabledFeatures?.multipleDatabase) {
+        if (this.dialect.disabledFeatures?.multipleDatabases) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
@@ -178,7 +178,7 @@
       100% { transform: rotate(360deg); }
     }
   }
-  
+
   .sqlite-db-name {
     width: 90%;
     overflow: hidden;

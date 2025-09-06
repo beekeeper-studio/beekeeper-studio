@@ -17,7 +17,7 @@
         v-if="filterMode === RAW"
         class="filter-group row gutter expand"
       >
-        <div class="btn-wrap">
+        <div class="btn-wrap" v-if="canBuilderFilter">
           <button
             class="btn btn-flat btn-fab"
             type="button"
@@ -35,7 +35,7 @@
               v-model="filterRaw"
               @blur="updateMinimalModeByFilterRaw"
               ref="valueInput"
-              placeholder="Enter condition, eg: name like 'Matthew%'"
+              :placeholder="dialectData?.rawFilterPlaceholder || `Enter condition, eg: name like 'Matthew%'`"
             >
             <button
               type="button"
@@ -62,13 +62,12 @@
         class="filter-group row gutter expand"
       >
         <div class="left-section">
-          <div class="btn-wrap">
+          <div class="btn-wrap" v-if="canRawFilter">
             <button
               class="btn btn-flat btn-fab"
               type="button"
               @click.stop="toggleFilterMode"
               title="Toggle Filter Type"
-              :disabled="!canRawFilter"
             >
               <i class="material-icons">code</i>
             </button>
@@ -205,7 +204,7 @@ export default Vue.extend({
       hideInMinimalMode: true,
       filters: this.reactiveFilters,
       filterRaw: "",
-      filterMode: BUILDER,
+      filterMode: BUILDER, // Will be changed in mounted()
       submittedWithEmptyValue: false,
       RAW,
       BUILDER,
@@ -231,6 +230,9 @@ export default Vue.extend({
     },
     canRawFilter() {
       return !this.dialectData?.disabledFeatures?.rawFilters;
+    },
+    canBuilderFilter() {
+      return !this.dialectData?.disabledFeatures?.builderFilters;
     }
   },
   methods: {
@@ -334,6 +336,12 @@ export default Vue.extend({
       }
       this.submittedWithEmptyValue = false
     },
+  },
+  mounted() {
+    // Set initial filter mode based on disabled features
+    if (this.dialectData?.disabledFeatures?.builderFilters) {
+      this.filterMode = RAW;
+    }
   },
 });
 </script>

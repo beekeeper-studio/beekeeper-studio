@@ -48,6 +48,9 @@ declare interface IBksConfig {
             idleTimeout: number;
             maxClient: number;
         };
+        redis: {
+            allowSkipToLastPage: boolean;
+        };
         redshift: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
