@@ -109,4 +109,9 @@
       display: inline-block;
     }
   }
+  &:has(.mapper-wrapper--create) {
+    max-width: 800px;
+    width: 800px;
+    overflow: visible;
+  }
 }
