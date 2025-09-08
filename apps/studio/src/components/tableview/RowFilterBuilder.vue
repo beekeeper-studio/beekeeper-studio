@@ -36,6 +36,7 @@
               @blur="updateMinimalModeByFilterRaw"
               ref="valueInput"
               placeholder="Enter condition, eg: name like 'Matthew%'"
+              @contextmenu.stop.prevent="onContextMenu($event)"
             >
             <button
               type="button"
@@ -193,12 +194,13 @@ import { mapGetters, mapState } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
 import _ from 'lodash';
 import BuilderFilter from "./filter/BuilderFilter.vue";
+import { getClipboardMenuOptions } from '@/lib/menu/clipboardMenuOptions.ts';
 
 const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
-  components: { BuilderFilter },
+  components: { BuilderFilter},
   props: ["columns", "reactiveFilters"],
   data() {
     return {
@@ -209,6 +211,8 @@ export default Vue.extend({
       submittedWithEmptyValue: false,
       RAW,
       BUILDER,
+      showContextMenu: false,
+      contextMenuEvent: null,
     };
   },
   computed: {
@@ -231,13 +235,24 @@ export default Vue.extend({
     },
     canRawFilter() {
       return !this.dialectData?.disabledFeatures?.rawFilters;
-    }
+    },
+    contextMenuOptions() {
+      return getClipboardMenuOptions(this.contextMenuEvent, this.$native.clipboard);
+  }
   },
   methods: {
     singleFilterChanged(index, filter) {
       const updated = [...this.filters]
       updated[index] = filter
       this.filters = updated
+    },
+    onContextMenu(event) {
+      event.preventDefault();
+      const options = getClipboardMenuOptions(event, this.$native.clipboard);
+      this.$bks.openMenu({
+        options,
+        event,
+      });
     },
 
     focusOnInput() {
