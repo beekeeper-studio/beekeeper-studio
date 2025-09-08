@@ -45,6 +45,7 @@
         :keymap="userKeymap"
         :vim-keymaps="vimKeymaps"
         :entities="entities"
+        :allow-presets="true"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :mode="dialectData.textEditorMode"
@@ -55,6 +56,7 @@
         @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
+        @bks-show-formatter-presets="handleFormatterPresetModal"
       />
       <span class="expand" />
       <div
@@ -169,7 +171,7 @@
         :result="result"
         :query="query"
         :tab="tab"
-        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
+        :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
         class="message"
@@ -218,6 +220,40 @@
         :active="active"
       />
     </div>
+
+    <!-- Super-Formatter Modal -->
+    <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        name="super-formatter"
+        height="auto"
+        :scrollable="true"
+      >
+        <!-- will need the close it option and then the whole shebang -->
+        <div class="dialog-content">
+          <button
+            type="button"
+            class="btn-fab"
+            aria-label="close super formatter"
+            title="Close super formatter"
+            @click="handleFormatterPresetModal({ showFormatter: false })"
+          >
+            X
+          </button>
+          <BksSuperFormatter
+            :value="unsavedText"
+            :formatter-dialect="formatterDialect"
+            :identifier-dialect="identifierDialect"
+            :can-add-presets="true"
+            :clipboard="$native.clipboard"
+            :default-preset="{}"
+            :presets="[]"
+            @bks-initialized="handleEditorInitialized"
+            @bks-value-change="unsavedText = $event.value"
+          />
+        </div>
+      </modal>
+    </portal>
 
     <!-- Save Modal -->
     <portal to="modals">
@@ -351,6 +387,7 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
+  import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
@@ -374,7 +411,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter},
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -697,6 +734,14 @@
     },
     methods: {
 
+      handleFormatterPresetModal({ showFormatter }){
+        // this will open the modal and stuff and get us down the path of doing a great job!!
+        if (showFormatter) {
+          this.$modal.show('super-formatter')
+        } else {
+          this.$modal.hide('super-formatter')
+        }
+      },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
         // 2.

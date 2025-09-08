@@ -1,5 +1,18 @@
 <template>
-  <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor"></div>
+  <div class="text-editor-wrapper">
+    <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor"></div>
+    <button
+      v-if="allowPresets"
+      type="button"
+      class="BksIconButton"
+      aria-label="Open preset formatter"
+      title="Open preset formatter"
+      @click="formatterPreset"
+    >
+      <i class="material-icons">settings</i>
+    </button>
+
+  </div>
 </template>
 
 <script lang="ts">
@@ -72,9 +85,12 @@ export default Vue.extend({
         }
       ];
     },
-
+    formatterPreset() {
+      this.$emit("bks-show-formatter-presets", { showFormatter: true });
+    },
     // Non-TextEditor overrides
     formatSql() {
+      // this would probably be what's listening for the override too if there's one
       const formatted = format(this.value, {
         language: this.formatterDialect,
       });

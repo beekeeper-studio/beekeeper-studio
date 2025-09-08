@@ -29,6 +29,10 @@ export default {
     type: props.languageId.type,
     default: "sql",
   },
+  allowPresets: {
+    type: Boolean,
+    default: false
+  }
 
   // --- replaced with languageId
   // mode: {
