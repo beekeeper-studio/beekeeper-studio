@@ -73,6 +73,9 @@ export default class PluginStoreService {
 
       "--query-editor-bg",
 
+      "--scrollbar-track",
+      "--scrollbar-thumb",
+
       // BksTextEditor
       "--bks-text-editor-activeline-bg-color",
       "--bks-text-editor-activeline-gutter-bg-color",
