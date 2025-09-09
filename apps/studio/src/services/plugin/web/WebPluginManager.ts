@@ -69,6 +69,7 @@ export default class WebPluginManager {
       throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
+    loader.dispose();
     this.loaders.delete(id);
   }
 
@@ -160,6 +161,24 @@ export default class WebPluginManager {
       { type: "divider" },
       ...extraOptions,
     ]
+  }
+
+  /** Subscribe to when a plugin is ready to be used. */
+  onReady(pluginId: string, fn: Function) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.onReady(fn);
+  }
+
+  /** Subscribe to when a plugin is disposed. */
+  onDispose(pluginId: string, fn: Function) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.onDispose(fn);
   }
 
   private async loadPlugin(manifest: Manifest) {

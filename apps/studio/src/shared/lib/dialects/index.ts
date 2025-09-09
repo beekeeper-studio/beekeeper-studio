@@ -14,6 +14,7 @@ import { MongoDBData } from "./mongodb";
 import { SqlAnywhereData } from "./anywhere";
 import { TrinoData } from "./trino";
 import { SurrealDBData } from "./surrealdb";
+import { RedisData } from "@shared/lib/dialects/redis";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -47,6 +48,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return TrinoData
     case 'surrealdb':
       return SurrealDBData
+    case 'redis':
+      return RedisData
     default:
       return SqliteData
   }

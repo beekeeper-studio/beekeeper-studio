@@ -27,6 +27,8 @@ windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
   private iframes: HTMLIFrameElement[] = [];
+  private onReadyListeners: Function[] = [];
+  private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
 
   /** @deprecated use `context.log` instead */
@@ -37,6 +39,7 @@ export default class WebPluginLoader {
   private pluginStore: PluginStoreService;
   /** @deprecated use `context.utility` instead */
   private utilityConnection: UtilityConnection;
+  private listening = false;
 
   menu: PluginMenuManager;
 
@@ -78,6 +81,11 @@ export default class WebPluginLoader {
       });
     } else {
       this.menu.register();
+    }
+
+    if (!this.listening) {
+      this.registerEvents();
+      this.onReadyListeners.forEach((fn) => fn());
     }
   }
 
@@ -334,5 +342,43 @@ export default class WebPluginLoader {
   checkPermission(data: PluginRequestData) {
     // do nothing on purpose
     // if not permitted, throw error
+  }
+
+  /** Warn: please dispose only when the plugin is not used anymore, like
+   * after uninstalling. */
+  dispose() {
+    this.unregisterEvents();
+    this.onDisposeListeners.forEach((fn) => fn());
+  }
+
+  private registerEvents() {
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
+    this.listening = true;
+  }
+
+  private unregisterEvents() {
+    window.removeEventListener("message", this.handleMessage);
+    this.listening = false;
+  }
+
+  /** Called when the plugin is ready to be used. If the plugin uses iframes,
+   * this should be called before mounting the iframes. */
+  onReady(fn: Function) {
+    if (this.listening) {
+      fn();
+    }
+    this.onReadyListeners.push(fn);
+    return () => {
+      this.onReadyListeners = _.without(this.onReadyListeners, fn);
+    }
+  }
+
+  /** Called when the plugin is disposed. */
+  onDispose(fn: Function) {
+    this.onDisposeListeners.push(fn);
+    return () => {
+      this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
+    }
   }
 }

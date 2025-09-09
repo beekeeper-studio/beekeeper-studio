@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "5.3.4",
+  "version": "5.3.6",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -79,6 +79,7 @@
     "humanize-duration": "^3.23.1",
     "indent-string": "^4.0.0",
     "ini": "^5.0.0",
+    "ioredis": "^5.6.1",
     "javascript-time-ago": "^2.0.8",
     "jquery": "^3.5.0",
     "json-pointer": "^0.6.2",
@@ -111,6 +112,7 @@
     "portfinder": "^1.0.26",
     "postgres-interval": "^4.0.0",
     "query-string": "^7.0.0",
+    "redis-splitargs": "^1.0.2",
     "reflect-metadata": "^0.1.10",
     "scrollyfills": "^1.0.0",
     "simple-encryptor": "^3.0.0",
