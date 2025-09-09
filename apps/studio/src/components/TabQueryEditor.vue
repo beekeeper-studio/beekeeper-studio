@@ -47,7 +47,7 @@
         :entities="entities"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
-        :mode="dialectData.textEditorMode"
+        :language-id="languageIdForDialect"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -618,6 +618,13 @@
       },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      languageIdForDialect() {
+        // Map textEditorMode to CodeMirror 6 languageId
+        if (this.dialectData.textEditorMode === 'text/x-redis') {
+          return 'redis';
+        }
+        return 'sql'; // default for all SQL databases
       },
       replaceExtensions() {
         return (extensions) => {
