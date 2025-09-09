@@ -1883,7 +1883,13 @@ export class DBTestUtil {
     expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
   }
 
-async paramTest(params: string[]) {
+  async paramTest(params: string[]) {
+    const paramTypes: any = {
+      positional: true,
+      named: [':', '@', '$'],
+      numbered: ['?', ':', '$'],
+      quoted: [':', '@', '$'],
+    }
     if (params.length === 1) {
       params = [params[0], params[0], params[0]];
     }
@@ -1894,7 +1900,7 @@ async paramTest(params: string[]) {
     let placeholders = [params[0]];
     let values = [`'Rose Tyler'`];
     let convertedParams = convertParamsForReplacement(placeholders, values);
-    query = deparameterizeQuery(query, this.dialect, convertedParams, null);
+    query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
     let result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
       { id: 2, data: 'Rose Tyler', is_draft: 1 },
@@ -1911,7 +1917,7 @@ async paramTest(params: string[]) {
     placeholders = params;
     values = ['5', `'Neo'`, '0'];
     convertedParams = convertParamsForReplacement(placeholders, values);
-    query = deparameterizeQuery(query, this.dialect, convertedParams, null);
+    query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
     result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
       { id: 5, data: 'Neo', is_draft:  0 }
