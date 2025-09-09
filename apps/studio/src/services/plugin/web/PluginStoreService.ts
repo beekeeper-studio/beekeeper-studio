@@ -9,6 +9,8 @@ import {
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
+  OpenQueryTabRequest,
+  OpenTabRequest,
   RunQueryResponse,
   TabResponse,
   ThemeChangedNotification,
@@ -232,6 +234,15 @@ export default class PluginStoreService {
     });
   }
 
+  /** @throws {Error} Not found */
+  private findTableOrThrow(name: string, schema?: string) {
+    const table = this.findTable(name, schema);
+    if (!table) {
+      throw new Error(schema ? `Table not found (table=${name}, schema=${schema})` : `Table not found (table=${name})`);
+    }
+    return table;
+  }
+
   async getColumns(
     tableName: string,
     schema?: string
@@ -326,5 +337,33 @@ export default class PluginStoreService {
     return {
       results: results.map(this.serializeQueryResponse),
     };
+  }
+
+  openTab(options: OpenTabRequest['args']): void {
+    if (options.type === "query") {
+      if (!options.query) {
+        this.appEventBus.emit(AppEvent.newTab)
+      } else {
+        this.appEventBus.emit(AppEvent.newTab, options.query)
+      }
+      return;
+    }
+
+    if (options.type === "tableStructure") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.openTableProperties, { table });
+      return;
+    }
+
+    if (options.type === "tableTable") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.loadTable, {
+        table,
+        filters: options.filters,
+      });
+      return;
+    }
+
+    throw new Error(`Unsupported tab type: ${options.type}`);
   }
 }

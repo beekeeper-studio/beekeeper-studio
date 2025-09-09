@@ -34,6 +34,8 @@ export default Vue.extend({
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
       unsubscribe: null,
+      unsubscribeOnReady: null,
+      unsubscribeOnDispose: null,
       iframe: null,
     };
   },
@@ -43,7 +45,7 @@ export default Vue.extend({
       return `${this.url}?timestamp=${this.timestamp}`;
     },
     showIframe() {
-      return this.visible || this.loaded;
+      return this.visible && this.loaded;
     },
   },
   watch: {
@@ -81,7 +83,6 @@ export default Vue.extend({
       });
       this.$refs.container.appendChild(iframe);
       this.iframe = iframe;
-      this.loaded = true;
     },
     unmountIframe() {
       if (!this.iframe) {
@@ -92,13 +93,22 @@ export default Vue.extend({
       this.unsubscribe?.();
       this.iframe.remove();
       this.iframe = null;
-      this.loaded = false;
     },
     handleError(e) {
       console.error(`${this.pluginId} iframe error`, e);
     }
   },
+  mounted() {
+    this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
+      this.loaded = true;
+    });
+    this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
+      this.loaded = false;
+    })
+  },
   beforeDestroy() {
+    this.unsubscribeOnReady?.();
+    this.unsubscribeOnDispose?.();
     this.unmountIframe();
   },
 });
