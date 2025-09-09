@@ -126,6 +126,7 @@ export interface DatabaseFilterOptions {
 }
 
 export interface SchemaFilterOptions {
+  database?: string;
   schema?: string;
   only?: string[];
   ignore?: string[];

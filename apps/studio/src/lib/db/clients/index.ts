@@ -26,6 +26,7 @@ interface ClientConfig {
   key: string,
   name: string,
   defaultPort?: number,
+  topLevelEntity?: string,
   defaultDatabase?: string,
   disabledFeatures?: string[],
 }
@@ -209,6 +210,17 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'trino',
+    name: 'Trino',
+    topLevelEntity: 'Catalog',
+    defaultPort: 8080,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'cancelQuery', // TODO how to do this?
+    ],
+  },
+  {
     key: 'clickhouse',
     name: 'ClickHouse',
     defaultPort: 8123,
@@ -238,5 +250,22 @@ export const CLIENTS: ClientConfig[] = [
       'server:socketPathWithCustomPort',
       'server:ssl'
     ]
+  },
+  {
+    key: 'redis',
+    name: 'Redis',
+    defaultPort: 6379,
+    defaultDatabase: '0',
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'server:user',
+      'scriptCreateTable',
+      'cancelQuery'
+    ],
   }
 ];

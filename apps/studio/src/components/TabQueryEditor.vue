@@ -47,7 +47,7 @@
         :entities="entities"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
-        :mode="dialectData.textEditorMode"
+        :language-id="languageIdForDialect"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
@@ -113,7 +113,10 @@
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <hr>
-                <x-menuitem @click.prevent="submitQueryToFile">
+                <x-menuitem
+                  @click.prevent="submitQueryToFile"
+                  :disabled="disableRunToFile"
+                >
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
                     v-if="isCommunity"
@@ -122,7 +125,10 @@
                     stars
                   </i>
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQueryToFile">
+                <x-menuitem
+                  @click.prevent="submitCurrentQueryToFile"
+                  :disabled="disableRunToFile"
+                >
                   <x-label>Run Current to File</x-label>
                   <i
                     v-if="isCommunity"
@@ -443,6 +449,9 @@
       enabled() {
         return !this.dialectData?.disabledFeatures?.queryEditor;
       },
+      disableRunToFile() {
+        return this.dialectData?.disabledFeatures?.export?.stream
+      },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
       },
@@ -607,6 +616,13 @@
       },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      languageIdForDialect() {
+        // Map textEditorMode to CodeMirror 6 languageId
+        if (this.dialectData.textEditorMode === 'text/x-redis') {
+          return 'redis';
+        }
+        return 'sql'; // default for all SQL databases
       },
       replaceExtensions() {
         return (extensions) => {

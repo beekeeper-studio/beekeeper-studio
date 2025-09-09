@@ -48,6 +48,9 @@ declare interface IBksConfig {
             idleTimeout: number;
             maxClient: number;
         };
+        redis: {
+            allowSkipToLastPage: boolean;
+        };
         redshift: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
@@ -68,6 +71,9 @@ declare interface IBksConfig {
             connectionTimeout: number;
         };
         tidb: {
+            allowSkipToLastPage: boolean;
+        };
+        trino: {
             allowSkipToLastPage: boolean;
         };
     };
