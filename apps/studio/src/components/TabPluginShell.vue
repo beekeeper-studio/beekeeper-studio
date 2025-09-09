@@ -13,6 +13,8 @@
         :url="url"
         :reload="reload"
         :on-request="handleRequest"
+        :command="tab.context.command"
+        :args="tab.context.args"
       />
     </div>
     <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">

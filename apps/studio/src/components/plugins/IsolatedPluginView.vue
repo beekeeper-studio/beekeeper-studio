@@ -8,7 +8,8 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType } from "vue";
+import { JsonValue } from "@/types";
 
 export default Vue.extend({
   name: "IsolatedPluginView",
@@ -21,6 +22,8 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    command: String,
+    args: null as PropType<JsonValue>,
     url: {
       type: String,
       required: true,
@@ -73,7 +76,11 @@ export default Vue.extend({
       iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
       iframe.allow = "clipboard-read; clipboard-write;";
 
-      this.$plugin.registerIframe(this.pluginId, iframe);
+      this.$plugin.registerIframe(
+        this.pluginId,
+        iframe,
+        { command: this.command, args: this.args }
+      );
       this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
         if (args.source === iframe) {
           this.onRequest?.(args);
