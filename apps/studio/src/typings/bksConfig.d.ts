@@ -35,7 +35,7 @@ declare interface IBksConfig {
             maxClient: number;
             paramTypes: {
                 named: any[];
-                numbered: any[];
+                numbered: string[];
                 positional: boolean;
                 quoted: any[];
             };
@@ -133,7 +133,7 @@ declare interface IBksConfig {
             maxClient: number;
             paramTypes: {
                 named: any[];
-                numbered: any[];
+                numbered: string[];
                 positional: boolean;
                 quoted: any[];
             };
