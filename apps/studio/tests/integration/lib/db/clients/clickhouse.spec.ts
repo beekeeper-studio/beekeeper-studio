@@ -108,6 +108,12 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       }
     });
 
+    describe("Param tests", () => {
+      it("Should be able to handle positional (?) params", async () => {
+        await util.paramTest(['?']);
+      })
+    })
+
     // TODO (azmi): These materialized views tests should be in common tests.
     // They're here for now to fix clickhouse
     it("should list materialized views correctly", async () => {

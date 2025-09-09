@@ -305,13 +305,23 @@ export class DBTestUtil {
       }
 
     }
-    await this.knex("test_param").insert([
-      { data: "River Song", is_draft: false },
-      { data: "Rose Tyler", is_draft: true },
-      { data: "Rose Tyler", is_draft: false },
-      { data: "John Wick", is_draft: true },
-      { data: "Neo", is_draft: false },
-    ]);
+
+    const testData = [
+      { data: "River Song", is_draft: 0 },
+      { data: "Rose Tyler", is_draft: 1 },
+      { data: "Rose Tyler", is_draft: 0 },
+      { data: "John Wick", is_draft: 1 },
+      { data: "Neo", is_draft: 0 },
+    ];
+
+    // Firebird doesn't support multi-row INSERT with VALUES, so insert one by one
+    if (this.dialect === "firebird") {
+      for (const row of testData) {
+        await this.knex("test_param").insert(row);
+      }
+    } else {
+      await this.knex("test_param").insert(testData);
+    }
   }
 
   async dropTableTests() {
@@ -1675,7 +1685,7 @@ export class DBTestUtil {
     await this.knex.schema.createTable('test_param', (table) => {
       primary(table);
       table.string("data").notNullable();
-      table.boolean("is_draft").notNullable();
+      table.integer("is_draft").notNullable();
     });
 
     await this.knex.schema.createTable('addresses', (table) => {
@@ -1900,7 +1910,7 @@ async paramTest(params: string[]) {
     `;
 
     placeholders = params;
-    values = ['5', `'Neo'`, 'false'];
+    values = ['5', `'Neo'`, '0'];
     convertedParams = convertParamsForReplacement(placeholders, values);
     query = deparameterizeQuery(query, this.dialect, convertedParams, null);
     result = await this.knex.raw(query);

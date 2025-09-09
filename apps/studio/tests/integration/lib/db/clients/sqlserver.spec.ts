@@ -92,6 +92,12 @@ function testWith(dockerTag: string, readonly: boolean) {
       }
     })
 
+    describe("Param tests", () => {
+      it("Should be able to handle named (:name) params", async () => {
+        await util.paramTest([':param1', ':param2', ':param3']);
+      })
+    })
+
     it("Can select top from table with square brackets in name", async () => {
       const top = await util.connection.selectTop("my[socks]", 0, 1, [{dir: 'ASC', field: 'id'}], [])
       expect(top.result.length).toBe(1)

@@ -193,6 +193,12 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         })
       })
 
+      describe("Param tests", () => {
+        it("Should be able to handle positional (?) params", async () => {
+          await util.paramTest(['?']);
+        })
+      })
+
     describe("Trino-specific constraints and features", () => {
       it("Should indicate Trino doesn't support transactions", async () => {
         expect((util.connection as any).supportsTransaction).toBe(false)
