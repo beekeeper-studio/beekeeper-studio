@@ -45,12 +45,12 @@ const SettingStoreModule: Module<State, any> = {
     async initializeSettings(context) {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
       context.commit(M.REPLACEALL, settings);
-      
+
       const privacyModeSetting = settings.find(s => s.key === 'privacyMode');
       if (privacyModeSetting) {
         context.commit('SET_PRIVACY_MODE', privacyModeSetting.value);
       }
-      
+
       context.commit('setInitialized');
     },
     async saveSetting(context, setting: TransportUserSetting) {
@@ -59,7 +59,7 @@ const SettingStoreModule: Module<State, any> = {
     },
     async save(context, { key, value }) {
       if (!key || value === undefined) return;
-    
+
       const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
       setValue(setting, value);
@@ -109,6 +109,10 @@ const SettingStoreModule: Module<State, any> = {
     lastUsedWorkspace(state) {
       if (!state.settings.lastUsedWorkspace) return null;
       return state.settings.lastUsedWorkspace
+    },
+    sqliteRuntimeExtensions(state) {
+      if (!state.settings.sqliteExtensionFile) return null
+      return state.settings.sqliteExtensionFile
     }
   }
 }
