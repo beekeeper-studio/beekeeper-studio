@@ -56,6 +56,12 @@ describe("CockroachDB Tests", () => {
     runCommonTests(() => util)
   })
 
+  describe("Param tests", () => {
+    it("Should be able to handle numbered ($1) params", async () => {
+      await util.paramTest(['$1', '$2', '$3']);
+    })
+  })
+
   it("should be able to list basic indexes", async () => {
     const indexes = await util.connection.listTableIndexes('test_indexes')
     // cockroach adds a pkey index
