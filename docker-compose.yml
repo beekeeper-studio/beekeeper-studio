@@ -63,6 +63,8 @@ services:
       - ./dev/docker_psql_load_test_init:/docker-entrypoint-initdb.d
     ports:
       - 5435:5432
+    shm_size: 2gb
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c max_connections=1000 -c shared_buffers=512MB -c work_mem=16MB
 
   psql15:
     image: postgres:15
