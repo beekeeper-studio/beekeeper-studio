@@ -17,6 +17,7 @@ volumes:
   firebird:
   mongodb:
   anywhere:
+  redis:
 
 services:
   anywhere:
@@ -258,6 +259,14 @@ services:
       - CLICKHOUSE_USER=username
       - CLICKHOUSE_PASSWORD=password
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    volumes:
+      - redis:/data
+      - ./dev/docker_redis:/docker_init
+    command: sh -c 'redis-server & sleep 3 && /docker_init/data.sh && wait'
 
   clickhouse25:
     image: clickhouse/clickhouse-server:25.6.1
