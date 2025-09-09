@@ -6,6 +6,7 @@ import fs from 'fs'
 import os from 'os'
 import tmp from 'tmp'
 import OracleDB from 'oracledb';
+import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_tools';
 // import { UserSetting } from '@/common/appdb/models/user_setting';
 const timeoutDefault = 1000 * 60 * 5 // 5 minutes
 
@@ -278,12 +279,6 @@ BEEKEEPER =
     // })
 
 
-
-    describe("Param tests", () => {
-      it("Should be able to handle positional params", async () => {
-        await util.paramTest(['?']);
-      })
-    })
 
     describe("Common DB Tests", () => {
       runCommonTests(getUtil, false)

@@ -50,7 +50,10 @@ function processRawConfig(config) {
   const dbObj = config.db;
 
   if (dbObj && _.has(dbObj, "default")) {
-    const defaultObj = dbObj.default;
+    // this sanitizes the defaults before we set them for all other dbs (ie [ '' ] => [])
+    populateDefaults(config, `db.default_parsed`, 'db.default')
+    config.db.default = config.db.default_parsed
+    config.db.default_parsed = undefined
     for (const d of DatabaseTypes) {
       const section = d === "postgresql" ? "postgres" : d;
       populateDefaults(config, `db.${section}`, "db.default")

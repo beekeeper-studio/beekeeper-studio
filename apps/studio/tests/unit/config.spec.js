@@ -228,4 +228,177 @@ initialSort = false
 
     expect(processedConfig).toMatchObject(expected);
   })
+
+  it("Should properly parse param types from config", () => {
+    const rawConfig = parseIni(`
+[db.default.paramTypes]
+positional = true
+named[] =
+numbered[] =
+quoted[] =
+
+[db.postgres.paramTypes]
+positional = false
+numbered[] = '$'
+
+[db.bigquery.paramTypes]
+positional = true
+named[] = '@'
+quoted[] = '@'
+    `)
+
+    const processedConfig = processRawConfig(rawConfig);
+
+    const expected = {
+
+      db: {
+        default: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        sqlite: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        sqlserver: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        redshift: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        cockroachdb: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        mysql: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        postgres: {
+          paramTypes: {
+            positional: false,
+            named: [],
+            numbered: [ '$' ],
+            quoted: [],
+          }
+        },
+        mariadb: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        cassandra: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        oracle: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        bigquery: {
+          paramTypes: {
+            positional: true,
+            named: [ '@' ],
+            numbered: [],
+            quoted: [ '@' ],
+          }
+        },
+        firebird: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        tidb: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        libsql: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        clickhouse: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        duckdb: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        mongodb: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+        sqlanywhere: {
+          paramTypes: {
+            positional: true,
+            named: [],
+            numbered: [],
+            quoted: [],
+          }
+        },
+      }
+    };
+
+    expect(processedConfig).toMatchObject(expected);
+  })
 });
