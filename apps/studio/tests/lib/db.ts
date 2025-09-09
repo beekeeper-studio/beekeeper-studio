@@ -1891,15 +1891,14 @@ async paramTest(params: string[]) {
       SELECT * FROM test_param WHERE
         data = ${params[0]};
     `;
-    let useBools = this.dialect === "postgresql" || this.dialect === "duckdb";
     let placeholders = [params[0]];
     let values = [`'Rose Tyler'`];
     let convertedParams = convertParamsForReplacement(placeholders, values);
     query = deparameterizeQuery(query, this.dialect, convertedParams, null);
     let result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
-      { id: 2, data: 'Rose Tyler', is_draft: useBools ? true : 1 },
-      { id: 3, data: 'Rose Tyler', is_draft: useBools ? false : 0 }
+      { id: 2, data: 'Rose Tyler', is_draft: 1 },
+      { id: 3, data: 'Rose Tyler', is_draft: 0 }
     ]);
 
     query = `
@@ -1915,7 +1914,7 @@ async paramTest(params: string[]) {
     query = deparameterizeQuery(query, this.dialect, convertedParams, null);
     result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
-      { id: 5, data: 'Neo', is_draft: useBools ? false : 0 }
+      { id: 5, data: 'Neo', is_draft:  0 }
     ]);
   }
 
