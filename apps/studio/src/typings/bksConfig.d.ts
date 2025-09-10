@@ -16,10 +16,16 @@ declare interface IBksConfig {
             idleTimeout: number;
             maxClient: number;
         };
+        default: {
+            allowSkipToLastPage: boolean;
+        };
         duckdb: {
             allowSkipToLastPage: boolean;
         };
         firebird: {
+            allowSkipToLastPage: boolean;
+        };
+        libsql: {
             allowSkipToLastPage: boolean;
         };
         mariadb: {
@@ -42,6 +48,9 @@ declare interface IBksConfig {
             idleTimeout: number;
             maxClient: number;
         };
+        redis: {
+            allowSkipToLastPage: boolean;
+        };
         redshift: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
@@ -57,7 +66,14 @@ declare interface IBksConfig {
         sqlserver: {
             allowSkipToLastPage: boolean;
         };
+        surrealdb: {
+            allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+        };
         tidb: {
+            allowSkipToLastPage: boolean;
+        };
+        trino: {
             allowSkipToLastPage: boolean;
         };
     };
@@ -123,6 +139,11 @@ declare interface IBksConfig {
             nextPage: string;
             openEditorModal: string;
             previousPage: string;
+        };
+    };
+    plugins: {
+        "bks-ai-shell": {
+            enabled: boolean;
         };
     };
     security: {

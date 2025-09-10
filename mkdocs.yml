@@ -16,7 +16,7 @@ extra:
   generator: false
 theme:
   logo: assets/bks.svg
-  favicon: assets/favicon.ico
+  favicon: assets/favicon-96x96.png
   name: material
   icon:
     repo: fontawesome/brands/github
@@ -55,18 +55,23 @@ plugins:
 #        background_color: "#2c2c2c"
 #        color: "#ffffff"
 #        font_family: Rubik
-
+  - ini-includer:
+      base_path: ../apps/studio
+      config_file: default.config.ini
 markdown_extensions:
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
   - tables
   - abbr
   - attr_list
@@ -96,20 +101,32 @@ nav:
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
     - SQLite: user_guide/connecting/sqlite.md
+    - Trino: user_guide/connecting/trino.md
+    - user_guide/connecting/surrealdb.md
 
   - Features:
     - user_guide/sql_editor/editor.md
+    - user_guide/sql-ai-shell.md
     - user_guide/editing-data.md
     - user_guide/modify-tables.md
     - user_guide/sql_editor/saving_queries.md
+    - user_guide/json-sidebar.md
     - user_guide/query-magics.md
     - Data Import: user_guide/importing-data-csv-json-etc.md
     - user_guide/data-export.md
     - Diagrams: user_guide/entity-relationship-diagrams-erd.md
     - user_guide/backup-restore.md
-    - Cloud Sync: user_guide/cloud-storage-team-workspaces.md
-    - user_guide/privacy-mode.md
+    - Cloud Workspaces: user_guide/cloud-storage-team-workspaces.md
+    - user_guide/security.md
+    - Plugins: user_guide/plugins.md
     - Configuration: user_guide/configuration.md
+  # - Plugin Development:
+  #   - Introduction: plugin_development/index.md
+  #   - Creating your first plugin: plugin_development/creating-your-first-plugin.md
+  #   - Plugin Views: plugin_development/plugin-views.md
+  #   - Manifest Reference: plugin_development/manifest.md
+  #   - API Reference: plugin_development/api-reference.md
+  #   - Publishing: plugin_development/publishing-plugins.md
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md

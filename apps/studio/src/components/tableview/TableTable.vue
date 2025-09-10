@@ -323,11 +323,11 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
-import { mapGetters, mapState, mapActions } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
@@ -612,7 +612,11 @@ export default Vue.extend({
 
       const paths = []
       for (const column of this.table.columns) {
-        if(this.isPrimaryKey(column.columnName) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
+        const isPrimaryKey = this.isPrimaryKey(column.columnName);
+        // Allow primary key editing for dialects that don't have read-only primary keys (e.g., Redis key renaming)
+        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+
+        if((isPrimaryKey && !canEditPrimaryKeys) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
         }
         paths.push(column.columnName)
@@ -850,7 +854,10 @@ export default Vue.extend({
         cssClass += ' primary-key';
       } else if (hasKeyDatas) {
         cssClass += ' foreign-key';
+      } else if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
+        cssClass += ' text-right'
       }
+
       if (column.generated) {
         cssClass += ' generated-column';
       }
@@ -958,7 +965,7 @@ export default Vue.extend({
       return `
         <span class="title">
           ${escapeHtml(columnName)}
-          <span class="badge column-data-type">${dataType}</span>
+          <span class="badge column-data-type">${escapeHtml(dataType)}</span>
         </span>`
     },
     maybeScrollAndSetWidths() {
@@ -1121,9 +1128,29 @@ export default Vue.extend({
       if (this.isPrimaryKey(cell.getField())) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
+    getActionValue(cell: CellComponent, s: string) {
+      const clickedValue = cell.getValue();
+      switch(s) {
+        case 'in': {
+          const ranges = cell.getRanges();
+          const selectedCells = ranges.flatMap(range => range.getCells()).flat();
+          const selectedValues = selectedCells
+            .filter(c => c.getField() === cell.getField())
+            .map(c => c.getValue())
+            .filter(v => v !== null && v !== undefined);
+          return selectedValues.length > 0 ? selectedValues : [clickedValue];
+        }
+        
+        case 'like':
+          return `%${clickedValue}%`;
+        
+        default:
+          return clickedValue;
+      }
+    },
     quickFilterMenuItem(cell: CellComponent) {
       const symbols = [
-        '=', '!=', '<', '<=', '>', '>='
+        '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
         label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
@@ -1133,7 +1160,11 @@ export default Vue.extend({
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
-              const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
+              const newFilter = [{ 
+                field: cell.getField(), 
+                type: s, 
+                value: this.getActionValue(cell, s)
+              }]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
             }
@@ -1276,7 +1307,10 @@ export default Vue.extend({
         }))
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
-      return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
+      const isPrimaryKey = this.isPrimaryKey(cell.getField());
+      // i know, the logic is a bit awkward (disable the disabling of editing the primary keys)
+      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+      return this.editable && (!isPrimaryKey || canEditPrimaryKeys) && !pendingDelete;
     },
     insertionCellCheck(cell: CellComponent) {
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
@@ -1328,10 +1362,12 @@ export default Vue.extend({
         return
       }
 
-      const primaryKeys = pkCells.map((cell) => {
+      const primaryKeys = pkCells.map((pkCell) => {
         return {
-          column: cell.getField(),
-          value: cell.getValue()
+          column: pkCell.getField(),
+          // Use old value if this primary key cell is the one being edited, otherwise current value
+          // This is for redis key renaming to work
+          value: pkCell === cell ? pkCell.getOldValue() : pkCell.getValue()
         }
       })
       if (currentEdit) {
@@ -1444,9 +1480,17 @@ export default Vue.extend({
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
           const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
+          let value = cell.getValue();
+          if (isBinary) {
+            try {
+              value = stringToTypedArray(value, "hex")
+            } catch (e) {
+              log.error(`Error converting ${value} to typed array. Skipping...`, e)
+            }
+          }
           primaryKeys.push({
             column: cell.getField(),
-            value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
+            value,
           })
         })
 
@@ -1685,7 +1729,6 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-
             // lets just make column selection a front-end only thing
             const selects = ['*']
             const response = await this.connection.selectTop(
@@ -1925,7 +1968,8 @@ export default Vue.extend({
             type: '=',
             value: _.get(this.selectedRowData, path),
           }],
-          tableKey.toSchema
+          tableKey.toSchema,
+          ['*']
         )
 
         if (table.result.length > 0) {
