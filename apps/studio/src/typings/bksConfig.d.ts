@@ -305,5 +305,8 @@ declare interface IBksConfig {
             maxColumnWidth: number;
         };
     };
+     azure: {
+      azSQLLoginScope: string;
+    };
 };
 

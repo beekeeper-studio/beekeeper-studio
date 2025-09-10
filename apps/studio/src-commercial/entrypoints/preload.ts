@@ -10,7 +10,6 @@ import { execSync } from 'child_process';
 import 'electron-log/preload';
 import pluralize from 'pluralize';
 
-
 const electron = require('@electron/remote');
 
 const testMode = process.env.TEST_MODE ? true : false;
