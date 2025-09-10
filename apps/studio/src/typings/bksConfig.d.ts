@@ -126,6 +126,9 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        redis: {
+            allowSkipToLastPage: boolean;
+        };
         redshift: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
