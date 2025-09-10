@@ -401,6 +401,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
   .settings-btn {
     width: auto;
     padding: 0;
+    box-shadow: none;
   }
   p.no-entities {
     width: 100%;

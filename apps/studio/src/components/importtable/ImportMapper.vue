@@ -490,6 +490,16 @@ export default {
 <style lang="scss" scoped>
   .mapper-wrapper {
     margin-top: 2rem;
+
+    &::v-deep .tabulator-tableholder {
+      .tabulator-bks-checkbox {
+        height: 100%;
+      }
+
+      .remove-btn .dynamic-action::after {
+        top: -0.2rem;
+      }
+    }
   }
   .checkbox-group:last-of-type {
     padding-top: 1rem;
