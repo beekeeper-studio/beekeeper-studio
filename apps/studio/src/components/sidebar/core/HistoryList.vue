@@ -113,7 +113,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
     },
     methods: {
       formatTimeAgo(item) {
-        const dt = _.isDate(item.createdAt) ? item.createdAt : new Date(item.createdAt * 1000)
+        const dt = _.isDate(item.updatedAt) ? item.updatedAt : new Date(item.updatedAt * 1000)
         return this.timeAgo.format(dt)
       },
       maybeUnselect(e) {

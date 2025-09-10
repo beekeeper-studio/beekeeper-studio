@@ -31,7 +31,8 @@
           >Close Tab</a>
         </div>
       </div>
-      <sql-text-editor
+      <component
+        :is="editorComponent"
         :value="unsavedText"
         :read-only="editor.readOnly"
         :is-focused="focusingElement === 'text-editor'"
@@ -46,7 +47,7 @@
         :entities="entities"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
-        :mode="dialectData.textEditorMode"
+        :language-id="languageIdForDialect"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
@@ -112,7 +113,10 @@
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <hr>
-                <x-menuitem @click.prevent="submitQueryToFile">
+                <x-menuitem
+                  @click.prevent="submitQueryToFile"
+                  :disabled="disableRunToFile"
+                >
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
                     v-if="isCommunity"
@@ -121,7 +125,10 @@
                     stars
                   </i>
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQueryToFile">
+                <x-menuitem
+                  @click.prevent="submitCurrentQueryToFile"
+                  :disabled="disableRunToFile"
+                >
                   <x-label>Run Current to File</x-label>
                   <i
                     v-if="isCommunity"
@@ -344,6 +351,7 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
+  import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -366,7 +374,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -435,8 +443,14 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
+      editorComponent() {
+        return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
+      },
       enabled() {
         return !this.dialectData?.disabledFeatures?.queryEditor;
+      },
+      disableRunToFile() {
+        return this.dialectData?.disabledFeatures?.export?.stream
       },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
@@ -602,6 +616,13 @@
       },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      languageIdForDialect() {
+        // Map textEditorMode to CodeMirror 6 languageId
+        if (this.dialectData.textEditorMode === 'text/x-redis') {
+          return 'redis';
+        }
+        return 'sql'; // default for all SQL databases
       },
       replaceExtensions() {
         return (extensions) => {
@@ -962,7 +983,23 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
+          const lastQuery = this.$store.state['data/usedQueries']?.items?.[0]
+          const isDuplicate = lastQuery?.text?.trim() === query?.trim()
+
+          const queryObj = {
+            text: query,
+            numberOfRecords: totalRows,
+            queryId: this.query?.id,
+            connectionId: this.usedConfig.id
+          }
+
+          if(lastQuery && isDuplicate){
+            queryObj.updatedAt = new Date();
+            queryObj.id = lastQuery.id;
+          }
+
+          this.$store.dispatch('data/usedQueries/save', queryObj)
+
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'
