@@ -701,6 +701,12 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         runCommonTests(() => util, { dbReadOnlyMode: readonly })
       }
     })
+
+    describe("Param tests", () => {
+      it("Should be able to handle numbered ($1) params", async () => {
+        await util.paramTest(['$1', '$2', '$3']);
+      })
+    })
   })
 }
 

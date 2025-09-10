@@ -51,6 +51,23 @@ select * from table where foo = $1 and bar = $2
 ```
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-13.gif)
 
+You can configure which syntax is active for your database engine using the [config file](../configuration.md).
+
+```ini
+; Enable all parameter types for postgres (not recommended)
+[db.postgres.paramTypes]
+positional = true
+named[] = ':'
+named[] = '@'
+named[] = '$'
+numbered[] = '?'
+numbered[] = ':'
+numbered[] = '$'
+quoted[] = ':'
+quoted[] = '@'
+quoted[] = '$'
+```
+
 
 ## Downloading Results
 

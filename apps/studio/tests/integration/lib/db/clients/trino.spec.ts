@@ -33,7 +33,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
       // Trino uses catalogs instead of databases, access PostgreSQL through 'postgresql' catalog
       // util = new DBTestUtil(TrinoTestDriver.config, "postgresql", TrinoTestDriver.utilOptions)
-      
+
       // await util.setupdb()
     })
 
@@ -65,19 +65,19 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         it("List table columns should work", async () => {
           const columns = await util.connection.listTableColumns("addresses", "public")
           const columnNames = columns.map((c) => c.columnName)
-    
+
           expect(columns.length).toBeGreaterThan(0)
           expect(columnNames).toContain('street')
           expect(columnNames).toContain('city')
           expect(columnNames).toContain('country')
-          
+
           // Verify column properties
           const streetColumn = columns.find(c => c.columnName === 'street')
           expect(streetColumn).toBeDefined()
           expect(streetColumn.schemaName).toBe('public')
           expect(streetColumn.tableName).toBe('addresses')
         })
-    
+
         it("Get database version should work", async () => {
           const version = await util.connection.versionString()
           expect(version).toBeDefined()
@@ -109,7 +109,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           let r = await util.connection.selectTop("jobs", 0, 10, [], [], 'public', [])
           expect(r.result).toBeDefined()
           expect(r.fields).toBeDefined()
-          
+
           if (r.result.length > 0) {
             const firstRow = r.result[0]
             expect(firstRow).toBeDefined()
@@ -128,7 +128,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           expect(result.result).toBeDefined()
           expect(result.fields).toBeDefined()
           expect(result.fields.length).toBeGreaterThan(0)
-          
+
           // The sorting functionality should work even if no data is returned
           expect(Array.isArray(result.result)).toBe(true)
         })
@@ -139,8 +139,8 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           expect(result.result).toBeDefined()
           expect(Array.isArray(result.result)).toBe(true)
           expect(result.result.length).toBeLessThanOrEqual(2)
-          
-          // Page 2 (next 2 items) 
+
+          // Page 2 (next 2 items)
           result = await util.connection.selectTop('people', 2, 2, [], [], 'public', [])
           expect(result.result).toBeDefined()
           expect(Array.isArray(result.result)).toBe(true)
@@ -149,7 +149,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         it("Should execute custom queries", async () => {
           const queryResult = await util.connection.query('SELECT COUNT(*) as table_count FROM postgresql.information_schema.tables WHERE table_schema = \'public\'')
           const results = await queryResult.execute()
-          
+
           expect(results).toBeDefined()
           expect(results.length).toBeGreaterThan(0)
           expect(results[0]).toBeDefined()
@@ -160,11 +160,11 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           // Test SHOW CATALOGS - a Trino-specific command
           const catalogsQuery = await util.connection.query('SHOW CATALOGS')
           const catalogsResult = await catalogsQuery.execute()
-          
+
           expect(catalogsResult).toBeDefined()
           expect(catalogsResult.length).toBeGreaterThan(0)
           expect(catalogsResult[0].rows).toBeDefined()
-          
+
           // The catalogs should include at least system catalogs
           const catalogNames = catalogsResult[0].rows.map(row => row.Catalog)
           expect(Array.isArray(catalogNames)).toBe(true)
@@ -179,14 +179,14 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           // Use a simpler query that's more likely to work
           const joinQuery = `
             SELECT COUNT(*) as count_result
-            FROM postgresql.public.people p 
+            FROM postgresql.public.people p
             WHERE p.id IS NOT NULL
             LIMIT 5
           `
-          
+
           const queryResult = await util.connection.query(joinQuery)
           const results = await queryResult.execute()
-          
+
           expect(results).toBeDefined()
           expect(results.length).toBeGreaterThan(0)
           expect(results[0].rows).toBeDefined()
@@ -201,7 +201,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       it("Should return null for primary keys (not supported)", async () => {
         const primaryKeys = await util.connection.getPrimaryKeys()
         expect(primaryKeys).toEqual([])
-        
+
         const singlePrimaryKey = await util.connection.getPrimaryKey('people', 'public')
         expect(singlePrimaryKey).toBeNull()
       })
@@ -209,30 +209,30 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       it("Should return null for data modification operations", async () => {
         const alterResult = await util.connection.alterTable({} as any)
         expect(alterResult).toBeNull()
-        
+
         const createDbResult = await util.connection.createDatabase()
         expect(createDbResult).toBeNull()
-        
+
         const truncateResult = await util.connection.truncateElementSql('test', 'public')
         expect(truncateResult).toBeNull()
-        
+
         const duplicateResult = await util.connection.duplicateTable('test', 'public', 'test_copy')
         expect(duplicateResult).toBeNull()
-        
+
         const duplicateSqlResult = await util.connection.duplicateTableSql('test', 'public', 'test_copy')
         expect(duplicateSqlResult).toBeNull()
-        
+
         const setNameResult = await util.connection.setElementNameSql('test', 'test_new', 'public')
         expect(setNameResult).toBeNull()
-        
+
         const builderResult = await util.connection.getBuilder('test_table', 'public')
         expect(builderResult).toBeNull()
       })
 
       it("Should support selectTopSql for query generation", async () => {
-        const sql = await util.connection.selectTopSql('people', 0, 10, 
+        const sql = await util.connection.selectTopSql('people', 0, 10,
           [], [], 'public', [])
-        
+
         expect(sql).toBeDefined()
         expect(typeof sql).toBe('string')
         expect(sql.length).toBeGreaterThan(0)
@@ -245,7 +245,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         // Test that we can query using full Trino naming convention
         const queryResult = await util.connection.query('SELECT 1 as test_column FROM postgresql.public.people LIMIT 1')
         const results = await queryResult.execute()
-        
+
         expect(results).toBeDefined()
         expect(results.length).toBeGreaterThan(0)
         expect(results[0].rows).toBeDefined()
@@ -281,7 +281,7 @@ describe('Trino util.Connection Edge Cases', () => {
       socketPathEnabled: false,
       password: null
     }
-    
+
     expect(config.client).toBe('trino')
     expect(config.port).toBe(8080)
     expect(config.readOnlyMode).toBe(false)
