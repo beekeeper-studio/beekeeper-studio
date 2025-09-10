@@ -136,11 +136,14 @@ export default class WebPluginLoader {
             request.args.table
           );
           break;
+        case "getTableKeys":
+          response.result = await this.utilityConnection.send(
+              'conn/getTableKeys',
+            { table: request.args.table, schema: request.args.schema }
+          );
+          break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
-          break;
-        case "getActiveTab":
-          response.result = this.pluginStore.getActiveTab();
           break;
         case "getAllTabs":
           response.result = this.pluginStore.getAllTabs();
@@ -157,7 +160,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard()
+          response.result = window.main.readTextFromClipboard();
           break;
 
         // ======== WRITE ACTIONS ===========
@@ -175,7 +178,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(request.args.text)
+          window.main.writeTextToClipboard(request.args.text);
           break;
 
         // ======== UI ACTIONS ===========
