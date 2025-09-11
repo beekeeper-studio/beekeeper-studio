@@ -90,7 +90,7 @@ export default class WebPluginLoader {
           source
         );
       } else {
-        this.handleViewNotification({
+        this.handleViewNotification(source, {
           name: event.data.name,
           args: event.data.args,
         });
@@ -214,14 +214,17 @@ export default class WebPluginLoader {
       response.error = e;
     }
 
-    this.postMessage(response);
+    this.postMessage(source, response);
 
     afterCallbacks.forEach((callback) => {
       callback(response);
     });
   }
 
-  private async handleViewNotification(notification: PluginNotificationData) {
+  private async handleViewNotification(
+    source: HTMLIFrameElement,
+    notification: PluginNotificationData
+  ) {
     switch (notification.name) {
       case "windowEvent": {
         const windowEventClass = windowEventMap.get(
@@ -248,6 +251,20 @@ export default class WebPluginLoader {
         this.log.error(`Received plugin error: ${notification.args.message}`, notification.args);
         break;
       }
+      case "broadcast": {
+        this.iframes.forEach((iframe) => {
+          if (iframe === source) {
+            return;
+          }
+          this.postMessage(iframe, {
+            name: "broadcast",
+            args: {
+              message: notification.args.message,
+            },
+          });
+        });
+        break;
+      }
 
       default:
         this.log.warn(`Unknown notification: ${notification.name}`);
@@ -257,7 +274,7 @@ export default class WebPluginLoader {
   registerIframe(iframe: HTMLIFrameElement) {
     this.iframes.push(iframe);
     iframe.onload = () => {
-      this.postMessage({
+      this.postMessage(iframe, {
         name: "themeChanged",
         args: this.pluginStore.getTheme(),
       });
@@ -268,13 +285,17 @@ export default class WebPluginLoader {
     this.iframes = _.without(this.iframes, iframe);
   }
 
-  postMessage(data: PluginNotificationData | PluginResponseData) {
+  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
     if (!this.iframes) {
       this.log.warn("Cannot post message, iframe not registered.");
       return;
     }
+    iframe.contentWindow.postMessage(data, "*");
+  }
+
+  broadcast(data: PluginNotificationData) {
     this.iframes.forEach((iframe) => {
-      iframe.contentWindow.postMessage(data, "*");
+      this.postMessage(iframe, data);
     });
   }
 

@@ -104,13 +104,13 @@ export default class WebPluginManager {
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.postMessage(data);
+    loader.broadcast(data);
   }
 
   /** Send a notification to all plugins */
   async notifyAll(data: PluginNotificationData) {
     this.loaders.forEach((loader) => {
-      loader.postMessage(data);
+      loader.broadcast(data);
     })
   }
 
