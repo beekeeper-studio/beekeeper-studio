@@ -3,11 +3,12 @@ import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
 /**
  * The kind of the tab. There is only one kind currently:
  *
- * - `shell`: Like a query tab. This tab has two main parts; A plugin's
+ * - `base-tab`: A plain tab with no special UI.
+ * - `shell-tab`: Like a query tab. This tab has two main parts; A plugin's
  *   `<iframe>` (placed at the top), and a table component (placed at the
  *   bottom). The table can be collapsed completely.
  **/
-export type TabKind = "shell";
+export type TabType = "shell" | "base";
 
 export type View = {
   /** The id of the view.
@@ -16,7 +17,7 @@ export type View = {
   /** The name of the view that will be displayed in the UI */
   name: string;
   /** The type of the view. */
-  type: "primary-sidebar" | "secondary-sidebar" | "shell-tab" | "plain-tab";
+  type: `${TabType}-tab`;
     /** The html entry point of the view. For example, `index.html`. */
   entry: string;
 }
@@ -44,7 +45,7 @@ export interface Manifest {
       tabTypes?: {
         id: string;
         name: string;
-        kind: TabKind;
+        kind: TabType;
         /** Same as `entry` above. */
         entry: string;
       }[];
