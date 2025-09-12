@@ -5,7 +5,6 @@ import type {
   TransportOpenTab,
 } from "@/common/transport/TransportOpenTab";
 import {
-  GetAllTabsResponse,
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
@@ -270,10 +269,6 @@ export default class PluginStoreService {
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
-  }
-
-  getAllTabs(): GetAllTabsResponse {
-    return this.store.state.tabs.tabs.map((tab) => this.serializeTab(tab));
   }
 
   private serializeTab(tab: TransportOpenTab): TabResponse {

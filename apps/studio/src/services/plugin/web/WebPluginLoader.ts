@@ -145,9 +145,6 @@ export default class WebPluginLoader {
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
-        case "getAllTabs":
-          response.result = this.pluginStore.getAllTabs();
-          break;
         case "getData":
         case "getEncryptedData": {
           const value = await this.utilityConnection.send(
