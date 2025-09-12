@@ -12,7 +12,7 @@
         class="nav-link"
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
-        @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
+        @contextmenu="$bks.openMenu({id: headerContextMenuId, item: tab, options: contextOptions, event: $event})"
         :class="{ active: selected }"
       >
         <tab-icon :tab="tab" />
@@ -142,6 +142,10 @@ import { mapState } from 'vuex'
     },
     computed: {
       ...mapState('tabs', { 'activeTab': 'active' }),
+      headerContextMenuId() {
+        // "tab.query.header", "tab.table.header", "tab.tableProperties.header", etc..
+        return `tab.${_.camelCase(this.tab.tabType)}-header`
+      },
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
 

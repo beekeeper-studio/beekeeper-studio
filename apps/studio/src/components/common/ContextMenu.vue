@@ -7,7 +7,7 @@
         ref="menu"
       >
         <li
-          v-for="(option, index) in options"
+          v-for="(option, index) in allOptions"
           :key="index"
           @click.stop="optionClicked(option, $event)"
           class="vue-simple-context-menu__item"
@@ -42,10 +42,11 @@
 // NOTE (@day): we can't use the store here for some reason
 import { ContextOption } from '@/plugins/BeekeeperPlugin'
 import Vue from 'vue'
+import { mapGetters } from 'vuex'
 
 export default Vue.extend({
   name: 'ContextMenu',
-  props: ['options', 'event', 'item'],
+  props: ['id', 'options', 'event', 'item'],
   data() {
     return {
       menuWidth: null,
@@ -55,13 +56,20 @@ export default Vue.extend({
   },
 
   computed: {
+    ...mapGetters('popupMenu', ['getExtraPopupMenu']),
     menuElements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))
       } else {
         return []
       }
-    }
+    },
+    allOptions() {
+      return [
+        ...this.options,
+        ...this.getExtraPopupMenu(this.id),
+      ]
+    },
   },
   methods: {
     showMenu(event) {
