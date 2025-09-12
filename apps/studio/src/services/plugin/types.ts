@@ -163,6 +163,7 @@ export type WebPluginContext = {
   store: PluginStoreService;
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
+  appVersion: string;
 }
 
 export type PluginContext = {

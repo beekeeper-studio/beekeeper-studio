@@ -7,13 +7,13 @@ import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
+  GetAppInfoResponse,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
-import { PluginTabContext } from "@/common/transport/TransportOpenTab";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -152,6 +152,12 @@ export default class WebPluginLoader {
             request.args.table
           );
           break;
+        case "getAppInfo":
+          response.result = {
+            theme: this.pluginStore.getTheme(),
+            version: this.context.appVersion,
+          } as GetAppInfoResponse['result'];
+          break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
@@ -174,6 +180,11 @@ export default class WebPluginLoader {
         }
         case "clipboard.readText":
           response.result = window.main.readTextFromClipboard()
+          break;
+        case "checkForUpdate":
+          response.result = await this.context.utility.send("plugin/checkForUpdates", {
+            id: this.context.manifest.id,
+          });
           break;
 
         // ======== WRITE ACTIONS ===========
@@ -294,8 +305,6 @@ export default class WebPluginLoader {
       this.postMessage(iframe, {
         name: "viewLoaded",
         args: {
-          appVersion: window.platformInfo.appVersion,
-          theme: this.context.store.getTheme(),
           command: options.command,
           args: options.args,
         },

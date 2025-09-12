@@ -190,7 +190,8 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
         emit: (...args) => app.$root.$emit(...args),
         on: (...args) => app.$root.$on(...args),
         off: (...args) => app.$root.$off(...args),
-      })
+      }),
+      window.platformInfo.appVersion
     )
     webPluginManager.initialize().then(() => {
       store.commit("webPluginManagerStatus", "ready")

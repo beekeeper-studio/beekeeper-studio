@@ -1,11 +1,11 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginContext, PluginNotificationData } from "../types";
+import { Manifest, OnViewRequestListener, PluginContext } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { PluginTabContext } from "@/common/transport/TransportOpenTab";
 import { JsonValue } from "@/types";
+import { PluginNotificationData } from "@beekeeperstudio/plugin";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -18,7 +18,8 @@ export default class WebPluginManager {
 
   constructor(
     private utilityConnection: UtilityConnection,
-    public readonly pluginStore: PluginStoreService
+    public readonly pluginStore: PluginStoreService,
+    public readonly appVersion: string
   ) {}
 
   async initialize() {
@@ -203,6 +204,7 @@ export default class WebPluginManager {
       store: this.pluginStore,
       utility: this.utilityConnection,
       log: rawLog.scope(`Plugin:${manifest.id}`),
+      appVersion: this.appVersion,
     });
     await loader.load();
     this.loaders.set(manifest.id, loader);

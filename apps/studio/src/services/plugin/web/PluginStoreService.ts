@@ -306,6 +306,7 @@ export default class PluginStoreService {
   getConnectionInfo(): GetConnectionInfoResponse {
     return {
       connectionType: this.store.state.connectionType,
+      databaseType: this.store.state.connectionType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
