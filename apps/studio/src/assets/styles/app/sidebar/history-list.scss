@@ -81,4 +81,20 @@
       right: 0.4rem;
     }
   }
+
+  .show-all-history-container {
+     display: flex;
+     align-items: center;
+     margin-left: 10px;
+     padding-bottom: 4px;
+
+     .show-all-history-text {
+      font-size: 12px;
+      color: gray; 
+     }
+    
+     #show-all-history-checkbox {
+      transform: scale(0.7);
+    }
+  }
 }

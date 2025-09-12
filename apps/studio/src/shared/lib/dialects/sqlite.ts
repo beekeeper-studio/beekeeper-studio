@@ -28,6 +28,15 @@ export const SqliteData: DialectData = {
   wrapLiteral: defaultWrapLiteral,
   wrapIdentifier: defaultWrapIdentifier,
   usesOffsetPagination: true,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'text',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   requireDataset: false,
   disallowedSortColumns: ['blob'],
   editorFriendlyIdentifier: (s) => s,
