@@ -18,7 +18,9 @@ import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
 import { MongoDBClient } from "./clients/mongodb";
 import { SQLAnywhereClient } from "./clients/anywhere";
+import { TrinoClient } from "./clients/trino";
 import { SurrealDBClient } from "./clients/surrealdb";
+import { RedisClient } from '@/lib/db/clients/redis';
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -38,7 +40,9 @@ const clients = new Map<ConnectionType, any>([
   ['clickhouse', ClickHouseClient],
   ['mongodb', MongoDBClient],
   ['sqlanywhere', SQLAnywhereClient],
-  ['surrealdb', SurrealDBClient]
+  ['trino', TrinoClient],
+  ['surrealdb', SurrealDBClient],
+  ['redis', RedisClient]
 ], );
 
 

@@ -3,7 +3,9 @@ import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 
-export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-shell'
+export type PluginTabType = 'plugin-base' | 'plugin-shell';
+export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
+export type TabType = CoreTabType | PluginTabType
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
@@ -29,16 +31,18 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   context: Context
 }
 
-export type TransportPluginShellTab = TransportOpenTab<{
+export type TransportPluginTab = TransportOpenTab<PluginTabContext>;
+
+export type PluginTabContext = {
   pluginId: string;
   pluginTabTypeId: string;
   /** A plugin can save the state of the tab here. For example, an AI plugin
      * can save the chat conversation here */
   data: any;
-}>
+};
 
 export namespace TabTypeConfig {
-  interface BaseTabTypeConfig {
+  interface BaseConfig {
     type: TabType;
     name: string;
     /** Used for the dropdown menu next to the "new tab" icon. */
@@ -48,24 +52,25 @@ export namespace TabTypeConfig {
     };
   }
 
-  interface DefaultConfig extends BaseTabTypeConfig {
-    type: Exclude<TabType, "plugin-shell">;
+  interface CoreConfig extends BaseConfig {
+    type: CoreTabType;
   }
 
   /** `"plugin-shell"` consists of two parts; an iframe at the top and a table at
    * the bottom. This tab looks almost identical to the query tab. The only
    * difference is, in this tab, the result table can be collapsed completely. */
-  export interface PluginShellConfig extends BaseTabTypeConfig, PluginShellConfigIdentifiers {
-    type: "plugin-shell";
+  export interface PluginConfig extends BaseConfig, PluginRef {
+    type: PluginTabType;
     icon?: string; // from material-icons
   }
 
-  export interface PluginShellConfigIdentifiers {
+  export interface PluginRef {
+    /** Use plugin id from the manifest */
     pluginId: string;
     pluginTabTypeId: string;
   }
 
-  export type Config = DefaultConfig | PluginShellConfig;
+  export type Config = CoreConfig | PluginConfig;
 }
 
 export function setFilters(obj: TransportOpenTab, filters: Nullable<TableFilter[]>) {

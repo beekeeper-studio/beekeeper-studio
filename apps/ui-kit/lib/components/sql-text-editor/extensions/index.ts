@@ -13,6 +13,7 @@ export type { QuerySelectionChangeParams };
 
 export type SQLExtensionsConfig = SQLConfig & {
   identiferDialect?: Options["dialect"];
+  paramTypes?: Options["paramTypes"];
   onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void
 }
 
@@ -26,6 +27,6 @@ export function extensions(config: SQLExtensionsConfig) {
     removeQueryQuotesExtension(),
     sqlContextComplete(),
     config.columnsGetter ? sqlCompletionSource(config.columnsGetter) : [],
-    querySelection(config.identiferDialect, config.onQuerySelectionChange),
+    querySelection(config.identiferDialect, config.paramTypes, config.onQuerySelectionChange),
   ];
 }

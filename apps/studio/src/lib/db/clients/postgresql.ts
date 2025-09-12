@@ -550,35 +550,46 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
       SELECT
-        tc.constraint_name,
-        kcu.column_name,
-        kcu.table_schema AS from_schema,
-        kcu.table_name AS from_table,
-        kcu2.column_name AS to_column,
-        kcu2.table_name AS to_table,
-        rc.unique_constraint_schema AS to_schema,
-        rc.update_rule,
-        rc.delete_rule,
-        kcu.ordinal_position
+        c.conname AS constraint_name,
+        a.attname AS column_name,
+        n.nspname AS from_schema,
+        t.relname AS from_table,
+        af.attname AS to_column,
+        tf.relname AS to_table,
+        nf.nspname AS to_schema,
+        CASE c.confupdtype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confupdtype::text
+        END AS update_rule,
+        CASE c.confdeltype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confdeltype::text
+        END AS delete_rule,
+        pos AS ordinal_position
       FROM
-        information_schema.table_constraints AS tc
-        JOIN information_schema.key_column_usage AS kcu
-          ON tc.constraint_name = kcu.constraint_name
-          AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.referential_constraints AS rc
-          ON rc.constraint_name = tc.constraint_name
-          AND rc.constraint_schema = tc.table_schema
-        JOIN information_schema.key_column_usage AS kcu2
-          ON kcu2.constraint_name = rc.unique_constraint_name
-          AND kcu.ordinal_position = kcu2.ordinal_position
-          AND kcu2.constraint_schema = rc.unique_constraint_schema
+        pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        JOIN pg_namespace n ON t.relnamespace = n.oid
+        JOIN generate_subscripts(c.conkey, 1) pos ON true
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
+        JOIN pg_class tf ON c.confrelid = tf.oid
+        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
+        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
       WHERE
-        tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_schema = $1
-        AND tc.table_name = $2
+        c.contype = 'f'
+        AND n.nspname = $1
+        AND t.relname = $2
       ORDER BY
-        tc.constraint_name,
-        kcu.ordinal_position;
+        c.conname,
+        pos;
     `;
 
     const params = [

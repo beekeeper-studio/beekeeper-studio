@@ -6,6 +6,7 @@ import fs from 'fs'
 import os from 'os'
 import tmp from 'tmp'
 import OracleDB from 'oracledb';
+import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_tools';
 // import { UserSetting } from '@/common/appdb/models/user_setting';
 const timeoutDefault = 1000 * 60 * 5 // 5 minutes
 
@@ -114,7 +115,7 @@ BEEKEEPER =
         `)
       })
     })
-    
+
     describe("createUpsertSQL tests", () => {
       it("should properly escape string values to prevent SQL injection", async () => {
         // Test with data containing characters that need escaping
@@ -125,33 +126,33 @@ BEEKEEPER =
           { id: 3, street: "Another Street with '' double quotes" }
         ];
         const primaryKeys = ['id'];
-        
+
         // @ts-ignore - Accessing method for testing
         const sql = util.connection.createUpsertSQL(entity, data, primaryKeys);
-        
+
         // Verify SQL is properly generated with escaped quotes
         expect(sql).toContain("'Normal Street'");
         expect(sql).toContain("'Dangerous Street with '' single quote'");
         expect(sql).toContain("'Another Street with '''' double quotes'");
-        
+
         // Verify SQL doesn't contain unescaped quotes (which would break the query)
         expect(sql).not.toContain("'Dangerous Street with ' single quote'");
       });
     })
-    
+
     describe("Database listing", () => {
       it("should list at least the current database", async () => {
         const databases = await util.connection.listDatabases();
-        
+
         // Should at least return the current database
         expect(databases).toBeDefined();
         expect(databases.length).toBeGreaterThanOrEqual(1);
-        
+
         // Should contain 'BEEKEEPER' as that's our test database
         expect(databases).toContain('BEEKEEPER');
       });
     })
-    
+
     describe("Routines listing", () => {
       it("should list database routines", async () => {
         // First create a test procedure
@@ -162,22 +163,22 @@ BEEKEEPER =
               NULL;
             END;
           `);
-          
+
           // Now test if listRoutines works
           const routines = await util.connection.listRoutines({
             schema: 'BEEKEEPER'
           });
-          
+
           // Should return at least our test procedure
           expect(routines).toBeDefined();
           expect(routines.length).toBeGreaterThanOrEqual(1);
-          
+
           // Find our test procedure
           const testProc = routines.find(r => r.name === 'TEST_PROCEDURE');
           expect(testProc).toBeDefined();
           expect(testProc.type).toBe('procedure');
           expect(testProc.schema).toBe('BEEKEEPER');
-          
+
         } finally {
           // Clean up
           try {
@@ -188,35 +189,35 @@ BEEKEEPER =
         }
       });
     })
-    
+
     describe("Query cancellation", () => {
       it("should properly handle query cancellation without errors", async () => {
         // This test verifies that query cancellation works properly in the Oracle client
         // by running a long query and cancelling it mid-execution
-        
+
         // Use a long-running query that we can cancel
         const sleepQuery = `
           BEGIN
             DBMS_LOCK.SLEEP(10);
           END;
         `;
-        
+
         // The DBTestUtil wraps the actual Oracle client, so we need to create a raw client instance
         // to get direct access to the cancel method
         const rawOracleClient = util.connection;
-        
+
         // Get a reference to the internal query method to ensure we can call 'cancel'
         const queryObj = rawOracleClient.query(sleepQuery);
-        
+
         // Start a timer to cancel the query after 1 second
         const timer = setTimeout(() => {
           queryObj.cancel();
         }, 1000);
-        
+
         try {
           // Execute the query - this should be interrupted by the cancel call
           await queryObj;
-          
+
           // If we reach this point without cancellation, the test should fail
           // as we expect the query to be cancelled
           expect(false).toBe(true, 'Query should have been cancelled but completed successfully');
@@ -226,7 +227,7 @@ BEEKEEPER =
           expect(err).toBeDefined();
           clearTimeout(timer);
         }
-        
+
         // To verify the connection is still usable after cancellation,
         // run a simple query - if this succeeds, our cancellation handling is working correctly
         const result = await rawOracleClient.executeQuery("SELECT 1 FROM dual");

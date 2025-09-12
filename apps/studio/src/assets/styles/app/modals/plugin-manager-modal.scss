@@ -88,6 +88,14 @@
           font-size: 0.875rem;
           color: rgba($theme-base, 0.7);
         }
+
+        .status-error {
+          font-size: 0.875rem;
+          color: $brand-danger;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
       }
 
       .actions {

@@ -36,6 +36,8 @@ import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
+import { WebPluginManagerStatus } from '@/services/plugin'
+import { MenuBarModule } from './modules/MenuBarModule'
 
 
 const log = RawLog.scope('store/index')
@@ -77,6 +79,8 @@ export interface State {
   // SurrealDB only
   namespace: Nullable<string>,
   namespaceList: string[],
+
+  pluginManagerStatus: WebPluginManagerStatus,
 }
 
 Vue.use(Vuex)
@@ -98,6 +102,7 @@ const store = new Vuex.Store<State>({
     imports: ImportStoreModule,
     backups: BackupModule,
     sidebar: SidebarModule,
+    menuBar: MenuBarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -132,7 +137,8 @@ const store = new Vuex.Store<State>({
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
     namespace: null,
-    namespaceList: []
+    namespaceList: [],
+    pluginManagerStatus: "initializing",
   },
 
   getters: {
@@ -395,6 +401,9 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
+    webPluginManagerStatus(state, status: WebPluginManagerStatus) {
+      state.pluginManagerStatus = status
+    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -464,7 +473,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateRoutines')
         context.dispatch('updateWindowTitle', config)
 
-        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id }) 
+        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
       } else {
@@ -511,7 +520,7 @@ const store = new Vuex.Store<State>({
       if (context.state.connectionType === 'surrealdb') {
         databaseForServer = `${context.state.namespace}::${newDatabase || ''}`;
       }
-      
+
       await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase: databaseForServer });
       context.commit('database', newDatabase)
       await context.dispatch('updateTables')
