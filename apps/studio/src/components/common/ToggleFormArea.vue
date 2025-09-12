@@ -31,9 +31,9 @@
 <script lang="ts">
 import Vue from 'vue'
   export default Vue.extend({
-    props: ['expanded', 'title', 'hideToggle'],
+    props: ['expanded', 'title', 'hideToggle', 'initiallyExpanded'],
     mounted() {
-      this.toggleContent = !!this.expanded
+      this.toggleContent = !!this.expanded || !!this.initiallyExpanded
     },
     data() {
       return {
