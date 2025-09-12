@@ -229,40 +229,6 @@ const connectionInfo = await getConnectionInfo();
 | `duckdb` | DuckDB |
 | `libsql` | LibSQL |
 
-### getAllTabs
-
-Get information about all open tabs.
-
-**Usage:**
-```javascript
-const tabs = await getAllTabs();
-```
-
-**Example Response:**
-```javascript
-[
-  {
-    id: 123,
-    title: "My Plugin Tab",
-    type: "plugin"
-  },
-  {
-    id: 124,
-    title: "Query #1",
-    type: "query"
-  }
-]
-```
-
-**Response Schema:**
-```typescript
-{
-  type: string;
-  id: number;
-  title: string;
-}[]
-```
-
 ### setTabTitle
 
 Set the title of the current plugin tab.
