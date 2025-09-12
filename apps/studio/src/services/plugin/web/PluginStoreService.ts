@@ -272,16 +272,6 @@ export default class PluginStoreService {
     };
   }
 
-  getActiveTab(): GetActiveTabResponse {
-    const activeTab: TransportOpenTab = this.store.state.tabs.active;
-
-    if (!activeTab) {
-      return null;
-    }
-
-    return this.serializeTab(activeTab);
-  }
-
   getAllTabs(): GetAllTabsResponse {
     return this.store.state.tabs.tabs.map((tab) => this.serializeTab(tab));
   }
