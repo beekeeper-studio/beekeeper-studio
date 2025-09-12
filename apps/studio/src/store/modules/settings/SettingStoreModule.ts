@@ -30,9 +30,7 @@ const SettingStoreModule: Module<State, any> = {
       state.settings = _.mapValues(grouped, v => v[0]) as unknown as IGroupedUserSettings
     },
     addSetting(state, newSetting: TransportUserSetting) {
-      if (!state.settings[newSetting.key]) {
-        Vue.set(state.settings, newSetting.key, newSetting)
-      }
+      Vue.set(state.settings, newSetting.key, newSetting)
     },
     setInitialized(state) {
       state.initialized = true;
@@ -66,7 +64,7 @@ const SettingStoreModule: Module<State, any> = {
       setting.key = key;
       const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
       _.merge(setting, newSetting);
-      context.commit(M.ADD, setting);
+      context.commit(M.ADD, newSetting);
     },
     async togglePrivacyMode({ commit, state, dispatch }) {
       const newPrivacyMode = !state.privacyMode;
