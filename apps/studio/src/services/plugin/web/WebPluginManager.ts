@@ -105,10 +105,10 @@ export default class WebPluginManager {
     loader.registerIframe(iframe, options);
   }
 
-  unregisterIframe(tabContext: PluginTabContext, iframe: HTMLIFrameElement) {
-    const loader = this.loaders.get(tabContext.pluginId);
+  unregisterIframe(pluginId: string, iframe: HTMLIFrameElement) {
+    const loader = this.loaders.get(pluginId);
     if (!loader) {
-      throw new Error("Plugin not found: " + tabContext.pluginId);
+      throw new Error("Plugin not found: " + pluginId);
     }
     loader.unregisterIframe(iframe);
   }
