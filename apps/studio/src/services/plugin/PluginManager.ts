@@ -53,6 +53,8 @@ export default class PluginManager {
 
     const installedPlugins = this.fileManager.scanPlugins();
 
+    log.debug(this.installedPlugins);
+
     await this.loadPluginSettings();
 
     this.plugins = installedPlugins.map((manifest) => ({

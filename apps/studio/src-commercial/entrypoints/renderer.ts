@@ -199,9 +199,8 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
       store.commit("webPluginManagerStatus", "failed-to-initialize")
     })
     Vue.prototype.$plugin = webPluginManager;
-    if (window.platformInfo.isDevelopment) {
-      window.webPluginManager = webPluginManager; // For debugging
-    }
+    Vue.prototype.$bksPlugin = webPluginManager;
+    window.bksPlugin = webPluginManager; // For debugging
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")

@@ -7,6 +7,8 @@ export enum AppEvent {
   menuClick = 'menu-click',
   settingsChanged = "sc-refresh",
   newTab = 'nt',
+  /** Create a new custom tab. First argument is `TransportOpenTab`. */
+  newCustomTab = 'nct',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
   disconnect = 'dc',
