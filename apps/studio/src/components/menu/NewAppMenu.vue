@@ -5,6 +5,9 @@
     v-hotkey="allHotkeys"
     :class="{active: menuActive}"
     ref="nav"
+    tabindex="-1"
+    role="menubar"
+    @keydown="maybeCaptureKeydown"
   >
     <!-- TOP MENU, eg File, Edit -->
     <ul class="menu-bar">
@@ -36,8 +39,8 @@
               :class="hoverClass(item)"
             >
               <span class="label">
-                <span 
-                  class="material-icons" 
+                <span
+                  class="material-icons"
                   v-if="item.checked"
                 >done</span>
                 <span>{{ item.label }}</span>
@@ -228,6 +231,7 @@ export default {
     setActive(item) {
       this.menuActive = !this.menuActive
       this.selected = item
+      this.$nextTick(() => this.$refs.nav?.focus())
     },
     setSelected(item) {
       this.selected = item
@@ -259,11 +263,9 @@ export default {
   },
   async mounted() {
     document.addEventListener('click', this.maybeHideMenu)
-    window.addEventListener('keydown', this.maybeCaptureKeydown, false)
   },
   beforeDestroy() {
     document.removeEventListener('click', this.maybeHideMenu)
-    window.removeEventListener('keydown', this.maybeCaptureKeydown, false)
   }
 
 

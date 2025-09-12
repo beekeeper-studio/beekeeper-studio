@@ -85,7 +85,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 | Value                 | Description                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------- |
 | `"shell-tab"`         | Tab with your plugin's iframe at the top and a collapsible result table at the bottom. |
-| `"plain-tab"`         | Full-tab interface. _(Planned for future releases)_                                    |
+| `"base-tab"`          | Full-tab interface.                                                                    |
 | `"primary-sidebar"`   | Primary sidebar panel. _(Planned for future releases)_                                 |
 | `"secondary-sidebar"` | Secondary sidebar panel. _(Planned for future releases)_                               |
 

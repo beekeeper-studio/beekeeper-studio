@@ -41,7 +41,7 @@ export const TabModule: Module<State, RootState> = {
         if (tab.type === "shell" && rootGetters.dialectData?.disabledFeatures?.shell) {
           return false;
         }
-        if (tab.type === "plugin-shell") {
+        if (tab.type === "plugin-shell" || tab.type === "plugin-base") {
           return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
         }
         return true;
@@ -96,13 +96,13 @@ export const TabModule: Module<State, RootState> = {
       state.tabs = tabs
     },
 
-    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginShellConfig) {
+    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginConfig) {
       state.allTabTypeConfigs.push(newConfig)
     },
 
-    removeTabTypeConfig(state, config: TabTypeConfig.PluginShellConfig) {
-      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginShellConfig) => {
-        if (t.type !== "plugin-shell") {
+    removeTabTypeConfig(state, config: TabTypeConfig.PluginConfig) {
+      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginConfig) => {
+        if (t.type !== "plugin-shell" && t.type !== "plugin-base") {
           return true;
         }
         const matches = t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId

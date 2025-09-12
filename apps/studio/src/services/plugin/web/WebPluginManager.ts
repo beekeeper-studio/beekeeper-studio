@@ -1,12 +1,13 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginNotificationData } from "../types";
+import { Manifest, OnViewRequestListener, PluginContext, PluginNotificationData } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 
 const log = rawLog.scope("WebPluginManager");
 
 export default class WebPluginManager {
+  plugins: PluginContext[] = [];
   /** A map of plugin id -> loader */
   loaders: Map<string, WebPluginLoader> = new Map();
 
@@ -23,11 +24,21 @@ export default class WebPluginManager {
       return;
     }
 
-    const enabledPlugins: Manifest[] = await this.utilityConnection.send(
-      "plugin/enabledPlugins"
+    await this.utilityConnection.send("plugin/waitForInit");
+
+    this.plugins = await this.utilityConnection.send(
+      "plugin/plugins"
     );
 
-    for (const manifest of enabledPlugins) {
+    for (const { loadable, manifest } of this.plugins) {
+      if (!loadable) {
+        log.warn(`Plugin "${manifest.id}" is not loadable. Skipping...`);
+        continue;
+      }
+      if (window.bksConfig.plugins[manifest.id]?.disabled) {
+        log.info(`Plugin "${manifest.id}" is disabled. Skipping...`);
+        continue;
+      }
       try {
         await this.loadPlugin(manifest);
       } catch (e) {
@@ -104,22 +115,22 @@ export default class WebPluginManager {
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.postMessage(data);
+    loader.broadcast(data);
   }
 
   /** Send a notification to all plugins */
   async notifyAll(data: PluginNotificationData) {
     this.loaders.forEach((loader) => {
-      loader.postMessage(data);
+      loader.broadcast(data);
     })
   }
 
-  manifestOf(pluginId: string) {
-    const loader = this.loaders.get(pluginId);
-    if (!loader) {
+  pluginOf(pluginId: string) {
+    const plugin = this.plugins.find((p) => p.manifest.id === pluginId);
+    if (!plugin) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    return loader.manifest;
+    return plugin;
   }
 
   buildUrlFor(pluginId: string, entry: string) {

@@ -146,7 +146,7 @@ import { mapState } from 'vuex'
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
 
         const devOptions = []
-        if (this.tab.tabType === "plugin-shell") {
+        if (this.tab.tabType === "plugin-shell" || this.tab.tabType === "plugin-base") {
           devOptions.push({ name: "[DEV] Reload plugin view", slug: 'dev-reload-plugin-view', handler: ({item}) => this.$emit('reloadPluginView', item) })
         }
 

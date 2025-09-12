@@ -184,24 +184,23 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
-    try {
-      const webPluginManager = new WebPluginManager(
-        Vue.prototype.$util,
-        new PluginStoreService(store, {
-          emit: (...args) => app.$root.$emit(...args),
-          on: (...args) => app.$root.$on(...args),
-          off: (...args) => app.$root.$off(...args),
-        })
-      )
-      await webPluginManager.initialize()
-      Vue.prototype.$plugin = webPluginManager;
-      if (window.platformInfo.isDevelopment) {
-        window.webPluginManager = webPluginManager; // For debugging
-      }
-    } catch (e) {
+    const webPluginManager = new WebPluginManager(
+      Vue.prototype.$util,
+      new PluginStoreService(store, {
+        emit: (...args) => app.$root.$emit(...args),
+        on: (...args) => app.$root.$on(...args),
+        off: (...args) => app.$root.$off(...args),
+      })
+    )
+    webPluginManager.initialize().then(() => {
+      store.commit("webPluginManagerStatus", "ready")
+    }).catch((e) => {
       log.error("Error initializing web plugin manager", e)
-      if (!Vue.prototype.$plugin) Vue.prototype.$plugin = {}
-      Vue.prototype.$plugin.failedToInitialize = true
+      store.commit("webPluginManagerStatus", "failed-to-initialize")
+    })
+    Vue.prototype.$plugin = webPluginManager;
+    if (window.platformInfo.isDevelopment) {
+      window.webPluginManager = webPluginManager; // For debugging
     }
     app.$mount('#app')
   } catch (err) {
