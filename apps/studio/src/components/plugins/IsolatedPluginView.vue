@@ -34,6 +34,7 @@ export default Vue.extend({
   data() {
     return {
       loaded: false,
+      mounted: false,
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
       unsubscribe: null,
@@ -47,7 +48,11 @@ export default Vue.extend({
       // FIXME move this somewhere
       return `${this.url}?timestamp=${this.timestamp}`;
     },
-    showIframe() {
+    shouldMountIframe() {
+      // If it's already mounted, do not unmount it unless it's not loaded
+      if (this.mounted) {
+        return this.loaded;
+      }
       return this.visible && this.loaded;
     },
   },
@@ -55,10 +60,10 @@ export default Vue.extend({
     reload() {
       this.timestamp = Date.now();
     },
-    showIframe: {
+    shouldMountIframe: {
       async handler() {
         await this.$nextTick();
-        if (this.showIframe) {
+        if (this.shouldMountIframe) {
           this.mountIframe();
         } else {
           this.unmountIframe();
@@ -90,6 +95,7 @@ export default Vue.extend({
       });
       this.$refs.container.appendChild(iframe);
       this.iframe = iframe;
+      this.mounted = true;
     },
     unmountIframe() {
       if (!this.iframe) {
@@ -100,6 +106,7 @@ export default Vue.extend({
       this.unsubscribe?.();
       this.iframe.remove();
       this.iframe = null;
+      this.mounted = false;
     },
     handleError(e) {
       console.error(`${this.pluginId} iframe error`, e);

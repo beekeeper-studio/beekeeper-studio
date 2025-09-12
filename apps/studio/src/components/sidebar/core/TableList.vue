@@ -123,16 +123,36 @@
           >
             <i class="material-icons">refresh</i>
           </button>
-          <!-- FIXME (@day): we don't want to have per-db testing in the UI -->
-          <button
-            @click.prevent="newTable"
-            :title="`New ${this.connectionType === 'mongodb' ? 'Collection' : 'Table'}`"
-            class="create-table"
-            :disabled="tablesLoading"
-            v-if="canCreateTable"
+
+          <x-button
+            class="settings-btn"
+            menu
           >
             <i class="material-icons">add</i>
-          </button>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem
+                :disabled="tablesLoading"
+                @click.prevent="newTable"
+              >
+                <x-label>
+                  {{ newTableOrCollection }}
+                </x-label>
+              </x-menuitem>
+              <x-menuitem
+                :disabled="tablesLoading"
+                @click.prevent="newTableFromFile"
+              >
+                <x-label>
+                  {{ newTableOrCollection }} from File
+                  <i
+                    v-if="$store.getters.isCommunity"
+                    class="material-icons menu-icon"
+                  >stars</i>
+                </x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
         </div>
       </div>
 
@@ -197,6 +217,12 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
       },
+      newTableOrCollection() {
+        // FIXME: shouldn't be doing dialect checks like this.
+        if (this.dialect === 'mongodb') return 'New Collection'
+
+        return 'New Table'
+      },
       totalEntities() {
         return this.tables.length + this.routines.length - this.hiddenEntities.length
       },
@@ -247,7 +273,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
           this.$refs.tables
         ]
       },
-      async supportsRoutines() {
+      supportsRoutines() {
         return this.supportedFeatures.customRoutines
       },
       canCreateTable() {
@@ -323,6 +349,9 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       newTable() {
         this.$root.$emit(AppEvent.createTable)
       },
+      newTableFromFile() {
+        this.$root.$emit(AppEvent.createTableFromFile)
+      },
       maybeUnselect(e) {
         if (this.selectedSidebarItem) {
           if (this.$refs.wrapper.contains(e.target)) {
@@ -368,6 +397,11 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
   .table-action-wrapper{
     display: flex;
     flex-direction: row;
+  }
+  .settings-btn {
+    width: auto;
+    padding: 0;
+    box-shadow: none;
   }
   p.no-entities {
     width: 100%;

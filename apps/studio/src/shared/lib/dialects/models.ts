@@ -7,6 +7,15 @@ const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mong
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
+interface ImportDefaultDataTypes {
+  stringType?: string
+  longStringType?: string 
+  dateType?: string
+  booleanType?: string
+  integerType?: string
+  numberType?: string
+  defaultType: string
+}
 
 export const SpecialTypes = ['autoincrement']
 export type Dialect = typeof Dialects[number]
@@ -100,6 +109,7 @@ export interface DialectData {
   queryDialectOverride?: string,
   columnTypes?: ColumnType[],
   constraintActions?: string[]
+  importDataType?: ImportDefaultDataTypes
   wrapIdentifier?: (s: string) => string
   editorFriendlyIdentifier?: (s: string) => string
   escapeString?: (s: string, quote?: boolean) => string

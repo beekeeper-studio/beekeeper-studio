@@ -7,7 +7,33 @@
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
+      <div
+        v-if="pluginManagerStatus !== 'ready'"
+        class="plugin-status"
+        :class="pluginManagerStatus"
+      >
+        <template v-if="pluginManagerStatus === 'initializing'">
+          Initializing plugins ...
+        </template>
+        <template v-else-if="pluginManagerStatus === 'failed-to-initialize'">
+          Failed to initialize plugin manager.
+        </template>
+      </div>
+      <div v-else-if="!plugin.loadable" class="plugin-status">
+        <p>
+          Plugin "{{ plugin.manifest.name }}" isn’t compatible with this version of Beekeeper Studio.
+          It requires version {{ plugin.manifest.minAppVersion }} or newer.
+        </p>
+
+        <p>To fix this:</p>
+
+        <ol>
+          <li>Upgrade your Beekeeper Studio.</li>
+          <li>Or install an older plugin version manually (see <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">instructions</a>).</li>
+        </ol>
+      </div>
       <isolated-plugin-view
+        v-else
         :visible="active"
         :plugin-id="tab.context.pluginId"
         :url="url"
@@ -84,12 +110,12 @@ import ShortcutHints from "@/components/editor/ShortcutHints.vue";
 import QueryEditorStatusBar from "@/components/editor/QueryEditorStatusBar.vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { PropType } from "vue";
-import { TransportPluginShellTab } from "@/common/transport/TransportOpenTab";
+import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { mapGetters } from "vuex";
+import { mapState, mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
-import { OnViewRequestListenerParams } from "@/services/plugin/types";
+import type { OnViewRequestListenerParams, PluginContext } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 
 export default Vue.extend({
@@ -104,7 +130,7 @@ export default Vue.extend({
   },
   props: {
     tab: {
-      type: Object as PropType<TransportPluginShellTab>,
+      type: Object as PropType<TransportPluginTab>,
       required: true,
     },
     active: Boolean,
@@ -129,7 +155,11 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapState(["pluginManagerStatus"]),
     ...mapGetters(["isCommunity"]),
+    plugin(): PluginContext {
+      return this.$plugin.pluginOf(this.tab.context.pluginId);
+    },
     url() {
       const manifest = this.$plugin.manifestOf(this.tab.context.pluginId);
       const tabType =

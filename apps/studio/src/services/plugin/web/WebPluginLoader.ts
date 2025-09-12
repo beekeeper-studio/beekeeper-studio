@@ -106,7 +106,7 @@ export default class WebPluginLoader {
           source
         );
       } else {
-        this.handleViewNotification({
+        this.handleViewNotification(source, {
           name: event.data.name,
           args: event.data.args,
         });
@@ -237,7 +237,10 @@ export default class WebPluginLoader {
     });
   }
 
-  private async handleViewNotification(notification: PluginNotificationData) {
+  private async handleViewNotification(
+    source: HTMLIFrameElement,
+    notification: PluginNotificationData
+  ) {
     switch (notification.name) {
       case "windowEvent": {
         const windowEventClass = windowEventMap.get(
@@ -262,6 +265,20 @@ export default class WebPluginLoader {
       }
       case "pluginError": {
         this.log.error(`Received plugin error: ${notification.args.message}`, notification.args);
+        break;
+      }
+      case "broadcast": {
+        this.iframes.forEach((iframe) => {
+          if (iframe === source) {
+            return;
+          }
+          this.postMessage(iframe, {
+            name: "broadcast",
+            args: {
+              message: notification.args.message,
+            },
+          });
+        });
         break;
       }
 
@@ -290,18 +307,18 @@ export default class WebPluginLoader {
     this.iframes = _.without(this.iframes, iframe);
   }
 
-  /** Broadcasts a message to all iframes. */
-  broadcast(data: PluginNotificationData | PluginResponseData) {
+  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
     if (!this.iframes) {
       this.log.warn("Cannot post message, iframe not registered.");
       return;
     }
-    this.iframes.forEach((iframe) => this.postMessage(iframe, data));
+    iframe.contentWindow.postMessage(data, "*");
   }
 
-  /** Posts a message to a specific iframe. */
-  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
-    iframe.contentWindow.postMessage(data, "*");
+  broadcast(data: PluginNotificationData) {
+    this.iframes.forEach((iframe) => {
+      this.postMessage(iframe, data);
+    });
   }
 
   buildEntryUrl(entry: string) {

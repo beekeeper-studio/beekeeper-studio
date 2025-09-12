@@ -44,6 +44,15 @@ export const OracleData: DialectData = {
   editorFriendlyIdentifier: (s) => s,
   usesOffsetPagination: true,
   requireDataset: false,
+  importDataType: {
+    stringType: 'varchar2(255)',
+    longStringType: 'CLOB',
+    dateType: 'date',
+    booleanType: 'number',
+    integerType: 'number',
+    numberType: 'number',
+    defaultType: 'varchar2(255)'
+  },
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
@@ -65,5 +74,5 @@ export const OracleData: DialectData = {
   },
   notices: {
   },
-  defaultColumnType: 'VARCHAR2(255)'
+  defaultColumnType: 'varchar2(255)'
 }

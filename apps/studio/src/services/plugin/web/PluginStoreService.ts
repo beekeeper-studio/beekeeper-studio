@@ -16,7 +16,7 @@ import {
   TabResponse,
   ThemeChangedNotification,
 } from "@beekeeperstudio/plugin";
-import { findTable } from "@/common/transport/TransportOpenTab";
+import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
@@ -24,7 +24,7 @@ import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
   Manifest,
   PluginMenuItem,
-  TabKind,
+  TabType,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -209,10 +209,10 @@ export default class PluginStoreService {
     pluginId: string;
     pluginTabTypeId: string;
     name: string;
-    kind: TabKind;
+    kind: TabType;
     icon?: string;
   }): void {
-    const config: TabTypeConfig.PluginShellConfig = {
+    const config: TabTypeConfig.PluginConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
@@ -225,7 +225,7 @@ export default class PluginStoreService {
 
   /** @deprecated use `removeTabTypeConfig` instead */
   removeTabTypeConfigV0(
-    identifier: TabTypeConfig.PluginShellConfigIdentifiers
+    identifier: TabTypeConfig.PluginRef
   ): void {
     this.store.commit("tabs/removeTabTypeConfig", identifier);
   }
@@ -234,11 +234,11 @@ export default class PluginStoreService {
     menuItem: PluginMenuItem;
     manifest: Manifest;
   }): void {
-    const id: TabTypeConfig.PluginShellConfigIdentifiers = {
+    const id: TabTypeConfig.PluginRef = {
       pluginId: options.manifest.id,
       pluginTabTypeId: options.menuItem.view,
     };
-    const config: TabTypeConfig.PluginShellConfig = {
+    const config: TabTypeConfig.PluginConfig = {
       ...id,
       type: "plugin-shell", // FIXME(azmi): We only support shell for now
       name: options.manifest.name,
@@ -252,7 +252,7 @@ export default class PluginStoreService {
     menuItem: PluginMenuItem;
     manifest: Manifest;
   }): void {
-    const id: TabTypeConfig.PluginShellConfigIdentifiers = {
+    const id: TabTypeConfig.PluginRef = {
       pluginId: options.manifest.id,
       pluginTabTypeId: options.menuItem.view,
     };
@@ -290,12 +290,8 @@ export default class PluginStoreService {
   async getColumns(
     tableName: string,
     schema?: string
-  ): Promise<GetColumnsResponse> {
-    const table = this.findTable(tableName, schema);
-
-    if (!table) {
-      throw new Error(`Table ${tableName} not found`);
-    }
+  ): Promise<GetColumnsResponse['result']> {
+    const table = this.findTableOrThrow(tableName, schema);
 
     if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);

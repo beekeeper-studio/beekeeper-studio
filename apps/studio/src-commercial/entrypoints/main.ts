@@ -235,7 +235,7 @@ app.on('ready', async () => {
 
 })
 
-function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
+function createAndSendPorts(filter: boolean, utilDied = false) {
   getActiveWindows().forEach((w) => {
     if (!filter || newWindows.includes(w.winId)) {
       const { port1, port2 } = new electron.MessageChannelMain();
