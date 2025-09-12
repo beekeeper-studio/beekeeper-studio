@@ -28,7 +28,7 @@
               <div
                 v-if="extensionChosen"
               >
-                <div v-for="extension in sqliteRuntimeExtensions?.value" :key="extension" class="alert">
+                <div v-for="extension in extensions" :key="extension" class="alert">
                   <i class="material-icons-outlined">check</i>
                   <span class="flex flex-row">
                     <span class="expand">
@@ -79,7 +79,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import SettingsInput from '../common/SettingsInput.vue'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import FilePicker from '../common/form/FilePicker.vue'
 export default Vue.extend({
@@ -99,7 +99,10 @@ export default Vue.extend({
     ...mapGetters(['isUltimate']),
     ...mapGetters('settings', { 'sqliteRuntimeExtensions': 'sqliteRuntimeExtensions' }),
     extensionChosen() {
-      return this.sqliteRuntimeExtensions?.value && this.sqliteRuntimeExtensions?.value?.length > 0
+      return this.extensions && this.extensions?.length > 0
+    },
+    extensions() {
+      return this.sqliteRuntimeExtensions?.value
     }
   },
   methods: {

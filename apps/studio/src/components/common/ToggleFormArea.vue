@@ -68,7 +68,12 @@ import Vue from 'vue'
       el.style.opacity = '1';  // Fade in
 
       // cleanup after animation
-      el.addEventListener('transitionend', done);
+      const onTransitionEnd = () => {
+        el.removeEventListener('transitionend', onTransitionEnd);
+        el.style.height = 'auto';  // Allow natural expansion after animation
+        done();
+      };
+      el.addEventListener('transitionend', onTransitionEnd);
     },
     beforeLeave(el) {
       el.style.height = el.scrollHeight + 'px';
