@@ -108,7 +108,7 @@ import ShortcutHints from "@/components/editor/ShortcutHints.vue";
 import QueryEditorStatusBar from "@/components/editor/QueryEditorStatusBar.vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { PropType } from "vue";
-import { TransportPluginShellTab } from "@/common/transport/TransportOpenTab";
+import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapState, mapGetters } from "vuex";
@@ -128,7 +128,7 @@ export default Vue.extend({
   },
   props: {
     tab: {
-      type: Object as PropType<TransportPluginShellTab>,
+      type: Object as PropType<TransportPluginTab>,
       required: true,
     },
     active: Boolean,

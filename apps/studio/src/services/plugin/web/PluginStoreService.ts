@@ -9,16 +9,18 @@ import {
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
+  OpenQueryTabRequest,
+  OpenTabRequest,
   RunQueryResponse,
   TabResponse,
   ThemeChangedNotification,
 } from "@beekeeperstudio/plugin";
-import { findTable } from "@/common/transport/TransportOpenTab";
+import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
-import { TabKind } from "../types";
+import { TabType } from "../types";
 
 /**
  * Service that provides an interface to the plugin Vuex module
@@ -195,10 +197,10 @@ export default class PluginStoreService {
     pluginId: string;
     pluginTabTypeId: string;
     name: string;
-    kind: TabKind;
+    kind: TabType;
     icon?: string;
   }): void {
-    const config: TabTypeConfig.PluginShellConfig = {
+    const config: TabTypeConfig.PluginConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
@@ -209,7 +211,7 @@ export default class PluginStoreService {
     this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  removeTabTypeConfig(identifier: TabTypeConfig.PluginShellConfigIdentifiers): void {
+  removeTabTypeConfig(identifier: TabTypeConfig.PluginRef): void {
     this.store.commit("tabs/removeTabTypeConfig", identifier);
   }
 
@@ -232,15 +234,20 @@ export default class PluginStoreService {
     });
   }
 
+  /** @throws {Error} Not found */
+  private findTableOrThrow(name: string, schema?: string) {
+    const table = this.findTable(name, schema);
+    if (!table) {
+      throw new Error(schema ? `Table not found (table=${name}, schema=${schema})` : `Table not found (table=${name})`);
+    }
+    return table;
+  }
+
   async getColumns(
     tableName: string,
     schema?: string
-  ): Promise<GetColumnsResponse> {
-    const table = this.findTable(tableName, schema);
-
-    if (!table) {
-      throw new Error(`Table ${tableName} not found`);
-    }
+  ): Promise<GetColumnsResponse['result']> {
+    const table = this.findTableOrThrow(tableName, schema);
 
     if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);
@@ -326,5 +333,33 @@ export default class PluginStoreService {
     return {
       results: results.map(this.serializeQueryResponse),
     };
+  }
+
+  openTab(options: OpenTabRequest['args']): void {
+    if (options.type === "query") {
+      if (!options.query) {
+        this.appEventBus.emit(AppEvent.newTab)
+      } else {
+        this.appEventBus.emit(AppEvent.newTab, options.query)
+      }
+      return;
+    }
+
+    if (options.type === "tableStructure") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.openTableProperties, { table });
+      return;
+    }
+
+    if (options.type === "tableTable") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.loadTable, {
+        table,
+        filters: options.filters,
+      });
+      return;
+    }
+
+    throw new Error(`Unsupported tab type: ${options.type}`);
   }
 }

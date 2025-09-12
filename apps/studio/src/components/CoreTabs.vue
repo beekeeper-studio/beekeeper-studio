@@ -88,6 +88,13 @@
           :tab="tab"
           :tab-id="tab.id"
         />
+        <PluginBase
+          v-if="tab.tabType === 'plugin-base'"
+          :tab="tab"
+          :active="activeTab.id === tab.id"
+          :reload="reloader[tab.id]"
+          @close="close"
+        />
         <PluginShell
           v-if="tab.tabType === 'plugin-shell'"
           :tab="tab"
@@ -296,6 +303,7 @@ import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vu
 import ImportTable from './TabImportTable.vue'
 import DatabaseBackup from './TabDatabaseBackup.vue'
 import PluginShell from './TabPluginShell.vue'
+import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
@@ -314,10 +322,9 @@ import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import Shell from './TabShell.vue'
-import { TabTypeConfig } from "@/store/modules/TabModule";
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TransportOpenTab, TransportPluginShellTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
 
 export default Vue.extend({
   props: [],
@@ -341,6 +348,7 @@ export default Vue.extend({
     CreateCollectionModal,
     Shell,
     PluginShell,
+    PluginBase,
   },
   data() {
     return {
@@ -419,6 +427,7 @@ export default Vue.extend({
         { event: AppEvent.closeAllTabs, handler: this.closeAll },
         { event: AppEvent.newTab, handler: this.createQuery },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
+        { event: AppEvent.createTableFromFile, handler: this.beginImport },
         { event: 'historyClick', handler: this.createQueryFromItem },
         { event: AppEvent.loadTable, handler: this.openTable },
         { event: AppEvent.openTableProperties, handler: this.openTableProperties },
@@ -650,12 +659,12 @@ export default Vue.extend({
     closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
     },
-    async createTab(config: TabTypeConfig) {
+    async createTab(config: TabTypeConfig.Config) {
       if (config.type === "query") {
         this.createQuery()
       } else if (config.type === "shell") {
         this.createShell()
-      } else if (config.type === "plugin-shell") {
+      } else if (config.type === "plugin-shell" || config.type === "plugin-base") {
         let tNum = 0;
         let title = config.name;
         do {
@@ -671,7 +680,7 @@ export default Vue.extend({
             pluginId: config.pluginId,
             pluginTabTypeId: config.pluginTabTypeId,
           },
-        } as TransportPluginShellTab;
+        } as TransportPluginTab;
         await this.addTab(tab)
       }
     },
@@ -754,16 +763,19 @@ export default Vue.extend({
       if (existing) return this.$store.dispatch('tabs/setActive', existing);
       this.addTab(t);
     },
-    beginImport({ table }) {
-      if (table.entityType !== 'table') {
+    beginImport(data = {}) {
+      const { table } = data
+      if (table && table.entityType !== 'table') {
         this.$noty.error("You can only import data into a table")
         return;
       }
       const t = { tabType: 'import-table' }
-      t.title = `Import Table: ${table.name}`
+      t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false
-      t.schemaName = table.schema
-      t.tableName = table.name
+      if (table) {
+        t.schemaName = table.schema
+        t.tableName = table.name
+      }
       const existing = this.tabItems.find(tab => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
