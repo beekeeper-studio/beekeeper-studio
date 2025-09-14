@@ -224,23 +224,29 @@
     <!-- Super-Formatter Modal -->
     <portal to="modals">
       <modal
-        class="vue-dialog beekeeper-modal"
+        class="vue-dialog beekeeper-modal super-formatter-modal"
         name="super-formatter"
-        height="auto"
         :scrollable="true"
+        min-height="80%"
+        min-width="90%"
       >
         <!-- will need the close it option and then the whole shebang -->
         <div class="dialog-content">
-          <button
-            type="button"
-            class="btn-fab"
-            aria-label="close super formatter"
-            title="Close super formatter"
-            @click="handleFormatterPresetModal({ showFormatter: false })"
-          >
-            X
-          </button>
-          <BksSuperFormatter
+          <div class="dialog-c-title">
+            <p>
+              Super Formatter
+            </p>
+            <button
+              type="button"
+              class="btn btn-fab"
+              aria-label="Close super formatter"
+              title="Close super formatter"
+              @click="handleFormatterPresetModal({ showFormatter: false })"
+            >
+              X
+            </button>
+          </div>
+          <bks-super-formatter
             :value="unsavedText"
             :formatter-dialect="formatterDialect"
             :identifier-dialect="identifierDialect"
@@ -248,7 +254,6 @@
             :clipboard="$native.clipboard"
             :default-preset="{}"
             :presets="[]"
-            @bks-initialized="handleEditorInitialized"
             @bks-value-change="unsavedText = $event.value"
           />
         </div>

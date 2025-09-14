@@ -132,4 +132,21 @@
     }
 
   }
+
+  &.super-formatter-modal {
+    .v--modal {
+      min-width: 90vw;
+      min-height: 80vh;
+    }
+    & .dialog-c-title {
+      display: flex;
+      padding-right: 0 !important;
+      justify-content: space-between;
+      align-items: start;
+      & p {
+        margin: 0;
+        padding: .5rem 0 0 0;
+      }
+    }
+  }
 }

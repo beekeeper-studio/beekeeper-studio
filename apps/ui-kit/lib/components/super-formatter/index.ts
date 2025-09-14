@@ -1,21 +1,17 @@
-import Vue from "vue";
-import Component from "./SurrealTextEditor.vue";
-import { PropsToType, VueWrapper } from "../utilTypes";
-import baseProps from "../text-editor/props";
-import props from "./props";
-import { ExposedMethods } from "../text-editor";
-import { SurrealTextEditorEventMap } from "./types";
-import wrap from "@vue/web-component-wrapper";
-import { exposeMethods } from "../text-editor/TextEditor";
+import Vue from "vue"
+import wrap from "@vue/web-component-wrapper"
+import Component from "./SuperFormatter.vue"
+import { PropsToType, VueWrapper } from "../utilTypes"
+import props from "./props"
+import { SuperFormatterEventMap } from "./types"
 
-export interface SurrealTextEditorElement
-  extends PropsToType<typeof baseProps>,
-    PropsToType<typeof props>,
-    ExposedMethods,
-    VueWrapper<SurrealTextEditorElement, SurrealTextEditorEventMap> {}
+export * from "./types"
+
+export interface SuperFormatterElement
+  extends PropsToType<typeof props>,
+    VueWrapper<SuperFormatterElement, SuperFormatterEventMap> {}
 
 // @ts-ignore - Third param is valid in our fork
-export const SurrealTextEditorElement = wrap(Vue, Component, {
-  disableShadowDom: true,
-  exposeMethods
-});
+export const SuperFormatterElement = wrap(Vue, Component, {
+  disableShadowDom: true
+}) as unknown as SuperFormatterElement
