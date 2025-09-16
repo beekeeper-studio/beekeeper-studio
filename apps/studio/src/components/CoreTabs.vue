@@ -686,7 +686,7 @@ export default Vue.extend({
             pluginId: config.pluginId,
             pluginTabTypeId: config.pluginTabTypeId,
             command: config.menuItem?.command,
-            args: config.menuItem?.args,
+            params: config.menuItem?.params,
           },
         } as TransportPluginTab;
         await this.addTab(tab)

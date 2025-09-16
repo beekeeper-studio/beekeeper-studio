@@ -357,6 +357,7 @@ export default class WebPluginLoader {
         });
       });
     } else {
+      this.pluginStore.removeTabTypeConfigs(this.manifest);
       this.menu.unregister();
     }
   }

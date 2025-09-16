@@ -3,6 +3,7 @@ import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 import { JsonValue } from "@/types";
+import { LoadViewParams } from "@beekeeperstudio/plugin";
 
 export type PluginTabType = 'plugin-base' | 'plugin-shell';
 export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
@@ -58,9 +59,9 @@ export type PluginTabContext = {
   /** The command to execute on the plugin. Plugins cannot change this.
    * @since 5.4.0 */
   command?: string;
-  /** Arguments to be passed to the plugin. Plugins cannot change this.
+  /** Parameters to be passed to the plugin. Plugins cannot change this.
    * @since 5.4.0 */
-  params?: JsonValue;
+  params?: LoadViewParams;
 };
 
 export namespace TabTypeConfig {
@@ -74,7 +75,7 @@ export namespace TabTypeConfig {
       /** For plugins */
       command: string;
       /** For plugins */
-      args?: JsonValue;
+      params?: LoadViewParams;
     };
   }
 

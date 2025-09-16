@@ -176,7 +176,7 @@ const pluginMenuFactories: MenuFactories = {
             disableWhenDisconnected: true,
             action: {
               event: AppEvent.newCustomTab,
-              args: context.store.buildPluginTabArgs({
+              args: context.store.buildPluginTabInit({
                 manifest: context.manifest,
                 viewId: menuItem.view,
                 command: menuItem.command,
@@ -200,7 +200,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (_event, payload) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -230,7 +230,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: CellComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -256,7 +256,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: ColumnComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -282,7 +282,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: CellComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -308,7 +308,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: CellComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -334,7 +334,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: CellComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -360,7 +360,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: ColumnComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -386,7 +386,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: CellComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -412,7 +412,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: CellComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -438,7 +438,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: TransportOpenTab }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -466,7 +466,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: TransportOpenTab }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -494,7 +494,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: DatabaseEntity }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -526,7 +526,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: string }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -557,7 +557,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: DatabaseEntity }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
@@ -589,7 +589,7 @@ const pluginMenuFactories: MenuFactories = {
             handler: (options: { item: TableOrView }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
-                context.store.buildPluginTabArgs({
+                context.store.buildPluginTabInit({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,

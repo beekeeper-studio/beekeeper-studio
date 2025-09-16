@@ -273,7 +273,6 @@ export default class PluginStoreService {
     const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
       label: options.menuItem.name,
       command: options.menuItem.command,
-      args: options.menuItem.args,
     }
     this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
   }
@@ -454,7 +453,7 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
-  buildPluginTabArgs(options: {
+  buildPluginTabInit(options: {
     manifest: Manifest;
     viewId: string;
     params?: JsonValue;
