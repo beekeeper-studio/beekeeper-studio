@@ -8,6 +8,7 @@ import {
   PluginResponseData,
   PluginRequestData,
   GetAppInfoResponse,
+  LoadViewParams,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
@@ -300,7 +301,7 @@ export default class WebPluginLoader {
     }
   }
 
-  registerIframe(iframe: HTMLIFrameElement, options: { command: string; args?: JsonValue }) {
+  registerIframe(iframe: HTMLIFrameElement, options: { command: string; params?: LoadViewParams }) {
     this.iframes.push(iframe);
 
     iframe.onload = () => {
@@ -308,7 +309,7 @@ export default class WebPluginLoader {
         name: "viewLoaded",
         args: {
           command: options.command,
-          args: options.args,
+          params: options.params,
         },
       })
     };

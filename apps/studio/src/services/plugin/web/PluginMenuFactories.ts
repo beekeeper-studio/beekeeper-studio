@@ -9,30 +9,36 @@ import {
 } from "tabulator-tables";
 import { MenuFactories } from "./PluginMenuManager";
 import { AppEvent } from "@/common/AppEvent";
-import { PluginMenu } from "@/services/plugin/types";
+import {
+  ActiveRange,
+  CellMenuParams,
+  CellMenuTarget,
+  ColumnMenuParams,
+  ColumnMenuTarget,
+  CornerMenuParams,
+  CornerMenuTarget,
+  RowMenuParams,
+  RowMenuTarget,
+} from "@beekeeperstudio/plugin";
 
 type BigIntSerialized = number;
 
-function buildArgsForTableMenu(
+function buildParamsForTableMenu(
   component: CellComponent,
   componentType: "cell" | "corner"
-): PluginMenu.CellArgs;
-function buildArgsForTableMenu(
+): CellMenuParams | CornerMenuParams;
+function buildParamsForTableMenu(
   component: ColumnComponent,
   componentType: "column"
-): PluginMenu.ColumnArgs;
-function buildArgsForTableMenu(
+): ColumnMenuParams;
+function buildParamsForTableMenu(
   component: RowComponent,
   componentType: "row"
-): PluginMenu.RowArgs;
-function buildArgsForTableMenu(
+): ColumnMenuParams;
+function buildParamsForTableMenu(
   component: CellComponent | ColumnComponent | RowComponent,
   componentType: "cell" | "corner" | "column" | "row"
-):
-  | PluginMenu.CellArgs
-  | PluginMenu.ColumnArgs
-  | PluginMenu.RowArgs
-  | PluginMenu.CornerArgs {
+): CellMenuParams | ColumnMenuParams | RowMenuParams | CornerMenuParams {
   const ranges = component.getTable().getRanges();
   let range: RangeComponent;
 
@@ -63,7 +69,7 @@ function buildArgsForTableMenu(
       }) || ranges[0];
   }
 
-  const activeRange: PluginMenu.ActiveRange = {
+  const activeRange: ActiveRange = {
     rows: range.getRows().map((row) => row.getPosition() || 1),
     columns: range.getColumns().map((col) => col.getDefinition().title),
     value: range.getStructuredCells().map((row) => {
@@ -73,7 +79,7 @@ function buildArgsForTableMenu(
 
   if (componentType === "cell") {
     const cell = component as CellComponent;
-    const target: PluginMenu.CellTarget = {
+    const target: CellMenuTarget = {
       type: "cell",
       row: cell.getRow().getPosition() || 1,
       column: cell.getColumn().getDefinition().title,
@@ -84,7 +90,7 @@ function buildArgsForTableMenu(
 
   if (componentType === "column") {
     const column = component as ColumnComponent;
-    const target: PluginMenu.ColumnTarget = {
+    const target: ColumnMenuTarget = {
       type: "column",
       rows: range.getRows().map((row) => row.getPosition() || 1),
       column: column.getDefinition().title,
@@ -97,7 +103,7 @@ function buildArgsForTableMenu(
 
   if (componentType === "row") {
     const row = component as RowComponent;
-    const target: PluginMenu.RowTarget = {
+    const target: RowMenuTarget = {
       type: "row",
       row: row.getPosition() || 1,
       columns: row
@@ -109,7 +115,7 @@ function buildArgsForTableMenu(
   }
 
   if (componentType === "corner") {
-    const target: PluginMenu.CornerTarget = {
+    const target: CornerMenuTarget = {
       type: "corner",
       rows: activeRange.rows,
       columns: activeRange.columns,
@@ -198,7 +204,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: {
+                  params: {
                     text: payload.text,
                     selectedText: payload.selectedText,
                     selectedQuery: payload.selectedQuery,
@@ -228,7 +234,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item, "cell"),
+                  params: buildParamsForTableMenu(options.item, "cell"),
                 })
               );
             },
@@ -254,7 +260,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item, "column"),
+                  params: buildParamsForTableMenu(options.item, "column"),
                 })
               );
             },
@@ -280,7 +286,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item.getRow(), "row"),
+                  params: buildParamsForTableMenu(options.item.getRow(), "row"),
                 })
               );
             },
@@ -306,7 +312,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item, "corner"),
+                  params: buildParamsForTableMenu(options.item, "corner"),
                 })
               );
             },
@@ -332,7 +338,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item, "cell"),
+                  params: buildParamsForTableMenu(options.item, "cell"),
                 })
               );
             },
@@ -358,7 +364,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item, "column"),
+                  params: buildParamsForTableMenu(options.item, "column"),
                 })
               );
             },
@@ -384,7 +390,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item.getRow(), "row"),
+                  params: buildParamsForTableMenu(options.item.getRow(), "row"),
                 })
               );
             },
@@ -410,7 +416,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: buildArgsForTableMenu(options.item, "corner"),
+                  params: buildParamsForTableMenu(options.item, "corner"),
                 })
               );
             },
@@ -436,7 +442,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: {
+                  params: {
                     tab: context.store.serializeTab(options.item),
                   },
                 })
@@ -464,7 +470,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: {
+                  params: {
                     tab: context.store.serializeTab(options.item),
                   },
                 })
@@ -492,7 +498,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: {
+                  params: {
                     entity: {
                       type: "table",
                       schema: options.item.schema,
@@ -524,7 +530,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: {
+                  params: {
                     entity: {
                       type: "schema",
                       name: options.item,
@@ -555,7 +561,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: {
+                  params: {
                     entity: {
                       type: "routine",
                       schema: options.item.schema,
@@ -587,7 +593,7 @@ const pluginMenuFactories: MenuFactories = {
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
-                  args: {
+                  params: {
                     entity: {
                       type: options.item.entityType,
                       name: options.item.name,

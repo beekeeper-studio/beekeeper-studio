@@ -5,7 +5,7 @@ import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { JsonValue } from "@/types";
-import { PluginNotificationData } from "@beekeeperstudio/plugin";
+import { LoadViewParams, PluginNotificationData } from "@beekeeperstudio/plugin";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -97,7 +97,7 @@ export default class WebPluginManager {
   /** For plugins that use iframes, they need to be registered so that we can
    * communicate. Please call this BEFORE the iframe is loaded.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event} */
-  registerIframe(pluginId: string, iframe: HTMLIFrameElement, options: { command: string; args?: JsonValue }) {
+  registerIframe(pluginId: string, iframe: HTMLIFrameElement, options: { command: string; params?: LoadViewParams }) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);

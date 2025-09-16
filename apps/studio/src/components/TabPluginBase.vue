@@ -10,7 +10,7 @@
       :reload="reload"
       :on-request="handleRequest"
       :command="tab.context.command"
-      :args="tab.context.args"
+      :params="tab.context.params"
     />
   </div>
 </template>

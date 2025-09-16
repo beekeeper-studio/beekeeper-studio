@@ -60,7 +60,7 @@ export type PluginTabContext = {
   command?: string;
   /** Arguments to be passed to the plugin. Plugins cannot change this.
    * @since 5.4.0 */
-  args?: JsonValue;
+  params?: JsonValue;
 };
 
 export namespace TabTypeConfig {

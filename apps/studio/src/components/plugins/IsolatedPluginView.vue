@@ -9,7 +9,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { JsonValue } from "@/types";
+import { LoadViewParams } from "@beekeeperstudio/plugin";
 
 export default Vue.extend({
   name: "IsolatedPluginView",
@@ -23,7 +23,7 @@ export default Vue.extend({
       required: true,
     },
     command: String,
-    args: null as PropType<JsonValue>,
+    params: null as PropType<LoadViewParams>,
     url: {
       type: String,
       required: true,
@@ -86,7 +86,7 @@ export default Vue.extend({
       this.$plugin.registerIframe(
         this.pluginId,
         iframe,
-        { command: this.command, args: this.args }
+        { command: this.command, params: this.params }
       );
       this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
         if (args.source === iframe) {

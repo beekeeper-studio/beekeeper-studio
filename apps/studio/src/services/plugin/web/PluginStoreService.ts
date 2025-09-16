@@ -457,7 +457,7 @@ export default class PluginStoreService {
   buildPluginTabArgs(options: {
     manifest: Manifest;
     viewId: string;
-    args?: JsonValue;
+    params?: JsonValue;
     command: string;
   }): TransportOpenTabInit<PluginTabContext> {
     // FIXME(azmi): duplicated code from CoreTabs.vue
@@ -476,7 +476,7 @@ export default class PluginStoreService {
       context: {
         pluginId: options.manifest.id,
         pluginTabTypeId: options.viewId,
-        args: options.args,
+        params: options.params,
         command: options.command,
       },
     };
