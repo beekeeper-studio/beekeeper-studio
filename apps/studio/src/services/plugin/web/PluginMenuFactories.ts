@@ -1,9 +1,143 @@
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import type { DatabaseEntity, TableOrView } from "@/lib/db/models";
 import _ from "lodash";
-import { CellComponent } from "tabulator-tables";
+import {
+  CellComponent,
+  ColumnComponent,
+  RangeComponent,
+  RowComponent,
+} from "tabulator-tables";
 import { MenuFactories } from "./PluginMenuManager";
 import { AppEvent } from "@/common/AppEvent";
+import { PluginMenu } from "@/services/plugin/types";
+
+type BigIntSerialized = number;
+
+function buildArgsForTableMenu(
+  component: CellComponent,
+  componentType: "cell" | "corner"
+): PluginMenu.CellArgs;
+function buildArgsForTableMenu(
+  component: ColumnComponent,
+  componentType: "column"
+): PluginMenu.ColumnArgs;
+function buildArgsForTableMenu(
+  component: RowComponent,
+  componentType: "row"
+): PluginMenu.RowArgs;
+function buildArgsForTableMenu(
+  component: CellComponent | ColumnComponent | RowComponent,
+  componentType: "cell" | "corner" | "column" | "row"
+):
+  | PluginMenu.CellArgs
+  | PluginMenu.ColumnArgs
+  | PluginMenu.RowArgs
+  | PluginMenu.CornerArgs {
+  const ranges = component.getTable().getRanges();
+  let range: RangeComponent;
+
+  if (ranges.length === 0) {
+    throw new Error(
+      "Range not found. This should never happen. Please report this as a bug."
+    );
+  }
+
+  if (ranges.length === 1 || componentType === "corner") {
+    range = ranges[0];
+  } else {
+    range =
+      ranges.find((range) => {
+        if (componentType === "cell") {
+          return range._range
+            .getCells()
+            .find((cell) => cell === component._cell);
+        }
+        if (componentType === "row") {
+          return range._range.getRows().find((row) => row === component._row);
+        }
+        if (componentType === "column") {
+          return range._range
+            .getColumns()
+            .find((column) => column === component._column);
+        }
+      }) || ranges[0];
+  }
+
+  const activeRange: PluginMenu.ActiveRange = {
+    rows: range.getRows().map((row) => row.getPosition() || 1),
+    columns: range.getColumns().map((col) => col.getDefinition().title),
+    value: range.getStructuredCells().map((row) => {
+      return serializeArray(row.map((cell) => cell.getValue()));
+    }),
+  };
+
+  if (componentType === "cell") {
+    const cell = component as CellComponent;
+    const target: PluginMenu.CellTarget = {
+      type: "cell",
+      row: cell.getRow().getPosition() || 1,
+      column: cell.getColumn().getDefinition().title,
+      value: serializeBigInt(cell.getValue()),
+    };
+    return { target, activeRange };
+  }
+
+  if (componentType === "column") {
+    const column = component as ColumnComponent;
+    const target: PluginMenu.ColumnTarget = {
+      type: "column",
+      rows: range.getRows().map((row) => row.getPosition() || 1),
+      column: column.getDefinition().title,
+      value: range.getStructuredCells().map((row) => {
+        return serializeArray(row.map((cell) => cell.getValue()));
+      }),
+    };
+    return { target, activeRange };
+  }
+
+  if (componentType === "row") {
+    const row = component as RowComponent;
+    const target: PluginMenu.RowTarget = {
+      type: "row",
+      row: row.getPosition() || 1,
+      columns: row
+        .getCells()
+        .map((cell) => cell.getColumn().getDefinition().title),
+      value: row.getCells().map((cell) => serializeBigInt(cell.getValue())),
+    };
+    return { target, activeRange };
+  }
+
+  if (componentType === "corner") {
+    const target: PluginMenu.CornerTarget = {
+      type: "corner",
+      rows: activeRange.rows,
+      columns: activeRange.columns,
+      value: activeRange.value,
+    };
+    return { target, activeRange };
+  }
+
+  throw new Error(
+    `Unknown component type: ${componentType}. This should never happen. Please report this as a bug.`
+  );
+}
+
+function serializeBigInt(val: bigint): BigIntSerialized;
+function serializeBigInt<T>(val: T): T;
+function serializeBigInt(val: unknown): unknown {
+  if (typeof val === "bigint") {
+    return Number(val);
+  }
+  return val;
+}
+
+function serializeArray<T>(
+  arr: T[]
+): (T extends bigint ? BigIntSerialized : T)[];
+function serializeArray(arr: unknown[]): unknown[] {
+  return arr.map((item) => serializeBigInt(item));
+}
 
 const pluginMenuFactories: MenuFactories = {
   newTabDropdown: {
@@ -57,8 +191,7 @@ const pluginMenuFactories: MenuFactories = {
           context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
-            handler: (...args) => {
-              // FIXME send the args
+            handler: (_event, payload) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
@@ -66,9 +199,9 @@ const pluginMenuFactories: MenuFactories = {
                   viewId: menuItem.view,
                   command: menuItem.command,
                   args: {
-                    text: "[[TEXT]]",
-                    selectedText: "[[SELECTED_TEXT]]",
-                    selectedQuery: "[[SELECTED_QUERY]]",
+                    text: payload.text,
+                    selectedText: payload.selectedText,
+                    selectedQuery: payload.selectedQuery,
                   },
                 })
               );
@@ -89,13 +222,13 @@ const pluginMenuFactories: MenuFactories = {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item, "cell"),
                 })
               );
             },
@@ -107,21 +240,21 @@ const pluginMenuFactories: MenuFactories = {
   },
   "results.columnHeader.context": {
     create(context, menuItem) {
-      const menuId = "results.column-header";
+      const menuId = "results.columnHeader";
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
           context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
-            handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
+            handler: (options: { item: ColumnComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item, "column"),
                 })
               );
             },
@@ -133,7 +266,7 @@ const pluginMenuFactories: MenuFactories = {
   },
   "results.rowHeader.context": {
     create(context, menuItem) {
-      const menuId = "result-table.row-header";
+      const menuId = "results.rowHeader";
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
@@ -141,13 +274,13 @@ const pluginMenuFactories: MenuFactories = {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item.getRow(), "row"),
                 })
               );
             },
@@ -159,7 +292,7 @@ const pluginMenuFactories: MenuFactories = {
   },
   "results.corner.context": {
     create(context, menuItem) {
-      const menuId = "result-table.corner";
+      const menuId = "results.corner";
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
@@ -167,13 +300,13 @@ const pluginMenuFactories: MenuFactories = {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item, "corner"),
                 })
               );
             },
@@ -185,7 +318,7 @@ const pluginMenuFactories: MenuFactories = {
   },
   "tableTable.cell.context": {
     create(context, menuItem) {
-      const menuId = "table-table.cell";
+      const menuId = "tableTable.cell";
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
@@ -193,13 +326,13 @@ const pluginMenuFactories: MenuFactories = {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item, "cell"),
                 })
               );
             },
@@ -211,21 +344,21 @@ const pluginMenuFactories: MenuFactories = {
   },
   "tableTable.columnHeader.context": {
     create(context, menuItem) {
-      const menuId = "table-table.column-header";
+      const menuId = "tableTable.columnHeader";
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
           context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
-            handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
+            handler: (options: { item: ColumnComponent }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item, "column"),
                 })
               );
             },
@@ -237,7 +370,7 @@ const pluginMenuFactories: MenuFactories = {
   },
   "tableTable.rowHeader.context": {
     create(context, menuItem) {
-      const menuId = "table-table.row-header";
+      const menuId = "tableTable.rowHeader";
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
@@ -245,13 +378,13 @@ const pluginMenuFactories: MenuFactories = {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item.getRow(), "row"),
                 })
               );
             },
@@ -263,7 +396,7 @@ const pluginMenuFactories: MenuFactories = {
   },
   "tableTable.corner.context": {
     create(context, menuItem) {
-      const menuId = "table-table.corner";
+      const menuId = "tableTable.corner";
       const slug = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
@@ -271,13 +404,13 @@ const pluginMenuFactories: MenuFactories = {
             name: menuItem.name,
             slug,
             handler: (options: { item: CellComponent }) => {
-              // FIXME send the args
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabArgs({
                   manifest: context.manifest,
                   viewId: menuItem.view,
                   command: menuItem.command,
+                  args: buildArgsForTableMenu(options.item, "corner"),
                 })
               );
             },
