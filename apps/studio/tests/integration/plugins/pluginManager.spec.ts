@@ -55,7 +55,7 @@ describe("Basic Plugin Management", () => {
   beforeAll(async () => {
     await TestOrmConnection.connect();
     const runner = TestOrmConnection.connection.connection.createQueryRunner();
-    await migration.run(runner);
+    await migration.testRun(runner);
     await runner.release();
   });
 
