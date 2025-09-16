@@ -84,6 +84,7 @@
 <script>
 import TabIcon from './tab/TabIcon.vue'
 import { mapState } from 'vuex'
+import _ from 'lodash'
 
   export default {
   components: { TabIcon },
