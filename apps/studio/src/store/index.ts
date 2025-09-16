@@ -36,6 +36,7 @@ import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
+import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 
@@ -102,6 +103,7 @@ const store = new Vuex.Store<State>({
     imports: ImportStoreModule,
     backups: BackupModule,
     sidebar: SidebarModule,
+    popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
   },
   state: {
