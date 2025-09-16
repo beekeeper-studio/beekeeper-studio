@@ -272,6 +272,8 @@ export default class PluginStoreService {
     };
     const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
       label: options.menuItem.name,
+      command: options.menuItem.command,
+      args: options.menuItem.args,
     }
     this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
   }

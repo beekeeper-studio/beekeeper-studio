@@ -71,6 +71,10 @@ export namespace TabTypeConfig {
     menuItem?: {
       label: string;
       shortcut?: string;
+      /** For plugins */
+      command: string;
+      /** For plugins */
+      args?: JsonValue;
     };
   }
 
