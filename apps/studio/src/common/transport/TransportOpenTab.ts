@@ -68,7 +68,7 @@ export namespace TabTypeConfig {
     type: TabType;
     name: string;
     /** Used for the dropdown menu next to the "new tab" icon. */
-    menuItem: {
+    menuItem?: {
       label: string;
       shortcut?: string;
     };

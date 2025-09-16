@@ -161,13 +161,16 @@ export default Vue.extend({
       return this.$plugin.pluginOf(this.tab.context.pluginId);
     },
     url() {
-      const manifest = this.$plugin.manifestOf(this.tab.context.pluginId);
-      const tabType =
-        manifest.capabilities.views.find?.(
-          (v) => v.id === this.tab.context.pluginTabTypeId
-        ) || manifest.capabilities.views.tabTypes?.find?.(
-            (t) => t.id === this.tab.context.pluginTabTypeId
-          );
+      const plugin = this.$plugin.pluginOf(this.tab.context.pluginId);
+      let tabType = plugin.manifest.capabilities.views.find?.(
+        (v) => v.id === this.tab.context.pluginTabTypeId
+      );
+      if (!tabType) {
+        // Using the old plugin shell API
+        tabType = plugin.manifest.capabilities.views.tabTypes?.find?.(
+          (t) => t.id === this.tab.context.pluginTabTypeId
+        );
+      }
       return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
     },
     shouldInitialize() {

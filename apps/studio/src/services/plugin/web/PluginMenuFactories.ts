@@ -10,13 +10,13 @@ const pluginMenuFactories: MenuFactories = {
     create(context, menuItem) {
       return {
         add() {
-          context.store.addTabTypeConfig({
+          context.store.setTabDropdownItem({
             manifest: context.manifest,
             menuItem,
           });
         },
         remove() {
-          context.store.removeTabTypeConfig({
+          context.store.unsetTabDropdownItem({
             manifest: context.manifest,
             menuItem,
           });

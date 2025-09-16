@@ -80,6 +80,8 @@ export default class WebPluginLoader {
         });
       });
     } else {
+      // Views are always embedded in tabs (for now).
+      this.pluginStore.addTabTypeConfigs(this.manifest);
       this.menu.register();
     }
 

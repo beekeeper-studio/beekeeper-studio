@@ -42,17 +42,19 @@
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <x-menuitem
-              v-for="(config, index) in tabTypeConfigs"
-              :key="index"
-              @click.prevent="createTab(config)"
-            >
-              <x-label>
-                <i class="material-icons">{{ config.icon }}</i>
-                {{ config.menuItem.label }}
-              </x-label>
-              <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
-            </x-menuitem>
+            <template v-for="(config, index) in tabTypeConfigs">
+              <x-menuitem
+                v-if="config.menuItem"
+                :key="index"
+                @click.prevent="createTab(config)"
+              >
+                <x-label>
+                  <i class="material-icons">{{ config.icon }}</i>
+                  {{ config.menuItem.label }}
+                </x-label>
+                <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
+              </x-menuitem>
+            </template>
           </x-menu>
         </x-button>
       </span>

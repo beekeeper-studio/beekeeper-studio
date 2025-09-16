@@ -5,7 +5,6 @@ import type {
   TabTypeConfig,
   TransportOpenTab,
   TransportOpenTabInit,
-  TransportPluginShellTab,
 } from "@/common/transport/TransportOpenTab";
 import {
   GetAllTabsResponse,
@@ -24,6 +23,7 @@ import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
   Manifest,
   PluginMenuItem,
+  PluginView,
   TabType,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
@@ -204,7 +204,7 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
-  /** @deprecated use `addTabTypeConfig` instead */
+  /** @deprecated use `addTabTypeConfigs` or `setTabDropdownItem` instead */
   addTabTypeConfigV0(params: {
     pluginId: string;
     pluginTabTypeId: string;
@@ -223,40 +223,68 @@ export default class PluginStoreService {
     this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  /** @deprecated use `removeTabTypeConfig` instead */
+  /** @deprecated use `removeTabTypeConfigs` or `unsetTabDropdownItem` instead */
   removeTabTypeConfigV0(
     identifier: TabTypeConfig.PluginRef
   ): void {
     this.store.commit("tabs/removeTabTypeConfig", identifier);
   }
 
-  addTabTypeConfig(options: {
-    menuItem: PluginMenuItem;
-    manifest: Manifest;
-  }): void {
-    const id: TabTypeConfig.PluginRef = {
-      pluginId: options.manifest.id,
-      pluginTabTypeId: options.menuItem.view,
-    };
-    const config: TabTypeConfig.PluginConfig = {
-      ...id,
-      type: "plugin-shell", // FIXME(azmi): We only support shell for now
-      name: options.manifest.name,
-      menuItem: { label: options.menuItem.name },
-      icon: options.manifest.icon,
-    };
-    this.store.commit("tabs/addTabTypeConfig", config);
+  /** Register plugin views as tabs */
+  addTabTypeConfigs(manifest: Manifest): void {
+    const views = manifest.capabilities.views as PluginView[];
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      const type: PluginTabType = view.type.includes("shell")
+        ? "plugin-shell"
+        : "plugin-base";
+      const config: TabTypeConfig.PluginConfig = {
+        ...ref,
+        type,
+        name: manifest.name,
+        icon: manifest.icon,
+      };
+      this.store.commit("tabs/addTabTypeConfig", config);
+    });
   }
 
-  removeTabTypeConfig(options: {
+  removeTabTypeConfigs(manifest: Manifest): void {
+    const views = manifest.capabilities.views as PluginView[];
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      this.store.commit("tabs/removeTabTypeConfig", ref);
+    })
+  }
+
+  setTabDropdownItem(options: {
     menuItem: PluginMenuItem;
     manifest: Manifest;
   }): void {
-    const id: TabTypeConfig.PluginRef = {
+    const ref: TabTypeConfig.PluginRef = {
       pluginId: options.manifest.id,
       pluginTabTypeId: options.menuItem.view,
     };
-    this.store.commit("tabs/removeTabTypeConfig", id);
+    const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
+      label: options.menuItem.name,
+    }
+    this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
+  }
+
+  unsetTabDropdownItem(options: {
+    menuItem: PluginMenuItem;
+    manifest: Manifest;
+  }): void {
+    const ref: TabTypeConfig.PluginRef = {
+      pluginId: options.manifest.id,
+      pluginTabTypeId: options.menuItem.view,
+    };
+    this.store.commit("tabs/unsetMenuItem", ref);
   }
 
   getTables(): GetTablesResponse {
