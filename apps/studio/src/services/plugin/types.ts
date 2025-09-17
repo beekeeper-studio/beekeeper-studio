@@ -84,7 +84,9 @@ type DeprecatedViews = {
   }[];
 }
 
-export interface Manifest {
+export type Manifest = ManifestV1 | ManifestV2;
+
+export type ManifestV1 = {
   id: string;
   name: string;
   author:
@@ -95,18 +97,28 @@ export interface Manifest {
   };
   description: string;
   version: string;
+  manifestVersion?: 0;
   minAppVersion?: string;
   /** Material UI icon name. https://fonts.google.com/icons?icon.set=Material+Icons */
   icon?: string;
   /** Provide all extension points here. */
   capabilities: {
     /** The list of views provided by the plugin. */
-    views: PluginView[] | DeprecatedViews;
+    views: DeprecatedViews;
     /** The list of menu items provided by the plugin. */
     menu: PluginMenuItem[];
   };
   /** The path to the plugin's root directory. This is helpful when you use a bundler to build the project to a `dist/` directory for example. */
   pluginEntryDir?: string;
+}
+
+export type ManifestV2 = ManifestV1 & {
+  manifestVersion: 1;
+  /** Provide all extension points here. */
+  capabilities: ManifestV1 & {
+    /** The list of views provided by the plugin. */
+    views: PluginView[];
+  };
   /** @todo not yet implemented. This is a list of settings that can be configured by config files. */
   settings?: {
     id: string;
