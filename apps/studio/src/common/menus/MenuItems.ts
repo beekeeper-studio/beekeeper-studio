@@ -97,6 +97,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
     },
+    restart: {
+      id: 'restart',
+      label: "Restart Beekeeper",
+      click: actionHandler.restart
+    },
     checkForUpdate: {
       id: 'updatecheck',
       label: 'Check for Software Updates',

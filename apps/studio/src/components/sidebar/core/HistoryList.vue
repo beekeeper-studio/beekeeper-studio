@@ -23,6 +23,10 @@
             </div>
           </div>
         </div>
+        <div class="show-all-history-container" title="By default, only the history executed on the current connection are shown.">
+          <input type="checkbox" id="show-all-history-checkbox" v-model="showAllHistory"/>
+          <label for="show-all-history-checkbox" class="show-all-history-text">Show all</label>
+        </div>
         <error-alert
           v-if="error"
           :error="error"
@@ -30,7 +34,7 @@
         />
         <sidebar-loading v-else-if="loading" />
         <div
-          v-else-if="!history.length"
+          v-else-if="!currentHistory.length"
           class="empty"
         >
           No recent queries
@@ -42,7 +46,7 @@
           <div
             class="list-item"
             @contextmenu.prevent.stop="openContextMenu($event, item)"
-            v-for="item in history"
+            v-for="item in currentHistory"
             :key="item.id"
           >
             <a
@@ -83,14 +87,23 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
       return {
         checkedHistoryQueries: [],
         timeAgo: new TimeAgo('en-US'),
-        selected: null
+        selected: null,
+        showAllHistory: false
       }
     },
     computed: {
+      ...mapState(['usedConfig']),
       ...mapState('data/usedQueries', { 'history': 'items', 'loading': 'loading', 'error': 'error'},),
       removeTitle() {
         return `Remove ${this.checkedHistoryQueries.length} saved history queries`;
-      }
+      },
+      currentHistory(){
+        if(this.showAllHistory){
+          return this.history;
+        } else {
+          return this.history.filter(item => item.connectionId === this.usedConfig?.id);
+        }
+      },
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)
@@ -100,7 +113,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
     },
     methods: {
       formatTimeAgo(item) {
-        const dt = _.isDate(item.createdAt) ? item.createdAt : new Date(item.createdAt * 1000)
+        const dt = _.isDate(item.updatedAt) ? item.updatedAt : new Date(item.updatedAt * 1000)
         return this.timeAgo.format(dt)
       },
       maybeUnselect(e) {

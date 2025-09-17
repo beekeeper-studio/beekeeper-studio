@@ -3,62 +3,198 @@ declare interface IBksConfig {
     db: {
         bigquery: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: string[];
+                numbered: any[];
+                positional: boolean;
+                quoted: string[];
+            };
         };
         cassandra: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         clickhouse: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         cockroachdb: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
             idleTimeout: number;
             maxClient: number;
+            paramTypes: {
+                named: any[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        default: {
+            allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: string[];
+                numbered: string[];
+                positional: boolean;
+                quoted: string[];
+            };
         };
         duckdb: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         firebird: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        libsql: {
+            allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         mariadb: {
             allowSkipToLastPage: boolean;
             connectTimeout: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         mongodb: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         mysql: {
             allowSkipToLastPage: boolean;
             connectTimeout: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         oracle: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         postgres: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
             idleTimeout: number;
             maxClient: number;
+            paramTypes: {
+                named: any[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        redis: {
+            allowSkipToLastPage: boolean;
         };
         redshift: {
             allowSkipToLastPage: boolean;
             connectionTimeout: number;
             idleTimeout: number;
             maxClient: number;
+            paramTypes: {
+                named: any[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         sqlite: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: string[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         sqlserver: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: string[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        surrealdb: {
+            allowSkipToLastPage: boolean;
+            connectionTimeout: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         tidb: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        trino: {
+            allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
     };
     general: {
@@ -123,6 +259,11 @@ declare interface IBksConfig {
             nextPage: string;
             openEditorModal: string;
             previousPage: string;
+        };
+    };
+    plugins: {
+        "bks-ai-shell": {
+            enabled: boolean;
         };
     };
     security: {
