@@ -1,8 +1,11 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginContext, PluginNotificationData } from "../types";
+import { Manifest, OnViewRequestListener, PluginContext } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { JsonValue } from "@/types";
+import { LoadViewParams, PluginNotificationData } from "@beekeeperstudio/plugin";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -15,7 +18,8 @@ export default class WebPluginManager {
 
   constructor(
     private utilityConnection: UtilityConnection,
-    public readonly pluginStore: PluginStoreService
+    public readonly pluginStore: PluginStoreService,
+    public readonly appVersion: string
   ) {}
 
   async initialize() {
@@ -93,12 +97,12 @@ export default class WebPluginManager {
   /** For plugins that use iframes, they need to be registered so that we can
    * communicate. Please call this BEFORE the iframe is loaded.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event} */
-  registerIframe(pluginId: string, iframe: HTMLIFrameElement) {
+  registerIframe(pluginId: string, iframe: HTMLIFrameElement, options: { command: string; params?: LoadViewParams }) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.registerIframe(iframe);
+    loader.registerIframe(iframe, options);
   }
 
   unregisterIframe(pluginId: string, iframe: HTMLIFrameElement) {
@@ -150,6 +154,27 @@ export default class WebPluginManager {
     return loader.addListener(listener);
   }
 
+  resolveContextMenuOptions(
+    contextId: "tab-header",
+    options: ContextOption[]
+  ) {
+    const extraOptions = [];
+
+    this.loaders.forEach((loader) => {
+      extraOptions.push(...loader.menu.getContextMenu(contextId));
+    });
+
+    if (extraOptions.length === 0) {
+      return options;
+    }
+
+    return [
+      ...options,
+      { type: "divider" },
+      ...extraOptions,
+    ]
+  }
+
   /** Subscribe to when a plugin is ready to be used. */
   onReady(pluginId: string, fn: Function) {
     const loader = this.loaders.get(pluginId);
@@ -174,7 +199,13 @@ export default class WebPluginManager {
       return this.loaders.get(manifest.id);
     }
 
-    const loader = new WebPluginLoader(manifest, this.pluginStore, this.utilityConnection);
+    const loader = new WebPluginLoader({
+      manifest,
+      store: this.pluginStore,
+      utility: this.utilityConnection,
+      log: rawLog.scope(`Plugin:${manifest.id}`),
+      appVersion: this.appVersion,
+    });
     await loader.load();
     this.loaders.set(manifest.id, loader);
     return loader;

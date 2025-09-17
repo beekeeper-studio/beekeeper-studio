@@ -1,16 +1,20 @@
 import {
   Manifest,
   OnViewRequestListener,
+  WebPluginContext,
 } from "../types";
 import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
+  GetAppInfoResponse,
+  LoadViewParams,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import { PluginMenuManager } from "./PluginMenuManager";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -27,16 +31,28 @@ export default class WebPluginLoader {
   private onReadyListeners: Function[] = [];
   private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
+
+  /** @deprecated use `context.log` instead */
   private log: ReturnType<typeof rawLog.scope>;
+  /** @deprecated use `context.manifest` instead */
+  public readonly manifest: Manifest;
+  /** @deprecated use `context.store` instead */
+  private pluginStore: PluginStoreService;
+  /** @deprecated use `context.utility` instead */
+  private utilityConnection: UtilityConnection;
   private listening = false;
 
-  constructor(
-    public readonly manifest: Manifest,
-    private pluginStore: PluginStoreService,
-    private utilityConnection: UtilityConnection
-  ) {
+  menu: PluginMenuManager;
+
+  constructor(public readonly context: WebPluginContext) {
+    this.manifest = context.manifest;
+    this.pluginStore = context.store;
+    this.utilityConnection = context.utility;
+    this.log = context.log;
+
+    this.menu = new PluginMenuManager(context);
+
     this.handleMessage = this.handleMessage.bind(this);
-    this.log = rawLog.scope(`WebPluginLoader:${manifest.id}`);
   }
 
   /** Starts the plugin */
@@ -49,23 +65,26 @@ export default class WebPluginLoader {
 
     this.log.info("Loading plugin", this.manifest);
 
-    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
-      this.pluginStore.addSidebarTab({
-        id: sidebar.id,
-        label: sidebar.name,
-        url: `plugin://${this.manifest.id}/${this.getEntry(sidebar.entry)}`,
-      });
-    });
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.tabTypes?.forEach((tabType) => {
-      this.pluginStore.addTabTypeConfig({
-        pluginId: this.manifest.id,
-        pluginTabTypeId: tabType.id,
-        name: tabType.name,
-        kind: tabType.kind,
-        icon: this.manifest.icon,
+    // Backward compatibility: Early version of AI Shell.
+    // TODO(azmi): Remove this in the future
+    if (!_.isArray(this.manifest.capabilities.views)) {
+      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
+        this.pluginStore.addTabTypeConfigV0({
+          pluginId: this.manifest.id,
+          pluginTabTypeId: tabType.id,
+          name: tabType.name,
+          kind: tabType.kind,
+          icon: this.manifest.icon,
+        });
       });
-    });
+    } else {
+      // Views are always embedded in tabs (for now).
+      this.pluginStore.addTabTypeConfigs(this.manifest);
+      this.menu.register();
+    }
 
     if (!this.listening) {
       this.registerEvents();
@@ -136,6 +155,12 @@ export default class WebPluginLoader {
             request.args.table
           );
           break;
+        case "getAppInfo":
+          response.result = {
+            theme: this.pluginStore.getTheme(),
+            version: this.context.appVersion,
+          } as GetAppInfoResponse['result'];
+          break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
@@ -158,6 +183,11 @@ export default class WebPluginLoader {
         }
         case "clipboard.readText":
           response.result = window.main.readTextFromClipboard()
+          break;
+        case "checkForUpdate":
+          response.result = await this.context.utility.send("plugin/checkForUpdates", {
+            id: this.context.manifest.id,
+          });
           break;
 
         // ======== WRITE ACTIONS ===========
@@ -271,13 +301,17 @@ export default class WebPluginLoader {
     }
   }
 
-  registerIframe(iframe: HTMLIFrameElement) {
+  registerIframe(iframe: HTMLIFrameElement, options: { command: string; params?: LoadViewParams }) {
     this.iframes.push(iframe);
+
     iframe.onload = () => {
       this.postMessage(iframe, {
-        name: "themeChanged",
-        args: this.pluginStore.getTheme(),
-      });
+        name: "viewLoaded",
+        args: {
+          command: options.command,
+          params: options.params,
+        },
+      })
     };
   }
 
@@ -311,16 +345,21 @@ export default class WebPluginLoader {
   }
 
   async unload() {
-    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
-      this.pluginStore.removeSidebarTab(sidebar.id);
-    });
+    window.removeEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.tabTypes?.forEach((tab) => {
-      this.pluginStore.removeTabTypeConfig({
-        pluginId: this.manifest.id,
-        pluginTabTypeId: tab.id,
+    // Backward compatibility: Early version of AI Shell.
+    // TODO(azmi): Remove this in the future
+    if (!_.isArray(this.manifest.capabilities.views)) {
+      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
+        this.pluginStore.removeTabTypeConfigV0({
+          pluginId: this.manifest.id,
+          pluginTabTypeId: tabType.id,
+        });
       });
-    });
+    } else {
+      this.pluginStore.removeTabTypeConfigs(this.manifest);
+      this.menu.unregister();
+    }
   }
 
   addListener(listener: OnViewRequestListener) {

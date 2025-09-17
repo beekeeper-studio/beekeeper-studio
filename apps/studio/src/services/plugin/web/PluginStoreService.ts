@@ -1,16 +1,16 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
 import type {
+  PluginTabContext,
   TabTypeConfig,
   TransportOpenTab,
+  TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
 import {
   GetAllTabsResponse,
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
-  OpenQueryTabRequest,
-  OpenTabRequest,
   RunQueryResponse,
   TabResponse,
   ThemeChangedNotification,
@@ -20,15 +20,23 @@ import { AppEvent } from "@/common/AppEvent";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
-import { TabType } from "../types";
+import {
+  Manifest,
+  PluginMenuItem,
+  PluginView,
+  TabType,
+} from "../types";
+import { ExternalMenuItem, JsonValue } from "@/types";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
 
 /**
- * Service that provides an interface to the plugin Vuex module
+ * An interface that bridges plugin system and Vuex. It also stores some states
+ * for context menu because they don't exist in Vuex.
  */
 export default class PluginStoreService {
   constructor(
     private store: Store<RootState>,
-    private appEventBus: {
+    public appEventBus: {
       emit: (event: AppEvent, ...args: any) => void;
       on: (event: AppEvent, listener: (...args: any) => void) => void;
       off: (event: AppEvent, listener: (...args: any) => void) => void;
@@ -64,6 +72,9 @@ export default class PluginStoreService {
       "--input-highlight",
 
       "--query-editor-bg",
+
+      "--scrollbar-track",
+      "--scrollbar-thumb",
 
       // BksTextEditor
       "--bks-text-editor-activeline-bg-color",
@@ -193,7 +204,8 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
-  addTabTypeConfig(params: {
+  /** @deprecated use `addTabTypeConfigs` or `setTabDropdownItem` instead */
+  addTabTypeConfigV0(params: {
     pluginId: string;
     pluginTabTypeId: string;
     name: string;
@@ -211,8 +223,69 @@ export default class PluginStoreService {
     this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  removeTabTypeConfig(identifier: TabTypeConfig.PluginRef): void {
+  /** @deprecated use `removeTabTypeConfigs` or `unsetTabDropdownItem` instead */
+  removeTabTypeConfigV0(
+    identifier: TabTypeConfig.PluginRef
+  ): void {
     this.store.commit("tabs/removeTabTypeConfig", identifier);
+  }
+
+  /** Register plugin views as tabs */
+  addTabTypeConfigs(manifest: Manifest): void {
+    const views = manifest.capabilities.views as PluginView[];
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      const type: PluginTabType = view.type.includes("shell")
+        ? "plugin-shell"
+        : "plugin-base";
+      const config: TabTypeConfig.PluginConfig = {
+        ...ref,
+        type,
+        name: manifest.name,
+        icon: manifest.icon,
+      };
+      this.store.commit("tabs/addTabTypeConfig", config);
+    });
+  }
+
+  removeTabTypeConfigs(manifest: Manifest): void {
+    const views = manifest.capabilities.views as PluginView[];
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      this.store.commit("tabs/removeTabTypeConfig", ref);
+    })
+  }
+
+  setTabDropdownItem(options: {
+    menuItem: PluginMenuItem;
+    manifest: Manifest;
+  }): void {
+    const ref: TabTypeConfig.PluginRef = {
+      pluginId: options.manifest.id,
+      pluginTabTypeId: options.menuItem.view,
+    };
+    const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
+      label: options.menuItem.name,
+      command: options.menuItem.command,
+    }
+    this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
+  }
+
+  unsetTabDropdownItem(options: {
+    menuItem: PluginMenuItem;
+    manifest: Manifest;
+  }): void {
+    const ref: TabTypeConfig.PluginRef = {
+      pluginId: options.manifest.id,
+      pluginTabTypeId: options.menuItem.view,
+    };
+    this.store.commit("tabs/unsetMenuItem", ref);
   }
 
   getTables(): GetTablesResponse {
@@ -262,6 +335,7 @@ export default class PluginStoreService {
   getConnectionInfo(): GetConnectionInfoResponse {
     return {
       connectionType: this.store.state.connectionType,
+      databaseType: this.store.state.connectionType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
@@ -282,7 +356,7 @@ export default class PluginStoreService {
     return this.store.state.tabs.tabs.map((tab) => this.serializeTab(tab));
   }
 
-  private serializeTab(tab: TransportOpenTab): TabResponse {
+  serializeTab(tab: TransportOpenTab): TabResponse {
     if (tab.tabType === "query") {
       return {
         type: "query",
@@ -361,5 +435,49 @@ export default class PluginStoreService {
     }
 
     throw new Error(`Unsupported tab type: ${options.type}`);
+  }
+
+  addPopupMenuItem(menuId: string, item: ContextOption) {
+    this.store.commit("popupMenu/add", { menuId, item });
+  }
+
+  removePopupMenuItem(menuId: string, slug: string) {
+    this.store.commit("popupMenu/remove", { menuId, slug });
+  }
+
+  addMenuBarItem(item: ExternalMenuItem<PluginTabContext>) {
+    this.store.commit("menuBar/add", item);
+  }
+
+  removeMenuBarItem(id: string) {
+    this.store.commit("menuBar/remove", id);
+  }
+
+  buildPluginTabInit(options: {
+    manifest: Manifest;
+    viewId: string;
+    params?: JsonValue;
+    command: string;
+  }): TransportOpenTabInit<PluginTabContext> {
+    // FIXME(azmi): duplicated code from CoreTabs.vue
+    const tabItems = this.store.getters["tabs/sortedTabs"];
+    let title = options.manifest.name;
+    let tNum = 0;
+    do {
+      tNum = tNum + 1;
+      title = `${options.manifest.name} #${tNum}`;
+    } while (tabItems.filter((t) => t.title === title).length > 0);
+
+    return {
+      tabType: "plugin-shell", // FIXME(azmi): We only support shell for now
+      title: options.manifest.name,
+      unsavedChanges: false,
+      context: {
+        pluginId: options.manifest.id,
+        pluginTabTypeId: options.viewId,
+        params: options.params,
+        command: options.command,
+      },
+    };
   }
 }
