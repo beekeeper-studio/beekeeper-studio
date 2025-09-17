@@ -101,10 +101,7 @@ export default class WebPluginLoader {
     const view = this.viewInstances.find(
       ({ iframe }) => iframe.contentWindow === event.source
     );
-    if (!view) {
-      return;
-    }
-    const source = view.iframe;
+    const source = view?.iframe;
 
     // Check if the message is from our iframe
     if (source) {
