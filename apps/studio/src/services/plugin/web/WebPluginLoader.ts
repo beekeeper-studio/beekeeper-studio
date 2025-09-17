@@ -1,16 +1,20 @@
 import {
   Manifest,
   OnViewRequestListener,
+  WebPluginContext,
 } from "../types";
 import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
+  GetAppInfoResponse,
+  LoadViewParams,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import { PluginMenuManager } from "./PluginMenuManager";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -24,17 +28,31 @@ windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
   private iframes: HTMLIFrameElement[] = [];
+  private onReadyListeners: Function[] = [];
+  private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
+
+  /** @deprecated use `context.log` instead */
   private log: ReturnType<typeof rawLog.scope>;
+  /** @deprecated use `context.manifest` instead */
+  public readonly manifest: Manifest;
+  /** @deprecated use `context.store` instead */
+  private pluginStore: PluginStoreService;
+  /** @deprecated use `context.utility` instead */
+  private utilityConnection: UtilityConnection;
+  private listening = false;
 
+  menu: PluginMenuManager;
 
-  constructor(
-    public readonly manifest: Manifest,
-    private pluginStore: PluginStoreService,
-    private utilityConnection: UtilityConnection
-  ) {
+  constructor(public readonly context: WebPluginContext) {
+    this.manifest = context.manifest;
+    this.pluginStore = context.store;
+    this.utilityConnection = context.utility;
+    this.log = context.log;
+
+    this.menu = new PluginMenuManager(context);
+
     this.handleMessage = this.handleMessage.bind(this);
-    this.log = rawLog.scope(`WebPluginLoader:${manifest.id}`);
   }
 
   /** Starts the plugin */
@@ -50,23 +68,28 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
-      this.pluginStore.addSidebarTab({
-        id: sidebar.id,
-        label: sidebar.name,
-        url: `plugin://${this.manifest.id}/${this.getEntry(sidebar.entry)}`,
+    // Backward compatibility: Early version of AI Shell.
+    // TODO(azmi): Remove this in the future
+    if (!_.isArray(this.manifest.capabilities.views)) {
+      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
+        this.pluginStore.addTabTypeConfigV0({
+          pluginId: this.manifest.id,
+          pluginTabTypeId: tabType.id,
+          name: tabType.name,
+          kind: tabType.kind,
+          icon: this.manifest.icon,
+        });
       });
-    });
+    } else {
+      // Views are always embedded in tabs (for now).
+      this.pluginStore.addTabTypeConfigs(this.manifest);
+      this.menu.register();
+    }
 
-    this.manifest.capabilities.views?.tabTypes?.forEach((tabType) => {
-      this.pluginStore.addTabTypeConfig({
-        pluginId: this.manifest.id,
-        pluginTabTypeId: tabType.id,
-        name: tabType.name,
-        kind: tabType.kind,
-        icon: this.manifest.icon,
-      });
-    });
+    if (!this.listening) {
+      this.registerEvents();
+      this.onReadyListeners.forEach((fn) => fn());
+    }
   }
 
   private handleMessage(event: MessageEvent) {
@@ -86,7 +109,7 @@ export default class WebPluginLoader {
           source
         );
       } else {
-        this.handleViewNotification({
+        this.handleViewNotification(source, {
           name: event.data.name,
           args: event.data.args,
         });
@@ -132,6 +155,12 @@ export default class WebPluginLoader {
             request.args.table
           );
           break;
+        case "getAppInfo":
+          response.result = {
+            theme: this.pluginStore.getTheme(),
+            version: this.context.appVersion,
+          } as GetAppInfoResponse['result'];
+          break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
@@ -154,6 +183,11 @@ export default class WebPluginLoader {
         }
         case "clipboard.readText":
           response.result = window.main.readTextFromClipboard()
+          break;
+        case "checkForUpdate":
+          response.result = await this.context.utility.send("plugin/checkForUpdates", {
+            id: this.context.manifest.id,
+          });
           break;
 
         // ======== WRITE ACTIONS ===========
@@ -195,6 +229,9 @@ export default class WebPluginLoader {
           // FIXME maybe we should ask user permission first before opening?
           window.main.openExternally(request.args.link);
           break;
+        case "openTab":
+          this.pluginStore.openTab(request.args);
+          break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);
@@ -207,14 +244,17 @@ export default class WebPluginLoader {
       response.error = e;
     }
 
-    this.postMessage(response);
+    this.postMessage(source, response);
 
     afterCallbacks.forEach((callback) => {
       callback(response);
     });
   }
 
-  private async handleViewNotification(notification: PluginNotificationData) {
+  private async handleViewNotification(
+    source: HTMLIFrameElement,
+    notification: PluginNotificationData
+  ) {
     switch (notification.name) {
       case "windowEvent": {
         const windowEventClass = windowEventMap.get(
@@ -241,19 +281,37 @@ export default class WebPluginLoader {
         this.log.error(`Received plugin error: ${notification.args.message}`, notification.args);
         break;
       }
+      case "broadcast": {
+        this.iframes.forEach((iframe) => {
+          if (iframe === source) {
+            return;
+          }
+          this.postMessage(iframe, {
+            name: "broadcast",
+            args: {
+              message: notification.args.message,
+            },
+          });
+        });
+        break;
+      }
 
       default:
         this.log.warn(`Unknown notification: ${notification.name}`);
     }
   }
 
-  registerIframe(iframe: HTMLIFrameElement) {
+  registerIframe(iframe: HTMLIFrameElement, options: { command: string; params?: LoadViewParams }) {
     this.iframes.push(iframe);
+
     iframe.onload = () => {
-      this.postMessage({
-        name: "themeChanged",
-        args: this.pluginStore.getTheme(),
-      });
+      this.postMessage(iframe, {
+        name: "viewLoaded",
+        args: {
+          command: options.command,
+          params: options.params,
+        },
+      })
     };
   }
 
@@ -261,13 +319,17 @@ export default class WebPluginLoader {
     this.iframes = _.without(this.iframes, iframe);
   }
 
-  postMessage(data: PluginNotificationData | PluginResponseData) {
+  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
     if (!this.iframes) {
       this.log.warn("Cannot post message, iframe not registered.");
       return;
     }
+    iframe.contentWindow.postMessage(data, "*");
+  }
+
+  broadcast(data: PluginNotificationData) {
     this.iframes.forEach((iframe) => {
-      iframe.contentWindow.postMessage(data, "*");
+      this.postMessage(iframe, data);
     });
   }
 
@@ -285,16 +347,19 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
-      this.pluginStore.removeSidebarTab(sidebar.id);
-    });
-
-    this.manifest.capabilities.views?.tabTypes?.forEach((tab) => {
-      this.pluginStore.removeTabTypeConfig({
-        pluginId: this.manifest.id,
-        pluginTabTypeId: tab.id,
+    // Backward compatibility: Early version of AI Shell.
+    // TODO(azmi): Remove this in the future
+    if (!_.isArray(this.manifest.capabilities.views)) {
+      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
+        this.pluginStore.removeTabTypeConfigV0({
+          pluginId: this.manifest.id,
+          pluginTabTypeId: tabType.id,
+        });
       });
-    });
+    } else {
+      this.pluginStore.removeTabTypeConfigs(this.manifest);
+      this.menu.unregister();
+    }
   }
 
   addListener(listener: OnViewRequestListener) {
@@ -307,5 +372,43 @@ export default class WebPluginLoader {
   checkPermission(data: PluginRequestData) {
     // do nothing on purpose
     // if not permitted, throw error
+  }
+
+  /** Warn: please dispose only when the plugin is not used anymore, like
+   * after uninstalling. */
+  dispose() {
+    this.unregisterEvents();
+    this.onDisposeListeners.forEach((fn) => fn());
+  }
+
+  private registerEvents() {
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
+    this.listening = true;
+  }
+
+  private unregisterEvents() {
+    window.removeEventListener("message", this.handleMessage);
+    this.listening = false;
+  }
+
+  /** Called when the plugin is ready to be used. If the plugin uses iframes,
+   * this should be called before mounting the iframes. */
+  onReady(fn: Function) {
+    if (this.listening) {
+      fn();
+    }
+    this.onReadyListeners.push(fn);
+    return () => {
+      this.onReadyListeners = _.without(this.onReadyListeners, fn);
+    }
+  }
+
+  /** Called when the plugin is disposed. */
+  onDispose(fn: Function) {
+    this.onDisposeListeners.push(fn);
+    return () => {
+      this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
+    }
   }
 }

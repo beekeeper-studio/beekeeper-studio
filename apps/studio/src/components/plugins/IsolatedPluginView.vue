@@ -8,7 +8,8 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType } from "vue";
+import { LoadViewParams } from "@beekeeperstudio/plugin";
 
 export default Vue.extend({
   name: "IsolatedPluginView",
@@ -21,6 +22,8 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    command: String,
+    params: null as PropType<LoadViewParams>,
     url: {
       type: String,
       required: true,
@@ -31,9 +34,12 @@ export default Vue.extend({
   data() {
     return {
       loaded: false,
+      mounted: false,
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
       unsubscribe: null,
+      unsubscribeOnReady: null,
+      unsubscribeOnDispose: null,
       iframe: null,
     };
   },
@@ -42,18 +48,22 @@ export default Vue.extend({
       // FIXME move this somewhere
       return `${this.url}?timestamp=${this.timestamp}`;
     },
-    showIframe() {
-      return this.visible || this.loaded;
+    shouldMountIframe() {
+      // If it's already mounted, do not unmount it unless it's not loaded
+      if (this.mounted) {
+        return this.loaded;
+      }
+      return this.visible && this.loaded;
     },
   },
   watch: {
     reload() {
       this.timestamp = Date.now();
     },
-    showIframe: {
+    shouldMountIframe: {
       async handler() {
         await this.$nextTick();
-        if (this.showIframe) {
+        if (this.shouldMountIframe) {
           this.mountIframe();
         } else {
           this.unmountIframe();
@@ -73,7 +83,11 @@ export default Vue.extend({
       iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
       iframe.allow = "clipboard-read; clipboard-write;";
 
-      this.$plugin.registerIframe(this.pluginId, iframe);
+      this.$plugin.registerIframe(
+        this.pluginId,
+        iframe,
+        { command: this.command, params: this.params }
+      );
       this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
         if (args.source === iframe) {
           this.onRequest?.(args);
@@ -81,7 +95,7 @@ export default Vue.extend({
       });
       this.$refs.container.appendChild(iframe);
       this.iframe = iframe;
-      this.loaded = true;
+      this.mounted = true;
     },
     unmountIframe() {
       if (!this.iframe) {
@@ -92,13 +106,23 @@ export default Vue.extend({
       this.unsubscribe?.();
       this.iframe.remove();
       this.iframe = null;
-      this.loaded = false;
+      this.mounted = false;
     },
     handleError(e) {
       console.error(`${this.pluginId} iframe error`, e);
     }
   },
+  mounted() {
+    this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
+      this.loaded = true;
+    });
+    this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
+      this.loaded = false;
+    })
+  },
   beforeDestroy() {
+    this.unsubscribeOnReady?.();
+    this.unsubscribeOnDispose?.();
     this.unmountIframe();
   },
 });
