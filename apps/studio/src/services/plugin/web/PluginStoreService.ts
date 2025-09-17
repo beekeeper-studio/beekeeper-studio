@@ -210,13 +210,13 @@ export default class PluginStoreService {
     name: string;
     kind: TabType;
     icon?: string;
-  }, menuItem?: TabTypeConfig.PluginConfig['menuItem']): void {
+  }): void {
     const config: TabTypeConfig.PluginConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
       pluginTabTypeId: params.pluginTabTypeId,
-      menuItem,
+      menuItem: { label: `Add ${params.name}` },
       icon: params.icon,
     };
     this.store.commit("tabs/addTabTypeConfig", config);

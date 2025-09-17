@@ -73,24 +73,16 @@ export default class WebPluginLoader {
     window.addEventListener("message", this.handleMessage);
 
     // Backward compatibility: Early version of AI Shell.
-    if (typeof this.manifest.manifestVersion === "undefined" || this.manifest.manifestVersion === 0) {
-      this.manifest.capabilities.views.tabTypes.forEach((tabType) => {
-        const config = {
+    // TODO(azmi): Remove this in the future
+    if (!_.isArray(this.manifest.capabilities.views)) {
+      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
+        this.pluginStore.addTabTypeConfigV0({
           pluginId: this.manifest.id,
           pluginTabTypeId: tabType.id,
           name: tabType.name,
           kind: tabType.kind,
           icon: this.manifest.icon,
-        }
-        if (!this.manifest.capabilities.menu) {
-          this.pluginStore.addTabTypeConfigV0(config, {
-            label: `Add ${tabType.name}`,
-            command: "nocommand",
-          });
-        } else {
-          this.pluginStore.addTabTypeConfigV0(config);
-          this.menu.register();
-        }
+        });
       });
     } else {
       // Newer plugins could use the Manifest V2.
