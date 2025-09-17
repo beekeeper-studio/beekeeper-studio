@@ -2,6 +2,7 @@ import {
   Manifest,
   OnViewRequestListener,
   WebPluginContext,
+  WebPluginViewInstance,
 } from "../types";
 import {
   PluginNotificationData,
@@ -9,12 +10,15 @@ import {
   PluginRequestData,
   GetAppInfoResponse,
   LoadViewParams,
+  GetViewContextResponse,
+  PluginViewContext,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
+import { TabTypeConfig } from "@/common/transport/TransportOpenTab";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -27,7 +31,7 @@ windowEventMap.set("KeyboardEvent", KeyboardEvent);
 windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
-  private iframes: HTMLIFrameElement[] = [];
+  private viewInstances: WebPluginViewInstance[] = [];
   private onReadyListeners: Function[] = [];
   private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
@@ -93,9 +97,13 @@ export default class WebPluginLoader {
   }
 
   private handleMessage(event: MessageEvent) {
-    const source = this.iframes.find(
-      (iframe) => iframe.contentWindow === event.source
+    const view = this.viewInstances.find(
+      ({ iframe }) => iframe.contentWindow === event.source
     );
+    if (!view) {
+      return;
+    }
+    const source = view.iframe;
 
     // Check if the message is from our iframe
     if (source) {
@@ -166,6 +174,13 @@ export default class WebPluginLoader {
             theme: this.pluginStore.getTheme(),
             version: this.context.appVersion,
           } as GetAppInfoResponse['result'];
+          break;
+        case "getViewContext":
+          const view = this.viewInstances.find((ins) => ins.iframe === source);
+          if (!view) {
+            throw new Error("View context not found.");
+          }
+          response.result = view.context as GetViewContextResponse['result'];
           break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
@@ -282,7 +297,7 @@ export default class WebPluginLoader {
         break;
       }
       case "broadcast": {
-        this.iframes.forEach((iframe) => {
+        this.viewInstances.forEach(({ iframe }) => {
           if (iframe === source) {
             return;
           }
@@ -301,34 +316,20 @@ export default class WebPluginLoader {
     }
   }
 
-  registerIframe(iframe: HTMLIFrameElement, options: { command: string; params?: LoadViewParams }) {
-    this.iframes.push(iframe);
-
-    iframe.onload = () => {
-      this.postMessage(iframe, {
-        name: "viewLoaded",
-        args: {
-          command: options.command,
-          params: options.params,
-        },
-      })
-    };
+  registerViewInstance(options: { iframe: HTMLIFrameElement, context: PluginViewContext }) {
+    this.viewInstances.push(options);
   }
 
-  unregisterIframe(iframe: HTMLIFrameElement) {
-    this.iframes = _.without(this.iframes, iframe);
+  unregisterViewInstance(iframe: HTMLIFrameElement) {
+    this.viewInstances = this.viewInstances.filter((ins) => ins.iframe !== iframe);
   }
 
   postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
-    if (!this.iframes) {
-      this.log.warn("Cannot post message, iframe not registered.");
-      return;
-    }
     iframe.contentWindow.postMessage(data, "*");
   }
 
   broadcast(data: PluginNotificationData) {
-    this.iframes.forEach((iframe) => {
+    this.viewInstances.forEach(({ iframe }) => {
       this.postMessage(iframe, data);
     });
   }

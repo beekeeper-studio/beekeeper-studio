@@ -1,5 +1,4 @@
-import { JsonValue } from "@/types";
-import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
+import { LoadViewParams, PluginRequestData, PluginResponseData, PluginViewContext } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
@@ -172,3 +171,8 @@ export type PluginContext = {
 }
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
+
+export interface WebPluginViewInstance {
+  iframe: HTMLIFrameElement;
+  context: PluginViewContext;
+}
