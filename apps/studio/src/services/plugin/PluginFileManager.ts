@@ -10,7 +10,6 @@ import { Manifest, PluginRegistryEntry, Release } from "./types";
 import platformInfo from "@/common/platform_info";
 import PluginRepositoryService from "./PluginRepositoryService";
 import extract from "extract-zip";
-import * as tar from "tar";
 import { tmpdir } from "os";
 
 const log = rawLog.scope("PluginFileManager");

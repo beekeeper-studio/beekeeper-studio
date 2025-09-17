@@ -1,5 +1,7 @@
 import { Octokit } from "@octokit/rest";
+import { RequestError } from "@octokit/request-error";
 import { Manifest, PluginRepository, Release } from "./types";
+import { BksError, PluginSystemErrorCode } from "@/lib/errors";
 
 export default class PluginRepositoryService {
   private octokit: Octokit;
@@ -21,12 +23,24 @@ export default class PluginRepositoryService {
         owner,
         repo,
       }
-    );
+    ).catch((e) => {
+        if (e instanceof RequestError && e.status === 404) {
+          throw new BksError(
+            `No latest release found for ${owner}/${repo}`,
+            PluginSystemErrorCode.PLUGIN_LATEST_RELEASE_NOT_FOUND,
+            { cause: e }
+          );
+        }
+        throw e;
+      });
 
     const manifestAsset = response.data.assets.find((asset) => asset.name === "manifest.json")
 
     if (!manifestAsset) {
-      throw new Error(`No manifest.json found in the latest release`)
+      throw new BksError(
+        `No manifest.json found in the latest release`,
+        PluginSystemErrorCode.PLUGIN_RELEASE_ASSET_NOT_FOUND
+      )
     }
 
     const manifestResponse = await this.octokit.request(
@@ -45,14 +59,20 @@ export default class PluginRepositoryService {
     const rawManifest = manifestResponse.data as unknown as ArrayBuffer
     const manifest: Manifest = JSON.parse(Buffer.from(rawManifest).toString("utf-8"))
 
-    const asset = response.data.assets.find((asset) => asset.name === `${manifest.id}-${manifest.version}.zip`)
+    const asset = response.data.assets.find((asset) =>
+      asset.name === `${manifest.id}.zip` ||
+      asset.name === `${manifest.id}-${manifest.version}.zip`
+    )
     if (!asset) {
-      throw new Error(`No asset found matching ${manifest.id}-${manifest.version}.zip in the latest release`)
+      throw new BksError(
+        `No asset found matching ${manifest.id}.zip or ${manifest.id}-${manifest.version}.zip in the latest release`,
+        PluginSystemErrorCode.PLUGIN_RELEASE_ASSET_NOT_FOUND
+      )
     }
 
     return {
       manifest,
-      // FIXME rename this, it's not source
+      // FIXME rename this, it's not really "source".. idk..
       sourceArchiveUrl: asset.browser_download_url,
     };
   }

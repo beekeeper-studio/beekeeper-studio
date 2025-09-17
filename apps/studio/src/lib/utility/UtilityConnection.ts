@@ -1,6 +1,7 @@
 import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
+import { BksError } from "../errors";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
@@ -44,13 +45,15 @@ export class UtilityConnection {
 
       if (msgData.type === 'error') {
         // handle errors
-        const { id, error, stack } = msgData;
+        const { id, error, stack, errorName, errorCode } = msgData;
 
         const handler = this.replyHandlers.get(id);
         if (handler) {
           log.error('GOT ERROR BACK FOR REQUEST ID: ', id);
           this.replyHandlers.delete(id);
-          const err = new Error(error);
+          const err = errorName === "BksError"
+            ? new BksError(error, errorCode)
+            : new Error(error);
           err.stack = stack;
           handler.reject(err);
         }
