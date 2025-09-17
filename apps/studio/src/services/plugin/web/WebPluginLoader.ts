@@ -155,6 +155,12 @@ export default class WebPluginLoader {
             request.args.table
           );
           break;
+        case "getTableKeys":
+          response.result = await this.utilityConnection.send(
+              'conn/getTableKeys',
+            { table: request.args.table, schema: request.args.schema }
+          );
+          break;
         case "getAppInfo":
           response.result = {
             theme: this.pluginStore.getTheme(),
@@ -163,12 +169,6 @@ export default class WebPluginLoader {
           break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
-          break;
-        case "getActiveTab":
-          response.result = this.pluginStore.getActiveTab();
-          break;
-        case "getAllTabs":
-          response.result = this.pluginStore.getAllTabs();
           break;
         case "getData":
         case "getEncryptedData": {
@@ -182,7 +182,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard()
+          response.result = window.main.readTextFromClipboard();
           break;
         case "checkForUpdate":
           response.result = await this.context.utility.send("plugin/checkForUpdates", {
@@ -205,7 +205,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(request.args.text)
+          window.main.writeTextToClipboard(request.args.text);
           break;
 
         // ======== UI ACTIONS ===========
