@@ -84,7 +84,7 @@ const postgresContext = {
   }
 };
 
-export class PostgresClient extends BasicDatabaseClient<QueryResult> {
+export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
@@ -629,14 +629,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     });
   }
 
-  async query(queryText: string, options?: any): Promise<CancelableQuery> {
+  async query(queryText: string, tabId: string, options?: any): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
       execute: async (): Promise<NgQueryResult[]> => {
-        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
+        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid', { tabId });
         const rows = dataPid.rows
 
         pid = rows[0].pid;
@@ -644,7 +644,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, { arrayMode: true, isManualCommit: options?.isManualCommit }),
+            this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
 
           pid = null;
@@ -673,7 +673,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
         canceling = true;
         try {
-          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`);
+          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`, { tabId });
 
           const rows = data.rows
 
@@ -690,14 +690,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
       commit: async (): Promise<void> => {
         try {
-        if (!options?.isManualCommit) {
-          throw new Error('No transaction to commit manually');
-        }
-        if (options?.isManualCommit && !this.connection) {
-          throw new Error('Connection is not in manual commit mode');
+          if (!this.reservedConnections.has(tabId)) {
+            throw new Error('Connection is not in manual commit mode')
           }
 
-        await this.runQuery(this.connection, 'COMMIT;', {});
+          await this.runQuery(this.reservedConnections.get(tabId), 'COMMIT;', { });
         } finally {
           cancelable.discard();
         }
@@ -705,14 +702,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
       rollback: async (): Promise<void> => {
         try {
-          if (!options?.isManualCommit) {
-            throw new Error('No transaction to rollback manually');
+          if (!this.reservedConnections.has(tabId)) {
+            throw new Error('Connection is not in manual commit mode')
           }
-          if (options?.isManualCommit && !this.connection) {
-            throw new Error('Connection is not in manual commit mode');
-        }
 
-        await this.runQuery(this.connection, 'ROLLBACK;', {});
+          await this.runQuery(this.reservedConnections.get(tabId), 'ROLLBACK;', { });
         } finally {
           cancelable.discard();
         }
@@ -722,7 +716,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode, isManualCommit: options?.isManualCommit });
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options.tabId });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
     return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
@@ -1236,7 +1230,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
-  private async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
+  async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
     const connection = await this.conn.pool.connect()
     try {
       return await child(connection)

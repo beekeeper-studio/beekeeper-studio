@@ -191,7 +191,7 @@ function buildSelectTopQuery(
   return { query: sql, countQuery: countSQL, params: filterParams };
 }
 
-export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
+export class DuckDBClient extends BasicDatabaseClient<DuckDBResult, null> {
   version: string;
   databasePath: string;
   databaseInstance: Database;

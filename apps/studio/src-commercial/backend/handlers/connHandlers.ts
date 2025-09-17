@@ -4,7 +4,7 @@ import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResul
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
-import ConnectionProvider from '../lib/connection-provider';
+import ConnectionProvider from '../lib/connection-provider'; 
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
@@ -49,7 +49,7 @@ export interface IConnectionHandlers {
   'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
   'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
-  'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
+  'conn/query': ({ queryText, options, tabId, sId }: { queryText: string, options?: any, tabId: string, sId: string }) => Promise<string>,
   'conn/getCompletions': ({ cmd, sId }: { cmd: string, sId: string }) => Promise<string[]>,
   'conn/getShellPrompt': ({ sId }: { sId: string }) => Promise<string>,
   'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
@@ -320,9 +320,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.executeCommand(commandText);
   },
 
-  'conn/query': async function({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) {
+  'conn/query': async function({ queryText, options, tabId, sId }: { queryText: string, options?: any, tabId: string, sId: string }) {
     checkConnection(sId);
-    const query = await state(sId).connection.query(queryText, options);
+    const query = await state(sId).connection.query(queryText, tabId, options);
     const id = uuidv4();
     state(sId).queries.set(id, query);
     return id;
