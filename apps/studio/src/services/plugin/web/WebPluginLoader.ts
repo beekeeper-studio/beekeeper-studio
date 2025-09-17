@@ -314,7 +314,7 @@ export default class WebPluginLoader {
     }
   }
 
-  registerViewInstance(options: { iframe: HTMLIFrameElement, context: PluginViewContext }) {
+  registerViewInstance(options: WebPluginViewInstance) {
     this.viewInstances.push(options);
   }
 
