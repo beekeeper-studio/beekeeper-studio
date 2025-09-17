@@ -39,6 +39,8 @@
         :url="url"
         :reload="reload"
         :on-request="handleRequest"
+        :command="tab.context.command"
+        :params="tab.context.params"
       />
     </div>
     <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">
@@ -159,9 +161,16 @@ export default Vue.extend({
       return this.$plugin.pluginOf(this.tab.context.pluginId);
     },
     url() {
-      const tabType = this.plugin.manifest.capabilities.views.tabTypes.find(
-        (t) => t.id === this.tab.context.pluginTabTypeId
+      const plugin = this.$plugin.pluginOf(this.tab.context.pluginId);
+      let tabType = plugin.manifest.capabilities.views.find?.(
+        (v) => v.id === this.tab.context.pluginTabTypeId
       );
+      if (!tabType) {
+        // Using the old plugin shell API
+        tabType = plugin.manifest.capabilities.views.tabTypes?.find?.(
+          (t) => t.id === this.tab.context.pluginTabTypeId
+        );
+      }
       return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
     },
     shouldInitialize() {

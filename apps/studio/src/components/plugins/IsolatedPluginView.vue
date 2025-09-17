@@ -8,7 +8,8 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType } from "vue";
+import { LoadViewParams } from "@beekeeperstudio/plugin";
 
 export default Vue.extend({
   name: "IsolatedPluginView",
@@ -21,6 +22,8 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    command: String,
+    params: null as PropType<LoadViewParams>,
     url: {
       type: String,
       required: true,
@@ -80,7 +83,11 @@ export default Vue.extend({
       iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
       iframe.allow = "clipboard-read; clipboard-write;";
 
-      this.$plugin.registerIframe(this.pluginId, iframe);
+      this.$plugin.registerIframe(
+        this.pluginId,
+        iframe,
+        { command: this.command, params: this.params }
+      );
       this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
         if (args.source === iframe) {
           this.onRequest?.(args);

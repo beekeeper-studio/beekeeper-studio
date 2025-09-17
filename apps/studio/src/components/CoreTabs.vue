@@ -42,14 +42,19 @@
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <x-menuitem
-              v-for="(config, index) in tabTypeConfigs"
-              :key="index"
-              @click.prevent="createTab(config)"
-            >
-              <x-label>{{ config.menuItem.label }}</x-label>
-              <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
-            </x-menuitem>
+            <template v-for="(config, index) in tabTypeConfigs">
+              <x-menuitem
+                v-if="config.menuItem"
+                :key="index"
+                @click.prevent="createTab(config)"
+              >
+                <x-label>
+                  <i class="material-icons">{{ config.icon }}</i>
+                  {{ config.menuItem.label }}
+                </x-label>
+                <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
+              </x-menuitem>
+            </template>
           </x-menu>
         </x-button>
       </span>
@@ -426,6 +431,7 @@ export default Vue.extend({
         { event: AppEvent.closeTab, handler: this.closeCurrentTab },
         { event: AppEvent.closeAllTabs, handler: this.closeAll },
         { event: AppEvent.newTab, handler: this.createQuery },
+        { event: AppEvent.newCustomTab, handler: this.addTab },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
         { event: AppEvent.createTableFromFile, handler: this.beginImport },
         { event: 'historyClick', handler: this.createQueryFromItem },
@@ -679,6 +685,8 @@ export default Vue.extend({
           context: {
             pluginId: config.pluginId,
             pluginTabTypeId: config.pluginTabTypeId,
+            command: config.menuItem?.command,
+            params: config.menuItem?.params,
           },
         } as TransportPluginTab;
         await this.addTab(tab)

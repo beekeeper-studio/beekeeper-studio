@@ -190,7 +190,8 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
         emit: (...args) => app.$root.$emit(...args),
         on: (...args) => app.$root.$on(...args),
         off: (...args) => app.$root.$off(...args),
-      })
+      }),
+      window.platformInfo.appVersion
     )
     webPluginManager.initialize().then(() => {
       store.commit("webPluginManagerStatus", "ready")
@@ -199,9 +200,8 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
       store.commit("webPluginManagerStatus", "failed-to-initialize")
     })
     Vue.prototype.$plugin = webPluginManager;
-    if (window.platformInfo.isDevelopment) {
-      window.webPluginManager = webPluginManager; // For debugging
-    }
+    Vue.prototype.$bksPlugin = webPluginManager;
+    window.bksPlugin = webPluginManager; // For debugging
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")
