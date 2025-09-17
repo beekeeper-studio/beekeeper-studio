@@ -9,16 +9,13 @@ import {
   PluginResponseData,
   PluginRequestData,
   GetAppInfoResponse,
-  LoadViewParams,
   GetViewContextResponse,
-  PluginViewContext,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
-import { TabTypeConfig } from "@/common/transport/TransportOpenTab";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
