@@ -210,13 +210,14 @@ export default class PluginStoreService {
     name: string;
     kind: TabType;
     icon?: string;
+    menuItem?: TabTypeConfig.PluginConfig['menuItem'];
   }): void {
     const config: TabTypeConfig.PluginConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
       pluginTabTypeId: params.pluginTabTypeId,
-      menuItem: { label: `Add ${params.name}` },
+      menuItem: params.menuItem,
       icon: params.icon,
     };
     this.store.commit("tabs/addTabTypeConfig", config);
@@ -230,11 +231,15 @@ export default class PluginStoreService {
   }
 
   /** Register plugin views as tabs */
-  addTabTypeConfigs(manifest: Manifest): void {
-    const views = manifest.capabilities.views as PluginView[];
-    views.forEach((view) => {
+  addTabTypeConfigs(options: {
+    pluginId: string;
+    pluginName: string;
+    pluginIcon: string;
+    views: PluginView[];
+  }): void {
+    options.views.forEach((view) => {
       const ref: TabTypeConfig.PluginRef = {
-        pluginId: manifest.id,
+        pluginId: options.pluginId,
         pluginTabTypeId: view.id,
       };
       const type: PluginTabType = view.type.includes("shell")
@@ -243,18 +248,17 @@ export default class PluginStoreService {
       const config: TabTypeConfig.PluginConfig = {
         ...ref,
         type,
-        name: manifest.name,
-        icon: manifest.icon,
+        name: options.pluginName,
+        icon: options.pluginIcon,
       };
       this.store.commit("tabs/addTabTypeConfig", config);
     });
   }
 
-  removeTabTypeConfigs(manifest: Manifest): void {
-    const views = manifest.capabilities.views as PluginView[];
+  removeTabTypeConfigs(pluginId: string, views: PluginView[]): void {
     views.forEach((view) => {
       const ref: TabTypeConfig.PluginRef = {
-        pluginId: manifest.id,
+        pluginId,
         pluginTabTypeId: view.id,
       };
       this.store.commit("tabs/removeTabTypeConfig", ref);

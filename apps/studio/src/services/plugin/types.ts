@@ -75,7 +75,7 @@ export interface PluginMenuItem {
 }
 
 /** @deprecated use `PluginView` instead. Used by earlier versions of AI Shell. */
-type DeprecatedViews = {
+export type DeprecatedViews = {
   tabTypes?: {
     id: string;
     name: string;

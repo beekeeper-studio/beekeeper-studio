@@ -2,6 +2,9 @@ import {
   Manifest,
   OnViewRequestListener,
   WebPluginContext,
+  PluginView,
+  DeprecatedViews,
+  PluginMenuItem,
 } from "../types";
 import {
   PluginNotificationData,
@@ -68,23 +71,44 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
+    let views: PluginView[];
+    let menu: PluginMenuItem[];
+
     // Backward compatibility: Early version of AI Shell.
     // TODO(azmi): Remove this in the future
-    if (!_.isArray(this.manifest.capabilities.views)) {
-      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
-        this.pluginStore.addTabTypeConfigV0({
-          pluginId: this.manifest.id,
-          pluginTabTypeId: tabType.id,
-          name: tabType.name,
-          kind: tabType.kind,
-          icon: this.manifest.icon,
-        });
-      });
+    if (!_.isArray(this.context.manifest.capabilities.views)) {
+      views = (this.context.manifest.capabilities.views as DeprecatedViews).tabTypes.map<PluginView>((tabType) => ({
+        id: tabType.id,
+        name: tabType.name,
+        type: tabType.kind.includes("shell") ? "shell-tab" : "base-tab",
+        entry: tabType.entry,
+      }));
+      if (this.context.manifest.capabilities.menu) {
+        menu = this.context.manifest.capabilities.menu;
+      } else {
+        menu = views.map((view) => ({
+          command: `${view.id}-new-tab-dropdown`,
+          name: `New ${this.context.manifest.name}`,
+          view: view.id,
+          placement: "newTabDropdown",
+        }))
+      }
     } else {
-      // Views are always embedded in tabs (for now).
-      this.pluginStore.addTabTypeConfigs(this.manifest);
-      this.menu.register();
+      views = this.context.manifest.capabilities.views;
+      menu = this.context.manifest.capabilities.menu;
     }
+
+    this.pluginStore.addTabTypeConfigs({
+      pluginId: this.context.manifest.id,
+      pluginName: this.context.manifest.name,
+      pluginIcon: this.context.manifest.icon,
+      views,
+    });
+
+    this.menu.register(
+      views,
+      this.context.manifest.capabilities.menu
+    );
 
     if (!this.listening) {
       this.registerEvents();
@@ -347,14 +371,18 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    // Backward compatibility: Early version of AI Shell.
-    // TODO(azmi): Remove this in the future
-    if (!_.isArray(this.manifest.capabilities.views)) {
-      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
-        this.pluginStore.removeTabTypeConfigV0({
-          pluginId: this.manifest.id,
+    if (typeof this.manifest.manifestVersion === "undefined" || this.manifest.manifestVersion === 0) {
+      this.manifest.capabilities.views.tabTypes.forEach((tabType) => {
+        const ref = {
+          pluginId: this.context.manifest.id,
           pluginTabTypeId: tabType.id,
-        });
+        }
+        if (!this.context.manifest.capabilities.menu) {
+          this.pluginStore.removeTabTypeConfigV0(ref);
+        } else {
+          this.pluginStore.removeTabTypeConfigV0(ref);
+          this.menu.unregister();
+        }
       });
     } else {
       this.pluginStore.removeTabTypeConfigs(this.manifest);
