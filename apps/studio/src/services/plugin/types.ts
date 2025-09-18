@@ -74,18 +74,21 @@ export interface PluginMenuItem {
   order?: number;
 }
 
-/** @deprecated use `PluginView` instead. Used by earlier versions of AI Shell. */
+/** Used by earlier versions of AI Shell. */
 type DeprecatedViews = {
   tabTypes?: {
     id: string;
     name: string;
-    kind: TabKind;
+    kind: TabType;
     /** Same as `entry` above. */
     entry: string;
   }[];
 }
 
-export interface Manifest {
+export type Manifest = ManifestV0 | ManifestV1;
+
+export type ManifestV0 = {
+  manifestVersion?: 0;
   id: string;
   name: string;
   author:
@@ -102,7 +105,7 @@ export interface Manifest {
   /** Provide all extension points here. */
   capabilities: {
     /** The list of views provided by the plugin. */
-    views: PluginView[] | DeprecatedViews;
+    views: DeprecatedViews;
     /** The list of menu items provided by the plugin. */
     menu: PluginMenuItem[];
   };
@@ -123,6 +126,13 @@ export interface Manifest {
     | "edit-entities"
   )[];
 }
+
+export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & {
+  manifestVersion: 1;
+  capabilities: Omit<ManifestV0["capabilities"], "views"> & {
+    views: PluginView[];
+  }
+};
 
 export type PluginRegistryEntry = Pick<
   Manifest,
