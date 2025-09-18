@@ -75,7 +75,7 @@ export interface PluginMenuItem {
 }
 
 /** Used by earlier versions of AI Shell. */
-type DeprecatedViews = {
+type LegacyViews = {
   tabTypes?: {
     id: string;
     name: string;
@@ -105,7 +105,7 @@ export type ManifestV0 = {
   /** Provide all extension points here. */
   capabilities: {
     /** The list of views provided by the plugin. */
-    views: DeprecatedViews;
+    views: LegacyViews;
     /** The list of menu items provided by the plugin. */
     menu: PluginMenuItem[];
   };
