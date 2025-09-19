@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import rawLog from '@bksLogger'
 
 export interface IAwsHandlers {
   "aws/getProfiles": () => Promise<string[]>;
@@ -31,7 +32,7 @@ export const AwsHandlers: IAwsHandlers = {
           const profiles = stdout.trim().split("\n");
           resolve(profiles);
         } else {
-          console.error(`AWS CLI failed with code ${code}`);
+          rawLog.error(`AWS CLI failed with code ${code}`);
           reject(
             `aws failed (code ${code})\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`
           );

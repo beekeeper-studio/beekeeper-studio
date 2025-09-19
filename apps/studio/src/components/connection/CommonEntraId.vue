@@ -60,7 +60,7 @@
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.host" @input="val => config.host = val" />
+        <masked-input :value="config.host" :privacy-mode="privacyMode" @input="val => config.host = val" />
       </div>
       <div class="form-group">
         <label for="database">Database</label>
@@ -92,16 +92,19 @@
       </div>
       <div class="form-group" v-show="showUser">
         <label for="user">User</label>
-        <input
-          name="user"
-          type="text"
-          class="form-control"
-          v-model="username"
-        />
+        <masked-input :value="username" :privacy-mode="privacyMode" @input="val => username = val" />
       </div>
       <div class="form-group" v-show="showPassword">
         <label for="password">Password</label>
-        <masked-input :value="config.password" @input="val => config.password = val" :type="'password'" />
+        <input
+          :type="togglePasswordInputType"
+          v-model="config.password"
+          class="password form-control"
+        >
+        <i
+          @click.prevent="togglePassword"
+          class="material-icons password-icon"
+        >{{ togglePasswordIcon }}</i>
       </div>
       <div class="form-group" v-show="showTenantId">
         <label for="tenantId">
@@ -117,19 +120,23 @@
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
+        <masked-input :value="config.azureAuthOptions.tenantId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
-        <label for="clientSecret">Client ID</label>
-        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" />
+        <label for="clientId">Client ID</label>
+        <masked-input :value="config.azureAuthOptions.clientId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientSecret">Client Secret</label>
-        <masked-input :value="config.azureAuthOptions.clientSecret" @input="val => config.azureAuthOptions.clientSecret = val" :type="'password'" />
+        <masked-input :value="config.azureAuthOptions.clientSecret" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientSecret = val" :type="togglePasswordInputType" />
+        <i
+          @click.prevent="togglePassword"
+          class="material-icons password-icon"
+        >{{ togglePasswordIcon }}</i>
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
-        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" />
+        <masked-input :value="config.azureAuthOptions.msiEndpoint" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.msiEndpoint = val" />
       </div>
     </div>
   </div>
@@ -138,8 +145,8 @@
 import { AzureAuthType } from "@/lib/db/types";
 import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
-import { onMounted } from "vue";
 import MaskedInput from '@/components/MaskedInput.vue'
+import { mapState } from 'vuex'
 
 export default {
   props: ["config", "authType"],
@@ -155,6 +162,7 @@ export default {
     };
   },
   computed: {
+    ...mapState('settings', ['privacyMode']),
     username: {
       get() {
         return this.config.username || this.config.user;
@@ -164,13 +172,19 @@ export default {
         this.config.user = value;
       },
     },
+    togglePasswordIcon() {
+      return this.showPassword ? "visibility_off" : "visibility"
+    },
+    togglePasswordInputType() {
+      return this.showPassword ? "text" : "password"
+    },
     showUser() {
       return [AzureAuthType.Password, AzureAuthType.CLI].includes(
         this.authType
       );
     },
     showPassword() {
-      return AzureAuthType.Password === this.authType;
+      return this.authType === AzureAuthType.Password;
     },
     showTenantId() {
       return [
@@ -179,13 +193,13 @@ export default {
       ].includes(this.authType);
     },
     isServicePrincipal() {
-      return AzureAuthType.ServicePrincipalSecret === this.authType;
+      return this.authType === AzureAuthType.ServicePrincipalSecret;
     },
     showMsiEndpoint() {
-      return AzureAuthType.MSIVM === this.authType;
+      return this.authType === AzureAuthType.MSIVM;
     },
     showCli() {
-      return AzureAuthType.CLI === this.authType;
+      return this.authType === AzureAuthType.CLI;
     },
     hasAccessTokenCache() {
       return Boolean(this.accountName);

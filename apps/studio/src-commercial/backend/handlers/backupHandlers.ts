@@ -1,7 +1,7 @@
 import { Command } from "@/lib/db/models";
 import { spawn } from "child_process";
 import { state } from "@/handlers/handlerState";
-import {whichTool} from "@/lib/db/clients/utils";
+import platformInfo from "@/common/platform_info";
 
 const errorMessages = {
   nonZero: 'Command returned non-zero exit code'
@@ -11,6 +11,38 @@ export interface IBackupHandlers {
   'backup/runCommand': ({ command, sId }: { command: Command, sId: string }) => Promise<void>,
   'backup/whichDumpTool': ({ toolName }: { toolName: string }) => Promise<string>,
   'backup/cancelCommand': ({ sId }: { sId: string }) => Promise<boolean>
+}
+
+export async function whichTool({ toolName }: { toolName: string }): Promise<string> {
+  const command = platformInfo.isWindows ? 'where' : 'which';
+
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, [toolName], { shell: true });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    proc.on('error', (err) => {
+      reject(err);
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        const path = stdout.trim().split('\n')[0]; // pick first result
+        resolve(path);
+      } else {
+        reject(`whichTool failed (code ${code})\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
+      }
+    });
+  });
 }
 
 export const BackupHandlers: IBackupHandlers = {
