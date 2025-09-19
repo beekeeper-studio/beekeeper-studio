@@ -638,7 +638,7 @@
         if (this.dialectData.textEditorMode === 'text/x-redis') {
           return 'redis';
         }
-        return 'sql'; // default for all SQL databases
+        return this.dialectData.textEditorMode;
       },
       replaceExtensions() {
         return (extensions) => {
