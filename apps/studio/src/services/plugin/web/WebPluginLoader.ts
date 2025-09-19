@@ -1,5 +1,6 @@
 import {
   Manifest,
+  ManifestV0,
   OnViewRequestListener,
   WebPluginContext,
 } from "../types";
@@ -68,9 +69,8 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
-    // Backward compatibility: Early version of AI Shell.
-    // TODO(azmi): Remove this in the future
-    if (!_.isArray(this.manifest.capabilities.views)) {
+    // Backward compatibility: used by AI Shell
+    if (this.isManifestV0(this.manifest)) {
       this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
         this.pluginStore.addTabTypeConfigV0({
           pluginId: this.manifest.id,
@@ -90,6 +90,10 @@ export default class WebPluginLoader {
       this.registerEvents();
       this.onReadyListeners.forEach((fn) => fn());
     }
+  }
+
+  private isManifestV0(m: Manifest): m is ManifestV0 {
+    return m.manifestVersion === undefined || m.manifestVersion === 0;
   }
 
   private handleMessage(event: MessageEvent) {
@@ -347,9 +351,7 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    // Backward compatibility: Early version of AI Shell.
-    // TODO(azmi): Remove this in the future
-    if (!_.isArray(this.manifest.capabilities.views)) {
+    if (this.isManifestV0(this.manifest)) {
       this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
         this.pluginStore.removeTabTypeConfigV0({
           pluginId: this.manifest.id,
