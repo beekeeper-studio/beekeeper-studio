@@ -848,7 +848,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   private makeQueryResult(command: string, result: unknown): NgQueryResult {
-    log.info("RESULT: ", result)
     let fields = [{ name: "result", id: "result" }];
     let rows: any = Array.isArray(result) ?
       result.map((r) => ({ result: r })) :
