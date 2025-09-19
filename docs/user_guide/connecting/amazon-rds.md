@@ -1,6 +1,7 @@
 ---
 title: Amazon RDS
 summary: How to connect to Amazon's 'special' RDS databases using native authentication types
+icon: simple/amazonrds
 ---
 
 Connecting to Amazon RDS requires you to set up an IAM user and ensure your security group allows traffic from your IP address.
