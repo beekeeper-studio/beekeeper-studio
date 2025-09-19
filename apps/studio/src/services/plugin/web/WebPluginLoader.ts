@@ -93,10 +93,7 @@ export default class WebPluginLoader {
   }
 
   private isManifestV0(m: Manifest): m is ManifestV0 {
-    return (
-      this.manifest.manifestVersion === undefined ||
-      this.manifest.manifestVersion === 0
-    );
+    return m.manifestVersion === undefined || m.manifestVersion === 0;
   }
 
   private handleMessage(event: MessageEvent) {
