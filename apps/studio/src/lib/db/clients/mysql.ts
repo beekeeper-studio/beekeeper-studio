@@ -283,7 +283,7 @@ function filterDatabase(
   return true;
 }
 
-export class MysqlClient extends BasicDatabaseClient<ResultType> {
+export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConnection> {
   versionInfo: Version & {
     versionString: string;
     version: number;
@@ -727,13 +727,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const params = [table];
 
     const { rows } = await this.driverExecuteSingle(sql, { params });
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -751,8 +751,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           fromSchema: "",
           isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
@@ -1012,7 +1012,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return sql;
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async query(queryText: string, tabId: number): Promise<CancelableQuery> {
     let pid = null;
     let canceling = false;
     const cancelable = createCancelablePromise({
@@ -1060,7 +1060,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           } finally {
             cancelable.discard();
           }
-        });
+        }, tabId);
       },
 
       cancel: async () => {
@@ -1135,7 +1135,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           },
           (err, data, fields) => {
             if (err && err.code === mysqlErrors.EMPTY_QUERY) {
-              return resolve({ rows: [], columns: [] });
+              return resolve({ rows: [], columns: [], arrayMode: undefined });
             }
 
             if (err) {
@@ -1153,33 +1153,34 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       : this.runWithConnection(runQuery);
   }
 
-  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>, tabId?: number): Promise<T> {
     const { pool } = this.conn;
-    let rejected = false;
-    return new Promise((resolve, reject) => {
-      const rejectErr = (err) => {
-        if (!rejected) {
-          rejected = true;
-          reject(err);
-        }
-      };
-
-      pool.getConnection((errPool, connection) => {
-        if (errPool) {
-          rejectErr(errPool);
-          return;
-        }
-
-        connection.on("error", (error) => {
-          // it will be handled later in the next query execution
-          logger().error("Connection fatal error %j", error);
-        });
-        run(connection)
-          .then((res) => resolve(res))
-          .catch((ex) => rejectErr(ex))
-          .finally(() => connection.release())
+    const hasReserved = this.reservedConnections.has(tabId);
+    let conn: mysql.PoolConnection;
+    if (hasReserved) {
+      conn = this.reservedConnections.get(tabId);
+    } else {
+      conn = await new Promise((resolve, reject) => {
+        pool.getConnection((err, connection) => {
+          if (err) {
+            reject(err);
+          }
+          resolve(connection);
+        })
       });
+    }
+
+    conn.on("error", (error) => {
+      logger().error("Connection fatal error %j", error);
     });
+
+    try {
+      return await run(conn);
+    } finally {
+      if (!hasReserved) {
+        conn.release();
+      }
+    }
   }
 
   async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
@@ -1437,6 +1438,46 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    this.conn.pool.getConnection((err, conn) => {
+      if (!err) {
+        this.pushConnection(tabId, conn);
+      }
+    })
+  }
+
+  async releaseConnection(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      conn.release();
+    }
+  }
+
+  async startTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await this.driverExecuteSingle('START TRANSACTION', { connection: conn });
+  }
+
+  async commitTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await this.driverExecuteSingle('COMMIT', { connection: conn });
+  }
+
+  async rollbackTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await this.driverExecuteSingle('ROLLBACK', { connection: conn });
+  }
+
+  protected parseQueryResultColumns(qr: ResultType): BksField[] {
+    return qr.columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
+        bksType = 'BINARY';
+      }
+      return { name: column.name, bksType }
+    })
   }
 
   parseTableColumn(column: { column_name: string; data_type: string }): BksField {

@@ -91,7 +91,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
-  connection: PoolClient | null = null;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -640,7 +639,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     });
   }
 
-  async query(queryText: string, tabId: string, options?: any): Promise<CancelableQuery> {
+  async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
@@ -698,30 +697,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
           throw err;
         }
       },
-
-      commit: async (): Promise<void> => {
-        try {
-          if (!this.reservedConnections.has(tabId)) {
-            throw new Error('Connection is not in manual commit mode')
-          }
-
-          await this.runQuery(this.reservedConnections.get(tabId), 'COMMIT;', { });
-        } finally {
-          cancelable.discard();
-        }
-      },
-
-      rollback: async (): Promise<void> => {
-        try {
-          if (!this.reservedConnections.has(tabId)) {
-            throw new Error('Connection is not in manual commit mode')
-          }
-
-          await this.runQuery(this.reservedConnections.get(tabId), 'ROLLBACK;', { });
-        } finally {
-          cancelable.discard();
-        }
-      }
     };
   }
 
@@ -1212,26 +1187,45 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean }): Promise<QueryResult | QueryResult[]> {
+  // Manual transaction management
+  async reserveConnection(tabId: number) {
+    const conn = await this.conn.pool.connect();
+    this.pushConnection(tabId, conn);
+  }
+
+  async releaseConnection(tabId: number) {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      conn.release();
+    }
+  }
+
+  async startTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'BEGIN', {});
+  }
+
+  async commitTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'COMMIT', {});
+  }
+
+  async rollbackTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'ROLLBACK', {});
+  }
+
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
     log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
-    // This means connection.release will be called elsewhere
-    if (options.connection) {
-      if (options.isManualCommit) {
-        await this.runQuery(options.connection, 'BEGIN', {});
-        this.connection = options.connection;
-      }
+    const hasReserved = this.reservedConnections.has(options.tabId)
+    if (options.tabId && hasReserved) {
+      const conn = this.peekConnection(options.tabId);
+      return await this.runQuery(conn, q, options);
+    } else if (options.connection) {
+      // This means connection.release will be called elsewhere
       return await this.runQuery(options.connection, q, options)
     } else {
       log.info('Acquiring new connection for: ', q)
-      log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
-      // if it is a manual commit, keep the connection open
-      if (options.isManualCommit) {
-        return await this.runWhileKeepingConnection(async (connection) => {
-          log.debug('Are you hitting this?')
-          await this.runQuery(connection, 'BEGIN', {})
-          return await this.runQuery(connection, q, options)
-        })
-      }
       // the simple case where we manage the connection ourselves
       return await this.runWithConnection(async (connection) => {
         return await this.runQuery(connection, q, options)
@@ -1248,12 +1242,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     } finally {
       connection.release()
     }
-  }
-
-  private async runWhileKeepingConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
-    const connection = await this.conn.pool.connect()
-    this.connection = connection;
-    return await child(connection);
   }
 
   // this will run your SQL wrapped in a transaction, making sure to manage the connection pool

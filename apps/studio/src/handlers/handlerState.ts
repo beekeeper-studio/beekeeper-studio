@@ -20,7 +20,7 @@ class State {
   port: MessagePortMain = null
   server: IDbConnectionPublicServer = null;
   usedConfig: IConnection = null;
-  connection: BasicDatabaseClient<any> = null;
+  connection: BasicDatabaseClient<any, any> = null;
   database: string = null;
   username: string = null;
   queries: Map<string, CancelableQuery> = new Map();
@@ -33,7 +33,7 @@ class State {
 
   // enums
   enumsInitialized = false;
-  
+
   private enumWatcher: FSWatcher = null;
 
   set watcher(value: FSWatcher) {

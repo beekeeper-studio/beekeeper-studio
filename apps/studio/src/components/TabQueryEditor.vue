@@ -94,7 +94,7 @@
             <x-button
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
-              @click.prevent="handleSubmitTabQuery"
+              @click.prevent="submitTabQuery"
               :disabled="running"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
@@ -106,11 +106,11 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="handleSubmitTabQuery">
+                <x-menuitem @click.prevent="submitTabQuery">
                   <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
                   <x-shortcut value="Control+Enter" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="handleSubmitCurrentQuery">
+                <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
@@ -144,6 +144,7 @@
           </x-buttons>
           <x-buttons class="">
             <x-button
+              :disabled="running"
               @click.prevent="toggleCommitMode"
               class="btn btn-flat btn-small"
               :class="{ 'btn-rounded': !isManualCommit }"
@@ -153,15 +154,15 @@
             <x-button v-if="isManualCommit" class="btn btn-flat btn-small" menu>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem 
-                  :disabled="!this.isManualQueryRunning"
+                <x-menuitem
+                  :disabled="!this.hasActiveTransaction"
                   @click.prevent="manualCommit"
                 >
                   <x-label>Commit</x-label>
                   <x-shortcut value="Shift+Control+C" />
                 </x-menuitem>
-                <x-menuitem 
-                  :disabled="!this.isManualQueryRunning"
+                <x-menuitem
+                  :disabled="!this.hasActiveTransaction"
                   @click.prevent="manualRollback"
                 >
                   <x-label>Rollback</x-label>
@@ -463,7 +464,7 @@
         currentlySelectedQuery: null,
         queryMagic: queryMagicExtension(),
         isManualCommit: false,
-        isManualQueryRunning: false,
+        hasActiveTransaction: false
       }
     },
     computed: {
@@ -968,6 +969,11 @@
           await this.cancelQuery();
         }
 
+        if (this.isManualCommit && !this.hasActiveTransaction) {
+          await this.connection.startTransaction(this.tab.id);
+          this.hasActiveTransaction = true
+        }
+
         this.tab.isRunning = true
         this.running = true
         this.error = null
@@ -997,7 +1003,7 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun, isManualCommit: this.isManualCommit });
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun});
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
@@ -1069,9 +1075,8 @@
           if(this.running) {
             this.error = ex
           }
-          if (this.isManualQueryRunning) {
+          if (this.hasActiveTransaction) {
             this.error = ex
-            this.isManualQueryRunning = false
             this.manualRollback()
           }
         } finally {
@@ -1133,52 +1138,24 @@
         })
       },
       async toggleCommitMode() {
-        if (this.isManualCommit && this.isManualQueryRunning)
-          await this.manualRollback()
-        else if (!this.isManualCommit && this.running)
-          await this.cancelQuery()
-        this.isManualCommit = !this.isManualCommit
-      },
-      async submitManualTabQuery() {
-        this.isManualCommit = true
-        this.isManualQueryRunning = true
-        await this.submitTabQuery()
-      },
-      async submitManualCurrentQuery() {
-        this.isManualCommit = true
-        this.isManualQueryRunning = true
-        await this.submitCurrentQuery()
+        if (this.isManualCommit) {
+          if (this.hasActiveTransaction) {
+            this.connection.rollbackTransaction(this.tab.id);
+          }
+          this.hasActiveTransaction = false;
+          this.connection.releaseConnection(this.tab.id);
+        } else if (!this.isManualCommit) {
+          await this.connection.reserveConnection(this.tab.id);
+        }
+        this.isManualCommit = !this.isManualCommit;
       },
       async manualCommit() {
-        console.log("manual commit")
-        if (!this.runningQuery) {
-          throw new Error('No running query to commit manually');
-        }
-        await this.runningQuery.commit()
-        this.isManualQueryRunning = false
-        this.runningQuery = null
+        this.connection.commitTransaction(this.tab.id);
+        this.hasActiveTransaction = false;
       },
       async manualRollback() {
-        if (!this.runningQuery) {
-          throw new Error('No running query to rollback manually');
-        }
-        await this.runningQuery.rollback()
-        this.isManualQueryRunning = false
-        this.runningQuery = null
-      },
-      handleSubmitTabQuery() {
-        if (this.isManualCommit) {
-          this.submitManualTabQuery()
-        } else {
-          this.submitTabQuery()
-        }
-      },
-      handleSubmitCurrentQuery() {
-        if (this.isManualCommit) {
-          this.submitManualCurrentQuery()
-        } else {
-          this.submitCurrentQuery()
-        }
+        this.connection.rollbackTransaction(this.tab.id)
+        this.hasActiveTransaction = false
       },
       async columnsGetter(tableName: string) {
         let table = this.tables.find(
@@ -1242,6 +1219,7 @@
       if(this.split) {
         this.split.destroy()
       }
+      this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
     },
   }

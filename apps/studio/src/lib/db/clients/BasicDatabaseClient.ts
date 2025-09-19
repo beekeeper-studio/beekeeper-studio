@@ -56,17 +56,13 @@ export const NoOpContextProvider: AppContextProvider = {
 };
 
 export interface BaseQueryResult {
-  columns: { name: string, type?: string }[]
+  columns: { name: string, type?: string | number }[]
   rows: any[][] | Record<string, any>[];
   arrayMode: boolean;
 }
 
-export interface BasePoolConnType {
-  release: () => void
-}
-
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn extends BasePoolConnType> implements IBasicDatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
@@ -77,7 +73,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   db: string;
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
-  reservedConnections: Map<string, Conn> = new Map<string, Conn>();
+  reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -183,8 +179,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return Promise.resolve([]);
   }
 
-  // abstract reserveConnectionForTransaction(tabId: string): Promise<void>;
-  abstract query(queryText: string, tabId: string, options?: any): Promise<CancelableQuery>;
+  abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
@@ -623,20 +618,34 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       .trim();
   }
 
-  reserveConnection(tabId: string, conn: Conn) {
+  // Manual transaction management
+  abstract reserveConnection(tabId: number): Promise<void>;
+  abstract releaseConnection(tabId: number): Promise<void>;
+  abstract startTransaction(tabId: number): Promise<void>;
+  abstract commitTransaction(tabId: number): Promise<void>;
+  abstract rollbackTransaction(tabId: number): Promise<void>;
+
+  protected pushConnection(tabId: number, conn: Conn) {
     if (this.reservedConnections.has(tabId)) {
       throw new Error("Tab has already reserved a connection from the pool");
     }
     this.reservedConnections.set(tabId, conn);
   }
 
-  async releaseConnection(tabId: string) {
+  protected popConnection(tabId: number): Conn {
     if (!this.reservedConnections.has(tabId)) {
-      throw new Error(`No reserved connection found for tab ${tabId}`);
+      return null
     }
 
     const conn = this.reservedConnections.get(tabId);
-    await conn.release();
     this.reservedConnections.delete(tabId);
+    return conn;
+  }
+
+  protected peekConnection(tabId: number): Conn {
+    if (!this.reservedConnections.get(tabId)) {
+      throw new Error("Could not retrieve reserved connection, please report this issue on our GitHub.");
+    }
+    return this.reservedConnections.get(tabId);
   }
 }

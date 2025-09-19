@@ -43,12 +43,13 @@ declare interface IBksConfig {
         default: {
             allowSkipToLastPage: boolean;
             paramTypes: {
-                named: string[];
-                numbered: string[];
+                named: any[];
+                numbered: any[];
                 positional: boolean;
-                quoted: string[];
+                quoted: any[];
             };
         };
+        default_parsed: any;
         duckdb: {
             allowSkipToLastPage: boolean;
             paramTypes: {
@@ -128,6 +129,12 @@ declare interface IBksConfig {
         };
         redis: {
             allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
         };
         redshift: {
             allowSkipToLastPage: boolean;

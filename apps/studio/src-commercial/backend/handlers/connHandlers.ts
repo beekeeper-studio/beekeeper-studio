@@ -4,7 +4,7 @@ import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResul
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
-import ConnectionProvider from '../lib/connection-provider'; 
+import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
@@ -117,6 +117,12 @@ export interface IConnectionHandlers {
   'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
 
   'conn/getQueryForFilter': ({ filter, sId }: { filter: TableFilter, sId: string }) => Promise<string>,
+
+  'conn/reserveConnection': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/releaseConnection': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/startTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/commitTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/rollbackTransaction': ({ tabId, sId}: { tabId: number, sId: string }) => Promise<void>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -563,4 +569,29 @@ export const ConnHandlers: IConnectionHandlers = {
     checkConnection(sId);
     return await state(sId).connection.getQueryForFilter(filter);
   },
+
+  'conn/reserveConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.reserveConnection(tabId);
+  },
+
+  'conn/releaseConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.releaseConnection(tabId);
+  },
+
+  'conn/startTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.startTransaction(tabId);
+  },
+
+  'conn/commitTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.commitTransaction(tabId);
+  },
+
+  'conn/rollbackTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.rollbackTransaction(tabId);
+  }
 }
