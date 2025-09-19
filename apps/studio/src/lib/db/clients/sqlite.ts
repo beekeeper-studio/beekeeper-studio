@@ -580,6 +580,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
     connection.defaultSafeIntegers(true);
 
+    console.log("Extensions: ", this.server.config.runtimeExtensions)
     if (this.server.config.runtimeExtensions && this.server.config.runtimeExtensions.length > 0) {
       for (const extension of this.server.config.runtimeExtensions) {
         try {

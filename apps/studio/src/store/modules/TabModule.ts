@@ -97,7 +97,15 @@ export const TabModule: Module<State, RootState> = {
     },
 
     addTabTypeConfig(state, newConfig: TabTypeConfig.PluginConfig) {
-      state.allTabTypeConfigs.push(newConfig)
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        state.allTabTypeConfigs.push(newConfig)
+      } else if (newConfig.menuItem) {
+        // If tabTypeConfig already exists, update the menuItem
+        Vue.set(found, 'menuItem', newConfig.menuItem)
+      }
     },
 
     removeTabTypeConfig(state, config: TabTypeConfig.PluginConfig) {
@@ -110,6 +118,25 @@ export const TabModule: Module<State, RootState> = {
       })
     },
 
+    setMenuItem(state, newConfig: TabTypeConfig.PluginRef & { menuItem: TabTypeConfig.PluginConfig['menuItem'] }) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${newConfig.pluginId} does not exist`)
+      }
+      found.menuItem = newConfig.menuItem
+    },
+
+    unsetMenuItem(state, config: TabTypeConfig.PluginRef) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${config.pluginId} does not exist`)
+      }
+      found.menuItem = undefined
+    },
   },
   actions: {
     async load(context) {
