@@ -7,7 +7,7 @@ icon: material/code-json
 # Plugin Manifest Reference
 
 !!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). Things might change, but we'd love your feedback!
+    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
 
 The `manifest.json` file defines your plugin's metadata, capabilities, settings, and permissions. This file must be located in the root of your plugin directory.
 
@@ -113,7 +113,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 }
 ```
 
-### Legacy Format (Deprecated)
+### Legacy Format (Manifest V0)
 
 For backward compatibility, the old `tabTypes` format is still supported:
 
