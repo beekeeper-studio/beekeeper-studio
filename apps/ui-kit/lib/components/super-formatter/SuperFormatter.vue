@@ -134,6 +134,7 @@
         </button>
         <div class="formatter-buttons__btn-group">
           <button
+            @click="copyToClipboard"
             class="btn btn-small"
             type="button"
           >
@@ -202,6 +203,9 @@ export default Vue.extend({
         language: this.formatterDialect,
         ...this.unsavedPreset
       })
+    },
+    copyToClipboard() {
+      this.clipboard(this.value)
     },
     handleOptionChange() {
       console.log(format(this.value, {

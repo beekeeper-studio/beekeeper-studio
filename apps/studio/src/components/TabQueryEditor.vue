@@ -252,7 +252,7 @@
             :formatter-dialect="formatterDialect"
             :identifier-dialect="identifierDialect"
             :can-add-presets="true"
-            :clipboard="$native.clipboard"
+            :clipboard="$native.clipboard.writeText"
             :default-preset="{}"
             :presets="[]"
             @bks-value-change="unsavedText = $event.value"
