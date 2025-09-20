@@ -39,6 +39,7 @@
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
         :identifier-dialect="identifierDialect"
+        :param-types="paramTypes"
         :keybindings="keybindings"
         :vim-config="vimConfig"
         :line-wrapping="wrapText"
@@ -48,7 +49,7 @@
         :allow-presets="true"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
-        :mode="dialectData.textEditorMode"
+        :language-id="languageIdForDialect"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         @bks-initialized="handleEditorInitialized"
@@ -345,7 +346,7 @@
                   :key="index"
                 >
                   <div class="form-group row">
-                    <label>{{ param }}</label>
+                    <label>{{ isNumber(param) ? `? ${param + 1}` : param }}</label>
                     <input
                       type="text"
                       class="form-control"
@@ -387,6 +388,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
+  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -585,7 +587,14 @@
           params = this.currentlySelectedQuery.parameters
         }
 
-        if (params.length && params[0] === '?') return []
+        if (params.length && params.includes('?')) {
+          let posIndex = 0; // number doesn't matter, this just distinguishes positional from other types
+          params = params.map((param) => {
+            if (param != '?') return param;
+
+            return posIndex++;
+          })
+        }
 
         return _.uniq(params)
       },
@@ -594,9 +603,11 @@
         if (_.isEmpty(query)) {
           return query;
         }
-        _.each(this.queryParameterPlaceholders, param => {
-          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`, 'g'), `$1${this.queryParameterValues[param]}$2`)
-        });
+
+        const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
+        const values = Object.values(this.queryParameterValues) as string[];
+        const convertedParams = convertParamsForReplacement(placeholders, values);
+        query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect]?.paramTypes);
         return query;
       },
       unsavedChanges() {
@@ -656,8 +667,18 @@
       formatterDialect() {
         return FormatterDialect(dialectFor(this.queryDialect))
       },
+      paramTypes() {
+        return this.$bksConfig.db[this.dialect]?.paramTypes
+      },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      languageIdForDialect() {
+        // Map textEditorMode to CodeMirror 6 languageId
+        if (this.dialectData.textEditorMode === 'text/x-redis') {
+          return 'redis';
+        }
+        return 'sql'; // default for all SQL databases
       },
       replaceExtensions() {
         return (extensions) => {
@@ -746,6 +767,9 @@
         } else {
           this.$modal.hide('super-formatter')
         }
+      },
+      isNumber(value: any) {
+        return _.isNumber(value);
       },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
@@ -975,8 +999,14 @@
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            this.$modal.show(`parameters-modal-${this.tab.id}`)
-            return
+            const params = this.individualQueries.flatMap((qs) => qs.parameters);
+            if (canDeparameterize(params)) {
+              this.$modal.show(`parameters-modal-${this.tab.id}`)
+              return;
+            } else {
+              this.error = `You can't use positional and non-positional parameters at the same time`
+              return;
+            }
           }
 
           const query = this.deparameterizedQuery

@@ -27,6 +27,8 @@ export class UsedQuery extends ApplicationEntity {
   @Column({ type: 'integer', nullable: false, default: -1 })
   workspaceId = -1
 
+  @Column({ type: "integer", nullable: false, default: -1 })
+  connectionId = -1
 
   @BeforeInsert()
   @BeforeUpdate()

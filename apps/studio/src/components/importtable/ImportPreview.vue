@@ -1,17 +1,19 @@
 <template>
   <section class="import-table-wrapper">
-    <div class="import-section-wrapper preview-stats">
+    <div class="import-section-wrapper">
       <div class="card-flat padding">
         <h3>Table</h3>
         <p>{{ tableName }}</p>
       </div>
-      <div class="card-flat padding">
-        <h3>Columns Mapped:</h3>
-        <p>{{ columnsImportedCount }}</p>
-      </div>
-      <div class="card-flat padding">
-        <h3>Columns Ignored</h3>
-        <p>{{ columnsIgnoredCount }}</p>
+      <div class="preview-column-stats">
+        <div class="card-flat padding">
+          <h3>Columns Mapped</h3>
+          <p>{{ columnsImportedCount }}</p>
+        </div>
+        <div class="card-flat padding" v-if="!importOptions?.createNewTable">
+          <h3>Columns Ignored</h3>
+          <p>{{ columnsIgnoredCount }}</p>
+        </div>
       </div>
     </div>
     <div ref="tabulator" />
@@ -34,8 +36,7 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        schema: '',
-        table: '',
+        tabId: null,
         importStarted: false,
         timer: null,
         importError: null
@@ -65,17 +66,19 @@ export default {
       return this.importOptions?.importMap?.length ?? '-'
     },
     columnsIgnoredCount () {
-      // TODO: table columns doesn't seem to be in "this.table" all the time so this will be 0 - mapped columns. Fix that
       const totalColumns = this.table?.columns?.length ?? 0
       const mappedColumns = this.importOptions?.importMap?.length ?? 0
       return totalColumns - mappedColumns
     },
     tableName () {
-      const schema = this.stepperProps.schema ? `${this.stepperProps.schema}.` : ''
-      return `${schema}${this.stepperProps.table}`
+      const schema = this.table?.schema ? `${this.table?.schema}.` : ''
+      return `${schema}${this.table?.name}`
     }
   },
   methods: {
+    importKey() {
+      return `new-import-${this.stepperProps.tabId}`
+    },
     getTable({schema, name: tableName}) {
       let foundSchema = ''
       if (this.schemaTables.length > 1) {
@@ -85,16 +88,12 @@ export default {
       }
       return foundSchema.tables.find(t => t.name === tableName)
     },
-    tableKey() {
-      const schema = this.stepperProps.schema ? `${this.stepperProps.schema}_` : ''
-      return `${schema}${this.stepperProps.table}`
-    },
     async tableData() {
       return await this.$util.send('import/getImportPreview', { id: this.importerClass })
     },
 
     async initTabulator() {
-      if (this.tabulator) return this.tabulator.redraw(true)
+      if (this.tabulator) this.tabulator.destroy()
 
       this.tabulator = new TabulatorFull(this.$refs.tabulator, {
         data: await this.tableData(),
@@ -109,13 +108,28 @@ export default {
       })
     },
     async onFocus () {
-      if (this.importerClass && this.tabulator) {
-        this.tabulator.redraw()
+      const importOptions = await this.tablesToImport.get(this.importKey())
+      this.table = importOptions.table
+
+      if (!importOptions.createNewTable) {
+        await this.$store.dispatch('updateTableColumns', this.getTable(importOptions.table))
+        this.table = this.getTable(importOptions.table)
+      }
+
+      if (Boolean(this.importerClass) && Boolean(this.tabulator)) {
+        this.initTabulator()
+      } else {
+        this.initialize()
       }
     },
     async initialize () {
-      const importOptions = await this.tablesToImport.get(this.tableKey())
-      this.table = importOptions.table
+      const importOptions = await this.tablesToImport.get(this.importKey())
+      if (!importOptions.createNewTable) {
+        await this.$store.dispatch('updateTableColumns', this.getTable(importOptions.table))
+        this.table = this.getTable(importOptions.table)
+      } else {
+        this.table = importOptions.table
+      }
       this.importOptions = importOptions
       if (!importOptions.importProcessId) {
         this.importerClass = await this.$util.send('import/init', { options: importOptions })
@@ -135,19 +149,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.preview-stats {
+.preview-column-stats {
   display: flex;
   justify-content: space-between;
+  margin-top: 2rem;
   margin-bottom: 2rem;
   > div {
     width: 30%;
      > h3 {
       margin: 0 0 .5rem 0;
-      overflow-wrap: break-word;
     }
     > p {
       margin: 0;
-      overflow-wrap: break-word;
      }
   }
 }
