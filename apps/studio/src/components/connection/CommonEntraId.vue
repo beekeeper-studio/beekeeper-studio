@@ -160,11 +160,10 @@ export default {
     ...mapState('settings', ['privacyMode']),
     username: {
       get() {
-        return this.config.username || this.config.user;
+        return this.config.username;
       },
       set(value) {
         this.config.username = value;
-        this.config.user = value;
       },
     },
     toggleClientSecretIcon() {
