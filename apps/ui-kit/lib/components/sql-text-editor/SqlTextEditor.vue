@@ -1,6 +1,6 @@
 <template>
   <div class="text-editor-wrapper">
-    <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor"></div>
+    <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor" />
     <button
       v-if="allowPresets"
       type="button"
@@ -11,7 +11,6 @@
     >
       <i class="material-icons">settings</i>
     </button>
-
   </div>
 </template>
 

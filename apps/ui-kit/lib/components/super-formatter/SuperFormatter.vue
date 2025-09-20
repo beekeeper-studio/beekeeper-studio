@@ -6,6 +6,12 @@
           Preset
           <select></select>
         </label>
+        <button
+          type="button"
+          class="btn btn-fab"
+        >
+          <i class="material-icons">add_circle</i>
+        </button>
       </div>
       <div class="formatter-settings">
         <label class="formatter-settings__inputs">
@@ -262,7 +268,14 @@ export default Vue.extend({
   }
 
   .presets {
+    label {
+      width: 90%;
+    }
     padding-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    align-content: center;
   }
 
   .switch {
