@@ -11,6 +11,7 @@
         <label class="formatter-settings__inputs">
           Tab Width
           <input
+            @change="handleOptionChange"
             v-model="unsavedPreset['tabWidth']"
             type="number"
             max="20"
@@ -21,13 +22,21 @@
         <label class="formatter-settings__inputs switch">
           <span class="sr-only">Use Tabs</span>
           <span class="switch-control">
-            <input v-model="unsavedPreset['useTabs']" type="checkbox" aria-label="Use Tabs">
+            <input
+              @change="handleOptionChange"
+              v-model="unsavedPreset['useTabs']"
+              type="checkbox"
+              aria-label="Use Tabs"
+            >
             <span class="slider" />
           </span>
         </label>
         <label class="formatter-settings__inputs">
           Keyword Case
-          <select v-model="unsavedPreset['keywordCase']">
+          <select
+            @change="handleOptionChange"
+            v-model="unsavedPreset['keywordCase']"
+          >
             <option v-for="opt in caseOptions" :key="opt.value" :value="opt.value">
               {{ opt.value }}
             </option>
@@ -35,7 +44,10 @@
         </label>
         <label class="formatter-settings__inputs">
           Data Type Case
-          <select v-model="unsavedPreset['dataTypeCase']">
+          <select
+            @change="handleOptionChange"
+            v-model="unsavedPreset['dataTypeCase']"
+          >
             <option v-for="opt in caseOptions" :key="opt.value" :value="opt.value">
               {{ opt.value }}
             </option>
@@ -43,7 +55,10 @@
         </label>
         <label class="formatter-settings__inputs">
           Function Case
-          <select v-model="unsavedPreset['functionCase']">
+          <select
+            @change="handleOptionChange"
+            v-model="unsavedPreset['functionCase']"
+          >
             <option v-for="opt in caseOptions" :key="opt.value" :value="opt.value">
               {{ opt.value }}
             </option>
@@ -52,7 +67,12 @@
         <label class="formatter-settings__inputs switch">
           <span class="sr-only">Logical Operator New Line</span>
           <span class="switch-control">
-            <input v-model="unsavedPreset['logicalOperatorNewline']" type="checkbox" aria-label="logical operator new line">
+            <input
+              @change="handleOptionChange"
+              v-model="unsavedPreset['logicalOperatorNewline']"
+              type="checkbox"
+              aria-label="logical operator new line"
+            >
             <span class="slider" />
           </span>
           <span class="slider" />
@@ -60,6 +80,7 @@
         <label class="formatter-settings__inputs">
           Expression Width
           <input
+            @change="handleOptionChange"
             v-model="unsavedPreset['expressionWidth']"
             type="number"
             max="100"
@@ -70,6 +91,7 @@
         <label class="formatter-settings__inputs">
           Lines Between Queries
           <input
+            @change="handleOptionChange"
             v-model="unsavedPreset['linesBetweenQueries']"
             type="number"
             max="20"
@@ -80,14 +102,24 @@
         <label class="formatter-settings__inputs switch">
           <span class="sr-only">Dense Operators</span>
           <span class="switch-control">
-            <input v-model="unsavedPreset['denseOperators']" type="checkbox" aria-label="Use Dense Operators">
+            <input
+              @change="handleOptionChange"
+              v-model="unsavedPreset['denseOperators']"
+              type="checkbox"
+              aria-label="Use Dense Operators"
+            >
             <span class="slider" />
           </span>
         </label>
         <label class="formatter-settings__inputs switch">
           <span class="sr-only">New Line Before Semicolon</span>
           <span class="switch-control">
-            <input v-model="unsavedPreset['newlineBeforeSemicolon']" type="checkbox" aria-label="new line before semicolon">
+            <input
+              @change="handleOptionChange"
+              v-model="unsavedPreset['newlineBeforeSemicolon']"
+              type="checkbox"
+              aria-label="new line before semicolon"
+            >
             <span class="slider" />
           </span>
         </label>
@@ -110,6 +142,7 @@
           <button
             class="btn btn-small"
             type="button"
+            @click="applyFormat"
           >
             Apply
           </button>
@@ -120,9 +153,11 @@
       <p>
         Preview
       </p>
-      <div>
-        {{ value }}
-      </div>
+      <textarea
+        class="formatter-textarea"
+        readonly
+        v-model="value"
+      />
     </div>
   </section>
 </template>
@@ -130,6 +165,8 @@
 <script lang="ts">
 import Vue from "vue"
 import props from './props'
+import { format } from 'sql-formatter'
+
 export default Vue.extend({
   data() {
     return {
@@ -150,12 +187,6 @@ export default Vue.extend({
   },
   mixins: [],
   props,
-  watch: {
-    entities() {
-      if (!this.textEditor) return
-      this.applyCompletionSource()
-    },
-  },
   computed: {
     caseOptions() {
       return [
@@ -166,7 +197,23 @@ export default Vue.extend({
     }
   },
   methods: {
-    
+    applyFormat() {
+      this.value = format(this.value, {
+        language: this.formatterDialect,
+        ...this.unsavedPreset
+      })
+    },
+    handleOptionChange() {
+      console.log(format(this.value, {
+        language: this.formatterDialect,
+        ...this.unsavedPreset
+      }))
+
+      this.value = format(this.value, {
+        language: this.formatterDialect,
+        ...this.unsavedPreset
+      })
+    }
   },
   mounted() {
     this.unsavedPreset = { ...this.unsavedPreset, ...this.defaultPreset }
@@ -191,6 +238,13 @@ export default Vue.extend({
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
+  }
+
+  .formatter-textarea {
+    flex: 1;
+    resize: none;
+    box-sizing: border-box;
+    width: 100%;
   }
 
   .formatter-buttons {
