@@ -77,7 +77,7 @@
       >
         <div class="advanced-body">
           <span class="info"
-            >Signed in{{ accountName ? ` as ${accountName}` : "" }}</span
+            >Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span
           >
           <button
             class="btn btn-flat btn-icon"
@@ -94,19 +94,7 @@
         <label for="user">User</label>
         <masked-input :value="username" :privacy-mode="privacyMode" @input="val => username = val" />
       </div>
-      <div class="form-group" v-show="showPassword">
-        <label for="password">Password</label>
-        <input
-          :type="togglePasswordInputType"
-          v-model="config.password"
-          class="password form-control"
-        >
-        <i
-          @click.prevent="togglePassword"
-          class="material-icons password-icon"
-        >{{ togglePasswordIcon }}</i>
-      </div>
-      <div class="form-group" v-show="showTenantId">
+      <div class="form-group" v-show="isServicePrincipal">
         <label for="tenantId">
           Tenant ID
           <i
@@ -126,13 +114,19 @@
         <label for="clientId">Client ID</label>
         <masked-input :value="config.azureAuthOptions.clientId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientId = val" />
       </div>
-      <div class="form-group" v-show="isServicePrincipal">
-        <label for="clientSecret">Client Secret</label>
-        <masked-input :value="config.azureAuthOptions.clientSecret" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientSecret = val" :type="togglePasswordInputType" />
-        <i
-          @click.prevent="togglePassword"
-          class="material-icons password-icon"
-        >{{ togglePasswordIcon }}</i>
+      <div class="row gutter">
+        <div class="col s12 form-group" v-show="isServicePrincipal">
+          <label for="clientSecret">Client Secret</label>
+          <input
+            :type="toggleClientSecretInputType"
+            v-model="config.azureAuthOptions.clientSecret"
+            class="password form-control"
+          >
+          <i
+            @click.prevent="toggleClientSecret"
+            class="material-icons password-icon"
+          >{{ toggleClientSecretIcon }}</i>
+        </div>
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
@@ -159,6 +153,7 @@ export default {
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
+      showClientSecret: false
     };
   },
   computed: {
@@ -172,25 +167,14 @@ export default {
         this.config.user = value;
       },
     },
-    togglePasswordIcon() {
-      return this.showPassword ? "visibility_off" : "visibility"
+    toggleClientSecretIcon() {
+      return this.showClientSecret ? "visibility_off" : "visibility"
     },
-    togglePasswordInputType() {
-      return this.showPassword ? "text" : "password"
+    toggleClientSecretInputType() {
+      return this.showClientSecret ? "text" : "password"
     },
     showUser() {
-      return [AzureAuthType.Password, AzureAuthType.CLI].includes(
-        this.authType
-      );
-    },
-    showPassword() {
-      return this.authType === AzureAuthType.Password;
-    },
-    showTenantId() {
-      return [
-        AzureAuthType.Password,
-        AzureAuthType.ServicePrincipalSecret,
-      ].includes(this.authType);
+      return this.authType === AzureAuthType.CLI;
     },
     isServicePrincipal() {
       return this.authType === AzureAuthType.ServicePrincipalSecret;
@@ -223,6 +207,9 @@ export default {
     toggleIAMAuthentication() {
       this.azureAuthEnabled = !this.azureAuthEnabled;
       this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled;
+    },
+    toggleClientSecret() {
+      return this.showClientSecret = !this.showClientSecret
     },
     async signOut() {
       try {
