@@ -1178,6 +1178,12 @@ export default Vue.extend({
     },
 
     openEditorMenuByShortcut() {
+      // Check if focus is on JSON viewer search input - if so, don't trigger editor modal
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement.classList.contains('search-input')) {
+        return; // Let the JSON viewer handle the Shift+Enter
+      }
+      
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       // FIXME maybe we can avoid calling child methods directly like this?

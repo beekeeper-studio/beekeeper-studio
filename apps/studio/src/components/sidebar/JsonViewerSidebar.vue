@@ -1,6 +1,7 @@
 <template>
   <div class="json-viewer-sidebar">
     <json-viewer
+      ref="jsonViewer"
       :value="value"
       :filter="filter"
       :data-id="dataId"
@@ -131,6 +132,9 @@ export default Vue.extend({
     },
     clearPersistentState() {
       SmartLocalStorage.removeItem(this.persistenceID)
+    },
+    getMenuOptions() {
+      return this.$refs.jsonViewer?.getMenuOptions() || [];
     },
   },
   mounted() {

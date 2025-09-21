@@ -13,6 +13,28 @@
         </x-tab>
       </x-tabs>
       <div class="actions">
+        <!-- Menu button for JSON Viewer (only show when json-viewer tab is active) -->
+        <x-button
+          v-if="secondaryActiveTabId === 'json-viewer'"
+          class="menu-btn btn btn-fab"
+          tabindex="0"
+        >
+          <i class="material-icons">more_vert</i>
+          <x-menu style="--target-align:right;">
+            <x-menuitem
+              v-for="option in jsonViewerMenuOptions"
+              :key="option.name"
+              :toggled="option.checked"
+              :togglable="typeof option.checked !== 'undefined'"
+              @click.prevent="option.handler"
+            >
+              <x-label>{{ option.name }}</x-label>
+            </x-menuitem>
+            <x-menuitem v-if="jsonViewerMenuOptions.length === 0">
+              <x-label>No options available</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
         <button class="close-btn btn btn-flat btn-fab" @click="$emit('close')">
           <i class="material-icons">close</i>
         </button>
@@ -22,6 +44,7 @@
       <template v-for="tab in tabs">
         <template v-if="tab.id === 'json-viewer'">
           <json-viewer-sidebar
+            ref="jsonViewerSidebar"
             v-show="secondaryActiveTabId === 'json-viewer'"
             :key="tab.id"
           />
@@ -62,6 +85,55 @@ export default Vue.extend({
   },
   computed: {
     ...mapState("sidebar", ["secondaryActiveTabId", "tabs", "secondarySidebarOpen"]),
+    jsonViewerMenuOptions() {
+      if (this.secondaryActiveTabId === 'json-viewer') {
+        // Return hardcoded menu options for now to test the UI
+        return [
+          {
+            name: "Copy Visible",
+            handler: () => {
+              const jsonViewerSidebar = this.$refs.jsonViewerSidebar as any;
+              const jsonViewer = jsonViewerSidebar?.$refs?.jsonViewer;
+              if (jsonViewer?.text) {
+                this.$native.clipboard.writeText(jsonViewer.text);
+              }
+            },
+          },
+          {
+            name: "Collapse all",
+            handler: () => {
+              const jsonViewerSidebar = this.$refs.jsonViewerSidebar as any;
+              const jsonViewer = jsonViewerSidebar?.$refs?.jsonViewer;
+              if (jsonViewer) {
+                jsonViewer.foldAll++;
+              }
+            },
+          },
+          {
+            name: "Expand all",
+            handler: () => {
+              const jsonViewerSidebar = this.$refs.jsonViewerSidebar as any;
+              const jsonViewer = jsonViewerSidebar?.$refs?.jsonViewer;
+              if (jsonViewer) {
+                jsonViewer.unfoldAll++;
+              }
+            },
+          },
+          {
+            name: "Wrap Text",
+            handler: () => {
+              const jsonViewerSidebar = this.$refs.jsonViewerSidebar as any;
+              const jsonViewer = jsonViewerSidebar?.$refs?.jsonViewer;
+              if (jsonViewer) {
+                jsonViewer.wrapText = !jsonViewer.wrapText;
+              }
+            },
+            checked: false, // We could make this dynamic later
+          },
+        ];
+      }
+      return [];
+    },
     rootBindings() {
       return [
         {
@@ -96,6 +168,9 @@ export default Vue.extend({
   },
   mounted() {
     this.registerHandlers(this.rootBindings);
+  },
+  updated() {
+    // No longer needed - removed updateMenuOptions
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
