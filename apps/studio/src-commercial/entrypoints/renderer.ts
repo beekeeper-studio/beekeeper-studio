@@ -40,6 +40,8 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
 import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
+// Import for side effects: enhances CodeMirror search panel UI (hides replace row, injects 3-dots menu, auto-opens search/focuses find box in JSON viewer)
+import '@/search-panel-ui-toggle'
 
 (async () => {
 

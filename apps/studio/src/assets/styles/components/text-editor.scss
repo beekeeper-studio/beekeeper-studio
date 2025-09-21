@@ -1,5 +1,73 @@
 @import "./text-editor-plugins/partial-read-only.scss";
 
+// Shared search panel UI variables and mixins
+$bks-toggle-size: 20px !default;
+$bks-toggle-radius: 4px !default;
+$bks-toggle-gap-x: 2px !default;
+
+@mixin bks-toggle-label() {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin: 0 $bks-toggle-gap-x 0 0;
+  color: transparent;
+  font-size: 0; // prevent hidden text from occupying space
+  white-space: nowrap;
+  user-select: none;
+}
+@mixin bks-toggle-input() {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+@mixin bks-toggle-box-base() {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $bks-toggle-size;
+  height: $bks-toggle-size;
+  border-radius: $bks-toggle-radius;
+  border: 1px solid rgba($theme-base, 0.32);
+  background: transparent;
+  color: rgba($theme-base, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+// Tooltip helper for icon-only controls
+@mixin bks-hover-tooltip($text) {
+  &::before {
+    content: $text;
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(-2px);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 10;
+    transition: opacity 120ms ease, transform 120ms ease, visibility 120ms linear;
+  }
+  &:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 .BksTextEditor {
   padding: 0.75rem 0;
   &.remove-json-root-brackets .CodeMirror-code {
@@ -29,5 +97,345 @@
     text-decoration-line: underline;
     text-decoration-style: wavy;
     text-decoration-color: rgba($brand-danger, 0.6);
+  }
+
+  // Hide specific CodeMirror search panel controls
+  // Keep search/replace working via shortcuts, just remove these UI buttons
+  .cm-panel.cm-search {
+    // Lay out controls responsively
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    overflow: visible; // allow tooltips to render outside
+
+    // Make text fields (find/replace) flex to fill available space
+    > input[type="text"],
+    > input.cm-textfield,
+    > .cm-textfield {
+      flex: 1 1 280px;
+      min-width: 140px;
+      max-width: none;
+    }
+    // Remove default left spacing on checkbox labels inside search panel
+    label:has(> input[type="checkbox"]) {
+      margin-left: 0 !important;
+      padding-left: 0 !important;
+    }
+
+    button[name="next"],
+    button[name="prev"],
+    button[name="replaceAll"],
+    button[name="all"],
+    button[name="select"],
+    button[name="selectMatches"],
+    button[name="selectAll"],
+    button[name="close"],
+    .cm-button[name="next"],
+    .cm-button[name="prev"],
+    .cm-button[name="replaceAll"],
+    .cm-button[name="all"],
+    .cm-button[name="select"],
+    .cm-button[name="selectMatches"],
+    .cm-button[name="selectAll"],
+    .cm-button[name="close"],
+    button[aria-label*="all" i],
+    .cm-button[aria-label*="all" i],
+    button[title*="all" i],
+    .cm-button[title*="all" i],
+    button[aria-label*="select" i],
+    .cm-button[aria-label*="select" i],
+    button[title*="select" i],
+    .cm-button[title*="select" i],
+    button[aria-label*="close" i],
+    .cm-button[aria-label*="close" i],
+    button[title*="close" i],
+    .cm-button[title*="close" i] {
+      display: none !important;
+    }
+
+    // Push replace icons to rightmost, and keep them last in flow
+    button[name="replace"],
+    .cm-button[name="replace"],
+    button[aria-label="replace" i],
+    .cm-button[aria-label="replace" i] {
+      order: 100;
+      margin-left: auto; // consumes remaining space to push to right
+    }
+    button[name="replaceAll"],
+    .cm-button[name="replaceAll"],
+    button[aria-label*="replace all" i],
+    .cm-button[aria-label*="replace all" i] {
+      order: 101; // ensure it sits just after Replace
+    }
+
+    // Kebab menu button on the far right
+    .bks-json-menu {
+      order: 102;
+      margin-left: 2px;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      height: auto;
+      min-width: 0;
+      min-height: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      @include bks-hover-tooltip("More options");
+    }
+    .bks-json-menu::after {
+      content: "⋮"; // Unicode vertical ellipsis
+      font-size: 12px;
+      line-height: 1;
+      color: rgba($theme-base, 0.9);
+    }
+    .bks-json-menu:hover { background: rgba($theme-base, 0.06); }
+    .bks-json-menu:focus-visible { outline: 2px solid rgba($theme-base, 0.5); outline-offset: 2px; }
+    .bks-json-menu.open { background: rgba($theme-base, 0.08); }
+    .bks-json-menu-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 200px;
+      background: #1f1f1f;
+      color: #fff;
+      border: 1px solid rgba($theme-base, 0.25);
+      border-radius: 6px;
+      padding: 4px;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      z-index: 100;
+    }
+    .bks-json-menu.open > .bks-json-menu-popover { display: block; }
+    .bks-json-menu-item {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      color: inherit;
+      border: 0;
+      border-radius: 4px;
+      padding: 6px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .bks-json-menu-item:hover { background: rgba(255,255,255,0.08); }
+
+    // When toggled off, hide replace controls (UI only)
+    &.bks-hide-replace {
+      // Hide the second text field and replace buttons
+      > input[type="text"]:nth-of-type(2),
+      > input.cm-textfield:nth-of-type(2),
+      > .cm-textfield:nth-of-type(2),
+      button[name="replace"],
+      .cm-button[name="replace"],
+      button[name="replaceAll"],
+      .cm-button[name="replaceAll"] {
+        display: none !important;
+      }
+    }
+
+    // (tooltip mixin defined globally)
+
+    // Show Replace and Replace All using the same box style as toggles
+    // Replace
+    button[name="replace"],
+    .cm-button[name="replace"],
+    button[aria-label="replace" i],
+    .cm-button[aria-label="replace" i] {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 $bks-toggle-size;
+      width: $bks-toggle-size;
+      height: $bks-toggle-size;
+      min-width: $bks-toggle-size;
+      max-width: $bks-toggle-size;
+      min-height: $bks-toggle-size;
+      max-height: $bks-toggle-size;
+      box-sizing: border-box;
+      margin: 0 $bks-toggle-gap-x 0 0;
+      padding: 0;
+      border-radius: $bks-toggle-radius;
+      border: 1px solid rgba($theme-base, 0.32);
+      background: transparent;
+      font-size: 0; // hide text label
+      line-height: 0; // prevent baseline from adding height
+      overflow: hidden; // prevent hidden text from reserving space
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease;
+      position: relative;
+      @include bks-hover-tooltip("Replace");
+    }
+    button[name="replace"]::after,
+    .cm-button[name="replace"]::after,
+    button[aria-label="replace" i]::after,
+    .cm-button[aria-label="replace" i]::after {
+      content: "redo";
+      font-family: "Material Icons";
+      font-weight: normal;
+      font-style: normal;
+      font-size: 12px; // match toggle glyph size
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: "liga";
+      color: rgba($theme-base, 0.9);
+    }
+    button[name="replace"]:hover,
+    .cm-button[name="replace"]:hover,
+    button[aria-label="replace" i]:hover,
+    .cm-button[aria-label="replace" i]:hover {
+      border-color: rgba($theme-base, 0.5);
+      background: rgba($theme-base, 0.06);
+    }
+    button[name="replace"]:focus-visible,
+    .cm-button[name="replace"]:focus-visible,
+    button[aria-label="replace" i]:focus-visible,
+    .cm-button[aria-label="replace" i]:focus-visible {
+      outline: 2px solid rgba($theme-base, 0.5);
+      outline-offset: 2px;
+    }
+
+    // Replace All
+    // Re-enable visibility if previously hidden by generic rules
+    button[name="replaceAll"],
+    .cm-button[name="replaceAll"],
+    button[aria-label*="replace all" i],
+    .cm-button[aria-label*="replace all" i] {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 $bks-toggle-size;
+      width: $bks-toggle-size;
+      height: $bks-toggle-size;
+      min-width: $bks-toggle-size;
+      max-width: $bks-toggle-size;
+      min-height: $bks-toggle-size;
+      max-height: $bks-toggle-size;
+      box-sizing: border-box;
+      margin: 0 $bks-toggle-gap-x 0 0;
+      padding: 0;
+      border-radius: $bks-toggle-radius;
+      border: 1px solid rgba($theme-base, 0.32);
+      background: transparent;
+      font-size: 0; // hide text label
+      line-height: 0; // prevent baseline from adding height
+      overflow: hidden; // prevent hidden text from reserving space
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease;
+      position: relative;
+      @include bks-hover-tooltip("Replace All");
+    }
+    button[name="replaceAll"]::after,
+    .cm-button[name="replaceAll"]::after,
+    button[aria-label*="replace all" i]::after,
+    .cm-button[aria-label*="replace all" i]::after {
+      content: "find_replace";
+      font-family: "Material Icons";
+      font-weight: normal;
+      font-style: normal;
+      font-size: 12px; // match toggle glyph size
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: "liga";
+      color: rgba($theme-base, 0.9);
+    }
+    button[name="replaceAll"]:hover,
+    .cm-button[name="replaceAll"]:hover,
+    button[aria-label*="replace all" i]:hover,
+    .cm-button[aria-label*="replace all" i]:hover {
+      border-color: rgba($theme-base, 0.5);
+      background: rgba($theme-base, 0.06);
+    }
+    button[name="replaceAll"]:focus-visible,
+    .cm-button[name="replaceAll"]:focus-visible,
+    button[aria-label*="replace all" i]:focus-visible,
+    .cm-button[aria-label*="replace all" i]:focus-visible {
+      outline: 2px solid rgba($theme-base, 0.5);
+      outline-offset: 2px;
+    }
+
+    // Common label styling
+    label:has(> input[name="case"]),
+    label:has(> input[name="regexp"]),
+    label:has(> input[name="re"]),
+    label:has(> input[name="word"]),
+    label:has(> input[name="whole"]) {
+      @include bks-toggle-label();
+    }
+    // Tooltips for the three search toggles
+    label:has(> input[name="case"]) { @include bks-hover-tooltip("Match Case"); }
+    label:has(> input[name="regexp"]),
+    label:has(> input[name="re"]) { @include bks-hover-tooltip("Use Regular Expression"); }
+    label:has(> input[name="word"]),
+    label:has(> input[name="whole"]) { @include bks-hover-tooltip("Match Whole Word"); }
+    // Hide native inputs (but keep interactive)
+    label:has(> input[name="case"]) > input[type="checkbox"],
+    label:has(> input[name="regexp"]) > input[type="checkbox"],
+    label:has(> input[name="re"]) > input[type="checkbox"],
+    label:has(> input[name="word"]) > input[type="checkbox"],
+    label:has(> input[name="whole"]) > input[type="checkbox"] {
+      @include bks-toggle-input();
+    }
+    // Common box base
+    label:has(> input[name="case"])::after,
+    label:has(> input[name="regexp"])::after,
+    label:has(> input[name="re"])::after,
+    label:has(> input[name="word"])::after,
+    label:has(> input[name="whole"])::after {
+      @include bks-toggle-box-base();
+    }
+    // Specific glyphs
+    label:has(> input[name="case"])::after { content: "Aa"; padding-bottom: 1px; }
+    label:has(> input[name="regexp"])::after,
+    label:has(> input[name="re"])::after { content: ".*"; }
+    label:has(> input[name="word"])::after,
+    label:has(> input[name="whole"])::after { content: "ab"; }
+
+    // States
+    label:has(> input[name="case"]):hover::after,
+    label:has(> input[name="regexp"]):hover::after,
+    label:has(> input[name="re"]):hover::after,
+    label:has(> input[name="word"]):hover::after,
+    label:has(> input[name="whole"]):hover::after {
+      border-color: rgba($theme-base, 0.5);
+      background: rgba($theme-base, 0.06);
+    }
+    label:has(> input[name="case"]:focus-visible)::after,
+    label:has(> input[name="regexp"]:focus-visible)::after,
+    label:has(> input[name="re"]:focus-visible)::after,
+    label:has(> input[name="word"]:focus-visible)::after,
+    label:has(> input[name="whole"]:focus-visible)::after {
+      outline: 2px solid rgba($theme-base, 0.5);
+      outline-offset: 2px;
+    }
+    label:has(> input[name="case"]:checked)::after,
+    label:has(> input[name="regexp"]:checked)::after,
+    label:has(> input[name="re"]:checked)::after,
+    label:has(> input[name="word"]:checked)::after,
+    label:has(> input[name="whole"]:checked)::after {
+      background: rgba($theme-base, 0.18);
+      border-color: rgba($theme-base, 0.55);
+    }
   }
 }

@@ -4,53 +4,13 @@
     ref="sidebar"
     v-show="!hidden"
   >
-    <div class="header">
-      <div
-        class="header-group"
-        v-show="!empty"
-      >
-        <div class="filter-wrap">
-          <input
-            class="form-control"
-            type="text"
-            placeholder="Filter keys by text or /regex/"
-            v-model="debouncedFilter"
-          >
-          <button
-            type="button"
-            class="clear btn-link"
-            @click="setFilter('')"
-            v-if="filter"
-          >
-            <i class="material-icons">cancel</i>
-          </button>
-        </div>
-        <x-button
-          class="menu-btn btn btn-fab"
-          tabindex="0"
-        >
-          <i class="material-icons">more_vert</i>
-          <x-menu style="--target-align:right;">
-            <x-menuitem
-              v-for="option in menuOptions"
-              :key="option.name"
-              :toggled="option.checked"
-              :togglable="typeof option.checked !== 'undefined'"
-              @click.prevent="option.handler"
-            >
-              <x-label>{{ option.name }}</x-label>
-            </x-menuitem>
-          </x-menu>
-        </x-button>
-      </div>
-    </div>
     <div class="text-editor-wrapper">
       <text-editor
         language-id="json"
         :fold-all="foldAll"
         :unfold-all="unfoldAll"
         :value="text"
-        :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
+        :force-initialize="reinitializeTextEditor + Number(reinitialize || 0)"
         :markers="markers"
         :replaceExtensions="replaceExtensions"
         :line-wrapping="wrapText"
@@ -178,14 +138,6 @@ export default Vue.extend({
         return ""
       }
       return this.sourceMap.json
-    },
-    debouncedFilter: {
-      get() {
-        return this.filter;
-      },
-      set: _.debounce(function (value) {
-        this.setFilter(value);
-      }, 500),
     },
     sourceMap() {
       let replacedFilteredValue = this.filteredValue;
@@ -365,6 +317,21 @@ export default Vue.extend({
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
+    onMenuCopyVisible() {
+      this.$native.clipboard.writeText(this.text);
+    },
+    onMenuCollapseAll() {
+      this.foldAll++
+    },
+    onMenuExpandAll() {
+      this.unfoldAll++
+    },
+    onMenuToggleExpandFk() {
+      this.$store.dispatch('toggleExpandFKDetailsByDefault')
+    },
+    onMenuToggleWrapText() {
+      this.wrapText = !this.wrapText
+    },
     replacer(_key: string, value: unknown) {
       // HACK: this is the case in mongodb objectid
       if (value && typeof value === "object" && _.isTypedArray((value as any).buffer)) {
@@ -401,9 +368,21 @@ export default Vue.extend({
   },
   mounted() {
     this.partialReadonly.addListener("change", this.handleEditableRangeChange)
+    const el = this.$el as HTMLElement
+    el.addEventListener('bks-json-menu:copy-visible', this.onMenuCopyVisible as any)
+    el.addEventListener('bks-json-menu:collapse-all', this.onMenuCollapseAll as any)
+    el.addEventListener('bks-json-menu:expand-all', this.onMenuExpandAll as any)
+    el.addEventListener('bks-json-menu:toggle-expand-fk', this.onMenuToggleExpandFk as any)
+    el.addEventListener('bks-json-menu:toggle-wrap-text', this.onMenuToggleWrapText as any)
   },
   beforeDestroy() {
     this.partialReadonly.removeListener("change", this.handleEditableRangeChange)
+    const el = this.$el as HTMLElement
+    el.removeEventListener('bks-json-menu:copy-visible', this.onMenuCopyVisible as any)
+    el.removeEventListener('bks-json-menu:collapse-all', this.onMenuCollapseAll as any)
+    el.removeEventListener('bks-json-menu:expand-all', this.onMenuExpandAll as any)
+    el.removeEventListener('bks-json-menu:toggle-expand-fk', this.onMenuToggleExpandFk as any)
+    el.removeEventListener('bks-json-menu:toggle-wrap-text', this.onMenuToggleWrapText as any)
   },
 });
 </script>
