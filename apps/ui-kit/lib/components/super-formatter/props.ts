@@ -5,7 +5,7 @@ export default {
   value: String,
   canAddPresets: Boolean,
   clipboard: Object,
-  defaultPreset: {
+  startingPreset: {
     type: Object,
     default: () => ({
       tabWidth: 2,

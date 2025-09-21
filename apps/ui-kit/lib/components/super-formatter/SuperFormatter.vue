@@ -189,7 +189,18 @@ export default Vue.extend({
         denseOperators: false,
         newlineBeforeSemicolon: false
       },
-      selectedPreset: {}
+      selectedPreset: {
+        tabWidth: 2,
+        useTabs: false,
+        keywordCase: 'preserve',
+        dataTypeCase: 'preserve',
+        functionCase: 'preserve',
+        logicalOperatorNewline: 'before',
+        expressionWidth: 50,
+        linesBetweenQueries: 1,
+        denseOperators: false,
+        newlineBeforeSemicolon: false
+      }
     }
   },
   mixins: [],
@@ -214,11 +225,6 @@ export default Vue.extend({
       this.clipboard(this.value)
     },
     handleOptionChange() {
-      console.log(format(this.value, {
-        language: this.formatterDialect,
-        ...this.unsavedPreset
-      }))
-
       this.value = format(this.value, {
         language: this.formatterDialect,
         ...this.unsavedPreset
@@ -226,7 +232,8 @@ export default Vue.extend({
     }
   },
   mounted() {
-    this.unsavedPreset = { ...this.unsavedPreset, ...this.defaultPreset }
+    this.unsavedPreset = { ...this.unsavedPreset, ...this.startingPreset }
+    this.selectedPreset = { ...this.selectedPreset, ...this.startingPreset }
   }
 })
 </script>
@@ -275,7 +282,7 @@ export default Vue.extend({
     display: flex;
     justify-content: space-between;
     flex-wrap: nowrap;
-    align-content: center;
+    align-items: flex-end;
   }
 
   .switch {
