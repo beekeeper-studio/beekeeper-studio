@@ -196,6 +196,7 @@ $bks-toggle-gap-x: 2px !default;
       cursor: pointer;
       line-height: 1;
       padding: 0;
+      @include bks-hover-tooltip("More options");
     }
     .bks-json-menu::after {
       content: "⋮"; 
