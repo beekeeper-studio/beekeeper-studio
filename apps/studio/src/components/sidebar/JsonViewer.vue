@@ -35,7 +35,7 @@
               @click="toggleMatchCase"
               title="Match Case"
             >
-              <i class="material-icons">text_fields</i>
+              <span class="control-text">Aa</span>
             </button>
             <button
               class="search-control-btn"
@@ -43,7 +43,7 @@
               @click="toggleWholeWord"
               title="Match Whole Word"
             >
-              <i class="material-icons">select_all</i>
+              <span class="control-text">ab</span>
             </button>
             <button
               class="search-control-btn"
@@ -51,18 +51,12 @@
               @click="toggleRegex"
               title="Use Regular Expression"
             >
-              <i class="material-icons">code</i>
+              <span class="control-text">.*</span>
             </button>
           </div>
         </div>
         <div class="search-navigation">
           <span class="search-results" v-if="searchQuery">{{ currentMatch }} of {{ totalMatches }}</span>
-          <button class="nav-btn" @click="findPrevious" title="Previous Match">
-            <i class="material-icons">keyboard_arrow_up</i>
-          </button>
-          <button class="nav-btn" @click="findNext" title="Next Match">
-            <i class="material-icons">keyboard_arrow_down</i>
-          </button>
           <button
             class="toggle-replace-btn"
             :class="{ active: showReplace }"
@@ -70,6 +64,9 @@
             title="Toggle Replace"
           >
             <i class="material-icons">find_replace</i>
+          </button>
+          <button class="menu-btn" @click="showMenu" title="More Options">
+            <i class="material-icons">more_vert</i>
           </button>
         </div>
       </div>
@@ -728,6 +725,12 @@ export default Vue.extend({
     getMenuOptions() {
       return this.menuOptions;
     },
+    showMenu(event) {
+      this.$bks.openMenu({
+        event,
+        options: this.menuOptions,
+      });
+    },
   },
   mounted() {
     this.partialReadonly.addListener("change", this.handleEditableRangeChange)
@@ -827,8 +830,10 @@ export default Vue.extend({
   color: white;
 }
 
-.search-control-btn .material-icons {
-  font-size: 14px;
+.search-control-btn .control-text {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--bks-font-family);
 }
 
 .search-navigation {
@@ -900,12 +905,35 @@ export default Vue.extend({
   font-size: 16px;
 }
 
-.nav-btn:disabled, .replace-btn:disabled {
+.menu-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bks-text-light);
+  transition: all 0.15s ease;
+}
+
+.menu-btn:hover {
+  background: var(--bks-brand-info-light);
+  color: var(--bks-text-dark);
+}
+
+.menu-btn .material-icons {
+  font-size: 16px;
+}
+
+.nav-btn:disabled, .replace-btn:disabled, .menu-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.nav-btn:disabled:hover, .replace-btn:disabled:hover {
+.nav-btn:disabled:hover, .replace-btn:disabled:hover, .menu-btn:disabled:hover {
   background: transparent;
 }
 </style>
