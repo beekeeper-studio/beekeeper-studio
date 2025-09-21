@@ -27,7 +27,7 @@ export type FormatterPresetValues = {
   systemDefault: boolean
 }
 
-@Entity({ name: "formatter_preset" })
+@Entity({ name: "formatter_presets" })
 export class FormatterPreset extends ApplicationEntity {
   withProps(props: any) {
     if (props) FormatterPreset.merge(this, props)
