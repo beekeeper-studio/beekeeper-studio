@@ -13,10 +13,9 @@
     const toggleReplaceLabel = isHidden ? 'Show Replace Row' : 'Hide Replace Row';
 
     const menuBtn = document.createElement('button');
-    menuBtn.type = 'button';
-    menuBtn.className = 'bks-json-menu cm-button';
-    menuBtn.setAttribute('aria-label', 'More');
-    menuBtn.setAttribute('title', 'More');
+  menuBtn.type = 'button';
+  menuBtn.className = 'bks-json-menu cm-button';
+  menuBtn.setAttribute('aria-label', 'More');
 
     const menu = document.createElement('div');
     menu.className = 'bks-json-menu-popover';
