@@ -13,9 +13,14 @@ export default {
               ];
             */
           const columnNamesOnly = columns.map((c) => c.field)
-          return data.rows.map((row, idx) => {
-            return _.pick(row, columnNamesOnly)
-          })
+          // For MongoDB, do not filter fields at all, return full document
+          if (this.connectionType === 'mongodb') {
+            return data.rows
+          } else {
+            return data.rows.map((row, idx) => {
+              return _.pick(row, columnNamesOnly)
+            })
+          }
         },
         extractColumns(data) {
             // columns here
