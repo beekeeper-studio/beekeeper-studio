@@ -1,3 +1,40 @@
+// --- Common Button and Toggle Mixins ---
+@mixin bks-icon-btn($tooltip) {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 $bks-toggle-size;
+  width: $bks-toggle-size;
+  height: $bks-toggle-size;
+  min-width: $bks-toggle-size;
+  max-width: $bks-toggle-size;
+  min-height: $bks-toggle-size;
+  max-height: $bks-toggle-size;
+  box-sizing: border-box;
+  margin: 0 $bks-toggle-gap-x 0 0;
+  padding: 0;
+  border-radius: $bks-toggle-radius;
+  border: 1px solid rgba($theme-base, 0.32);
+  background: transparent;
+  font-size: 0; // hide text label
+  line-height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+  position: relative;
+  @include bks-hover-tooltip($tooltip);
+}
+
+@mixin bks-icon-btn-hover {
+  border-color: rgba($theme-base, 0.5);
+  background: rgba($theme-base, 0.06);
+}
+
+@mixin bks-icon-btn-focus {
+  outline: 2px solid rgba($theme-base, 0.5);
+  outline-offset: 2px;
+}
 @import "./text-editor-plugins/partial-read-only.scss";
 
 // Shared search panel UI variables and mixins
@@ -117,35 +154,16 @@ $bks-toggle-gap-x: 2px !default;
       margin-left: 0 !important;
       padding-left: 0 !important;
     }
-    button[name="next"],
-    button[name="prev"],
-    button[name="replaceAll"],
-    button[name="all"],
-    button[name="select"],
-    button[name="selectMatches"],
-    button[name="selectAll"],
-    button[name="close"],
-    .cm-button[name="next"],
-    .cm-button[name="prev"],
-    .cm-button[name="replaceAll"],
-    .cm-button[name="all"],
-    .cm-button[name="select"],
-    .cm-button[name="selectMatches"],
-    .cm-button[name="selectAll"],
-    .cm-button[name="close"],
-    button[aria-label*="all" i],
-    .cm-button[aria-label*="all" i],
-    button[title*="all" i],
-    .cm-button[title*="all" i],
-    button[aria-label*="select" i],
-    .cm-button[aria-label*="select" i],
-    button[title*="select" i],
-    .cm-button[title*="select" i],
-    button[aria-label*="close" i],
-    .cm-button[aria-label*="close" i],
-    button[title*="close" i],
-    .cm-button[title*="close" i] {
-      display: none !important;
+    $bks-hide-btns: ("next", "prev", "replaceAll", "all", "select", "selectMatches", "selectAll", "close");
+    @each $btn in $bks-hide-btns {
+      button[name="#{$btn}"],
+      .cm-button[name="#{$btn}"],
+      button[aria-label*="#{$btn}" i],
+      .cm-button[aria-label*="#{$btn}" i],
+      button[title*="#{$btn}" i],
+      .cm-button[title*="#{$btn}" i] {
+        display: none !important;
+      }
     }
 
     button[name="replace"],
@@ -234,196 +252,85 @@ $bks-toggle-gap-x: 2px !default;
 
     // Show Replace and Replace All using the same box style as toggles
     // Replace
-    button[name="replace"],
-    .cm-button[name="replace"],
-    button[aria-label="replace" i],
-    .cm-button[aria-label="replace" i] {
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-      flex: 0 0 $bks-toggle-size;
-      width: $bks-toggle-size;
-      height: $bks-toggle-size;
-      min-width: $bks-toggle-size;
-      max-width: $bks-toggle-size;
-      min-height: $bks-toggle-size;
-      max-height: $bks-toggle-size;
-      box-sizing: border-box;
-      margin: 0 $bks-toggle-gap-x 0 0;
-      padding: 0;
-      border-radius: $bks-toggle-radius;
-      border: 1px solid rgba($theme-base, 0.32);
-      background: transparent;
-      font-size: 0; // hide text label
-      line-height: 0; 
-      overflow: hidden; 
-      white-space: nowrap;
-      cursor: pointer;
-      transition: background-color 120ms ease, border-color 120ms ease;
-      position: relative;
-      @include bks-hover-tooltip("Replace");
-    }
-    button[name="replace"]::after,
-    .cm-button[name="replace"]::after,
-    button[aria-label="replace" i]::after,
-    .cm-button[aria-label="replace" i]::after {
-      content: "redo";
-      font-family: "Material Icons";
-      font-weight: normal;
-      font-style: normal;
-      font-size: 12px; 
-      line-height: 1;
-      letter-spacing: normal;
-      text-transform: none;
-      display: inline-block;
-      white-space: nowrap;
-      word-wrap: normal;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      font-feature-settings: "liga";
-      color: rgba($theme-base, 0.9);
-    }
-    button[name="replace"]:hover,
-    .cm-button[name="replace"]:hover,
-    button[aria-label="replace" i]:hover,
-    .cm-button[aria-label="replace" i]:hover {
-      border-color: rgba($theme-base, 0.5);
-      background: rgba($theme-base, 0.06);
-    }
-    button[name="replace"]:focus-visible,
-    .cm-button[name="replace"]:focus-visible,
-    button[aria-label="replace" i]:focus-visible,
-    .cm-button[aria-label="replace" i]:focus-visible {
-      outline: 2px solid rgba($theme-base, 0.5);
-      outline-offset: 2px;
+    $bks-icon-btns: (
+      "replace": ("Replace", "redo"),
+      "replaceAll": ("Replace All", "find_replace")
+    );
+    @each $btn, $data in $bks-icon-btns {
+      $label: nth($data, 1);
+      $icon: nth($data, 2);
+      button[name="#{$btn}"],
+      .cm-button[name="#{$btn}"],
+      button[aria-label*="#{$btn}" i],
+      .cm-button[aria-label*="#{$btn}" i] {
+        @include bks-icon-btn($label);
+      }
+      button[name="#{$btn}"]::after,
+      .cm-button[name="#{$btn}"]::after,
+      button[aria-label*="#{$btn}" i]::after,
+      .cm-button[aria-label*="#{$btn}" i]::after {
+        content: $icon;
+        font-family: "Material Icons";
+        font-weight: normal;
+        font-style: normal;
+        font-size: 12px;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "liga";
+        color: rgba($theme-base, 0.9);
+      }
+      button[name="#{$btn}"]:hover,
+      .cm-button[name="#{$btn}"]:hover,
+      button[aria-label*="#{$btn}" i]:hover,
+      .cm-button[aria-label*="#{$btn}" i]:hover {
+        @include bks-icon-btn-hover;
+      }
+      button[name="#{$btn}"]:focus-visible,
+      .cm-button[name="#{$btn}"]:focus-visible,
+      button[aria-label*="#{$btn}" i]:focus-visible,
+      .cm-button[aria-label*="#{$btn}" i]:focus-visible {
+        @include bks-icon-btn-focus;
+      }
     }
 
-    button[name="replaceAll"],
-    .cm-button[name="replaceAll"],
-    button[aria-label*="replace all" i],
-    .cm-button[aria-label*="replace all" i] {
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-      flex: 0 0 $bks-toggle-size;
-      width: $bks-toggle-size;
-      height: $bks-toggle-size;
-      min-width: $bks-toggle-size;
-      max-width: $bks-toggle-size;
-      min-height: $bks-toggle-size;
-      max-height: $bks-toggle-size;
-      box-sizing: border-box;
-      margin: 0 $bks-toggle-gap-x 0 0;
-      padding: 0;
-      border-radius: $bks-toggle-radius;
-      border: 1px solid rgba($theme-base, 0.32);
-      background: transparent;
-      font-size: 0; // hide text label
-      line-height: 0; 
-      overflow: hidden; 
-      white-space: nowrap;
-      cursor: pointer;
-      transition: background-color 120ms ease, border-color 120ms ease;
-      position: relative;
-      @include bks-hover-tooltip("Replace All");
+    // Toggle label/checkboxes (case, regexp, word, whole)
+    @mixin bks-toggle-label-group($name, $glyph, $tooltip) {
+      label:has(> input[name=#{$name}]) {
+        @include bks-toggle-label();
+        @include bks-hover-tooltip($tooltip);
+      }
+      label:has(> input[name=#{$name}]) > input[type="checkbox"] {
+        @include bks-toggle-input();
+      }
+      label:has(> input[name=#{$name}])::after {
+        @include bks-toggle-box-base();
+        content: $glyph;
+        @if $name == "case" { padding-bottom: 1px; }
+      }
+      label:has(> input[name=#{$name}]):hover::after {
+        border-color: rgba($theme-base, 0.5);
+        background: rgba($theme-base, 0.06);
+      }
+      label:has(> input[name=#{$name}]:focus-visible)::after {
+        outline: 2px solid rgba($theme-base, 0.5);
+        outline-offset: 2px;
+      }
+      label:has(> input[name=#{$name}]:checked)::after {
+        background: rgba($theme-base, 0.18);
+        border-color: rgba($theme-base, 0.55);
+      }
     }
-    button[name="replaceAll"]::after,
-    .cm-button[name="replaceAll"]::after,
-    button[aria-label*="replace all" i]::after,
-    .cm-button[aria-label*="replace all" i]::after {
-      content: "find_replace";
-      font-family: "Material Icons";
-      font-weight: normal;
-      font-style: normal;
-      font-size: 12px; 
-      line-height: 1;
-      letter-spacing: normal;
-      text-transform: none;
-      display: inline-block;
-      white-space: nowrap;
-      word-wrap: normal;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      font-feature-settings: "liga";
-      color: rgba($theme-base, 0.9);
-    }
-    button[name="replaceAll"]:hover,
-    .cm-button[name="replaceAll"]:hover,
-    button[aria-label*="replace all" i]:hover,
-    .cm-button[aria-label*="replace all" i]:hover {
-      border-color: rgba($theme-base, 0.5);
-      background: rgba($theme-base, 0.06);
-    }
-    button[name="replaceAll"]:focus-visible,
-    .cm-button[name="replaceAll"]:focus-visible,
-    button[aria-label*="replace all" i]:focus-visible,
-    .cm-button[aria-label*="replace all" i]:focus-visible {
-      outline: 2px solid rgba($theme-base, 0.5);
-      outline-offset: 2px;
-    }
-
-    label:has(> input[name="case"]),
-    label:has(> input[name="regexp"]),
-    label:has(> input[name="re"]),
-    label:has(> input[name="word"]),
-    label:has(> input[name="whole"]) {
-      @include bks-toggle-label();
-    }
-
-    label:has(> input[name="case"]) { @include bks-hover-tooltip("Match Case"); }
-    label:has(> input[name="regexp"]),
-    label:has(> input[name="re"]) { @include bks-hover-tooltip("Use Regular Expression"); }
-    label:has(> input[name="word"]),
-    label:has(> input[name="whole"]) { @include bks-hover-tooltip("Match Whole Word"); }
-
-    label:has(> input[name="case"]) > input[type="checkbox"],
-    label:has(> input[name="regexp"]) > input[type="checkbox"],
-    label:has(> input[name="re"]) > input[type="checkbox"],
-    label:has(> input[name="word"]) > input[type="checkbox"],
-    label:has(> input[name="whole"]) > input[type="checkbox"] {
-      @include bks-toggle-input();
-    }
-    // Common box base
-    label:has(> input[name="case"])::after,
-    label:has(> input[name="regexp"])::after,
-    label:has(> input[name="re"])::after,
-    label:has(> input[name="word"])::after,
-    label:has(> input[name="whole"])::after {
-      @include bks-toggle-box-base();
-    }
-    // Specific glyphs
-    label:has(> input[name="case"])::after { content: "Aa"; padding-bottom: 1px; }
-    label:has(> input[name="regexp"])::after,
-    label:has(> input[name="re"])::after { content: ".*"; }
-    label:has(> input[name="word"])::after,
-    label:has(> input[name="whole"])::after { content: "ab"; }
-
-    // States
-    label:has(> input[name="case"]):hover::after,
-    label:has(> input[name="regexp"]):hover::after,
-    label:has(> input[name="re"]):hover::after,
-    label:has(> input[name="word"]):hover::after,
-    label:has(> input[name="whole"]):hover::after {
-      border-color: rgba($theme-base, 0.5);
-      background: rgba($theme-base, 0.06);
-    }
-    label:has(> input[name="case"]:focus-visible)::after,
-    label:has(> input[name="regexp"]:focus-visible)::after,
-    label:has(> input[name="re"]:focus-visible)::after,
-    label:has(> input[name="word"]:focus-visible)::after,
-    label:has(> input[name="whole"]:focus-visible)::after {
-      outline: 2px solid rgba($theme-base, 0.5);
-      outline-offset: 2px;
-    }
-    label:has(> input[name="case"]:checked)::after,
-    label:has(> input[name="regexp"]:checked)::after,
-    label:has(> input[name="re"]:checked)::after,
-    label:has(> input[name="word"]:checked)::after,
-    label:has(> input[name="whole"]:checked)::after {
-      background: rgba($theme-base, 0.18);
-      border-color: rgba($theme-base, 0.55);
-    }
+    @include bks-toggle-label-group("case", "Aa", "Match Case");
+    @include bks-toggle-label-group("regexp", ".*", "Use Regular Expression");
+    @include bks-toggle-label-group("re", ".*", "Use Regular Expression");
+    @include bks-toggle-label-group("word", "ab", "Match Whole Word");
+    @include bks-toggle-label-group("whole", "ab", "Match Whole Word");
   }
 }
