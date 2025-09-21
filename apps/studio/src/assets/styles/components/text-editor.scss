@@ -100,16 +100,12 @@ $bks-toggle-gap-x: 2px !default;
   }
 
   // Hide specific CodeMirror search panel controls
-  // Keep search/replace working via shortcuts, just remove these UI buttons
   .cm-panel.cm-search {
-    // Lay out controls responsively
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px;
-    overflow: visible; // allow tooltips to render outside
-
-    // Make text fields (find/replace) flex to fill available space
+    overflow: visible; 
     > input[type="text"],
     > input.cm-textfield,
     > .cm-textfield {
@@ -117,12 +113,10 @@ $bks-toggle-gap-x: 2px !default;
       min-width: 140px;
       max-width: none;
     }
-    // Remove default left spacing on checkbox labels inside search panel
     label:has(> input[type="checkbox"]) {
       margin-left: 0 !important;
       padding-left: 0 !important;
     }
-
     button[name="next"],
     button[name="prev"],
     button[name="replaceAll"],
@@ -154,22 +148,20 @@ $bks-toggle-gap-x: 2px !default;
       display: none !important;
     }
 
-    // Push replace icons to rightmost, and keep them last in flow
     button[name="replace"],
     .cm-button[name="replace"],
     button[aria-label="replace" i],
     .cm-button[aria-label="replace" i] {
       order: 100;
-      margin-left: auto; // consumes remaining space to push to right
+      margin-left: auto; 
     }
     button[name="replaceAll"],
     .cm-button[name="replaceAll"],
     button[aria-label*="replace all" i],
     .cm-button[aria-label*="replace all" i] {
-      order: 101; // ensure it sits just after Replace
+      order: 101; 
     }
 
-    // Kebab menu button on the far right
     .bks-json-menu {
       order: 102;
       margin-left: 2px;
@@ -189,7 +181,7 @@ $bks-toggle-gap-x: 2px !default;
       @include bks-hover-tooltip("More options");
     }
     .bks-json-menu::after {
-      content: "⋮"; // Unicode vertical ellipsis
+      content: "⋮"; 
       font-size: 12px;
       line-height: 1;
       color: rgba($theme-base, 0.9);
@@ -227,7 +219,6 @@ $bks-toggle-gap-x: 2px !default;
 
     // When toggled off, hide replace controls (UI only)
     &.bks-hide-replace {
-      // Hide the second text field and replace buttons
       > input[type="text"]:nth-of-type(2),
       > input.cm-textfield:nth-of-type(2),
       > .cm-textfield:nth-of-type(2),
@@ -264,8 +255,8 @@ $bks-toggle-gap-x: 2px !default;
       border: 1px solid rgba($theme-base, 0.32);
       background: transparent;
       font-size: 0; // hide text label
-      line-height: 0; // prevent baseline from adding height
-      overflow: hidden; // prevent hidden text from reserving space
+      line-height: 0; 
+      overflow: hidden; 
       white-space: nowrap;
       cursor: pointer;
       transition: background-color 120ms ease, border-color 120ms ease;
@@ -280,7 +271,7 @@ $bks-toggle-gap-x: 2px !default;
       font-family: "Material Icons";
       font-weight: normal;
       font-style: normal;
-      font-size: 12px; // match toggle glyph size
+      font-size: 12px; 
       line-height: 1;
       letter-spacing: normal;
       text-transform: none;
@@ -308,8 +299,6 @@ $bks-toggle-gap-x: 2px !default;
       outline-offset: 2px;
     }
 
-    // Replace All
-    // Re-enable visibility if previously hidden by generic rules
     button[name="replaceAll"],
     .cm-button[name="replaceAll"],
     button[aria-label*="replace all" i],
@@ -331,8 +320,8 @@ $bks-toggle-gap-x: 2px !default;
       border: 1px solid rgba($theme-base, 0.32);
       background: transparent;
       font-size: 0; // hide text label
-      line-height: 0; // prevent baseline from adding height
-      overflow: hidden; // prevent hidden text from reserving space
+      line-height: 0; 
+      overflow: hidden; 
       white-space: nowrap;
       cursor: pointer;
       transition: background-color 120ms ease, border-color 120ms ease;
@@ -347,7 +336,7 @@ $bks-toggle-gap-x: 2px !default;
       font-family: "Material Icons";
       font-weight: normal;
       font-style: normal;
-      font-size: 12px; // match toggle glyph size
+      font-size: 12px; 
       line-height: 1;
       letter-spacing: normal;
       text-transform: none;
@@ -375,7 +364,6 @@ $bks-toggle-gap-x: 2px !default;
       outline-offset: 2px;
     }
 
-    // Common label styling
     label:has(> input[name="case"]),
     label:has(> input[name="regexp"]),
     label:has(> input[name="re"]),
@@ -383,13 +371,13 @@ $bks-toggle-gap-x: 2px !default;
     label:has(> input[name="whole"]) {
       @include bks-toggle-label();
     }
-    // Tooltips for the three search toggles
+
     label:has(> input[name="case"]) { @include bks-hover-tooltip("Match Case"); }
     label:has(> input[name="regexp"]),
     label:has(> input[name="re"]) { @include bks-hover-tooltip("Use Regular Expression"); }
     label:has(> input[name="word"]),
     label:has(> input[name="whole"]) { @include bks-hover-tooltip("Match Whole Word"); }
-    // Hide native inputs (but keep interactive)
+
     label:has(> input[name="case"]) > input[type="checkbox"],
     label:has(> input[name="regexp"]) > input[type="checkbox"],
     label:has(> input[name="re"]) > input[type="checkbox"],
