@@ -13,8 +13,9 @@ export default {
               ];
             */
           const columnNamesOnly = columns.map((c) => c.field)
-          // For MongoDB, do not filter fields at all, return full document
-          if (this.connectionType === 'mongodb') {
+          // Set of connectionTypes that should bypass column filtering
+          const bypassColumnFilterConnectionTypes = new Set(['mongodb'])
+          if (bypassColumnFilterConnectionTypes.has(this.connectionType)) {
             return data.rows
           } else {
             return data.rows.map((row, idx) => {
