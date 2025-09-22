@@ -415,7 +415,7 @@
         originalText: "",
         initialized: false,
         blankQuery: blankFavoriteQuery(),
-        fullSavedQuery: null,
+        fullQuery: null,
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
@@ -464,7 +464,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return this.fullSavedQuery ?? this.blankQuery
+        return this.fullQuery ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
@@ -682,7 +682,7 @@
         this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
-      fullSavedQuery() {
+      fullQuery() {
         this.initializeQueries();
       },
       remoteDeleted() {
@@ -869,7 +869,7 @@
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
 
-            this.$nextTick(() => {
+            this.$nextTick(async () => {
               this.unsavedText = this.query.text
               this.tab.title = this.query.title
               this.originalText = this.query.text
@@ -1141,7 +1141,9 @@
     },
     async mounted() {
       if (this.tab.queryId) {
-        this.fullSavedQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+        this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+      } else if (this.tab.usedQueryId) {
+        this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
       }
       
       if (this.shouldInitialize) {

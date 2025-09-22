@@ -69,6 +69,7 @@ import createPluginData from './20250630_create_plugin_data'
 import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
+import addUsedQueryId from './20250620_add_used_query_id'
 
 import ultimate from './ultimate/index'
 
@@ -107,7 +108,8 @@ const realMigrations = [
   queryExcerpts,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
-  surrealDbOptions, upgradeSqliteExtensions
+  surrealDbOptions, upgradeSqliteExtensions,
+  addUsedQueryId
 ]
 
 // fixtures require the models
