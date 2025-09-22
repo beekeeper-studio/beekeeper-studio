@@ -1,11 +1,12 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
 import type {
+  PluginTabContext,
   TabTypeConfig,
   TransportOpenTab,
+  TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
 import {
-  GetAllTabsResponse,
   GetColumnsResponse,
   GetConnectionInfoResponse,
   GetTablesResponse,
@@ -13,20 +14,28 @@ import {
   TabResponse,
   ThemeChangedNotification,
 } from "@beekeeperstudio/plugin";
-import { findTable } from "@/common/transport/TransportOpenTab";
+import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
-import { TabKind } from "../types";
+import {
+  Manifest,
+  PluginMenuItem,
+  PluginView,
+  TabType,
+} from "../types";
+import { ExternalMenuItem, JsonValue } from "@/types";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
 
 /**
- * Service that provides an interface to the plugin Vuex module
+ * An interface that bridges plugin system and Vuex. It also stores some states
+ * for context menu because they don't exist in Vuex.
  */
 export default class PluginStoreService {
   constructor(
     private store: Store<RootState>,
-    private appEventBus: {
+    public appEventBus: {
       emit: (event: AppEvent, ...args: any) => void;
       on: (event: AppEvent, listener: (...args: any) => void) => void;
       off: (event: AppEvent, listener: (...args: any) => void) => void;
@@ -63,6 +72,9 @@ export default class PluginStoreService {
 
       "--query-editor-bg",
 
+      "--scrollbar-track",
+      "--scrollbar-thumb",
+
       // BksTextEditor
       "--bks-text-editor-activeline-bg-color",
       "--bks-text-editor-activeline-gutter-bg-color",
@@ -76,14 +88,20 @@ export default class PluginStoreService {
       "--bks-text-editor-comment-tag-fg-color",
       "--bks-text-editor-comment-type-fg-color",
       "--bks-text-editor-cursor-bg-color",
+      "--bks-text-editor-fatcursor-bg-color",
       "--bks-text-editor-def-fg-color",
       "--bks-text-editor-error-bg-color",
       "--bks-text-editor-error-fg-color",
       "--bks-text-editor-fg-color",
+      "--bks-text-editor-focused-outline-color",
+      "--bks-text-editor-foldgutter-fg-color",
+      "--bks-text-editor-foldgutter-fg-color-hover",
       "--bks-text-editor-gutter-bg-color",
+      "--bks-text-editor-gutter-border-color",
       "--bks-text-editor-guttermarker-fg-color",
       "--bks-text-editor-guttermarker-subtle-fg-color",
       "--bks-text-editor-header-fg-color",
+      "--bks-text-editor-highlight-bg-color",
       "--bks-text-editor-keyword-fg-color",
       "--bks-text-editor-linenumber-fg-color",
       "--bks-text-editor-link-fg-color",
@@ -92,6 +110,7 @@ export default class PluginStoreService {
       "--bks-text-editor-number-fg-color",
       "--bks-text-editor-property-fg-color",
       "--bks-text-editor-selected-bg-color",
+      "--bks-text-editor-matchingselection-bg-color",
       "--bks-text-editor-string-fg-color",
       "--bks-text-editor-tag-fg-color",
       "--bks-text-editor-variable-2-fg-color",
@@ -130,6 +149,23 @@ export default class PluginStoreService {
       "--bks-text-editor-url-fg-color",
       "--bks-text-editor-processingInstruction-fg-color",
       "--bks-text-editor-special-string-fg-color",
+      "--bks-text-editor-name-fg-color",
+      "--bks-text-editor-deleted-fg-color",
+      "--bks-text-editor-character-fg-color",
+      "--bks-text-editor-color-fg-color",
+      "--bks-text-editor-standard-fg-color",
+      "--bks-text-editor-separator-fg-color",
+      "--bks-text-editor-changed-fg-color",
+      "--bks-text-editor-annotation-fg-color",
+      "--bks-text-editor-modifier-fg-color",
+      "--bks-text-editor-self-fg-color",
+      "--bks-text-editor-operatorKeyword-fg-color",
+      "--bks-text-editor-escape-fg-color",
+      "--bks-text-editor-strong-fg-color",
+      "--bks-text-editor-emphasis-fg-color",
+      "--bks-text-editor-strikethrough-fg-color",
+      "--bks-text-editor-sql-alias-fg-color",
+      "--bks-text-editor-sql-field-fg-color",
 
       // BksTextEditor context menu
       "--bks-text-editor-context-menu-bg-color",
@@ -167,14 +203,15 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
-  addTabTypeConfig(params: {
+  /** @deprecated use `addTabTypeConfigs` or `setTabDropdownItem` instead */
+  addTabTypeConfigV0(params: {
     pluginId: string;
     pluginTabTypeId: string;
     name: string;
-    kind: TabKind;
+    kind: TabType;
     icon?: string;
   }): void {
-    const config: TabTypeConfig.PluginShellConfig = {
+    const config: TabTypeConfig.PluginConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
@@ -185,8 +222,69 @@ export default class PluginStoreService {
     this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  removeTabTypeConfig(identifier: TabTypeConfig.PluginShellConfigIdentifiers): void {
+  /** @deprecated use `removeTabTypeConfigs` or `unsetTabDropdownItem` instead */
+  removeTabTypeConfigV0(
+    identifier: TabTypeConfig.PluginRef
+  ): void {
     this.store.commit("tabs/removeTabTypeConfig", identifier);
+  }
+
+  /** Register plugin views as tabs */
+  addTabTypeConfigs(manifest: Manifest): void {
+    const views = manifest.capabilities.views as PluginView[];
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      const type: PluginTabType = view.type.includes("shell")
+        ? "plugin-shell"
+        : "plugin-base";
+      const config: TabTypeConfig.PluginConfig = {
+        ...ref,
+        type,
+        name: manifest.name,
+        icon: manifest.icon,
+      };
+      this.store.commit("tabs/addTabTypeConfig", config);
+    });
+  }
+
+  removeTabTypeConfigs(manifest: Manifest): void {
+    const views = manifest.capabilities.views as PluginView[];
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      this.store.commit("tabs/removeTabTypeConfig", ref);
+    })
+  }
+
+  setTabDropdownItem(options: {
+    menuItem: PluginMenuItem;
+    manifest: Manifest;
+  }): void {
+    const ref: TabTypeConfig.PluginRef = {
+      pluginId: options.manifest.id,
+      pluginTabTypeId: options.menuItem.view,
+    };
+    const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
+      label: options.menuItem.name,
+      command: options.menuItem.command,
+    }
+    this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
+  }
+
+  unsetTabDropdownItem(options: {
+    menuItem: PluginMenuItem;
+    manifest: Manifest;
+  }): void {
+    const ref: TabTypeConfig.PluginRef = {
+      pluginId: options.manifest.id,
+      pluginTabTypeId: options.menuItem.view,
+    };
+    this.store.commit("tabs/unsetMenuItem", ref);
   }
 
   getTables(): GetTablesResponse {
@@ -208,15 +306,20 @@ export default class PluginStoreService {
     });
   }
 
+  /** @throws {Error} Not found */
+  private findTableOrThrow(name: string, schema?: string) {
+    const table = this.findTable(name, schema);
+    if (!table) {
+      throw new Error(schema ? `Table not found (table=${name}, schema=${schema})` : `Table not found (table=${name})`);
+    }
+    return table;
+  }
+
   async getColumns(
     tableName: string,
     schema?: string
-  ): Promise<GetColumnsResponse> {
-    const table = this.findTable(tableName, schema);
-
-    if (!table) {
-      throw new Error(`Table ${tableName} not found`);
-    }
+  ): Promise<GetColumnsResponse['result']> {
+    const table = this.findTableOrThrow(tableName, schema);
 
     if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);
@@ -231,27 +334,14 @@ export default class PluginStoreService {
   getConnectionInfo(): GetConnectionInfoResponse {
     return {
       connectionType: this.store.state.connectionType,
+      databaseType: this.store.state.connectionType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
   }
 
-  getActiveTab(): GetActiveTabResponse {
-    const activeTab: TransportOpenTab = this.store.state.tabs.active;
-
-    if (!activeTab) {
-      return null;
-    }
-
-    return this.serializeTab(activeTab);
-  }
-
-  getAllTabs(): GetAllTabsResponse {
-    return this.store.state.tabs.tabs.map((tab) => this.serializeTab(tab));
-  }
-
-  private serializeTab(tab: TransportOpenTab): TabResponse {
+  serializeTab(tab: TransportOpenTab): TabResponse {
     if (tab.tabType === "query") {
       return {
         type: "query",
@@ -301,6 +391,84 @@ export default class PluginStoreService {
 
     return {
       results: results.map(this.serializeQueryResponse),
+    };
+  }
+
+  openTab(options: OpenTabRequest['args']): void {
+    if (options.type === "query") {
+      if (!options.query) {
+        this.appEventBus.emit(AppEvent.newTab)
+      } else {
+        this.appEventBus.emit(AppEvent.newTab, options.query)
+      }
+      return;
+    }
+
+    if (options.type === "tableStructure") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.openTableProperties, { table });
+      return;
+    }
+
+    if (options.type === "tableTable") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.loadTable, {
+        table,
+        filters: options.filters,
+      });
+      return;
+    }
+
+    throw new Error(`Unsupported tab type: ${options.type}`);
+  }
+
+  addPopupMenuItem(menuId: string, item: ContextOption) {
+    this.store.commit("popupMenu/add", { menuId, item });
+  }
+
+  removePopupMenuItem(menuId: string, slug: string) {
+    this.store.commit("popupMenu/remove", { menuId, slug });
+  }
+
+  addMenuBarItem(item: ExternalMenuItem<PluginTabContext>) {
+    this.store.commit("menuBar/add", item);
+  }
+
+  removeMenuBarItem(id: string) {
+    this.store.commit("menuBar/remove", id);
+  }
+
+  buildPluginTabInit(options: {
+    manifest: Manifest;
+    viewId: string;
+    params?: JsonValue;
+    command: string;
+  }): TransportOpenTabInit<PluginTabContext> {
+    // FIXME(azmi): duplicated code from CoreTabs.vue
+    const tabItems = this.store.getters["tabs/sortedTabs"];
+    let title = options.manifest.name;
+    let tNum = 0;
+    do {
+      tNum = tNum + 1;
+      title = `${options.manifest.name} #${tNum}`;
+    } while (tabItems.filter((t) => t.title === title).length > 0);
+
+    const views = options.manifest.capabilities.views as PluginView[];
+    const view = views.find((v) => v.id === options.viewId);
+    const tabType: PluginTabType = view.type.includes("shell")
+      ? "plugin-shell"
+      : "plugin-base";
+
+    return {
+      tabType,
+      title: options.manifest.name,
+      unsavedChanges: false,
+      context: {
+        pluginId: options.manifest.id,
+        pluginTabTypeId: options.viewId,
+        params: options.params,
+        command: options.command,
+      },
     };
   }
 }

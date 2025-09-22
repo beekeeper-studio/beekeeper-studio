@@ -5,12 +5,13 @@ import * as fs from 'fs'
 import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
+import bksConfig from "@/common/bksConfig";
 
 const log = rawLog.scope('ProtocolBuilder')
 
 function mimeTypeOf(pathName: string) {
   const extension = path.extname(pathName).toLowerCase()
-  if (extension === '.js') {
+  if (extension === '.js' || extension === '.mjs') {
     return 'text/javascript'
   } else if (extension === '.html') {
     return 'text/html'
@@ -74,10 +75,15 @@ export const ProtocolBuilder = {
     protocol.registerBufferProtocol("plugin", (request, respond) => {
       // Removes the leading "plugin://" and the query string
       const url = new URL(request.url);
-      const pathName = path.join(url.host, url.pathname);
+      const pluginId = url.host;
+      const pathName = path.join(pluginId, url.pathname);
       const normalized = path.normalize(pathName)
       const fullPath = path.join(platformInfo.userDirectory, "plugins", normalized)
       log.debug("resolving", pathName, 'to', fullPath)
+      if (bksConfig.get(`plugins.${pluginId}.disabled`)) {
+        respond({ error: -20 }) // blocked by client
+        return;
+      }
       readFile(fullPath, (error, data) => {
         if (error) {
           log.error("error loading plugin file", pathName, error)
@@ -90,11 +96,9 @@ export const ProtocolBuilder = {
         }
 
         const headers = {}
-        if (platformInfo.isDevelopment) {
-          headers['Cache-Control'] = 'no-cache'
-          headers['Pragma'] = 'no-cache'
-          headers['Expires'] = '0'
-        }
+        headers['Cache-Control'] = 'no-cache'
+        headers['Pragma'] = 'no-cache'
+        headers['Expires'] = '0'
 
         const response: any = {
           mimeType: mimeTypeOf(pathName),

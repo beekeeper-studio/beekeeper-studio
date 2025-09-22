@@ -28,6 +28,7 @@ import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
 import { DuckDBBlobValue } from '@duckdb/node-api'
 import { parseVersion } from '@/common/version'
+import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_tools'
 
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
@@ -139,6 +140,8 @@ export class DBTestUtil {
 
     if (options.knex) {
       this.knex = options.knex
+    } else if (config.client === 'trino') {
+      this.knex = null
     } else if (config.client === 'sqlite' || config.client === 'duckdb') {
       this.knex = knex({
         client: KnexTypes[config.client],
@@ -281,9 +284,9 @@ export class DBTestUtil {
         });
 
         await this.knex("composite_child").insert({
-          child_id: 1, 
-          ref_id1: 1, 
-          ref_id2: 2, 
+          child_id: 1,
+          ref_id1: 1,
+          ref_id2: 2,
           description: "child test"
         });
       } else {
@@ -294,13 +297,30 @@ export class DBTestUtil {
         });
 
         await this.knex("COMPOSITE_CHILD").insert({
-          CHILD_ID: 1, 
-          REF_ID1: 1, 
-          REF_ID2: 2, 
+          CHILD_ID: 1,
+          REF_ID1: 1,
+          REF_ID2: 2,
           DESCRIPTION: "Child Test"
         });
       }
 
+    }
+
+    const testData = [
+      { data: "River Song", is_draft: 0 },
+      { data: "Rose Tyler", is_draft: 1 },
+      { data: "Rose Tyler", is_draft: 0 },
+      { data: "John Wick", is_draft: 1 },
+      { data: "Neo", is_draft: 0 },
+    ];
+
+    // Firebird doesn't support multi-row INSERT with VALUES, so insert one by one
+    if (this.dialect === "firebird") {
+      for (const row of testData) {
+        await this.knex("test_param").insert(row);
+      }
+    } else {
+      await this.knex("test_param").insert(testData);
     }
   }
 
@@ -1662,6 +1682,12 @@ export class DBTestUtil {
       }
     }
 
+    await this.knex.schema.createTable('test_param', (table) => {
+      primary(table);
+      table.string("data").notNullable();
+      table.integer("is_draft").notNullable();
+    });
+
     await this.knex.schema.createTable('addresses', (table) => {
       primary(table)
       table.timestamps(true, true)
@@ -1844,7 +1870,7 @@ export class DBTestUtil {
 
     const fromColumns = (compositeKey.fromColumn as string[]).map((c) => c.toLowerCase());
     const toColumns = (compositeKey.toColumn as string[]).map((c) => c.toLowerCase());
-    
+
     expect(compositeKey.isComposite).toBe(true);
     expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
     expect(Array.isArray(compositeKey.toColumn)).toBe(true);
@@ -1855,5 +1881,55 @@ export class DBTestUtil {
     expect(toColumns).toContain('parent_id1');
     expect(toColumns).toContain('parent_id2');
     expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
+  }
+
+  async paramTest(params: string[]) {
+    const paramTypes: any = {
+      positional: true,
+      named: [':', '@', '$'],
+      numbered: ['?', ':', '$'],
+      quoted: [':', '@', '$'],
+    }
+    if (params.length === 1) {
+      params = [params[0], params[0], params[0]];
+    }
+    let query = `
+      SELECT * FROM test_param WHERE
+        data = ${params[0]};
+    `;
+    let placeholders = [params[0]];
+    let values = [`'Rose Tyler'`];
+    let convertedParams = convertParamsForReplacement(placeholders, values);
+    query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
+    let result = await this.knex.raw(query);
+    expect(this.convertResult(result)).toMatchObject([
+      { id: 2, data: 'Rose Tyler', is_draft: 1 },
+      { id: 3, data: 'Rose Tyler', is_draft: 0 }
+    ]);
+
+    query = `
+      SELECT * FROM test_param WHERE
+        id = ${params[0]} AND
+        data = ${params[1]} AND
+        is_draft = ${params[2]};
+    `;
+
+    placeholders = params;
+    values = ['5', `'Neo'`, '0'];
+    convertedParams = convertParamsForReplacement(placeholders, values);
+    query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
+    result = await this.knex.raw(query);
+    expect(this.convertResult(result)).toMatchObject([
+      { id: 5, data: 'Neo', is_draft:  0 }
+    ]);
+  }
+
+  convertResult(result: any) {
+    if (this.dialect === 'mysql') {
+      result = result[0];
+    } else if (this.dialect === 'postgresql' || this.dialect === 'duckdb') {
+      result = result.rows;
+    }
+    return result;
   }
 }

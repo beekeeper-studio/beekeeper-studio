@@ -10,6 +10,16 @@
       <div class="info">
         <div class="title">
           {{ plugin.name }}
+          <span class="badge" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">disabled</span>
+        </div>
+        <div class="status-error" v-if="!plugin.loadable && plugin.installed">
+          This plugin requires version {{ plugin.minAppVersion }} or newer.
+        </div>
+        <div class="status-error" v-if="plugin.error">
+          <template v-if="plugin.error.toString?.().includes('not compatible')">
+            {{ plugin.error.toString().split("Please upgrade")[0] }}
+          </template>
+          <template v-else>{{ plugin.error }}</template>
         </div>
         <div class="description">
           {{ plugin.description }}
@@ -62,12 +72,15 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { CommonPluginInfo } from "@/services/plugin/types";
+import type { PluginRegistryEntry, Manifest } from "@/services/plugin/types";
 
-interface Plugin extends CommonPluginInfo {
+interface Plugin extends PluginRegistryEntry, Manifest {
   installing: boolean;
   installed: boolean;
   enabled: boolean;
+  loadable: boolean;
+  error: unknown;
+  updateAvailable: boolean;
 }
 
 export default Vue.extend({
@@ -79,7 +92,7 @@ export default Vue.extend({
     },
   },
   methods: {
-    handleItemClick(_event: MouseEvent, plugin: CommonPluginInfo) {
+    handleItemClick(_event: MouseEvent, plugin: Plugin) {
       this.$emit("item-click", plugin);
     },
   },

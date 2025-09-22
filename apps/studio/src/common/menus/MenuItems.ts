@@ -82,7 +82,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
-      accelerator: platformInfo.isMac ? 'Shift+CommandOrControl+F' : 'F11',
+      accelerator: platformInfo.isMac ? 'Command+Control+F' : 'F11',
       click: actionHandler.fullscreen
     },
     // help
@@ -96,6 +96,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Show Developer Tools",
       nonNativeMacOSRole: true,
       click: actionHandler.devtools
+    },
+    restart: {
+      id: 'restart',
+      label: "Restart Beekeeper",
+      click: actionHandler.restart
     },
     checkForUpdate: {
       id: 'updatecheck',

@@ -63,14 +63,33 @@
           }}</x-label>
         </x-button>
       </div>
-      <div class="update-indicator">
-        <template
-          v-if="
-            !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
-          "
-        >
-          {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
-        </template>
+      <div
+        v-if="
+          !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
+        "
+        class="update-indicator"
+      >
+        {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
+      </div>
+      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
+        <i class="material-icons">info_outline</i>
+        <div>This plugin has been disabled via configuration</div>
+      </div>
+      <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body expand">
+          <span>This plugin requires version {{ plugin.minAppVersion }} or newer. Please upgrade your Beekeeper Studio or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install</a> a compatible plugin version.</span>
+        </div>
+      </div>
+      <div class="alert alert-danger" v-if="plugin.error">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body expand">
+          <span v-if="plugin.error.toString?.().includes('not compatible')">
+            {{ plugin.error }}
+            Or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install</a> a compatible plugin version.
+          </span>
+          <span v-else>{{ plugin.error }}</span>
+        </div>
       </div>
     </div>
     <div class="markdown-content">

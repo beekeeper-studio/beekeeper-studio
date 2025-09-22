@@ -3,7 +3,7 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
-import { parseIni } from "../../../src/config/helpers";
+import { parseIni, processRawConfig } from "../../../src/config/helpers.mjs";
 import {
   BksConfigProvider,
   ConfigEntryDetailWarning,
@@ -33,6 +33,12 @@ export function checkUnrecognized(
   function traverse(obj: Record<string, any>, parentPath = "") {
     for (const key of Object.keys(obj)) {
       const path = parentPath ? `${parentPath}.${key}` : key;
+
+      // Skip validation for plugin configurations (plugins and plugins.[plugin-id])
+      if (path === 'plugins' || /^plugins\.[^.]+/.test(path)) {
+        continue;
+      }
+
       const unrecognized = !_.has(defaultConfig, path);
       const value = obj[key];
 
@@ -107,7 +113,7 @@ function readConfig(filePath: string) {
   try {
     const config = parseIni(readFileSync(filePath, "utf-8"));
     log.debug(`Successfully read config ${filePath}.`);
-    return config;
+    return processRawConfig(config);
   } catch (error) {
     log.error(`Failed reading config ${filePath}.`, error);
     throw error;

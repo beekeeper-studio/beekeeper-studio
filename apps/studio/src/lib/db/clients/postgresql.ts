@@ -550,35 +550,46 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     const sql = `
       SELECT
-        tc.constraint_name,
-        kcu.column_name,
-        kcu.table_schema AS from_schema,
-        kcu.table_name AS from_table,
-        kcu2.column_name AS to_column,
-        kcu2.table_name AS to_table,
-        rc.unique_constraint_schema AS to_schema,
-        rc.update_rule,
-        rc.delete_rule,
-        kcu.ordinal_position
+        c.conname AS constraint_name,
+        a.attname AS column_name,
+        n.nspname AS from_schema,
+        t.relname AS from_table,
+        af.attname AS to_column,
+        tf.relname AS to_table,
+        nf.nspname AS to_schema,
+        CASE c.confupdtype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confupdtype::text
+        END AS update_rule,
+        CASE c.confdeltype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confdeltype::text
+        END AS delete_rule,
+        pos AS ordinal_position
       FROM
-        information_schema.table_constraints AS tc
-        JOIN information_schema.key_column_usage AS kcu
-          ON tc.constraint_name = kcu.constraint_name
-          AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.referential_constraints AS rc
-          ON rc.constraint_name = tc.constraint_name
-          AND rc.constraint_schema = tc.table_schema
-        JOIN information_schema.key_column_usage AS kcu2
-          ON kcu2.constraint_name = rc.unique_constraint_name
-          AND kcu.ordinal_position = kcu2.ordinal_position
-          AND kcu2.constraint_schema = rc.unique_constraint_schema
+        pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        JOIN pg_namespace n ON t.relnamespace = n.oid
+        JOIN generate_subscripts(c.conkey, 1) pos ON true
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
+        JOIN pg_class tf ON c.confrelid = tf.oid
+        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
+        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
       WHERE
-        tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_schema = $1
-        AND tc.table_name = $2
+        c.contype = 'f'
+        AND n.nspname = $1
+        AND t.relname = $2
       ORDER BY
-        tc.constraint_name,
-        kcu.ordinal_position;
+        c.conname,
+        pos;
     `;
 
     const params = [
@@ -741,6 +752,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableProperties(table: string, schema: string = this._defaultSchema): Promise<TableProperties> {
     const identifier = this.wrapTable(table, schema)
+    const permissionWarnings: string[] = []
 
     const statements = [
       `pg_indexes_size('${identifier}') as index_size`,
@@ -754,10 +766,42 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const sql = `SELECT ${statements.join(",")}`
 
-    const detailsPromise = this.driverExecuteSingle(sql);
+    // Execute each query independently with error handling for read-only connections
+    const detailsPromise = this.driverExecuteSingle(sql).catch(err => {
+      log.warn('Unable to fetch table size/description (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table size and description due to insufficient permissions')
+      return { rows: [{ index_size: 0, table_size: 0, description: null }] }
+    });
 
-    const triggersPromise = this.listTableTriggers(table, schema);
-    const partitionsPromise = this.listTablePartitions(table, schema);
+    const indexesPromise = this.listTableIndexes(table, schema).catch(err => {
+      log.warn('Unable to fetch table indexes (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table indexes due to insufficient permissions')
+      return []
+    });
+
+    const relationsPromise = this.getTableKeys(table, schema).catch(err => {
+      log.warn('Unable to fetch table relations (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table relations due to insufficient permissions')
+      return []
+    });
+
+    const triggersPromise = this.listTableTriggers(table, schema).catch(err => {
+      log.warn('Unable to fetch table triggers (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table triggers due to insufficient permissions')
+      return []
+    });
+
+    const partitionsPromise = this.listTablePartitions(table, schema).catch(err => {
+      log.warn('Unable to fetch table partitions (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table partitions due to insufficient permissions')
+      return []
+    });
+
+    const ownerPromise = this.getTableOwner(table, schema).catch(err => {
+      log.warn('Unable to fetch table owner (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table owner due to insufficient permissions')
+      return null
+    });
 
     const [
       result,
@@ -768,23 +812,24 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(table, schema),
-      this.getTableKeys(table, schema),
+      indexesPromise,
+      relationsPromise,
       triggersPromise,
       partitionsPromise,
-      this.getTableOwner(table, schema)
+      ownerPromise
     ])
 
     const props = result.rows.length > 0 ? result.rows[0] : {}
     return {
       description: props.description,
-      indexSize: Number(props.index_size),
-      size: Number(props.table_size),
+      indexSize: Number(props.index_size || 0),
+      size: Number(props.table_size || 0),
       indexes,
       relations,
       triggers,
       partitions,
-      owner
+      owner,
+      permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
     }
   }
 

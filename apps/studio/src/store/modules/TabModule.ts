@@ -41,6 +41,9 @@ export const TabModule: Module<State, RootState> = {
         if (tab.type === "shell" && rootGetters.dialectData?.disabledFeatures?.shell) {
           return false;
         }
+        if (tab.type === "plugin-shell" || tab.type === "plugin-base") {
+          return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
+        }
         return true;
       })
     },
@@ -93,13 +96,21 @@ export const TabModule: Module<State, RootState> = {
       state.tabs = tabs
     },
 
-    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginShellConfig) {
-      state.allTabTypeConfigs.push(newConfig)
+    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginConfig) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        state.allTabTypeConfigs.push(newConfig)
+      } else if (newConfig.menuItem) {
+        // If tabTypeConfig already exists, update the menuItem
+        Vue.set(found, 'menuItem', newConfig.menuItem)
+      }
     },
 
-    removeTabTypeConfig(state, config: TabTypeConfig.PluginShellConfig) {
-      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginShellConfig) => {
-        if (t.type !== "plugin-shell") {
+    removeTabTypeConfig(state, config: TabTypeConfig.PluginConfig) {
+      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginConfig) => {
+        if (t.type !== "plugin-shell" && t.type !== "plugin-base") {
           return true;
         }
         const matches = t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
@@ -107,6 +118,25 @@ export const TabModule: Module<State, RootState> = {
       })
     },
 
+    setMenuItem(state, newConfig: TabTypeConfig.PluginRef & { menuItem: TabTypeConfig.PluginConfig['menuItem'] }) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${newConfig.pluginId} does not exist`)
+      }
+      found.menuItem = newConfig.menuItem
+    },
+
+    unsetMenuItem(state, config: TabTypeConfig.PluginRef) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${config.pluginId} does not exist`)
+      }
+      found.menuItem = undefined
+    },
   },
   actions: {
     async load(context) {

@@ -31,13 +31,15 @@
           >Close Tab</a>
         </div>
       </div>
-      <sql-text-editor
+      <component
+        :is="editorComponent"
         :value="unsavedText"
         :read-only="editor.readOnly"
-        :focus="focusingElement === 'text-editor'"
+        :is-focused="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
         :identifier-dialect="identifierDialect"
+        :param-types="paramTypes"
         :keybindings="keybindings"
         :vim-config="vimConfig"
         :line-wrapping="wrapText"
@@ -46,11 +48,13 @@
         :entities="entities"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
-        :mode="dialectData.textEditorMode"
+        :language-id="languageIdForDialect"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
+        :context-menu-items="editorContextMenu"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
+        @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
       />
@@ -111,7 +115,10 @@
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <hr>
-                <x-menuitem @click.prevent="submitQueryToFile">
+                <x-menuitem
+                  @click.prevent="submitQueryToFile"
+                  :disabled="disableRunToFile"
+                >
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
                   <i
                     v-if="isCommunity"
@@ -120,7 +127,10 @@
                     stars
                   </i>
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQueryToFile">
+                <x-menuitem
+                  @click.prevent="submitCurrentQueryToFile"
+                  :disabled="disableRunToFile"
+                >
                   <x-label>Run Current to File</x-label>
                   <i
                     v-if="isCommunity"
@@ -296,7 +306,7 @@
                   :key="index"
                 >
                   <div class="form-group row">
-                    <label>{{ param }}</label>
+                    <label>{{ isNumber(param) ? `? ${param + 1}` : param }}</label>
                     <input
                       type="text"
                       class="form-control"
@@ -338,11 +348,13 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
+  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
+  import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -365,7 +377,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -435,8 +447,15 @@
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
+      ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      editorComponent() {
+        return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
+      },
       enabled() {
         return !this.dialectData?.disabledFeatures?.queryEditor;
+      },
+      disableRunToFile() {
+        return this.dialectData?.disabledFeatures?.export?.stream
       },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
@@ -529,7 +548,14 @@
           params = this.currentlySelectedQuery.parameters
         }
 
-        if (params.length && params[0] === '?') return []
+        if (params.length && params.includes('?')) {
+          let posIndex = 0; // number doesn't matter, this just distinguishes positional from other types
+          params = params.map((param) => {
+            if (param != '?') return param;
+
+            return posIndex++;
+          })
+        }
 
         return _.uniq(params)
       },
@@ -538,9 +564,11 @@
         if (_.isEmpty(query)) {
           return query;
         }
-        _.each(this.queryParameterPlaceholders, param => {
-          query = query.replace(new RegExp(`(\\W|^)${this.escapeRegExp(param)}(\\W|$)`, 'g'), `$1${this.queryParameterValues[param]}$2`)
-        });
+
+        const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
+        const values = Object.values(this.queryParameterValues) as string[];
+        const convertedParams = convertParamsForReplacement(placeholders, values);
+        query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect]?.paramTypes);
         return query;
       },
       unsavedChanges() {
@@ -550,20 +578,11 @@
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
       keybindings() {
-        const keybindings: any = {
-          "Shift-Ctrl-Enter": this.submitCurrentQuery,
-          "Shift-Cmd-Enter": this.submitCurrentQuery,
-          "Ctrl-Enter": this.submitTabQuery,
-          "Cmd-Enter": this.submitTabQuery,
-          "Ctrl-S": this.triggerSave,
-          "Cmd-S": this.triggerSave,
-          "F5": this.submitTabQuery,
-          "Shift-F5": this.submitCurrentQuery,
-          "Ctrl+I": this.submitQueryToFile,
-          "Cmd+I": this.submitQueryToFile,
-          "Shift+Ctrl+I": this.submitCurrentQueryToFile,
-          "Shift+Cmd+I": this.submitCurrentQueryToFile,
-        }
+        const keybindings = this.$CMKeymap({
+          'general.save': this.triggerSave,
+          'queryEditor.submitCurrentQuery': this.submitCurrentQuery,
+          'queryEditor.submitTabQuery': this.submitTabQuery,
+        })
 
         if(this.userKeymap === "vim") {
           keybindings["Ctrl-Esc"] = this.cancelQuery
@@ -609,8 +628,18 @@
       formatterDialect() {
         return FormatterDialect(dialectFor(this.queryDialect))
       },
+      paramTypes() {
+        return this.$bksConfig.db[this.dialect]?.paramTypes
+      },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
+      },
+      languageIdForDialect() {
+        // Map textEditorMode to CodeMirror 6 languageId
+        if (this.dialectData.textEditorMode === 'text/x-redis') {
+          return 'redis';
+        }
+        return this.dialectData.textEditorMode;
       },
       replaceExtensions() {
         return (extensions) => {
@@ -694,7 +723,9 @@
       },
     },
     methods: {
-
+      isNumber(value: any) {
+        return _.isNumber(value);
+      },
       locationFromPosition(queryText, ...rawPositions) {
         // 1. find the query text inside the editor
         // 2.
@@ -769,6 +800,9 @@
           this.tableHeight = this.$refs.bottomPanel.clientHeight
           this.updateEditorHeight()
         })
+      },
+      handleEditorSelectionChange(detail) {
+        this.editor.selection = detail.value
       },
       saveTab: _.debounce(function() {
         this.$store.dispatch('tabs/save', this.tab)
@@ -920,8 +954,14 @@
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            this.$modal.show(`parameters-modal-${this.tab.id}`)
-            return
+            const params = this.individualQueries.flatMap((qs) => qs.parameters);
+            if (canDeparameterize(params)) {
+              this.$modal.show(`parameters-modal-${this.tab.id}`)
+              return;
+            } else {
+              this.error = `You can't use positional and non-positional parameters at the same time`
+              return;
+            }
           }
 
           const query = this.deparameterizedQuery
@@ -971,7 +1011,24 @@
           console.log("non empty result", nonEmptyResult)
           this.selectedResult = nonEmptyResult === -1 ? results.length - 1 : nonEmptyResult
 
-          this.$store.dispatch('data/usedQueries/save', { text: query, excerpt: query.substr(0, 250), numberOfRecords: totalRows, queryId: this.query?.id, connectionId: this.usedConfig.id })
+          const lastQuery = this.$store.state['data/usedQueries']?.items?.[0]
+          const isDuplicate = lastQuery?.text?.trim() === query?.trim()
+
+          const queryObj = {
+            text: query,
+            excerpt: query.substr(0, 250),
+            numberOfRecords: totalRows,
+            queryId: this.query?.id,
+            connectionId: this.usedConfig.id
+          }
+
+          if(lastQuery && isDuplicate){
+            queryObj.updatedAt = new Date();
+            queryObj.id = lastQuery.id;
+          }
+
+          this.$store.dispatch('data/usedQueries/save', queryObj)
+
           log.debug('identification', identification)
           const found = identification.find(i => {
             return i.type === 'CREATE_TABLE' || i.type === 'DROP_TABLE' || i.type === 'ALTER_TABLE'
@@ -1074,7 +1131,13 @@
       stopTimer() {
         clearInterval(this.timerInterval);
         this.timerInterval = null;
-      }
+      },
+      editorContextMenu(_event, _context, items) {
+        return [
+          ...items,
+          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+        ];
+      },
     },
     async mounted() {
       if (this.tab.queryId) {

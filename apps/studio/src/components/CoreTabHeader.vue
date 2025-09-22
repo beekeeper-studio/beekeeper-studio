@@ -12,7 +12,7 @@
         class="nav-link"
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
-        @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
+        @contextmenu="$bks.openMenu({id: headerContextMenuId, item: tab, options: contextOptions, event: $event})"
         :class="{ active: selected }"
       >
         <tab-icon :tab="tab" />
@@ -84,6 +84,7 @@
 <script>
 import TabIcon from './tab/TabIcon.vue'
 import { mapState } from 'vuex'
+import _ from 'lodash'
 
   export default {
   components: { TabIcon },
@@ -142,11 +143,15 @@ import { mapState } from 'vuex'
     },
     computed: {
       ...mapState('tabs', { 'activeTab': 'active' }),
+      headerContextMenuId() {
+        // "tab.query.header", "tab.table.header", "tab.tableProperties.header", etc..
+        return `tab.${_.camelCase(this.tab.tabType)}-header`
+      },
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
 
         const devOptions = []
-        if (this.tab.tabType === "plugin-shell") {
+        if (this.tab.tabType === "plugin-shell" || this.tab.tabType === "plugin-base") {
           devOptions.push({ name: "[DEV] Reload plugin view", slug: 'dev-reload-plugin-view', handler: ({item}) => this.$emit('reloadPluginView', item) })
         }
 
@@ -157,7 +162,7 @@ import { mapState } from 'vuex'
           { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
           { name: "Copy Entity Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
-          ...(window.platformInfo.isDevelopment && devOptions),
+          ...(window.platformInfo.isDevelopment ? devOptions : []),
         ];
       },
       modalName() {

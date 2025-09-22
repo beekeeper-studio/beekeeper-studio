@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import { TextEditor } from '../text-editor/v2/TextEditor';
+import { TextEditor } from '../text-editor/TextEditor';
 import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 import { Annotation, EditorState, Compartment } from '@codemirror/state';
 import { EditorView, keymap as cmKeymap } from '@codemirror/view';
@@ -40,6 +40,10 @@ export default {
     lineWrapping() {
       if (!this.textEditor) return;
       this.applyLineWrapping();
+    },
+    isFocused() {
+      if (!this.textEditor) return;
+      this.applyFocus();
     },
     promptSymbol(value) {
       if (this.textEditor) {
@@ -188,6 +192,11 @@ export default {
     },
     applyKeymap() {
       this.textEditor.setKeymap(this.keymap, this.vimOptions);
+    },
+    applyFocus() {
+      if (this.isFocused) {
+        this.textEditor.focus();
+      }
     },
     getPromptText(promptSymbol) {
       if (promptSymbol.length <= this.maxPromptSymbolLength) return promptSymbol;

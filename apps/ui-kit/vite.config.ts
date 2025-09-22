@@ -15,6 +15,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@codemirror/state", "@codemirror/view"],
   },
+  define: process.env.VITEST ? {} : { global: 'navigator' },
   build: {
     lib: {
       entry: resolve(__dirname, "lib/index.ts"),
@@ -32,14 +33,13 @@ export default defineConfig({
         "@codemirror/lint",
         "@codemirror/lang-sql",
         "@codemirror/autocomplete",
-        "@lezer/highlight",
         "@replit/codemirror-emacs",
         "@replit/codemirror-vim",
         "@marimo-team/codemirror-languageserver",
       ],
       input: {
         style: resolve(__dirname, "lib/style.scss"),
-        index: resolve(__dirname, "lib/components/define.ts"),
+        index: resolve(__dirname, "lib/index.ts"),
         table: resolve(__dirname, "lib/components/table/define.ts"),
         "entity-list": resolve(
           __dirname,
@@ -57,6 +57,10 @@ export default defineConfig({
           __dirname,
           "lib/components/mongo-shell/state.ts"
         ),
+        "surreal-text-editor": resolve(
+          __dirname,
+          "lib/components/surreal-text-editor/define.ts"
+        ),
         "data-editor": resolve(
           __dirname,
           "lib/components/data-editor/define.ts"
@@ -72,7 +76,7 @@ export default defineConfig({
         ),
         "vue/sql-text-editor": resolve(
           __dirname,
-          "lib/components/sql-text-editor/v2/SqlTextEditor.vue"
+          "lib/components/sql-text-editor/SqlTextEditor.vue"
         ),
         "vue/mongo-shell": resolve(
           __dirname,
@@ -84,7 +88,11 @@ export default defineConfig({
         ),
         "vue/text-editor": resolve(
           __dirname,
-          "lib/components/text-editor/v2/TextEditor.vue"
+          "lib/components/text-editor/TextEditor.vue"
+        ),
+        "vue/surreal-text-editor": resolve(
+          __dirname,
+          "lib/components/surreal-text-editor/SurrealTextEditor.vue"
         ),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
