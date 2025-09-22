@@ -62,6 +62,8 @@ Get a list of tables from the current database.
 
 **Usage:**
 ```typescript
+import { getTables } from '@beekeeperstudio/plugin';
+
 // Get all tables
 const tables = await getTables();
 
@@ -97,6 +99,7 @@ Get column information for a specific table.
 
 **Usage:**
 ```typescript
+import { getColumns } from '@beekeeperstudio/plugin';
 const columns = await getColumns('users', 'public');
 ```
 
@@ -131,6 +134,7 @@ Execute a SQL query against the current database.
 
 **Usage:**
 ```typescript
+import { runQuery } from '@beekeeperstudio/plugin';
 const result = await runQuery({
   query: 'SELECT * FROM users WHERE active = true LIMIT 10'
 });
@@ -168,13 +172,14 @@ Get information about the current database connection.
 
 **Usage:**
 ```typescript
+import { getConnectionInfo } from '@beekeeperstudio/plugin';
 const connectionInfo = await getConnectionInfo();
 ```
 
 **Example Response:**
 ```typescript
 {
-  connectionType: "postgresql",
+  databaseType: "postgresql",
   databaseName: "myapp_production",
   defaultSchema: "public",
   readOnlyMode: false
@@ -197,6 +202,7 @@ Set the title of the current plugin tab.
 
 **Usage:**
 ```typescript
+import { setTabTitle } from '@beekeeperstudio/plugin';
 await setTabTitle('Data Analysis Tool');
 ```
 
@@ -211,6 +217,7 @@ Display query results in the bottom table panel (shell-type tabs only).
 
 **Usage:**
 ```typescript
+import { expandTableResult } from '@beekeeperstudio/plugin';
 await expandTableResult([{
   fields: [
     { id: "1", name: 'id', dataType: 'integer' },
@@ -244,6 +251,7 @@ Get the current state of your view instance.
 
 **Usage:**
 ```typescript
+import { getViewState } from '@beekeeperstudio/plugin';
 const state = await getViewState();
 ```
 
@@ -260,6 +268,7 @@ Store state for your view instance.
 
 **Usage:**
 ```typescript
+import { setViewState } from '@beekeeperstudio/plugin';
 await setViewState({
   state: {
     selectedTable: 'users',
@@ -279,6 +288,7 @@ Get information about the application.
 
 **Usage:**
 ```typescript
+import { getAppInfo } from '@beekeeperstudio/plugin';
 const appInfo = await getAppInfo();
 ```
 
@@ -300,6 +310,7 @@ Write text to the system clipboard.
 
 **Usage:**
 ```typescript
+import { clipboard } from '@beekeeperstudio/plugin';
 await clipboard.writeText('Hello world!');
 ```
 
@@ -314,6 +325,7 @@ Read text from the system clipboard.
 
 **Usage:**
 ```typescript
+import { clipboard } from '@beekeeperstudio/plugin';
 const text = await clipboard.readText();
 ```
 
@@ -360,6 +372,7 @@ Check for updates for your plugin.
 
 **Usage:**
 ```typescript
+import { checkForUpdate } from '@beekeeperstudio/plugin';
 const updateAvailable = await checkForUpdate();
 ```
 
@@ -376,6 +389,7 @@ Fired when the application theme changes.
 
 **Usage:**
 ```typescript
+import { addNotificationListener } from '@beekeeperstudio/plugin';
 addNotificationListener('themeChanged', (appTheme) => {
   // Apply new theme to your plugin
   styleTag.textContent = `:root { ${params.cssString} }`;
@@ -395,6 +409,7 @@ Fired for various window events.
 
 **Usage:**
 ```typescript
+import { addNotificationListener } from '@beekeeperstudio/plugin';
 addNotificationListener('windowEvent', (params) => {
   if (params.eventType === 'resize') {
     // Handle window resize
