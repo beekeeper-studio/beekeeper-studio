@@ -1,10 +1,7 @@
 import {
   Manifest,
-  ManifestV0,
   OnViewRequestListener,
   WebPluginContext,
-  PluginView,
-  PluginMenuItem,
   WebPluginViewInstance,
 } from "../types";
 import {
