@@ -457,8 +457,14 @@ export default class PluginStoreService {
       title = `${options.manifest.name} #${tNum}`;
     } while (tabItems.filter((t) => t.title === title).length > 0);
 
+    const views = options.manifest.capabilities.views as PluginView[];
+    const view = views.find((v) => v.id === options.viewId);
+    const tabType: PluginTabType = view.type.includes("shell")
+      ? "plugin-shell"
+      : "plugin-base";
+
     return {
-      tabType: "plugin-shell", // FIXME(azmi): We only support shell for now
+      tabType,
       title: options.manifest.name,
       unsavedChanges: false,
       context: {
