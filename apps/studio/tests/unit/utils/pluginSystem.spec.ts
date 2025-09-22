@@ -1,5 +1,5 @@
 import { ManifestV0 } from "@/services/plugin";
-import { mapViewsAndMenuFromV0ToV1 } from "@/services/plugin/utils";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "@/services/plugin/utils";
 
 const manifestV0: ManifestV0 = {
   id: "test-plugin",
@@ -24,6 +24,12 @@ const manifestV0: ManifestV0 = {
 
 describe("Plugin System", () => {
   describe("Manifest V0 compatibility", () => {
+    it("checks manifest version", () => {
+      expect(isManifestV0(manifestV0)).toBe(true);
+      expect(isManifestV0({ ...manifestV0, manifestVersion: 0 })).toBe(true);
+      expect(isManifestV0({ ...manifestV0, manifestVersion: 1 })).toBe(false);
+    });
+
     it("translates tabTypes to pluginViews", () => {
       const { views } = mapViewsAndMenuFromV0ToV1(manifestV0);
       expect(views).toStrictEqual([

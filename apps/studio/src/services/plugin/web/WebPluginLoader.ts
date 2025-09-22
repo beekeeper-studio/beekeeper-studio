@@ -19,7 +19,7 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
-import { mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -78,7 +78,7 @@ export default class WebPluginLoader {
 
     // Backward compatibility: Early version of AI Shell.
     // TODO(azmi): Remove this in the future
-    if (this.isManifestV0(this.context.manifest)) {
+    if (isManifestV0(this.context.manifest)) {
       const v1 = mapViewsAndMenuFromV0ToV1(this.context.manifest);
       views = v1.views;
       menu = v1.menu;
@@ -98,10 +98,6 @@ export default class WebPluginLoader {
       this.registerEvents();
       this.onReadyListeners.forEach((fn) => fn());
     }
-  }
-
-  private isManifestV0(m: Manifest): m is ManifestV0 {
-    return m.manifestVersion === undefined || m.manifestVersion === 0;
   }
 
   private handleMessage(event: MessageEvent) {
@@ -356,7 +352,7 @@ export default class WebPluginLoader {
     let views: PluginView[];
     let menu: PluginMenuItem[];
 
-    if (this.isManifestV0(this.context.manifest)) {
+    if (isManifestV0(this.context.manifest)) {
       const v1 = mapViewsAndMenuFromV0ToV1(this.context.manifest);
       views = v1.views;
       menu = v1.menu;

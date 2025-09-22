@@ -27,6 +27,7 @@ import {
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 /**
  * An interface that bridges plugin system and Vuex. It also stores some states
@@ -451,7 +452,9 @@ export default class PluginStoreService {
       title = `${options.manifest.name} #${tNum}`;
     } while (tabItems.filter((t) => t.title === title).length > 0);
 
-    const views = options.manifest.capabilities.views as PluginView[];
+    const views = isManifestV0(options.manifest)
+      ? mapViewsAndMenuFromV0ToV1(options.manifest).views
+      : options.manifest.capabilities.views;
     const view = views.find((v) => v.id === options.viewId);
     const tabType: PluginTabType = view.type.includes("shell")
       ? "plugin-shell"
