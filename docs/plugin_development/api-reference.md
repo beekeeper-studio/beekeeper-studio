@@ -23,15 +23,6 @@ The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plug
     yarn add @beekeeperstudio/plugin
     ```
 
-## Core Functions
-
-| Function | Description |
-|----------|-------------|
-| `request(name, args?)` | Send requests to Beekeeper Studio to retrieve data or execute actions. Returns a Promise. |
-| `notify(name, args)` | Send one-way notifications to the main application without expecting a response. |
-| `addNotificationListener(name, callback)` | Listen for notifications from the main application (like theme changes). |
-| `setDebugComms(enabled)` | Enable or disable debug logging for plugin communication. Useful for development. |
-
 ## Debugging
 
 ### setDebugComms
@@ -39,24 +30,29 @@ The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plug
 Enable debug logging to see all communication between your plugin and Beekeeper Studio. This is helpful when developing plugins to understand what messages are being sent and received.
 
 **Usage:**
-```javascript
-// Enable debug logging
-setDebugComms(true);
-
-// Now all communication will be logged to the browser console
-const tables = await getTables();
-
-// Disable debug logging
-setDebugComms(false);
-```
-
-**Arguments Schema:**
 ```typescript
-{ enabled: boolean }
+setDebugComms(true);
 ```
 
-!!! tip "Development Workflow"
-    Enable debug communications early in your development process to see exactly what data is being exchanged. This makes it much easier to troubleshoot issues and understand the plugin API behavior.
+**Signature:**
+```typescript
+function setDebugComms(enabled: boolean);
+```
+
+### log.error
+
+Log an error message to the application log.
+
+**Usage:**
+```typescript
+import { log } from "@beekeeperstudio/plugin";
+log.error('An error occurred');
+```
+
+**Signature:**
+```typescript
+function error(err: string | Error): void;
+```
 
 ## Request Methods
 
@@ -65,16 +61,16 @@ setDebugComms(false);
 Get a list of tables from the current database.
 
 **Usage:**
-```javascript
+```typescript
 // Get all tables
 const tables = await getTables();
 
 // Get tables from specific schema
-const tables = await getTables({ schema: 'public' });
+const tables = await getTables('public');
 ```
 
 **Example Response:**
-```javascript
+```typescript
 [
   {
     name: "users",
@@ -87,14 +83,12 @@ const tables = await getTables({ schema: 'public' });
 ]
 ```
 
-**Arguments Schema:**
+**Signature:**
 ```typescript
-{ schema?: string }
-```
-
-**Response Schema:**
-```typescript
-{ name: string; schema?: string }[]
+async function getTables(schema?: string): Promise<{
+  name: string;
+  schema?: string;
+}[]>;
 ```
 
 ### getColumns
@@ -102,15 +96,12 @@ const tables = await getTables({ schema: 'public' });
 Get column information for a specific table.
 
 **Usage:**
-```javascript
-const columns = await getColumns({
-  table: 'users',
-  schema: 'public'
-});
+```typescript
+const columns = await getColumns('users', 'public');
 ```
 
 **Example Response:**
-```javascript
+```typescript
 [
   {
     name: "id",
@@ -123,14 +114,12 @@ const columns = await getColumns({
 ]
 ```
 
-**Arguments Schema:**
+**Signature:**
 ```typescript
-{ table: string; schema?: string }
-```
-
-**Response Schema:**
-```typescript
-{ name: string; type: string }[]
+async function getColumns(table: string, schema?: string): Promise<{
+  name: string;
+  type: string;
+}[]>;
 ```
 
 ### runQuery
@@ -141,14 +130,14 @@ Execute a SQL query against the current database.
     The query will be executed exactly as provided with no modification or sanitization. Always validate and sanitize user input before including it in queries to prevent unwanted actions.
 
 **Usage:**
-```javascript
+```typescript
 const result = await runQuery({
   query: 'SELECT * FROM users WHERE active = true LIMIT 10'
 });
 ```
 
 **Example Response:**
-```javascript
+```typescript
 {
   results: [
     {
@@ -165,20 +154,12 @@ const result = await runQuery({
 }
 ```
 
-**Arguments Schema:**
+**Signature:**
 ```typescript
-{ query: string }
-```
-
-**Response Schema:**
-```typescript
-{
-  results: {
-    fields: { id: string; name: string; dataType?: string }[];
-    rows: Record<string, unknown>[];
-  }[];
+async function runQuery(query: string): Promise<{
+  results: QueryResult[];
   error?: unknown;
-}
+}>;
 ```
 
 ### getConnectionInfo
@@ -186,12 +167,12 @@ const result = await runQuery({
 Get information about the current database connection.
 
 **Usage:**
-```javascript
+```typescript
 const connectionInfo = await getConnectionInfo();
 ```
 
 **Example Response:**
-```javascript
+```typescript
 {
   connectionType: "postgresql",
   databaseName: "myapp_production",
@@ -200,67 +181,14 @@ const connectionInfo = await getConnectionInfo();
 }
 ```
 
-**Response Schema:**
+**Signature:**
 ```typescript
-{
-  connectionType: string;
+async function getConnectionInfo(): Promise<{
+  databaseType: 'postgresql' | 'mysql' | 'mariadb' | 'sqlite' | 'sqlserver' | 'oracle' | 'mongodb' | 'cassandra' | 'clickhouse' | 'firebird' | 'bigquery' | 'redshift' | 'duckdb' | 'libsql' | 'redis' | 'surrealdb' | 'trino';
   databaseName: string;
   defaultSchema?: string;
   readOnlyMode: boolean;
-}
-```
-
-**Supported Connection Types:**
-
-| Value | Database |
-|-------|----------|
-| `postgresql` | PostgreSQL |
-| `mysql` | MySQL |
-| `mariadb` | MariaDB |
-| `sqlite` | SQLite |
-| `sqlserver` | SQL Server |
-| `oracle` | Oracle Database |
-| `mongodb` | MongoDB |
-| `cassandra` | Apache Cassandra |
-| `clickhouse` | ClickHouse |
-| `firebird` | Firebird |
-| `bigquery` | Google BigQuery |
-| `redshift` | Amazon Redshift |
-| `duckdb` | DuckDB |
-| `libsql` | LibSQL |
-
-### getAllTabs
-
-Get information about all open tabs.
-
-**Usage:**
-```javascript
-const tabs = await getAllTabs();
-```
-
-**Example Response:**
-```javascript
-[
-  {
-    id: 123,
-    title: "My Plugin Tab",
-    type: "plugin"
-  },
-  {
-    id: 124,
-    title: "Query #1",
-    type: "query"
-  }
-]
-```
-
-**Response Schema:**
-```typescript
-{
-  type: string;
-  id: number;
-  title: string;
-}[]
+}>;
 ```
 
 ### setTabTitle
@@ -268,13 +196,13 @@ const tabs = await getAllTabs();
 Set the title of the current plugin tab.
 
 **Usage:**
-```javascript
-await setTabTitle({ title: 'Data Analysis Tool' });
+```typescript
+await setTabTitle('Data Analysis Tool');
 ```
 
-**Arguments Schema:**
+**Signature:**
 ```typescript
-{ title: string }
+async function setTabTitle(title: string): Promise<void>;
 ```
 
 ### expandTableResult
@@ -282,30 +210,26 @@ await setTabTitle({ title: 'Data Analysis Tool' });
 Display query results in the bottom table panel (shell-type tabs only).
 
 **Usage:**
-```javascript
-await expandTableResult({
-  results: [
-    {
-      fields: [
-        { id: "1", name: 'id', dataType: 'integer' },
-        { id: "2", name: 'name', dataType: 'varchar' }
-      ],
-      rows: [
-        { id: 1, name: 'John', age: 30 }
-      ]
-    }
-  ]
-});
+```typescript
+await expandTableResult([{
+  fields: [
+    { id: "1", name: 'id', dataType: 'integer' },
+    { id: "2", name: 'name', dataType: 'varchar' },
+  ],
+  rows: [
+    { id: 1, name: 'John', age: 30 },
+  ],
+}]);
 ```
 
-**Arguments Schema:**
+**Signature:**
 ```typescript
-{
+async function expandTableResult(
   results: {
-    fields: { id: string; name: string; dataType?: string }[];
-    rows: Record<string, unknown>[];
-  }[]
-}
+    fields: QueryResult[];
+    rows: Record<string, JsonValue>[];
+  }[];
+): Promise<void>;
 ```
 
 !!! tip "Table Display Tips"
@@ -319,14 +243,13 @@ Get the current state of your view instance.
 !!! tip "Learn more about View State [here](plugin-views.md#view-state)."
 
 **Usage:**
-```javascript
+```typescript
 const state = await getViewState();
-console.log('Current state:', state);
 ```
 
-**Response Schema:**
+**Signature:**
 ```typescript
-any
+async function getViewState<T>(): Promise<T>;
 ```
 
 ### setViewState
@@ -336,7 +259,7 @@ Store state for your view instance.
 !!! tip "Learn about more about View State [here](plugin-views.md#view-state)."
 
 **Usage:**
-```javascript
+```typescript
 await setViewState({
   state: {
     selectedTable: 'users',
@@ -345,9 +268,104 @@ await setViewState({
 });
 ```
 
-**Arguments Schema:**
+**Signature:**
 ```typescript
-any
+async function setViewState<T>(state: T): Promise<void>;
+```
+
+### getAppInfo
+
+Get information about the application.
+
+**Usage:**
+```typescript
+const appInfo = await getAppInfo();
+```
+
+**Signature:**
+```typescript
+async function getAppInfo(): Promise<{
+  version: string;
+  theme: {
+    palette: Record<string, string>;
+    cssString: string;
+    type: "dark" | "light";
+  };
+}>;
+```
+
+### clipboard.writeText
+
+Write text to the system clipboard.
+
+**Usage:**
+```typescript
+await clipboard.writeText('Hello world!');
+```
+
+**Signature:**
+```typescript
+async function writeText(text: string): Promise<void>;
+```
+
+### clipboard.readText
+
+Read text from the system clipboard.
+
+**Usage:**
+```typescript
+const text = await clipboard.readText();
+```
+
+**Signature:**
+```typescript
+async function readText(): Promise<string>;
+```
+
+### broadcast.post
+
+Broadcast a message to other views of your plugin.
+
+**Usage:**
+```typescript
+import { broadcast } from '@beekeeperstudio/plugin';
+broadcast.post("hello");
+```
+
+**Signature:**
+```typescript
+function post(message: JsonValue): Promise<void>;
+```
+
+### broadcast.on
+
+Listen for messages from other views of your plugin.
+
+**Usage:**
+```typescript
+import { broadcast } from '@beekeeperstudio/plugin';
+broadcast.on((message) => {
+  // Handle message here
+});
+```
+
+**Signature:**
+```typescript
+function on(callback: (message: JsonValue) => void): void;
+```
+
+### checkForUpdate
+
+Check for updates for your plugin.
+
+**Usage:**
+```typescript
+const updateAvailable = await checkForUpdate();
+```
+
+**Signature:**
+```typescript
+async function checkForUpdate(): Promise<boolean>;
 ```
 
 ## Notifications
@@ -357,22 +375,16 @@ any
 Fired when the application theme changes.
 
 **Usage:**
-```javascript
-addNotificationListener('themeChanged', (args) => {
+```typescript
+addNotificationListener('themeChanged', (appTheme) => {
   // Apply new theme to your plugin
-  document.documentElement.style.setProperty('--primary-color', args.palette.primary);
-  document.body.className = `theme-${args.type}`;
+  styleTag.textContent = `:root { ${params.cssString} }`;
 });
 ```
 
-**Schema:**
-```typescript
-{
-  palette: Record<string, string>;
-  cssString: string;
-  type: "dark" | "light";
-}
-```
+**Params schema:**
+
+See [appTheme](#AppTheme)
 
 ### windowEvent
 
@@ -382,11 +394,10 @@ addNotificationListener('themeChanged', (args) => {
 Fired for various window events.
 
 **Usage:**
-```javascript
-addNotificationListener('windowEvent', (args) => {
-  if (args.eventType === 'resize') {
+```typescript
+addNotificationListener('windowEvent', (params) => {
+  if (params.eventType === 'resize') {
     // Handle window resize
-    adjustLayout();
   }
 });
 ```
@@ -436,12 +447,26 @@ addNotificationListener('windowEvent', (args) => {
 | `schema`     | `string` | Schema name |
 | `entityType` | `string` | Type of entity (typically "table") |
 
-### Tab
+### QueryResult
 
-| Property | Type      | Description |
-|----------|-----------|-------------|
-| `id`     | `string`  | Unique tab identifier |
-| `title`  | `string`  | Tab display title |
-| `type`   | `string`  | Tab type ("plugin", "query", etc.) |
-| `active` | `boolean` | Whether tab is currently active |
+| Property | Type | Description |
+|----------|------|-------------|
+| `fields` | `{ id: string; name: string; dataType?: string }[]` | Array of field definitions |
+| `rows`   | `object[]` | Array of result rows |
 
+### AppTheme
+
+| Property    | Type      | Description |
+|-------------|-----------|-------------|
+| `palette`   | `Record<string, string>` | Key-value pairs of color names and hex codes |
+| `cssString` | `string`                 | Generated CSS rules for the theme |
+| `type`      | `ThemeType`              | Defines whether the theme is light or dark |
+
+
+### ThemeType
+
+`"dark" | "light"`
+
+### JsonValue
+
+`string | number | boolean | null | Record<string, JsonValue> | JsonValue[]`
