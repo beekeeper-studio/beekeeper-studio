@@ -203,33 +203,6 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
-  /** @deprecated use `addTabTypeConfigs` or `setTabDropdownItem` instead */
-  addTabTypeConfigV0(params: {
-    pluginId: string;
-    pluginTabTypeId: string;
-    name: string;
-    kind: TabType;
-    icon?: string;
-    menuItem?: TabTypeConfig.PluginConfig['menuItem'];
-  }): void {
-    const config: TabTypeConfig.PluginConfig = {
-      type: `plugin-${params.kind}` as const,
-      name: params.name,
-      pluginId: params.pluginId,
-      pluginTabTypeId: params.pluginTabTypeId,
-      menuItem: params.menuItem,
-      icon: params.icon,
-    };
-    this.store.commit("tabs/addTabTypeConfig", config);
-  }
-
-  /** @deprecated use `removeTabTypeConfigs` or `unsetTabDropdownItem` instead */
-  removeTabTypeConfigV0(
-    identifier: TabTypeConfig.PluginRef
-  ): void {
-    this.store.commit("tabs/removeTabTypeConfig", identifier);
-  }
-
   /** Register plugin views as tabs */
   addTabTypeConfigs(options: {
     pluginId: string;
