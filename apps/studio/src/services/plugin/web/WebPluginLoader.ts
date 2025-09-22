@@ -73,26 +73,15 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
-    let views: PluginView[];
-    let menu: PluginMenuItem[];
-
     // Backward compatibility: Early version of AI Shell.
     // TODO(azmi): Remove this in the future
-    if (isManifestV0(this.context.manifest)) {
-      const v1 = mapViewsAndMenuFromV0ToV1(this.context.manifest);
-      views = v1.views;
-      menu = v1.menu;
-    } else {
-      views = this.context.manifest.capabilities.views;
-      menu = this.context.manifest.capabilities.menu;
-    }
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
 
     this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
 
-    this.menu.register(
-      views,
-      this.context.manifest.capabilities.menu
-    );
+    this.menu.register(views, menu);
 
     if (!this.listening) {
       this.registerEvents();
@@ -349,17 +338,9 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    let views: PluginView[];
-    let menu: PluginMenuItem[];
-
-    if (isManifestV0(this.context.manifest)) {
-      const v1 = mapViewsAndMenuFromV0ToV1(this.context.manifest);
-      views = v1.views;
-      menu = v1.menu;
-    } else {
-      views = this.context.manifest.capabilities.views;
-      menu = this.context.manifest.capabilities.menu;
-    }
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
 
     this.menu.unregister(views, menu);
     this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);
