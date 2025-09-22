@@ -6,7 +6,6 @@ import {
   PluginView,
   PluginMenuItem,
   WebPluginViewInstance,
-  LegacyViews,
 } from "../types";
 import {
   PluginNotificationData,

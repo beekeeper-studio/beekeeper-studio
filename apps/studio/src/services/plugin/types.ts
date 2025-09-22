@@ -75,7 +75,7 @@ export interface PluginMenuItem {
 }
 
 /** Used by earlier versions of AI Shell. */
-export type LegacyViews = {
+type LegacyViews = {
   tabTypes?: {
     id: string;
     name: string;
