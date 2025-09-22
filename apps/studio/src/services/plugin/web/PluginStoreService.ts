@@ -230,15 +230,10 @@ export default class PluginStoreService {
   }
 
   /** Register plugin views as tabs */
-  addTabTypeConfigs(options: {
-    pluginId: string;
-    pluginName: string;
-    pluginIcon: string;
-    views: PluginView[];
-  }): void {
-    options.views.forEach((view) => {
+  addTabTypeConfigs(manifest: Manifest, views: PluginView[]): void {
+    views.forEach((view) => {
       const ref: TabTypeConfig.PluginRef = {
-        pluginId: options.pluginId,
+        pluginId: manifest.id,
         pluginTabTypeId: view.id,
       };
       const type: PluginTabType = view.type.includes("shell")
@@ -247,17 +242,17 @@ export default class PluginStoreService {
       const config: TabTypeConfig.PluginConfig = {
         ...ref,
         type,
-        name: options.pluginName,
-        icon: options.pluginIcon,
+        name: manifest.name,
+        icon: manifest.icon,
       };
       this.store.commit("tabs/addTabTypeConfig", config);
     });
   }
 
-  removeTabTypeConfigs(pluginId: string, views: PluginView[]): void {
+  removeTabTypeConfigs(manifest: Manifest, views: PluginView[]): void {
     views.forEach((view) => {
       const ref: TabTypeConfig.PluginRef = {
-        pluginId,
+        pluginId: manifest.id,
         pluginTabTypeId: view.id,
       };
       this.store.commit("tabs/removeTabTypeConfig", ref);

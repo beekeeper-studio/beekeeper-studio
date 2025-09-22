@@ -19,6 +19,7 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
+import { mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -78,7 +79,7 @@ export default class WebPluginLoader {
     // Backward compatibility: Early version of AI Shell.
     // TODO(azmi): Remove this in the future
     if (this.isManifestV0(this.context.manifest)) {
-      const v1 = this.mapViewsAndMenuFromV0ToV1(this.context.manifest);
+      const v1 = mapViewsAndMenuFromV0ToV1(this.context.manifest);
       views = v1.views;
       menu = v1.menu;
     } else {
@@ -86,12 +87,7 @@ export default class WebPluginLoader {
       menu = this.context.manifest.capabilities.menu;
     }
 
-    this.pluginStore.addTabTypeConfigs({
-      pluginId: this.context.manifest.id,
-      pluginName: this.context.manifest.name,
-      pluginIcon: this.context.manifest.icon,
-      views,
-    });
+    this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
 
     this.menu.register(
       views,
@@ -361,16 +357,16 @@ export default class WebPluginLoader {
     let menu: PluginMenuItem[];
 
     if (this.isManifestV0(this.context.manifest)) {
-      const v1 = this.mapViewsAndMenuFromV0ToV1(this.context.manifest);
+      const v1 = mapViewsAndMenuFromV0ToV1(this.context.manifest);
       views = v1.views;
       menu = v1.menu;
     } else {
-      menu = this.context.manifest.capabilities.menu;
       views = this.context.manifest.capabilities.views;
+      menu = this.context.manifest.capabilities.menu;
     }
 
     this.menu.unregister(views, menu);
-    this.pluginStore.removeTabTypeConfigs(this.context.manifest.id, views);
+    this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);
   }
 
   addListener(listener: OnViewRequestListener) {
@@ -423,29 +419,4 @@ export default class WebPluginLoader {
     }
   }
 
-  private mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
-    views: PluginView[];
-    menu: PluginMenuItem[];
-  } {
-    const views = manifest.capabilities.views.tabTypes.map<PluginView>(
-      (tabType) => ({
-        id: tabType.id,
-        name: tabType.name,
-        type: tabType.kind.includes("shell") ? "shell-tab" : "base-tab",
-        entry: tabType.entry,
-      })
-    );
-    let menu: PluginMenuItem[] = [];
-    if (this.context.manifest.capabilities.menu) {
-      menu = this.context.manifest.capabilities.menu;
-    } else {
-      menu = views.map((view) => ({
-        command: `${view.id}-new-tab-dropdown`,
-        name: `New ${this.context.manifest.name}`,
-        view: view.id,
-        placement: "newTabDropdown",
-      }))
-    }
-    return { views, menu };
-  }
 }
