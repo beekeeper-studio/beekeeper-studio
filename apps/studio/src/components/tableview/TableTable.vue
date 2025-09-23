@@ -324,7 +324,7 @@ import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
-import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
+import { TableUpdate, TableUpdateResult, ExtendedTableColumn, TableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
 import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
@@ -1010,6 +1010,44 @@ export default Vue.extend({
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
       await this.getTableKeys();
+      let columnConf;
+
+      if (this.connectionType === 'mongodb') {
+        columnConf = {
+          autoColumns: "full",
+          autoColumnsDefinitions: (autoDefinitions: any[]) => {
+            const definitions = [];
+            const existingColumns = this.tableColumns.reduce((map, item, index) => {
+              map.set(item.title, index);
+              return map;
+            }, new Map<string, number>());
+
+            for (const definition of autoDefinitions) {
+              if (definition.title === this.internalIndexColumn) {
+                continue;
+              }
+              if (existingColumns.has(definition.title)) {
+                definitions.push(this.tableColumns[existingColumns.get(definition.title)]);
+              } else {
+                const tableColumn: TableColumn = {
+                  columnName: definition.title,
+                  dataType: 'string',
+                  schemaName: this.table.schema,
+                  tableName: this.table.name,
+                }
+                const newDefinition = this.createColumnFromProps(tableColumn);
+                definitions.push(newDefinition);
+              }
+            }
+
+            return definitions;
+          }
+        }
+      } else {
+        columnConf = {
+          columns: this.tableColumns,
+        }
+      }
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
@@ -1051,7 +1089,7 @@ export default Vue.extend({
             ]
           },
         },
-        columns: this.tableColumns,
+        ...columnConf,
         ajaxURL: "http://fake",
         sortMode: 'remote',
         filterMode: 'remote',
@@ -1145,10 +1183,10 @@ export default Vue.extend({
             .filter(v => v !== null && v !== undefined);
           return selectedValues.length > 0 ? selectedValues : [clickedValue];
         }
-        
+
         case 'like':
           return `%${clickedValue}%`;
-        
+
         default:
           return clickedValue;
       }
@@ -1165,9 +1203,9 @@ export default Vue.extend({
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
-              const newFilter = [{ 
-                field: cell.getField(), 
-                type: s, 
+              const newFilter = [{
+                field: cell.getField(),
+                type: s,
                 value: this.getActionValue(cell, s)
               }]
               this.tableFilters = newFilter
@@ -1788,7 +1826,12 @@ export default Vue.extend({
               row[this.internalIndexColumn] = primaryValues.join(",");
             });
 
-            const data = this.dataToTableData({ rows: r }, this.tableColumns, offset);
+            let data;
+            if (this.connectionType !== 'mongodb') {
+              data = this.dataToTableData({ rows: r }, this.tableColumns, offset);
+            } else {
+              data = r
+            }
             this.data = Object.freeze(data)
             this.lastUpdated = Date.now()
             this.preLoadScrollPosition = this.tableHolder.scrollLeft

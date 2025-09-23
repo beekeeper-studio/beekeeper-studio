@@ -34,6 +34,7 @@ export function createRootItem(): RootItem {
 
 export interface ItemState {
   expanded: boolean;
+  pinned: boolean;
 }
 
 export type ItemStateType = keyof ItemState;
