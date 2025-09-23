@@ -331,8 +331,11 @@ export default class PluginStoreService {
     }));
   }
 
-  getConnectionInfo(): GetConnectionInfoResponse {
+  getConnectionInfo() {
     return {
+      id: this.store.state.usedConfig.id,
+      workspaceId: this.store.state.workspaceId,
+      connectionName: this.store.state.usedConfig.name || "",
       connectionType: this.store.state.connectionType,
       databaseType: this.store.state.connectionType,
       databaseName: this.store.state.database,

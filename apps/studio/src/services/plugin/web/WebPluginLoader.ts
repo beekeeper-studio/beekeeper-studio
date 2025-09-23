@@ -11,6 +11,7 @@ import {
   PluginRequestData,
   GetAppInfoResponse,
   GetViewContextResponse,
+  GetConnectionInfoResponse,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
@@ -182,7 +183,7 @@ export default class WebPluginLoader {
           response.result = view.context as GetViewContextResponse['result'];
           break;
         case "getConnectionInfo":
-          response.result = this.pluginStore.getConnectionInfo();
+          response.result = this.pluginStore.getConnectionInfo() as GetConnectionInfoResponse['result'];
           break;
         case "getData":
         case "getEncryptedData": {
