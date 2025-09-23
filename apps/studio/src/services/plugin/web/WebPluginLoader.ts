@@ -12,6 +12,7 @@ import {
   GetAppInfoResponse,
   GetViewContextResponse,
   GetConnectionInfoResponse,
+  GetTablesResponse,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
@@ -156,7 +157,7 @@ export default class WebPluginLoader {
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getTables":
-          response.result = this.pluginStore.getTables();
+          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
           break;
         case "getColumns":
           response.result = await this.pluginStore.getColumns(
