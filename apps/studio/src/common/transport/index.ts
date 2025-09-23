@@ -40,6 +40,7 @@ export interface TransportPinnedConn extends Transport {
 export interface TransportFavoriteQuery extends Transport {
   title: string;
   text: string;
+  excerpt: string;
   database: string | null;
   connectionHash: string;
 }
@@ -48,6 +49,7 @@ export function blankFavoriteQuery(): TransportFavoriteQuery {
   return {
     title: undefined,
     text: undefined,
+    excerpt: undefined,
     database: null,
     connectionHash: undefined,
     id: undefined,
@@ -59,6 +61,7 @@ export function blankFavoriteQuery(): TransportFavoriteQuery {
 
 export interface TransportUsedQuery extends Transport {
   text: string;
+  excerpt: string;
   database: string;
   connectionHash: string;
   status: string;

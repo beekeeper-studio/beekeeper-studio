@@ -1,4 +1,5 @@
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
+import { MaxLength } from 'class-validator';
 import { ApplicationEntity  } from './application_entity'
 
 @Entity({ name: 'used_query'})
@@ -8,8 +9,12 @@ export class UsedQuery extends ApplicationEntity {
     return this;
   }
 
-  @Column({type: "text", nullable: false})
+  @MaxLength(2_000_000, { message: `Queries have a max length of 2,000,000 characters.` })
+  @Column({type: "text", nullable: false, select: false})
   text!: string
+
+  @Column({type: 'text'})
+  excerpt: string
 
   @Column("varchar")
   database!: string

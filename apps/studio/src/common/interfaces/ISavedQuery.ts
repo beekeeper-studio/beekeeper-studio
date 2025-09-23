@@ -5,6 +5,7 @@ export default interface ISavedQuery {
   title: string
   // same as title, damn you title
   text: string
+  excerpt: string
   database: string | null
   // TODO (matthew)
   // queryFolderId: number | null

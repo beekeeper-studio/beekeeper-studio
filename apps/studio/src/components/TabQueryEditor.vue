@@ -415,6 +415,7 @@
         originalText: "",
         initialized: false,
         blankQuery: blankFavoriteQuery(),
+        fullQuery: null,
         dryRun: false,
         containerResizeObserver: null,
         onTextEditorBlur: null,
@@ -463,7 +464,7 @@
         return this.storeInitialized && this.tab.queryId && !this.query
       },
       query() {
-        return findQuery(this.tab, this.savedQueries ?? []) ?? this.blankQuery
+        return this.fullQuery ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
@@ -681,6 +682,9 @@
         this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
+      fullQuery() {
+        this.initializeQueries();
+      },
       remoteDeleted() {
         if (this.remoteDeleted) {
           this.editor.readOnly = 'nocursor'
@@ -865,7 +869,7 @@
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
 
-            this.$nextTick(() => {
+            this.$nextTick(async () => {
               this.unsavedText = this.query.text
               this.tab.title = this.query.title
               this.originalText = this.query.text
@@ -1012,6 +1016,7 @@
 
           const queryObj = {
             text: query,
+            excerpt: query.substr(0, 250),
             numberOfRecords: totalRows,
             queryId: this.query?.id,
             connectionId: this.usedConfig.id
@@ -1135,6 +1140,12 @@
       },
     },
     async mounted() {
+      if (this.tab.queryId) {
+        this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+      } else if (this.tab.usedQueryId) {
+        this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
+      }
+      
       if (this.shouldInitialize) {
         await this.$nextTick()
         this.initialize()

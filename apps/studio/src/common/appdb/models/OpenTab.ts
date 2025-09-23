@@ -55,6 +55,9 @@ export class OpenTab extends ApplicationEntity {
   @Column({ type: 'integer', nullable: true })
   queryId?: number
 
+  @Column({ type: 'integer', nullable: true })
+  usedQueryId?: number
+
   @Column({type: 'text', nullable: true})
   unsavedQueryText?: string
 

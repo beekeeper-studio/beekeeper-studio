@@ -53,13 +53,13 @@
               class="list-item-btn"
               @click.prevent="select(item)"
               @dblclick.prevent="click(item)"
-              :title="item.text"
+              :title="item.excerpt"
               :class="{selected: item === selected}"
             >
               <i class="item-icon query material-icons">code</i>
               <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
               <div class="list-title flex-col">
-                <span class="item-text expand truncate">{{ nicelySized(item.text) }}</span>
+                <span class="item-text expand truncate">{{ nicelySized(item.excerpt) }}</span>
                 <span class="subtitle"><span>{{ item.numberOfRecords || 0 }} Results</span>, {{ formatTimeAgo(item) }}</span>
               </div>
             </a>

@@ -126,8 +126,8 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async login(context, { email, password }) {
-      const existing = await Vue.prototype.$util.send('appdb/credential/findOne', { email })
-      const appId = (await Vue.prototype.$util.send('appdb/credential/findOne', {}))?.appId || genAppId()
+      const existing = await Vue.prototype.$util.send('appdb/credential/findOneBy', { email })
+      const appId = (await Vue.prototype.$util.send('appdb/credential/findOneBy', {}))?.appId || genAppId()
       let cred: TransportCloudCredential = existing || {
         appId: null,
         email: null,

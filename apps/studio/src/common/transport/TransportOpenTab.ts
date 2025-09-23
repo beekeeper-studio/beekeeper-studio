@@ -20,6 +20,7 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   position: number,
   active: boolean,
   queryId?: number,
+  usedQueryId?: number,
   unsavedQueryText?: string,
   tableName?: string,
   schemaName?: string,
@@ -170,7 +171,8 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
       // at a time.
       return obj.tabType === 'import-export-database'
     case 'query':
-      return obj.queryId === other.queryId
+      return (obj.queryId === other.queryId && obj.queryId !== null && other.queryId !== null) ||
+        (obj.usedQueryId === other.usedQueryId && obj.usedQueryId !== null && other.queryId !== null)
     case 'backup':
       return obj.tabType === 'backup';
     case 'restore':

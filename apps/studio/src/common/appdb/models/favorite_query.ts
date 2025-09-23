@@ -1,4 +1,5 @@
 import ISavedQuery from '@/common/interfaces/ISavedQuery'
+import { MaxLength } from 'class-validator';
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 import { QueryLike } from './base'
@@ -13,8 +14,12 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   @Column({type: "varchar", nullable: false})
   title!: string
 
-  @Column({type: "text", nullable: false})
+  @MaxLength(2_000_000, { message: `Queries have a max length of 2,000,000 characters.` })
+  @Column({type: "text", nullable: false, select: false})
   text!: string
+
+  @Column({type: "text"})
+  excerpt: string
 
   @Column({type: "varchar", nullable: true})
   database: string | null = null

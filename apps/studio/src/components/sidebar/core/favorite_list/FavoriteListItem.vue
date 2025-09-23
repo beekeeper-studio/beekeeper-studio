@@ -33,7 +33,7 @@ export default Vue.extend({
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
-      return _.truncate(this.item.text, { length: 100});
+      return _.truncate(this.item.excerpt, { length: 100});
     },
     moveToOptions() {
       return this.folders
