@@ -8,8 +8,6 @@ import type {
 } from "@/common/transport/TransportOpenTab";
 import {
   GetColumnsResponse,
-  GetConnectionInfoResponse,
-  GetTablesResponse,
   RunQueryResponse,
   TabResponse,
   ThemeChangedNotification,
@@ -287,7 +285,7 @@ export default class PluginStoreService {
     this.store.commit("tabs/unsetMenuItem", ref);
   }
 
-  getTables(): GetTablesResponse {
+  getTables() {
     return this.store.state.tables.map((t) => ({
       name: t.name,
       schema: t.schema,
