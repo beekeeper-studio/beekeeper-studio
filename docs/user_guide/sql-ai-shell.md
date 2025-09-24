@@ -52,6 +52,18 @@ You can configure the AI Shell using the Beekeeper Studio [configuration system]
 
 {% ini-include section="plugins.bks-ai-shell" %}
 
+## Custom Instructions
+
+You can provide custom instructions to personalize how the AI Shell responds to your queries. To add custom instructions:
+
+1. Click the settings button (⚙️) in the top right of the AI Shell
+2. Navigate to the **General** tab
+3. Add your custom instructions in the provided text field
+
+Custom instructions help the AI understand your preferences, coding style, or specific requirements for your database work.
+
+![AI Custom Instructions](../assets/images/ai/ai-custom-instructions.png)
+
 ## AI Shell Data Privacy
 
 The AI shell is 100% optional. Even when in-use, no data is ever sent from the AI Shell to the Beekeeper Studio servers. The AI Shell communicates directly with your AI Agent of choice -- no middlemen.
