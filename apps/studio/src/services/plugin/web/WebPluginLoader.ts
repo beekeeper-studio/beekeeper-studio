@@ -71,13 +71,11 @@ export default class WebPluginLoader {
     window.addEventListener("message", this.handleMessage);
 
     // Backward compatibility: Early version of AI Shell.
-    // TODO(azmi): Remove this in the future
     const { views, menu } = isManifestV0(this.context.manifest)
       ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
       : this.context.manifest.capabilities;
 
     this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
-
     this.menu.register(views, menu);
 
     if (!this.listening) {
@@ -392,5 +390,4 @@ export default class WebPluginLoader {
       this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
     }
   }
-
 }
