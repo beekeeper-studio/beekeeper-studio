@@ -8,8 +8,6 @@ import type {
 } from "@/common/transport/TransportOpenTab";
 import {
   GetColumnsResponse,
-  GetConnectionInfoResponse,
-  GetTablesResponse,
   RunQueryResponse,
   TabResponse,
   ThemeChangedNotification,
@@ -287,7 +285,7 @@ export default class PluginStoreService {
     this.store.commit("tabs/unsetMenuItem", ref);
   }
 
-  getTables(): GetTablesResponse {
+  getTables() {
     return this.store.state.tables.map((t) => ({
       name: t.name,
       schema: t.schema,
@@ -331,8 +329,11 @@ export default class PluginStoreService {
     }));
   }
 
-  getConnectionInfo(): GetConnectionInfoResponse {
+  getConnectionInfo() {
     return {
+      id: this.store.state.usedConfig.id,
+      workspaceId: this.store.state.workspaceId,
+      connectionName: this.store.state.usedConfig.name || "",
       connectionType: this.store.state.connectionType,
       databaseType: this.store.state.connectionType,
       databaseName: this.store.state.database,
