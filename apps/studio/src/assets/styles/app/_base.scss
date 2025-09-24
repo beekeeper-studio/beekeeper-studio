@@ -1,7 +1,26 @@
 // Fonts
 $material-icons-font-path: 'material-icons/iconfont/';
-$font-family:        'Roboto';
-$font-family-mono:   'Source Code Pro';
+$font-family:        system-ui,
+             -apple-system, BlinkMacSystemFont,
+             "Segoe UI",
+             "Roboto",
+             "Oxygen",
+             "Ubuntu",
+             "Cantarell",
+             "Fira Sans",
+             "Droid Sans",
+             "Helvetica Neue",
+             Arial, sans-serif;
+$font-family-mono:   ui-monospace,
+             Menlo, Monaco,
+             "Cascadia Mono", "Segoe UI Mono",
+             "Roboto Mono",
+             "Oxygen Mono",
+             "Ubuntu Mono",
+             "Source Code Pro",
+             "Fira Mono",
+             "Droid Sans Mono",
+             "Consolas", "Courier New", monospace;
 $base-font-size:      0.875rem; // ~14px
 
 @import 'material-icons/iconfont/material-icons.scss';
@@ -12,7 +31,7 @@ $base-font-size:      0.875rem; // ~14px
 }
 :root {
   font-size: $base-font-size;
-  font-family: $font-family, Helvetica, Arial, sans-serif;
+  font-family: $font-family;
   -webkit-font-smoothing: antialiased;
   font-weight: normal;
   -webkit-user-select: none;
