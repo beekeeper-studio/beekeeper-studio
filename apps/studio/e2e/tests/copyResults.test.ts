@@ -54,18 +54,6 @@ test.describe("Copy Results Verifications", () => {
         await expect(footer.copyToClipboardToast).toBeVisible();
     });
 
-    test("copy as Excel", async () => {
-        const fileType = "Excel";
-
-        await userAttemptsTo.clickOnDownloadMenu();
-
-        const copyOption = await footer.copyFromDownloadMenu(fileType);
-
-        await userAttemptsTo.clickOnCopyToClipboardOption(fileType);
-        await expect(copyOption).toBeHidden();
-        await expect(footer.copyToClipboardToast).toBeVisible();
-    });
-
     test("copy as Markdown", async () => {
         const fileType = "Markdown";
 

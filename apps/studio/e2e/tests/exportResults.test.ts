@@ -54,7 +54,7 @@ test.describe("Export Results Verifications", () => {
 
         const downloadOption = await footer.downloadAsMenu(fileType);
 
-        await userAttemptsTo.clickOnDownloadOption(fileType);
+        await userAttemptsTo.downloadFileAs(fileType);
 
         await expect(downloadOption).toBeHidden();
     });
@@ -66,7 +66,7 @@ test.describe("Export Results Verifications", () => {
 
         const downloadOption = await footer.downloadAsMenu(fileType);
 
-        await userAttemptsTo.clickOnDownloadOption(fileType);
+        await userAttemptsTo.downloadFileAs(fileType);
 
         await expect(downloadOption).toBeHidden();
     });
@@ -78,7 +78,7 @@ test.describe("Export Results Verifications", () => {
 
         const downloadOption = await footer.downloadAsMenu(fileType);
 
-        await userAttemptsTo.clickOnDownloadOption(fileType);
+        await userAttemptsTo.downloadFileAs(fileType);
 
         await expect(downloadOption).toBeHidden();
     });
@@ -90,7 +90,7 @@ test.describe("Export Results Verifications", () => {
 
         const downloadOption = await footer.downloadAsMenu(fileType);
 
-        await userAttemptsTo.clickOnDownloadOption(fileType);
+        await userAttemptsTo.downloadFileAs(fileType);
 
         await expect(downloadOption).toBeHidden();
     });

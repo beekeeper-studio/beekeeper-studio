@@ -13,11 +13,12 @@ export class Footer {
   }
 
   async downloadAsMenu(typeOfFile?: string) {
-    return await this.page.locator(`x-menuitem >> text=Download as ${typeOfFile}`);
+    return await this.page.locator('x-menuitem', { hasText: `Download as ${typeOfFile}` });
   }
 
   async copyFromDownloadMenu(typeOfFile?: string) {
-    return await this.page.locator(`x-menuitem >> text=Copy to Clipboard (${typeOfFile})`);
+    return await this.page.locator('x-menuitem', { hasText: `Copy to Clipboard (${typeOfFile})` });
+
   }
 
 }
