@@ -116,4 +116,66 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result).toBe(expected);
   })
 
+  it("Should handle read-only permission errors gracefully and still return relations", async () => {
+    // Mock the methods that might fail due to permission issues
+    const mockRelations = [
+      {
+        constraintName: 'fk_test',
+        fromTable: 'table1',
+        fromSchema: 'public',
+        fromColumn: 'id',
+        toTable: 'table2',
+        toSchema: 'public',
+        toColumn: 'ref_id',
+        onUpdate: 'NO ACTION',
+        onDelete: 'CASCADE',
+        isComposite: false
+      }
+    ];
+
+    // Set up the client properly for testing
+    client._defaultSchema = 'public';
+    client.version = { number: 100000 }; // Mock a modern PostgreSQL version
+    client.wrapTable = jest.fn().mockReturnValue('"public"."test_table"');
+
+    // Mock methods that may fail with permission errors
+    client.driverExecuteSingle = jest.fn().mockRejectedValue(new Error('permission denied for function pg_relation_size'));
+    client.listTableIndexes = jest.fn().mockRejectedValue(new Error('permission denied'));
+    client.listTableTriggers = jest.fn().mockRejectedValue(new Error('permission denied'));
+    client.listTablePartitions = jest.fn().mockRejectedValue(new Error('permission denied'));
+    client.getTableOwner = jest.fn().mockRejectedValue(new Error('permission denied'));
+
+    // Mock getTableKeys to return relations successfully (this should work with read-only)
+    client.getTableKeys = jest.fn().mockResolvedValue(mockRelations);
+
+    const result = await client.getTableProperties('test_table', 'public');
+
+    // Verify that relations are returned even when other properties fail
+    expect(result.relations).toEqual(mockRelations);
+    expect(result.indexes).toEqual([]);
+    expect(result.triggers).toEqual([]);
+    expect(result.partitions).toEqual([]);
+    expect(result.owner).toBeNull();
+    expect(result.indexSize).toBe(0);
+    expect(result.size).toBe(0);
+    expect(result.description).toBeNull();
+    
+    // Verify that permission warnings are included
+    expect(result.permissionWarnings).toBeDefined();
+    expect(result.permissionWarnings).toContain('Unable to retrieve table size and description due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table indexes due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table triggers due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table partitions due to insufficient permissions');
+    expect(result.permissionWarnings).toContain('Unable to retrieve table owner due to insufficient permissions');
+    // Relations should succeed, so it should not have a warning for relations
+    expect(result.permissionWarnings).not.toContain('Unable to retrieve table relations due to insufficient permissions');
+
+    // Verify that all methods were called despite some failing
+    expect(client.getTableKeys).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.listTableIndexes).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.listTableTriggers).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.listTablePartitions).toHaveBeenCalledWith('test_table', 'public');
+    expect(client.getTableOwner).toHaveBeenCalledWith('test_table', 'public');
+  })
+
 })

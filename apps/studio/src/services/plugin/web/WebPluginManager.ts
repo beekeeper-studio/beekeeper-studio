@@ -66,6 +66,7 @@ export default class WebPluginManager {
       throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
+    loader.dispose();
     this.loaders.delete(id);
   }
 
@@ -78,8 +79,9 @@ export default class WebPluginManager {
     await loader.load(manifest);
   }
 
-  /** If the plugin uses iframes, please register the iframe so we can send
-   * and receive messages. Make sure to register after the iframe is fully loaded. */
+  /** For plugins that use iframes, they need to be registered so that we can
+   * communicate. Please call this BEFORE the iframe is loaded.
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event} */
   registerIframe(pluginId: string, iframe: HTMLIFrameElement) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
@@ -134,7 +136,25 @@ export default class WebPluginManager {
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.addListener(listener);
+    return loader.addListener(listener);
+  }
+
+  /** Subscribe to when a plugin is ready to be used. */
+  onReady(pluginId: string, fn: Function) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.onReady(fn);
+  }
+
+  /** Subscribe to when a plugin is disposed. */
+  onDispose(pluginId: string, fn: Function) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.onDispose(fn);
   }
 
   private async loadPlugin(manifest: Manifest) {

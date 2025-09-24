@@ -24,9 +24,11 @@ windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
   private iframes: HTMLIFrameElement[] = [];
+  private onReadyListeners: Function[] = [];
+  private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
   private log: ReturnType<typeof rawLog.scope>;
-
+  private listening = false;
 
   constructor(
     public readonly manifest: Manifest,
@@ -39,13 +41,13 @@ export default class WebPluginLoader {
 
   /** Starts the plugin */
   async load(manifest?: Manifest) {
+    // FIXME dont load manifest this way. probably make a new method `setManifest`
     if (manifest) {
       // @ts-ignore
       this.manifest = manifest;
     }
 
-    // Add event listener for messages from iframe
-    window.addEventListener("message", this.handleMessage);
+    this.log.info("Loading plugin", this.manifest);
 
     this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.addSidebarTab({
@@ -64,6 +66,11 @@ export default class WebPluginLoader {
         icon: this.manifest.icon,
       });
     });
+
+    if (!this.listening) {
+      this.registerEvents();
+      this.onReadyListeners.forEach((fn) => fn());
+    }
   }
 
   private handleMessage(event: MessageEvent) {
@@ -192,6 +199,9 @@ export default class WebPluginLoader {
           // FIXME maybe we should ask user permission first before opening?
           window.main.openExternally(request.args.link);
           break;
+        case "openTab":
+          this.pluginStore.openTab(request.args);
+          break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);
@@ -246,10 +256,12 @@ export default class WebPluginLoader {
 
   registerIframe(iframe: HTMLIFrameElement) {
     this.iframes.push(iframe);
-    this.postMessage({
-      name: "themeChanged",
-      args: this.pluginStore.getTheme(),
-    });
+    iframe.onload = () => {
+      this.postMessage({
+        name: "themeChanged",
+        args: this.pluginStore.getTheme(),
+      });
+    };
   }
 
   unregisterIframe(iframe: HTMLIFrameElement) {
@@ -278,8 +290,6 @@ export default class WebPluginLoader {
   }
 
   async unload() {
-    window.removeEventListener("message", this.handleMessage);
-
     this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
       this.pluginStore.removeSidebarTab(sidebar.id);
     });
@@ -302,5 +312,43 @@ export default class WebPluginLoader {
   checkPermission(data: PluginRequestData) {
     // do nothing on purpose
     // if not permitted, throw error
+  }
+
+  /** Warn: please dispose only when the plugin is not used anymore, like
+   * after uninstalling. */
+  dispose() {
+    this.unregisterEvents();
+    this.onDisposeListeners.forEach((fn) => fn());
+  }
+
+  private registerEvents() {
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
+    this.listening = true;
+  }
+
+  private unregisterEvents() {
+    window.removeEventListener("message", this.handleMessage);
+    this.listening = false;
+  }
+
+  /** Called when the plugin is ready to be used. If the plugin uses iframes,
+   * this should be called before mounting the iframes. */
+  onReady(fn: Function) {
+    if (this.listening) {
+      fn();
+    }
+    this.onReadyListeners.push(fn);
+    return () => {
+      this.onReadyListeners = _.without(this.onReadyListeners, fn);
+    }
+  }
+
+  /** Called when the plugin is disposed. */
+  onDispose(fn: Function) {
+    this.onDisposeListeners.push(fn);
+    return () => {
+      this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
+    }
   }
 }
