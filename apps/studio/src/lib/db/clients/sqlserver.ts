@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
+import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request, Transaction } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
 import _ from 'lodash'
@@ -83,7 +83,7 @@ knex.client._escapeBinding = function (value: any, context: any) {
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
-export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
+export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -205,8 +205,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, options.arrayRowMode))
   }
 
-  async query(queryText: string) {
-    const queryRequest: Request = this.pool.request();
+  async query(queryText: string, tabId: number) {
+    const hasReserved = this.reservedConnections.has(tabId);
+    const queryRequest: Request = hasReserved ? this.reservedConnections.get(tabId).request() : this.pool.request();
+    log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
     return {
       execute: async(): Promise<NgQueryResult[]> => {
         try {
@@ -565,7 +567,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
-    this.logger().info('RUNNING', q, options);
+    log.info('RUNNING', q, options);
 
     const runQuery = async (connection: Request) => {
       connection.arrayRowMode = options.arrayRowMode || false;
@@ -1050,6 +1052,40 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   getBuilder(table: string, schema?: string) {
     return new SqlServerChangeBuilder(table, schema, [], [])
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    const conn = this.pool.transaction();
+    this.pushConnection(tabId, conn);
+  }
+
+  async releaseConnection(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      try {
+        // This may throw if the connection hasn't been begun yet, so just to be safe we'll catch
+        conn.rollback();
+      } catch {}
+    }
+  }
+
+  async startTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.begin();
+  }
+
+  async commitTransaction(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    await conn.commit();
+    // commit releases the connection annoyingly so we have to re reserve one
+    await this.reserveConnection(tabId);
+  }
+
+  async rollbackTransaction(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    await conn.rollback();
+    // rollback also releases the connection so we have to re reserve the connection
+    await this.reserveConnection(tabId);
   }
 
   private async executeWithTransaction(q: string) {

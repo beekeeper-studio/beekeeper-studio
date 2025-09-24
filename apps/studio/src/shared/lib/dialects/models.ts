@@ -9,7 +9,7 @@ export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
 interface ImportDefaultDataTypes {
   stringType?: string
-  longStringType?: string 
+  longStringType?: string
   dateType?: string
   booleanType?: string
   integerType?: string
@@ -122,6 +122,7 @@ export interface DialectData {
   disallowedSortColumns?: string[],
   rawFilterPlaceholder?: string,
   disabledFeatures?: {
+    manualCommit?: boolean
     rawFilters?: boolean
     builderFilters?: boolean
     shell?: boolean
