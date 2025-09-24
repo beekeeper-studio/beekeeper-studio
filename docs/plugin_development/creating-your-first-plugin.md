@@ -7,9 +7,9 @@ icon: material/hammer-wrench
 # Creating Your First Plugin
 
 !!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). Things might change, but we'd love your feedback!
+    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
 
-Let's build a simple "Hello World" plugin! You'll create a new tab that shows "Hello World!" and learn how to interact with databases. Perfect for getting started! 🚀
+Let's build a simple "Hello World" plugin! You'll create a new tab that shows "Hello World!" and learn how to interact with databases.
 
 ## What You Need
 
@@ -17,15 +17,15 @@ Let's build a simple "Hello World" plugin! You'll create a new tab that shows "H
 -   Node.js and npm/yarn installed
 -   Beekeeper Studio installed
 
-## Quick Start (3 Options)
+## Quick Start (2 Options)
 
-### Option 1: Vite Project ⭐ *Recommended*
+### Option 1: Vite Project ⭐
 
-**Why Vite?** Vite provides a nice development experience with Hot Module Replacement (HMR). When you make changes to your plugin code, you'll see updates reflected in Beekeeper Studio without needing to manually reload the plugin or restart the application. This helps streamline the development process.
+**Why Vite?** Vite provides Hot Module Replacement (HMR) for a nice development experience. When you make changes to your plugin, you'll see updates reflected in Beekeeper Studio without needing to manually reload the plugin or restart the application. This helps streamline the development process.
 
-Vite is also quite straightforward to configure. With a simple `vite.config.ts` and our official plugin, you get TypeScript support, modern JavaScript features, asset bundling, and production builds.
+Vite is also quite straightforward to configure. With a simple `vite.config.ts` and our official plugin, you get TypeScript support, asset bundling, and production builds.
 
-#### 1. Create a Vite project
+1) Create a Vite project
 
 === "npm"
     ```bash
@@ -39,7 +39,7 @@ Vite is also quite straightforward to configure. With a simple `vite.config.ts` 
     cd hello-world-plugin
     ```
 
-#### 2. Install the Beekeeper Studio Vite plugin
+2) Install the Beekeeper Studio Vite plugin
 
 === "npm"
     ```bash
@@ -51,7 +51,7 @@ Vite is also quite straightforward to configure. With a simple `vite.config.ts` 
     yarn add @beekeeperstudio/vite-plugin
     ```
 
-#### 3. Create the manifest file
+3) Create the manifest file
 
 Create `manifest.json` to define your plugin:
 
@@ -65,20 +65,30 @@ Create `manifest.json` to define your plugin:
     },
     "description": "My first awesome plugin!",
     "version": "1.0.0",
+    "icon": "extension",
+    "manifestVersion": 1,
     "capabilities": {
         "views": [
             {
-                "id": "hello-world-tab",
+                "id": "hello-world-view",
                 "name": "Hello World",
                 "type": "shell-tab",
                 "entry": "dist/index.html"
+            }
+        ],
+        "menu": [
+            {
+                "command": "say-hello",
+                "name": "New Hello World",
+                "view": "hello-world-view",
+                "placement": "newTabDropdown"
             }
         ]
     }
 }
 ```
 
-#### 4. Create/update `vite.config.ts`:
+4) Create `vite.config.ts`
 
 ```typescript
 import { defineConfig } from 'vite'
@@ -89,9 +99,10 @@ export default defineConfig({
 })
 ```
 
-#### 5. Link to Beekeeper Studio
+5) Install the plugin
 
-Create a symbolic link so Beekeeper Studio can find your plugin:
+To install the plugin, you can simply move the project to the plugins directory
+or create a symbolic link to it:
 
 === "Linux"
     ```bash
@@ -108,15 +119,16 @@ Create a symbolic link so Beekeeper Studio can find your plugin:
     mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
     ```
 
-=== "Portable Version"
-    ```bash
-    ln -s $(pwd) /path/to/beekeeper-studio/beekeeper-studio-data/plugins/hello-world-plugin
+=== "Windows (Portable)"
+    ```cmd
+    mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
     ```
 
-!!! tip "Why link instead of copying directly?"
-    This keeps your code safe! If you accidentally uninstall the plugin, your source code won't be deleted.
+!!! tip "Why link instead of moving directly?"
+    This gives you control over your project location and keeps you free from accidentally deleting your project by uninstalling the plugin!
 
-#### 6. Run development server
+
+6) Run development server
 
 === "npm"
     ```bash
@@ -132,42 +144,11 @@ Now you have hot reload! Changes to your code will automatically update in Beeke
 
 ---
 
-### Option 2: Use the Starter Template (without Vite)
-
-#### 1. Clone our ready-to-go template
-
-```bash
-git clone https://github.com/beekeeper-studio/bks-plugin-starter.git hello-world-plugin
-cd hello-world-plugin
-```
-
-#### 2. Link it to Beekeeper Studio's plugins folder
-
-=== "Linux"
-    ```bash
-    ln -s $(pwd) ~/.config/beekeeper-studio/plugins/hello-world-plugin
-    ```
-
-=== "macOS"
-    ```bash
-    ln -s $(pwd) "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
-    ```
-
-=== "Windows"
-    ```cmd
-    mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
-    ```
-
-!!! tip "Why link instead of copying directly?"
-    This keeps your code safe! If you accidentally uninstall the plugin, your source code won't be deleted.
-
----
-
-### Option 3: Build from Scratch
+### Option 2: Build from Scratch
 
 Want to understand every piece? Let's build it step by step:
 
-#### Step 1: Create Your Plugin Folder
+1) Create Your Plugin Folder
 
 First, create a folder anywhere you like for your plugin:
 
@@ -193,15 +174,15 @@ Then link it to Beekeeper Studio's plugins directory:
     mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
     ```
 
-=== "Portable Version"
-    ```bash
-    ln -s $(pwd) /path/to/beekeeper-studio/beekeeper-studio-data/plugins/hello-world-plugin
+=== "Windows (Portable)"
+    ```cmd
+    mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
     ```
 
 !!! tip "Why link instead of copying directly?"
     This keeps your code safe! If you accidentally uninstall the plugin, your source code won't be deleted.
 
-#### Step 2: Create the Manifest
+2) Create the Manifest
 
 Create `manifest.json` - this tells Beekeeper Studio about your plugin:
 
@@ -215,20 +196,33 @@ Create `manifest.json` - this tells Beekeeper Studio about your plugin:
     },
     "description": "My first awesome plugin!",
     "version": "1.0.0",
+    "icon": "extension",
+    "manifestVersion": 1,
     "capabilities": {
         "views": [
             {
-                "id": "hello-world-tab",
+                "id": "hello-world-view",
                 "name": "Hello World",
                 "type": "shell-tab",
                 "entry": "index.html"
+            }
+        ],
+        "menu": [
+            {
+                "command": "say-hello",
+                "name": "New Hello World",
+                "view": "hello-world-view",
+                "placement": "newTabDropdown"
             }
         ]
     }
 }
 ```
 
-#### Step 3: Create the Interface
+!!! note "Difference from Vite"
+    The only difference from the Vite manifest is the `entry` field: `"index.html"` instead of `"dist/index.html"` since we're not using a build process.
+
+3) Create the Interface
 
 Create `index.html` - your plugin's main page:
 
@@ -245,7 +239,7 @@ Create `index.html` - your plugin's main page:
             font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
             padding: 2rem;
-            background: #f8f9fa;
+            background-color: #f8f9fa;
             color: #333;
         }
         .container {
@@ -262,7 +256,7 @@ Create `index.html` - your plugin's main page:
             margin-bottom: 1.5rem;
         }
         button {
-            background: #3182ce;
+            background-color: #3182ce;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -271,11 +265,11 @@ Create `index.html` - your plugin's main page:
             font-size: 1rem;
             font-weight: 500;
         }
-        button:hover { background: #2c5aa0; }
+        button:hover { background-color: #2c5aa0; }
         .tables {
             margin-top: 1rem;
             padding: 1rem;
-            background: #e6fffa;
+            background-color: #e6fffa;
             border-radius: 0.5rem;
             display: none;
         }
@@ -298,7 +292,7 @@ hello-world-plugin/
 └── index.html
 ```
 
-## Test It Out! 🧪
+## Test Your Plugin
 
 !!! note "For Vite Users"
     If you're using Vite, make sure your dev server is running first!
@@ -317,9 +311,9 @@ hello-world-plugin/
 ![New tab dropdown menu](../../assets/images/new-tab-dropdown.png)
 ![Plugin tab running](../../assets/images/plugin-tab.png)
 
-## Make It Interactive! 🎮
+## Reading Database
 
-Let's add database interaction! First, install the plugin dependency:
+Let's read the database! First, install the plugin dependency:
 
 === "npm"
     ```bash
@@ -331,13 +325,14 @@ Let's add database interaction! First, install the plugin dependency:
     yarn add @beekeeperstudio/plugin
     ```
 
-Create `main.js`:
+Create a javascript file called `main.js`:
 
 ```javascript
-// Essential: enables proper event handling
-import "./node_modules/@beekeeperstudio/plugin/dist/eventForwarder.js";
-import { getTables } from "./node_modules/@beekeeperstudio/plugin/dist/index.js";
+// Enables proper keyboard and mouse event handling
+import "@beekeeperstudio/plugin/dist/eventForwarder.js";
+import { getTables } from "@beekeeperstudio/plugin/";
 
+// Show database tables
 async function showTables() {
     try {
         const tables = await getTables();
@@ -350,71 +345,81 @@ async function showTables() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector("#show-tables-btn")?.addEventListener("click", showTables);
+    document.querySelector("#show-tables-btn").addEventListener("click", showTables);
 });
 ```
 
-Update your HTML by adding this inside the container div (after the `<p>` tag):
+Update your HTML by adding this inside the container div:
 
-```html
-<button id="show-tables-btn">Show Database Tables</button>
-<div class="tables"></div>
-<script type="module" src="main.js"></script>
+```diff
+...
+<body>
+    <div class="container">
+        <h1>🎉 Your plugin works!</h1>
+        <p>Edit this HTML and reload to see changes.</p>
++        <button id="show-tables-btn">Show Database Tables</button>
++        <div class="tables"></div>
++        <script type="module" src="main.js"></script>
+    </div>
+</body>
+...
 ```
 
 ![Plugin with interactive button](../../assets/images/interactive-plugin.png)
 
-## Theme Sync (Optional) 🎨
-
-!!! note "Coming Soon!"
-    Automatic theme syncing is planned. For now, here's how to do it manually.
+## Theme Sync
 
 Make your plugin match Beekeeper Studio's theme:
 
-**Add to your `main.js`:**
+Add a new `<style>` tag to your html:
 
-```javascript
-import { addNotificationListener } from "./node_modules/@beekeeperstudio/plugin/dist/index.js";
-
-// Sync with app theme
-addNotificationListener("themeChanged", (args) => {
-    const css = `:root { ${args.cssString} }`;
-    let style = document.getElementById("bks-theme-style");
-
-    if (style) {
-        style.innerHTML = css;
-    } else {
-        style = document.createElement("style");
-        style.id = "bks-theme-style";
-        style.innerHTML = css;
-        document.head.appendChild(style);
-    }
-});
+```diff
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World Plugin</title>
++   <style id="app-theme"></style>
+    <style>
 ```
 
-**Update your CSS to use theme variables:**
 
-```css
-body {
-    background-color: var(--query-editor-bg, #f8f9fa);
-    color: var(--text-dark, #333);
-}
+Update your javascript to use the app theme:
 
-button {
-    background-color: var(--theme-base, #3182ce);
-    color: white;
-}
+```diff
+// Enables proper keyboard and mouse event handling
+import "@beekeeperstudio/plugin/dist/eventForwarder.js";
+import { getTables } from "@beekeeperstudio/plugin/dist/index.js";
++ import { addNotificationListener, getAppInfo } from "@beekeeperstudio/plugin";
 
-.tables {
-    background-color: var(--brand-success-light, #e6fffa);
-}
++ function applyTheme(theme) {
++      document.querySelector("#app-theme")!.textContent =
++        `:root { ${app.theme.cssString} }`;
++ }
+
++ // Initialize theme
++ getAppInfo().then((app) => applyTheme(app.theme));
+
++ // Sync with app theme
++ addNotificationListener("themeChanged", (theme) => applyTheme(theme));
+
+// Show database tables
+async function showTables() {
 ```
 
-The fallback values (after the comma) ensure your plugin works even before theme sync is initialized.
+Update your CSS to use theme variables:
 
-## Final Result 🎉
+```diff
+-    background-color: #f8f9fa;
++    background-color: var(--query-editor-bg);
+-    color: #333;
++    color: var(--text-dark);
+```
 
-**Your complete `index.html`:**
+## Final Result
+
+Your complete `index.html`:
 
 ```html
 <!DOCTYPE html>
@@ -429,8 +434,8 @@ The fallback values (after the comma) ensure your plugin works even before theme
             font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
             padding: 2rem;
-            background-color: var(--query-editor-bg, #f8f9fa);
-            color: var(--text-dark, #333);
+            background-color: var(--query-editor-bg);
+            color: var(--text-dark);
         }
         .container {
             max-width: 600px;
@@ -446,7 +451,7 @@ The fallback values (after the comma) ensure your plugin works even before theme
             margin-bottom: 1.5rem;
         }
         button {
-            background: var(--theme-base, #3182ce);
+            background: var(--theme-base);
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -459,7 +464,7 @@ The fallback values (after the comma) ensure your plugin works even before theme
         .tables {
             margin-top: 1rem;
             padding: 1rem;
-            background: var(--brand-success-light, #e6fffa);
+            background: var(--brand-success-light);
             border-radius: 0.5rem;
             display: none;
         }
@@ -480,15 +485,23 @@ The fallback values (after the comma) ensure your plugin works even before theme
 </html>
 ```
 
-**Your complete `main.js`:**
+Your complete `main.js`:
 
 ```javascript
-// Essential imports
-import "./node_modules/@beekeeperstudio/plugin/dist/eventForwarder.js";
-import {
-    getTables,
-    addNotificationListener,
-} from "./node_modules/@beekeeperstudio/plugin/dist/index.js";
+// Enables proper keyboard and mouse event handling
+import "@beekeeperstudio/plugin/dist/eventForwarder.js";
+import { getTables, addNotificationListener, getAppInfo } from "@beekeeperstudio/plugin";
+
+function applyTheme(theme) {
+    document.querySelector("#app-theme").textContent =
+        `:root { ${app.theme.cssString} }`;
+}
+
+// Initialize theme
+getAppInfo().then((app) => applyTheme(app.theme));
+
+// Sync with app theme
+addNotificationListener("themeChanged", (theme) => applyTheme(theme));
 
 // Show database tables
 async function showTables() {
@@ -502,24 +515,9 @@ async function showTables() {
     }
 }
 
-// Theme sync
-addNotificationListener("themeChanged", (args) => {
-    const css = `:root { ${args.cssString} }`;
-    let style = document.getElementById("bks-theme-style");
-
-    if (style) {
-        style.innerHTML = css;
-    } else {
-        style = document.createElement("style");
-        style.id = "bks-theme-style";
-        style.innerHTML = css;
-        document.head.appendChild(style);
-    }
-});
-
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector("#show-tables-btn")?.addEventListener("click", showTables);
+    document.querySelector("#show-tables-btn").addEventListener("click", showTables);
 });
 ```
 
