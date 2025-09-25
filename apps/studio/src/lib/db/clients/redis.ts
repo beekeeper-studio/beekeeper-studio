@@ -95,6 +95,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     const config: RedisOptions = {
       host: this.server.config.host || "localhost",
       port: this.server.config.port || 6379,
+      username: this.server.config.user || undefined,
       password: this.server.config.password || "",
       db: parseInt(this.database.database, 10) || 0,
       lazyConnect: true, // needed to return promise

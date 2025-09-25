@@ -30,6 +30,15 @@
     </div>
 
     <!-- Authentication -->
+    <div class="form-group">
+      <label for="user">User (optional)</label>
+      <masked-input
+        v-model="config.username"
+        :privacy-mode="privacyMode"
+        placeholder="username"
+      />
+    </div>
+
     <div class="form-group form-group-password">
       <label for="password">Password (optional)</label>
       <input
