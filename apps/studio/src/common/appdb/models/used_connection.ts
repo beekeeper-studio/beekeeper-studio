@@ -35,6 +35,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.socketPathEnabled = other.socketPathEnabled
       this.bigQueryOptions = other.bigQueryOptions
       this.azureAuthOptions = other.azureAuthOptions
+      this.iamAuthOptions = other.iamAuthOptions
       // TEMP (@day): this is just till we fix the used conn duplication issue
       this.authId = other.authId
       this.libsqlOptions = other.libsqlOptions
