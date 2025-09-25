@@ -7,6 +7,7 @@
     @expand="onExpand($event, source)"
     @contextmenu.prevent.stop="
       $bks.openMenu({
+        id: 'entity.schema',
         event: $event,
         item: source.entity,
         options: source.contextMenu,
@@ -25,6 +26,7 @@
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="
       $bks.openMenu({
+        id: 'entity.table',
         event: $event,
         item: source.entity,
         options: source.contextMenu,
@@ -41,6 +43,7 @@
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="
       $bks.openMenu({
+        id: 'entity.routine',
         event: $event,
         item: source.entity,
         options: source.contextMenu,

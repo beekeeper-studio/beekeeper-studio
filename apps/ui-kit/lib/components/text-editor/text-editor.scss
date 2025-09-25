@@ -268,7 +268,7 @@
   // Marker styles
   .cm-error {
     background-color: var(--bks-text-editor-error-bg-color);
-    border-bottom: 2px dashed var(--bks-text-editor-error-fg-color);
+    border-bottom: 1px solid var(--bks-text-editor-error-fg-color);
     border-radius: 2px;
   }
 

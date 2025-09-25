@@ -88,3 +88,6 @@ $font-family: 'Roboto, sans-serif';
 
 $grouped-tables-base: color.adjust($theme-bg, $lightness: 2%);
 $grouped-tables-light: color.adjust($grouped-tables-base, $lightness: 2%);
+
+$scrollbar-track: transparent;
+$scrollbar-thumb: color.mix($theme-base, $theme-bg, 20%);

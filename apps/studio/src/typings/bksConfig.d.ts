@@ -263,7 +263,7 @@ declare interface IBksConfig {
     };
     plugins: {
         "bks-ai-shell": {
-            enabled: boolean;
+            disabled: boolean;
         };
     };
     security: {

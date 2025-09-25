@@ -1,16 +1,24 @@
 import {
   Manifest,
   OnViewRequestListener,
+  WebPluginContext,
+  WebPluginViewInstance,
 } from "../types";
 import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
+  GetAppInfoResponse,
+  GetViewContextResponse,
+  GetConnectionInfoResponse,
+  GetTablesResponse,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import { PluginMenuManager } from "./PluginMenuManager";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -23,20 +31,32 @@ windowEventMap.set("KeyboardEvent", KeyboardEvent);
 windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
-  private iframes: HTMLIFrameElement[] = [];
+  private viewInstances: WebPluginViewInstance[] = [];
   private onReadyListeners: Function[] = [];
   private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
+
+  /** @deprecated use `context.log` instead */
   private log: ReturnType<typeof rawLog.scope>;
+  /** @deprecated use `context.manifest` instead */
+  public readonly manifest: Manifest;
+  /** @deprecated use `context.store` instead */
+  private pluginStore: PluginStoreService;
+  /** @deprecated use `context.utility` instead */
+  private utilityConnection: UtilityConnection;
   private listening = false;
 
-  constructor(
-    public readonly manifest: Manifest,
-    private pluginStore: PluginStoreService,
-    private utilityConnection: UtilityConnection
-  ) {
+  menu: PluginMenuManager;
+
+  constructor(public readonly context: WebPluginContext) {
+    this.manifest = context.manifest;
+    this.pluginStore = context.store;
+    this.utilityConnection = context.utility;
+    this.log = context.log;
+
+    this.menu = new PluginMenuManager(context);
+
     this.handleMessage = this.handleMessage.bind(this);
-    this.log = rawLog.scope(`WebPluginLoader:${manifest.id}`);
   }
 
   /** Starts the plugin */
@@ -49,23 +69,16 @@ export default class WebPluginLoader {
 
     this.log.info("Loading plugin", this.manifest);
 
-    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
-      this.pluginStore.addSidebarTab({
-        id: sidebar.id,
-        label: sidebar.name,
-        url: `plugin://${this.manifest.id}/${this.getEntry(sidebar.entry)}`,
-      });
-    });
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.tabTypes?.forEach((tabType) => {
-      this.pluginStore.addTabTypeConfig({
-        pluginId: this.manifest.id,
-        pluginTabTypeId: tabType.id,
-        name: tabType.name,
-        kind: tabType.kind,
-        icon: this.manifest.icon,
-      });
-    });
+    // Backward compatibility: Early version of AI Shell.
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
+
+    this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
+    this.menu.register(views, menu);
 
     if (!this.listening) {
       this.registerEvents();
@@ -74,9 +87,10 @@ export default class WebPluginLoader {
   }
 
   private handleMessage(event: MessageEvent) {
-    const source = this.iframes.find(
-      (iframe) => iframe.contentWindow === event.source
+    const view = this.viewInstances.find(
+      ({ iframe }) => iframe.contentWindow === event.source
     );
+    const source = view?.iframe;
 
     // Check if the message is from our iframe
     if (source) {
@@ -90,7 +104,7 @@ export default class WebPluginLoader {
           source
         );
       } else {
-        this.handleViewNotification({
+        this.handleViewNotification(source, {
           name: event.data.name,
           args: event.data.args,
         });
@@ -129,21 +143,34 @@ export default class WebPluginLoader {
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getTables":
-          response.result = this.pluginStore.getTables();
+          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
           break;
         case "getColumns":
           response.result = await this.pluginStore.getColumns(
             request.args.table
           );
           break;
+        case "getTableKeys":
+          response.result = await this.utilityConnection.send(
+              'conn/getTableKeys',
+            { table: request.args.table, schema: request.args.schema }
+          );
+          break;
+        case "getAppInfo":
+          response.result = {
+            theme: this.pluginStore.getTheme(),
+            version: this.context.appVersion,
+          } as GetAppInfoResponse['result'];
+          break;
+        case "getViewContext":
+          const view = this.viewInstances.find((ins) => ins.iframe === source);
+          if (!view) {
+            throw new Error("View context not found.");
+          }
+          response.result = view.context as GetViewContextResponse['result'];
+          break;
         case "getConnectionInfo":
-          response.result = this.pluginStore.getConnectionInfo();
-          break;
-        case "getActiveTab":
-          response.result = this.pluginStore.getActiveTab();
-          break;
-        case "getAllTabs":
-          response.result = this.pluginStore.getAllTabs();
+          response.result = this.pluginStore.getConnectionInfo() as GetConnectionInfoResponse['result'];
           break;
         case "getData":
         case "getEncryptedData": {
@@ -157,7 +184,12 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard()
+          response.result = window.main.readTextFromClipboard();
+          break;
+        case "checkForUpdate":
+          response.result = await this.context.utility.send("plugin/checkForUpdates", {
+            id: this.context.manifest.id,
+          });
           break;
 
         // ======== WRITE ACTIONS ===========
@@ -175,7 +207,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(request.args.text)
+          window.main.writeTextToClipboard(request.args.text);
           break;
 
         // ======== UI ACTIONS ===========
@@ -214,14 +246,17 @@ export default class WebPluginLoader {
       response.error = e;
     }
 
-    this.postMessage(response);
+    this.postMessage(source, response);
 
     afterCallbacks.forEach((callback) => {
       callback(response);
     });
   }
 
-  private async handleViewNotification(notification: PluginNotificationData) {
+  private async handleViewNotification(
+    source: HTMLIFrameElement,
+    notification: PluginNotificationData
+  ) {
     switch (notification.name) {
       case "windowEvent": {
         const windowEventClass = windowEventMap.get(
@@ -248,33 +283,41 @@ export default class WebPluginLoader {
         this.log.error(`Received plugin error: ${notification.args.message}`, notification.args);
         break;
       }
+      case "broadcast": {
+        this.viewInstances.forEach(({ iframe }) => {
+          if (iframe === source) {
+            return;
+          }
+          this.postMessage(iframe, {
+            name: "broadcast",
+            args: {
+              message: notification.args.message,
+            },
+          });
+        });
+        break;
+      }
 
       default:
         this.log.warn(`Unknown notification: ${notification.name}`);
     }
   }
 
-  registerIframe(iframe: HTMLIFrameElement) {
-    this.iframes.push(iframe);
-    iframe.onload = () => {
-      this.postMessage({
-        name: "themeChanged",
-        args: this.pluginStore.getTheme(),
-      });
-    };
+  registerViewInstance(options: WebPluginViewInstance) {
+    this.viewInstances.push(options);
   }
 
-  unregisterIframe(iframe: HTMLIFrameElement) {
-    this.iframes = _.without(this.iframes, iframe);
+  unregisterViewInstance(iframe: HTMLIFrameElement) {
+    this.viewInstances = this.viewInstances.filter((ins) => ins.iframe !== iframe);
   }
 
-  postMessage(data: PluginNotificationData | PluginResponseData) {
-    if (!this.iframes) {
-      this.log.warn("Cannot post message, iframe not registered.");
-      return;
-    }
-    this.iframes.forEach((iframe) => {
-      iframe.contentWindow.postMessage(data, "*");
+  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
+    iframe.contentWindow.postMessage(data, "*");
+  }
+
+  broadcast(data: PluginNotificationData) {
+    this.viewInstances.forEach(({ iframe }) => {
+      this.postMessage(iframe, data);
     });
   }
 
@@ -290,16 +333,14 @@ export default class WebPluginLoader {
   }
 
   async unload() {
-    this.manifest.capabilities.views?.sidebars?.forEach((sidebar) => {
-      this.pluginStore.removeSidebarTab(sidebar.id);
-    });
+    window.removeEventListener("message", this.handleMessage);
 
-    this.manifest.capabilities.views?.tabTypes?.forEach((tab) => {
-      this.pluginStore.removeTabTypeConfig({
-        pluginId: this.manifest.id,
-        pluginTabTypeId: tab.id,
-      });
-    });
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
+
+    this.menu.unregister(views, menu);
+    this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);
   }
 
   addListener(listener: OnViewRequestListener) {
