@@ -65,7 +65,7 @@ export interface BaseQueryResult {
 export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
-  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
+  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic" | "bedrock";
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
   server: IDbConnectionServer;

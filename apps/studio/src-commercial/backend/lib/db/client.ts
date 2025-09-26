@@ -21,6 +21,7 @@ import { SQLAnywhereClient } from "./clients/anywhere";
 import { TrinoClient } from "./clients/trino";
 import { SurrealDBClient } from "./clients/surrealdb";
 import { RedisClient } from '@/lib/db/clients/redis';
+import { BedrockClient } from '@/lib/db/clients/bedrock';
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -42,7 +43,8 @@ const clients = new Map<ConnectionType, any>([
   ['sqlanywhere', SQLAnywhereClient],
   ['trino', TrinoClient],
   ['surrealdb', SurrealDBClient],
-  ['redis', RedisClient]
+  ['redis', RedisClient],
+  ['bedrock', BedrockClient]
 ], );
 
 

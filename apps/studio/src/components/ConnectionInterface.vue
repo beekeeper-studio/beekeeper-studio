@@ -50,6 +50,9 @@
                 <mysql-form v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)" :config="config"
                             :testing="testing"
                 />
+                <bedrock-form v-else-if="config.connectionType === 'bedrock'" :config="config"
+                            :testing="testing"
+                />
                 <postgres-form v-else-if="config.connectionType === 'postgresql'" :config="config" :testing="testing" />
                 <redshift-form v-else-if="config.connectionType === 'redshift'" :config="config" :testing="testing" />
                 <sqlite-form v-else-if="config.connectionType === 'sqlite'" :config="config" :testing="testing" />
@@ -177,6 +180,7 @@ import DuckDbForm from './connection/DuckDBForm.vue'
 import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
 import TrinoForm from './connection/TrinoForm.vue'
 import SurrealDbForm from './connection/SurrealDBForm.vue'
+import BedrockForm from './connection/BedrockForm.vue'
 import RedisForm from './connection/RedisForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
@@ -200,7 +204,7 @@ const log = rawLog.scope('ConnectionInterface')
 
 export default Vue.extend({
   components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
-    ContentPlaceholderHeading, SurrealDbForm
+    ContentPlaceholderHeading, SurrealDbForm, BedrockForm
   },
 
   data() {
