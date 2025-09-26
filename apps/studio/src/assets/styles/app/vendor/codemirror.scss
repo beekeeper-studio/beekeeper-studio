@@ -1,7 +1,7 @@
 @use "sass:color";
 :not(.BksTextEditor) {
   .CodeMirror {
-    font-family: $font-family-mono, monospace;
+    font-family: $font-family-mono;
     background: $query-editor-bg!important;
     color: $text-dark!important;
     padding: 0.75rem 0;
@@ -51,7 +51,7 @@
 // Addon: Hints
 // --------------------------------------
 .CodeMirror-hints {
-  font-family: $font-family-mono, monospace;
+  font-family: $font-family-mono;
   background: color.adjust($theme-bg, $lightness: 5%);
   color: $text-dark;
   padding: $gutter-h 0;

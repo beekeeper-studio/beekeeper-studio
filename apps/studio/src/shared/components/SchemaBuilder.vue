@@ -340,8 +340,20 @@ export default Vue.extend({
           height: $row-height;
           line-height: $row-height;
           box-shadow: inset 0 1px $theme-base;
-          pre, input:not([type="checkbox"]) {
-            font-family: 'Roboto';
+
+          pre,
+          input:not([type="checkbox"]) {
+            font-family: system-ui,
+              -apple-system, BlinkMacSystemFont,
+              "Segoe UI",
+              "Roboto",
+              "Oxygen",
+              "Ubuntu",
+              "Cantarell",
+              "Fira Sans",
+              "Droid Sans",
+              "Helvetica Neue",
+              Arial, sans-serif;
             min-height: $row-height;
             line-height: $row-height;
             padding: 0 $cell-padding!important;

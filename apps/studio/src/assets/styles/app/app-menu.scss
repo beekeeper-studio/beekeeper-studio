@@ -1,6 +1,7 @@
 @use "sass:color";
 
 .flyout-nav {
+  font-size: $form-control-font-size;
   .disabled-app-menu {
     pointer-events:none;
     opacity: 0.5;
@@ -38,12 +39,10 @@
         padding: $gutter-h $gutter-w;
       }
       .shortcut {
-        font-size: 90%;
         text-align: right;
         color: $text-lighter;
       }
       .label {
-        font-size: 95%;
         padding-left: $gutter-w * 2.6;
         cursor: pointer;
         .material-icons {
@@ -127,7 +126,6 @@
         > .label {
           display: inline-flex;
           align-items: center;
-          font-size: 85%;
           color: $text-lighter;
           padding: 0 ($gutter-w * 0.85);
           height: $titlebar-actions-height;
