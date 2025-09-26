@@ -26,6 +26,7 @@ import splitargs from "redis-splitargs";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBuilder";
+import { REDIS_COMMANDS } from "@beekeeperstudio/ui-kit/components/text-editor/extensions/redisCommands";
 
 type RedisQueryResult = BaseQueryResult;
 
@@ -74,9 +75,50 @@ type RedisTableRow = {
   value: unknown;
 };
 
-function makeQueryResult(command: string, result: unknown): NgQueryResult {
+function makeMapResult(
+  command: string,
+  result: unknown,
+  fieldName = "field",
+  valueName = "value"
+): NgQueryResult {
+  const rows = Object.entries(result).map(([field, value]) => ({
+    [fieldName]: field,
+    [valueName]: value,
+  }));
   return {
-    command: command,
+    rows,
+    fields: [
+      { name: fieldName, id: fieldName },
+      { name: valueName, id: valueName },
+    ],
+    rowCount: rows.length,
+    affectedRows: 0,
+  };
+}
+
+function makePairsResult(
+  command: string,
+  result: unknown,
+  fieldName = "field",
+  valueName = "value"
+): NgQueryResult {
+  const rows = _.chunk(result, 2).map(([field, value]) => ({
+    [fieldName]: field,
+    [valueName]: value,
+  }));
+  return {
+    rows,
+    fields: [
+      { name: fieldName, id: fieldName },
+      { name: valueName, id: valueName },
+    ],
+    rowCount: rows.length,
+    affectedRows: 0,
+  };
+}
+
+function makeDefaultResult(result: unknown): NgQueryResult {
+  return {
     rows: Array.isArray(result)
       ? result.map((r) => ({ result: r }))
       : [{ result }],
@@ -84,6 +126,32 @@ function makeQueryResult(command: string, result: unknown): NgQueryResult {
     rowCount: Array.isArray(result) ? result.length : 1,
     affectedRows: 0,
   };
+}
+
+function makeQueryResult(
+  command: keyof typeof REDIS_COMMANDS,
+  args: string[],
+  result: unknown
+): NgQueryResult {
+  if (_.isPlainObject(result)) {
+    // RESP3 can return maps
+    return makeMapResult(command, result);
+  }
+
+  // With RESP2, we basically have to guess how to format the result based on the command and its arguments
+  switch (command.toUpperCase() as keyof typeof REDIS_COMMANDS) {
+    case "HGETALL":
+    case "HSCAN":
+      return makePairsResult(command, result);
+    case "ZRANGE": {
+      const [_key, _start, _stop, ...rest] = args;
+      return rest.includes("WITHSCORES")
+        ? makePairsResult(command, result, "value", "score")
+        : makeDefaultResult(command, result);
+    }
+    default:
+      return makeDefaultResult(command, result);
+  }
 }
 
 const NEWLINE_RG = /[\r\n]+/;
@@ -275,21 +343,26 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async executeCommand(commandText: string): Promise<NgQueryResult[]> {
-    const commands = commandText
+  async executeCommand(text: string): Promise<NgQueryResult[]> {
+    const lines = text
       .split(NEWLINE_RG)
       .map((c) => c.trim())
       .filter(Boolean);
 
     const results: NgQueryResult[] = [];
 
-    for (const command of commands) {
-      const args = splitargs(command);
+    for (const line of lines) {
+      if (line.startsWith("#")) {
+        continue; // this is a comment
+      }
+
+      const [command, ...args] = splitargs(line);
+
       try {
-        const result = await this.redis.sendCommand(args);
-        results.push(makeQueryResult(command, result));
+        const result = await this.redis.sendCommand([command, ...args]);
+        results.push(makeQueryResult(command, args, result));
       } catch (error) {
-        results.push(makeQueryError(command, error));
+        results.push(makeQueryError(command, args, error));
       }
     }
 
@@ -365,7 +438,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
     let encoding = "unknown";
     try {
-      encoding = await this.redis.objectEncoding(key);
+      encoding = String(await this.redis.objectEncoding(key)); // make typescript happy by wrapping into string
     } catch (error) {
       // Some Redis versions or key types might not support OBJECT ENCODING
       log.debug(`Could not get encoding for key ${key}:`, error);
@@ -392,25 +465,25 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   private prepareList(value: unknown): string[] {
     if (typeof value === "string") value = JSON.parse(value);
     if (!Array.isArray(value)) throw new Error(`Value should be an array`);
-    return Object.values(value).map(v => this.preparePrimitive(v));
+    return Object.values(value).map((v) => this.preparePrimitive(v));
   }
 
   private prepareHash(value: unknown): Record<string, string> {
     if (typeof value === "string") value = JSON.parse(value);
     if (!_.isObject(value) || Array.isArray(value))
       throw new Error(`Value should be an object`);
-    return _.mapValues(value, v => this.preparePrimitive(v)) as Record<string, string>;
+    return _.mapValues(value, (v) => this.preparePrimitive(v));
   }
 
   private prepareZset(value: unknown): Record<string, string[]> {
     if (typeof value === "string") value = JSON.parse(value);
     if (!_.isObject(value) || Array.isArray(value))
       throw new Error(`Value should be an object`);
-    const zset = _.mapValues(value, v => this.prepareList(v));
+    const zset = _.mapValues(value, (v) => this.prepareList(v));
     for (const key of Object.keys(zset)) {
       if (Number.isNaN(Number(key))) throw new Error(`Invalid score: ${key}`);
     }
-    return zset as Record<string, string[]>;
+    return zset;
   }
 
   private prepareStream(value: unknown) {
