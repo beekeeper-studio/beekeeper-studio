@@ -278,7 +278,7 @@ x-buttons {
   label {
     display: flex;
     align-items: center;
-    font-size: 0.85rem;
+    font-size: $form-control-font-size;
     line-height: 1.5;
     padding: 0 ($gutter-h * 0.5);
     margin-bottom: 2px;

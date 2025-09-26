@@ -22,6 +22,7 @@ $font-family-mono:   ui-monospace,
              "Droid Sans Mono",
              "Consolas", "Courier New", monospace;
 $base-font-size:      0.875rem; // ~14px
+$form-control-font-size: 0.831rem; // ~13.3px
 
 @import 'material-icons/iconfont/material-icons.scss';
 @import "./vendor/custom-icons.scss";
