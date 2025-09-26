@@ -31,6 +31,7 @@ export const REDIS_COMMANDS = {
   HINCRBY: "Increment the integer value of a hash field by the given number",
   HINCRBYFLOAT: "Increment the float value of a hash field by the given amount",
   HSETNX: "Set the value of a hash field, only if the field does not exist",
+  HSCAN: "Incrementally iterate hash fields and associated values",
 
   // List commands
   LPUSH: "Prepend one or multiple values to a list",

@@ -75,8 +75,11 @@ type RedisTableRow = {
   value: unknown;
 };
 
+function ensureArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [value];
+}
+
 function makeMapResult(
-  command: string,
   result: unknown,
   fieldName = "field",
   valueName = "value"
@@ -97,32 +100,32 @@ function makeMapResult(
 }
 
 function makePairsResult(
-  command: string,
-  result: unknown,
+  result: unknown[],
   fieldName = "field",
   valueName = "value"
 ): NgQueryResult {
-  const rows = _.chunk(result, 2).map(([field, value]) => ({
-    [fieldName]: field,
-    [valueName]: value,
-  }));
-  return {
-    rows,
-    fields: [
-      { name: fieldName, id: fieldName },
-      { name: valueName, id: valueName },
-    ],
-    rowCount: rows.length,
-    affectedRows: 0,
-  };
+  return makeMapResult(Object.fromEntries(_.chunk(result, 2)), fieldName, valueName);
 }
 
-function makeDefaultResult(result: unknown): NgQueryResult {
+function makeCursorResult(cursor: unknown, result: NgQueryResult) {
+  if (result.rows?.length) {
+    result.rows[0].cursor = cursor;
+  } else {
+    result.rows = [{ cursor }];
+  }
+  result.fields = [{ name: "cursor", id: "cursor" }, ...result.fields];
+  return result;
+}
+
+function makeDefaultResult(
+  result: unknown,
+  valueName = "result"
+): NgQueryResult {
   return {
     rows: Array.isArray(result)
-      ? result.map((r) => ({ result: r }))
-      : [{ result }],
-    fields: [{ name: "result", id: "result" }],
+      ? result.map((r) => ({ [valueName]: r }))
+      : [{ [valueName]: result }],
+    fields: [{ name: valueName, id: valueName }],
     rowCount: Array.isArray(result) ? result.length : 1,
     affectedRows: 0,
   };
@@ -133,25 +136,39 @@ function makeQueryResult(
   args: string[],
   result: unknown
 ): NgQueryResult {
+  command = command.toUpperCase() as keyof typeof REDIS_COMMANDS;
+
   if (_.isPlainObject(result)) {
-    // RESP3 can return maps
-    return makeMapResult(command, result);
+    // RESP3 can return maps for some of the commands
+    return makeMapResult(result);
   }
 
-  // With RESP2, we basically have to guess how to format the result based on the command and its arguments
-  switch (command.toUpperCase() as keyof typeof REDIS_COMMANDS) {
-    case "HGETALL":
-    case "HSCAN":
-      return makePairsResult(command, result);
-    case "ZRANGE": {
-      const [_key, _start, _stop, ...rest] = args;
-      return rest.includes("WITHSCORES")
-        ? makePairsResult(command, result, "value", "score")
-        : makeDefaultResult(command, result);
+  if (Array.isArray(result)) {
+    // RESP2 returns arrays for most of the commands with complex replies
+
+    switch (command) {
+      case "SCAN": {
+        const [cursor, list] = result;
+        return makeCursorResult(cursor, makeDefaultResult(list, "key"));
+      }
+      case "HSCAN": {
+        const [cursor, pairs] = result;
+        return makeCursorResult(cursor, makePairsResult(pairs));
+      }
+      case "HGETALL":
+        return makePairsResult(result);
+      case "ZRANGE": {
+        const [_key, _start, _stop, ...rest] = args;
+        return rest.includes("WITHSCORES")
+          ? makePairsResult(result, "value", "score")
+          : makeDefaultResult(result);
+      }
+      default:
+        return makeDefaultResult(result);
     }
-    default:
-      return makeDefaultResult(command, result);
   }
+
+  return makeDefaultResult(result);
 }
 
 const NEWLINE_RG = /[\r\n]+/;
@@ -434,7 +451,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getKeyInfo(key: string): Promise<RedisTableRow> {
     const type = (await this.redis.type(key)) as RedisKeyType;
-    const memory = await this.redis.memoryUsage(key);
+    const memory = (await this.redis.memoryUsage(key)) as number;
 
     let encoding = "unknown";
     try {
