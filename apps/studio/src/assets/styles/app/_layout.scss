@@ -306,6 +306,8 @@ label {
 }
 
 input, select, textarea, .bk-form-input {
+  font-family: $font-family;
+  font-size: $base-font-size;
   @include form-control;
   &:focus {
     border-color: $input-highlight;
