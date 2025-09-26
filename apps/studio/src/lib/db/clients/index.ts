@@ -252,6 +252,23 @@ export const CLIENTS: ClientConfig[] = [
     ]
   },
   {
+    key: 'redis',
+    name: 'Redis',
+    defaultPort: 6379,
+    defaultDatabase: '0',
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'server:user',
+      'scriptCreateTable',
+      'cancelQuery'
+    ],
+  },
+  {
     key: 'bedrock',
     name: 'Bedrock',
     defaultPort: 3306,
@@ -259,6 +276,6 @@ export const CLIENTS: ClientConfig[] = [
       'server:schema',
       'server:domain',
       'server:socketPathWithCustomPort',
-    ],
+    ]
   }
 ];

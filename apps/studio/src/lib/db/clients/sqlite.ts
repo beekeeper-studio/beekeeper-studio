@@ -580,6 +580,18 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
     connection.defaultSafeIntegers(true);
 
+    console.log("Extensions: ", this.server.config.runtimeExtensions)
+    if (this.server.config.runtimeExtensions && this.server.config.runtimeExtensions.length > 0) {
+      for (const extension of this.server.config.runtimeExtensions) {
+        try {
+          connection.loadExtension(extension)
+        } catch (err) {
+          log.error(`Unable to load extension file ${extension}`)
+          throw err
+        }
+      }
+    }
+
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
       const query = queries[index];

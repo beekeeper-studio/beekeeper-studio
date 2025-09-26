@@ -354,6 +354,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     table: TableOrView,
     importScriptOptions: ImportFuncOptions,
     readStream: (b: {[key: string]: any}, executeOptions?: any, c?: string) => Promise<any>,
+    createTableSql?: string
   ) {
     const {
       executeOptions,
@@ -366,6 +367,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
         executeOptions.connection = connection
         importScriptOptions.clientExtras = await this.importStepZero(table, { connection })
         await this.importBeginCommand(table, importScriptOptions)
+        if (storeValues.createNewTable) {
+          await this.rawExecuteQuery(createTableSql, {}) as RawResultType[]
+        }
         if (storeValues.truncateTable) {
           await this.importTruncateCommand(table, importScriptOptions)
         }

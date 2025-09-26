@@ -9,6 +9,6 @@ declare global {
     platformInfo: IPlatformInfo
     bksConfigSource: BksConfigSource
     bksConfig: BksConfig
-    webPluginManager: WebPluginManager
+    bksPlugin: WebPluginManager
   }
 }

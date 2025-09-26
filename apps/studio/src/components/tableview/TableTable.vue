@@ -398,6 +398,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    ...mapGetters('popupMenu', ['getExtraPopupMenu']),
     canJumpToLastPage() {
       const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
       return this.$bksConfig.db[dbType].allowSkipToLastPage;
@@ -612,7 +613,11 @@ export default Vue.extend({
 
       const paths = []
       for (const column of this.table.columns) {
-        if(this.isPrimaryKey(column.columnName) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
+        const isPrimaryKey = this.isPrimaryKey(column.columnName);
+        // Allow primary key editing for dialects that don't have read-only primary keys (e.g., Redis key renaming)
+        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+
+        if((isPrimaryKey && !canEditPrimaryKeys) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
         }
         paths.push(column.columnName)
@@ -749,6 +754,7 @@ export default Vue.extend({
             ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
+            ...this.getExtraPopupMenu('tableTable.cell', { transform: "tabulator" }),
           ]
 
           if (keyDatas?.length > 0) {
@@ -798,6 +804,7 @@ export default Vue.extend({
             action: () => column.getTable().setColumnLayout(this.tableColumns),
           },
           this.openColumnFilterMenuItem,
+          ...this.getExtraPopupMenu('tableTable.columnHeader', { transform: "tabulator" }),
         ]
       }
 
@@ -1022,6 +1029,7 @@ export default Vue.extend({
               }),
               { separator: true },
               ...this.rowActionsMenu(range),
+              ...this.getExtraPopupMenu('tableTable.rowHeader', { transform: "tabulator" }),
             ]
           },
           headerContextMenu: () => {
@@ -1039,6 +1047,7 @@ export default Vue.extend({
               resizeAllColumnsToFitContent,
               resizeAllColumnsToFixedWidth,
               this.openColumnFilterMenuItem,
+              ...this.getExtraPopupMenu('tableTable.corner', { transform: "tabulator" }),
             ]
           },
         },
@@ -1303,7 +1312,10 @@ export default Vue.extend({
         }))
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
-      return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
+      const isPrimaryKey = this.isPrimaryKey(cell.getField());
+      // i know, the logic is a bit awkward (disable the disabling of editing the primary keys)
+      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+      return this.editable && (!isPrimaryKey || canEditPrimaryKeys) && !pendingDelete;
     },
     insertionCellCheck(cell: CellComponent) {
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
@@ -1355,10 +1367,12 @@ export default Vue.extend({
         return
       }
 
-      const primaryKeys = pkCells.map((cell) => {
+      const primaryKeys = pkCells.map((pkCell) => {
         return {
-          column: cell.getField(),
-          value: cell.getValue()
+          column: pkCell.getField(),
+          // Use old value if this primary key cell is the one being edited, otherwise current value
+          // This is for redis key renaming to work
+          value: pkCell === cell ? pkCell.getOldValue() : pkCell.getValue()
         }
       })
       if (currentEdit) {
@@ -1471,9 +1485,17 @@ export default Vue.extend({
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
           const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
+          let value = cell.getValue();
+          if (isBinary) {
+            try {
+              value = stringToTypedArray(value, "hex")
+            } catch (e) {
+              log.error(`Error converting ${value} to typed array. Skipping...`, e)
+            }
+          }
           primaryKeys.push({
             column: cell.getField(),
-            value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
+            value,
           })
         })
 
