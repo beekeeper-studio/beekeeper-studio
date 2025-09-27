@@ -559,16 +559,16 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     if (typeof value === "string") value = JSON.parse(value);
     if (!_.isObject(value) || Array.isArray(value))
       throw new Error(`Value should be an object`);
-    return _.mapValues(value, (v) => this.preparePrimitive(v));
+    return _.mapValues(value, (v) => this.preparePrimitive(v)) as Record<string, string>;
   }
 
-  private prepareZset(value: unknown): Record<string, string[]> {
+  private prepareZset(value: unknown): Record<string, string> {
     const hash = this.prepareHash(value);
     for (const score of Object.values(hash)) {
       if (Number.isNaN(Number(score)))
         throw new Error(`Invalid score: ${score}`);
     }
-    return hash;
+    return hash as Record<string, string>;
   }
 
   private prepareStream(value: unknown) {
