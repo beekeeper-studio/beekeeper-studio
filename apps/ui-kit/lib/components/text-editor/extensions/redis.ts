@@ -6,14 +6,7 @@
 
 import { LanguageSupport, StreamLanguage } from "@codemirror/language";
 import { CompletionContext } from "@codemirror/autocomplete";
-import {
-  REDIS_COMMANDS,
-  REDIS_OPTIONS,
-  REDIS_COMMAND_NAMES,
-  REDIS_OPTION_NAMES,
-  getCommandDescription,
-  getOptionDescription,
-} from "./redisCommands";
+import redisCommands from "./redisCommands";
 
 // Stream parser for Redis syntax
 const redisStreamParser = StreamLanguage.define({
@@ -62,11 +55,7 @@ const redisStreamParser = StreamLanguage.define({
     if (stream.match(/^\w+(\.\w+)?/)) {
       const token = stream.current().toUpperCase();
 
-      if (REDIS_COMMANDS[token]) {
-        return "keyword";
-      }
-
-      if (REDIS_OPTIONS[token]) {
+      if (redisCommands[token]) {
         return "keyword";
       }
 
@@ -90,32 +79,32 @@ function redisCompletion(context: CompletionContext) {
   if (word === null || (word.from === word.to && !context.explicit))
     return null;
 
-  const wordUpper = word.text.toUpperCase();
+  const wordLower = word.text.toLowerCase();
   const options = [];
 
   // Add matching commands
-  for (const cmd of REDIS_COMMAND_NAMES) {
-    if (cmd.startsWith(wordUpper)) {
+  for (const [cmd, docs] of Object.entries(redisCommands)) {
+    if (cmd.startsWith(wordLower)) {
       options.push({
         label: cmd,
         type: "keyword",
-        info: getCommandDescription(cmd) || `Redis ${cmd} command`,
-        boost: cmd.length < 5 ? 10 : 0, // Boost short, common commands
+        info: "summary" in docs ? docs.summary : `Redis ${cmd} command`,
+        boost: 20 - cmd.length, // Boost short, common commands
       });
     }
   }
 
   // Add matching options
-  for (const opt of REDIS_OPTION_NAMES) {
-    if (opt.startsWith(wordUpper)) {
-      options.push({
-        label: opt,
-        type: "keyword",
-        info: getOptionDescription(opt) || `Redis ${opt} option`,
-        boost: -1, // Lower priority for options
-      });
-    }
-  }
+  // for (const opt of REDIS_OPTION_NAMES) {
+  //   if (opt.startsWith(wordLower)) {
+  //     options.push({
+  //       label: opt,
+  //       type: "keyword",
+  //       info: getOptionDescription(opt) || `Redis ${opt} option`,
+  //       boost: -1, // Lower priority for options
+  //     });
+  //   }
+  // }
 
   return options.length
     ? {

@@ -26,7 +26,8 @@ import splitargs from "redis-splitargs";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBuilder";
-import { REDIS_COMMANDS } from "@beekeeperstudio/ui-kit/components/text-editor/extensions/redisCommands";
+import redisCommands from "@beekeeperstudio/ui-kit/components/text-editor/extensions/redisCommands";
+// import fs from "fs/promises";
 
 type RedisQueryResult = BaseQueryResult;
 
@@ -79,6 +80,10 @@ function ensureArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [value];
 }
 
+function objectFromPairs(pairs: unknown[]) {
+  return Object.fromEntries(_.chunk(pairs, 2));
+}
+
 function makeMapResult(
   result: unknown,
   fieldName = "field",
@@ -104,7 +109,7 @@ function makePairsResult(
   fieldName = "field",
   valueName = "value"
 ): NgQueryResult {
-  return makeMapResult(Object.fromEntries(_.chunk(result, 2)), fieldName, valueName);
+  return makeMapResult(objectFromPairs(result), fieldName, valueName);
 }
 
 function makeCursorResult(cursor: unknown, result: NgQueryResult) {
@@ -121,22 +126,21 @@ function makeDefaultResult(
   result: unknown,
   valueName = "result"
 ): NgQueryResult {
+  const rows = ensureArray(result).map((r) => ({ [valueName]: r }));
   return {
-    rows: Array.isArray(result)
-      ? result.map((r) => ({ [valueName]: r }))
-      : [{ [valueName]: result }],
+    rows,
     fields: [{ name: valueName, id: valueName }],
-    rowCount: Array.isArray(result) ? result.length : 1,
+    rowCount: rows.length,
     affectedRows: 0,
   };
 }
 
 function makeQueryResult(
-  command: keyof typeof REDIS_COMMANDS,
+  command: keyof typeof redisCommands,
   args: string[],
   result: unknown
 ): NgQueryResult {
-  command = command.toUpperCase() as keyof typeof REDIS_COMMANDS;
+  command = command.toLowerCase() as keyof typeof redisCommands;
 
   if (_.isPlainObject(result)) {
     // RESP3 can return maps for some of the commands
@@ -147,17 +151,27 @@ function makeQueryResult(
     // RESP2 returns arrays for most of the commands with complex replies
 
     switch (command) {
-      case "SCAN": {
+      // These are exceptions
+      // Normally, makeDefaultResult is enough for all other cases
+      case "scan": {
         const [cursor, list] = result;
         return makeCursorResult(cursor, makeDefaultResult(list, "key"));
       }
-      case "HSCAN": {
+      case "sscan": {
+        const [cursor, list] = result;
+        return makeCursorResult(cursor, makeDefaultResult(list, "value"));
+      }
+      case "hscan": {
         const [cursor, pairs] = result;
         return makeCursorResult(cursor, makePairsResult(pairs));
       }
-      case "HGETALL":
+      case "zscan": {
+        const [cursor, pairs] = result;
+        return makeCursorResult(cursor, makePairsResult(pairs, "value", "score"));
+      }
+      case "hgetall":
         return makePairsResult(result);
-      case "ZRANGE": {
+      case "zrange": {
         const [_key, _start, _stop, ...rest] = args;
         return rest.includes("WITHSCORES")
           ? makePairsResult(result, "value", "score")
@@ -193,6 +207,30 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       database: parseInt(this.database.database, 10) || 0,
     });
     await this.redis.connect();
+
+    // Uncomment to get command list & docs upon connection as json
+    // Used in autocomplete
+    // ONLY DO THIS WHEN CONNECTING TO THE LATEST VERSION OF REDIS
+
+    // const commands = await this.redis.commandList();
+    // const docs = await Promise.all(
+    //   commands.map((c) => this.redis.sendCommand(["COMMAND", "DOCS", c]))
+    // );
+    // const mapped = Object.fromEntries(
+    //   docs
+    //     .map((pair) => {
+    //       const command = pair[0].replace("|", " ").toLowerCase();
+    //       const docs = pairsToObject(pair[1]);
+    //       if (docs.history) docs.history = Object.fromEntries(docs.history);
+    //       if (docs.arguments)
+    //         docs.arguments = docs.arguments.map(pairsToObject);
+    //       return [command, docs];
+    //     })
+    //     .filter(([, docs]) => !docs.subcommands)
+    //     .sort((a, b) => a[0].localeCompare(b[0]))
+    // );
+
+    // await fs.writeFile("commands.json", JSON.stringify(mapped, null, 2));
   }
 
   async versionString(): Promise<string> {
@@ -493,14 +531,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   private prepareZset(value: unknown): Record<string, string[]> {
-    if (typeof value === "string") value = JSON.parse(value);
-    if (!_.isObject(value) || Array.isArray(value))
-      throw new Error(`Value should be an object`);
-    const zset = _.mapValues(value, (v) => this.prepareList(v));
-    for (const key of Object.keys(zset)) {
-      if (Number.isNaN(Number(key))) throw new Error(`Invalid score: ${key}`);
+    const hash = this.prepareHash(value);
+    for (const score of Object.values(hash)) {
+      if (Number.isNaN(Number(score))) throw new Error(`Invalid score: ${score}`);
     }
-    return zset;
+    return hash;
   }
 
   private prepareStream(value: unknown) {
@@ -556,9 +591,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       case "zset": {
         const zset = this.prepareZset(value);
         await this.redis.del(key);
-        const members = Object.entries(zset).flatMap(([score, values]) =>
-          values.map((value) => ({ score: Number(score), value }))
-        );
+        const members = Object.entries(zset).map(([value, score]) => ({ score: Number(score), value }));
         await this.redis.zAdd(key, members);
         break;
       }
@@ -593,10 +626,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         return this.redis.sMembers(key);
       case "zset": {
         const result = await this.redis.zRangeWithScores(key, 0, -1);
-        const grouped = _.groupBy(result, (item) => item.score);
-        return _.mapValues(grouped, (group) =>
-          group.map((item) => item.value).sort()
-        );
+        return Object.fromEntries(result.map(({ value, score }) => [value, score]))
       }
       case "hash":
         return this.redis.hGetAll(key);
