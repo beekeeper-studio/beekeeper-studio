@@ -76,40 +76,69 @@ const redisStreamParser = StreamLanguage.define({
 // Autocompletion function
 function redisCompletion(context: CompletionContext) {
   const word = context.matchBefore(/\w*/);
-  if (word === null || (word.from === word.to && !context.explicit))
-    return null;
-
-  const wordLower = word.text.toLowerCase();
+  const text = context.matchBefore(/.+/);
+  console.log({ word, text })
+  // const wordLower = word.text.toLowerCase();
+  const textLower = text ? text.text.toLowerCase() : "";
   const options = [];
 
-  // Add matching commands
   for (const [cmd, docs] of Object.entries(redisCommands)) {
-    if (cmd.startsWith(wordLower)) {
+    if (cmd.startsWith(textLower)) {
       options.push({
         label: cmd,
         type: "keyword",
-        info: "summary" in docs ? docs.summary : `Redis ${cmd} command`,
-        boost: 20 - cmd.length, // Boost short, common commands
-      });
+        info: ((docs as any).summary) ?? `Redis ${cmd} command`,
+        boost: 20 - cmd.length,
+      })
+        console.log((docs as any).arguments)
+    }
+
+    if (textLower.startsWith(cmd)) {
+      for (const argument of (docs as any).arguments) {
+        if (argument.token) {
+          options.push({
+            label: argument.token.toLowerCase(),
+            type: "keyword",
+            info: "",
+            boost: -5,
+          })
+        }
+      }
     }
   }
 
-  // Add matching options
-  // for (const opt of REDIS_OPTION_NAMES) {
-  //   if (opt.startsWith(wordLower)) {
+  // // Add matching commands
+  // for (const [cmd, docs] of Object.entries(redisCommands)) {
+  //   if (cmd.startsWith(wordLower)) {
   //     options.push({
-  //       label: opt,
+  //       label: cmd,
   //       type: "keyword",
-  //       info: getOptionDescription(opt) || `Redis ${opt} option`,
-  //       boost: -1, // Lower priority for options
+  //       info: (docs as any).summary ?? `Redis ${cmd} command`,
+  //       boost: 20 - cmd.length, // Boost short, common commands
   //     });
+  //   }
+  // }
+
+  // // Add matching options
+  // for (const [cmd, docs] of Object.entries(redisCommands)) {
+  //   if (text.text.toLowerCase().startsWith(cmd)) {
+  //     for (const argument of (docs as any).arguments) {
+  //       if (argument.token?.startsWith(wordLower)) {
+  //         options.push({
+  //           label: argument.token.toLowerCase(),
+  //           type: "keyword",
+  //           info: argument.description,
+  //           boost: -1, // Lower priority for options
+  //         });
+  //       }
+  //     }
   //   }
   // }
 
   return options.length
     ? {
         from: word.from,
-        options: options.slice(0, 50),
+        options,
       }
     : null;
 }
