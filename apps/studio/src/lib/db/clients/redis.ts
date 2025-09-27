@@ -141,6 +141,7 @@ function makeQueryResult(
   result: unknown
 ): NgQueryResult {
   command = command.toLowerCase() as keyof typeof redisCommands;
+  args = args.map((arg) => arg.toLowerCase());
 
   if (_.isPlainObject(result)) {
     // RESP3 can return maps for some of the commands
@@ -162,8 +163,9 @@ function makeQueryResult(
         return makeCursorResult(cursor, makeDefaultResult(list, "value"));
       }
       case "hscan": {
+        const [_key, _cursor, ...rest] = args;
         const [cursor, pairs] = result;
-        return makeCursorResult(cursor, makePairsResult(pairs));
+        return makeCursorResult(cursor, rest.includes("novalues") ? makeDefaultResult(pairs, "field") : makePairsResult(pairs));
       }
       case "zscan": {
         const [cursor, pairs] = result;
@@ -173,7 +175,7 @@ function makeQueryResult(
         return makePairsResult(result);
       case "zrange": {
         const [_key, _start, _stop, ...rest] = args;
-        return rest.includes("WITHSCORES")
+        return rest.includes("withscores")
           ? makePairsResult(result, "value", "score")
           : makeDefaultResult(result);
       }
@@ -417,7 +419,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         const result = await this.redis.sendCommand([command, ...args]);
         results.push(makeQueryResult(command, args, result));
       } catch (error) {
-        results.push(makeQueryError(command, args, error));
+        results.push(makeQueryError(command, error));
       }
     }
 
