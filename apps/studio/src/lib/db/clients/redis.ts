@@ -122,6 +122,23 @@ function makeCursorResult(cursor: unknown, result: NgQueryResult) {
   return result;
 }
 
+function makeStreamResult(result: unknown) {
+  const rows = [];
+  for (const pair of ensureArray(result)) {
+    const id = pair[0]; // typescript doesn't like array destructuring here for some reason
+    const data = pair[1];
+    for (const [field, value] of _.chunk(data, 2)) {
+      rows.push({ id, field, value });
+    }
+  }
+  return {
+    rows,
+    fields: [{ name: "id", id: "id" }, { name: "field", id: "field" }, { name: "value", id: "value" }],
+    rowCount: rows.length,
+    affectedRows: 0,
+  };
+}
+
 function makeDefaultResult(
   result: unknown,
   valueName = "result"
@@ -165,19 +182,32 @@ function makeQueryResult(
       case "hscan": {
         const [_key, _cursor, ...rest] = args;
         const [cursor, pairs] = result;
-        return makeCursorResult(cursor, rest.includes("novalues") ? makeDefaultResult(pairs, "field") : makePairsResult(pairs));
+        return makeCursorResult(
+          cursor,
+          rest.includes("novalues")
+            ? makeDefaultResult(pairs, "field")
+            : makePairsResult(pairs)
+        );
       }
       case "zscan": {
         const [cursor, pairs] = result;
-        return makeCursorResult(cursor, makePairsResult(pairs, "value", "score"));
+        return makeCursorResult(
+          cursor,
+          makePairsResult(pairs, "value", "score")
+        );
       }
       case "hgetall":
         return makePairsResult(result);
-      case "zrange": {
+      case "xrange":
+      case "xrevrange": {
+        return makeStreamResult(result);
+      }
+      case "zrange":
+      case "zrangebyscore": {
         const [_key, _start, _stop, ...rest] = args;
         return rest.includes("withscores")
           ? makePairsResult(result, "value", "score")
-          : makeDefaultResult(result);
+          : makeDefaultResult(result, "value");
       }
       default:
         return makeDefaultResult(result);
@@ -535,7 +565,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   private prepareZset(value: unknown): Record<string, string[]> {
     const hash = this.prepareHash(value);
     for (const score of Object.values(hash)) {
-      if (Number.isNaN(Number(score))) throw new Error(`Invalid score: ${score}`);
+      if (Number.isNaN(Number(score)))
+        throw new Error(`Invalid score: ${score}`);
     }
     return hash;
   }
@@ -593,7 +624,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       case "zset": {
         const zset = this.prepareZset(value);
         await this.redis.del(key);
-        const members = Object.entries(zset).map(([value, score]) => ({ score: Number(score), value }));
+        const members = Object.entries(zset).map(([value, score]) => ({
+          score: Number(score),
+          value,
+        }));
         await this.redis.zAdd(key, members);
         break;
       }
@@ -628,7 +662,9 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         return this.redis.sMembers(key);
       case "zset": {
         const result = await this.redis.zRangeWithScores(key, 0, -1);
-        return Object.fromEntries(result.map(({ value, score }) => [value, score]))
+        return Object.fromEntries(
+          result.map(({ value, score }) => [value, score])
+        );
       }
       case "hash":
         return this.redis.hGetAll(key);
