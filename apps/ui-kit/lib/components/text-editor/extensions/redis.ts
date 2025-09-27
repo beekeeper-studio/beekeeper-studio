@@ -86,7 +86,7 @@ function redisCompletion(context: CompletionContext) {
       options.push({
         label: cmd,
         type: "keyword",
-        info: (docs as any).summary ?? `Redis ${cmd} command`,
+        info: (docs as any).summary ?? "",
         boost: 20 - cmd.length,
       });
     }
