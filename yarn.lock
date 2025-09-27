@@ -3775,7 +3775,7 @@
   resolved "https://registry.yarnpkg.com/@redis/bloom/-/bloom-5.8.2.tgz#e649698907876cd746d4867b634c4fa1f152bec8"
   integrity sha512-855DR0ChetZLarblio5eM0yLwxA9Dqq50t8StXKp5bAtLT0G+rZ+eRzzqxl37sPqQKjUudSYypz55o6nNhbz0A==
 
-"@redis/client@5.8.2":
+"@redis/client@5.8.2", "@redis/client@^5.8.2":
   version "5.8.2"
   resolved "https://registry.yarnpkg.com/@redis/client/-/client-5.8.2.tgz#099f387b7fba99180c10e0e7093b71d022e704f8"
   integrity sha512-WtMScno3+eBpTac1Uav2zugXEoXqaU23YznwvFgkPwBQVwEHTDgOG7uEAObtZ/Nyn8SmAMbqkEubJaMOvnqdsQ==

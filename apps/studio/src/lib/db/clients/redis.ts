@@ -19,6 +19,8 @@ import {
   BasicDatabaseClient,
 } from "./BasicDatabaseClient";
 import { createClient, RedisClientType } from "redis";
+import { getTransformReply } from "@redis/client/dist/lib/commander";
+import COMMANDS from "@redis/client/dist/lib/commands";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -26,7 +28,6 @@ import splitargs from "redis-splitargs";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBuilder";
-import redisCommands from "@beekeeperstudio/ui-kit/components/text-editor/extensions/redisCommands";
 // import fs from "fs/promises";
 
 type RedisQueryResult = BaseQueryResult;
@@ -78,14 +79,6 @@ type RedisTableRow = {
   value: unknown;
 };
 
-function ensureArray(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [value];
-}
-
-function objectFromPairs(pairs: unknown[]) {
-  return Object.fromEntries(_.chunk(pairs, 2));
-}
-
 function parseInfo(info: string) {
   return Object.fromEntries(
     info
@@ -95,146 +88,65 @@ function parseInfo(info: string) {
   );
 }
 
-function makeMapResult(
-  result: unknown,
-  fieldName = "field",
-  valueName = "value"
-): NgQueryResult {
+function makeObjectResult(result: unknown) {
   const rows = Object.entries(result).map(([field, value]) => ({
-    [fieldName]: field,
-    [valueName]: value,
+    field,
+    value,
   }));
   return {
     rows,
     fields: [
-      { name: fieldName, id: fieldName },
-      { name: valueName, id: valueName },
+      { name: "field", id: "field" },
+      { name: "value", id: "value" },
     ],
     rowCount: rows.length,
     affectedRows: 0,
   };
 }
 
-function makePairsResult(
-  result: unknown[],
-  fieldName = "field",
-  valueName = "value"
-): NgQueryResult {
-  return makeMapResult(objectFromPairs(result), fieldName, valueName);
-}
-
-function makeCursorResult(cursor: unknown, result: NgQueryResult) {
-  if (result.rows?.length) {
-    result.rows[0].cursor = cursor;
-  } else {
-    result.rows = [{ cursor }];
-  }
-  result.fields = [{ name: "cursor", id: "cursor" }, ...result.fields];
-  return result;
-}
-
-function makeStreamResult(result: unknown) {
-  const rows = [];
-  for (const pair of ensureArray(result)) {
-    const id = pair[0]; // typescript doesn't like array destructuring here for some reason
-    const data = pair[1];
-    for (const [field, value] of _.chunk(data, 2)) {
-      rows.push({ id, field, value });
-    }
-  }
+function makeArrayOfObjectsResult(result: unknown[]) {
   return {
-    rows,
-    fields: [{ name: "id", id: "id" }, { name: "field", id: "field" }, { name: "value", id: "value" }],
-    rowCount: rows.length,
+    rows: result,
+    fields: result.length
+      ? Object.keys(result[0]).map((key) => ({ name: key, id: key }))
+      : [],
+    rowCount: result.length,
     affectedRows: 0,
   };
 }
 
-function makeDefaultResult(
-  result: unknown,
-  valueName = "result"
-): NgQueryResult {
-  const rows = ensureArray(result).map((r) => ({ [valueName]: r }));
+function makeCursorResult(result: unknown) {
+  const { cursor, ...rest } = result as any;
+  const [data] = Object.values(rest);
+  const rows = Array.isArray(data)
+    ? data.map((d) => ({ ...d, cursor }))
+    : [{ cursor }];
   return {
     rows,
-    fields: [{ name: valueName, id: valueName }],
-    rowCount: rows.length,
-    affectedRows: 0,
+    fields: [
+      { id: "cursor", name: "cursor" },
+      ...(Array.isArray(data) && data.length
+        ? Object.keys(data[0]).map((key) => ({ id: key, name: key }))
+        : []),
+    ],
+    rowCount: 1,
   };
 }
 
-function makeQueryResult(
-  command: keyof typeof redisCommands,
-  args: string[],
-  result: unknown
-): NgQueryResult {
-  command = command.toLowerCase() as keyof typeof redisCommands;
-  args = args.map((arg) => arg.toLowerCase());
-
-  if (_.isPlainObject(result)) {
-    // RESP3 can return maps for some of the commands
-    return makeMapResult(result);
-  }
-
-  if (Array.isArray(result)) {
-    // RESP2 returns arrays for most of the commands with complex replies
-
-    switch (command) {
-      // These are exceptions
-      // Normally, makeDefaultResult is enough for all other cases
-      case "scan": {
-        const [cursor, list] = result;
-        return makeCursorResult(cursor, makeDefaultResult(list, "key"));
-      }
-      case "sscan": {
-        const [cursor, list] = result;
-        return makeCursorResult(cursor, makeDefaultResult(list, "value"));
-      }
-      case "hscan": {
-        const [_key, _cursor, ...rest] = args;
-        const [cursor, pairs] = result;
-        return makeCursorResult(
-          cursor,
-          rest.includes("novalues")
-            ? makeDefaultResult(pairs, "field")
-            : makePairsResult(pairs)
-        );
-      }
-      case "zscan": {
-        const [cursor, pairs] = result;
-        return makeCursorResult(
-          cursor,
-          makePairsResult(pairs, "value", "score")
-        );
-      }
-      case "hgetall":
-        return makePairsResult(result);
-      case "xrange":
-      case "xrevrange": {
-        return makeStreamResult(result);
-      }
-      case "zrange":
-      case "zrangebyscore": {
-        const [_key, _start, _stop, ...rest] = args;
-        return rest.includes("withscores")
-          ? makePairsResult(result, "value", "score")
-          : makeDefaultResult(result, "value");
-      }
-      default:
-        return makeDefaultResult(result);
-    }
-  }
-
-  switch (command) {
-    case "info":
-      return makeMapResult(parseInfo(result));
-    default:
-      return makeDefaultResult(result);
-  }
+function makeGenericResult(result: unknown) {
+  return {
+    rows: Array.isArray(result)
+      ? result.map((r) => ({ result: r }))
+      : [{ result }],
+    fields: [{ id: "result", name: "result" }],
+    rowCount: Array.isArray(result) ? result.length : 1,
+  };
 }
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   redis: RedisClientType;
+  commandsInfo: Awaited<ReturnType<typeof this.redis.command>>;
+  hello: Awaited<ReturnType<typeof this.redis.hello>>;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, redisContext, server, database);
@@ -253,6 +165,9 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       database: parseInt(this.database.database, 10) || 0,
     });
     await this.redis.connect();
+
+    this.commandsInfo = await this.redis.command();
+    this.hello = await this.redis.hello();
 
     // Uncomment to get command list & docs upon connection as json
     // Used in autocomplete
@@ -452,6 +367,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async executeCommand(text: string): Promise<NgQueryResult[]> {
+    this.hello = await this.redis.hello();
+
     const lines = text
       .split(NEWLINE_RG)
       .map((c) => c.trim())
@@ -464,11 +381,66 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         continue; // this is a comment
       }
 
-      const [command, ...args] = splitargs(line);
+      const commandWithArgs = splitargs(line) as string[];
+      const [command] = commandWithArgs;
+
+      // For "command info", this will find just "command" which is expected (there's no "command info" in commandsInfo)
+      const info = this.commandsInfo.find((c) => c.name === command);
+
+      if (!info) {
+        results.push(makeQueryError(command, `Command "${command}" is not supported`));
+        continue;
+      }
+
+      const requiredArgs = commandWithArgs.slice(0, Math.abs(info.arity));
+      const optionalArgs = commandWithArgs.slice(requiredArgs.length);
+
+      let lastName: keyof typeof COMMANDS | null = null;
+      let lastNumArgsMatched = 0;
+
+      // Find most suitable predefined method for transforming the reply
+      // TODO: This is hacky, but it works great for now
+      for (const NAME of Object.keys(COMMANDS)) {
+        const name = NAME.toLowerCase();
+
+        if (name.startsWith(command)) {
+          const argsMatched = optionalArgs
+            .map((arg) => name.includes(arg))
+            .filter(Boolean);
+
+          if (
+            (optionalArgs.length === 0 && !lastName) ||
+            argsMatched.length > lastNumArgsMatched
+          ) {
+            lastNumArgsMatched = argsMatched.length;
+            lastName = NAME;
+          }
+        }
+      }
+
+      const transformResult = lastName
+        ? getTransformReply(COMMANDS[lastName], this.hello.proto)
+        : null;
 
       try {
-        const result = await this.redis.sendCommand([command, ...args]);
-        results.push(makeQueryResult(command, args, result));
+        const result = await this.redis.sendCommand(commandWithArgs);
+        const transformed = transformResult ? transformResult(result) : result;
+
+        if (["info"].includes(command)) {
+          results.push(makeObjectResult(parseInfo(transformed)));
+        } else if (["scan", "hscan", "sscan", "zscan"].includes(command)) {
+          results.push(makeCursorResult(transformed));
+        } else if (_.isPlainObject(transformed)) {
+          results.push(makeObjectResult(transformed));
+        } else if (
+          Array.isArray(transformed) &&
+          transformed.length &&
+          _.isPlainObject(transformed[0])
+        ) {
+          results.push(makeArrayOfObjectsResult(transformed));
+        } else {
+          results.push(makeGenericResult(transformed));
+        }
       } catch (error) {
         results.push(makeQueryError(command, error));
       }
@@ -580,7 +552,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     if (typeof value === "string") value = JSON.parse(value);
     if (!_.isObject(value) || Array.isArray(value))
       throw new Error(`Value should be an object`);
-    return _.mapValues(value, (v) => this.preparePrimitive(v)) as Record<string, string>;
+    return _.mapValues(value, (v) => this.preparePrimitive(v)) as Record<
+      string,
+      string
+    >;
   }
 
   private prepareZset(value: unknown): Record<string, string> {
