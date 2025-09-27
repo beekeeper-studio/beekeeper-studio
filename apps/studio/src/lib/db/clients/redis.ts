@@ -33,6 +33,8 @@ type RedisQueryResult = BaseQueryResult;
 
 const log = rawLog.scope("redis");
 
+const NEWLINE_RG = /[\r\n]+/;
+
 const redisContext: AppContextProvider = {
   getExecutionContext() {
     return null;
@@ -82,6 +84,15 @@ function ensureArray(value: unknown): unknown[] {
 
 function objectFromPairs(pairs: unknown[]) {
   return Object.fromEntries(_.chunk(pairs, 2));
+}
+
+function parseInfo(info: string) {
+  return Object.fromEntries(
+    info
+      .split(NEWLINE_RG)
+      .filter((line) => line.includes(":"))
+      .map((line) => line.split(":"))
+  );
 }
 
 function makeMapResult(
@@ -214,10 +225,13 @@ function makeQueryResult(
     }
   }
 
-  return makeDefaultResult(result);
+  switch (command) {
+    case "info":
+      return makeMapResult(parseInfo(result));
+    default:
+      return makeDefaultResult(result);
+  }
 }
-
-const NEWLINE_RG = /[\r\n]+/;
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   redis: RedisClientType;
@@ -326,12 +340,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getInfo() {
     const info = await this.redis.info();
-    return Object.fromEntries(
-      info
-        .split(NEWLINE_RG)
-        .filter((line) => line.includes(":"))
-        .map((line) => line.split(":"))
-    );
+    return parseInfo(info);
   }
 
   async listViews(): Promise<TableOrView[]> {
