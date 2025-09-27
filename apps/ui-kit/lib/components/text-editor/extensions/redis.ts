@@ -77,7 +77,6 @@ const redisStreamParser = StreamLanguage.define({
 function redisCompletion(context: CompletionContext) {
   const word = context.matchBefore(/\w*/);
   const text = context.matchBefore(/.+/);
-  console.log({ word, text })
   // const wordLower = word.text.toLowerCase();
   const textLower = text ? text.text.toLowerCase() : "";
   const options = [];
@@ -90,7 +89,6 @@ function redisCompletion(context: CompletionContext) {
         info: ((docs as any).summary) ?? `Redis ${cmd} command`,
         boost: 20 - cmd.length,
       })
-        console.log((docs as any).arguments)
     }
 
     if (textLower.startsWith(cmd)) {
