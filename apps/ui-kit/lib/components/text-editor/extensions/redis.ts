@@ -6,14 +6,7 @@
 
 import { LanguageSupport, StreamLanguage } from "@codemirror/language";
 import { CompletionContext } from "@codemirror/autocomplete";
-import {
-  REDIS_COMMANDS,
-  REDIS_OPTIONS,
-  REDIS_COMMAND_NAMES,
-  REDIS_OPTION_NAMES,
-  getCommandDescription,
-  getOptionDescription,
-} from "./redisCommands";
+import redisCommands from "./redisCommands";
 
 // Stream parser for Redis syntax
 const redisStreamParser = StreamLanguage.define({
@@ -62,11 +55,7 @@ const redisStreamParser = StreamLanguage.define({
     if (stream.match(/^\w+(\.\w+)?/)) {
       const token = stream.current().toUpperCase();
 
-      if (REDIS_COMMANDS[token]) {
-        return "keyword";
-      }
-
-      if (REDIS_OPTIONS[token]) {
+      if (redisCommands[token]) {
         return "keyword";
       }
 
@@ -87,40 +76,95 @@ const redisStreamParser = StreamLanguage.define({
 // Autocompletion function
 function redisCompletion(context: CompletionContext) {
   const word = context.matchBefore(/\w*/);
-  if (word === null || (word.from === word.to && !context.explicit))
-    return null;
-
-  const wordUpper = word.text.toUpperCase();
+  const text = context.matchBefore(/.+/);
+  // const wordLower = word.text.toLowerCase();
+  const textLower = text ? text.text.toLowerCase() : "";
   const options = [];
 
-  // Add matching commands
-  for (const cmd of REDIS_COMMAND_NAMES) {
-    if (cmd.startsWith(wordUpper)) {
+  for (const [cmd, docs] of Object.entries(redisCommands)) {
+    if (cmd.startsWith(textLower)) {
       options.push({
         label: cmd,
         type: "keyword",
-        info: getCommandDescription(cmd) || `Redis ${cmd} command`,
-        boost: cmd.length < 5 ? 10 : 0, // Boost short, common commands
+        info: (docs as any).summary ?? "",
+        boost: 20 - cmd.length,
       });
+    }
+
+    if (textLower.startsWith(cmd)) {
+      for (const argument of (docs as any).arguments) {
+        if (argument.token) {
+          options.push({
+            label: argument.token.toLowerCase(),
+            type: "keyword",
+            info: "",
+            boost: -5,
+          });
+        }
+
+        if (argument.arguments) {
+          console.log("argument.arguments", argument.arguments);
+          for (const argument1 of argument.arguments) {
+            if (argument1.token) {
+              options.push({
+                label: argument1.token.toLowerCase(),
+                type: "keyword",
+                info: "",
+                boost: -5,
+              });
+            }
+
+            if (argument1.arguments) {
+              console.log("argument1.arguments", argument1.arguments);
+              for (const argument2 of argument1.arguments) {
+                if (argument2.token) {
+                  options.push({
+                    label: argument2.token.toLowerCase(),
+                    type: "keyword",
+                    info: "",
+                    boost: -5,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
-  // Add matching options
-  for (const opt of REDIS_OPTION_NAMES) {
-    if (opt.startsWith(wordUpper)) {
-      options.push({
-        label: opt,
-        type: "keyword",
-        info: getOptionDescription(opt) || `Redis ${opt} option`,
-        boost: -1, // Lower priority for options
-      });
-    }
-  }
+  // // Add matching commands
+  // for (const [cmd, docs] of Object.entries(redisCommands)) {
+  //   if (cmd.startsWith(wordLower)) {
+  //     options.push({
+  //       label: cmd,
+  //       type: "keyword",
+  //       info: (docs as any).summary ?? `Redis ${cmd} command`,
+  //       boost: 20 - cmd.length, // Boost short, common commands
+  //     });
+  //   }
+  // }
+
+  // // Add matching options
+  // for (const [cmd, docs] of Object.entries(redisCommands)) {
+  //   if (text.text.toLowerCase().startsWith(cmd)) {
+  //     for (const argument of (docs as any).arguments) {
+  //       if (argument.token?.startsWith(wordLower)) {
+  //         options.push({
+  //           label: argument.token.toLowerCase(),
+  //           type: "keyword",
+  //           info: argument.description,
+  //           boost: -1, // Lower priority for options
+  //         });
+  //       }
+  //     }
+  //   }
+  // }
 
   return options.length
     ? {
         from: word.from,
-        options: options.slice(0, 50),
+        options,
       }
     : null;
 }

@@ -18,7 +18,7 @@ import {
   BaseQueryResult,
   BasicDatabaseClient,
 } from "./BasicDatabaseClient";
-import Redis, { RedisOptions } from "ioredis";
+import { createClient, RedisClientType } from "redis";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -26,10 +26,14 @@ import splitargs from "redis-splitargs";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBuilder";
+import redisCommands from "@beekeeperstudio/ui-kit/components/text-editor/extensions/redisCommands";
+// import fs from "fs/promises";
 
 type RedisQueryResult = BaseQueryResult;
 
 const log = rawLog.scope("redis");
+
+const NEWLINE_RG = /[\r\n]+/;
 
 const redisContext: AppContextProvider = {
   getExecutionContext() {
@@ -59,6 +63,12 @@ type RedisKeyType =
   | "stream"
   | "ReJSON-RL";
 
+type RedisScanOptions = {
+  MATCH: string;
+  COUNT: number;
+  TYPE?: string;
+};
+
 type RedisTableRow = {
   key: string;
   type: RedisKeyType;
@@ -68,12 +78,163 @@ type RedisTableRow = {
   value: unknown;
 };
 
+function ensureArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [value];
+}
 
-const NEWLINE_RG = /[\r\n]+/;
+function objectFromPairs(pairs: unknown[]) {
+  return Object.fromEntries(_.chunk(pairs, 2));
+}
+
+function parseInfo(info: string) {
+  return Object.fromEntries(
+    info
+      .split(NEWLINE_RG)
+      .filter((line) => line.includes(":"))
+      .map((line) => line.split(":"))
+  );
+}
+
+function makeMapResult(
+  result: unknown,
+  fieldName = "field",
+  valueName = "value"
+): NgQueryResult {
+  const rows = Object.entries(result).map(([field, value]) => ({
+    [fieldName]: field,
+    [valueName]: value,
+  }));
+  return {
+    rows,
+    fields: [
+      { name: fieldName, id: fieldName },
+      { name: valueName, id: valueName },
+    ],
+    rowCount: rows.length,
+    affectedRows: 0,
+  };
+}
+
+function makePairsResult(
+  result: unknown[],
+  fieldName = "field",
+  valueName = "value"
+): NgQueryResult {
+  return makeMapResult(objectFromPairs(result), fieldName, valueName);
+}
+
+function makeCursorResult(cursor: unknown, result: NgQueryResult) {
+  if (result.rows?.length) {
+    result.rows[0].cursor = cursor;
+  } else {
+    result.rows = [{ cursor }];
+  }
+  result.fields = [{ name: "cursor", id: "cursor" }, ...result.fields];
+  return result;
+}
+
+function makeStreamResult(result: unknown) {
+  const rows = [];
+  for (const pair of ensureArray(result)) {
+    const id = pair[0]; // typescript doesn't like array destructuring here for some reason
+    const data = pair[1];
+    for (const [field, value] of _.chunk(data, 2)) {
+      rows.push({ id, field, value });
+    }
+  }
+  return {
+    rows,
+    fields: [{ name: "id", id: "id" }, { name: "field", id: "field" }, { name: "value", id: "value" }],
+    rowCount: rows.length,
+    affectedRows: 0,
+  };
+}
+
+function makeDefaultResult(
+  result: unknown,
+  valueName = "result"
+): NgQueryResult {
+  const rows = ensureArray(result).map((r) => ({ [valueName]: r }));
+  return {
+    rows,
+    fields: [{ name: valueName, id: valueName }],
+    rowCount: rows.length,
+    affectedRows: 0,
+  };
+}
+
+function makeQueryResult(
+  command: keyof typeof redisCommands,
+  args: string[],
+  result: unknown
+): NgQueryResult {
+  command = command.toLowerCase() as keyof typeof redisCommands;
+  args = args.map((arg) => arg.toLowerCase());
+
+  if (_.isPlainObject(result)) {
+    // RESP3 can return maps for some of the commands
+    return makeMapResult(result);
+  }
+
+  if (Array.isArray(result)) {
+    // RESP2 returns arrays for most of the commands with complex replies
+
+    switch (command) {
+      // These are exceptions
+      // Normally, makeDefaultResult is enough for all other cases
+      case "scan": {
+        const [cursor, list] = result;
+        return makeCursorResult(cursor, makeDefaultResult(list, "key"));
+      }
+      case "sscan": {
+        const [cursor, list] = result;
+        return makeCursorResult(cursor, makeDefaultResult(list, "value"));
+      }
+      case "hscan": {
+        const [_key, _cursor, ...rest] = args;
+        const [cursor, pairs] = result;
+        return makeCursorResult(
+          cursor,
+          rest.includes("novalues")
+            ? makeDefaultResult(pairs, "field")
+            : makePairsResult(pairs)
+        );
+      }
+      case "zscan": {
+        const [cursor, pairs] = result;
+        return makeCursorResult(
+          cursor,
+          makePairsResult(pairs, "value", "score")
+        );
+      }
+      case "hgetall":
+        return makePairsResult(result);
+      case "xrange":
+      case "xrevrange": {
+        return makeStreamResult(result);
+      }
+      case "zrange":
+      case "zrangebyscore": {
+        const [_key, _start, _stop, ...rest] = args;
+        return rest.includes("withscores")
+          ? makePairsResult(result, "value", "score")
+          : makeDefaultResult(result, "value");
+      }
+      default:
+        return makeDefaultResult(result);
+    }
+  }
+
+  switch (command) {
+    case "info":
+      return makeMapResult(parseInfo(result));
+    default:
+      return makeDefaultResult(result);
+  }
+}
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
-  redis: Redis;
-  commands: Set<string>;
+  redis: RedisClientType;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, redisContext, server, database);
@@ -82,22 +243,52 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    const config: RedisOptions = {
-      host: this.server.config.host || "localhost",
-      port: this.server.config.port || 6379,
+    this.redis = createClient({
+      socket: {
+        host: this.server.config.host || "localhost",
+        port: this.server.config.port || 6379,
+      },
       username: this.server.config.user || undefined,
       password: this.server.config.password || "",
-      db: parseInt(this.database.database, 10) || 0,
-      lazyConnect: true, // needed to return promise
-    };
+      database: parseInt(this.database.database, 10) || 0,
+    });
+    await this.redis.connect();
 
-    this.redis = new Redis(config);
-    const connection = await this.redis.connect();
+    // Uncomment to get command list & docs upon connection as json
+    // Used in autocomplete
+    // ONLY DO THIS WHEN CONNECTING TO THE LATEST VERSION OF REDIS
 
-    const commands = await this.redis.command("LIST");
-    this.commands = new Set<string>(commands as string[]);
+    // const commands = await this.redis.commandList();
+    // const docs = await Promise.all(
+    //   commands.map((c) => this.redis.sendCommand(["COMMAND", "DOCS", c]))
+    // );
+    // const mapped = Object.fromEntries(
+    //   docs
+    //     .map((pair) => {
+    //       const command = pair[0].replace("|", " ").toLowerCase();
+    //       const docs = objectFromPairs(pair[1]);
+    //       if (docs.history) docs.history = Object.fromEntries(docs.history);
+    //       if (docs.arguments) {
+    //         docs.arguments = docs.arguments.map(objectFromPairs);
+    //         for (const arg of docs.arguments) {
+    //           if (arg.arguments) {
+    //             arg.arguments = arg.arguments.map(objectFromPairs);
+    //             for (const arg2 of arg.arguments) {
+    //               if (arg2.arguments) {
+    //                 arg2.arguments = arg2.arguments.map(objectFromPairs);
+    //               }
+    //             }
+    //           }
+    //         }
+    //       }
 
-    return connection
+    //       return [command, docs];
+    //     })
+    //     .filter(([, docs]) => !docs.subcommands)
+    //     .sort((a, b) => a[0].localeCompare(b[0]))
+    // );
+
+    // await fs.writeFile("commands.json", JSON.stringify(mapped, null, 2));
   }
 
   async versionString(): Promise<string> {
@@ -122,7 +313,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async disconnect(): Promise<void> {
     if (this.redis) {
-      this.redis.quit();
+      this.redis.destroy();
       this.redis = null;
     }
   }
@@ -149,12 +340,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getInfo() {
     const info = await this.redis.info();
-    return Object.fromEntries(
-      info
-        .split(NEWLINE_RG)
-        .filter((line) => line.includes(":"))
-        .map((line) => line.split(":"))
-    );
+    return parseInfo(info);
   }
 
   async listViews(): Promise<TableOrView[]> {
@@ -265,25 +451,24 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async executeCommand(commandText: string): Promise<NgQueryResult[]> {
-    const commands = commandText
+  async executeCommand(text: string): Promise<NgQueryResult[]> {
+    const lines = text
       .split(NEWLINE_RG)
       .map((c) => c.trim())
       .filter(Boolean);
 
     const results: NgQueryResult[] = [];
 
-    for (const command of commands) {
-      const [commandName, ...args] = splitargs(command);
-      const lowerCommandName = commandName.toLowerCase();
+    for (const line of lines) {
+      if (line.startsWith("#")) {
+        continue; // this is a comment
+      }
+
+      const [command, ...args] = splitargs(line);
+
       try {
-        let result;
-        if (this.commands.has(lowerCommandName) && typeof this.redis[lowerCommandName] === 'function') {
-          result = await this.redis[lowerCommandName](...args);
-        } else {
-          result = await this.redis.call.call(this.redis, commandName, ...args);
-        }
-        results.push(this.makeQueryResult(command, result));
+        const result = await this.redis.sendCommand([command, ...args]);
+        results.push(makeQueryResult(command, args, result));
       } catch (error) {
         results.push(makeQueryError(command, error));
       }
@@ -308,8 +493,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   async listDatabases() {
     try {
       // Get the actual database count from Redis configuration
-      const config = await this.redis.config("GET", "databases");
-      const dbCount = parseInt(config[1], 10) || 16;
+      const config = await this.redis.configGet("databases");
+      const dbCount = parseInt(config.databases, 10) || 16;
       return new Array(dbCount).fill(null).map((_, i) => String(i));
     } catch (error) {
       // Fallback to default 16 databases if config command fails
@@ -345,23 +530,23 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     log.debug("Scanning Redis keys", { match, count, cursor });
     const keys: string[] = [];
     do {
-      const args = [cursor, "MATCH", match, "COUNT", count];
-      if (type) args.push("TYPE", type);
+      const options: RedisScanOptions = { MATCH: match, COUNT: count };
+      if (type) options.TYPE = type;
 
-      const [newCursor, result] = await this.redis.scan.call(this.redis, args);
-      keys.push(...result);
-      cursor = newCursor;
+      const result = await this.redis.scan(cursor, options);
+      keys.push(...result.keys);
+      cursor = String(result.cursor);
     } while (cursor !== "0");
     return keys;
   }
 
   async getKeyInfo(key: string): Promise<RedisTableRow> {
     const type = (await this.redis.type(key)) as RedisKeyType;
-    const memory = (await this.redis.call("MEMORY", "USAGE", key)) as number;
+    const memory = (await this.redis.memoryUsage(key)) as number;
 
     let encoding = "unknown";
     try {
-      encoding = (await this.redis.call("OBJECT", "ENCODING", key)) as string;
+      encoding = String(await this.redis.objectEncoding(key)); // make typescript happy by wrapping into string
     } catch (error) {
       // Some Redis versions or key types might not support OBJECT ENCODING
       log.debug(`Could not get encoding for key ${key}:`, error);
@@ -385,28 +570,26 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       : String(value);
   }
 
-  private prepareList(value: unknown) {
+  private prepareList(value: unknown): string[] {
     if (typeof value === "string") value = JSON.parse(value);
     if (!Array.isArray(value)) throw new Error(`Value should be an array`);
-    return Object.values(value).map(this.preparePrimitive);
+    return Object.values(value).map((v) => this.preparePrimitive(v));
   }
 
-  private prepareHash(value: unknown) {
+  private prepareHash(value: unknown): Record<string, string> {
     if (typeof value === "string") value = JSON.parse(value);
     if (!_.isObject(value) || Array.isArray(value))
       throw new Error(`Value should be an object`);
-    return _.mapValues(value, this.preparePrimitive);
+    return _.mapValues(value, (v) => this.preparePrimitive(v)) as Record<string, string>;
   }
 
-  private prepareZset(value: unknown) {
-    if (typeof value === "string") value = JSON.parse(value);
-    if (!_.isObject(value) || Array.isArray(value))
-      throw new Error(`Value should be an object`);
-    const zset = _.mapValues(value, this.prepareList);
-    for (const key of Object.keys(zset)) {
-      if (Number.isNaN(Number(key))) throw new Error(`Invalid score: ${key}`);
+  private prepareZset(value: unknown): Record<string, string> {
+    const hash = this.prepareHash(value);
+    for (const score of Object.values(hash)) {
+      if (Number.isNaN(Number(score)))
+        throw new Error(`Invalid score: ${score}`);
     }
-    return zset;
+    return hash as Record<string, string>;
   }
 
   private prepareStream(value: unknown) {
@@ -436,7 +619,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         const list = this.prepareList(value);
         await this.redis.del(key);
         if (list.length > 0) {
-          await this.redis.lpush(key, ...list.reverse()); // lpush adds in reverse order
+          await this.redis.lPush(key, list.reverse()); // lpush adds in reverse order
         }
         break;
       }
@@ -445,7 +628,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         const set = this.prepareList(value);
         await this.redis.del(key);
         if (set.length > 0) {
-          await this.redis.sadd(key, ...set);
+          await this.redis.sAdd(key, set);
         }
         break;
       }
@@ -453,44 +636,35 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         const hash = this.prepareHash(value);
         await this.redis.del(key);
         if (Object.keys(hash).length > 0) {
-          await this.redis.hmset(key, hash);
+          for (const [field, value] of Object.entries(hash)) {
+            await this.redis.hSet(key, field, value);
+          }
         }
         break;
       }
       case "zset": {
         const zset = this.prepareZset(value);
         await this.redis.del(key);
-        for (const [score, members] of Object.entries(zset)) {
-          for (const member of members) {
-            await this.redis.zadd(key, Number(score), member);
-          }
-        }
+        const members = Object.entries(zset).map(([value, score]) => ({
+          score: Number(score),
+          value,
+        }));
+        await this.redis.zAdd(key, members);
         break;
       }
       case "stream": {
         const stream = this.prepareStream(value);
         await this.redis.del(key);
         for (const entry of stream) {
-          const fields = [];
-          for (const [field, fieldValue] of Object.entries(entry.data)) {
-            fields.push(field, fieldValue);
-          }
-          if (fields.length > 0) {
-            // Use the original ID, or * for auto-generation if ID is malformed
-            const entryId = entry.id && entry.id !== "" ? entry.id : "*";
-            await this.redis.xadd(key, entryId, ...fields);
-          }
+          // Use the original ID, or * for auto-generation if ID is malformed
+          const entryId = entry.id && entry.id !== "" ? entry.id : "*";
+          await this.redis.xAdd(key, entryId, entry.data);
         }
         break;
       }
       case "ReJSON-RL": {
         // For JSON values, expect parsed object that needs to be stringified
-        await this.redis.call(
-          "JSON.SET",
-          key,
-          "$",
-          this.preparePrimitive(value)
-        );
+        await this.redis.json.set(key, "$", this.preparePrimitive(value));
         break;
       }
       default:
@@ -504,35 +678,23 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       case "string":
         return this.redis.get(key);
       case "list":
-        return this.redis.lrange(key, 0, -1);
+        return this.redis.lRange(key, 0, -1);
       case "set":
-        return this.redis.smembers(key);
+        return this.redis.sMembers(key);
       case "zset": {
-        const result = await this.redis.zrange(key, 0, -1, "WITHSCORES");
-        const pairs = _.chunk(result, 2).map(([member, score]) => ({
-          member,
-          score: Number(score),
-        }));
-        const grouped = _.groupBy(pairs, (item) => item.score);
-        return _.mapValues(grouped, (group) =>
-          group.map((item) => item.member).sort()
+        const result = await this.redis.zRangeWithScores(key, 0, -1);
+        return Object.fromEntries(
+          result.map(({ value, score }) => [value, score])
         );
       }
       case "hash":
-        return this.redis.hgetall(key);
+        return this.redis.hGetAll(key);
       case "stream": {
-        const result = await this.redis.xrange(key, "-", "+");
-        return result.map(([id, fields]) => {
-          const data = {};
-          // Redis returns fields as flat array: [field1, value1, field2, value2, ...]
-          for (let i = 0; i < fields.length; i += 2) {
-            data[fields[i]] = fields[i + 1];
-          }
-          return { id, data };
-        });
+        const result = await this.redis.xRange(key, "-", "+");
+        return result.map((r) => ({ id: r.id, data: r.message }));
       }
       case "ReJSON-RL": {
-        const result = await this.redis.call("JSON.GET", key, "$");
+        const result = await this.redis.json.get(key, { path: "$" });
         return JSON.parse(String(result));
       }
       default:
@@ -614,11 +776,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async truncateAllTables(): Promise<void> {
-    await this.redis.flushdb();
+    await this.redis.flushDb();
   }
 
   async getTableLength(): Promise<number> {
-    return this.redis.dbsize();
+    return this.redis.dbSize();
   }
 
   async duplicateTable(): Promise<void> {
@@ -846,26 +1008,5 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getQueryForFilter(): Promise<string> {
     return "";
-  }
-
-  private makeQueryResult(command: string, result: unknown): NgQueryResult {
-    let fields = [{ name: "result", id: "result" }];
-    let rows: any = Array.isArray(result) ?
-      result.map((r) => ({ result: r })) :
-      [{ result }];
-    if (_.isObject(result) && !_.isArray(result)) {
-      fields = [{ name: "key", id: "key" }, { name: "value", id: "value" }];
-      rows = Object.entries(result).map(([key, value]) => ({
-        key,
-        value
-      }));
-    }
-    return {
-      command: command,
-      rows,
-      fields,
-      rowCount: Array.isArray(result) ? result.length : 1,
-      affectedRows: 0,
-    };
   }
 }
