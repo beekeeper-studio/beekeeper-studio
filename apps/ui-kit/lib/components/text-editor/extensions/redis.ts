@@ -86,9 +86,9 @@ function redisCompletion(context: CompletionContext) {
       options.push({
         label: cmd,
         type: "keyword",
-        info: ((docs as any).summary) ?? `Redis ${cmd} command`,
+        info: (docs as any).summary ?? `Redis ${cmd} command`,
         boost: 20 - cmd.length,
-      })
+      });
     }
 
     if (textLower.startsWith(cmd)) {
@@ -99,7 +99,35 @@ function redisCompletion(context: CompletionContext) {
             type: "keyword",
             info: "",
             boost: -5,
-          })
+          });
+        }
+
+        if (argument.arguments) {
+          console.log("argument.arguments", argument.arguments);
+          for (const argument1 of argument.arguments) {
+            if (argument1.token) {
+              options.push({
+                label: argument1.token.toLowerCase(),
+                type: "keyword",
+                info: "",
+                boost: -5,
+              });
+            }
+
+            if (argument1.arguments) {
+              console.log("argument1.arguments", argument1.arguments);
+              for (const argument2 of argument1.arguments) {
+                if (argument2.token) {
+                  options.push({
+                    label: argument2.token.toLowerCase(),
+                    type: "keyword",
+                    info: "",
+                    boost: -5,
+                  });
+                }
+              }
+            }
+          }
         }
       }
     }

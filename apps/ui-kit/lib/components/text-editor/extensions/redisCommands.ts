@@ -125,24 +125,17 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ],
-          [
-            "name",
-            "reset",
-            "type",
-            "pure-token",
-            "display_text",
-            "reset",
-            "token",
-            "RESET"
-          ]
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          },
+          {
+            "name": "reset",
+            "type": "pure-token",
+            "display_text": "reset",
+            "token": "RESET"
+          }
         ]
       }
     ]
@@ -290,57 +283,38 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "start",
-            "type",
-            "integer",
-            "display_text",
-            "start"
-          ],
-          [
-            "name",
-            "end",
-            "type",
-            "integer",
-            "display_text",
-            "end"
-          ],
-          [
-            "name",
-            "unit",
-            "type",
-            "oneof",
-            "since",
-            "7.0.0",
-            "flags",
-            [
+          {
+            "name": "start",
+            "type": "integer",
+            "display_text": "start"
+          },
+          {
+            "name": "end",
+            "type": "integer",
+            "display_text": "end"
+          },
+          {
+            "name": "unit",
+            "type": "oneof",
+            "since": "7.0.0",
+            "flags": [
               "optional"
             ],
-            "arguments",
-            [
-              [
-                "name",
-                "byte",
-                "type",
-                "pure-token",
-                "display_text",
-                "byte",
-                "token",
-                "BYTE"
-              ],
-              [
-                "name",
-                "bit",
-                "type",
-                "pure-token",
-                "display_text",
-                "bit",
-                "token",
-                "BIT"
-              ]
+            "arguments": [
+              {
+                "name": "byte",
+                "type": "pure-token",
+                "display_text": "byte",
+                "token": "BYTE"
+              },
+              {
+                "name": "bit",
+                "type": "pure-token",
+                "display_text": "bit",
+                "token": "BIT"
+              }
             ]
-          ]
+          }
         ]
       }
     ]
@@ -365,53 +339,35 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "get-block",
-            "type",
-            "block",
-            "token",
-            "GET",
-            "arguments",
-            [
-              [
-                "name",
-                "encoding",
-                "type",
-                "string",
-                "display_text",
-                "encoding"
-              ],
-              [
-                "name",
-                "offset",
-                "type",
-                "integer",
-                "display_text",
-                "offset"
-              ]
+          {
+            "name": "get-block",
+            "type": "block",
+            "token": "GET",
+            "arguments": [
+              {
+                "name": "encoding",
+                "type": "string",
+                "display_text": "encoding"
+              },
+              {
+                "name": "offset",
+                "type": "integer",
+                "display_text": "offset"
+              }
             ]
-          ],
-          [
-            "name",
-            "write",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "overflow-block",
-                "type",
-                "oneof",
-                "token",
-                "OVERFLOW",
-                "flags",
-                [
+          },
+          {
+            "name": "write",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "overflow-block",
+                "type": "oneof",
+                "token": "OVERFLOW",
+                "flags": [
                   "optional"
                 ],
-                "arguments",
-                [
+                "arguments": [
                   [
                     "name",
                     "wrap",
@@ -443,14 +399,11 @@ export default {
                     "FAIL"
                   ]
                 ]
-              ],
-              [
-                "name",
-                "write-operation",
-                "type",
-                "oneof",
-                "arguments",
-                [
+              },
+              {
+                "name": "write-operation",
+                "type": "oneof",
+                "arguments": [
                   [
                     "name",
                     "set-block",
@@ -522,9 +475,9 @@ export default {
                     ]
                   ]
                 ]
-              ]
+              }
             ]
-          ]
+          }
         ]
       }
     ]
@@ -551,22 +504,16 @@ export default {
           "multiple_token"
         ],
         "arguments": [
-          [
-            "name",
-            "encoding",
-            "type",
-            "string",
-            "display_text",
-            "encoding"
-          ],
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ]
+          {
+            "name": "encoding",
+            "type": "string",
+            "display_text": "encoding"
+          },
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          }
         ]
       }
     ]
@@ -581,46 +528,30 @@ export default {
         "name": "operation",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "and",
-            "type",
-            "pure-token",
-            "display_text",
-            "and",
-            "token",
-            "AND"
-          ],
-          [
-            "name",
-            "or",
-            "type",
-            "pure-token",
-            "display_text",
-            "or",
-            "token",
-            "OR"
-          ],
-          [
-            "name",
-            "xor",
-            "type",
-            "pure-token",
-            "display_text",
-            "xor",
-            "token",
-            "XOR"
-          ],
-          [
-            "name",
-            "not",
-            "type",
-            "pure-token",
-            "display_text",
-            "not",
-            "token",
-            "NOT"
-          ]
+          {
+            "name": "and",
+            "type": "pure-token",
+            "display_text": "and",
+            "token": "AND"
+          },
+          {
+            "name": "or",
+            "type": "pure-token",
+            "display_text": "or",
+            "token": "OR"
+          },
+          {
+            "name": "xor",
+            "type": "pure-token",
+            "display_text": "xor",
+            "token": "XOR"
+          },
+          {
+            "name": "not",
+            "type": "pure-token",
+            "display_text": "not",
+            "token": "NOT"
+          }
         ]
       },
       {
@@ -667,46 +598,31 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "start",
-            "type",
-            "integer",
-            "display_text",
-            "start"
-          ],
-          [
-            "name",
-            "end-unit-block",
-            "type",
-            "block",
-            "flags",
-            [
+          {
+            "name": "start",
+            "type": "integer",
+            "display_text": "start"
+          },
+          {
+            "name": "end-unit-block",
+            "type": "block",
+            "flags": [
               "optional"
             ],
-            "arguments",
-            [
-              [
-                "name",
-                "end",
-                "type",
-                "integer",
-                "display_text",
-                "end"
-              ],
-              [
-                "name",
-                "unit",
-                "type",
-                "oneof",
-                "since",
-                "7.0.0",
-                "flags",
-                [
+            "arguments": [
+              {
+                "name": "end",
+                "type": "integer",
+                "display_text": "end"
+              },
+              {
+                "name": "unit",
+                "type": "oneof",
+                "since": "7.0.0",
+                "flags": [
                   "optional"
                 ],
-                "arguments",
-                [
+                "arguments": [
                   [
                     "name",
                     "byte",
@@ -728,9 +644,9 @@ export default {
                     "BIT"
                   ]
                 ]
-              ]
+              }
             ]
-          ]
+          }
         ]
       }
     ]
@@ -757,52 +673,36 @@ export default {
         "name": "wherefrom",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "left",
-            "type",
-            "pure-token",
-            "display_text",
-            "left",
-            "token",
-            "LEFT"
-          ],
-          [
-            "name",
-            "right",
-            "type",
-            "pure-token",
-            "display_text",
-            "right",
-            "token",
-            "RIGHT"
-          ]
+          {
+            "name": "left",
+            "type": "pure-token",
+            "display_text": "left",
+            "token": "LEFT"
+          },
+          {
+            "name": "right",
+            "type": "pure-token",
+            "display_text": "right",
+            "token": "RIGHT"
+          }
         ]
       },
       {
         "name": "whereto",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "left",
-            "type",
-            "pure-token",
-            "display_text",
-            "left",
-            "token",
-            "LEFT"
-          ],
-          [
-            "name",
-            "right",
-            "type",
-            "pure-token",
-            "display_text",
-            "right",
-            "token",
-            "RIGHT"
-          ]
+          {
+            "name": "left",
+            "type": "pure-token",
+            "display_text": "left",
+            "token": "LEFT"
+          },
+          {
+            "name": "right",
+            "type": "pure-token",
+            "display_text": "right",
+            "token": "RIGHT"
+          }
         ]
       },
       {
@@ -841,26 +741,18 @@ export default {
         "name": "where",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "left",
-            "type",
-            "pure-token",
-            "display_text",
-            "left",
-            "token",
-            "LEFT"
-          ],
-          [
-            "name",
-            "right",
-            "type",
-            "pure-token",
-            "display_text",
-            "right",
-            "token",
-            "RIGHT"
-          ]
+          {
+            "name": "left",
+            "type": "pure-token",
+            "display_text": "left",
+            "token": "LEFT"
+          },
+          {
+            "name": "right",
+            "type": "pure-token",
+            "display_text": "right",
+            "token": "RIGHT"
+          }
         ]
       },
       {
@@ -986,26 +878,18 @@ export default {
         "name": "where",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "min",
-            "type",
-            "pure-token",
-            "display_text",
-            "min",
-            "token",
-            "MIN"
-          ],
-          [
-            "name",
-            "max",
-            "type",
-            "pure-token",
-            "display_text",
-            "max",
-            "token",
-            "MAX"
-          ]
+          {
+            "name": "min",
+            "type": "pure-token",
+            "display_text": "min",
+            "token": "MIN"
+          },
+          {
+            "name": "max",
+            "type": "pure-token",
+            "display_text": "max",
+            "token": "MAX"
+          }
         ]
       },
       {
@@ -1079,26 +963,18 @@ export default {
         "name": "mode",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "yes",
-            "type",
-            "pure-token",
-            "display_text",
-            "yes",
-            "token",
-            "YES"
-          ],
-          [
-            "name",
-            "no",
-            "type",
-            "pure-token",
-            "display_text",
-            "no",
-            "token",
-            "NO"
-          ]
+          {
+            "name": "yes",
+            "type": "pure-token",
+            "display_text": "yes",
+            "token": "YES"
+          },
+          {
+            "name": "no",
+            "type": "pure-token",
+            "display_text": "no",
+            "token": "NO"
+          }
         ]
       }
     ]
@@ -1150,58 +1026,38 @@ export default {
         "name": "filter",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "old-format",
-            "type",
-            "string",
-            "display_text",
-            "ip:port",
-            "deprecated_since",
-            "2.8.12"
-          ],
-          [
-            "name",
-            "new-format",
-            "type",
-            "oneof",
-            "flags",
-            [
+          {
+            "name": "old-format",
+            "type": "string",
+            "display_text": "ip:port",
+            "deprecated_since": "2.8.12"
+          },
+          {
+            "name": "new-format",
+            "type": "oneof",
+            "flags": [
               "multiple"
             ],
-            "arguments",
-            [
-              [
-                "name",
-                "client-id",
-                "type",
-                "integer",
-                "display_text",
-                "client-id",
-                "token",
-                "ID",
-                "since",
-                "2.8.12",
-                "flags",
-                [
+            "arguments": [
+              {
+                "name": "client-id",
+                "type": "integer",
+                "display_text": "client-id",
+                "token": "ID",
+                "since": "2.8.12",
+                "flags": [
                   "optional"
                 ]
-              ],
-              [
-                "name",
-                "client-type",
-                "type",
-                "oneof",
-                "token",
-                "TYPE",
-                "since",
-                "2.8.12",
-                "flags",
-                [
+              },
+              {
+                "name": "client-type",
+                "type": "oneof",
+                "token": "TYPE",
+                "since": "2.8.12",
+                "flags": [
                   "optional"
                 ],
-                "arguments",
-                [
+                "arguments": [
                   [
                     "name",
                     "normal",
@@ -1257,64 +1113,43 @@ export default {
                     "PUBSUB"
                   ]
                 ]
-              ],
-              [
-                "name",
-                "username",
-                "type",
-                "string",
-                "display_text",
-                "username",
-                "token",
-                "USER",
-                "flags",
-                [
+              },
+              {
+                "name": "username",
+                "type": "string",
+                "display_text": "username",
+                "token": "USER",
+                "flags": [
                   "optional"
                 ]
-              ],
-              [
-                "name",
-                "addr",
-                "type",
-                "string",
-                "display_text",
-                "ip:port",
-                "token",
-                "ADDR",
-                "flags",
-                [
+              },
+              {
+                "name": "addr",
+                "type": "string",
+                "display_text": "ip:port",
+                "token": "ADDR",
+                "flags": [
                   "optional"
                 ]
-              ],
-              [
-                "name",
-                "laddr",
-                "type",
-                "string",
-                "display_text",
-                "ip:port",
-                "token",
-                "LADDR",
-                "since",
-                "6.2.0",
-                "flags",
-                [
+              },
+              {
+                "name": "laddr",
+                "type": "string",
+                "display_text": "ip:port",
+                "token": "LADDR",
+                "since": "6.2.0",
+                "flags": [
                   "optional"
                 ]
-              ],
-              [
-                "name",
-                "skipme",
-                "type",
-                "oneof",
-                "token",
-                "SKIPME",
-                "flags",
-                [
+              },
+              {
+                "name": "skipme",
+                "type": "oneof",
+                "token": "SKIPME",
+                "flags": [
                   "optional"
                 ],
-                "arguments",
-                [
+                "arguments": [
                   [
                     "name",
                     "yes",
@@ -1336,25 +1171,19 @@ export default {
                     "NO"
                   ]
                 ]
-              ],
-              [
-                "name",
-                "maxage",
-                "type",
-                "integer",
-                "display_text",
-                "maxage",
-                "token",
-                "MAXAGE",
-                "since",
-                "7.4.0",
-                "flags",
-                [
+              },
+              {
+                "name": "maxage",
+                "type": "integer",
+                "display_text": "maxage",
+                "token": "MAXAGE",
+                "since": "7.4.0",
+                "flags": [
                   "optional"
                 ]
-              ]
+              }
             ]
-          ]
+          }
         ]
       }
     ]
@@ -1385,46 +1214,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "normal",
-            "type",
-            "pure-token",
-            "display_text",
-            "normal",
-            "token",
-            "NORMAL"
-          ],
-          [
-            "name",
-            "master",
-            "type",
-            "pure-token",
-            "display_text",
-            "master",
-            "token",
-            "MASTER"
-          ],
-          [
-            "name",
-            "replica",
-            "type",
-            "pure-token",
-            "display_text",
-            "replica",
-            "token",
-            "REPLICA"
-          ],
-          [
-            "name",
-            "pubsub",
-            "type",
-            "pure-token",
-            "display_text",
-            "pubsub",
-            "token",
-            "PUBSUB"
-          ]
+          {
+            "name": "normal",
+            "type": "pure-token",
+            "display_text": "normal",
+            "token": "NORMAL"
+          },
+          {
+            "name": "master",
+            "type": "pure-token",
+            "display_text": "master",
+            "token": "MASTER"
+          },
+          {
+            "name": "replica",
+            "type": "pure-token",
+            "display_text": "replica",
+            "token": "REPLICA"
+          },
+          {
+            "name": "pubsub",
+            "type": "pure-token",
+            "display_text": "pubsub",
+            "token": "PUBSUB"
+          }
         ]
       },
       {
@@ -1450,26 +1263,18 @@ export default {
         "name": "enabled",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "on",
-            "type",
-            "pure-token",
-            "display_text",
-            "on",
-            "token",
-            "ON"
-          ],
-          [
-            "name",
-            "off",
-            "type",
-            "pure-token",
-            "display_text",
-            "off",
-            "token",
-            "OFF"
-          ]
+          {
+            "name": "on",
+            "type": "pure-token",
+            "display_text": "on",
+            "token": "ON"
+          },
+          {
+            "name": "off",
+            "type": "pure-token",
+            "display_text": "off",
+            "token": "OFF"
+          }
         ]
       }
     ]
@@ -1484,26 +1289,18 @@ export default {
         "name": "enabled",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "on",
-            "type",
-            "pure-token",
-            "display_text",
-            "on",
-            "token",
-            "ON"
-          ],
-          [
-            "name",
-            "off",
-            "type",
-            "pure-token",
-            "display_text",
-            "off",
-            "token",
-            "OFF"
-          ]
+          {
+            "name": "on",
+            "type": "pure-token",
+            "display_text": "on",
+            "token": "ON"
+          },
+          {
+            "name": "off",
+            "type": "pure-token",
+            "display_text": "off",
+            "token": "OFF"
+          }
         ]
       }
     ]
@@ -1530,26 +1327,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "write",
-            "type",
-            "pure-token",
-            "display_text",
-            "write",
-            "token",
-            "WRITE"
-          ],
-          [
-            "name",
-            "all",
-            "type",
-            "pure-token",
-            "display_text",
-            "all",
-            "token",
-            "ALL"
-          ]
+          {
+            "name": "write",
+            "type": "pure-token",
+            "display_text": "write",
+            "token": "WRITE"
+          },
+          {
+            "name": "all",
+            "type": "pure-token",
+            "display_text": "all",
+            "token": "ALL"
+          }
         ]
       }
     ]
@@ -1564,36 +1353,24 @@ export default {
         "name": "action",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "on",
-            "type",
-            "pure-token",
-            "display_text",
-            "on",
-            "token",
-            "ON"
-          ],
-          [
-            "name",
-            "off",
-            "type",
-            "pure-token",
-            "display_text",
-            "off",
-            "token",
-            "OFF"
-          ],
-          [
-            "name",
-            "skip",
-            "type",
-            "pure-token",
-            "display_text",
-            "skip",
-            "token",
-            "SKIP"
-          ]
+          {
+            "name": "on",
+            "type": "pure-token",
+            "display_text": "on",
+            "token": "ON"
+          },
+          {
+            "name": "off",
+            "type": "pure-token",
+            "display_text": "off",
+            "token": "OFF"
+          },
+          {
+            "name": "skip",
+            "type": "pure-token",
+            "display_text": "skip",
+            "token": "SKIP"
+          }
         ]
       }
     ]
@@ -1608,26 +1385,18 @@ export default {
         "name": "attr",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "libname",
-            "type",
-            "string",
-            "display_text",
-            "libname",
-            "token",
-            "LIB-NAME"
-          ],
-          [
-            "name",
-            "libver",
-            "type",
-            "string",
-            "display_text",
-            "libver",
-            "token",
-            "LIB-VER"
-          ]
+          {
+            "name": "libname",
+            "type": "string",
+            "display_text": "libname",
+            "token": "LIB-NAME"
+          },
+          {
+            "name": "libver",
+            "type": "string",
+            "display_text": "libver",
+            "token": "LIB-VER"
+          }
         ]
       }
     ]
@@ -1655,26 +1424,18 @@ export default {
         "name": "status",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "on",
-            "type",
-            "pure-token",
-            "display_text",
-            "on",
-            "token",
-            "ON"
-          ],
-          [
-            "name",
-            "off",
-            "type",
-            "pure-token",
-            "display_text",
-            "off",
-            "token",
-            "OFF"
-          ]
+          {
+            "name": "on",
+            "type": "pure-token",
+            "display_text": "on",
+            "token": "ON"
+          },
+          {
+            "name": "off",
+            "type": "pure-token",
+            "display_text": "off",
+            "token": "OFF"
+          }
         ]
       },
       {
@@ -1759,26 +1520,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "timeout",
-            "type",
-            "pure-token",
-            "display_text",
-            "timeout",
-            "token",
-            "TIMEOUT"
-          ],
-          [
-            "name",
-            "error",
-            "type",
-            "pure-token",
-            "display_text",
-            "error",
-            "token",
-            "ERROR"
-          ]
+          {
+            "name": "timeout",
+            "type": "pure-token",
+            "display_text": "timeout",
+            "token": "TIMEOUT"
+          },
+          {
+            "name": "error",
+            "type": "pure-token",
+            "display_text": "error",
+            "token": "ERROR"
+          }
         ]
       }
     ]
@@ -1818,22 +1571,16 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "start-slot",
-            "type",
-            "integer",
-            "display_text",
-            "start-slot"
-          ],
-          [
-            "name",
-            "end-slot",
-            "type",
-            "integer",
-            "display_text",
-            "end-slot"
-          ]
+          {
+            "name": "start-slot",
+            "type": "integer",
+            "display_text": "start-slot"
+          },
+          {
+            "name": "end-slot",
+            "type": "integer",
+            "display_text": "end-slot"
+          }
         ]
       }
     ]
@@ -1899,22 +1646,16 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "start-slot",
-            "type",
-            "integer",
-            "display_text",
-            "start-slot"
-          ],
-          [
-            "name",
-            "end-slot",
-            "type",
-            "integer",
-            "display_text",
-            "end-slot"
-          ]
+          {
+            "name": "start-slot",
+            "type": "integer",
+            "display_text": "start-slot"
+          },
+          {
+            "name": "end-slot",
+            "type": "integer",
+            "display_text": "end-slot"
+          }
         ]
       }
     ]
@@ -1932,26 +1673,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "force",
-            "type",
-            "pure-token",
-            "display_text",
-            "force",
-            "token",
-            "FORCE"
-          ],
-          [
-            "name",
-            "takeover",
-            "type",
-            "pure-token",
-            "display_text",
-            "takeover",
-            "token",
-            "TAKEOVER"
-          ]
+          {
+            "name": "force",
+            "type": "pure-token",
+            "display_text": "force",
+            "token": "FORCE"
+          },
+          {
+            "name": "takeover",
+            "type": "pure-token",
+            "display_text": "takeover",
+            "token": "TAKEOVER"
+          }
         ]
       }
     ]
@@ -2111,26 +1844,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "hard",
-            "type",
-            "pure-token",
-            "display_text",
-            "hard",
-            "token",
-            "HARD"
-          ],
-          [
-            "name",
-            "soft",
-            "type",
-            "pure-token",
-            "display_text",
-            "soft",
-            "token",
-            "SOFT"
-          ]
+          {
+            "name": "hard",
+            "type": "pure-token",
+            "display_text": "hard",
+            "token": "HARD"
+          },
+          {
+            "name": "soft",
+            "type": "pure-token",
+            "display_text": "soft",
+            "token": "SOFT"
+          }
         ]
       }
     ]
@@ -2169,46 +1894,30 @@ export default {
         "name": "subcommand",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "importing",
-            "type",
-            "string",
-            "display_text",
-            "node-id",
-            "token",
-            "IMPORTING"
-          ],
-          [
-            "name",
-            "migrating",
-            "type",
-            "string",
-            "display_text",
-            "node-id",
-            "token",
-            "MIGRATING"
-          ],
-          [
-            "name",
-            "node",
-            "type",
-            "string",
-            "display_text",
-            "node-id",
-            "token",
-            "NODE"
-          ],
-          [
-            "name",
-            "stable",
-            "type",
-            "pure-token",
-            "display_text",
-            "stable",
-            "token",
-            "STABLE"
-          ]
+          {
+            "name": "importing",
+            "type": "string",
+            "display_text": "node-id",
+            "token": "IMPORTING"
+          },
+          {
+            "name": "migrating",
+            "type": "string",
+            "display_text": "node-id",
+            "token": "MIGRATING"
+          },
+          {
+            "name": "node",
+            "type": "string",
+            "display_text": "node-id",
+            "token": "NODE"
+          },
+          {
+            "name": "stable",
+            "type": "pure-token",
+            "display_text": "stable",
+            "token": "STABLE"
+          }
         ]
       }
     ]
@@ -2359,36 +2068,24 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "module-name",
-            "type",
-            "string",
-            "display_text",
-            "module-name",
-            "token",
-            "MODULE"
-          ],
-          [
-            "name",
-            "category",
-            "type",
-            "string",
-            "display_text",
-            "category",
-            "token",
-            "ACLCAT"
-          ],
-          [
-            "name",
-            "pattern",
-            "type",
-            "pattern",
-            "display_text",
-            "pattern",
-            "token",
-            "PATTERN"
-          ]
+          {
+            "name": "module-name",
+            "type": "string",
+            "display_text": "module-name",
+            "token": "MODULE"
+          },
+          {
+            "name": "category",
+            "type": "string",
+            "display_text": "category",
+            "token": "ACLCAT"
+          },
+          {
+            "name": "pattern",
+            "type": "pattern",
+            "display_text": "pattern",
+            "token": "PATTERN"
+          }
         ]
       }
     ]
@@ -2446,22 +2143,16 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "parameter",
-            "type",
-            "string",
-            "display_text",
-            "parameter"
-          ],
-          [
-            "name",
-            "value",
-            "type",
-            "string",
-            "display_text",
-            "value"
-          ]
+          {
+            "name": "parameter",
+            "type": "string",
+            "display_text": "parameter"
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "display_text": "value"
+          }
         ]
       }
     ]
@@ -2804,46 +2495,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       }
     ]
@@ -2876,46 +2551,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       }
     ]
@@ -2948,36 +2607,25 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "host",
-            "type",
-            "string",
-            "display_text",
-            "host"
-          ],
-          [
-            "name",
-            "port",
-            "type",
-            "integer",
-            "display_text",
-            "port"
-          ],
-          [
-            "name",
-            "force",
-            "type",
-            "pure-token",
-            "display_text",
-            "force",
-            "token",
-            "FORCE",
-            "flags",
-            [
+          {
+            "name": "host",
+            "type": "string",
+            "display_text": "host"
+          },
+          {
+            "name": "port",
+            "type": "integer",
+            "display_text": "port"
+          },
+          {
+            "name": "force",
+            "type": "pure-token",
+            "display_text": "force",
+            "token": "FORCE",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
@@ -3091,30 +2739,20 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "async",
-            "type",
-            "pure-token",
-            "display_text",
-            "async",
-            "token",
-            "ASYNC",
-            "since",
-            "4.0.0"
-          ],
-          [
-            "name",
-            "sync",
-            "type",
-            "pure-token",
-            "display_text",
-            "sync",
-            "token",
-            "SYNC",
-            "since",
-            "6.2.0"
-          ]
+          {
+            "name": "async",
+            "type": "pure-token",
+            "display_text": "async",
+            "token": "ASYNC",
+            "since": "4.0.0"
+          },
+          {
+            "name": "sync",
+            "type": "pure-token",
+            "display_text": "sync",
+            "token": "SYNC",
+            "since": "6.2.0"
+          }
         ]
       }
     ]
@@ -3136,30 +2774,20 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "async",
-            "type",
-            "pure-token",
-            "display_text",
-            "async",
-            "token",
-            "ASYNC",
-            "since",
-            "4.0.0"
-          ],
-          [
-            "name",
-            "sync",
-            "type",
-            "pure-token",
-            "display_text",
-            "sync",
-            "token",
-            "SYNC",
-            "since",
-            "6.2.0"
-          ]
+          {
+            "name": "async",
+            "type": "pure-token",
+            "display_text": "async",
+            "token": "ASYNC",
+            "since": "4.0.0"
+          },
+          {
+            "name": "sync",
+            "type": "pure-token",
+            "display_text": "sync",
+            "token": "SYNC",
+            "since": "6.2.0"
+          }
         ]
       }
     ]
@@ -3196,26 +2824,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "async",
-            "type",
-            "pure-token",
-            "display_text",
-            "async",
-            "token",
-            "ASYNC"
-          ],
-          [
-            "name",
-            "sync",
-            "type",
-            "pure-token",
-            "display_text",
-            "sync",
-            "token",
-            "SYNC"
-          ]
+          {
+            "name": "async",
+            "type": "pure-token",
+            "display_text": "async",
+            "token": "ASYNC"
+          },
+          {
+            "name": "sync",
+            "type": "pure-token",
+            "display_text": "sync",
+            "token": "SYNC"
+          }
         ]
       }
     ]
@@ -3298,36 +2918,24 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "flush",
-            "type",
-            "pure-token",
-            "display_text",
-            "flush",
-            "token",
-            "FLUSH"
-          ],
-          [
-            "name",
-            "append",
-            "type",
-            "pure-token",
-            "display_text",
-            "append",
-            "token",
-            "APPEND"
-          ],
-          [
-            "name",
-            "replace",
-            "type",
-            "pure-token",
-            "display_text",
-            "replace",
-            "token",
-            "REPLACE"
-          ]
+          {
+            "name": "flush",
+            "type": "pure-token",
+            "display_text": "flush",
+            "token": "FLUSH"
+          },
+          {
+            "name": "append",
+            "type": "pure-token",
+            "display_text": "append",
+            "token": "APPEND"
+          },
+          {
+            "name": "replace",
+            "type": "pure-token",
+            "display_text": "replace",
+            "token": "REPLACE"
+          }
         ]
       }
     ]
@@ -3361,26 +2969,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          }
         ]
       },
       {
@@ -3400,30 +3000,21 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "longitude",
-            "type",
-            "double",
-            "display_text",
-            "longitude"
-          ],
-          [
-            "name",
-            "latitude",
-            "type",
-            "double",
-            "display_text",
-            "latitude"
-          ],
-          [
-            "name",
-            "member",
-            "type",
-            "string",
-            "display_text",
-            "member"
-          ]
+          {
+            "name": "longitude",
+            "type": "double",
+            "display_text": "longitude"
+          },
+          {
+            "name": "latitude",
+            "type": "double",
+            "display_text": "latitude"
+          },
+          {
+            "name": "member",
+            "type": "string",
+            "display_text": "member"
+          }
         ]
       }
     ]
@@ -3457,46 +3048,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "m",
-            "type",
-            "pure-token",
-            "display_text",
-            "m",
-            "token",
-            "M"
-          ],
-          [
-            "name",
-            "km",
-            "type",
-            "pure-token",
-            "display_text",
-            "km",
-            "token",
-            "KM"
-          ],
-          [
-            "name",
-            "ft",
-            "type",
-            "pure-token",
-            "display_text",
-            "ft",
-            "token",
-            "FT"
-          ],
-          [
-            "name",
-            "mi",
-            "type",
-            "pure-token",
-            "display_text",
-            "mi",
-            "token",
-            "MI"
-          ]
+          {
+            "name": "m",
+            "type": "pure-token",
+            "display_text": "m",
+            "token": "M"
+          },
+          {
+            "name": "km",
+            "type": "pure-token",
+            "display_text": "km",
+            "token": "KM"
+          },
+          {
+            "name": "ft",
+            "type": "pure-token",
+            "display_text": "ft",
+            "token": "FT"
+          },
+          {
+            "name": "mi",
+            "type": "pure-token",
+            "display_text": "mi",
+            "token": "MI"
+          }
         ]
       }
     ]
@@ -3587,46 +3162,30 @@ export default {
         "name": "unit",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "m",
-            "type",
-            "pure-token",
-            "display_text",
-            "m",
-            "token",
-            "M"
-          ],
-          [
-            "name",
-            "km",
-            "type",
-            "pure-token",
-            "display_text",
-            "km",
-            "token",
-            "KM"
-          ],
-          [
-            "name",
-            "ft",
-            "type",
-            "pure-token",
-            "display_text",
-            "ft",
-            "token",
-            "FT"
-          ],
-          [
-            "name",
-            "mi",
-            "type",
-            "pure-token",
-            "display_text",
-            "mi",
-            "token",
-            "MI"
-          ]
+          {
+            "name": "m",
+            "type": "pure-token",
+            "display_text": "m",
+            "token": "M"
+          },
+          {
+            "name": "km",
+            "type": "pure-token",
+            "display_text": "km",
+            "token": "KM"
+          },
+          {
+            "name": "ft",
+            "type": "pure-token",
+            "display_text": "ft",
+            "token": "FT"
+          },
+          {
+            "name": "mi",
+            "type": "pure-token",
+            "display_text": "mi",
+            "token": "MI"
+          }
         ]
       },
       {
@@ -3663,32 +3222,22 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "COUNT"
-          ],
-          [
-            "name",
-            "any",
-            "type",
-            "pure-token",
-            "display_text",
-            "any",
-            "token",
-            "ANY",
-            "since",
-            "6.2.0",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "COUNT"
+          },
+          {
+            "name": "any",
+            "type": "pure-token",
+            "display_text": "any",
+            "token": "ANY",
+            "since": "6.2.0",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
@@ -3698,26 +3247,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       },
       {
@@ -3727,30 +3268,20 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "storekey",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            1,
-            "token",
-            "STORE"
-          ],
-          [
-            "name",
-            "storedistkey",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            2,
-            "token",
-            "STOREDIST"
-          ]
+          {
+            "name": "storekey",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 1,
+            "token": "STORE"
+          },
+          {
+            "name": "storedistkey",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 2,
+            "token": "STOREDIST"
+          }
         ]
       }
     ]
@@ -3795,46 +3326,30 @@ export default {
         "name": "unit",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "m",
-            "type",
-            "pure-token",
-            "display_text",
-            "m",
-            "token",
-            "M"
-          ],
-          [
-            "name",
-            "km",
-            "type",
-            "pure-token",
-            "display_text",
-            "km",
-            "token",
-            "KM"
-          ],
-          [
-            "name",
-            "ft",
-            "type",
-            "pure-token",
-            "display_text",
-            "ft",
-            "token",
-            "FT"
-          ],
-          [
-            "name",
-            "mi",
-            "type",
-            "pure-token",
-            "display_text",
-            "mi",
-            "token",
-            "MI"
-          ]
+          {
+            "name": "m",
+            "type": "pure-token",
+            "display_text": "m",
+            "token": "M"
+          },
+          {
+            "name": "km",
+            "type": "pure-token",
+            "display_text": "km",
+            "token": "KM"
+          },
+          {
+            "name": "ft",
+            "type": "pure-token",
+            "display_text": "ft",
+            "token": "FT"
+          },
+          {
+            "name": "mi",
+            "type": "pure-token",
+            "display_text": "mi",
+            "token": "MI"
+          }
         ]
       },
       {
@@ -3871,32 +3386,22 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "COUNT"
-          ],
-          [
-            "name",
-            "any",
-            "type",
-            "pure-token",
-            "display_text",
-            "any",
-            "token",
-            "ANY",
-            "since",
-            "6.2.0",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "COUNT"
+          },
+          {
+            "name": "any",
+            "type": "pure-token",
+            "display_text": "any",
+            "token": "ANY",
+            "since": "6.2.0",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
@@ -3906,26 +3411,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       }
     ]
@@ -3965,46 +3462,30 @@ export default {
         "name": "unit",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "m",
-            "type",
-            "pure-token",
-            "display_text",
-            "m",
-            "token",
-            "M"
-          ],
-          [
-            "name",
-            "km",
-            "type",
-            "pure-token",
-            "display_text",
-            "km",
-            "token",
-            "KM"
-          ],
-          [
-            "name",
-            "ft",
-            "type",
-            "pure-token",
-            "display_text",
-            "ft",
-            "token",
-            "FT"
-          ],
-          [
-            "name",
-            "mi",
-            "type",
-            "pure-token",
-            "display_text",
-            "mi",
-            "token",
-            "MI"
-          ]
+          {
+            "name": "m",
+            "type": "pure-token",
+            "display_text": "m",
+            "token": "M"
+          },
+          {
+            "name": "km",
+            "type": "pure-token",
+            "display_text": "km",
+            "token": "KM"
+          },
+          {
+            "name": "ft",
+            "type": "pure-token",
+            "display_text": "ft",
+            "token": "FT"
+          },
+          {
+            "name": "mi",
+            "type": "pure-token",
+            "display_text": "mi",
+            "token": "MI"
+          }
         ]
       },
       {
@@ -4041,30 +3522,21 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "COUNT"
-          ],
-          [
-            "name",
-            "any",
-            "type",
-            "pure-token",
-            "display_text",
-            "any",
-            "token",
-            "ANY",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "COUNT"
+          },
+          {
+            "name": "any",
+            "type": "pure-token",
+            "display_text": "any",
+            "token": "ANY",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
@@ -4074,26 +3546,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       },
       {
@@ -4103,30 +3567,20 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "storekey",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            1,
-            "token",
-            "STORE"
-          ],
-          [
-            "name",
-            "storedistkey",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            2,
-            "token",
-            "STOREDIST"
-          ]
+          {
+            "name": "storekey",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 1,
+            "token": "STORE"
+          },
+          {
+            "name": "storedistkey",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 2,
+            "token": "STOREDIST"
+          }
         ]
       }
     ]
@@ -4166,46 +3620,30 @@ export default {
         "name": "unit",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "m",
-            "type",
-            "pure-token",
-            "display_text",
-            "m",
-            "token",
-            "M"
-          ],
-          [
-            "name",
-            "km",
-            "type",
-            "pure-token",
-            "display_text",
-            "km",
-            "token",
-            "KM"
-          ],
-          [
-            "name",
-            "ft",
-            "type",
-            "pure-token",
-            "display_text",
-            "ft",
-            "token",
-            "FT"
-          ],
-          [
-            "name",
-            "mi",
-            "type",
-            "pure-token",
-            "display_text",
-            "mi",
-            "token",
-            "MI"
-          ]
+          {
+            "name": "m",
+            "type": "pure-token",
+            "display_text": "m",
+            "token": "M"
+          },
+          {
+            "name": "km",
+            "type": "pure-token",
+            "display_text": "km",
+            "token": "KM"
+          },
+          {
+            "name": "ft",
+            "type": "pure-token",
+            "display_text": "ft",
+            "token": "FT"
+          },
+          {
+            "name": "mi",
+            "type": "pure-token",
+            "display_text": "mi",
+            "token": "MI"
+          }
         ]
       },
       {
@@ -4242,30 +3680,21 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "COUNT"
-          ],
-          [
-            "name",
-            "any",
-            "type",
-            "pure-token",
-            "display_text",
-            "any",
-            "token",
-            "ANY",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "COUNT"
+          },
+          {
+            "name": "any",
+            "type": "pure-token",
+            "display_text": "any",
+            "token": "ANY",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
@@ -4275,26 +3704,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       }
     ]
@@ -4318,73 +3739,49 @@ export default {
         "name": "from",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "member",
-            "type",
-            "string",
-            "display_text",
-            "member",
-            "token",
-            "FROMMEMBER"
-          ],
-          [
-            "name",
-            "fromlonlat",
-            "type",
-            "block",
-            "token",
-            "FROMLONLAT",
-            "arguments",
-            [
-              [
-                "name",
-                "longitude",
-                "type",
-                "double",
-                "display_text",
-                "longitude"
-              ],
-              [
-                "name",
-                "latitude",
-                "type",
-                "double",
-                "display_text",
-                "latitude"
-              ]
+          {
+            "name": "member",
+            "type": "string",
+            "display_text": "member",
+            "token": "FROMMEMBER"
+          },
+          {
+            "name": "fromlonlat",
+            "type": "block",
+            "token": "FROMLONLAT",
+            "arguments": [
+              {
+                "name": "longitude",
+                "type": "double",
+                "display_text": "longitude"
+              },
+              {
+                "name": "latitude",
+                "type": "double",
+                "display_text": "latitude"
+              }
             ]
-          ]
+          }
         ]
       },
       {
         "name": "by",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "circle",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "radius",
-                "type",
-                "double",
-                "display_text",
-                "radius",
-                "token",
-                "BYRADIUS"
-              ],
-              [
-                "name",
-                "unit",
-                "type",
-                "oneof",
-                "arguments",
-                [
+          {
+            "name": "circle",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "radius",
+                "type": "double",
+                "display_text": "radius",
+                "token": "BYRADIUS"
+              },
+              {
+                "name": "unit",
+                "type": "oneof",
+                "arguments": [
                   [
                     "name",
                     "m",
@@ -4426,41 +3823,28 @@ export default {
                     "MI"
                   ]
                 ]
-              ]
+              }
             ]
-          ],
-          [
-            "name",
-            "box",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "width",
-                "type",
-                "double",
-                "display_text",
-                "width",
-                "token",
-                "BYBOX"
-              ],
-              [
-                "name",
-                "height",
-                "type",
-                "double",
-                "display_text",
-                "height"
-              ],
-              [
-                "name",
-                "unit",
-                "type",
-                "oneof",
-                "arguments",
-                [
+          },
+          {
+            "name": "box",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "width",
+                "type": "double",
+                "display_text": "width",
+                "token": "BYBOX"
+              },
+              {
+                "name": "height",
+                "type": "double",
+                "display_text": "height"
+              },
+              {
+                "name": "unit",
+                "type": "oneof",
+                "arguments": [
                   [
                     "name",
                     "m",
@@ -4502,9 +3886,9 @@ export default {
                     "MI"
                   ]
                 ]
-              ]
+              }
             ]
-          ]
+          }
         ]
       },
       {
@@ -4514,26 +3898,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       },
       {
@@ -4543,30 +3919,21 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "COUNT"
-          ],
-          [
-            "name",
-            "any",
-            "type",
-            "pure-token",
-            "display_text",
-            "any",
-            "token",
-            "ANY",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "COUNT"
+          },
+          {
+            "name": "any",
+            "type": "pure-token",
+            "display_text": "any",
+            "token": "ANY",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
@@ -4623,73 +3990,49 @@ export default {
         "name": "from",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "member",
-            "type",
-            "string",
-            "display_text",
-            "member",
-            "token",
-            "FROMMEMBER"
-          ],
-          [
-            "name",
-            "fromlonlat",
-            "type",
-            "block",
-            "token",
-            "FROMLONLAT",
-            "arguments",
-            [
-              [
-                "name",
-                "longitude",
-                "type",
-                "double",
-                "display_text",
-                "longitude"
-              ],
-              [
-                "name",
-                "latitude",
-                "type",
-                "double",
-                "display_text",
-                "latitude"
-              ]
+          {
+            "name": "member",
+            "type": "string",
+            "display_text": "member",
+            "token": "FROMMEMBER"
+          },
+          {
+            "name": "fromlonlat",
+            "type": "block",
+            "token": "FROMLONLAT",
+            "arguments": [
+              {
+                "name": "longitude",
+                "type": "double",
+                "display_text": "longitude"
+              },
+              {
+                "name": "latitude",
+                "type": "double",
+                "display_text": "latitude"
+              }
             ]
-          ]
+          }
         ]
       },
       {
         "name": "by",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "circle",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "radius",
-                "type",
-                "double",
-                "display_text",
-                "radius",
-                "token",
-                "BYRADIUS"
-              ],
-              [
-                "name",
-                "unit",
-                "type",
-                "oneof",
-                "arguments",
-                [
+          {
+            "name": "circle",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "radius",
+                "type": "double",
+                "display_text": "radius",
+                "token": "BYRADIUS"
+              },
+              {
+                "name": "unit",
+                "type": "oneof",
+                "arguments": [
                   [
                     "name",
                     "m",
@@ -4731,41 +4074,28 @@ export default {
                     "MI"
                   ]
                 ]
-              ]
+              }
             ]
-          ],
-          [
-            "name",
-            "box",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "width",
-                "type",
-                "double",
-                "display_text",
-                "width",
-                "token",
-                "BYBOX"
-              ],
-              [
-                "name",
-                "height",
-                "type",
-                "double",
-                "display_text",
-                "height"
-              ],
-              [
-                "name",
-                "unit",
-                "type",
-                "oneof",
-                "arguments",
-                [
+          },
+          {
+            "name": "box",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "width",
+                "type": "double",
+                "display_text": "width",
+                "token": "BYBOX"
+              },
+              {
+                "name": "height",
+                "type": "double",
+                "display_text": "height"
+              },
+              {
+                "name": "unit",
+                "type": "oneof",
+                "arguments": [
                   [
                     "name",
                     "m",
@@ -4807,9 +4137,9 @@ export default {
                     "MI"
                   ]
                 ]
-              ]
+              }
             ]
-          ]
+          }
         ]
       },
       {
@@ -4819,26 +4149,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       },
       {
@@ -4848,30 +4170,21 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "COUNT"
-          ],
-          [
-            "name",
-            "any",
-            "type",
-            "pure-token",
-            "display_text",
-            "any",
-            "token",
-            "ANY",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "COUNT"
+          },
+          {
+            "name": "any",
+            "type": "pure-token",
+            "display_text": "any",
+            "token": "ANY",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
@@ -4951,56 +4264,36 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "seconds",
-            "type",
-            "integer",
-            "display_text",
-            "seconds",
-            "token",
-            "EX"
-          ],
-          [
-            "name",
-            "milliseconds",
-            "type",
-            "integer",
-            "display_text",
-            "milliseconds",
-            "token",
-            "PX"
-          ],
-          [
-            "name",
-            "unix-time-seconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-seconds",
-            "token",
-            "EXAT"
-          ],
-          [
-            "name",
-            "unix-time-milliseconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-milliseconds",
-            "token",
-            "PXAT"
-          ],
-          [
-            "name",
-            "persist",
-            "type",
-            "pure-token",
-            "display_text",
-            "persist",
-            "token",
-            "PERSIST"
-          ]
+          {
+            "name": "seconds",
+            "type": "integer",
+            "display_text": "seconds",
+            "token": "EX"
+          },
+          {
+            "name": "milliseconds",
+            "type": "integer",
+            "display_text": "milliseconds",
+            "token": "PX"
+          },
+          {
+            "name": "unix-time-seconds",
+            "type": "unix-time",
+            "display_text": "unix-time-seconds",
+            "token": "EXAT"
+          },
+          {
+            "name": "unix-time-milliseconds",
+            "type": "unix-time",
+            "display_text": "unix-time-milliseconds",
+            "token": "PXAT"
+          },
+          {
+            "name": "persist",
+            "type": "pure-token",
+            "display_text": "persist",
+            "token": "PERSIST"
+          }
         ]
       }
     ]
@@ -5094,59 +4387,40 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "protover",
-            "type",
-            "integer",
-            "display_text",
-            "protover"
-          ],
-          [
-            "name",
-            "auth",
-            "type",
-            "block",
-            "token",
-            "AUTH",
-            "flags",
-            [
+          {
+            "name": "protover",
+            "type": "integer",
+            "display_text": "protover"
+          },
+          {
+            "name": "auth",
+            "type": "block",
+            "token": "AUTH",
+            "flags": [
               "optional"
             ],
-            "arguments",
-            [
-              [
-                "name",
-                "username",
-                "type",
-                "string",
-                "display_text",
-                "username"
-              ],
-              [
-                "name",
-                "password",
-                "type",
-                "string",
-                "display_text",
-                "password"
-              ]
+            "arguments": [
+              {
+                "name": "username",
+                "type": "string",
+                "display_text": "username"
+              },
+              {
+                "name": "password",
+                "type": "string",
+                "display_text": "password"
+              }
             ]
-          ],
-          [
-            "name",
-            "clientname",
-            "type",
-            "string",
-            "display_text",
-            "clientname",
-            "token",
-            "SETNAME",
-            "flags",
-            [
+          },
+          {
+            "name": "clientname",
+            "type": "string",
+            "display_text": "clientname",
+            "token": "SETNAME",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5194,46 +4468,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       },
       {
@@ -5241,26 +4499,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5289,46 +4540,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       },
       {
@@ -5336,26 +4571,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5377,26 +4605,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5451,26 +4672,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5494,56 +4708,36 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "seconds",
-            "type",
-            "integer",
-            "display_text",
-            "seconds",
-            "token",
-            "EX"
-          ],
-          [
-            "name",
-            "milliseconds",
-            "type",
-            "integer",
-            "display_text",
-            "milliseconds",
-            "token",
-            "PX"
-          ],
-          [
-            "name",
-            "unix-time-seconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-seconds",
-            "token",
-            "EXAT"
-          ],
-          [
-            "name",
-            "unix-time-milliseconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-milliseconds",
-            "token",
-            "PXAT"
-          ],
-          [
-            "name",
-            "persist",
-            "type",
-            "pure-token",
-            "display_text",
-            "persist",
-            "token",
-            "PERSIST"
-          ]
+          {
+            "name": "seconds",
+            "type": "integer",
+            "display_text": "seconds",
+            "token": "EX"
+          },
+          {
+            "name": "milliseconds",
+            "type": "integer",
+            "display_text": "milliseconds",
+            "token": "PX"
+          },
+          {
+            "name": "unix-time-seconds",
+            "type": "unix-time",
+            "display_text": "unix-time-seconds",
+            "token": "EXAT"
+          },
+          {
+            "name": "unix-time-milliseconds",
+            "type": "unix-time",
+            "display_text": "unix-time-milliseconds",
+            "token": "PXAT"
+          },
+          {
+            "name": "persist",
+            "type": "pure-token",
+            "display_text": "persist",
+            "token": "PERSIST"
+          }
         ]
       },
       {
@@ -5551,26 +4745,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5697,22 +4884,16 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field"
-          ],
-          [
-            "name",
-            "value",
-            "type",
-            "string",
-            "display_text",
-            "value"
-          ]
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field"
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "display_text": "value"
+          }
         ]
       }
     ]
@@ -5734,26 +4915,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5782,46 +4956,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       },
       {
@@ -5829,26 +4987,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5877,46 +5028,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       },
       {
@@ -5924,26 +5059,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -5965,26 +5093,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -6006,26 +5127,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -6049,28 +5163,20 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ],
-          [
-            "name",
-            "withvalues",
-            "type",
-            "pure-token",
-            "display_text",
-            "withvalues",
-            "token",
-            "WITHVALUES",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          },
+          {
+            "name": "withvalues",
+            "type": "pure-token",
+            "display_text": "withvalues",
+            "token": "WITHVALUES",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -6143,22 +5249,16 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field"
-          ],
-          [
-            "name",
-            "value",
-            "type",
-            "string",
-            "display_text",
-            "value"
-          ]
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field"
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "display_text": "value"
+          }
         ]
       }
     ]
@@ -6182,26 +5282,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "fnx",
-            "type",
-            "pure-token",
-            "display_text",
-            "fnx",
-            "token",
-            "FNX"
-          ],
-          [
-            "name",
-            "fxx",
-            "type",
-            "pure-token",
-            "display_text",
-            "fxx",
-            "token",
-            "FXX"
-          ]
+          {
+            "name": "fnx",
+            "type": "pure-token",
+            "display_text": "fnx",
+            "token": "FNX"
+          },
+          {
+            "name": "fxx",
+            "type": "pure-token",
+            "display_text": "fxx",
+            "token": "FXX"
+          }
         ]
       },
       {
@@ -6211,56 +5303,36 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "seconds",
-            "type",
-            "integer",
-            "display_text",
-            "seconds",
-            "token",
-            "EX"
-          ],
-          [
-            "name",
-            "milliseconds",
-            "type",
-            "integer",
-            "display_text",
-            "milliseconds",
-            "token",
-            "PX"
-          ],
-          [
-            "name",
-            "unix-time-seconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-seconds",
-            "token",
-            "EXAT"
-          ],
-          [
-            "name",
-            "unix-time-milliseconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-milliseconds",
-            "token",
-            "PXAT"
-          ],
-          [
-            "name",
-            "keepttl",
-            "type",
-            "pure-token",
-            "display_text",
-            "keepttl",
-            "token",
-            "KEEPTTL"
-          ]
+          {
+            "name": "seconds",
+            "type": "integer",
+            "display_text": "seconds",
+            "token": "EX"
+          },
+          {
+            "name": "milliseconds",
+            "type": "integer",
+            "display_text": "milliseconds",
+            "token": "PX"
+          },
+          {
+            "name": "unix-time-seconds",
+            "type": "unix-time",
+            "display_text": "unix-time-seconds",
+            "token": "EXAT"
+          },
+          {
+            "name": "unix-time-milliseconds",
+            "type": "unix-time",
+            "display_text": "unix-time-milliseconds",
+            "token": "PXAT"
+          },
+          {
+            "name": "keepttl",
+            "type": "pure-token",
+            "display_text": "keepttl",
+            "token": "KEEPTTL"
+          }
         ]
       },
       {
@@ -6268,43 +5340,30 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "data",
-            "type",
-            "block",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "data",
+            "type": "block",
+            "flags": [
               "multiple"
             ],
-            "arguments",
-            [
-              [
-                "name",
-                "field",
-                "type",
-                "string",
-                "display_text",
-                "field"
-              ],
-              [
-                "name",
-                "value",
-                "type",
-                "string",
-                "display_text",
-                "value"
-              ]
+            "arguments": [
+              {
+                "name": "field",
+                "type": "string",
+                "display_text": "field"
+              },
+              {
+                "name": "value",
+                "type": "string",
+                "display_text": "value"
+              }
             ]
-          ]
+          }
         ]
       }
     ]
@@ -6369,26 +5428,19 @@ export default {
         "type": "block",
         "token": "FIELDS",
         "arguments": [
-          [
-            "name",
-            "numfields",
-            "type",
-            "integer",
-            "display_text",
-            "numfields"
-          ],
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field",
-            "flags",
-            [
+          {
+            "name": "numfields",
+            "type": "integer",
+            "display_text": "numfields"
+          },
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -6667,26 +5719,18 @@ export default {
         "name": "where",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "before",
-            "type",
-            "pure-token",
-            "display_text",
-            "before",
-            "token",
-            "BEFORE"
-          ],
-          [
-            "name",
-            "after",
-            "type",
-            "pure-token",
-            "display_text",
-            "after",
-            "token",
-            "AFTER"
-          ]
+          {
+            "name": "before",
+            "type": "pure-token",
+            "display_text": "before",
+            "token": "BEFORE"
+          },
+          {
+            "name": "after",
+            "type": "pure-token",
+            "display_text": "after",
+            "token": "AFTER"
+          }
         ]
       },
       {
@@ -6737,52 +5781,36 @@ export default {
         "name": "wherefrom",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "left",
-            "type",
-            "pure-token",
-            "display_text",
-            "left",
-            "token",
-            "LEFT"
-          ],
-          [
-            "name",
-            "right",
-            "type",
-            "pure-token",
-            "display_text",
-            "right",
-            "token",
-            "RIGHT"
-          ]
+          {
+            "name": "left",
+            "type": "pure-token",
+            "display_text": "left",
+            "token": "LEFT"
+          },
+          {
+            "name": "right",
+            "type": "pure-token",
+            "display_text": "right",
+            "token": "RIGHT"
+          }
         ]
       },
       {
         "name": "whereto",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "left",
-            "type",
-            "pure-token",
-            "display_text",
-            "left",
-            "token",
-            "LEFT"
-          ],
-          [
-            "name",
-            "right",
-            "type",
-            "pure-token",
-            "display_text",
-            "right",
-            "token",
-            "RIGHT"
-          ]
+          {
+            "name": "left",
+            "type": "pure-token",
+            "display_text": "left",
+            "token": "LEFT"
+          },
+          {
+            "name": "right",
+            "type": "pure-token",
+            "display_text": "right",
+            "token": "RIGHT"
+          }
         ]
       }
     ]
@@ -6811,26 +5839,18 @@ export default {
         "name": "where",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "left",
-            "type",
-            "pure-token",
-            "display_text",
-            "left",
-            "token",
-            "LEFT"
-          ],
-          [
-            "name",
-            "right",
-            "type",
-            "pure-token",
-            "display_text",
-            "right",
-            "token",
-            "RIGHT"
-          ]
+          {
+            "name": "left",
+            "type": "pure-token",
+            "display_text": "left",
+            "token": "LEFT"
+          },
+          {
+            "name": "right",
+            "type": "pure-token",
+            "display_text": "right",
+            "token": "RIGHT"
+          }
         ]
       },
       {
@@ -7174,26 +6194,18 @@ export default {
         "name": "key-selector",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "key",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            0
-          ],
-          [
-            "name",
-            "empty-string",
-            "type",
-            "pure-token",
-            "display_text",
-            "empty-string",
-            "token",
-            ""
-          ]
+          {
+            "name": "key",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 0
+          },
+          {
+            "name": "empty-string",
+            "type": "pure-token",
+            "display_text": "empty-string",
+            "token": ""
+          }
         ]
       },
       {
@@ -7233,47 +6245,31 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "auth",
-            "type",
-            "string",
-            "display_text",
-            "password",
-            "token",
-            "AUTH",
-            "since",
-            "4.0.7"
-          ],
-          [
-            "name",
-            "auth2",
-            "type",
-            "block",
-            "token",
-            "AUTH2",
-            "since",
-            "6.0.0",
-            "arguments",
-            [
-              [
-                "name",
-                "username",
-                "type",
-                "string",
-                "display_text",
-                "username"
-              ],
-              [
-                "name",
-                "password",
-                "type",
-                "string",
-                "display_text",
-                "password"
-              ]
+          {
+            "name": "auth",
+            "type": "string",
+            "display_text": "password",
+            "token": "AUTH",
+            "since": "4.0.7"
+          },
+          {
+            "name": "auth2",
+            "type": "block",
+            "token": "AUTH2",
+            "since": "6.0.0",
+            "arguments": [
+              {
+                "name": "username",
+                "type": "string",
+                "display_text": "username"
+              },
+              {
+                "name": "password",
+                "type": "string",
+                "display_text": "password"
+              }
             ]
-          ]
+          }
         ]
       },
       {
@@ -7345,22 +6341,16 @@ export default {
           "multiple_token"
         ],
         "arguments": [
-          [
-            "name",
-            "name",
-            "type",
-            "string",
-            "display_text",
-            "name"
-          ],
-          [
-            "name",
-            "value",
-            "type",
-            "string",
-            "display_text",
-            "value"
-          ]
+          {
+            "name": "name",
+            "type": "string",
+            "display_text": "name"
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "display_text": "value"
+          }
         ]
       },
       {
@@ -7425,24 +6415,17 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "key",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            0
-          ],
-          [
-            "name",
-            "value",
-            "type",
-            "string",
-            "display_text",
-            "value"
-          ]
+          {
+            "name": "key",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 0
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "display_text": "value"
+          }
         ]
       }
     ]
@@ -7460,24 +6443,17 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "key",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            0
-          ],
-          [
-            "name",
-            "value",
-            "type",
-            "string",
-            "display_text",
-            "value"
-          ]
+          {
+            "name": "key",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 0
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "display_text": "value"
+          }
         ]
       }
     ]
@@ -7592,46 +6568,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       }
     ]
@@ -7664,46 +6624,30 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ],
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          },
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       }
     ]
@@ -8116,60 +7060,40 @@ export default {
         "name": "args",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "host-port",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "host",
-                "type",
-                "string",
-                "display_text",
-                "host"
-              ],
-              [
-                "name",
-                "port",
-                "type",
-                "integer",
-                "display_text",
-                "port"
-              ]
+          {
+            "name": "host-port",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "host",
+                "type": "string",
+                "display_text": "host"
+              },
+              {
+                "name": "port",
+                "type": "integer",
+                "display_text": "port"
+              }
             ]
-          ],
-          [
-            "name",
-            "no-one",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "no",
-                "type",
-                "pure-token",
-                "display_text",
-                "no",
-                "token",
-                "NO"
-              ],
-              [
-                "name",
-                "one",
-                "type",
-                "pure-token",
-                "display_text",
-                "one",
-                "token",
-                "ONE"
-              ]
+          },
+          {
+            "name": "no-one",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "no",
+                "type": "pure-token",
+                "display_text": "no",
+                "token": "NO"
+              },
+              {
+                "name": "one",
+                "type": "pure-token",
+                "display_text": "one",
+                "token": "ONE"
+              }
             ]
-          ]
+          }
         ]
       }
     ]
@@ -8525,36 +7449,24 @@ export default {
         "name": "mode",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "yes",
-            "type",
-            "pure-token",
-            "display_text",
-            "yes",
-            "token",
-            "YES"
-          ],
-          [
-            "name",
-            "sync",
-            "type",
-            "pure-token",
-            "display_text",
-            "sync",
-            "token",
-            "SYNC"
-          ],
-          [
-            "name",
-            "no",
-            "type",
-            "pure-token",
-            "display_text",
-            "no",
-            "token",
-            "NO"
-          ]
+          {
+            "name": "yes",
+            "type": "pure-token",
+            "display_text": "yes",
+            "token": "YES"
+          },
+          {
+            "name": "sync",
+            "type": "pure-token",
+            "display_text": "sync",
+            "token": "SYNC"
+          },
+          {
+            "name": "no",
+            "type": "pure-token",
+            "display_text": "no",
+            "token": "NO"
+          }
         ]
       }
     ]
@@ -8592,26 +7504,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "async",
-            "type",
-            "pure-token",
-            "display_text",
-            "async",
-            "token",
-            "ASYNC"
-          ],
-          [
-            "name",
-            "sync",
-            "type",
-            "pure-token",
-            "display_text",
-            "sync",
-            "token",
-            "SYNC"
-          ]
+          {
+            "name": "async",
+            "type": "pure-token",
+            "display_text": "async",
+            "token": "ASYNC"
+          },
+          {
+            "name": "sync",
+            "type": "pure-token",
+            "display_text": "sync",
+            "token": "SYNC"
+          }
         ]
       }
     ]
@@ -8725,26 +7629,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          }
         ]
       },
       {
@@ -8764,66 +7660,41 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "seconds",
-            "type",
-            "integer",
-            "display_text",
-            "seconds",
-            "token",
-            "EX",
-            "since",
-            "2.6.12"
-          ],
-          [
-            "name",
-            "milliseconds",
-            "type",
-            "integer",
-            "display_text",
-            "milliseconds",
-            "token",
-            "PX",
-            "since",
-            "2.6.12"
-          ],
-          [
-            "name",
-            "unix-time-seconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-seconds",
-            "token",
-            "EXAT",
-            "since",
-            "6.2.0"
-          ],
-          [
-            "name",
-            "unix-time-milliseconds",
-            "type",
-            "unix-time",
-            "display_text",
-            "unix-time-milliseconds",
-            "token",
-            "PXAT",
-            "since",
-            "6.2.0"
-          ],
-          [
-            "name",
-            "keepttl",
-            "type",
-            "pure-token",
-            "display_text",
-            "keepttl",
-            "token",
-            "KEEPTTL",
-            "since",
-            "6.0.0"
-          ]
+          {
+            "name": "seconds",
+            "type": "integer",
+            "display_text": "seconds",
+            "token": "EX",
+            "since": "2.6.12"
+          },
+          {
+            "name": "milliseconds",
+            "type": "integer",
+            "display_text": "milliseconds",
+            "token": "PX",
+            "since": "2.6.12"
+          },
+          {
+            "name": "unix-time-seconds",
+            "type": "unix-time",
+            "display_text": "unix-time-seconds",
+            "token": "EXAT",
+            "since": "6.2.0"
+          },
+          {
+            "name": "unix-time-milliseconds",
+            "type": "unix-time",
+            "display_text": "unix-time-milliseconds",
+            "token": "PXAT",
+            "since": "6.2.0"
+          },
+          {
+            "name": "keepttl",
+            "type": "pure-token",
+            "display_text": "keepttl",
+            "token": "KEEPTTL",
+            "since": "6.0.0"
+          }
         ]
       }
     ]
@@ -8945,26 +7816,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nosave",
-            "type",
-            "pure-token",
-            "display_text",
-            "nosave",
-            "token",
-            "NOSAVE"
-          ],
-          [
-            "name",
-            "save",
-            "type",
-            "pure-token",
-            "display_text",
-            "save",
-            "token",
-            "SAVE"
-          ]
+          {
+            "name": "nosave",
+            "type": "pure-token",
+            "display_text": "nosave",
+            "token": "NOSAVE"
+          },
+          {
+            "name": "save",
+            "type": "pure-token",
+            "display_text": "save",
+            "token": "SAVE"
+          }
         ]
       },
       {
@@ -9104,60 +7967,40 @@ export default {
         "name": "args",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "host-port",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "host",
-                "type",
-                "string",
-                "display_text",
-                "host"
-              ],
-              [
-                "name",
-                "port",
-                "type",
-                "integer",
-                "display_text",
-                "port"
-              ]
+          {
+            "name": "host-port",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "host",
+                "type": "string",
+                "display_text": "host"
+              },
+              {
+                "name": "port",
+                "type": "integer",
+                "display_text": "port"
+              }
             ]
-          ],
-          [
-            "name",
-            "no-one",
-            "type",
-            "block",
-            "arguments",
-            [
-              [
-                "name",
-                "no",
-                "type",
-                "pure-token",
-                "display_text",
-                "no",
-                "token",
-                "NO"
-              ],
-              [
-                "name",
-                "one",
-                "type",
-                "pure-token",
-                "display_text",
-                "one",
-                "token",
-                "ONE"
-              ]
+          },
+          {
+            "name": "no-one",
+            "type": "block",
+            "arguments": [
+              {
+                "name": "no",
+                "type": "pure-token",
+                "display_text": "no",
+                "token": "NO"
+              },
+              {
+                "name": "one",
+                "type": "pure-token",
+                "display_text": "one",
+                "token": "ONE"
+              }
             ]
-          ]
+          }
         ]
       }
     ]
@@ -9290,22 +8133,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       },
       {
@@ -9327,26 +8164,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       },
       {
@@ -9400,22 +8229,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       },
       {
@@ -9437,26 +8260,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "asc",
-            "type",
-            "pure-token",
-            "display_text",
-            "asc",
-            "token",
-            "ASC"
-          ],
-          [
-            "name",
-            "desc",
-            "type",
-            "pure-token",
-            "display_text",
-            "desc",
-            "token",
-            "DESC"
-          ]
+          {
+            "name": "asc",
+            "type": "pure-token",
+            "display_text": "asc",
+            "token": "ASC"
+          },
+          {
+            "name": "desc",
+            "type": "pure-token",
+            "display_text": "desc",
+            "token": "DESC"
+          }
         ]
       },
       {
@@ -10017,118 +8832,78 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "strategy",
-            "type",
-            "oneof",
-            "arguments",
-            [
-              [
-                "name",
-                "maxlen",
-                "type",
-                "pure-token",
-                "display_text",
-                "maxlen",
-                "token",
-                "MAXLEN"
-              ],
-              [
-                "name",
-                "minid",
-                "type",
-                "pure-token",
-                "display_text",
-                "minid",
-                "token",
-                "MINID",
-                "since",
-                "6.2.0"
-              ]
+          {
+            "name": "strategy",
+            "type": "oneof",
+            "arguments": [
+              {
+                "name": "maxlen",
+                "type": "pure-token",
+                "display_text": "maxlen",
+                "token": "MAXLEN"
+              },
+              {
+                "name": "minid",
+                "type": "pure-token",
+                "display_text": "minid",
+                "token": "MINID",
+                "since": "6.2.0"
+              }
             ]
-          ],
-          [
-            "name",
-            "operator",
-            "type",
-            "oneof",
-            "flags",
-            [
+          },
+          {
+            "name": "operator",
+            "type": "oneof",
+            "flags": [
               "optional"
             ],
-            "arguments",
-            [
-              [
-                "name",
-                "equal",
-                "type",
-                "pure-token",
-                "display_text",
-                "equal",
-                "token",
-                "="
-              ],
-              [
-                "name",
-                "approximately",
-                "type",
-                "pure-token",
-                "display_text",
-                "approximately",
-                "token",
-                "~"
-              ]
+            "arguments": [
+              {
+                "name": "equal",
+                "type": "pure-token",
+                "display_text": "equal",
+                "token": "="
+              },
+              {
+                "name": "approximately",
+                "type": "pure-token",
+                "display_text": "approximately",
+                "token": "~"
+              }
             ]
-          ],
-          [
-            "name",
-            "threshold",
-            "type",
-            "string",
-            "display_text",
-            "threshold"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "LIMIT",
-            "since",
-            "6.2.0",
-            "flags",
-            [
+          },
+          {
+            "name": "threshold",
+            "type": "string",
+            "display_text": "threshold"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "LIMIT",
+            "since": "6.2.0",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       },
       {
         "name": "id-selector",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "auto-id",
-            "type",
-            "pure-token",
-            "display_text",
-            "auto-id",
-            "token",
-            "*"
-          ],
-          [
-            "name",
-            "id",
-            "type",
-            "string",
-            "display_text",
-            "id"
-          ]
+          {
+            "name": "auto-id",
+            "type": "pure-token",
+            "display_text": "auto-id",
+            "token": "*"
+          },
+          {
+            "name": "id",
+            "type": "string",
+            "display_text": "id"
+          }
         ]
       },
       {
@@ -10138,22 +8913,16 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "field",
-            "type",
-            "string",
-            "display_text",
-            "field"
-          ],
-          [
-            "name",
-            "value",
-            "type",
-            "string",
-            "display_text",
-            "value"
-          ]
+          {
+            "name": "field",
+            "type": "string",
+            "display_text": "field"
+          },
+          {
+            "name": "value",
+            "type": "string",
+            "display_text": "value"
+          }
         ]
       }
     ]
@@ -10350,24 +9119,17 @@ export default {
         "name": "id-selector",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "id",
-            "type",
-            "string",
-            "display_text",
-            "id"
-          ],
-          [
-            "name",
-            "new-id",
-            "type",
-            "pure-token",
-            "display_text",
-            "new-id",
-            "token",
-            "$"
-          ]
+          {
+            "name": "id",
+            "type": "string",
+            "display_text": "id"
+          },
+          {
+            "name": "new-id",
+            "type": "pure-token",
+            "display_text": "new-id",
+            "token": "$"
+          }
         ]
       },
       {
@@ -10487,24 +9249,17 @@ export default {
         "name": "id-selector",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "id",
-            "type",
-            "string",
-            "display_text",
-            "id"
-          ],
-          [
-            "name",
-            "new-id",
-            "type",
-            "pure-token",
-            "display_text",
-            "new-id",
-            "token",
-            "$"
-          ]
+          {
+            "name": "id",
+            "type": "string",
+            "display_text": "id"
+          },
+          {
+            "name": "new-id",
+            "type": "pure-token",
+            "display_text": "new-id",
+            "token": "$"
+          }
         ]
       },
       {
@@ -10587,30 +9342,21 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "full",
-            "type",
-            "pure-token",
-            "display_text",
-            "full",
-            "token",
-            "FULL"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "COUNT",
-            "flags",
-            [
+          {
+            "name": "full",
+            "type": "pure-token",
+            "display_text": "full",
+            "token": "FULL"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "COUNT",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -10656,58 +9402,39 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "min-idle-time",
-            "type",
-            "integer",
-            "display_text",
-            "min-idle-time",
-            "token",
-            "IDLE",
-            "since",
-            "6.2.0",
-            "flags",
-            [
+          {
+            "name": "min-idle-time",
+            "type": "integer",
+            "display_text": "min-idle-time",
+            "token": "IDLE",
+            "since": "6.2.0",
+            "flags": [
               "optional"
             ]
-          ],
-          [
-            "name",
-            "start",
-            "type",
-            "string",
-            "display_text",
-            "start"
-          ],
-          [
-            "name",
-            "end",
-            "type",
-            "string",
-            "display_text",
-            "end"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ],
-          [
-            "name",
-            "consumer",
-            "type",
-            "string",
-            "display_text",
-            "consumer",
-            "flags",
-            [
+          },
+          {
+            "name": "start",
+            "type": "string",
+            "display_text": "start"
+          },
+          {
+            "name": "end",
+            "type": "string",
+            "display_text": "end"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          },
+          {
+            "name": "consumer",
+            "type": "string",
+            "display_text": "consumer",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -10776,32 +9503,23 @@ export default {
         "type": "block",
         "token": "STREAMS",
         "arguments": [
-          [
-            "name",
-            "key",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            0,
-            "flags",
-            [
+          {
+            "name": "key",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 0,
+            "flags": [
               "multiple"
             ]
-          ],
-          [
-            "name",
-            "id",
-            "type",
-            "string",
-            "display_text",
-            "id",
-            "flags",
-            [
+          },
+          {
+            "name": "id",
+            "type": "string",
+            "display_text": "id",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -10817,22 +9535,16 @@ export default {
         "type": "block",
         "token": "GROUP",
         "arguments": [
-          [
-            "name",
-            "group",
-            "type",
-            "string",
-            "display_text",
-            "group"
-          ],
-          [
-            "name",
-            "consumer",
-            "type",
-            "string",
-            "display_text",
-            "consumer"
-          ]
+          {
+            "name": "group",
+            "type": "string",
+            "display_text": "group"
+          },
+          {
+            "name": "consumer",
+            "type": "string",
+            "display_text": "consumer"
+          }
         ]
       },
       {
@@ -10867,32 +9579,23 @@ export default {
         "type": "block",
         "token": "STREAMS",
         "arguments": [
-          [
-            "name",
-            "key",
-            "type",
-            "key",
-            "display_text",
-            "key",
-            "key_spec_index",
-            0,
-            "flags",
-            [
+          {
+            "name": "key",
+            "type": "key",
+            "display_text": "key",
+            "key_spec_index": 0,
+            "flags": [
               "multiple"
             ]
-          ],
-          [
-            "name",
-            "id",
-            "type",
-            "string",
-            "display_text",
-            "id",
-            "flags",
-            [
+          },
+          {
+            "name": "id",
+            "type": "string",
+            "display_text": "id",
+            "flags": [
               "multiple"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -10994,94 +9697,61 @@ export default {
         "name": "trim",
         "type": "block",
         "arguments": [
-          [
-            "name",
-            "strategy",
-            "type",
-            "oneof",
-            "arguments",
-            [
-              [
-                "name",
-                "maxlen",
-                "type",
-                "pure-token",
-                "display_text",
-                "maxlen",
-                "token",
-                "MAXLEN"
-              ],
-              [
-                "name",
-                "minid",
-                "type",
-                "pure-token",
-                "display_text",
-                "minid",
-                "token",
-                "MINID",
-                "since",
-                "6.2.0"
-              ]
+          {
+            "name": "strategy",
+            "type": "oneof",
+            "arguments": [
+              {
+                "name": "maxlen",
+                "type": "pure-token",
+                "display_text": "maxlen",
+                "token": "MAXLEN"
+              },
+              {
+                "name": "minid",
+                "type": "pure-token",
+                "display_text": "minid",
+                "token": "MINID",
+                "since": "6.2.0"
+              }
             ]
-          ],
-          [
-            "name",
-            "operator",
-            "type",
-            "oneof",
-            "flags",
-            [
+          },
+          {
+            "name": "operator",
+            "type": "oneof",
+            "flags": [
               "optional"
             ],
-            "arguments",
-            [
-              [
-                "name",
-                "equal",
-                "type",
-                "pure-token",
-                "display_text",
-                "equal",
-                "token",
-                "="
-              ],
-              [
-                "name",
-                "approximately",
-                "type",
-                "pure-token",
-                "display_text",
-                "approximately",
-                "token",
-                "~"
-              ]
+            "arguments": [
+              {
+                "name": "equal",
+                "type": "pure-token",
+                "display_text": "equal",
+                "token": "="
+              },
+              {
+                "name": "approximately",
+                "type": "pure-token",
+                "display_text": "approximately",
+                "token": "~"
+              }
             ]
-          ],
-          [
-            "name",
-            "threshold",
-            "type",
-            "string",
-            "display_text",
-            "threshold"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count",
-            "token",
-            "LIMIT",
-            "since",
-            "6.2.0",
-            "flags",
-            [
+          },
+          {
+            "name": "threshold",
+            "type": "string",
+            "display_text": "threshold"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count",
+            "token": "LIMIT",
+            "since": "6.2.0",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -11111,26 +9781,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "nx",
-            "type",
-            "pure-token",
-            "display_text",
-            "nx",
-            "token",
-            "NX"
-          ],
-          [
-            "name",
-            "xx",
-            "type",
-            "pure-token",
-            "display_text",
-            "xx",
-            "token",
-            "XX"
-          ]
+          {
+            "name": "nx",
+            "type": "pure-token",
+            "display_text": "nx",
+            "token": "NX"
+          },
+          {
+            "name": "xx",
+            "type": "pure-token",
+            "display_text": "xx",
+            "token": "XX"
+          }
         ]
       },
       {
@@ -11141,26 +9803,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "gt",
-            "type",
-            "pure-token",
-            "display_text",
-            "gt",
-            "token",
-            "GT"
-          ],
-          [
-            "name",
-            "lt",
-            "type",
-            "pure-token",
-            "display_text",
-            "lt",
-            "token",
-            "LT"
-          ]
+          {
+            "name": "gt",
+            "type": "pure-token",
+            "display_text": "gt",
+            "token": "GT"
+          },
+          {
+            "name": "lt",
+            "type": "pure-token",
+            "display_text": "lt",
+            "token": "LT"
+          }
         ]
       },
       {
@@ -11190,22 +9844,16 @@ export default {
           "multiple"
         ],
         "arguments": [
-          [
-            "name",
-            "score",
-            "type",
-            "double",
-            "display_text",
-            "score"
-          ],
-          [
-            "name",
-            "member",
-            "type",
-            "string",
-            "display_text",
-            "member"
-          ]
+          {
+            "name": "score",
+            "type": "double",
+            "display_text": "score"
+          },
+          {
+            "name": "member",
+            "type": "string",
+            "display_text": "member"
+          }
         ]
       }
     ]
@@ -11369,36 +10017,24 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "sum",
-            "type",
-            "pure-token",
-            "display_text",
-            "sum",
-            "token",
-            "SUM"
-          ],
-          [
-            "name",
-            "min",
-            "type",
-            "pure-token",
-            "display_text",
-            "min",
-            "token",
-            "MIN"
-          ],
-          [
-            "name",
-            "max",
-            "type",
-            "pure-token",
-            "display_text",
-            "max",
-            "token",
-            "MAX"
-          ]
+          {
+            "name": "sum",
+            "type": "pure-token",
+            "display_text": "sum",
+            "token": "SUM"
+          },
+          {
+            "name": "min",
+            "type": "pure-token",
+            "display_text": "min",
+            "token": "MIN"
+          },
+          {
+            "name": "max",
+            "type": "pure-token",
+            "display_text": "max",
+            "token": "MAX"
+          }
         ]
       },
       {
@@ -11487,36 +10123,24 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "sum",
-            "type",
-            "pure-token",
-            "display_text",
-            "sum",
-            "token",
-            "SUM"
-          ],
-          [
-            "name",
-            "min",
-            "type",
-            "pure-token",
-            "display_text",
-            "min",
-            "token",
-            "MIN"
-          ],
-          [
-            "name",
-            "max",
-            "type",
-            "pure-token",
-            "display_text",
-            "max",
-            "token",
-            "MAX"
-          ]
+          {
+            "name": "sum",
+            "type": "pure-token",
+            "display_text": "sum",
+            "token": "SUM"
+          },
+          {
+            "name": "min",
+            "type": "pure-token",
+            "display_text": "min",
+            "token": "MIN"
+          },
+          {
+            "name": "max",
+            "type": "pure-token",
+            "display_text": "max",
+            "token": "MAX"
+          }
         ]
       }
     ]
@@ -11569,26 +10193,18 @@ export default {
         "name": "where",
         "type": "oneof",
         "arguments": [
-          [
-            "name",
-            "min",
-            "type",
-            "pure-token",
-            "display_text",
-            "min",
-            "token",
-            "MIN"
-          ],
-          [
-            "name",
-            "max",
-            "type",
-            "pure-token",
-            "display_text",
-            "max",
-            "token",
-            "MAX"
-          ]
+          {
+            "name": "min",
+            "type": "pure-token",
+            "display_text": "min",
+            "token": "MIN"
+          },
+          {
+            "name": "max",
+            "type": "pure-token",
+            "display_text": "max",
+            "token": "MAX"
+          }
         ]
       },
       {
@@ -11687,28 +10303,20 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ],
-          [
-            "name",
-            "withscores",
-            "type",
-            "pure-token",
-            "display_text",
-            "withscores",
-            "token",
-            "WITHSCORES",
-            "flags",
-            [
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          },
+          {
+            "name": "withscores",
+            "type": "pure-token",
+            "display_text": "withscores",
+            "token": "WITHSCORES",
+            "flags": [
               "optional"
             ]
-          ]
+          }
         ]
       }
     ]
@@ -11746,26 +10354,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "byscore",
-            "type",
-            "pure-token",
-            "display_text",
-            "byscore",
-            "token",
-            "BYSCORE"
-          ],
-          [
-            "name",
-            "bylex",
-            "type",
-            "pure-token",
-            "display_text",
-            "bylex",
-            "token",
-            "BYLEX"
-          ]
+          {
+            "name": "byscore",
+            "type": "pure-token",
+            "display_text": "byscore",
+            "token": "BYSCORE"
+          },
+          {
+            "name": "bylex",
+            "type": "pure-token",
+            "display_text": "bylex",
+            "token": "BYLEX"
+          }
         ]
       },
       {
@@ -11787,22 +10387,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       },
       {
@@ -11851,22 +10445,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       }
     ]
@@ -11919,22 +10507,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       }
     ]
@@ -11974,26 +10556,18 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "byscore",
-            "type",
-            "pure-token",
-            "display_text",
-            "byscore",
-            "token",
-            "BYSCORE"
-          ],
-          [
-            "name",
-            "bylex",
-            "type",
-            "pure-token",
-            "display_text",
-            "bylex",
-            "token",
-            "BYLEX"
-          ]
+          {
+            "name": "byscore",
+            "type": "pure-token",
+            "display_text": "byscore",
+            "token": "BYSCORE"
+          },
+          {
+            "name": "bylex",
+            "type": "pure-token",
+            "display_text": "bylex",
+            "token": "BYLEX"
+          }
         ]
       },
       {
@@ -12013,22 +10587,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       }
     ]
@@ -12234,22 +10802,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       }
     ]
@@ -12301,22 +10863,16 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "offset",
-            "type",
-            "integer",
-            "display_text",
-            "offset"
-          ],
-          [
-            "name",
-            "count",
-            "type",
-            "integer",
-            "display_text",
-            "count"
-          ]
+          {
+            "name": "offset",
+            "type": "integer",
+            "display_text": "offset"
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "display_text": "count"
+          }
         ]
       }
     ]
@@ -12446,36 +11002,24 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "sum",
-            "type",
-            "pure-token",
-            "display_text",
-            "sum",
-            "token",
-            "SUM"
-          ],
-          [
-            "name",
-            "min",
-            "type",
-            "pure-token",
-            "display_text",
-            "min",
-            "token",
-            "MIN"
-          ],
-          [
-            "name",
-            "max",
-            "type",
-            "pure-token",
-            "display_text",
-            "max",
-            "token",
-            "MAX"
-          ]
+          {
+            "name": "sum",
+            "type": "pure-token",
+            "display_text": "sum",
+            "token": "SUM"
+          },
+          {
+            "name": "min",
+            "type": "pure-token",
+            "display_text": "min",
+            "token": "MIN"
+          },
+          {
+            "name": "max",
+            "type": "pure-token",
+            "display_text": "max",
+            "token": "MAX"
+          }
         ]
       },
       {
@@ -12533,38 +11077,26 @@ export default {
           "optional"
         ],
         "arguments": [
-          [
-            "name",
-            "sum",
-            "type",
-            "pure-token",
-            "display_text",
-            "sum",
-            "token",
-            "SUM"
-          ],
-          [
-            "name",
-            "min",
-            "type",
-            "pure-token",
-            "display_text",
-            "min",
-            "token",
-            "MIN"
-          ],
-          [
-            "name",
-            "max",
-            "type",
-            "pure-token",
-            "display_text",
-            "max",
-            "token",
-            "MAX"
-          ]
+          {
+            "name": "sum",
+            "type": "pure-token",
+            "display_text": "sum",
+            "token": "SUM"
+          },
+          {
+            "name": "min",
+            "type": "pure-token",
+            "display_text": "min",
+            "token": "MIN"
+          },
+          {
+            "name": "max",
+            "type": "pure-token",
+            "display_text": "max",
+            "token": "MAX"
+          }
         ]
       }
     ]
   }
-}
+};

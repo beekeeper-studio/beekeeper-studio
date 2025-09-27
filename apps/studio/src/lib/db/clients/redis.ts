@@ -252,10 +252,22 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     //   docs
     //     .map((pair) => {
     //       const command = pair[0].replace("|", " ").toLowerCase();
-    //       const docs = pairsToObject(pair[1]);
+    //       const docs = objectFromPairs(pair[1]);
     //       if (docs.history) docs.history = Object.fromEntries(docs.history);
-    //       if (docs.arguments)
-    //         docs.arguments = docs.arguments.map(pairsToObject);
+    //       if (docs.arguments) {
+    //         docs.arguments = docs.arguments.map(objectFromPairs);
+    //         for (const arg of docs.arguments) {
+    //           if (arg.arguments) {
+    //             arg.arguments = arg.arguments.map(objectFromPairs);
+    //             for (const arg2 of arg.arguments) {
+    //               if (arg2.arguments) {
+    //                 arg2.arguments = arg2.arguments.map(objectFromPairs);
+    //               }
+    //             }
+    //           }
+    //         }
+    //       }
+
     //       return [command, docs];
     //     })
     //     .filter(([, docs]) => !docs.subcommands)
