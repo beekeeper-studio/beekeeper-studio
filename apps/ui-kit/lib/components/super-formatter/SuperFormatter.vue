@@ -4,7 +4,18 @@
       <div v-if="canAddPresets" class="presets">
         <label>
           Preset
-          <select></select>
+          <select
+            @change="handlePresetChange"
+            v-model="selectedPresetId"
+          >
+            <option
+              v-for="opt in presetList"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
         </label>
         <button
           type="button"
@@ -200,7 +211,8 @@ export default Vue.extend({
         linesBetweenQueries: 1,
         denseOperators: false,
         newlineBeforeSemicolon: false
-      }
+      },
+      selectedPresetId: 1
     }
   },
   mixins: [],
@@ -212,6 +224,12 @@ export default Vue.extend({
         { value: 'upper' },
         { value: 'lower' }
       ]
+    },
+    presetList() {
+      return this.presets.map(preset => ({
+        value: preset.id,
+        label: preset.name
+      }))
     }
   },
   methods: {
@@ -229,6 +247,9 @@ export default Vue.extend({
         language: this.formatterDialect,
         ...this.unsavedPreset
       })
+    },
+    handlePresetChange() {
+      console.log(this.selectedPresetId)
     }
   },
   mounted() {

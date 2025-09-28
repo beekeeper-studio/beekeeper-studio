@@ -227,6 +227,7 @@
       <modal
         class="vue-dialog beekeeper-modal super-formatter-modal"
         name="super-formatter"
+        @opened="getPresets"
         :scrollable="true"
         min-height="80%"
         min-width="90%"
@@ -254,7 +255,7 @@
             :can-add-presets="true"
             :clipboard="$native.clipboard.writeText"
             :default-preset="{}"
-            :presets="[]"
+            :presets="formatterPresets"
             @bks-value-change="unsavedText = $event.value"
           />
         </div>
@@ -461,7 +462,7 @@
         onTextEditorBlur: null,
         wrapText: false,
         vimKeymaps: [],
-
+        formatterPresets: [],
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
          * if we want to switch focus. Why two states? We need a feedback from
@@ -759,7 +760,6 @@
       },
     },
     methods: {
-
       handleFormatterPresetModal({ showFormatter }){
         // this will open the modal and stuff and get us down the path of doing a great job!!
         if (showFormatter) {
@@ -767,6 +767,17 @@
         } else {
           this.$modal.hide('super-formatter')
         }
+      },
+      getPresets() {
+        this.$util.send('appdb/formatter/getAll')
+          .then((presets) => {
+            console.log(presets)
+            this.formatterPresets = presets;
+          })
+          .catch(err => {
+            console.error(err)
+            throw new Error(err)
+          })
       },
       isNumber(value: any) {
         return _.isNumber(value);
