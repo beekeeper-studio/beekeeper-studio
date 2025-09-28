@@ -119,14 +119,13 @@ function makeCursorResult(result: unknown) {
   const { cursor, ...rest } = result as any;
   const [data] = Object.values(rest);
   const rows = Array.isArray(data)
-    ? data.map((d) => ({ ...d, cursor }))
+    ? (data.length && _.isPlainObject(data[0])) ? data.map((d) => ({  cursor, ...d, })) : data.map((value) => ({ cursor, value }))
     : [{ cursor }];
   return {
     rows,
     fields: [
-      { id: "cursor", name: "cursor" },
       ...(Array.isArray(data) && data.length
-        ? Object.keys(data[0]).map((key) => ({ id: key, name: key }))
+        ? Object.keys(rows[0]).map((key) => ({ id: key, name: key }))
         : []),
     ],
     rowCount: 1,
@@ -384,7 +383,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       }
 
       const commandWithArgs = splitargs(line) as string[];
-      const [command] = commandWithArgs;
+      const command = commandWithArgs[0]?.toLowerCase() || "";
 
       // For "command info", this will find just "command" which is expected (there's no "command info" in commandsInfo)
       const info = this.commandsInfo.find((c) => c.name === command);
@@ -441,52 +440,75 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     const argsLower = optionalArgs.map(arg => arg.toLowerCase().replace(/[^a-z]/g, ''));
     const argsSet = new Set(argsLower.filter(Boolean));
 
-    // Find all commands that start with our base command
-    const candidates = Object.keys(COMMANDS).filter(name =>
-      name.toLowerCase().startsWith(commandLower)
-    );
+    // Direct mapping table: only for special cases that don't map 1:1
+    const transformMap: Record<string, string> = {
+      // Commands that map to different transforms than their name
+      'zrevrank': 'ZRANK',  // Same response format as ZRANK
 
-    if (candidates.length === 0) return null;
+      // ZRANGE variations with arguments
+      'zrange+withscores': 'ZRANGE_WITHSCORES',
+      'zrange+byscore': 'ZRANGEBYSCORE',
+      'zrange+byscore+withscores': 'ZRANGEBYSCORE_WITHSCORES',
+      'zrange+bylex': 'ZRANGEBYLEX',
 
-    // Score each candidate
-    const scored = candidates.map(name => {
-      const nameLower = name.toLowerCase();
-      const suffix = nameLower.slice(commandLower.length);
+      // ZREVRANGE variations (use ZRANGE transforms - same format)
+      'zrevrange': 'ZRANGE',
+      'zrevrange+withscores': 'ZRANGE_WITHSCORES',
 
-      // Extract parts from the suffix (split by _ or -)
-      const suffixParts = suffix.split(/[_-]/).filter(Boolean);
-      const suffixSet = new Set(suffixParts);
+      // ZRANGEBYSCORE variations
+      'zrangebyscore+withscores': 'ZRANGEBYSCORE_WITHSCORES',
+      'zrevrangebyscore': 'ZRANGEBYSCORE',  // Same format as ZRANGEBYSCORE
+      'zrevrangebyscore+withscores': 'ZRANGEBYSCORE_WITHSCORES',
 
-      // Calculate match quality
-      const matchedArgs = [...argsSet].filter(arg => suffixSet.has(arg));
-      const unmatchedSuffixParts = [...suffixSet].filter(part => !argsSet.has(part));
+      // ZRANGEBYLEX variations
+      'zrevrangebylex': 'ZRANGEBYLEX',  // Same format
 
-      return {
-        name,
-        exactMatch: nameLower === commandLower,
-        matchedCount: matchedArgs.length,
-        unmatchedCount: unmatchedSuffixParts.length,
-        totalSuffixParts: suffixParts.length,
-        // Prefer exact matches when no args, or suffix matches when args present
-        score: nameLower === commandLower && argsSet.size === 0 ? 1000 :
-               matchedArgs.length * 100 - unmatchedSuffixParts.length * 200
-      };
-    });
+      // Stream commands that map to similar transforms
+      'xrevrange': 'XRANGE',  // Same format as XRANGE
 
-    // Sort by score and pick the best
-    scored.sort((a, b) => {
-      // First by score
-      if (b.score !== a.score) return b.score - a.score;
-      // Then prefer fewer unmatched parts
-      if (a.unmatchedCount !== b.unmatchedCount) return a.unmatchedCount - b.unmatchedCount;
-      // Then prefer shorter names (more specific)
-      return a.name.length - b.name.length;
-    });
+      // Client/Config compound commands
+      'client+list': 'CLIENTLIST',
+      'client+info': 'CLIENTINFO',
+      'client+kill': 'CLIENTKILL',
+      'config+get': 'CONFIGGET',
+      'config+set': 'CONFIGSET',
 
-    const best = scored[0];
-    console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Matched: ${best.name}, Score: ${best.score}`);
+      // Memory compound commands
+      'memory+usage': 'MEMORYUSAGE',
+      'memory+stats': 'MEMORYSTATS',
+    };
 
-    return getTransformReply(COMMANDS[best.name as keyof typeof COMMANDS], this.hello.proto);
+    // Build lookup key from command + sorted args
+    const sortedArgs = [...argsSet].sort();
+    const lookupKey = sortedArgs.length > 0
+      ? `${commandLower}+${sortedArgs.join('+')}`
+      : commandLower;
+
+    // Try exact match first
+    let transformCommand = transformMap[lookupKey];
+
+    // If no exact match, try just the base command
+    if (!transformCommand) {
+      transformCommand = transformMap[commandLower];
+    }
+
+    // If still no match, try automatic 1:1 mapping (case-insensitive)
+    if (!transformCommand) {
+      const commandUpper = commandLower.toUpperCase();
+      if (COMMANDS[commandUpper as keyof typeof COMMANDS]) {
+        transformCommand = commandUpper;
+      }
+    }
+
+    const mappingType = transformMap[lookupKey] ? 'explicit' :
+                       transformMap[commandLower] ? 'base' :
+                       transformCommand ? '1:1' : 'none';
+
+    console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Lookup: "${lookupKey}", Matched: ${transformCommand || 'none'} (${mappingType})`);
+
+    return transformCommand && COMMANDS[transformCommand as keyof typeof COMMANDS]
+      ? getTransformReply(COMMANDS[transformCommand as keyof typeof COMMANDS], this.hello.proto)
+      : null;
   }
 
   async executeQuery(queryText: string): Promise<NgQueryResult[]> {
