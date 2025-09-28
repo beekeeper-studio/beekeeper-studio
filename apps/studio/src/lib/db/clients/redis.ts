@@ -397,8 +397,19 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       const requiredArgs = commandWithArgs.slice(0, Math.abs(info.arity));
       const optionalArgs = commandWithArgs.slice(requiredArgs.length);
 
-      // For multi-word commands, include command parts beyond the first word as transform args
-      const commandParts = requiredArgs.slice(1); // Skip the base command word
+      // Use commandsInfo to properly separate command parts from data arguments
+      const firstKeyIndex = info.firstKeyIndex;
+
+      // Extract command parts (multi-word commands like CLIENT LIST)
+      // For commands with firstKeyIndex = 0 (no keys), all required args after the first are command parts
+      // For commands with firstKeyIndex > 1, command parts are before the first key
+      const commandParts = firstKeyIndex === 0
+        ? requiredArgs.slice(1)  // All args after command name are command parts (CLIENT LIST)
+        : firstKeyIndex > 1
+          ? commandWithArgs.slice(1, firstKeyIndex)  // Parts before first key
+          : [];  // Single word command with immediate key (GET key)
+
+      // Everything after required args are optional modifiers
       const transformArgs = [...commandParts, ...optionalArgs];
 
       // Find most suitable predefined method for transforming the reply
@@ -447,14 +458,13 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
     // Direct mapping table: only for special cases that don't map 1:1
     const transformMap: Record<string, string> = {
-      // Commands that map to different transforms than their name
-      'zrevrank': 'ZRANK',  // Same response format as ZRANK
-
       // ZRANGE variations with arguments
       'zrange+withscores': 'ZRANGE_WITHSCORES',
       'zrange+byscore': 'ZRANGEBYSCORE',
       'zrange+byscore+withscores': 'ZRANGEBYSCORE_WITHSCORES',
       'zrange+bylex': 'ZRANGEBYLEX',
+      'zrange+rev': 'ZRANGE',  // REV is just an option, same transform
+      'zrange+rev+withscores': 'ZRANGE_WITHSCORES',
 
       // ZREVRANGE variations (use ZRANGE transforms - same format)
       'zrevrange': 'ZRANGE',
@@ -472,15 +482,28 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       'xrevrange': 'XRANGE',  // Same format as XRANGE
 
       // Client/Config compound commands
-      'client+list': 'CLIENTLIST',
-      'client+info': 'CLIENTINFO',
-      'client+kill': 'CLIENTKILL',
-      'config+get': 'CONFIGGET',
-      'config+set': 'CONFIGSET',
+      'client+list': 'CLIENT_LIST',
+      'client+info': 'CLIENT_INFO',
+      'client+kill': 'CLIENT_KILL',
+      'client+getname': 'CLIENT_GETNAME',
+      'client+setname': 'CLIENT_SETNAME',
+      'client+pause': 'CLIENT_PAUSE',
+      'client+unpause': 'CLIENT_UNPAUSE',
+      'config+get': 'CONFIG_GET',
+      'config+set': 'CONFIG_SET',
+      'config+rewrite': 'CONFIG_REWRITE',
+      'config+resetstat': 'CONFIG_RESETSTAT',
 
       // Memory compound commands
-      'memory+usage': 'MEMORYUSAGE',
-      'memory+stats': 'MEMORYSTATS',
+      'memory+usage': 'MEMORY_USAGE',
+      'memory+stats': 'MEMORY_STATS',
+      'memory+doctor': 'MEMORY_DOCTOR',
+
+      // Command compound commands
+      'command+count': 'COMMAND_COUNT',
+      'command+getkeys': 'COMMAND_GETKEYS',
+      'command+info': 'COMMAND_INFO',
+      'command+list': 'COMMAND_LIST',
     };
 
     // Build lookup key from command + sorted args
