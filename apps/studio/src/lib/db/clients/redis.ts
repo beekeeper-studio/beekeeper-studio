@@ -21,6 +21,7 @@ import {
 import { createClient, RedisClientType } from "redis";
 import { getTransformReply } from "@redis/client/dist/lib/commander";
 import COMMANDS from "@redis/client/dist/lib/commands";
+import type { Command } from "@redis/client/dist/lib/RESP/types";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -118,7 +119,7 @@ function makeArrayOfObjectsResult(result: unknown[]) {
 }
 
 function makeCursorResult(result: unknown) {
-  const { cursor, ...rest } = result as any;
+  const { cursor, ...rest } = result as Record<string, unknown>;
   const [data] = Object.values(rest);
   const rows = Array.isArray(data)
     ? (data.length && _.isPlainObject(data[0])) ? data.map((d) => ({  cursor, ...d, })) : data.map((value) => ({ cursor, value }))
@@ -440,12 +441,18 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       // Everything after required args are optional modifiers
       const transformArgs = [...commandParts, ...optionalArgs];
 
-      // Find most suitable predefined method for transforming the reply
+      // Find most suitable predefined method for transforming the reply and get readonly info
       const transformResult = this.findBestTransformMethod(command, transformArgs);
+
+      // Check readonly mode using transform result
+      if (this.readOnlyMode && transformResult && !transformResult.isReadOnly) {
+        results.push(makeQueryError(command, `Write action not allowed in Read-Only Mode.`));
+        continue;
+      }
 
       try {
         const result = await this.redis.sendCommand(commandWithArgs);
-        const transformed = transformResult ? transformResult(result) : result;
+        const transformed = transformResult?.transformReply ? transformResult.transformReply(result) : result;
 
         if (["info"].includes(command)) {
           results.push(makeObjectResult(parseInfo(transformed)));
@@ -479,7 +486,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     };
   }
 
-  private findBestTransformMethod(command: string, optionalArgs: string[]) {
+  private findBestTransformMethod(command: string, optionalArgs: string[]): {
+    transformReply: ((result: unknown) => unknown) | null;
+    commandDefinition: Command;
+    isReadOnly: boolean;
+  } | null {
     const commandLower = command.toLowerCase();
     const argsLower = optionalArgs.map(arg => arg.toLowerCase().replace(/[^a-z]/g, ''));
     const argsSet = new Set(argsLower.filter(Boolean));
@@ -562,9 +573,16 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
     console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Lookup: "${lookupKey}", Matched: ${transformCommand || 'none'} (${mappingType})`);
 
-    return transformCommand && COMMANDS[transformCommand as keyof typeof COMMANDS]
-      ? getTransformReply(COMMANDS[transformCommand as keyof typeof COMMANDS], this.hello.proto)
-      : null;
+    if (transformCommand && COMMANDS[transformCommand as keyof typeof COMMANDS]) {
+      const commandDefinition = COMMANDS[transformCommand as keyof typeof COMMANDS];
+      return {
+        transformReply: getTransformReply(commandDefinition, this.hello.proto),
+        commandDefinition,
+        isReadOnly: commandDefinition && 'IS_READ_ONLY' in commandDefinition && commandDefinition.IS_READ_ONLY
+      };
+    }
+
+    return null;
   }
 
   async executeQuery(queryText: string): Promise<NgQueryResult[]> {
