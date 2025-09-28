@@ -28,9 +28,11 @@ import splitargs from "redis-splitargs";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBuilder";
-// import fs from "fs/promises";
+import fs from "fs/promises";
 
 type RedisQueryResult = BaseQueryResult;
+
+type RedisSocketConfig = Parameters<typeof createClient>[0]["socket"];
 
 const log = rawLog.scope("redis");
 
@@ -156,14 +158,40 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   async connect(): Promise<void> {
     await super.connect();
 
+    const socketConfig: RedisSocketConfig = {
+      host: this.server.config.host || "localhost",
+      port: this.server.config.port || 6379,
+    };
+
+    // Add SSL/TLS configuration if enabled
+    if (this.server.config.ssl) {
+      socketConfig.tls = true;
+
+      // Set rejectUnauthorized based on sslRejectUnauthorized setting
+      if (this.server.config.sslRejectUnauthorized !== undefined) {
+        socketConfig.rejectUnauthorized = this.server.config.sslRejectUnauthorized;
+      }
+
+      // Add certificate files if provided
+      if (this.server.config.sslCaFile) {
+        socketConfig.ca = await fs.readFile(this.server.config.sslCaFile, 'utf-8');
+      }
+
+      if (this.server.config.sslCertFile) {
+        socketConfig.cert = await fs.readFile(this.server.config.sslCertFile, 'utf-8');
+      }
+
+      if (this.server.config.sslKeyFile) {
+        socketConfig.key = await fs.readFile(this.server.config.sslKeyFile, 'utf-8');
+      }
+    }
+
     this.redis = createClient({
-      socket: {
-        host: this.server.config.host || "localhost",
-        port: this.server.config.port || 6379,
-      },
+      socket: socketConfig,
       username: this.server.config.user || undefined,
       password: this.server.config.password || "",
       database: parseInt(this.database.database, 10) || 0,
+
     });
     await this.redis.connect();
 
