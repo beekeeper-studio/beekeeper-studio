@@ -71,7 +71,7 @@ export default class PluginRepositoryService {
     return { latestRelease, readme };
   }
 
-  private async fetchReadme(owner: string, repo: string) {
+  protected async fetchReadme(owner: string, repo: string) {
     const response = await this.octokit.request(
       "GET /repos/{owner}/{repo}/readme",
       {
