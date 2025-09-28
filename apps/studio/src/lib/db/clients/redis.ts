@@ -438,106 +438,55 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   private findBestTransformMethod(command: string, optionalArgs: string[]) {
     const commandLower = command.toLowerCase();
-    const normalizedArgs = optionalArgs.map(arg => arg.toLowerCase().replace(/[^a-z]/g, ''));
+    const argsLower = optionalArgs.map(arg => arg.toLowerCase().replace(/[^a-z]/g, ''));
+    const argsSet = new Set(argsLower.filter(Boolean));
     
-    // Score-based approach for better matching
-    let bestMatch: {
-      name: keyof typeof COMMANDS | null;
-      score: number;
-    } = { name: null, score: -1 };
+    // Find all commands that start with our base command
+    const candidates = Object.keys(COMMANDS).filter(name => 
+      name.toLowerCase().startsWith(commandLower)
+    );
     
-    for (const NAME of Object.keys(COMMANDS) as Array<keyof typeof COMMANDS>) {
-      const candidateLower = NAME.toLowerCase();
-      
-      // Skip if not a prefix match
-      if (!candidateLower.startsWith(commandLower)) {
-        continue;
-      }
-      
-      // Calculate match score
-      let score = 0;
-      
-      // Exact match without args should have lower priority if we have args
-      if (candidateLower === commandLower) {
-        // If we have optional args, an exact match without them is less desirable
-        score += normalizedArgs.length > 0 ? 100 : 1000;
-      } else {
-        // Base command matches, now check the remainder
-        const remainder = candidateLower.slice(commandLower.length);
-        
-        // Split remainder by underscore or common separators to find compound parts
-        // e.g., ZRANGE_WITHSCORES -> remainder = "_withscores" -> parts = ["withscores"]
-        const remainderParts = remainder.split(/[_\-]/).filter(p => p.length > 0);
-        
-        // Count how many parts match and how many don't
-        let matchedParts = 0;
-        let unmatchedParts = 0;
-        
-        // Score each part of the compound command against optional args
-        for (const part of remainderParts) {
-          let partMatched = false;
-          for (const arg of normalizedArgs) {
-            if (arg && (part === arg || part.includes(arg) || arg.includes(part))) {
-              // Exact match of part to arg gets higher score
-              score += part === arg ? 500 : 250;
-              matchedParts++;
-              partMatched = true;
-              break; // Count each part only once
-            }
-          }
-          if (!partMatched) {
-            unmatchedParts++;
-          }
-        }
-        
-        // Bonus for matching multiple args from the command
-        if (matchedParts > 0) {
-          score += matchedParts * 100;
-        }
-        
-        // Heavy penalty for unmatched parts (e.g., WITHSCORES when it's not in args)
-        if (unmatchedParts > 0) {
-          score -= unmatchedParts * 400;
-        }
-      }
-      
-      // Check if important args like "withscores" are in the candidate name
-      // Only give bonus if the arg is actually present
-      for (const arg of normalizedArgs) {
-        // Special handling for common Redis modifiers
-        if (arg === 'withscores' && candidateLower.includes('withscores')) {
-          score += 300;
-        }
-        if (arg === 'byscore' && candidateLower.includes('byscore')) {
-          score += 200;
-        }
-        if (arg === 'bylex' && candidateLower.includes('bylex')) {
-          score += 200;
-        }
-        if (arg === 'rev' && candidateLower.includes('rev')) {
-          score += 200;
-        }
-      }
-      
-      // Additional penalty for commands that have modifiers not in our args
-      // This catches cases where the command name has withscores but we don't want it
-      const commonModifiers = ['withscores', 'byscore', 'bylex', 'rev', 'limit'];
-      for (const modifier of commonModifiers) {
-        if (candidateLower.includes(modifier) && !normalizedArgs.includes(modifier)) {
-          score -= 200;
-        }
-      }
-      
-      if (score > bestMatch.score) {
-        bestMatch = { name: NAME, score };
-      }
-    }
+    if (candidates.length === 0) return null;
     
-    console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Matched: ${bestMatch.name || 'none'}, Score: ${bestMatch.score}`);
+    // Score each candidate
+    const scored = candidates.map(name => {
+      const nameLower = name.toLowerCase();
+      const suffix = nameLower.slice(commandLower.length);
+      
+      // Extract parts from the suffix (split by _ or -)
+      const suffixParts = suffix.split(/[_\-]/).filter(Boolean);
+      const suffixSet = new Set(suffixParts);
+      
+      // Calculate match quality
+      const matchedArgs = [...argsSet].filter(arg => suffixSet.has(arg));
+      const unmatchedSuffixParts = [...suffixSet].filter(part => !argsSet.has(part));
+      
+      return {
+        name,
+        exactMatch: nameLower === commandLower,
+        matchedCount: matchedArgs.length,
+        unmatchedCount: unmatchedSuffixParts.length,
+        totalSuffixParts: suffixParts.length,
+        // Prefer exact matches when no args, or suffix matches when args present
+        score: nameLower === commandLower && argsSet.size === 0 ? 1000 :
+               matchedArgs.length * 100 - unmatchedSuffixParts.length * 200
+      };
+    });
     
-    return bestMatch.name 
-      ? getTransformReply(COMMANDS[bestMatch.name], this.hello.proto)
-      : null;
+    // Sort by score and pick the best
+    scored.sort((a, b) => {
+      // First by score
+      if (b.score !== a.score) return b.score - a.score;
+      // Then prefer fewer unmatched parts
+      if (a.unmatchedCount !== b.unmatchedCount) return a.unmatchedCount - b.unmatchedCount;
+      // Then prefer shorter names (more specific)
+      return a.name.length - b.name.length;
+    });
+    
+    const best = scored[0];
+    console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Matched: ${best.name}, Score: ${best.score}`);
+    
+    return getTransformReply(COMMANDS[best.name as keyof typeof COMMANDS], this.hello.proto);
   }
 
   async executeQuery(queryText: string): Promise<NgQueryResult[]> {
