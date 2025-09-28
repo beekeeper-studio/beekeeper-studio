@@ -103,7 +103,6 @@ function redisCompletion(context: CompletionContext) {
         }
 
         if (argument.arguments) {
-          console.log("argument.arguments", argument.arguments);
           for (const argument1 of argument.arguments) {
             if (argument1.token) {
               options.push({
@@ -115,7 +114,6 @@ function redisCompletion(context: CompletionContext) {
             }
 
             if (argument1.arguments) {
-              console.log("argument1.arguments", argument1.arguments);
               for (const argument2 of argument1.arguments) {
                 if (argument2.token) {
                   options.push({

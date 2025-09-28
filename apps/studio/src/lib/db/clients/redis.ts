@@ -604,10 +604,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
     return value.map((entry) => {
       if (entry.id === undefined) throw new Error(`Missing id field`);
-      if (entry.data === undefined) throw new Error(`Missing data field`);
+      if (entry.message === undefined) throw new Error(`Missing message field`);
       return {
         id: this.preparePrimitive(entry.id),
-        data: this.prepareHash(entry.data),
+        message: this.prepareHash(entry.message),
       };
     });
   }
@@ -664,7 +664,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         for (const entry of stream) {
           // Use the original ID, or * for auto-generation if ID is malformed
           const entryId = entry.id && entry.id !== "" ? entry.id : "*";
-          await this.redis.xAdd(key, entryId, entry.data);
+          await this.redis.xAdd(key, entryId, entry.message);
         }
         break;
       }
@@ -697,7 +697,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         return this.redis.hGetAll(key);
       case "stream": {
         const result = await this.redis.xRange(key, "-", "+");
-        return result.map((r) => ({ id: r.id, data: r.message }));
+        return result.map((r) => ({ id: r.id, message: r.message }));
       }
       case "ReJSON-RL": {
         const result = await this.redis.json.get(key, { path: "$" });
