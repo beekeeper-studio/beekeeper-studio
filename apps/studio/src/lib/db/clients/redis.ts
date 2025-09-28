@@ -393,11 +393,16 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         continue;
       }
 
+      // required args include command itself too (especially important for commands consisting of multiple words)
       const requiredArgs = commandWithArgs.slice(0, Math.abs(info.arity));
       const optionalArgs = commandWithArgs.slice(requiredArgs.length);
 
+      // For multi-word commands, include command parts beyond the first word as transform args
+      const commandParts = requiredArgs.slice(1); // Skip the base command word
+      const transformArgs = [...commandParts, ...optionalArgs];
+
       // Find most suitable predefined method for transforming the reply
-      const transformResult = this.findBestTransformMethod(command, optionalArgs);
+      const transformResult = this.findBestTransformMethod(command, transformArgs);
 
       try {
         const result = await this.redis.sendCommand(commandWithArgs);
