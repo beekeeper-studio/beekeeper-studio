@@ -452,7 +452,12 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
       try {
         const result = await this.redis.sendCommand(commandWithArgs);
-        const transformed = transformResult?.transformReply ? transformResult.transformReply(result) : result;
+        const transformedRaw = transformResult?.transformReply ? transformResult.transformReply(result) : result;
+        // Convert sets to arrays
+        const transformed = JSON.parse(JSON.stringify(transformedRaw, (_key, value) => (value instanceof Set ? [...value] : value)))
+
+        console.log("RESULT", result);
+        console.log("TRANSFORMED", transformed);
 
         if (["info"].includes(command)) {
           results.push(makeObjectResult(parseInfo(transformed)));
@@ -543,6 +548,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       'command+getkeys': 'COMMAND_GETKEYS',
       'command+info': 'COMMAND_INFO',
       'command+list': 'COMMAND_LIST',
+      'command+help': null, // do not transform
     };
 
     // Build lookup key from command + sorted args
@@ -555,12 +561,14 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     let transformCommand = transformMap[lookupKey];
 
     // If no exact match, try just the base command
-    if (!transformCommand) {
+    // But don't override explicit null values
+    if (transformCommand === undefined) {
       transformCommand = transformMap[commandLower];
     }
 
     // If still no match, try automatic 1:1 mapping (case-insensitive)
-    if (!transformCommand) {
+    // But don't override explicit null values
+    if (transformCommand === undefined) {
       const commandUpper = commandLower.toUpperCase();
       if (COMMANDS[commandUpper as keyof typeof COMMANDS]) {
         transformCommand = commandUpper;
@@ -572,6 +580,15 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
                        transformCommand ? '1:1' : 'none';
 
     console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Lookup: "${lookupKey}", Matched: ${transformCommand || 'none'} (${mappingType})`);
+
+    // Handle explicit null case (no transformation should be applied)
+    if (transformCommand === null) {
+      return {
+        transformReply: null,
+        commandDefinition: null,
+        isReadOnly: false
+      };
+    }
 
     if (transformCommand && COMMANDS[transformCommand as keyof typeof COMMANDS]) {
       const commandDefinition = COMMANDS[transformCommand as keyof typeof COMMANDS];
