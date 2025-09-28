@@ -130,6 +130,7 @@ function makeCursorResult(result: unknown) {
         : []),
     ],
     rowCount: 1,
+    affectedRows: 0,
   };
 }
 
@@ -140,6 +141,7 @@ function makeGenericResult(result: unknown) {
       : [{ result }],
     fields: [{ id: "result", name: "result" }],
     rowCount: Array.isArray(result) ? result.length : 1,
+    affectedRows: 0,
   };
 }
 
@@ -395,32 +397,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       const requiredArgs = commandWithArgs.slice(0, Math.abs(info.arity));
       const optionalArgs = commandWithArgs.slice(requiredArgs.length);
 
-      let lastName: keyof typeof COMMANDS | null = null;
-      let lastNumArgsMatched = 0;
-
       // Find most suitable predefined method for transforming the reply
-      // TODO: This is hacky, but it works great for now
-      for (const NAME of Object.keys(COMMANDS)) {
-        const name = NAME.toLowerCase();
-
-        if (name.startsWith(command)) {
-          const argsMatched = optionalArgs
-            .map((arg) => name.includes(arg))
-            .filter(Boolean);
-
-          if (
-            (optionalArgs.length === 0 && !lastName) ||
-            argsMatched.length > lastNumArgsMatched
-          ) {
-            lastNumArgsMatched = argsMatched.length;
-            lastName = NAME;
-          }
-        }
-      }
-
-      const transformResult = lastName
-        ? getTransformReply(COMMANDS[lastName], this.hello.proto)
-        : null;
+      const transformResult = this.findBestTransformMethod(command, optionalArgs);
 
       try {
         const result = await this.redis.sendCommand(commandWithArgs);
@@ -456,6 +434,110 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         // you can't cancel redis commands
       },
     };
+  }
+
+  private findBestTransformMethod(command: string, optionalArgs: string[]) {
+    const commandLower = command.toLowerCase();
+    const normalizedArgs = optionalArgs.map(arg => arg.toLowerCase().replace(/[^a-z]/g, ''));
+    
+    // Score-based approach for better matching
+    let bestMatch: {
+      name: keyof typeof COMMANDS | null;
+      score: number;
+    } = { name: null, score: -1 };
+    
+    for (const NAME of Object.keys(COMMANDS) as Array<keyof typeof COMMANDS>) {
+      const candidateLower = NAME.toLowerCase();
+      
+      // Skip if not a prefix match
+      if (!candidateLower.startsWith(commandLower)) {
+        continue;
+      }
+      
+      // Calculate match score
+      let score = 0;
+      
+      // Exact match without args should have lower priority if we have args
+      if (candidateLower === commandLower) {
+        // If we have optional args, an exact match without them is less desirable
+        score += normalizedArgs.length > 0 ? 100 : 1000;
+      } else {
+        // Base command matches, now check the remainder
+        const remainder = candidateLower.slice(commandLower.length);
+        
+        // Split remainder by underscore or common separators to find compound parts
+        // e.g., ZRANGE_WITHSCORES -> remainder = "_withscores" -> parts = ["withscores"]
+        const remainderParts = remainder.split(/[_\-]/).filter(p => p.length > 0);
+        
+        // Count how many parts match and how many don't
+        let matchedParts = 0;
+        let unmatchedParts = 0;
+        
+        // Score each part of the compound command against optional args
+        for (const part of remainderParts) {
+          let partMatched = false;
+          for (const arg of normalizedArgs) {
+            if (arg && (part === arg || part.includes(arg) || arg.includes(part))) {
+              // Exact match of part to arg gets higher score
+              score += part === arg ? 500 : 250;
+              matchedParts++;
+              partMatched = true;
+              break; // Count each part only once
+            }
+          }
+          if (!partMatched) {
+            unmatchedParts++;
+          }
+        }
+        
+        // Bonus for matching multiple args from the command
+        if (matchedParts > 0) {
+          score += matchedParts * 100;
+        }
+        
+        // Heavy penalty for unmatched parts (e.g., WITHSCORES when it's not in args)
+        if (unmatchedParts > 0) {
+          score -= unmatchedParts * 400;
+        }
+      }
+      
+      // Check if important args like "withscores" are in the candidate name
+      // Only give bonus if the arg is actually present
+      for (const arg of normalizedArgs) {
+        // Special handling for common Redis modifiers
+        if (arg === 'withscores' && candidateLower.includes('withscores')) {
+          score += 300;
+        }
+        if (arg === 'byscore' && candidateLower.includes('byscore')) {
+          score += 200;
+        }
+        if (arg === 'bylex' && candidateLower.includes('bylex')) {
+          score += 200;
+        }
+        if (arg === 'rev' && candidateLower.includes('rev')) {
+          score += 200;
+        }
+      }
+      
+      // Additional penalty for commands that have modifiers not in our args
+      // This catches cases where the command name has withscores but we don't want it
+      const commonModifiers = ['withscores', 'byscore', 'bylex', 'rev', 'limit'];
+      for (const modifier of commonModifiers) {
+        if (candidateLower.includes(modifier) && !normalizedArgs.includes(modifier)) {
+          score -= 200;
+        }
+      }
+      
+      if (score > bestMatch.score) {
+        bestMatch = { name: NAME, score };
+      }
+    }
+    
+    console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Matched: ${bestMatch.name || 'none'}, Score: ${bestMatch.score}`);
+    
+    return bestMatch.name 
+      ? getTransformReply(COMMANDS[bestMatch.name], this.hello.proto)
+      : null;
   }
 
   async executeQuery(queryText: string): Promise<NgQueryResult[]> {
