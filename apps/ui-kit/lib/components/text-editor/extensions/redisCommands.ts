@@ -11099,4 +11099,4 @@ export default {
       }
     ]
   }
-};
+} as const;
