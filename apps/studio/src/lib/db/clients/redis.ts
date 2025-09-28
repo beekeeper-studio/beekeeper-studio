@@ -440,27 +440,27 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     const commandLower = command.toLowerCase();
     const argsLower = optionalArgs.map(arg => arg.toLowerCase().replace(/[^a-z]/g, ''));
     const argsSet = new Set(argsLower.filter(Boolean));
-    
+
     // Find all commands that start with our base command
-    const candidates = Object.keys(COMMANDS).filter(name => 
+    const candidates = Object.keys(COMMANDS).filter(name =>
       name.toLowerCase().startsWith(commandLower)
     );
-    
+
     if (candidates.length === 0) return null;
-    
+
     // Score each candidate
     const scored = candidates.map(name => {
       const nameLower = name.toLowerCase();
       const suffix = nameLower.slice(commandLower.length);
-      
+
       // Extract parts from the suffix (split by _ or -)
-      const suffixParts = suffix.split(/[_\-]/).filter(Boolean);
+      const suffixParts = suffix.split(/[_-]/).filter(Boolean);
       const suffixSet = new Set(suffixParts);
-      
+
       // Calculate match quality
       const matchedArgs = [...argsSet].filter(arg => suffixSet.has(arg));
       const unmatchedSuffixParts = [...suffixSet].filter(part => !argsSet.has(part));
-      
+
       return {
         name,
         exactMatch: nameLower === commandLower,
@@ -472,7 +472,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
                matchedArgs.length * 100 - unmatchedSuffixParts.length * 200
       };
     });
-    
+
     // Sort by score and pick the best
     scored.sort((a, b) => {
       // First by score
@@ -482,10 +482,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       // Then prefer shorter names (more specific)
       return a.name.length - b.name.length;
     });
-    
+
     const best = scored[0];
     console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Matched: ${best.name}, Score: ${best.score}`);
-    
+
     return getTransformReply(COMMANDS[best.name as keyof typeof COMMANDS], this.hello.proto);
   }
 
