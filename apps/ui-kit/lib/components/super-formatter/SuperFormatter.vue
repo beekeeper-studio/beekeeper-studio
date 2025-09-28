@@ -1,7 +1,7 @@
 <template>
   <section class="BksUiKit BksSuperFormatter" ref="super-formatter">
     <div class="core-columns">
-      <div v-if="canAddPresets" class="presets">
+      <div v-if="canAddPresets && !addNewPreset" class="presets">
         <label>
           Preset
           <select
@@ -24,12 +24,35 @@
           <i class="material-icons">add_circle</i>
         </button>
       </div>
+      <div v-if="addNewPreset" class="presets">
+        <label>
+          Preset
+          <select
+            @change="handlePresetChange"
+            v-model="selectedPresetId"
+          >
+            <option
+              v-for="opt in presetList"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+        </label>
+        <button
+          type="button"
+          class="btn btn-fab"
+        >
+          Cancel
+        </button>
+      </div>
       <div class="formatter-settings">
         <label class="formatter-settings__inputs">
           Tab Width
           <input
-            @change="handleOptionChange"
-            v-model="unsavedPreset['tabWidth']"
+            @change="updatePreview"
+            v-model.number="unsavedPreset['tabWidth']"
             type="number"
             max="20"
             min="1"
@@ -40,7 +63,7 @@
           <span class="sr-only">Use Tabs</span>
           <span class="switch-control">
             <input
-              @change="handleOptionChange"
+              @change="updatePreview"
               v-model="unsavedPreset['useTabs']"
               type="checkbox"
               aria-label="Use Tabs"
@@ -51,7 +74,7 @@
         <label class="formatter-settings__inputs">
           Keyword Case
           <select
-            @change="handleOptionChange"
+            @change="updatePreview"
             v-model="unsavedPreset['keywordCase']"
           >
             <option v-for="opt in caseOptions" :key="opt.value" :value="opt.value">
@@ -62,7 +85,7 @@
         <label class="formatter-settings__inputs">
           Data Type Case
           <select
-            @change="handleOptionChange"
+            @change="updatePreview"
             v-model="unsavedPreset['dataTypeCase']"
           >
             <option v-for="opt in caseOptions" :key="opt.value" :value="opt.value">
@@ -73,7 +96,7 @@
         <label class="formatter-settings__inputs">
           Function Case
           <select
-            @change="handleOptionChange"
+            @change="updatePreview"
             v-model="unsavedPreset['functionCase']"
           >
             <option v-for="opt in caseOptions" :key="opt.value" :value="opt.value">
@@ -85,7 +108,7 @@
           <span class="sr-only">Logical Operator New Line</span>
           <span class="switch-control">
             <input
-              @change="handleOptionChange"
+              @change="updatePreview"
               v-model="unsavedPreset['logicalOperatorNewline']"
               type="checkbox"
               aria-label="logical operator new line"
@@ -97,8 +120,8 @@
         <label class="formatter-settings__inputs">
           Expression Width
           <input
-            @change="handleOptionChange"
-            v-model="unsavedPreset['expressionWidth']"
+            @change="updatePreview"
+            v-model.number="unsavedPreset['expressionWidth']"
             type="number"
             max="100"
             min="1"
@@ -108,8 +131,8 @@
         <label class="formatter-settings__inputs">
           Lines Between Queries
           <input
-            @change="handleOptionChange"
-            v-model="unsavedPreset['linesBetweenQueries']"
+            @change="updatePreview"
+            v-model.number="unsavedPreset['linesBetweenQueries']"
             type="number"
             max="20"
             min="1"
@@ -120,7 +143,7 @@
           <span class="sr-only">Dense Operators</span>
           <span class="switch-control">
             <input
-              @change="handleOptionChange"
+              @change="updatePreview"
               v-model="unsavedPreset['denseOperators']"
               type="checkbox"
               aria-label="Use Dense Operators"
@@ -132,7 +155,7 @@
           <span class="sr-only">New Line Before Semicolon</span>
           <span class="switch-control">
             <input
-              @change="handleOptionChange"
+              @change="updatePreview"
               v-model="unsavedPreset['newlineBeforeSemicolon']"
               type="checkbox"
               aria-label="new line before semicolon"
@@ -145,9 +168,17 @@
         <button
           class="btn btn-small"
           type="button"
+          @click="savePreset"
+          :disabled="!shouldBeSaved"
           v-if="canAddPresets"
         >
           Save preset
+          <span 
+            v-if="shouldBeSaved"
+            class="material-icons-outlined"
+          >
+            pending
+          </span>
         </button>
         <div class="formatter-buttons__btn-group">
           <button
@@ -182,6 +213,7 @@
 
 <script lang="ts">
 import Vue from "vue"
+import isEqual from 'lodash/isEqual'
 import props from './props'
 import { format } from 'sql-formatter'
 
@@ -212,7 +244,9 @@ export default Vue.extend({
         denseOperators: false,
         newlineBeforeSemicolon: false
       },
-      selectedPresetId: 1
+      selectedPresetId: 1,
+      addNewPresetName: null,
+      addNewPreset: false
     }
   },
   mixins: [],
@@ -230,26 +264,36 @@ export default Vue.extend({
         value: preset.id,
         label: preset.name
       }))
+    },
+    shouldBeSaved() {
+      return !isEqual(this.unsavedPreset, this.selectedPreset)
     }
   },
   methods: {
     applyFormat() {
-      this.value = format(this.value, {
-        language: this.formatterDialect,
-        ...this.unsavedPreset
-      })
+      this.$emit('bks-apply-preset', this.selectedPreset)
     },
     copyToClipboard() {
       this.clipboard(this.value)
     },
-    handleOptionChange() {
+    updatePreview() {
       this.value = format(this.value, {
         language: this.formatterDialect,
         ...this.unsavedPreset
       })
     },
     handlePresetChange() {
-      console.log(this.selectedPresetId)
+      const presetValues = this.presets.find(p => p.id === this.selectedPresetId)
+      this.unsavedPreset = { ...presetValues.config }
+      this.selectedPreset = { ...presetValues.config }
+      this.updatePreview()
+    },
+    savePreset() {
+      this.selectedPreset = { ...this.unsavedPreset }
+      this.$emit('bks-save-preset', {
+        id: this.selectedPresetId,
+        config: this.selectedPreset
+      })
     }
   },
   mounted() {

@@ -73,15 +73,36 @@ export class FormatterPreset extends ApplicationEntity {
     }
   }
 
+  static async addPreset(updateValues: FormatterPresetValues): Promise<TransportFormatterPreset>{
+    const { name, config } = updateValues
+    try {
+      const formatterValues = new FormatterPreset()
+      formatterValues.config = JSON.stringify(config),
+      formatterValues.name = name
+      const savedFormat = await formatterValues.save()
+      return {
+        ...savedFormat,
+        config: JSON.parse(savedFormat.config),
+        systemDefault: Boolean(savedFormat.systemDefault)
+      }
+    } catch (e) {
+      log.error(`Error adding new preset`, e)
+      throw new Error(`Error adding new preset`)
+    }
+  }
+
   static async updatePreset(id: number, updateValues: FormatterPresetValues): Promise<TransportFormatterPreset>{
     const existing = await this.findOne({ where: { id } })
-    const { name, config } = updateValues
+    const { config } = updateValues
     try {
       if (!existing) throw new Error('Preset not found')
       existing.config = JSON.stringify(config)
-      existing.name = name
-      await existing.save()
-      return
+      const savedFormat = await existing.save()
+      return {
+        ...savedFormat,
+        config: JSON.parse(savedFormat.config),
+        systemDefault: Boolean(savedFormat.systemDefault)
+      }
     } catch (e) {
       log.error(`Error updating preset id: ${id}`, e)
       throw new Error(`Error updating preset id: ${id}`)

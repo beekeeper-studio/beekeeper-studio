@@ -7,7 +7,7 @@ export interface Transport {
   id: number | null
   createdAt: Date,
   updatedAt: Date,
-  version?: number
+  version: number
 }
 
 export interface TransportTempFile {

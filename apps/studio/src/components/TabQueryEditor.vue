@@ -255,9 +255,10 @@
             :identifier-dialect="identifierDialect"
             :can-add-presets="true"
             :clipboard="$native.clipboard.writeText"
-            :default-preset="{}"
+            :starting-preset="selectedFormatter"
             :presets="formatterPresets"
-            @bks-value-change="unsavedText = $event.value"
+            @bks-apply-preset="applyPreset"
+            @bks-save-preset="savePreset"
           />
         </div>
       </modal>
@@ -464,6 +465,7 @@
         wrapText: false,
         vimKeymaps: [],
         formatterPresets: [],
+        selectedFormatter: {},
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
          * if we want to switch focus. Why two states? We need a feedback from
@@ -773,13 +775,30 @@
       getPresets() {
         this.$util.send('appdb/formatter/getAll')
           .then((presets) => {
-            console.log(presets)
-            this.formatterPresets = presets;
+            this.formatterPresets = presets
           })
           .catch(err => {
             console.error(err)
             throw new Error(err)
           })
+      },
+      applyPreset() {
+        this.handleFormatterPresetModal({ showFormatter: false })
+      },
+      savePreset({id, config}) {
+        console.log('ohai')
+        this.$util.send('appdb/formatter/updatePreset', {id, updateValues: { config }})
+          .then((presetValues) => {
+            this.selectedFormatter = presetValues.config
+            return this.getPresets()
+          })
+          .catch(err => {
+            console.error(err)
+            throw new Error(err)
+          })
+        // save the preset
+        // call the tabs with the id and set the formatterPresets and defaultPreset value as the id
+        // use notify when it's been saved and all that jazz
       },
       isNumber(value: any) {
         return _.isNumber(value);
