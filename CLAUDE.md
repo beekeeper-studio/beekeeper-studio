@@ -9,7 +9,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 ## Architecture
 
 ### Monorepo Structure
-- **`apps/studio/`** - Main Electron application 
+- **`apps/studio/`** - Main Electron application
 - **`apps/ui-kit/`** - Reusable UI components library (`@beekeeperstudio/ui-kit`)
 - **`apps/sqltools/`** - Currently unused workspace
 
@@ -23,7 +23,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 ### Key Entry Points
 All entrypoints are listed under src-commercial/entrypoints
 - **Main Process**: `src-commercial/entrypoints/main.ts` (Electron main)
-- **Renderer Process**: `src-commercial/entrypoints/renderer.ts` & `src/App.vue` (Vue application) 
+- **Renderer Process**: `src-commercial/entrypoints/renderer.ts` & `src/App.vue` (Vue application)
 - **Preload Script**: `src-commercial/entrypoints/preload.ts`
 - **Utility Process*: `src-commercial/entrypoints/utility.ts`
 
@@ -41,7 +41,7 @@ All entrypoints are listed under src-commercial/entrypoints
 yarn bks:dev              # Start development server (builds lib + starts electron)
 yarn electron:serve       # Alias for bks:dev
 
-# Building  
+# Building
 yarn bks:build            # Build complete app (lib + electron)
 yarn electron:build       # Alias for bks:build
 yarn lib:build            # Build UI kit library only
@@ -49,7 +49,7 @@ yarn lib:dev              # Start UI kit in development/watch mode
 
 # Testing
 yarn test:unit            # Unit tests with Jest
-yarn test:integration     # Integration tests  
+yarn test:integration     # Integration tests
 yarn test:e2e             # End-to-end tests with Playwright
 yarn test:ci              # CI-specific test configuration
 yarn test:codemirror      # CodeMirror-specific tests
@@ -68,7 +68,7 @@ yarn dev:vite             # Watch renderer process (Vite)
 # Building
 yarn build                # Build both main and renderer processes
 yarn build:esbuild        # Build main process only
-yarn build:vite           # Build renderer process only  
+yarn build:vite           # Build renderer process only
 yarn electron:build       # Full production build with electron-builder
 
 # Test Build (Agents - use this to test the build, also good for CI)
@@ -88,7 +88,7 @@ yarn lint                 # ESLint
 components/          # Vue components organized by feature
 ├── common/         # Shared/reusable components
 ├── connection/     # Database connection forms
-├── editor/         # Query editor components  
+├── editor/         # Query editor components
 ├── export/         # Data export functionality
 ├── sidebar/        # Sidebar navigation components
 └── ...
@@ -101,7 +101,7 @@ lib/                # Core business logic
 └── ...
 
 background/         # Electron main process code
-common/            # Shared utilities and models  
+common/            # Shared utilities and models
 store/             # Vuex store modules
 migration/         # Database migration scripts
 assets/            # Styles, fonts, images
@@ -126,7 +126,7 @@ assets/            # Styles, fonts, images
 ## Key Configuration Files
 
 - **ESBuild**: `apps/studio/esbuild.mjs` (main process build)
-- **Vite**: `apps/studio/vite.config.mjs` (renderer process build)  
+- **Vite**: `apps/studio/vite.config.mjs` (renderer process build)
 - **TypeScript**: `apps/studio/tsconfig.json`
 - **Jest**: `apps/studio/jest.config.js` (plus specialized configs)
 - **Electron Builder**: `apps/studio/electron-builder-config.js`
@@ -139,7 +139,7 @@ Always run tests from the appropriate directory:
 
 Test files are organized in `apps/studio/tests/`:
 - `unit/` - Unit tests
-- `integration/` - Integration tests  
+- `integration/` - Integration tests
 - `e2e/` - End-to-end tests with Playwright
 
 ## Development Workflow
@@ -153,7 +153,7 @@ Test files are organized in `apps/studio/tests/`:
 
 ```typescript
 "@" -> "./src"
-"@commercial" -> "./src-commercial"  
+"@commercial" -> "./src-commercial"
 "@shared" -> "./src/shared"
 "assets" -> "./src/assets"
 "@bksLogger" -> "./src/lib/log/rendererLogger"

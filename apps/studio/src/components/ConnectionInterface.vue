@@ -126,7 +126,7 @@
                 </div>
                 <div class="row" v-if="connectionError">
                   <div class="col">
-                    <error-alert :error="connectionError" :help-text="errorHelp" @close="connectionError = null"
+                    <error-alert :error="connectionError" :help-text="errorHelp" :link="errorLink" @close="connectionError = null"
                                  :closable="true"
                     />
                   </div>
@@ -194,6 +194,7 @@ import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
+import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -209,6 +210,7 @@ export default Vue.extend({
       errors: null,
       connectionError: null,
       errorHelp: null,
+      errorLink: null,
       testing: false,
       connecting: false,
       split: null,
@@ -287,15 +289,14 @@ export default Vue.extend({
       })
     },
     connectionError() {
-      console.log("error watch", this.connectionError, this.dialect)
-      if (this.connectionError &&
-        this.dialect == 'sqlserver' &&
-        this.connectionError.message &&
-        this.connectionError.message.includes('self signed certificate')
-      ) {
-        this.errorHelp = `You might need to check 'Trust Server Certificate'`
+
+      if (this.connectionError) {
+        const friendlyHelp = FriendlyErrorHelper.getHelpText(this.config.connectionType, this.connectionError)
+        this.errorHelp = friendlyHelp?.help
+        this.errorLink = friendlyHelp?.link
       } else {
         this.errorHelp = null
+        this.errorLink = null
       }
     }
   },
@@ -422,6 +423,7 @@ export default Vue.extend({
         if (cancelled) return;
         await this.$store.dispatch('connect', { config: this.config, auth })
       } catch (ex) {
+        console.log("CONNECTION ERROR", ex)
         this.connectionError = ex
         this.$noty.error("Error establishing a connection")
         log.error(ex)
