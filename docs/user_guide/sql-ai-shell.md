@@ -56,11 +56,9 @@ You can configure the AI Shell using the Beekeeper Studio [configuration system]
 
 You can provide custom instructions to personalize how the AI Shell responds to your queries. To add custom instructions:
 
-1. Click the settings button (⚙️) in the top right of the AI Shell
-2. Navigate to the **General** tab
+1. Open the settings menu (⚙️).
+2. Go to the General tab.
 3. Add your custom instructions in the provided text field
-
-Custom instructions help the AI understand your preferences, coding style, or specific requirements for your database work.
 
 ![AI Custom Instructions](../assets/images/ai/ai-custom-instructions.png)
 
@@ -91,6 +89,13 @@ There are some limited actions the AI shell can take without your permission, bu
 
 ![AI Asks permission](../assets/images/ai/ai-asks-permission.png)
 
+#### Skipping the prompt in read-only mode
+
+If you prefer not to be prompted every time, you can enable Always allow query execution in read-only mode:
+
+1. Open the Settings menu (⚙️ in the AI Shell).
+2. Go to the General tab.
+3. Toggle **Always allow query execution in read-only mode**.
 
 ### Disabling the AI Shell
 
