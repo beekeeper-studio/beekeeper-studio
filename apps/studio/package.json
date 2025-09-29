@@ -55,7 +55,7 @@
     "@types/semver": "^7.7.0",
     "@uiw/codemirror-theme-monokai": "^4.23.10",
     "ansi-to-html": "^0.7.2",
-    "axios": "^1.8.2",
+    "axios": "^1.12.0",
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "bcryptjs": "^3.0.2",
