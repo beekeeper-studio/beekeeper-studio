@@ -99,3 +99,56 @@ You can disable the AI shell entirely by adding a flag to either your personal o
 {% ini-include section="plugins.bks-ai-shell" %}
 
 Even if the application user has previously entered an API key, this setting will disable the feature and lock out any further usage.
+
+### Troubleshooting
+
+#### Problem fetching Ollama
+
+If AI Shell cannot connect to Ollama, it may be due to **CORS restrictions**. You’ll need to allow requests from Beekeeper Studio.
+
+##### macOS
+
+Run one of the following commands:
+
+```bash
+# Allow all origins
+launchctl setenv OLLAMA_ORIGINS "*"
+
+# Allow only Beekeeper Studio
+launchctl setenv OLLAMA_ORIGINS "plugin://*"
+```
+
+##### Windows
+
+Set an environment variable:
+
+1. Press **Windows + R**, type `sysdm.cpl`, and press **OK**.
+2. Go to **Advanced > Environment Variables**.
+3. Add or edit the variable `OLLAMA_ORIGINS`.
+4. Set the value to:
+
+   * `*` (allow all origins), or
+   * `plugin://*` (only Beekeeper Studio).
+
+##### Linux
+
+Edit the Ollama service config:
+
+```bash
+sudo systemctl edit ollama.service
+```
+
+Add the environment variable:
+
+```
+[Service]
+Environment="OLLAMA_ORIGINS=*"
+# or
+Environment="OLLAMA_ORIGINS=plugin://*"
+```
+
+Then restart the service:
+
+```bash
+sudo systemctl restart ollama
+```
