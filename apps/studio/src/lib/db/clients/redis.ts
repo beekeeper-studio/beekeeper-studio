@@ -534,9 +534,10 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           )
         );
 
-        if (["info"].includes(knownCommand.name)) {
+        if (knownCommand && ["info"].includes(knownCommand.name)) {
           results.push(makeObjectResult(parseInfo(result), line));
         } else if (
+          knownCommand &&
           ["scan", "hscan", "sscan", "zscan"].includes(knownCommand.name)
         ) {
           results.push(makeCursorResult(result, line));
@@ -552,7 +553,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           results.push(makeGenericResult(result, line));
         }
       } catch (error) {
-        results.push(makeQueryError(knownCommand.name, error));
+        results.push(makeQueryError(line, error));
       }
     }
 
