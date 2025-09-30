@@ -36,15 +36,21 @@ let electron = null
 /** @type {fs.FSWatcher[]} */
 const configWatchers = {}
 
+let exitTriggeredByWatcher = false
+
 const restartElectron = _.debounce(() => {
   if (electron) {
+    exitTriggeredByWatcher = true
     process.kill(electron.pid, 'SIGINT')
   }
   // start electron again
   electron = spawn(electronBin, ['.'], { stdio: 'inherit' })
   electron.on('exit', (code, signal) => {
     console.log('electron exited', code, signal)
-    if (!signal) process.exit()
+    if (!exitTriggeredByWatcher && !signal) {
+      process.exit() // kill whole dev process including the watcher
+    }
+    exitTriggeredByWatcher = false
   })
   console.log('spawned electron, pid: ', electron.pid)
 
