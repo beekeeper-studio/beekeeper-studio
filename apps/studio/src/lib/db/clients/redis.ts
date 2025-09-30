@@ -209,7 +209,7 @@ function makeGenericResult(result: unknown) {
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   redis: RedisClientType;
-  respVersion = 2; // This is the default for most instances
+  respVersion: 2 | 3 = 2; // This is the default for most instances
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, redisContext, server, database);
