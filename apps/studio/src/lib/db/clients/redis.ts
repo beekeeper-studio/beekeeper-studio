@@ -518,7 +518,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       try {
         const rawResult = await this.redis.sendCommand(commandWithArgs);
         const transform = knownCommandDef
-          ? getTransformReply(knownCommandDef, this.hello.proto)
+          ? getTransformReply(knownCommandDef, this.respVersion)
           : null;
         const transformedResult = transform ? transform(rawResult) : rawResult;
 
