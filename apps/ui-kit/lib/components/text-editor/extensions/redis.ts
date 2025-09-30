@@ -28,7 +28,7 @@ const REDIS_COMMAND_DOCS_KEYS_REVERSED = Object.keys(
 
 // Reverse is to ensure that more specific commands are matched before command groups
 // This highly depends on sorting order of the keys in REDIS_COMMAND_DOCS
-function findCommand(text: string): string | null {
+function findCommand(text: string): keyof typeof REDIS_COMMAND_DOCS | null {
   const lowerText = text.toLowerCase();
 
   for (const key of REDIS_COMMAND_DOCS_KEYS_REVERSED) {
@@ -184,8 +184,8 @@ export function redisCompletion(
   const matchedCommand = findCommand(trimmedLine);
 
   if (matchedCommand) {
-    const info: any = REDIS_COMMAND_DOCS[matchedCommand];
-    if (info?.tokens?.length) {
+    const info = REDIS_COMMAND_DOCS[matchedCommand];
+    if (info && 'tokens' in info) {
       for (const token of info.tokens) {
         options.push({
           label: token,
