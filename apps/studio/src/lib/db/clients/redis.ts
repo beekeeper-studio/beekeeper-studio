@@ -49,9 +49,9 @@ const redisContext: AppContextProvider = {
   },
 };
 
-function objectFromPairs(pairs: unknown[]) {
-  return Object.fromEntries(_.chunk(pairs, 2));
-}
+// function objectFromPairs(pairs: unknown[]) {
+//   return Object.fromEntries(_.chunk(pairs, 2));
+// }
 
 function has(haystack: string[], needle: string) {
   return haystack.some((item) =>
@@ -59,7 +59,9 @@ function has(haystack: string[], needle: string) {
   );
 }
 
-const REDIS_COMMAND_DOCS_KEYS_REVERSED = Object.keys(REDIS_COMMAND_DOCS).reverse() as (keyof typeof REDIS_COMMAND_DOCS)[];
+const REDIS_COMMAND_DOCS_KEYS_REVERSED = Object.keys(
+  REDIS_COMMAND_DOCS
+).reverse() as (keyof typeof REDIS_COMMAND_DOCS)[];
 
 function parseKnownRedisCommand(commandWithArgs: string[]) {
   const line = commandWithArgs.join(" ").toLowerCase();
@@ -71,6 +73,7 @@ function parseKnownRedisCommand(commandWithArgs: string[]) {
       const keyLength = key.split(" ").length;
       return {
         name: key,
+        command: commandWithArgs.slice(0, keyLength),
         args: commandWithArgs.slice(keyLength),
       };
     }
@@ -86,10 +89,12 @@ function getKnownRedisCommandDef(
   switch (command) {
     // Some commands have different response formats based on arguments
     case "zrange":
+    case "zrevrange":
       return has(args, "withscores")
         ? COMMANDS.zRangeWithScores
         : COMMANDS.zRange;
     case "zrangebyscore":
+    case "zrevrangebyscore":
       return has(args, "withscores")
         ? COMMANDS.zRangeByScoreWithScores
         : COMMANDS.zRangeByScore;
@@ -104,7 +109,7 @@ function getKnownRedisCommandDef(
     }
   }
 
-  log.warn('Command definition not found:', command, args);
+  log.warn("Known command definition not found:", command, args);
   return null;
 }
 
@@ -151,23 +156,18 @@ function parseInfo(info: string) {
   );
 }
 
-function makeObjectResult(result: unknown) {
-  const rows = Object.entries(result).map(([field, value]) => ({
-    field,
-    value,
-  }));
+function makeObjectResult(result: unknown, command: string) {
+  const rows = [result];
   return {
     rows,
-    fields: [
-      { name: "field", id: "field" },
-      { name: "value", id: "value" },
-    ],
+    fields: Object.keys(result).map((key) => ({ name: key, id: key })),
     rowCount: rows.length,
     affectedRows: 0,
+    command,
   };
 }
 
-function makeArrayOfObjectsResult(result: unknown[]) {
+function makeArrayOfObjectsResult(result: unknown[], command: string) {
   return {
     rows: result,
     fields: result.length
@@ -175,10 +175,11 @@ function makeArrayOfObjectsResult(result: unknown[]) {
       : [],
     rowCount: result.length,
     affectedRows: 0,
+    command,
   };
 }
 
-function makeCursorResult(result: unknown) {
+function makeCursorResult(result: unknown, command: string) {
   const { cursor, ...rest } = result as Record<string, unknown>;
   const [data] = Object.values(rest);
   const rows = Array.isArray(data)
@@ -195,10 +196,11 @@ function makeCursorResult(result: unknown) {
     ],
     rowCount: 1,
     affectedRows: 0,
+    command,
   };
 }
 
-function makeGenericResult(result: unknown) {
+function makeGenericResult(result: unknown, command: string) {
   return {
     rows: Array.isArray(result)
       ? result.map((r) => ({ result: r }))
@@ -206,6 +208,7 @@ function makeGenericResult(result: unknown) {
     fields: [{ id: "result", name: "result" }],
     rowCount: Array.isArray(result) ? result.length : 1,
     affectedRows: 0,
+    command,
   };
 }
 
@@ -532,21 +535,21 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         );
 
         if (["info"].includes(knownCommand.name)) {
-          results.push(makeObjectResult(parseInfo(result)));
+          results.push(makeObjectResult(parseInfo(result), line));
         } else if (
           ["scan", "hscan", "sscan", "zscan"].includes(knownCommand.name)
         ) {
-          results.push(makeCursorResult(result));
+          results.push(makeCursorResult(result, line));
         } else if (_.isPlainObject(result)) {
-          results.push(makeObjectResult(result));
+          results.push(makeObjectResult(result, line));
         } else if (
           Array.isArray(result) &&
           result.length &&
           _.isPlainObject(result[0])
         ) {
-          results.push(makeArrayOfObjectsResult(result));
+          results.push(makeArrayOfObjectsResult(result, line));
         } else {
-          results.push(makeGenericResult(result));
+          results.push(makeGenericResult(result, line));
         }
       } catch (error) {
         results.push(makeQueryError(knownCommand.name, error));
