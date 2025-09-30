@@ -146,11 +146,11 @@ describe('Redis', () => {
       expect(hmsetResult[0].rows).toEqual([{ result: 'OK' }]);
 
       const hgetallResult = await connection.executeQuery('HGETALL test:hash');
-      expect(hgetallResult[0].rows).toEqual([
-        { key: 'field1', value: 'value1' },
-        { key: 'field2', value: 'value2' },
-        { key: 'field3', value: 'value3' }
-      ]);
+      expect(hgetallResult[0].rows).toEqual([{
+        field1: "value1",
+        field2: "value2",
+        field3: "value3"
+      }]);
     });
 
     it('should execute HDEL command', async () => {
@@ -160,10 +160,10 @@ describe('Redis', () => {
       expect(hdelResult[0].rows[0].result).toBe(1);
 
       const hgetallResult = await connection.executeQuery('HGETALL test:hash');
-      expect(hgetallResult[0].rows).toEqual([
-        { key: 'field1', value: 'value1' },
-        { key: 'field3', value: 'value3' }
-      ]);
+      expect(hgetallResult[0].rows).toEqual([{
+        field1: "value1",
+        field3: "value3"
+      }]);
     });
 
     it('should execute HEXISTS command', async () => {
@@ -244,7 +244,7 @@ describe('Redis', () => {
       await connection.executeQuery('ZADD test:zset 2.5 "member1"');
 
       const zscoreResult = await connection.executeQuery('ZSCORE test:zset "member1"');
-      expect(zscoreResult[0].rows).toEqual([{ result: '2.5' }]);
+      expect(zscoreResult[0].rows).toEqual([{ result: 2.5 }]);
     });
   });
 
@@ -538,10 +538,10 @@ describe('Redis', () => {
       await connection.executeQuery('ZADD test:zset 1 "member1"');
 
       const zincrbyResult = await connection.executeQuery('ZINCRBY test:zset 2 "member1"');
-      expect(zincrbyResult[0].rows).toEqual([{ result: '3' }]);
+      expect(zincrbyResult[0].rows).toEqual([{ result: 3 }]);
 
       const zscoreResult = await connection.executeQuery('ZSCORE test:zset "member1"');
-      expect(zscoreResult[0].rows).toEqual([{ result: '3' }]);
+      expect(zscoreResult[0].rows).toEqual([{ result: 3 }]);
     });
 
     it('should execute ZRANK command', async () => {
@@ -835,9 +835,7 @@ describe('Redis', () => {
 
     it('should execute PUBSUB NUMSUB command', async () => {
       const numsubResult = await connection.executeQuery('PUBSUB NUMSUB test:channel');
-      expect(numsubResult[0].rows).toHaveLength(2);
-      expect(numsubResult[0].rows[0].result).toBe('test:channel');
-      expect(numsubResult[0].rows[1].result).toBe(0); // No subscribers
+      expect(numsubResult[0].rows).toEqual([{ "test:channel": "0" }]);
     });
 
     it('should execute PUBSUB NUMPAT command', async () => {
@@ -888,9 +886,10 @@ describe('Redis', () => {
       expect(geoaddResult[0].rows[0].result).toBe(2);
 
       const geoposResult = await connection.executeQuery('GEOPOS test:geo "Palermo" "Catania"');
-      expect(geoposResult[0].rows).toHaveLength(2);
-      expect(geoposResult[0].rows[0].result).toHaveLength(2); // [longitude, latitude]
-      expect(geoposResult[0].rows[1].result).toHaveLength(2);
+      expect(geoposResult[0].rows).toEqual([
+        { "longitude": "13.361389338970184", "latitude": "38.1155563954963" },
+        { "longitude": "15.087267458438873", "latitude": "37.50266842333162" }
+      ]);
     });
 
     it('should execute GEODIST command', async () => {
@@ -1026,18 +1025,14 @@ describe('Redis', () => {
       await connection.executeQuery('LPUSH test:list "item"');
 
       const blpopResult = await connection.executeQuery('BLPOP test:list 1');
-      expect(blpopResult[0].rows).toHaveLength(2);
-      expect(blpopResult[0].rows[0].result).toBe('test:list');
-      expect(blpopResult[0].rows[1].result).toBe('item');
+      expect(blpopResult[0].rows).toEqual([{ key: 'test:list', element: 'item' }]);
     });
 
     it('should execute BRPOP command with timeout', async () => {
       await connection.executeQuery('RPUSH test:list "item"');
 
       const brpopResult = await connection.executeQuery('BRPOP test:list 1');
-      expect(brpopResult[0].rows).toHaveLength(2);
-      expect(brpopResult[0].rows[0].result).toBe('test:list');
-      expect(brpopResult[0].rows[1].result).toBe('item');
+      expect(brpopResult[0].rows).toEqual([{ element: "item", key: "test:list" }]);
     });
 
     it('should execute LMOVE command', async () => {
@@ -1230,18 +1225,14 @@ describe('Redis', () => {
       await connection.executeQuery('ZADD test:zset 1 "one" 2 "two" 3 "three"');
 
       const zpopmaxResult = await connection.executeQuery('ZPOPMAX test:zset');
-      expect(zpopmaxResult[0].rows).toHaveLength(2);
-      expect(zpopmaxResult[0].rows[0].result).toBe('three');
-      expect(zpopmaxResult[0].rows[1].result).toBe('3');
+      expect(zpopmaxResult[0].rows).toEqual([{ score: 3, value: "three" }]);
     });
 
     it('should execute ZPOPMIN command', async () => {
       await connection.executeQuery('ZADD test:zset 1 "one" 2 "two" 3 "three"');
 
       const zpopminResult = await connection.executeQuery('ZPOPMIN test:zset');
-      expect(zpopminResult[0].rows).toHaveLength(2);
-      expect(zpopminResult[0].rows[0].result).toBe('one');
-      expect(zpopminResult[0].rows[1].result).toBe('1');
+      expect(zpopminResult[0].rows).toEqual([{ score: 1, value: "one" }]);
     });
   });
 
