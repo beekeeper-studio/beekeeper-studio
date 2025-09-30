@@ -280,42 +280,42 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     // Used in autocomplete
     // ONLY DO THIS WHEN CONNECTING TO THE LATEST VERSION OF REDIS
 
-    function extractArgumentTokens(
-      rawArgs: any[] | undefined,
-      tokens: string[]
-    ) {
-      if (rawArgs) {
-        const args = rawArgs.map(objectFromPairs);
+    // function extractArgumentTokens(
+    //   rawArgs: any[] | undefined,
+    //   tokens: string[]
+    // ) {
+    //   if (rawArgs) {
+    //     const args = rawArgs.map(objectFromPairs);
 
-        for (const a of args) {
-          if (typeof a.token === "string") {
-            tokens.push(a.token.toLowerCase());
-          }
+    //     for (const a of args) {
+    //       if (typeof a.token === "string") {
+    //         tokens.push(a.token.toLowerCase());
+    //       }
 
-          if (a.arguments) {
-            extractArgumentTokens(a.arguments, tokens);
-          }
-        }
-      }
-    }
+    //       if (a.arguments) {
+    //         extractArgumentTokens(a.arguments, tokens);
+    //       }
+    //     }
+    //   }
+    // }
 
-    const commands = await this.redis.commandList();
-    const docs: any[] = await Promise.all(
-      commands.map((c) => this.redis.sendCommand(["COMMAND", "DOCS", c]))
-    );
-    const mapped = _(Object.fromEntries(docs))
-      .mapKeys((_, key) => key.replaceAll("|", " ").toLowerCase())
-      .mapValues((value) => {
-        const { summary, ...rest } = objectFromPairs(value);
-        const tokens: string[] = [];
-        extractArgumentTokens(rest.arguments, tokens);
-        return { summary, tokens };
-      })
-      .toPairs()
-      .sortBy(0)
-      .fromPairs()
-      .value();
-    await fs.writeFile("commands.json", JSON.stringify(mapped));
+    // const commands = await this.redis.commandList();
+    // const docs: any[] = await Promise.all(
+    //   commands.map((c) => this.redis.sendCommand(["COMMAND", "DOCS", c]))
+    // );
+    // const mapped = _(Object.fromEntries(docs))
+    //   .mapKeys((_, key) => key.replaceAll("|", " ").toLowerCase())
+    //   .mapValues((value) => {
+    //     const { summary, ...rest } = objectFromPairs(value);
+    //     const tokens: string[] = [];
+    //     extractArgumentTokens(rest.arguments, tokens);
+    //     return { summary, tokens };
+    //   })
+    //   .toPairs()
+    //   .sortBy(0)
+    //   .fromPairs()
+    //   .value();
+    // await fs.writeFile("commands.json", JSON.stringify(mapped));
   }
 
   async versionString(): Promise<string> {
