@@ -58,7 +58,7 @@ export const redisStreamParser = StreamLanguage.define<RedisState>({
   },
 
   token(stream, state) {
-    // Handle line start - reset state for new line
+    // Line start - reset state
     if (stream.sol()) {
       state.commandName = null;
       state.commandWordCount = 0;
@@ -66,53 +66,44 @@ export const redisStreamParser = StreamLanguage.define<RedisState>({
       state.wordPosition = 0;
     }
 
-    // Skip whitespace
-    if (stream.eatSpace()) {
-      return null;
-    }
+    if (stream.eatSpace()) return null;
 
-    // Handle comments
-    if (stream.match(/^#.*/)) {
-      return "comment";
-    }
+    // Comments
+    if (stream.match(/^#.*/)) return "comment";
 
-    // Handle strings
+    // String handling
     if (state.inString) {
-      let escaped = false;
       while (!stream.eol()) {
         const ch = stream.next();
-        if (ch === state.stringDelim && !escaped) {
+        if (ch === "\\") {
+          stream.next(); // Skip escaped character
+        } else if (ch === state.stringDelim) {
           state.inString = false;
           state.stringDelim = null;
           break;
         }
-        escaped = !escaped && ch === "\\";
       }
       return "string";
     }
 
-    // Check for string start
+    // String start
     if (stream.match(/^["']/)) {
       state.inString = true;
       state.stringDelim = stream.current();
       return "string";
     }
 
-    // Handle numbers (including negative and floats)
-    if (stream.match(/^-?\d+(\.\d+)?/)) {
-      return "number";
-    }
+    // Numbers
+    if (stream.match(/^-?\d+(\.\d+)?/)) return "number";
 
-    // Handle words (commands, keywords, arguments)
-    const wordMatch = stream.match(/^[^\s"']+/);
-    if (wordMatch) {
-      const word = wordMatch[0];
+    // Words
+    if (stream.match(/^[^\s"']+/)) {
+      const word = stream.current();
       const wordLower = word.toLowerCase();
 
-      // If no command detected yet, find it from the line
+      // Detect command once on first word
       if (!state.commandName) {
         const command = findCommand(stream.string);
-
         if (command) {
           state.commandName = command;
           state.commandWordCount = command.split(" ").length;
@@ -123,24 +114,16 @@ export const redisStreamParser = StreamLanguage.define<RedisState>({
         }
       }
 
-      // Check if this word is part of the command name itself
-      if (state.commandName && state.wordPosition < state.commandWordCount) {
-        state.wordPosition++;
-        return "keyword";
-      }
+      // Classify word: command part or keyword argument or regular atom
+      const isCommandWord = state.wordPosition < state.commandWordCount;
+      const isKeyword = state.commandTokens.has(wordLower);
 
-      // Check if this word is a known token/keyword for this command
-      if (state.commandTokens.has(wordLower)) {
-        state.wordPosition++;
-        return "keyword";
-      }
-
-      // Default: regular argument
       state.wordPosition++;
-      return "atom";
+
+      return isCommandWord || isKeyword ? "keyword" : "atom";
     }
 
-    // Consume any other character
+    // Fallback
     stream.next();
     return null;
   },
