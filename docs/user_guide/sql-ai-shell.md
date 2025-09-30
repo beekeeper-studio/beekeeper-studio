@@ -54,11 +54,14 @@ You can configure the AI Shell using the Beekeeper Studio [configuration system]
 
 ## Custom Instructions
 
-You can provide custom instructions to personalize how the AI Shell responds to your queries. To add custom instructions:
+You can provide custom instructions to personalize how the AI Shell responds to your messages. To add custom instructions:
 
 1. Open the settings menu (⚙️).
 2. Go to the General tab.
 3. Add your custom instructions in the provided text field
+
+Your instructions are appended to the AI Shell’s base instructions and are included with **every message you send** as a system prompt, ensuring consistent behavior across sessions.
+For details, see [the instructions repository](https://github.com/beekeeper-studio/bks-ai-shell/tree/main/instructions).
 
 ![AI Custom Instructions](../assets/images/ai/ai-custom-instructions.png)
 
@@ -89,13 +92,13 @@ There are some limited actions the AI shell can take without your permission, bu
 
 ![AI Asks permission](../assets/images/ai/ai-asks-permission.png)
 
-#### Skipping the prompt in read-only mode
+#### Allow execution of read-only queries without asking permission
 
-If you prefer not to be prompted every time, you can enable Always allow query execution in read-only mode:
+If you prefer not to be asked every time, you can enable `Always allow execution of read-only queries`:
 
 1. Open the Settings menu (⚙️ in the AI Shell).
 2. Go to the General tab.
-3. Toggle **Always allow query execution in read-only mode**.
+3. Toggle **Always allow execution of read-only queries**.
 
 ### Disabling the AI Shell
 
@@ -105,13 +108,13 @@ You can disable the AI shell entirely by adding a flag to either your personal o
 
 Even if the application user has previously entered an API key, this setting will disable the feature and lock out any further usage.
 
-### Troubleshooting
+## Troubleshooting
 
-#### Problem fetching Ollama
+### Problem fetching Ollama
 
 If AI Shell cannot connect to Ollama, it may be due to **CORS restrictions**. You’ll need to allow requests from Beekeeper Studio.
 
-##### macOS
+#### macOS
 
 Run one of the following commands:
 
@@ -123,7 +126,7 @@ launchctl setenv OLLAMA_ORIGINS "*"
 launchctl setenv OLLAMA_ORIGINS "plugin://*"
 ```
 
-##### Windows
+#### Windows
 
 Set an environment variable:
 
@@ -135,7 +138,7 @@ Set an environment variable:
    * `*` (allow all origins), or
    * `plugin://*` (only Beekeeper Studio).
 
-##### Linux
+#### Linux
 
 Edit the Ollama service config:
 
