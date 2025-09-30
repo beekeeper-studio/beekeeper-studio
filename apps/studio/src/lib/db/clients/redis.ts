@@ -30,6 +30,7 @@ import _ from "lodash";
 import rawLog from "@bksLogger";
 import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBuilder";
 import fs from "fs/promises";
+import REDIS_COMMAND_DOCS from "@beekeeperstudio/ui-kit/lib/components/text-editor/extensions/redisCommands.json";
 
 type RedisQueryResult = BaseQueryResult;
 
@@ -47,6 +48,63 @@ const redisContext: AppContextProvider = {
     return null;
   },
 };
+
+function objectFromPairs(pairs: unknown[]) {
+  return Object.fromEntries(_.chunk(pairs, 2));
+}
+
+function has(haystack: string[], needle: string) {
+  return haystack.some((item) =>
+    item.toLowerCase().includes(needle.toLowerCase())
+  );
+}
+
+function parseKnownRedisCommand(commandWithArgs: string[]) {
+  const line = commandWithArgs.join(" ").toLowerCase();
+
+  // Reverse is to ensure that more specific commands are matched before command groups
+  // This highly depends on sorting order of the keys in REDIS_COMMAND_DOCS
+  for (const key of Object.keys(REDIS_COMMAND_DOCS).reverse()) {
+    if (line.startsWith(key.toLowerCase())) {
+      const keyLength = key.split(" ").length;
+      return {
+        name: key as keyof typeof REDIS_COMMAND_DOCS,
+        args: commandWithArgs.slice(keyLength),
+      };
+    }
+  }
+
+  return null;
+}
+
+function getKnownRedisCommandDef(
+  command: keyof typeof REDIS_COMMAND_DOCS,
+  args: string[]
+): Command | null {
+  switch (command) {
+    // Some commands have different response formats based on arguments
+    case "zrange":
+      return has(args, "withscores")
+        ? COMMANDS.zRangeWithScores
+        : COMMANDS.zRange;
+    case "zrangebyscore":
+      return has(args, "withscores")
+        ? COMMANDS.zRangeByScoreWithScores
+        : COMMANDS.zRangeByScore;
+    // The rest should be handled here
+    default: {
+      const commandMerged = command.replaceAll(" ", "").toLowerCase();
+      for (const [key, value] of Object.entries(COMMANDS)) {
+        if (key.toLowerCase() === commandMerged) {
+          return value;
+        }
+      }
+    }
+  }
+
+  log.warn('Command definition not found:', command, args);
+  return null;
+}
 
 function makeQueryError(command: string, error?: unknown): NgQueryResult {
   return {
@@ -122,7 +180,9 @@ function makeCursorResult(result: unknown) {
   const { cursor, ...rest } = result as Record<string, unknown>;
   const [data] = Object.values(rest);
   const rows = Array.isArray(data)
-    ? (data.length && _.isPlainObject(data[0])) ? data.map((d) => ({  cursor, ...d, })) : data.map((value) => ({ cursor, value }))
+    ? data.length && _.isPlainObject(data[0])
+      ? data.map((d) => ({ cursor, ...d }))
+      : data.map((value) => ({ cursor, value }))
     : [{ cursor }];
   return {
     rows,
@@ -149,11 +209,20 @@ function makeGenericResult(result: unknown) {
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   redis: RedisClientType;
-  commandsInfo: Awaited<ReturnType<typeof this.redis.command>>;
-  hello: Awaited<ReturnType<typeof this.redis.hello>>;
+  respVersion = 2; // This is the default for most instances
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, redisContext, server, database);
+  }
+
+  private async getRespVersion() {
+    try {
+      const hello = await this.redis.hello();
+      this.respVersion = hello.proto;
+    } catch (error) {
+      // Assume the default and dont change anything
+      log.error("Error getting Redis version:", error);
+    }
   }
 
   async connect(): Promise<void> {
@@ -170,20 +239,30 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
       // Set rejectUnauthorized based on sslRejectUnauthorized setting
       if (this.server.config.sslRejectUnauthorized !== undefined) {
-        socketConfig.rejectUnauthorized = this.server.config.sslRejectUnauthorized;
+        socketConfig.rejectUnauthorized =
+          this.server.config.sslRejectUnauthorized;
       }
 
       // Add certificate files if provided
       if (this.server.config.sslCaFile) {
-        socketConfig.ca = await fs.readFile(this.server.config.sslCaFile, 'utf-8');
+        socketConfig.ca = await fs.readFile(
+          this.server.config.sslCaFile,
+          "utf-8"
+        );
       }
 
       if (this.server.config.sslCertFile) {
-        socketConfig.cert = await fs.readFile(this.server.config.sslCertFile, 'utf-8');
+        socketConfig.cert = await fs.readFile(
+          this.server.config.sslCertFile,
+          "utf-8"
+        );
       }
 
       if (this.server.config.sslKeyFile) {
-        socketConfig.key = await fs.readFile(this.server.config.sslKeyFile, 'utf-8');
+        socketConfig.key = await fs.readFile(
+          this.server.config.sslKeyFile,
+          "utf-8"
+        );
       }
     }
 
@@ -192,48 +271,51 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       username: this.server.config.user || undefined,
       password: this.server.config.password || "",
       database: parseInt(this.database.database, 10) || 0,
-
     });
     await this.redis.connect();
 
-    this.commandsInfo = await this.redis.command();
-    this.hello = await this.redis.hello();
+    this.getRespVersion();
 
     // Uncomment to get command list & docs upon connection as json
     // Used in autocomplete
     // ONLY DO THIS WHEN CONNECTING TO THE LATEST VERSION OF REDIS
 
-    // const commands = await this.redis.commandList();
-    // const docs = await Promise.all(
-    //   commands.map((c) => this.redis.sendCommand(["COMMAND", "DOCS", c]))
-    // );
-    // const mapped = Object.fromEntries(
-    //   docs
-    //     .map((pair) => {
-    //       const command = pair[0].replace("|", " ").toLowerCase();
-    //       const docs = objectFromPairs(pair[1]);
-    //       if (docs.history) docs.history = Object.fromEntries(docs.history);
-    //       if (docs.arguments) {
-    //         docs.arguments = docs.arguments.map(objectFromPairs);
-    //         for (const arg of docs.arguments) {
-    //           if (arg.arguments) {
-    //             arg.arguments = arg.arguments.map(objectFromPairs);
-    //             for (const arg2 of arg.arguments) {
-    //               if (arg2.arguments) {
-    //                 arg2.arguments = arg2.arguments.map(objectFromPairs);
-    //               }
-    //             }
-    //           }
-    //         }
-    //       }
+    function extractArgumentTokens(
+      rawArgs: any[] | undefined,
+      tokens: string[]
+    ) {
+      if (rawArgs) {
+        const args = rawArgs.map(objectFromPairs);
 
-    //       return [command, docs];
-    //     })
-    //     .filter(([, docs]) => !docs.subcommands)
-    //     .sort((a, b) => a[0].localeCompare(b[0]))
-    // );
+        for (const a of args) {
+          if (typeof a.token === "string") {
+            tokens.push(a.token.toLowerCase());
+          }
 
-    // await fs.writeFile("commands.json", JSON.stringify(mapped, null, 2));
+          if (a.arguments) {
+            extractArgumentTokens(a.arguments, tokens);
+          }
+        }
+      }
+    }
+
+    const commands = await this.redis.commandList();
+    const docs: any[] = await Promise.all(
+      commands.map((c) => this.redis.sendCommand(["COMMAND", "DOCS", c]))
+    );
+    const mapped = _(Object.fromEntries(docs))
+      .mapKeys((_, key) => key.replaceAll("|", " ").toLowerCase())
+      .mapValues((value) => {
+        const { summary, ...rest } = objectFromPairs(value);
+        const tokens: string[] = [];
+        extractArgumentTokens(rest.arguments, tokens);
+        return { summary, tokens };
+      })
+      .toPairs()
+      .sortBy(0)
+      .fromPairs()
+      .value();
+    await fs.writeFile("commands.json", JSON.stringify(mapped));
   }
 
   async versionString(): Promise<string> {
@@ -397,7 +479,9 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async executeCommand(text: string): Promise<NgQueryResult[]> {
-    this.hello = await this.redis.hello();
+    // Important to run before any command because previous command,
+    // because it could have been "HEELO 3" which would change protocol version
+    await this.getRespVersion();
 
     const lines = text
       .split(NEWLINE_RG)
@@ -412,70 +496,58 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       }
 
       const commandWithArgs = splitargs(line) as string[];
-      const command = commandWithArgs[0]?.toLowerCase() || "";
+      const knownCommand = parseKnownRedisCommand(commandWithArgs);
+      const knownCommandDef = knownCommand
+        ? getKnownRedisCommandDef(knownCommand.name, knownCommand.args)
+        : null;
 
-      // For "command info", this will find just "command" which is expected (there's no "command info" in commandsInfo)
-      const info = this.commandsInfo.find((c) => c.name === command);
-
-      if (!info) {
-        results.push(makeQueryError(command, `Command "${command}" is not supported`));
-        continue;
-      }
-
-      // required args include command itself too (especially important for commands consisting of multiple words)
-      const requiredArgs = commandWithArgs.slice(0, Math.abs(info.arity));
-      const optionalArgs = commandWithArgs.slice(requiredArgs.length);
-
-      // Use commandsInfo to properly separate command parts from data arguments
-      const firstKeyIndex = info.firstKeyIndex;
-
-      // Extract command parts (multi-word commands like CLIENT LIST)
-      // For commands with firstKeyIndex = 0 (no keys), all required args after the first are command parts
-      // For commands with firstKeyIndex > 1, command parts are before the first key
-      const commandParts = firstKeyIndex === 0
-        ? requiredArgs.slice(1)  // All args after command name are command parts (CLIENT LIST)
-        : firstKeyIndex > 1
-          ? commandWithArgs.slice(1, firstKeyIndex)  // Parts before first key
-          : [];  // Single word command with immediate key (GET key)
-
-      // Everything after required args are optional modifiers
-      const transformArgs = [...commandParts, ...optionalArgs];
-
-      // Find most suitable predefined method for transforming the reply and get readonly info
-      const transformResult = this.findBestTransformMethod(command, transformArgs);
-
-      // Check readonly mode using transform result
-      if (this.readOnlyMode && transformResult && !transformResult.isReadOnly) {
-        results.push(makeQueryError(command, `Write action not allowed in Read-Only Mode.`));
+      if (
+        this.readOnlyMode &&
+        knownCommandDef &&
+        !knownCommandDef.IS_READ_ONLY
+      ) {
+        results.push(
+          makeQueryError(
+            knownCommand.name,
+            `This command is not allowed in Read-Only mode.`
+          )
+        );
         continue;
       }
 
       try {
-        const result = await this.redis.sendCommand(commandWithArgs);
-        const transformedRaw = transformResult?.transformReply ? transformResult.transformReply(result) : result;
+        const rawResult = await this.redis.sendCommand(commandWithArgs);
+        const transform = knownCommandDef
+          ? getTransformReply(knownCommandDef, this.hello.proto)
+          : null;
+        const transformedResult = transform ? transform(rawResult) : rawResult;
+
         // Convert sets to arrays
-        const transformed = JSON.parse(JSON.stringify(transformedRaw, (_key, value) => (value instanceof Set ? [...value] : value)))
+        const result = JSON.parse(
+          JSON.stringify(transformedResult, (_key, value) =>
+            value instanceof Set ? [...value] : value
+          )
+        );
 
-        console.log("RESULT", result);
-        console.log("TRANSFORMED", transformed);
-
-        if (["info"].includes(command)) {
-          results.push(makeObjectResult(parseInfo(transformed)));
-        } else if (["scan", "hscan", "sscan", "zscan"].includes(command)) {
-          results.push(makeCursorResult(transformed));
-        } else if (_.isPlainObject(transformed)) {
-          results.push(makeObjectResult(transformed));
+        if (["info"].includes(knownCommand.name)) {
+          results.push(makeObjectResult(parseInfo(result)));
         } else if (
-          Array.isArray(transformed) &&
-          transformed.length &&
-          _.isPlainObject(transformed[0])
+          ["scan", "hscan", "sscan", "zscan"].includes(knownCommand.name)
         ) {
-          results.push(makeArrayOfObjectsResult(transformed));
+          results.push(makeCursorResult(result));
+        } else if (_.isPlainObject(result)) {
+          results.push(makeObjectResult(result));
+        } else if (
+          Array.isArray(result) &&
+          result.length &&
+          _.isPlainObject(result[0])
+        ) {
+          results.push(makeArrayOfObjectsResult(result));
         } else {
-          results.push(makeGenericResult(transformed));
+          results.push(makeGenericResult(result));
         }
       } catch (error) {
-        results.push(makeQueryError(command, error));
+        results.push(makeQueryError(knownCommand.name, error));
       }
     }
 
@@ -489,117 +561,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         // you can't cancel redis commands
       },
     };
-  }
-
-  private findBestTransformMethod(command: string, optionalArgs: string[]): {
-    transformReply: ((result: unknown) => unknown) | null;
-    commandDefinition: Command;
-    isReadOnly: boolean;
-  } | null {
-    const commandLower = command.toLowerCase();
-    const argsLower = optionalArgs.map(arg => arg.toLowerCase().replace(/[^a-z]/g, ''));
-    const argsSet = new Set(argsLower.filter(Boolean));
-
-    // Direct mapping table: only for special cases that don't map 1:1
-    const transformMap: Record<string, string> = {
-      // ZRANGE variations with arguments
-      'zrange+withscores': 'ZRANGE_WITHSCORES',
-      'zrange+byscore': 'ZRANGEBYSCORE',
-      'zrange+byscore+withscores': 'ZRANGEBYSCORE_WITHSCORES',
-      'zrange+bylex': 'ZRANGEBYLEX',
-      'zrange+rev': 'ZRANGE',  // REV is just an option, same transform
-      'zrange+rev+withscores': 'ZRANGE_WITHSCORES',
-
-      // ZREVRANGE variations (use ZRANGE transforms - same format)
-      'zrevrange': 'ZRANGE',
-      'zrevrange+withscores': 'ZRANGE_WITHSCORES',
-
-      // ZRANGEBYSCORE variations
-      'zrangebyscore+withscores': 'ZRANGEBYSCORE_WITHSCORES',
-      'zrevrangebyscore': 'ZRANGEBYSCORE',  // Same format as ZRANGEBYSCORE
-      'zrevrangebyscore+withscores': 'ZRANGEBYSCORE_WITHSCORES',
-
-      // ZRANGEBYLEX variations
-      'zrevrangebylex': 'ZRANGEBYLEX',  // Same format
-
-      // Stream commands that map to similar transforms
-      'xrevrange': 'XRANGE',  // Same format as XRANGE
-
-      // Client/Config compound commands
-      'client+list': 'CLIENT_LIST',
-      'client+info': 'CLIENT_INFO',
-      'client+kill': 'CLIENT_KILL',
-      'client+getname': 'CLIENT_GETNAME',
-      'client+setname': 'CLIENT_SETNAME',
-      'client+pause': 'CLIENT_PAUSE',
-      'client+unpause': 'CLIENT_UNPAUSE',
-      'config+get': 'CONFIG_GET',
-      'config+set': 'CONFIG_SET',
-      'config+rewrite': 'CONFIG_REWRITE',
-      'config+resetstat': 'CONFIG_RESETSTAT',
-
-      // Memory compound commands
-      'memory+usage': 'MEMORY_USAGE',
-      'memory+stats': 'MEMORY_STATS',
-      'memory+doctor': 'MEMORY_DOCTOR',
-
-      // Command compound commands
-      'command+count': 'COMMAND_COUNT',
-      'command+getkeys': 'COMMAND_GETKEYS',
-      'command+info': 'COMMAND_INFO',
-      'command+list': 'COMMAND_LIST',
-      'command+help': null, // do not transform
-    };
-
-    // Build lookup key from command + sorted args
-    const sortedArgs = [...argsSet].sort();
-    const lookupKey = sortedArgs.length > 0
-      ? `${commandLower}+${sortedArgs.join('+')}`
-      : commandLower;
-
-    // Try exact match first
-    let transformCommand = transformMap[lookupKey];
-
-    // If no exact match, try just the base command
-    // But don't override explicit null values
-    if (transformCommand === undefined) {
-      transformCommand = transformMap[commandLower];
-    }
-
-    // If still no match, try automatic 1:1 mapping (case-insensitive)
-    // But don't override explicit null values
-    if (transformCommand === undefined) {
-      const commandUpper = commandLower.toUpperCase();
-      if (COMMANDS[commandUpper as keyof typeof COMMANDS]) {
-        transformCommand = commandUpper;
-      }
-    }
-
-    const mappingType = transformMap[lookupKey] ? 'explicit' :
-                       transformMap[commandLower] ? 'base' :
-                       transformCommand ? '1:1' : 'none';
-
-    console.log(`Command: ${command}, Args: [${optionalArgs.join(', ')}], Lookup: "${lookupKey}", Matched: ${transformCommand || 'none'} (${mappingType})`);
-
-    // Handle explicit null case (no transformation should be applied)
-    if (transformCommand === null) {
-      return {
-        transformReply: null,
-        commandDefinition: null,
-        isReadOnly: false
-      };
-    }
-
-    if (transformCommand && COMMANDS[transformCommand as keyof typeof COMMANDS]) {
-      const commandDefinition = COMMANDS[transformCommand as keyof typeof COMMANDS];
-      return {
-        transformReply: getTransformReply(commandDefinition, this.hello.proto),
-        commandDefinition,
-        isReadOnly: commandDefinition && 'IS_READ_ONLY' in commandDefinition && commandDefinition.IS_READ_ONLY
-      };
-    }
-
-    return null;
   }
 
   async executeQuery(queryText: string): Promise<NgQueryResult[]> {

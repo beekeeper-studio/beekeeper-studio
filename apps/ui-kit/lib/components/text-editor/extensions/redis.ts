@@ -9,7 +9,10 @@
 
 import { LanguageSupport, StreamLanguage } from "@codemirror/language";
 import { CompletionContext } from "@codemirror/autocomplete";
-import redisCommands from "./redisCommands";
+// import redisCommands from "./redisCommands";
+
+// Disable this temporarily
+const redisCommands = {};
 
 interface RedisState {
   inString: boolean;
