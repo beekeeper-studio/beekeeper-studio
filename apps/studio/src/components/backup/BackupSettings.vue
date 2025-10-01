@@ -127,13 +127,13 @@
                   >
                     <label :for="control.settingName">{{ control.settingDesc + (control.required ? '*' : '') }}</label>
                     <div class="input-group">
-                      <input
+                      <BaseInput
                         type="text"
                         :name="control.settingName"
                         :id="control.settingName"
                         @change="onChange(control)"
                         v-model="config[control.settingName]"
-                      >
+                      />
                       <div
                         class="input-group-append"
                         v-if="!control.required"
@@ -220,11 +220,13 @@ import { mapGetters, mapState } from 'vuex';
 import FilePicker from '@/components/common/form/FilePicker.vue'
 import { CommandSettingControl, CommandSettingSection } from '@/lib/db/models';
 import _ from 'lodash';
+import BaseInput from '@/components/common/form/BaseInput.vue';
 
 export default Vue.extend({
   props: [],
   components: {
     FilePicker,
+    BaseInput,
   },
   data() {
     return {

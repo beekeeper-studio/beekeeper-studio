@@ -8,21 +8,21 @@
     </div>
     <div class="form-group">
       <label for="Project Id">ProjectId</label>
-      <input
+      <BaseInput
         type="text"
         class="form-control"
         placeholder="eg: example-project"
         v-model="config.bigQueryOptions.projectId"
-      >
+      />
     </div>
     <div class="form-group">
       <label for="defaultDataset">Default Dataset</label>
-      <input
+      <BaseInput
         type="text"
         class="form-control"
         v-model="config.defaultDatabase"
         placeholder="(Optional)"
-      >
+      />
     </div>
     <toggle-form-area
       v-if="$config.isDevelopment"
@@ -37,18 +37,18 @@
         />
       </template>
       <div class="form-group">
-        <label for="host">Host</label><input
+        <label for="host">Host</label><BaseInput
           type="text"
           class="form-control"
           v-model="config.host"
-        >
+        />
       </div>
       <div class="form-group">
-        <label for="port">Port</label><input
+        <label for="port">Port</label><BaseInput
           type="text"
           class="form-control"
           v-model="config.port"
-        >
+        />
       </div>
     </toggle-form-area>
     <toggle-form-area
@@ -80,9 +80,10 @@
 import Vue from 'vue'
 import FilePicker from '@/components/common/form/FilePicker.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
+import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default Vue.extend({
-  components: { FilePicker, ToggleFormArea },
+  components: { FilePicker, ToggleFormArea, BaseInput },
   data() {
     return {
       iamAuthenticationEnabled: this.config.bigQueryOptions?.iamAuthenticationEnabled || false

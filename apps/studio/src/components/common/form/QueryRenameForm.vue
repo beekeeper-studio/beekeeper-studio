@@ -8,14 +8,14 @@
         {{ saveError }}
       </div>
       <div class="form-group">
-        <input
+        <BaseInput
           ref="input"
           type="text"
           v-model="title"
           autofocus
           class="form-control"
           name="title"
-        >
+        />
       </div>
       <div class="buttons">
         <button
@@ -40,10 +40,12 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import rawLog from '@bksLogger';
+import BaseInput from './BaseInput.vue'
 
 const log = rawLog.scope('QueryRenameForm')
 
 export default Vue.extend({
+  components: { BaseInput },
   props: ["query"],
   mounted() {
     this.title = this.query.title

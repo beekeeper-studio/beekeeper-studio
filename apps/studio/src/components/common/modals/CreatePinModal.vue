@@ -25,7 +25,7 @@
 
           <div class="form-group form-group-password">
             <label for="input-pin">PIN</label>
-            <input
+            <BaseInput
               id="input-pin"
               name="pin"
               :type="showPin ? 'text' : 'password'"
@@ -44,7 +44,7 @@
 
           <div class="form-group form-group-password">
             <label for="input-confirm-pin">Confirm PIN</label>
-            <input
+            <BaseInput
               id="input-confirm-pin"
               name="confirmPin"
               :type="showConfirmPin ? 'text' : 'password'"
@@ -97,9 +97,10 @@
 import Vue from "vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import ExternalLink from "@/components/common/ExternalLink.vue";
+import BaseInput from "@/components/common/form/BaseInput.vue";
 
 export default Vue.extend({
-  components: { ErrorAlert, ExternalLink },
+  components: { ErrorAlert, ExternalLink, BaseInput },
   data() {
     return {
       modalName: "create-pin-modal",
@@ -138,7 +139,7 @@ export default Vue.extend({
     },
     opened() {
       this.$nextTick(() => {
-        this.$refs.pinInput.focus();
+        this.$refs.pinInput.input.focus();
       });
     },
     togglePinVisibility() {

@@ -10,13 +10,13 @@
       v-hotkey="tableFilterKeymap"
     >
       <div class="input-wrapper filter">
-        <input
+        <BaseInput
           type="text"
           v-model="filterValue"
           ref="filterInput"
           class="form-control filter-value"
           placeholder="Search Results"
-        >
+        />
         <button
           type="button"
           class="clear btn-link"
@@ -68,8 +68,10 @@
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
+  import BaseInput from '@/components/common/form/BaseInput.vue'
 
   export default {
+    components: { BaseInput },
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
@@ -320,7 +322,7 @@
       focusOnFilterInput() {
         this.hiddenFilter = false
         this.$nextTick(() => {
-          this.$refs.filterInput.focus()
+          this.$refs.filterInput.input.focus()
         })
       },
       closeTableFilter() {

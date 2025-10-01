@@ -7,12 +7,12 @@
     <div class="fixed">
       <div class="filter">
         <div class="filter-wrap">
-          <input
+          <BaseInput
             class="filter-input"
             type="text"
             placeholder="Filter"
             v-model="filterQuery"
-          >
+          />
           <x-buttons class="filter-actions">
             <x-button
               @click="clearFilter"
@@ -193,10 +193,11 @@
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
 import { matches } from '@/common/transport/TransportPinnedEntity'
+import BaseInput from '@/components/common/form/BaseInput.vue'
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
-    components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList },
+    components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList, BaseInput },
     data() {
       return {
         isDev: window.platformInfo.isDevelopment,

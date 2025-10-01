@@ -28,12 +28,12 @@
       <div class="fixed">
         <div class="filter">
           <div class="filter-wrap">
-            <input
+            <BaseInput
               class="filter-input"
               type="text"
               placeholder="Filter"
               v-model="filterQuery"
-            >
+            />
             <x-buttons class="filter-actions">
               <x-button
                 @click="clearFilter"
@@ -75,9 +75,11 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
+import BaseInput from '@/components/common/form/BaseInput.vue'
 export default {
   components: {
-    ToggleFormArea
+    ToggleFormArea,
+    BaseInput
   },
   props: {
     stepperProps: {

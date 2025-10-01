@@ -28,7 +28,7 @@
 
           <div class="form-group form-group-password">
             <label for="input-old-pin">Current PIN</label>
-            <input
+            <BaseInput
               id="input-old-pin"
               name="oldPin"
               :type="showOldPin ? 'text' : 'password'"
@@ -47,7 +47,7 @@
 
           <div class="form-group form-group-password">
             <label for="input-new-pin">New PIN</label>
-            <input
+            <BaseInput
               id="input-new-pin"
               name="newPin"
               :type="showNewPin ? 'text' : 'password'"
@@ -95,9 +95,10 @@ import Vue from "vue";
 import { AppEvent } from "@/common/AppEvent";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import ExternalLink from "@/components/common/ExternalLink.vue";
+import BaseInput from "@/components/common/form/BaseInput.vue";
 
 export default Vue.extend({
-  components: { ErrorAlert, ExternalLink },
+  components: { ErrorAlert, ExternalLink, BaseInput },
   data() {
     return {
       modalName: "update-pin-modal",
@@ -130,7 +131,7 @@ export default Vue.extend({
     },
     opened() {
       this.$nextTick(() => {
-        this.$refs.oldPinInput.focus();
+        this.$refs.oldPinInput.input.focus();
       });
     },
     close() {
