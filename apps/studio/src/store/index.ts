@@ -261,6 +261,14 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
+    aiShellHintShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
+    },
+    aiShellAvailable(_state, getters) {
+      return getters["tabs/newTabDropdownItems"].some(
+        ({ config }) => config.pluginId === "bks-ai-shell"
+      );
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -672,6 +680,12 @@ const store = new Vuex.Store<State>({
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    setAiShellHintShown(context) {
+      context.dispatch("settings/save", {
+        key: "tabDropdownAIShellHintShown",
+        value: new Date(),
+      });
     },
   },
   plugins: []
