@@ -18,19 +18,19 @@
             v-if="defaultSchema"
           >
             <label for="schema">Schema</label>
-            <input
+            <BaseInput
               type="text"
               v-model="tableSchema"
               :placeholder="defaultSchema"
-            >
+            />
           </div>
           <div class="form-group">
             <label for="table">Table Name</label>
-            <input
+            <BaseInput
               type="text"
               v-model="tableName"
               placeholder="untitled_table"
-            >
+            />
           </div>
         </div>
         <schema-builder
@@ -100,6 +100,7 @@ import { BasicTable } from '@/lib/data/table_templates'
 import _ from 'lodash';
 import ErrorAlert from './common/ErrorAlert.vue';
 import { CancelableQuery } from '@/lib/db/models';
+import BaseInput from '@/components/common/form/BaseInput.vue';
 interface Data {
   initialColumns: SchemaItem[]
   tableName: string | null,
@@ -114,6 +115,7 @@ export default Vue.extend({
     SchemaBuilder,
     StatusBar,
     ErrorAlert,
+    BaseInput,
   },
   props: ['tabId', 'active'],
   data(): Data {

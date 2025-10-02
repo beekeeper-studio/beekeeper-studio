@@ -33,7 +33,7 @@
     </div>
     <div class="expand filter">
       <div class="filter-wrap">
-        <input
+        <BaseInput
           class="form-control filter-value"
           :class="{ 'disabled-input': isNullFilter }"
           type="text"
@@ -49,7 +49,7 @@
               ? `Enter values separated by comma, eg: foo,bar`
               : 'Enter Value'
           "
-        >
+        />
         <button
           v-if="!isNullFilter"
           type="button"
@@ -65,8 +65,10 @@
 </template>
 <script lang="js">
 import { TableFilterSymbols } from '@/lib/db/types';
+import BaseInput from '@/components/common/form/BaseInput.vue';
 
 export default {
+  components: { BaseInput },
   props: ['filter', 'columns', 'index'],
   data: () => ({
     filterTypes: TableFilterSymbols
