@@ -1,19 +1,46 @@
 <template>
-  <input v-bind="$attrs" v-on="$listeners" @contextmenu.prevent="showContextMenu($event)" />
+  <component v-bind="$attrs" v-on="listeners" :is="type === 'textarea' ? 'textarea' : 'input'" :type="type"
+    @contextmenu.prevent="showContextMenu($event)" :value="value" @input="$emit('input', $event.target.value)" />
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType, InputHTMLAttributes } from "vue";
 
 export default Vue.extend({
   name: "BaseInput",
+
+  props: {
+    type: String as PropType<InputHTMLAttributes["type"] | "textarea">,
+    value: [String, Number, Boolean],
+    contextMenu: {
+      type: Boolean,
+      default: true,
+    },
+  },
+
   data() {
     return {
       lastEditable: null as HTMLInputElement | HTMLTextAreaElement | null,
     };
   },
+
+  computed: {
+    listeners() {
+      const obj = {};
+      for (const key in this.$listeners) {
+        if (key === "input") continue;
+        obj[key] = this.$listeners[key];
+      }
+      return obj;
+    },
+  },
+
   methods: {
     showContextMenu(event: MouseEvent) {
+      if (!this.contextMenu) {
+        return;
+      }
+
       const target = event.target as HTMLElement;
 
       // Remember what was right-clicked so handlers act on the correct field
