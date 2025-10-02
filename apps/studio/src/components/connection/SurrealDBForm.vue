@@ -60,11 +60,11 @@
       </div>
       <div class="col s6 form-group">
         <label for="password">Password</label>
-        <input
+        <BaseInput
           :type="togglePasswordInputType"
           v-model="config.password"
           class="password form-control"
-        >
+        />
         <i
           @click.prevent="togglePassword"
           class="material-icons password"
@@ -74,21 +74,21 @@
     <div class="row gutter">
       <div class="form-group col s6">
         <label for="namespace">Namespace</label>
-        <input
+        <BaseInput
           name="namespace"
           type="text"
           class="form-control"
           v-model="config.surrealDbOptions.namespace"
-        >
+        />
       </div>
       <div class="form-group col s6">
         <label for="database">Database</label>
-        <input
+        <BaseInput
           name="database"
           type="text"
           class="form-control"
           v-model="config.defaultDatabase"
-        >
+        />
       </div>
     </div>
     <common-advanced :config="config" />
@@ -100,6 +100,7 @@ import Vue from 'vue';
 import { SurrealAuthType, SurrealAuthTypes } from '../../lib/db/types';
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
+import BaseInput from "@/components/common/form/BaseInput.vue";
 import MaskedInput from '@/components/MaskedInput.vue'
 import { mapState } from 'vuex';
 

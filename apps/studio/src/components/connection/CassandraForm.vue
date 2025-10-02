@@ -9,6 +9,7 @@
         name="dataCenter"
         class="form-control"
         v-model="config.cassandraOptions.localDataCenter"
+        v-input-menu
       >
     </div>
     <common-server-inputs :config="config" />

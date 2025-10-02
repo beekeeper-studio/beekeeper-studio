@@ -34,21 +34,21 @@
             help_outlined
           </i>
         </label>
-        <input
+        <BaseInput
           id="url"
           class="form-control"
           v-model="config.defaultDatabase"
           type="text"
           name="url"
-        >
+        />
       </div>
       <div class="form-group col">
         <label for="auth-token" required>Authentication Token</label>
-        <textarea
+        <BaseInput
           id="auth-token"
           class="form-control"
           v-model="config.libsqlOptions.authToken"
-          type="text"
+          type="textarea"
           name="auth-token"
         />
       </div>
@@ -70,33 +70,33 @@
       </div>
       <div class="form-group col">
         <label for="sync-url" required>Sync URL</label>
-        <input
+        <BaseInput
           id="sync-url"
           class="form-control"
           v-model="config.libsqlOptions.syncUrl"
           type="text"
           name="syncUrl"
-        >
+        />
       </div>
       <div class="form-group col">
         <label for="auth-token" required>Authentication Token</label>
-        <textarea
+        <BaseInput
           id="auth-token"
           class="form-control"
           v-model="config.libsqlOptions.authToken"
-          type="text"
+          type="textarea"
           name="auth-token"
         />
       </div>
       <div class="form-group col">
         <label for="sync-period" required>Sync Period <span class="hint">(optional, in seconds)</span></label>
-        <input
+        <BaseInput
           id="sync-period"
           class="form-control"
           v-model="config.libsqlOptions.syncPeriod"
           type="number"
           name="syncPeriod"
-        >
+        />
       </div>
     </toggle-form-area>
   </div>
@@ -107,8 +107,9 @@ import Vue from "vue";
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import SnapExternalWarning from "@/components/connection/SnapExternalWarning.vue";
 import ToggleFormArea from "../common/ToggleFormArea.vue";
+import BaseInput from "@/components/common/form/BaseInput.vue";
 export default Vue.extend({
   props: ["config"],
-  components: { FilePicker, SnapExternalWarning, ToggleFormArea },
+  components: { FilePicker, SnapExternalWarning, ToggleFormArea, BaseInput },
 });
 </script>

@@ -11,6 +11,7 @@
         type="text"
         v-model="config.name"
         placeholder="Connection Name"
+        v-input-menu
       >
     </div>
 
