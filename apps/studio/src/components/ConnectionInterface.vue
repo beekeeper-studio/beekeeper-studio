@@ -3,8 +3,7 @@
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar :selected-config="config" @remove="remove" @duplicate="duplicate" @edit="edit"
-                            @connect="handleConnect" @create="create"
-        />
+          @connect="handleConnect" @create="create" />
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
@@ -28,8 +27,7 @@
               <div class="form-group">
                 <label for="connection-select">Connection Type</label>
                 <select name="connectionType" class="form-control custom-select" v-model="config.connectionType"
-                        id="connection-select"
-                >
+                  id="connection-select">
                   <option disabled hidden value="null">
                     Select a connection type...
                   </option>
@@ -45,64 +43,41 @@
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <upsell-content v-if="shouldUpsell" />
                 <postgres-form v-else-if="config.connectionType === 'cockroachdb'" :config="config"
-                               :testing="testing"
-                />
+                  :testing="testing" />
                 <mysql-form v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)" :config="config"
-                            :testing="testing"
-                />
+                  :testing="testing" />
                 <postgres-form v-else-if="config.connectionType === 'postgresql'" :config="config" :testing="testing" />
                 <redshift-form v-else-if="config.connectionType === 'redshift'" :config="config" :testing="testing" />
                 <sqlite-form v-else-if="config.connectionType === 'sqlite'" :config="config" :testing="testing" />
                 <sql-server-form v-else-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"
-                                 @error="connectionError = $event"
-                />
+                  @error="connectionError = $event" />
                 <big-query-form v-else-if="config.connectionType === 'bigquery'" :config="config" :testing="testing" />
                 <firebird-form v-else-if="config.connectionType === 'firebird' && isUltimate" :config="config"
-                               :testing="testing"
-                />
+                  :testing="testing" />
                 <oracle-form v-if="config.connectionType === 'oracle' && isUltimate" :config="config"
-                             :testing="testing"
-                />
+                  :testing="testing" />
                 <cassandra-form v-if="config.connectionType === 'cassandra' && isUltimate" :config="config"
-                                :testing="testing"
-                />
+                  :testing="testing" />
                 <click-house-form v-else-if="config.connectionType === 'clickhouse' && isUltimate" :config="config"
-                                  :testing="testing"
-                />
+                  :testing="testing" />
                 <trino-form v-else-if="config.connectionType === 'trino' && isUltimate" :config="config"
-                            :testing="testing"
-                />
+                  :testing="testing" />
                 <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
-                              :testing="testing"
-                />
-                <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config" :testing="testing" />
-                <duck-db-form
-                  v-else-if="config.connectionType === 'duckdb'"
-                  :config="config"
-                  :testing="testing"
-                />
-                <sql-anywhere-form
-                  v-else-if="config.connectionType === 'sqlanywhere' && isUltimate"
-                  :config="config"
-                  :testing="testing"
-                />
-                <surreal-db-form
-                  v-else-if="config.connectionType === 'surrealdb' && isUltimate"
-                  :config="config"
-                  :testing="testing"
-                />
-                <redis-form
-                  v-else-if="config.connectionType === 'redis'"
-                  :config="config"
-                  :testing="testing"
-                />
+                  :testing="testing" />
+                <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config"
+                  :testing="testing" />
+                <duck-db-form v-else-if="config.connectionType === 'duckdb'" :config="config" :testing="testing" />
+                <sql-anywhere-form v-else-if="config.connectionType === 'sqlanywhere' && isUltimate" :config="config"
+                  :testing="testing" />
+                <surreal-db-form v-else-if="config.connectionType === 'surrealdb' && isUltimate" :config="config"
+                  :testing="testing" />
+                <redis-form v-else-if="config.connectionType === 'redis'" :config="config" :testing="testing" />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
-                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
-                           v-model="config.readOnlyMode"
-                    >
+                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox"
+                      name="readOnlyMode" v-model="config.readOnlyMode">
                     <span>Read Only Mode</span>
                     <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
@@ -113,13 +88,11 @@
                   <span class="expand" />
                   <div class="btn-group">
                     <button :disabled="testing || connecting" class="btn btn-flat" type="button"
-                            @click.prevent="testConnection"
-                    >
+                      @click.prevent="testConnection">
                       Test
                     </button>
                     <button :disabled="testing || connecting" class="btn btn-primary" type="submit"
-                            @click.prevent="submit"
-                    >
+                      @click.prevent="submit">
                       Connect
                     </button>
                   </div>
@@ -127,8 +100,7 @@
                 <div class="row" v-if="connectionError">
                   <div class="col">
                     <error-alert :error="connectionError" :help-text="errorHelp" @close="connectionError = null"
-                                 :closable="true"
-                    />
+                      :closable="true" />
                   </div>
                 </div>
                 <SaveConnectionForm v-if="!shouldUpsell" :config="config" @save="save" />
@@ -137,8 +109,7 @@
           </div>
           <template v-if="!config.connectionType">
             <div class="pitch" v-if="!isUltimate">
-              🌟 <strong>Upgrade</strong> for more features like ClickHouse & Oracle support, JSON view for table rows,
-              and more!
+              🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
               <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
             </div>
             <div class="pitch" v-else-if="isTrial">
@@ -146,11 +117,15 @@
               don't lose access.
               <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
             </div>
+            <div class="pitch" v-else>
+              🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
+              <a href="https://www.beekeeperstudio.io/features/sql-ai">Learn more</a>
+            </div>
           </template>
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version
-        }}</a></small>
+            }}</a></small>
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
