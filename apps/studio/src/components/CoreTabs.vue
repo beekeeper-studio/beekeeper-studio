@@ -30,7 +30,7 @@
         />
       </Draggable>
       <!-- </div> -->
-      <span class="actions add-tab-group">
+      <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
@@ -38,7 +38,6 @@
         <x-button
           class="btn-fab add-tab-dropdown"
           menu
-          id="add-tab-dropdown"
           v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>

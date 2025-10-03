@@ -24,7 +24,7 @@ const flows: Record<
   connectedScreen: {
     steps: [
       {
-        element: "#add-tab-dropdown",
+        element: "#add-tab-group",
         popover: {
           title: `<div class="main-title"><i class="material-icons ai-shell-icon">auto_awesome</i> AI Shell</div><div class="subtitle">Included in your paid plan</div>`,
           description: `Use <b>AI Shell</b> from this menu to ask questions and generate queries.`,
