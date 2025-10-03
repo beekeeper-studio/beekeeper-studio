@@ -5,75 +5,125 @@
  */
 
 import { LanguageSupport, StreamLanguage } from "@codemirror/language";
-import { CompletionContext } from "@codemirror/autocomplete";
 import {
-  REDIS_COMMANDS,
-  REDIS_OPTIONS,
-  REDIS_COMMAND_NAMES,
-  REDIS_OPTION_NAMES,
-  getCommandDescription,
-  getOptionDescription,
-} from "./redisCommands";
+  CompletionContext,
+  CompletionResult,
+  Completion,
+} from "@codemirror/autocomplete";
+// import splitArgs from "redis-splitargs";
+import REDIS_COMMAND_DOCS from "./redisCommands.json";
 
-// Stream parser for Redis syntax
-const redisStreamParser = StreamLanguage.define({
+interface RedisState {
+  inString: boolean;
+  stringDelim: string | null;
+  commandName: string | null;
+  commandWordCount: number;
+  commandTokens: Set<string>;
+  wordPosition: number;
+}
+
+// Build command lookup: lowercase command name -> command data
+// const REDIS_COMMAND_DOCS_KEYS = Object.keys(REDIS_COMMAND_DOCS) as (keyof typeof REDIS_COMMAND_DOCS)[];
+const REDIS_COMMAND_DOCS_KEYS_REVERSED = Object.keys(
+  REDIS_COMMAND_DOCS
+).reverse() as (keyof typeof REDIS_COMMAND_DOCS)[];
+
+// Reverse is to ensure that more specific commands are matched before command groups
+// This highly depends on sorting order of the keys in REDIS_COMMAND_DOCS
+function findCommand(text: string): keyof typeof REDIS_COMMAND_DOCS | null {
+  const lowerText = text.toLowerCase();
+
+  for (const key of REDIS_COMMAND_DOCS_KEYS_REVERSED) {
+    if (lowerText.startsWith(key)) {
+      return key;
+    }
+  }
+
+  return null;
+}
+
+// Stream parser for Redis syntax highlighting
+export const redisStreamParser = StreamLanguage.define<RedisState>({
   name: "redis",
 
-  startState() {
+  startState(): RedisState {
     return {
       inString: false,
       stringDelim: null,
+      commandName: null,
+      commandWordCount: 0,
+      commandTokens: new Set(),
+      wordPosition: 0,
     };
   },
 
   token(stream, state) {
-    // Skip whitespace
-    if (stream.eatSpace()) return null;
-
-    // Handle comments
-    if (stream.match(/^#.*/)) {
-      return "comment";
+    // Line start - reset state
+    if (stream.sol()) {
+      state.commandName = null;
+      state.commandWordCount = 0;
+      state.commandTokens = new Set();
+      state.wordPosition = 0;
     }
 
-    // Handle strings
+    if (stream.eatSpace()) return null;
+
+    // Comments
+    if (stream.match(/^#.*/)) return "comment";
+
+    // String handling
     if (state.inString) {
-      if (stream.next() === state.stringDelim) {
-        state.inString = false;
-        state.stringDelim = null;
-        return "string";
+      while (!stream.eol()) {
+        const ch = stream.next();
+        if (ch === "\\") {
+          stream.next(); // Skip escaped character
+        } else if (ch === state.stringDelim) {
+          state.inString = false;
+          state.stringDelim = null;
+          break;
+        }
       }
-      stream.skipTo(state.stringDelim) || stream.skipToEnd();
       return "string";
     }
 
-    // Check for string delimiters
+    // String start
     if (stream.match(/^["']/)) {
       state.inString = true;
       state.stringDelim = stream.current();
       return "string";
     }
 
-    // Handle numbers
-    if (stream.match(/^-?\d+(\.\d+)?/)) {
-      return "number";
-    }
+    // Numbers
+    if (stream.match(/^-?\d+(\.\d+)?/)) return "number";
 
-    // Handle words (commands, options, arguments)
-    if (stream.match(/^\w+(\.\w+)?/)) {
-      const token = stream.current().toUpperCase();
+    // Words
+    if (stream.match(/^[^\s"']+/)) {
+      const word = stream.current();
+      const wordLower = word.toLowerCase();
 
-      if (REDIS_COMMANDS[token]) {
-        return "keyword";
+      // Detect command once on first word
+      if (!state.commandName) {
+        const command = findCommand(stream.string);
+        if (command) {
+          state.commandName = command;
+          state.commandWordCount = command.split(" ").length;
+          const commandData = REDIS_COMMAND_DOCS[command];
+          state.commandTokens = new Set(
+            commandData.tokens.map((t: string) => t.toLowerCase())
+          );
+        }
       }
 
-      if (REDIS_OPTIONS[token]) {
-        return "keyword";
-      }
+      // Classify word: command part or keyword argument or regular atom
+      const isCommandWord = state.wordPosition < state.commandWordCount;
+      const isKeyword = state.commandTokens.has(wordLower);
 
-      return "atom"; // Arguments and other identifiers
+      state.wordPosition++;
+
+      return isCommandWord || isKeyword ? "keyword" : "atom";
     }
 
-    // Default: consume any character
+    // Fallback
     stream.next();
     return null;
   },
@@ -84,45 +134,55 @@ const redisStreamParser = StreamLanguage.define({
   },
 });
 
-// Autocompletion function
-function redisCompletion(context: CompletionContext) {
-  const word = context.matchBefore(/\w*/);
-  if (word === null || (word.from === word.to && !context.explicit))
-    return null;
 
-  const wordUpper = word.text.toUpperCase();
-  const options = [];
+// Autocompletion for Redis commands and their arguments
+export function redisCompletion(
+  context: CompletionContext
+): CompletionResult | null {
+  const currentWord = context.matchBefore(/\S*/);
+  const currentLine = context.matchBefore(/.*/);
 
-  // Add matching commands
-  for (const cmd of REDIS_COMMAND_NAMES) {
-    if (cmd.startsWith(wordUpper)) {
-      options.push({
-        label: cmd,
-        type: "keyword",
-        info: getCommandDescription(cmd) || `Redis ${cmd} command`,
-        boost: cmd.length < 5 ? 10 : 0, // Boost short, common commands
-      });
-    }
-  }
+  if (!currentWord || !currentLine) return null;
 
-  // Add matching options
-  for (const opt of REDIS_OPTION_NAMES) {
-    if (opt.startsWith(wordUpper)) {
-      options.push({
-        label: opt,
-        type: "keyword",
-        info: getOptionDescription(opt) || `Redis ${opt} option`,
-        boost: -1, // Lower priority for options
-      });
-    }
-  }
+  // const endsWithSpace = false
+  const completedWords = [...currentLine.text.matchAll(/\S /g)].length;
+  const trimmedLine = currentLine.text.trim();
 
-  return options.length
-    ? {
-        from: word.from,
-        options: options.slice(0, 50),
+  const visited = new Set<string>();
+  const options: Completion[] = [];
+
+  for (const [key, info] of Object.entries(REDIS_COMMAND_DOCS)) {
+    if (key.startsWith(trimmedLine)) {
+      const parts = key.split(" ").slice(completedWords, completedWords + 1);
+      const label = parts.join(" ");
+
+      if (parts.length && !visited.has(label)) {
+        visited.add(label);
+        options.push({
+          label,
+          type: completedWords > 0 ? "method" : "function",
+          info: "summary" in info ? info.summary : "",
+        });
       }
-    : null;
+    }
+  }
+
+  const matchedCommand = findCommand(trimmedLine);
+
+  if (matchedCommand) {
+    const info = REDIS_COMMAND_DOCS[matchedCommand];
+    if (info && 'tokens' in info) {
+      for (const token of info.tokens) {
+        options.push({
+          label: token,
+          type: "keyword",
+        });
+      }
+
+    }
+  }
+
+  return { options, from: currentWord.from };
 }
 
 // Export Redis language support
