@@ -248,14 +248,14 @@
                 {{ saveError }}
               </div>
               <div class="form-group">
-                <input
+                <BaseInput
                   type="text"
                   ref="titleInput"
                   name="title"
                   class="form-control"
                   v-model="query.title"
                   autofocus
-                >
+                />
               </div>
             </div>
           </div>
@@ -307,14 +307,14 @@
                 >
                   <div class="form-group row">
                     <label>{{ isNumber(param) ? `? ${param + 1}` : param }}</label>
-                    <input
+                    <BaseInput
                       type="text"
                       class="form-control"
                       required
                       v-model="queryParameterValues[param]"
                       autofocus
                       ref="paramInput"
-                    >
+                    />
                   </div>
                 </div>
               </div>
@@ -360,6 +360,7 @@
   import rawlog from '@bksLogger'
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
+  import BaseInput from '@/components/common/form/BaseInput.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
@@ -377,7 +378,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BaseInput },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -838,7 +839,7 @@
       },
       selectFirstParameter() {
         if (!this.$refs['paramInput'] || this.$refs['paramInput'].length === 0) return
-        this.$refs['paramInput'][0].select()
+        this.$refs['paramInput'][0].input.select()
       },
       updateEditorHeight() {
         let height = this.$refs.topPanel.clientHeight

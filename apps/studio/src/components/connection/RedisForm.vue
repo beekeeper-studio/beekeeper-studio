@@ -41,12 +41,12 @@
 
     <div class="form-group form-group-password">
       <label for="password">Password (optional)</label>
-      <input
+      <BaseInput
         :type="togglePasswordInputType"
         v-model="config.password"
         class="password form-control"
         placeholder="password"
-      >
+      />
       <i
         @click.prevent="togglePassword"
         class="material-icons password-icon"
@@ -56,13 +56,13 @@
     <!-- Redis Specific Options -->
     <div class="form-group">
       <label for="database">Database</label>
-      <input
+      <BaseInput
         id="database"
         v-model="config.defaultDatabase"
         type="number"
         class="form-control"
         placeholder="0"
-      >
+      />
       <small class="form-text text-muted">
         Not applicable to Redis Cluster
       </small>
@@ -72,12 +72,14 @@
 
 <script>
 import MaskedInput from '@/components/MaskedInput.vue'
+import BaseInput from '@/components/common/form/BaseInput.vue';
 import { mapState } from 'vuex'
 
 export default {
   name: "RedisForm",
   components: {
-    MaskedInput
+    MaskedInput,
+    BaseInput,
   },
   props: {
     config: {

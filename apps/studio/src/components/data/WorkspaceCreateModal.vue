@@ -20,7 +20,7 @@
         </div>
         <div class="form-group">
           <label for="workspace-name">Workspace Name</label>
-          <input id="workspace-name" name="workspace-name" v-model="workspaceName" type="text" ref="nameInput" placeholder="e.g. Matthew's Workspace">
+          <BaseInput id="workspace-name" name="workspace-name" v-model="workspaceName" type="text" ref="nameInput" placeholder="e.g. Matthew's Workspace" />
         </div>
       </div>
       <div class="vue-dialog-buttons flex-between">
@@ -43,9 +43,10 @@ import Vue from "vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { mapState } from "vuex";
+import BaseInput from '@/components/common/form/BaseInput.vue';
 
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, BaseInput },
   data() {
     return {
       modalName: "create-workspace",
@@ -79,7 +80,7 @@ export default Vue.extend({
   },
   methods: {
     focus() {
-      this.$refs.nameInput.focus();
+      this.$refs.nameInput.input.focus();
     },
     open() {
       this.$modal.show(this.modalName);

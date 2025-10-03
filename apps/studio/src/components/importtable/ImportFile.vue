@@ -46,23 +46,23 @@
                   <label for="columnDelimeter">
                     Column Separator
                   </label>
-                  <input
+                  <BaseInput
                     type="text"
                     class="form-control"
                     name="columnDelimeter"
                     v-model="columnDelimeter"
-                  >
+                  />
                 </div>
                 <div class="form-group">
                   <label for="quoteCharacter">
                     Text Quote Character
                   </label>
-                  <input
+                  <BaseInput
                     type="text"
                     class="form-control"
                     name="quoteCharacter"
                     v-model="quoteCharacter"
-                  >
+                  />
                 </div>
               </div>
               <div class="col s6">
@@ -70,23 +70,23 @@
                   <label for="escapeCharacter">
                     Escape Character
                   </label>
-                  <input
+                  <BaseInput
                     type="text"
                     class="form-control"
                     name="escapeCharacter"
                     v-model="escapeCharacter"
-                  >
+                  />
                 </div>
                 <div class="form-group">
                   <label for="newlineCharacter">
                     Newline Character
                   </label>
-                  <input
+                  <BaseInput
                     type="text"
                     class="form-control"
                     name="newlineCharacter"
                     v-model="newlineCharacter"
-                  >
+                  />
                 </div>
               </div>
             </div>
@@ -202,10 +202,12 @@
   import FilePicker from '@/components/common/form/FilePicker.vue'
   import Mutators from '../../mixins/data_mutators'
   import ToggleFormArea from '../common/ToggleFormArea.vue'
+  import BaseInput from '@/components/common/form/BaseInput.vue'
   export default {
     components: {
     FilePicker,
-    ToggleFormArea
+    ToggleFormArea,
+    BaseInput
 },
     mixins: [Mutators],
     props: {

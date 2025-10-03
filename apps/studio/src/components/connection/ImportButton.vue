@@ -29,12 +29,12 @@
             </div>
             <div class="form-group">
               <label for="url">Paste URL</label>
-              <input
+              <BaseInput
                 class="form-control"
                 ref="importInput"
                 type="text"
                 v-model="url"
-              >
+              />
             </div>
           </div>
           <div class="vue-dialog-buttons">
@@ -59,8 +59,11 @@
   </div>
 </template>
 <script>
+import BaseInput from "@/components/common/form/BaseInput.vue";
+
 export default {
     props: ['config'],
+    components: { BaseInput },
     data() {
       return {
         importError: null,

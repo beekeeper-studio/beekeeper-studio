@@ -52,12 +52,12 @@
               v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
             >help_outlined</i>
           </label>
-          <input
+          <BaseInput
             type="number"
             v-model.number="config.sshKeepaliveInterval"
             name="sshKeepaliveInterval"
             placeholder="(in seconds)"
-          >
+          />
         </div>
       </div>
       <div class="form-group">
@@ -163,11 +163,11 @@
           </div>
           <div class="col s6 form-group">
             <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
-            <input
+            <BaseInput
               type="password"
               class="form-control"
               v-model="config.sshKeyfilePassword"
-            >
+            />
           </div>
         </div>
       </div>
@@ -188,11 +188,11 @@
         <div class="col s6">
           <div class="form-group">
             <label for="sshPassword">SSH Password</label>
-            <input
+            <BaseInput
               class="form-control"
               type="password"
               v-model="config.sshPassword"
-            >
+            />
           </div>
         </div>
       </div>
@@ -205,12 +205,14 @@ import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
 import { mapState } from 'vuex'
+import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default {
   props: ['config'],
   components: {
     FilePicker, ExternalLink,
-    ToggleFormArea, MaskedInput
+    ToggleFormArea, MaskedInput,
+    BaseInput,
   },
   computed: {
     ...mapState('settings', ['privacyMode']),

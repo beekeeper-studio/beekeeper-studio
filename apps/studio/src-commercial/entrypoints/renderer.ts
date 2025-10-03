@@ -113,17 +113,26 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
     Vue.mixin({
       methods: {
         ctrlOrCmd(key) {
-          if (this.$config.isMac) return `meta+${key}`
-          return `ctrl+${key}`
+          const keys = key.split('+');
+          // First letter is uppercase
+          key = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join('+');
+          if (this.$config.isMac) return `Meta+${key}`
+          return `Ctrl+${key}`
         },
         // codemirror sytax
         cmCtrlOrCmd(key: string) {
+          const keys = key.split('-');
+          // First letter is uppercase
+          key = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join('-');
           if (this.$config.isMac) return `Cmd-${key}`
           return `Ctrl-${key}`
         },
         ctrlOrCmdShift(key) {
-          if (this.$config.isMac) return `meta+shift+${key}`
-          return `ctrl+shift+${key}`
+          const keys = key.split('+');
+          // First letter is uppercase
+          key = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join('+');
+          if (this.$config.isMac) return `Meta+Shift+${key}`
+          return `Ctrl+Shift+${key}`
         },
         selectChildren(element) {
           const selection = window.getSelection()
