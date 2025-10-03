@@ -42,6 +42,15 @@ const flows: Record<
             return false;
           }
 
+          // Dont show it if the plugin is not in the dropdown menu (disabled or not installed)
+          if (
+            !context.store.getters["tabs/newTabDropdownItems"].find(
+              (t) => t.config.pluginId === "bks-ai-shell"
+            )
+          ) {
+            return false;
+          }
+
           const tabs = await context.utility.send("appdb/tabs/find", {
             where: {
               connectionId: context.store.getters["connection/id"],
