@@ -1,0 +1,48 @@
+.driver-overlay {
+  // This is to win over the noty overlay
+  z-index: 9999999 !important;
+}
+
+.driver-popover {
+  background-color: var(--theme-bg);
+  color: var(--text-dark);
+
+  &,
+  *:not(.material-icons) {
+    font-family: $font-family;
+  }
+
+  .material-icons {
+    font-family: "Material Icons";
+  }
+
+  [class^="driver-"][class$="-btn"] {
+    @include btn;
+  }
+
+  .ai-shell-icon {
+    color: var(--theme-primary);
+  }
+
+  .driver-popover-title {
+    font-size: 1rem;
+
+    .main-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      font-weight: normal;
+      color: var(--text-lighter);
+    }
+  }
+
+  .driver-popover-description {
+    font-size: 1rem;
+  }
+}

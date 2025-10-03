@@ -331,6 +331,7 @@ import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
   props: [],
@@ -382,8 +383,9 @@ export default Vue.extend({
     async usedConfig() {
       await this.$store.dispatch('tabs/load')
       if (!this.tabItems?.length) {
-        this.createQuery()
+        await this.createQuery()
       }
+      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
