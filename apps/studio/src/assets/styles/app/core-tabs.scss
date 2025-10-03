@@ -8,6 +8,7 @@
 
   .btn-upgrade {
     margin-right: 0.8rem;
+    margin-left: auto;
   }
 
   .tab-content, .tab-pane {
@@ -34,14 +35,27 @@
     display: flex;
     align-items: center;
     background: $tabs-bg;
+
+    .add-tab-group {
+      transition: all 0.2s ease-in-out;
+      border: 1px solid transparent;
+      border-radius: 9999px;
+      display: flex;
+
+      &:has(.add-tab-dropdown:hover) {
+        border-color: var(--border-color);
+      }
+
+      .btn-fab > i {
+        font-size: 1.145rem;
+      }
+    }
     // -webkit-app-region: drag;
     .add-query {
       i {
-        color: $text-lighter;
         transition: all 0.2s ease-in-out;
       }
       &:hover {
-        background: none;
         i {
           color: $text-dark;
         }
@@ -191,7 +205,7 @@
     }
   }
   .actions {
-    padding: 0 $gutter-h;
+    margin: 0 $gutter-h;
     display: flex;
     flex-direction: row;
     -webkit-app-region: no-drag;

@@ -40,6 +40,7 @@ import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModu
 import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
+import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
 (async () => {
 
@@ -140,6 +141,7 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
       }
     })
 
+    const utility = new UtilityConnection()
 
     Vue.config.productionTip = false
     Vue.use(VueHotkey, {
@@ -162,13 +164,14 @@ import * as UIKit from '@beekeeperstudio/ui-kit'
       closeWith: ['button', 'click'],
     })
     Vue.use(VueKeyboardTrapDirectivePlugin)
+    Vue.use(ProductTourPlugin, { store, utility })
 
     const app = new Vue({
       render: h => h(App),
       store,
     })
 
-    Vue.prototype.$util = new UtilityConnection();
+    Vue.prototype.$util = utility;
     window.main.attachPortListener();
     window.onmessage = (event) => {
       if (event.source === window && event.data.type === 'port') {
