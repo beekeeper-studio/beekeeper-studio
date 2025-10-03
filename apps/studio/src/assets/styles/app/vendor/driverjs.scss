@@ -16,6 +16,10 @@
     font-family: "Material Icons";
   }
 
+  .driver-popover-arrow-side-bottom {
+    border-bottom-color: var(--theme-bg);
+  }
+
   [class^="driver-"][class$="-btn"] {
     @include btn;
   }

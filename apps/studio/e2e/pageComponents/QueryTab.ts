@@ -10,7 +10,7 @@ export class QueryTab {
     this.page = page;
     this.queryTabTextArea = this.page.locator('#tab-0').getByRole('textbox');
     this.runQueryButton = this.page.getByRole('button', { name: 'Run' });
-    this.openNewTabButton = this.page.locator('a').filter({ hasText: 'add_circle' });
+    this.openNewTabButton = this.page.locator('#add-tab-group a').filter({ hasText: 'add' });
   }
 
   async tabTextArea(tabNumber?: string) {
