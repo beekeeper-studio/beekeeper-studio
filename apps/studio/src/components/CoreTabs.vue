@@ -39,21 +39,20 @@
           class="btn-fab add-tab-dropdown"
           menu
           id="add-tab-dropdown"
-          v-if="tabTypeConfigs.length > 1"
+          v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <template v-for="(config, index) in tabTypeConfigs">
+            <template v-for="(menuItem, index) in newTabDropdownItems">
               <x-menuitem
-                v-if="config.menuItem"
                 :key="index"
-                @click.prevent="createTab(config)"
+                @click.prevent="createTab(menuItem.config)"
               >
                 <x-label>
-                  <i class="material-icons">{{ config.icon }}</i>
-                  {{ config.menuItem.label }}
+                  <i class="material-icons">{{ menuItem.config.icon }}</i>
+                  {{ menuItem.label }}
                 </x-label>
-                <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
+                <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
               </x-menuitem>
             </template>
           </x-menu>
@@ -403,7 +402,7 @@ export default Vue.extend({
        'dialect': 'dialect', 
        'dialectData': 'dialectData', 
        'dialectTitle': 'dialectTitle',
-       'tabTypeConfigs': 'tabs/tabTypeConfigs',
+       'newTabDropdownItems': 'tabs/newTabDropdownItems',
     }),
     tabIcon() {
       return {

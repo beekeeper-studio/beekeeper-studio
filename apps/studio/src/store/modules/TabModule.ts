@@ -47,6 +47,14 @@ export const TabModule: Module<State, RootState> = {
         return true;
       })
     },
+    newTabDropdownItems(_state, getters) {
+      const items = [];
+      for (const config of getters.tabTypeConfigs) {
+        if (!config.menuItem) continue;
+        items.push({ ...config.menuItem, config });
+      }
+      return items;
+    },
     sortedTabs(state) {
       return _.sortBy(state.tabs, 'position')
     },
