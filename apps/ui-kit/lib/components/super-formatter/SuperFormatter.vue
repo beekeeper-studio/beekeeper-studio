@@ -19,30 +19,25 @@
         </label>
         <button
           type="button"
-          class="btn btn-fab"
+          @click.prevent="addPreset"
+          class="menu-btn btn btn-fab"
         >
           <i class="material-icons">add_circle</i>
         </button>
       </div>
       <div v-if="addNewPreset" class="presets">
         <label>
-          Preset
-          <select
-            @change="handlePresetChange"
-            v-model="selectedPresetId"
-          >
-            <option
-              v-for="opt in presetList"
-              :key="opt.value"
-              :value="opt.value"
-            >
-              {{ opt.label }}
-            </option>
-          </select>
+          Add New Preset
+          <input
+            type="text"
+            ref="addNewPresetInput"
+            v-model="addNewPresetName"
+          />
         </label>
         <button
           type="button"
-          class="btn btn-fab"
+          @click.prevent="cancelAdd"
+          class="btn btn-sm btn-flat"
         >
           Cancel
         </button>
@@ -57,7 +52,7 @@
             max="20"
             min="1"
             step="1"
-          >
+          />
         </label>
         <label class="formatter-settings__inputs switch">
           <span class="sr-only">Use Tabs</span>
@@ -168,11 +163,11 @@
         <button
           class="btn btn-small"
           type="button"
-          @click="savePreset"
+          @click.prevent="savePreset"
           :disabled="!shouldBeSaved"
           v-if="canAddPresets"
         >
-          Save preset
+          {{ saveText }}
           <span 
             v-if="shouldBeSaved"
             class="material-icons-outlined"
@@ -182,7 +177,7 @@
         </button>
         <div class="formatter-buttons__btn-group">
           <button
-            @click="copyToClipboard"
+            @click.prevent="copyToClipboard"
             class="btn btn-small"
             type="button"
           >
@@ -191,7 +186,7 @@
           <button
             class="btn btn-small"
             type="button"
-            @click="applyFormat"
+            @click.prevent="applyFormat"
           >
             Apply
           </button>
@@ -266,10 +261,30 @@ export default Vue.extend({
       }))
     },
     shouldBeSaved() {
+      if (this.addNewPreset) {
+        return (this.addNewPresetName != null && this.addNewPresetName !== '')
+      } 
+
       return !isEqual(this.unsavedPreset, this.selectedPreset)
+    },
+    saveText() {
+      if (this.addNewPreset) {
+        return 'Add Preset'
+      }
+
+      return 'Save Preset'
     }
   },
   methods: {
+    addPreset() {
+      this.addNewPresetName = null
+      this.addNewPreset = true
+    },
+    cancelAdd() {
+      this.addNewPresetName = null
+      this.addNewPreset = false
+      this.unsavedPreset = { ...this.selectedPreset }
+    },
     applyFormat() {
       this.$emit('bks-apply-preset', this.selectedPreset)
     },
@@ -290,10 +305,31 @@ export default Vue.extend({
     },
     savePreset() {
       this.selectedPreset = { ...this.unsavedPreset }
+      if (this.addNewPreset) {
+        console.log('adding new preset. Should emit a thing')
+        return this.$emit('bks-create-preset', {
+          config: this.selectedPreset
+        })
+      }
+      console.log('saving a preset. Should emit a thing')
       this.$emit('bks-save-preset', {
         id: this.selectedPresetId,
         config: this.selectedPreset
       })
+    }
+  },
+  watch: {
+    addNewPreset(addingNewPreset) {
+      if (addingNewPreset) {
+        this.$nextTick(() => {
+          this.$refs.addNewPresetInput.focus()
+        })
+      }
+    },
+    presets() {
+      console.log('!!!new presets sent in!!!')
+      this.addNewPresetName = null
+      this.addNewPreset = false
     }
   },
   mounted() {

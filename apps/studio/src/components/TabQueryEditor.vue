@@ -259,6 +259,7 @@
             :presets="formatterPresets"
             @bks-apply-preset="applyPreset"
             @bks-save-preset="savePreset"
+            @bks-create-preset="savePreset"
           />
         </div>
       </modal>
@@ -787,6 +788,8 @@
       },
       savePreset({id, config}) {
         console.log('ohai')
+        if (id == null) return console.log('add new booooi')
+
         this.$util.send('appdb/formatter/updatePreset', {id, updateValues: { config }})
           .then((presetValues) => {
             this.selectedFormatter = presetValues.config
