@@ -59,3 +59,32 @@
 .noty_theme__mint.noty_type__success {
   color: color.adjust($brand-success, $lightness: 5%);
 }
+
+// Getting started notification
+.noty-gs-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: $gutter-h * 0.5;
+  display: flex;
+  align-items: center;
+
+  .noty-gs-logo {
+    width: auto;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+  }
+}
+
+.noty-gs-body .link {
+  color: color-mix(in srgb, var(--theme-primary) 90%, var(--text-dark) 20%);
+  text-decoration-line: underline;
+
+  &:hover {
+    color: color-mix(in srgb, var(--theme-primary) 90%, var(--text-dark) 40%);
+  }
+
+  &:focus-visible {
+    color: color-mix(in srgb, var(--theme-primary) 90%, var(--text-dark) 40%);
+    outline: 1px auto var(--text-dark);
+  }
+}

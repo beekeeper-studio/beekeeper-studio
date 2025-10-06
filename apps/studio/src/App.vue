@@ -146,7 +146,8 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
-    this.notifyFreeTrial()
+    this.notifyGettingStarted()
+    // this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');
     this.licenseInterval = setInterval(
@@ -181,6 +182,32 @@ export default Vue.extend({
 
   },
   methods: {
+    notifyGettingStarted() {
+      Noty.closeAll('getting-started')
+      const options = {
+        text: `<div class="noty-gs-title">
+                <img class="noty-gs-logo" src="/src/assets/logo.svg">
+                Welcome to Beekeeper Studio!
+              </div>
+              <div class="noty-gs-body">
+                Double click the demo database to explore app features,
+                <a class="link" href="https://docs.beekeeperstudio.io">watch our 60s quickstart video</a>,
+                or <a class="link" href="https://docs.beekeeperstudio.io">read our getting started guide</a>.
+              </div>`,
+        closeWith: ['button'],
+        layout: 'bottomRight',
+        timeout: false,
+        queue: 'getting-started',
+        buttons: [
+          Noty.button("Don't show again", 'btn btn-flat', () => {
+            console.log("dont show again")
+          }),
+        ]
+      }
+      // @ts-ignore
+      const n = new Noty(options)
+      n.show()
+    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {
