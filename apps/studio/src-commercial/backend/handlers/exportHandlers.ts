@@ -46,7 +46,8 @@ export interface IExportHandlers {
   'export/name': ({ id, sId }: { id: string, sId: string }) => Promise<string>,
   'export/start': ({ id, sId }: { id: string, sId: string }) => Promise<void>,
   'export/cancel': ({ id, sId }: { id: string, sId: string }) => Promise<void>,
-  'export/batch': ({ ids, sId }: { ids: string[], sId: string }) => Promise<void>
+  'export/batch': ({ ids, sId }: { ids: string[], sId: string }) => Promise<void>,
+  'export/retryFailed': ({ sId }: { sId: string }) => Promise<void>,
 }
 
 export const ExportHandlers: IExportHandlers = {
@@ -136,5 +137,11 @@ export const ExportHandlers: IExportHandlers = {
 
       return exporter.exportToFile();
     }));
+  },
+  'export/retryFailed': async function({ sId }: { sId: string }) {
+    const exports = state(sId).exports.values().filter((e) => e.status === ExportStatus.Aborted || e.status === ExportStatus.Error);
+    await Promise.all(exports.map((exporter) => {
+      return exporter.exportToFile();
+    }))
   }
 }
