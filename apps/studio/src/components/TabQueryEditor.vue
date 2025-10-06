@@ -142,7 +142,7 @@
               </x-menu>
             </x-button>
           </x-buttons>
-          <x-buttons class="">
+          <x-buttons v-show="canManageTransactions" class="">
             <x-button
               :disabled="running"
               @click.prevent="toggleCommitMode"
@@ -159,14 +159,12 @@
                   @click.prevent="manualCommit"
                 >
                   <x-label>Commit</x-label>
-                  <x-shortcut value="Shift+Control+C" />
                 </x-menuitem>
                 <x-menuitem
                   :disabled="!this.hasActiveTransaction"
                   @click.prevent="manualRollback"
                 >
                   <x-label>Rollback</x-label>
-                  <x-shortcut value="Shift+Control+R" />
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -399,6 +397,7 @@
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+import { IdentifyResult } from 'sql-query-identifier/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -478,6 +477,9 @@
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      canManageTransactions() {
+        return !this.dialectData?.disabledFeatures?.manualCommit;
+      },
       editorComponent() {
         return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
       },
@@ -569,6 +571,8 @@
           'queryEditor.selectEditor': this.selectEditor,
           'queryEditor.submitQueryToFile': this.submitQueryToFile,
           'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.manualCommit': this.manualCommit,
+          'queryEditor.manualRollback': this.manualRollback,
         })
       },
       queryParameterPlaceholders() {
@@ -969,7 +973,7 @@
           await this.cancelQuery();
         }
 
-        if (this.isManualCommit && !this.hasActiveTransaction) {
+        if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
           await this.connection.startTransaction(this.tab.id);
           this.hasActiveTransaction = true
         }
@@ -983,6 +987,18 @@
         let identification = []
         try {
           identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+
+          if (this.canManageTransactions && !this.isManualCommit) {
+            const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
+            const endTransaction = identification.filter((value: IdentifyResult) => value.type === "COMMIT" || value.type === "ROLLBACK").length
+
+            if (startTransaction > endTransaction) {
+              await this.toggleCommitMode()
+              this.hasActiveTransaction = true
+            }
+          }
+
+          log.info("IDENTIFICATION: ", identification)
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -1138,6 +1154,7 @@
         })
       },
       async toggleCommitMode() {
+        if (!this.canManageTransactions) return
         if (this.isManualCommit) {
           if (this.hasActiveTransaction) {
             this.connection.rollbackTransaction(this.tab.id);
@@ -1150,10 +1167,12 @@
         this.isManualCommit = !this.isManualCommit;
       },
       async manualCommit() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
         this.connection.commitTransaction(this.tab.id);
         this.hasActiveTransaction = false;
       },
       async manualRollback() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
         this.connection.rollbackTransaction(this.tab.id)
         this.hasActiveTransaction = false
       },

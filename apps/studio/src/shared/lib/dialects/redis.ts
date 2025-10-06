@@ -7,6 +7,7 @@ export const RedisData: DialectData = {
   textEditorMode: 'text/x-redis',
   rawFilterPlaceholder: 'Search',
   disabledFeatures: {
+    manualCommit: true,
     readOnlyPrimaryKeys: true,
     builderFilters: true,
     shell: true,

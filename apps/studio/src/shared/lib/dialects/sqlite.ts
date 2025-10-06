@@ -47,6 +47,7 @@ export const SqliteData: DialectData = {
   },
   textEditorMode: "text/x-sqlite",
   disabledFeatures: {
+    manualCommit: true,
     shell: true,
     schema: true,
     comments: true,

@@ -702,7 +702,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options.tabId });
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
     return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
@@ -1217,9 +1217,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
     log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
-    const hasReserved = this.reservedConnections.has(options.tabId)
-    if (options.tabId && hasReserved) {
-      const conn = this.peekConnection(options.tabId);
+    const hasReserved = this.reservedConnections.has(options?.tabId)
+    if (options?.tabId && hasReserved) {
+      const conn = this.peekConnection(options?.tabId);
       return await this.runQuery(conn, q, options);
     } else if (options.connection) {
       // This means connection.release will be called elsewhere

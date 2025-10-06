@@ -62,7 +62,7 @@ export interface BaseQueryResult {
 }
 
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn> implements IBasicDatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn = null> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
@@ -619,11 +619,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   // Manual transaction management
-  abstract reserveConnection(tabId: number): Promise<void>;
-  abstract releaseConnection(tabId: number): Promise<void>;
-  abstract startTransaction(tabId: number): Promise<void>;
-  abstract commitTransaction(tabId: number): Promise<void>;
-  abstract rollbackTransaction(tabId: number): Promise<void>;
+  async reserveConnection(_tabId: number): Promise<void> {}
+  async releaseConnection(_tabId: number): Promise<void> {}
+  async startTransaction(_tabId: number): Promise<void> {}
+  async commitTransaction(_tabId: number): Promise<void> {}
+  async rollbackTransaction(_tabId: number): Promise<void> {}
 
   protected pushConnection(tabId: number, conn: Conn) {
     if (this.reservedConnections.has(tabId)) {

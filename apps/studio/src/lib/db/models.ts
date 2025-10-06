@@ -268,8 +268,6 @@ export type QueryResult = NgQueryResult[];
 export interface CancelableQuery {
   execute: () => Promise<QueryResult>;
   cancel: () => Promise<void>;
-  commit?: () => Promise<void>;
-  rollback?: () => Promise<void>;
 }
 
 // Backups

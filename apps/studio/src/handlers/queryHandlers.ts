@@ -10,8 +10,7 @@ export interface IQueryHandlers {
 }
 
 export const QueryHandlers: IQueryHandlers = {
-  'query/execute': async function({ queryId, sId, isManualCommit }: { queryId: string, sId: string, isManualCommit: boolean }) { 
-    console.debug('QueryHandlers execute isManualCommit', isManualCommit)
+  'query/execute': async function({ queryId, sId, isManualCommit }: { queryId: string, sId: string, isManualCommit: boolean }) {
     checkConnection(sId);
     const query = state(sId).queries.get(queryId);
     if (!query) {
@@ -33,25 +32,6 @@ export const QueryHandlers: IQueryHandlers = {
     }
 
     await query.cancel();
-    state(sId).queries.delete(queryId);
-  },
-  'query/commit': async function({ queryId, sId }: { queryId: string, sId: string }) {
-    checkConnection(sId);
-    const query = state(sId).queries.get(queryId);
-    if (!query) {
-      throw new Error(errorMessages.noQuery);
-    }
-
-    await query.commit();
-    state(sId).queries.delete(queryId);
-  },
-  'query/rollback': async function({ queryId, sId }: { queryId: string, sId: string }) {
-    checkConnection(sId);
-    const query = state(sId).queries.get(queryId);
-    if (!query) {
-      throw new Error(errorMessages.noQuery);
-    }
-    await query.rollback();
     state(sId).queries.delete(queryId);
   }
 }
