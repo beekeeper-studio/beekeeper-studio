@@ -37,43 +37,30 @@ const flows: Record<
             return false;
           }
 
-          const settings = context.store.getters["settings/settings"];
-          if (settings["tabDropdownAIShellHintShown"]) {
+          if (context.store.getters.aiShellHintShown) {
             return false;
           }
 
           // Dont show it if the plugin is not in the dropdown menu (disabled or not installed)
-          if (
-            !context.store.getters["tabs/newTabDropdownItems"].find(
-              (t) => t.config.pluginId === "bks-ai-shell"
-            )
-          ) {
+          if (!context.store.getters.aiShellAvailable) {
             return false;
           }
 
-          const tabs = await context.utility.send("appdb/tabs/find", {
-            where: {
-              connectionId: context.store.getters["connection/id"],
-              workspaceId: context.store.getters["workspace/id"],
-              pluginId: "bks-ai-shell",
-            },
+          // Dont show it if the plugin is already open
+          const tabCount = await context.utility.send("appdb/tabs/count", {
+            where: { generatedPluginId: "bks-ai-shell" },
+            withDeleted: true,
           });
 
-          if (tabs.length > 0) {
-            context.store.dispatch("settings/save", {
-              key: "tabDropdownAIShellHintShown",
-              value: new Date(),
-            });
+          if (tabCount > 0) {
+            context.store.dispatch("setAiShellHintShown");
             return false;
           }
 
           return true;
         },
         onFinished(context) {
-          context.store.dispatch("settings/save", {
-            key: "tabDropdownAIShellHintShown",
-            value: new Date(),
-          });
+          context.store.dispatch("setAiShellHintShown");
         },
       },
     ],
