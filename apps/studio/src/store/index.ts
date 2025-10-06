@@ -262,7 +262,7 @@ const store = new Vuex.Store<State>({
       return state.expandFKDetailsByDefault
     },
     aiShellHintShown(_state, getters) {
-      return getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value;
+      return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
     },
     aiShellAvailable(_state, getters) {
       return getters["tabs/newTabDropdownItems"].some(

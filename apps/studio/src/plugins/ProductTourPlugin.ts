@@ -1,5 +1,5 @@
 import { PluginObject } from "vue";
-import { driver as createDriver, DriveStep } from "driver.js";
+import { driver as createDriver, DriveStep, PopoverDOM } from "driver.js";
 import { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import type store from "@/store";
 
@@ -13,6 +13,7 @@ type FlowId = "connectedScreen";
 type FlowStep = DriveStep & {
   shouldShow: (context: Context) => boolean | Promise<boolean>;
   onFinished: (context: Context) => void | Promise<void>;
+  onRender?: (popover: PopoverDOM) => void;
 };
 
 const flows: Record<
@@ -27,10 +28,17 @@ const flows: Record<
         element: "#add-tab-group",
         popover: {
           title: `<div class="main-title"><i class="material-icons ai-shell-icon">auto_awesome</i> AI Shell</div><div class="subtitle">Included in your paid plan</div>`,
-          description: `Use <b>AI Shell</b> from this menu to ask questions and generate queries.`,
+          description: `AI can explore your database and run SQL to answer your questions. Integrates with your favorite LLM.`,
           side: "bottom",
           showButtons: ["next"],
           doneBtnText: "Okay",
+        },
+        onRender(popover) {
+          const learnMore = document.createElement("a");
+          learnMore.innerText = "Learn more";
+          learnMore.classList.add("btn", "btn-flat");
+          learnMore.href = "https://beekeeperstudio.io/features/sql-ai";
+          popover.footerButtons.prepend(learnMore);
         },
         async shouldShow(context: Context) {
           if (context.store.getters.isCommunity) {
@@ -75,7 +83,25 @@ const tour = {
 
     for (const step of allSteps) {
       if (await step.shouldShow(context)) {
-        steps.push(step);
+        steps.push({
+          ...step,
+          popover: {
+            ...step.popover,
+            onPopoverRender(popover) {
+              popover.footerButtons
+                .querySelector(".driver-popover-next-btn")
+                .classList.add("btn", "btn-primary");
+
+              if (typeof step.element === "string") {
+                document.body.dataset.driverStepElement = step.element;
+              } else if (document.body.dataset.driverStepElement) {
+                delete document.body.dataset.driverStepElement;
+              }
+
+              step.onRender?.(popover);
+            },
+          },
+        });
       }
     }
 
@@ -85,7 +111,7 @@ const tour = {
 
     createDriver({
       steps,
-      overlayOpacity: 0.4,
+      overlayOpacity: 0.25,
       onNextClick(_el, _step, { state, driver }) {
         const step = steps[state.activeIndex];
         step.onFinished(context);
@@ -101,6 +127,7 @@ const tour = {
           }
           steps[i].onFinished(context);
         }
+        delete document.body.dataset.driverStepElement;
         driver.destroy();
       },
     }).drive();

@@ -50,3 +50,12 @@
     font-size: 1rem;
   }
 }
+
+.driver-popover-footer button {
+    text-decoration: unset;
+    text-shadow: unset;
+}
+
+&.driver-active[data-driver-step-element="#add-tab-group"] #add-tab-group {
+  border-color: var(--border-color);
+}
