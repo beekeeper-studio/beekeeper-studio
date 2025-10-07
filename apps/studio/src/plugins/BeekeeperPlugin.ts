@@ -17,6 +17,8 @@ export interface ContextOption {
 }
 
 interface MenuProps {
+  /** The id of the menu. Not to be confused with the `elementId`. */
+  id?: string
   options: ContextOption[],
   elementId?: string
   item: any,
