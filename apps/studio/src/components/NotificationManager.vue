@@ -82,7 +82,7 @@ export default Vue.extend({
       }
 
       // First time user will get a demo query tab (cheese query), so if the
-      // tab is more than 1, then the user has used the app before.
+      // tabCount is more than 1, then the user has used the app before.
       const tabCount = await this.$util.send("appdb/tabs/count", {
         withDeleted: true,
       });
@@ -126,9 +126,9 @@ export default Vue.extend({
       this.noty = n;
     },
   },
-  async mounted() {
-    await this.notifyOnboarding()
+  mounted() {
     this.initNotifyInterval()
+    this.notifyOnboarding()
   }
 })
 </script>
