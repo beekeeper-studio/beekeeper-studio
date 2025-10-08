@@ -93,11 +93,11 @@ export default Vue.extend({
       }
 
       const n = new Noty({
-        text: `<div class="noty-gs-title">
-                <img class="noty-gs-logo" src="/src/assets/logo.svg">
+        text: `<div class="noty-onboarding-title">
+                <img class="noty-onboarding-logo" src="/src/assets/logo.svg">
                 Welcome to Beekeeper Studio!
               </div>
-              <div class="noty-gs-body">
+              <div class="noty-onboarding-body">
                 Double click the demo database to explore app features,
                 <a class="link" href="https://docs.beekeeperstudio.io">watch our 60s quickstart video</a>,
                 or <a class="link" href="https://docs.beekeeperstudio.io">read our getting started guide</a>.
