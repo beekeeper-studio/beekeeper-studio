@@ -54,6 +54,7 @@ class ClickHouseColumnType extends ColumnType {
 }
 
 export const ClickHouseData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ClickHouseColumnType(t, false, defaultLength(t))),
   constraintActions: [],
   wrapIdentifier(value: string) {

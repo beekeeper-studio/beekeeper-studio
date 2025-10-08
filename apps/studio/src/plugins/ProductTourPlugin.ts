@@ -2,6 +2,7 @@ import { PluginObject } from "vue";
 import { driver as createDriver, DriveStep, PopoverDOM } from "driver.js";
 import { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import type store from "@/store";
+import { DialectData } from "@/shared/lib/dialects/models";
 
 type Context = {
   store: typeof store;
@@ -13,7 +14,7 @@ type FlowId = "connectedScreen";
 type FlowStep = DriveStep & {
   shouldShow: (context: Context) => boolean | Promise<boolean>;
   onFinished: (context: Context) => void | Promise<void>;
-  onRender?: (popover: PopoverDOM) => void;
+  onRender?: (popover: PopoverDOM, context: Context) => void;
 };
 
 const flows: Record<
@@ -28,17 +29,23 @@ const flows: Record<
         element: "#add-tab-group",
         popover: {
           title: `<div class="main-title"><i class="material-icons ai-shell-icon">auto_awesome</i> AI Shell</div><div class="subtitle">Included in your paid plan</div>`,
-          description: `AI can explore your database and run SQL to answer your questions. Integrates with your favorite LLM.`,
+          description: `AI can explore your database and run <span class="token">SQL</span> to answer your questions. Integrates with your favorite LLM.`,
           side: "bottom",
           showButtons: ["next"],
           doneBtnText: "Okay",
         },
-        onRender(popover) {
+        onRender(popover, context) {
           const learnMore = document.createElement("a");
           learnMore.innerText = "Learn more";
           learnMore.classList.add("btn", "btn-flat");
           learnMore.href = "https://beekeeperstudio.io/features/sql-ai";
           popover.footerButtons.prepend(learnMore);
+          const dialect: DialectData = context.store.getters.dialectData;
+          if (dialect) {
+            const token: HTMLSpanElement =
+              popover.wrapper.querySelector(".token");
+            token.innerText = dialect.sqlLabel;
+          }
         },
         async shouldShow(context: Context) {
           if (context.store.getters.isCommunity) {
@@ -98,7 +105,7 @@ const tour = {
                 delete document.body.dataset.driverStepElement;
               }
 
-              step.onRender?.(popover);
+              step.onRender?.(popover, context);
             },
           },
         });
