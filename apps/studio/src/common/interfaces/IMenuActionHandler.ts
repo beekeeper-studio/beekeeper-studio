@@ -25,6 +25,7 @@ export interface IMenuActionHandler {
   restart: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   contactSupport: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  openGettingStarted: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newQuery: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
