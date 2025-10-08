@@ -7,6 +7,7 @@ const types = [
 ]
 
 export const MongoDBData: DialectData = {
+  sqlLabel: "code",
   columnTypes: types.map((t) => new ColumnType(t)),
   usesOffsetPagination: true,
   queryDialectOverride: 'postgresql',
