@@ -12,7 +12,7 @@
           <toggle-form-area
             v-show="isUltimate"
             title="Runtime Extensions"
-            :expanded="extensionChosen"
+            :initially-expanded="extensionChosen"
           >
             <template>
               <div class="alert alert-info">
@@ -26,27 +26,36 @@
               </div>
 
               <div
-                class="alert"
                 v-if="extensionChosen"
               >
-                <i class="material-icons-outlined">check</i>
-                <span class="flex flex-row">
-                  <span class="expand">
-                    {{ sqliteRuntimeExtensions?.value }}
+                <div v-for="extension in extensions" :key="extension" class="alert">
+                  <i class="material-icons-outlined">check</i>
+                  <span class="flex flex-row">
+                    <span class="expand">
+                      {{ extension }}
+                    </span>
+                    <a
+                      class="a-icon"
+                      @click.prevent="unloadExtension(extension)"
+                    ><i class="material-icons">delete</i></a>
                   </span>
-                  <a
-                    class="a-icon"
-                    @click.prevent="unloadExtension"
-                  ><i class="material-icons">delete</i></a>
+                </div>
+              </div>
+              <div class="alert" v-else>
+                <span class="flex">
+                  <span class="expand">
+                    No extensions loaded
+                  </span>
                 </span>
               </div>
-              <settings-input
-                v-else
-                setting-key="sqliteExtensionFile"
-                input-type="file"
-                title="Runtime extension file"
-                :help="`File must have extension .${loadExtensionFileType}`"
-              />
+              <div class="row flex-middle">
+                <span class="expand"/>
+                <div class="btn-group">
+                  <button class="btn" @click.prevent.stop="loadExtension">
+                    <i class="material-icons">add</i> Add Extension
+                  </button>
+                </div>
+              </div>
             </template>
           </toggle-form-area>
           <div
@@ -70,7 +79,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import SettingsInput from '../common/SettingsInput.vue'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import FilePicker from '../common/form/FilePicker.vue'
 export default Vue.extend({
@@ -90,13 +99,29 @@ export default Vue.extend({
     ...mapGetters(['isUltimate']),
     ...mapGetters('settings', { 'sqliteRuntimeExtensions': 'sqliteRuntimeExtensions' }),
     extensionChosen() {
-      return !!this.sqliteRuntimeExtensions?.value
+      return this.extensions && this.extensions?.length > 0
+    },
+    extensions() {
+      return this.sqliteRuntimeExtensions?.value
     }
   },
   methods: {
-    async unloadExtension() {
-      await this.$store.dispatch('settings/save', { key: 'sqliteExtensionFile', value: null })
+    async unloadExtension(toRemove: string) {
+      let value = this.sqliteRuntimeExtensions?.value
+      value = value.filter((v) => v !== toRemove);
+      await this.$store.dispatch('settings/save', { key: 'sqliteExtensionFile', value })
     },
+    async loadExtension() {
+      let file = this.$native.dialog.showOpenDialogSync({
+        properties: ['openFile']
+      });
+
+      if (Array.isArray(file)) file = file[0]
+
+      let value = this.sqliteRuntimeExtensions?.value
+      value.push(file)
+      await this.$store.dispatch('settings/save', { key: 'sqliteExtensionFile', value })
+    }
   }
 })
 </script>
