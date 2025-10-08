@@ -69,6 +69,8 @@ import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
 import addOnboardingNotyShown from "./20251008_add_onboarding_noty_shown_setting"
+import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_column'
+import addTabDropdownAIShellHintShownSetting from './20251003_add_tab_dropdown_ai_shell_hint_shown_setting'
 
 import ultimate from './ultimate/index'
 
@@ -106,7 +108,7 @@ const realMigrations = [
   sqlAnywhereOptions,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
-  surrealDbOptions, upgradeSqliteExtensions, addOnboardingNotyShown
+  surrealDbOptions, upgradeSqliteExtensions, addOnboardingNotyShown, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting
 ]
 
 // fixtures require the models

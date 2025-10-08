@@ -23,6 +23,7 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 const UNWRAPPER = /^`(.*)`$/
 
 export const MysqlData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier(value: string) {

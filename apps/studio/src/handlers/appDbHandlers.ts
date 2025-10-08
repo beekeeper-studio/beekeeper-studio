@@ -91,7 +91,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       // Support both direct options or wrapped in { options: ... }
       const options = 'options' in args ? args.options : args;
       return await cls.count(options);
-    },
+    }
   }
 }
 

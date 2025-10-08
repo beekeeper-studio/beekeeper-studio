@@ -264,6 +264,14 @@ const store = new Vuex.Store<State>({
     onboardingNotyShown(_state, getters) {
       return !_.isEmpty(getters["settings/settings"]["onboardingNotyShown"]?.value);
     },
+    aiShellHintShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
+    },
+    aiShellAvailable(_state, getters) {
+      return getters["tabs/newTabDropdownItems"].some(
+        ({ config }) => config.pluginId === "bks-ai-shell"
+      );
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -679,6 +687,12 @@ const store = new Vuex.Store<State>({
     setOnboardingNotyShown(context) {
       context.dispatch('settings/save', {
         key: 'onboardingNotyShown',
+        value: new Date(),
+      });
+    },
+    setAiShellHintShown(context) {
+      context.dispatch("settings/save", {
+        key: "tabDropdownAIShellHintShown",
         value: new Date(),
       });
     },
