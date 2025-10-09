@@ -39,6 +39,8 @@ import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
 import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
+import * as UIKit from '@beekeeperstudio/ui-kit'
+import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
 (async () => {
 
@@ -74,6 +76,22 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
       }
     });
 
+    UIKit.setClipboard(
+      new (class extends EventTarget implements Clipboard {
+        async writeText(text: string) {
+          window.main.writeTextToClipboard(text)
+        }
+        async readText() {
+          return window.main.readTextFromClipboard()
+        }
+        async read(): Promise<ClipboardItem[]> {
+          throw new Error("Not implemented")
+        }
+        async write(_items: ClipboardItem[]) {
+          throw new Error("Not implemented")
+        }
+      })()
+    );
 
     window.main.setTlsMinVersion("TLSv1");
     TimeAgo.addLocale(en)
@@ -123,6 +141,7 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
       }
     })
 
+    const utility = new UtilityConnection()
 
     Vue.config.productionTip = false
     Vue.use(VueHotkey, {
@@ -145,13 +164,14 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
       closeWith: ['button', 'click'],
     })
     Vue.use(VueKeyboardTrapDirectivePlugin)
+    Vue.use(ProductTourPlugin, { store, utility })
 
     const app = new Vue({
       render: h => h(App),
       store,
     })
 
-    Vue.prototype.$util = new UtilityConnection();
+    Vue.prototype.$util = utility;
     window.main.attachPortListener();
     window.onmessage = (event) => {
       if (event.source === window && event.data.type === 'port') {
@@ -167,25 +187,24 @@ import PluginStoreService from '@/services/plugin/web/PluginStoreService'
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
-    try {
-      const webPluginManager = new WebPluginManager(
-        Vue.prototype.$util,
-        new PluginStoreService(store, {
-          emit: (...args) => app.$root.$emit(...args),
-          on: (...args) => app.$root.$on(...args),
-          off: (...args) => app.$root.$off(...args),
-        })
-      )
-      await webPluginManager.initialize()
-      Vue.prototype.$plugin = webPluginManager;
-      if (window.platformInfo.isDevelopment) {
-        window.webPluginManager = webPluginManager; // For debugging
-      }
-    } catch (e) {
+    const webPluginManager = new WebPluginManager(
+      Vue.prototype.$util,
+      new PluginStoreService(store, {
+        emit: (...args) => app.$root.$emit(...args),
+        on: (...args) => app.$root.$on(...args),
+        off: (...args) => app.$root.$off(...args),
+      }),
+      window.platformInfo.appVersion
+    )
+    webPluginManager.initialize().then(() => {
+      store.commit("webPluginManagerStatus", "ready")
+    }).catch((e) => {
       log.error("Error initializing web plugin manager", e)
-      if (!Vue.prototype.$plugin) Vue.prototype.$plugin = {}
-      Vue.prototype.$plugin.failedToInitialize = true
-    }
+      store.commit("webPluginManagerStatus", "failed-to-initialize")
+    })
+    Vue.prototype.$plugin = webPluginManager;
+    Vue.prototype.$bksPlugin = webPluginManager;
+    window.bksPlugin = webPluginManager; // For debugging
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")

@@ -15,7 +15,9 @@ export default {
   data() {
     return {
       textEditor: null,
+      internalMenuContextModifiers: [],
       internalContextMenuItems: [],
+      internalActionsKeymap: []
     };
   },
 
@@ -177,6 +179,7 @@ export default {
         markers: this.markers,
         lineGutters: this.lineGutters,
         foldGutters: this.foldGutters,
+        actionsKeymap: this.getActionsKeymap()
       });
 
       this.textEditor = textEditor;
@@ -184,6 +187,26 @@ export default {
       this.initialized?.();
 
       this.$emit("bks-initialized", { editor: textEditor } as TextEditorInitializedEvent['detail']);
+    },
+
+    getActionsKeymap() {
+      const keys =  [
+        {
+          key: "Mod-f",
+          run: () => {
+            this.textEditor.execCommand("findAndReplace")
+          }
+        },
+        {
+          key: "Mod-r",
+          run: () => {
+            this.textEditor.execCommand("findAndReplace")
+          }
+        },
+        ...this.internalActionsKeymap
+      ]
+
+      return keys
     },
 
     showContextMenu(event: Event) {
@@ -204,7 +227,7 @@ export default {
             label: "Redo",
             id: "text-redo",
             handler: () => this.textEditor.execCommand("redo"),
-            shortcut: "Shift+Z",
+            shortcut: "Control+Shift+Z",
             write: true,
           },
           {
@@ -234,12 +257,7 @@ export default {
             id: "text-paste",
             handler: async () => {
               const clipboard = await readClipboard();
-              if (this.textEditor.getSelection()) {
-                this.textEditor.replaceSelection(clipboard, "around");
-              } else {
-                const cursor = this.textEditor.getCursor();
-                this.textEditor.replaceRange(clipboard, cursor);
-              }
+              this.textEditor.replaceSelection(clipboard);
             },
             shortcut: "Control+V",
             write: true,
@@ -263,31 +281,13 @@ export default {
           },
           divider,
           {
-            label: "Find",
+            label: "Find & Replace",
             id: "text-find",
             handler: () => {
-              this.textEditor.execCommand("find");
+              this.textEditor.execCommand("findAndReplace");
             },
             shortcut: "Control+F",
-          },
-          {
-            label: "Replace",
-            id: "text-replace",
-            handler: () => {
-              this.textEditor.execCommand("replace");
-            },
-            shortcut: "Control+R",
-            write: true,
-          },
-          {
-            label: "Replace All",
-            id: "text-replace-all",
-            handler: () => {
-              this.textEditor.execCommand("replaceAll");
-            },
-            shortcut: "Shift+R",
-            write: true,
-          },
+          }
         ],
         event,
       };
@@ -308,7 +308,14 @@ export default {
         items as InternalContextItem<unknown>[],
         this.contextMenuItems
       );
-      openMenu({ event, options: items });
+      let context = {
+        text: this.textEditor.getValue(),
+        selectedText: this.textEditor.getSelection(),
+      }
+      for (const mod of this.internalMenuContextModifiers) {
+        context = mod(context);
+      }
+      openMenu({ event, options: items, item: context });
     },
   },
 

@@ -25,3 +25,4 @@ apps/studio/test-results
 *.db
 *.log
 *.orig
+surreal_data/

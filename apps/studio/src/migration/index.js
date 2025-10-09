@@ -13,6 +13,8 @@ import dev5 from './dev-5'
 import dev6 from './dev-6'
 import dev7 from './dev-7'
 import dev8 from './dev-8'
+import dev9 from './dev-9'
+import dev10 from './dev-10'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -64,6 +66,10 @@ import addPrivacyModeSetting from "./20250618_add_privacy_mode_setting"
 import createUserPins from './20250604_create_user_pins'
 import createPluginData from './20250630_create_plugin_data'
 import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
+import surrealDbOptions from './20250702_add_surrealdb_options'
+import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
+import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_column'
+import addTabDropdownAIShellHintShownSetting from './20251003_add_tab_dropdown_ai_shell_hint_shown_setting'
 
 import ultimate from './ultimate/index'
 
@@ -101,6 +107,7 @@ const realMigrations = [
   sqlAnywhereOptions,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
+  surrealDbOptions, upgradeSqliteExtensions, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting
 ]
 
 // fixtures require the models
@@ -109,7 +116,8 @@ const fixtures = [
 ]
 
 const devMigrations = [
-  dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8
+  dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8, dev9,
+  dev10
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

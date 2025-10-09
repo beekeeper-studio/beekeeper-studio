@@ -63,7 +63,7 @@ export type TextEditorConfiguration = Configuration | ConfigurationWithLS;
 
 type Configuration = ExtensionConfiguration & {
   parent: HTMLElement;
-  onValueChange: (value: string) => void;
+  onValueChange?: (value: string) => void;
   onSelectionChange?: (value: string) => void;
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
@@ -71,6 +71,7 @@ type Configuration = ExtensionConfiguration & {
   initialValue?: string;
   focus?: boolean;
   replaceExtensions?: Extension | ((extensions: Extension) => Extension);
+  actionsKeymap?: any[]
 }
 
 type ConfigurationWithLS = Configuration & {
@@ -89,9 +90,10 @@ export interface ExtensionConfiguration {
   markers?: EditorMarker[];
   lineGutters?: LineGutter[];
   foldGutters?: boolean;
+  actionsKeymap?: any[];
 }
 
-export type LanguageId = "json" | "html" | "javascript";
+export type LanguageId = "json" | "html" | "javascript" | "redis";
 
 export interface LSContext {
   client: LanguageServerClient;

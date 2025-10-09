@@ -2,11 +2,20 @@ import _ from 'lodash'
 import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere'] as const
+const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'redis'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
+interface ImportDefaultDataTypes {
+  stringType?: string
+  longStringType?: string 
+  dateType?: string
+  booleanType?: string
+  integerType?: string
+  numberType?: string
+  defaultType: string
+}
 
 export const SpecialTypes = ['autoincrement']
 export type Dialect = typeof Dialects[number]
@@ -44,7 +53,10 @@ export const DialectTitles: {[K in Dialect]: string} = {
   duckdb: "DuckDB",
   clickhouse: "ClickHouse",
   mongodb: "MongoDB",
-  sqlanywhere: 'SqlAnywhere'
+  sqlanywhere: 'SqlAnywhere',
+  trino: 'Trino',
+  surrealdb: 'SurrealDB',
+  redis: 'Redis'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -59,7 +71,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite'
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
@@ -69,6 +81,8 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
   if (d === 'duckdb') return 'sql'
+  if (d === 'trino') return 'trino'
+  if (d === 'surrealdb') return 'sql'
   return 'mysql' // we want this as the default
 }
 
@@ -95,6 +109,7 @@ export interface DialectData {
   queryDialectOverride?: string,
   columnTypes?: ColumnType[],
   constraintActions?: string[]
+  importDataType?: ImportDefaultDataTypes
   wrapIdentifier?: (s: string) => string
   editorFriendlyIdentifier?: (s: string) => string
   escapeString?: (s: string, quote?: boolean) => string
@@ -105,8 +120,12 @@ export interface DialectData {
   usesOffsetPagination?: boolean
   requireDataset?: boolean,
   disallowedSortColumns?: string[],
+  rawFilterPlaceholder?: string,
+  /** Is it called "sql" or "code" in this dialect? */
+  sqlLabel: "SQL" | "code";
   disabledFeatures?: {
     rawFilters?: boolean
+    builderFilters?: boolean
     shell?: boolean
     queryEditor?: boolean
     informationSchema?: {
@@ -157,7 +176,8 @@ export interface DialectData {
     headerSort?: boolean,
     duplicateTable?: boolean,
     export?: {
-      sql?: boolean
+      sql?: boolean,
+      stream?: boolean
     }
     schema?: boolean
     multipleDatabases?: boolean
@@ -166,10 +186,10 @@ export interface DialectData {
     chunkSizeStream?: boolean
     binaryColumn?: boolean
     initialSort?: boolean
-    multipleDatabase?: boolean
     sqlCreate?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
+    readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
   },
   notices?: {
     infoSchema?: string
@@ -279,7 +299,7 @@ export const AdditionalMongoOrders = [ '2d', '2dsphere', 'text', 'geoHaystack', 
 
 export interface IndexColumn {
   name: string
-  order: 'ASC' | 'DESC' | '2d' | '2dsphere' | 'text' | 'geoHaystack' | 'hashed' | number // after DESC is for mongo only
+  order?: 'ASC' | 'DESC' | '2d' | '2dsphere' | 'text' | 'geoHaystack' | 'hashed' | number // after DESC is for mongo only
   prefix?: number | null // MySQL Only
 }
 

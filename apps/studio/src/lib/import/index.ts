@@ -12,7 +12,7 @@ export default class Import {
   logger: () => rawLog.LogFunctions;
   importScriptOptions: any;
 
-  constructor(fileName, options, connection, table) {
+  constructor(fileName, options, connection, table = null) {
     this.fileName = fileName
     this.options = options
     this.connection = connection
@@ -30,11 +30,11 @@ export default class Import {
     this.importScriptOptions.userImportOptions = opt
   }
   
-  async importFile() {
+  async importFile(createTableSql = null) {
     this.importScriptOptions.importerOptions = this.getImporterOptions({ isPreview: false });
     this.importScriptOptions.storeValues = { ...this.options };
 
-    await this.connection.importFile(this.table, this.importScriptOptions, this.read.bind(this))
+    await this.connection.importFile(this.table, this.importScriptOptions, this.read.bind(this), createTableSql)
   }
 
   /**
@@ -146,7 +146,7 @@ export default class Import {
     throw new Error("Method 'read()' must be implemented.")
   }
 
-  async getPreview(_options?: any): Promise<any> {
+  async getPreview(): Promise<any> {
     throw new Error("Method 'getPreview()' must be implemented.")
   }
 
@@ -165,5 +165,51 @@ export default class Import {
 
   async getSheets(): Promise<any> {
     throw new Error("Method 'getSheets()' must be implemented but is Excel only")
+  }
+
+  checkDataType (data) {
+    if (_.isNil(data)) return 'null'
+    if (_.isDate(data)) return 'dateType'
+    if (_.isBoolean(data)) return 'booleanType'
+
+    if (_.isFinite(Number(data))) {
+      if (Number.isInteger(Number(data))) return 'integerType'
+
+      return 'numberType'
+    }
+
+    if (data.length > 255) return 'longStringType'
+
+    return 'stringType'
+  }
+
+  async generateColumnTypesFromFile (): Promise<any> {
+    const tablePreview = await this.getPreview()
+    const { columns: columnsRaw, data } = this.mapRawData(tablePreview)
+    
+    const { columns, dataAnalysis } = columnsRaw.reduce((acc, v) => {
+      const set = new Set()
+
+      acc.columns.push(v.title)
+      acc.dataAnalysis.push(set)
+
+      return acc
+    }, { columns: [], dataAnalysis: []})
+    
+    data.forEach(d => {
+      Object.keys(d).forEach(key => {
+        const arrInd = columns.indexOf(key)
+
+        if (arrInd == null) return
+
+        dataAnalysis[arrInd].add(this.checkDataType(d[key]))
+      })
+    })
+
+    return columns.map((col, arrInd) => ({
+      columnName: col,
+      primary: arrInd === 0,
+      dataTypes: dataAnalysis[arrInd]
+    }))
   }
 }

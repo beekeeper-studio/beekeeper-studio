@@ -39,6 +39,8 @@
   --bks-text-editor-property-fg-color: #a6e22e;
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-matchingselection-bg-color: #{rgba($theme-base, 0.1)};
+  --bks-text-editor-searchmatch-bg-color: rgb(from var(--bks-brand-secondary) r g b / 25%);
+  --bks-text-editor-searchmatch-selected-bg-color: rgb(from var(--bks-brand-info) r g b / 30%);
   --bks-text-editor-string-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
   --bks-text-editor-tag-fg-color: #f92672;
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
@@ -97,6 +99,10 @@
   --bks-text-editor-sql-alias-fg-color: #{$text-dark};
   --bks-text-editor-sql-field-fg-color: #{$brand-secondary};
 
+  // Panels (E.g. Find and replace)
+  --bks-text-editor-panel-bg-color: var(--bks-query-editor-bg);
+  --bks-text-editor-panel-fg-color: var(--bks-text-dark);
+
   // Context Menu
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
@@ -117,6 +123,7 @@
   }
 
   .cm-scroller {
+    outline: none;
     font-family: $font-family-mono;
   }
 
@@ -206,6 +213,10 @@
     background-color: var(--bks-text-editor-matchingselection-bg-color);
   }
 
+  // Search
+  .cm-searchMatch { background-color: var(--bks-text-editor-searchmatch-bg-color); }
+  .cm-searchMatch-selected { background-color: var(--bks-text-editor-searchmatch-selected-bg-color); }
+
   // Gutters and line numbers
   .cm-gutters {
     background-color: var(--bks-text-editor-gutter-bg-color);
@@ -257,13 +268,75 @@
   // Marker styles
   .cm-error {
     background-color: var(--bks-text-editor-error-bg-color);
-    border-bottom: 2px dashed var(--bks-text-editor-error-fg-color);
+    border-bottom: 1px solid var(--bks-text-editor-error-fg-color);
     border-radius: 2px;
   }
 
   .cm-highlight {
     background-color: var(--bks-text-editor-highlight-bg-color);
     border-radius: 2px;
+  }
+
+  .cm-panel {
+    background-color: var(--bks-query-editor-bg);
+    color: var(--bks-text-dark);
+  }
+
+  .cm-textfield {
+    @include bk-form-input;
+    width: 15em;
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    font-size: 12px;
+  }
+
+  .cm-button {
+    @include btn;
+    background-image: none; // reset cm style
+    background-color: var(--bks-text-editor-button-bg-color);
+    text-transform: capitalize;
+  }
+
+  .cm-panel.cm-search {
+    border-bottom: 1px solid var(--bks-border-color);
+
+    button, input, label {
+      margin-top: 0;
+      margin-bottom: 0.4rem;
+      font-family: $font-family;
+    }
+
+    label {
+      min-height: 25px;
+      input {
+        margin: 0;
+      }
+    }
+
+    [name=close] {
+      width: 1.6rem;
+      height: 1.6rem;
+      font-size: 1.3rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      color: inherit;
+
+      &:hover, &:focus {
+        background: rgb(from var(--bks-theme-base) r g b / 12%);
+      }
+    }
+
+    .cm-button {
+      @include btn-flat;
+    }
+
+    > label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: capitalize;
+    }
   }
 }
 
