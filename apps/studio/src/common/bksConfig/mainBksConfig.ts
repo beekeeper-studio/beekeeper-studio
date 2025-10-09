@@ -115,7 +115,7 @@ function readConfig(filePath: string) {
     log.debug(`Successfully read config ${filePath}.`);
     return processRawConfig(config);
   } catch (error) {
-    log.error(`Failed reading config ${filePath}.`, error);
+    log.debug(`Failed reading config ${filePath}.`, error);
     throw error;
   }
 }
