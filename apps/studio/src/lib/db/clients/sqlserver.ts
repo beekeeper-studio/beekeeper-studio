@@ -977,7 +977,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   async connect(signal?: AbortSignal): Promise<void> {
     await super.connect();
-    throw new Error("login failed for user <token-identified principal> Something something")
 
     this.dbConfig = await this.configDatabase(this.server, this.database, signal)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
