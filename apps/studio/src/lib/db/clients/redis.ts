@@ -281,7 +281,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     });
     await this.redis.connect();
 
-    this.getRespVersion();
+    await this.getRespVersion();
 
     // Uncomment to get command list & docs upon connection as json
     // Used in autocomplete
