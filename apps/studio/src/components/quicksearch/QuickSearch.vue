@@ -9,12 +9,12 @@
       ref="menu"
     >
       <div class="form-group">
-        <input
+        <BaseInput
           type="text"
           ref="searchBox"
           placeholder="Quick Search"
           v-model="searchTerm"
-        >
+        />
         <span
           class="clear"
           @click.prevent="searchTerm = null"
@@ -140,12 +140,13 @@ import { mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
 import TableIcon from '@/components/common/TableIcon.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
+import BaseInput from '@/components/common/form/BaseInput.vue'
 export default Vue.extend({
-  components: { TableIcon },
+  components: { TableIcon, BaseInput },
   mounted() {
     document.addEventListener('mousedown', this.maybeHide)
     this.$nextTick(() => {
-      this.$refs.searchBox.focus()
+      this.$refs.searchBox.input.focus()
       this.getTabHistory()
     })
   },

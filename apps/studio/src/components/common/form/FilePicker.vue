@@ -2,7 +2,7 @@
   <div
     class="input-group"
   >
-    <input
+    <BaseInput
       :id="inputId"
       type="text"
       class="form-control clickable"
@@ -13,7 +13,8 @@
       :readonly="!editable"
       @click.prevent.stop="!editable && openFilePickerDialog()"
       @input="$emit('input', $event.target.value)"
-    >
+      :context-menu="editable"
+    />
     <div
       class="input-group-append"
       :class="{ 'not-last': hasOtherActions || showCreateButton }"
@@ -42,6 +43,7 @@
 </template>
 
 <script>
+import BaseInput from '@/components/common/form/BaseInput.vue';
 
 /* options and all for the native file picker can be found here https://www.electronjs.org/docs/latest/api/dialog */
 export default {
@@ -95,6 +97,7 @@ export default {
       default: false,
     },
   },
+  components: { BaseInput },
   computed: {
     hasOtherActions() {
       return !!this.$slots.actions;

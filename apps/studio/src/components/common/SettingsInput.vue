@@ -14,11 +14,11 @@
       :options="{properties: ['openDirectory']}"
       button-text="Choose Directory"
     />
-    <input
+    <BaseInput
       v-else
       type="text"
       v-model="value"
-    >
+    />
     <small
       v-if="help"
       class="help text-muted"
@@ -31,8 +31,9 @@ import Vue from 'vue'
 import _ from 'lodash'
 import { mapState } from 'vuex'
 import FilePicker from './form/FilePicker.vue'
+import BaseInput from '@/components/common/form/BaseInput.vue'
 export default Vue.extend({
-  components: { FilePicker },
+  components: { FilePicker, BaseInput },
   props: ['settingKey', 'title', 'inputType', 'help'],
   data: () => ({
 

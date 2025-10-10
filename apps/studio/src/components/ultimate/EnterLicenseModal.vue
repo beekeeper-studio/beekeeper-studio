@@ -30,11 +30,11 @@
           <error-alert :error=" error" />
           <div class="form-group">
             <label for="email">License Name</label>
-            <input type="text" v-model="email">
+            <BaseInput type="text" v-model="email" />
           </div>
           <div class="form-group">
             <label for="key">License Key</label>
-            <input type="text" v-model="key">
+            <BaseInput type="text" v-model="key" />
           </div>
         </div>
       </div>
@@ -55,9 +55,10 @@ import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
 import ErrorAlert from '../common/ErrorAlert.vue'
 import LicenseInformation from './LicenseInformation.vue'
+import BaseInput from '@/components/common/form/BaseInput.vue'
 import _ from 'lodash'
 export default Vue.extend({
-  components: { ErrorAlert, LicenseInformation },
+  components: { ErrorAlert, LicenseInformation, BaseInput },
   data: () => ({
     email: null, key: null,
     error: null
