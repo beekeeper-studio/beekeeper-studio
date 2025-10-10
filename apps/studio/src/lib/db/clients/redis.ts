@@ -153,14 +153,19 @@ function parseInfo(info: string) {
   );
 }
 
-function makeObjectResult(result: unknown, command: string) {
-  const rows = [result];
+function makeObjectResult(result: unknown) {
+  const rows = Object.entries(result).map(([field, value]) => ({
+    field,
+    value,
+  }));
   return {
     rows,
-    fields: Object.keys(result).map((key) => ({ name: key, id: key })),
+    fields: [
+      { name: "field", id: "field" },
+      { name: "value", id: "value" },
+    ],
     rowCount: rows.length,
     affectedRows: 0,
-    command,
   };
 }
 
