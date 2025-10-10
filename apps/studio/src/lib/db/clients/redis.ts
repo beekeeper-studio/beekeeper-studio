@@ -59,24 +59,21 @@ function has(haystack: string[], needle: string) {
   );
 }
 
-const REDIS_COMMAND_DOCS_KEYS_REVERSED = Object.keys(
-  REDIS_COMMAND_DOCS
-).reverse() as (keyof typeof REDIS_COMMAND_DOCS)[];
-
 function parseKnownRedisCommand(commandWithArgs: string[]) {
-  const line = commandWithArgs.join(" ").toLowerCase();
+  const tokens = commandWithArgs.map(t => t.toLowerCase());
 
-  // Reverse is to ensure that more specific commands are matched before command groups
-  // This highly depends on sorting order of the keys in REDIS_COMMAND_DOCS
-  for (const key of REDIS_COMMAND_DOCS_KEYS_REVERSED) {
-    if (line.startsWith(key.toLowerCase())) {
-      const keyLength = key.split(" ").length;
+  while (tokens.length > 0) {
+    const candidate = tokens.join(' ');
+
+    if (candidate in REDIS_COMMAND_DOCS) {
       return {
-        name: key,
-        command: commandWithArgs.slice(0, keyLength),
-        args: commandWithArgs.slice(keyLength),
+        name: candidate as keyof typeof REDIS_COMMAND_DOCS,
+        command: commandWithArgs.slice(0, tokens.length),
+        args: commandWithArgs.slice(tokens.length),
       };
     }
+
+    tokens.pop();
   }
 
   return null;

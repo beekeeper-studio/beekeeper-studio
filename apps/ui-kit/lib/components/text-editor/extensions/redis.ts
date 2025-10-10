@@ -22,21 +22,18 @@ interface RedisState {
   wordPosition: number;
 }
 
-// Build command lookup: lowercase command name -> command data
-// const REDIS_COMMAND_DOCS_KEYS = Object.keys(REDIS_COMMAND_DOCS) as (keyof typeof REDIS_COMMAND_DOCS)[];
-const REDIS_COMMAND_DOCS_KEYS_REVERSED = Object.keys(
-  REDIS_COMMAND_DOCS
-).reverse() as (keyof typeof REDIS_COMMAND_DOCS)[];
-
-// Reverse is to ensure that more specific commands are matched before command groups
-// This highly depends on sorting order of the keys in REDIS_COMMAND_DOCS
+// Split command text into tokens and progressively match from most specific to least specific
 function findCommand(text: string): keyof typeof REDIS_COMMAND_DOCS | null {
-  const lowerText = text.toLowerCase();
+  let tokens = text.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
-  for (const key of REDIS_COMMAND_DOCS_KEYS_REVERSED) {
-    if (lowerText.startsWith(key)) {
-      return key;
+  while (tokens.length > 0) {
+    const candidate = tokens.join(' ');
+
+    if (candidate in REDIS_COMMAND_DOCS) {
+      return candidate as keyof typeof REDIS_COMMAND_DOCS;
     }
+
+    tokens.pop();
   }
 
   return null;
