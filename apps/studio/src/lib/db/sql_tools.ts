@@ -32,10 +32,30 @@ export function convertParamsForReplacement(placeholders: string[], values: stri
   }
 }
 
+// Generic parameter replacement without formatting
+function genericReplaceParams(queryText: string, params: ParamItems | string[]): string {
+  if (Array.isArray(params)) {
+    // Positional params (?)
+    let index = 0;
+    return queryText.replace(/\?/g, () => {
+      return index < params.length ? params[index++] : '?';
+    });
+  } else {
+    // Named params (:name, $name, @name)
+    let result = queryText;
+    for (const [key, value] of Object.entries(params)) {
+      // Match :key, $key, or @key with word boundaries
+      const regex = new RegExp(`[:$@]${key}\\b`, 'g');
+      result = result.replace(regex, value);
+    }
+    return result;
+  }
+}
+
 export function deparameterizeQuery(queryText: string, dialect: Dialect, params: ParamItems | string[], paramTypes: Options["paramTypes"]) {
   if (dialect === 'redis') {
-    // formatting breaks redis multi-line command execution
-    return queryText;
+    // Parameter replacement only - no formatting to preserve multi-line commands
+    return genericReplaceParams(queryText, params);
   }
   // for if we want custom params in the future
   // paramTypes.custom = paramTypes.custom.map((reg: string) => ({ regex: reg }));
