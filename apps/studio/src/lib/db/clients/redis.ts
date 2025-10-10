@@ -190,11 +190,17 @@ function makeArrayOfObjectsResult(result: unknown[], command: string) {
 function makeCursorResult(result: unknown, command: string) {
   const { cursor, ...rest } = result as Record<string, unknown>;
   const [data] = Object.values(rest);
-  const rows = Array.isArray(data)
-    ? data.length && _.isPlainObject(data[0])
-      ? data.map((d) => ({ cursor, ...d }))
-      : data.map((value) => ({ cursor, value }))
-    : [{ cursor }];
+
+  let rows: unknown[] = [{ cursor }];
+
+  if (Array.isArray(data)) {
+    if (data.length && _.isPlainObject(data[0])) {
+      rows = data.map((d) => ({ cursor, ...d }));
+    } else {
+      rows = data.map((value) => ({ cursor, value }));
+    }
+  }
+
   return {
     rows,
     fields: [
