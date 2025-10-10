@@ -777,8 +777,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         return result.map((r) => ({ id: r.id, message: r.message }));
       }
       case "ReJSON-RL": {
-        const result = await this.redis.json.get(key, { path: "$" });
-        return JSON.parse(String(result));
+        const result = await this.redis.json.get(key, { path: ["$"] });
+        return result[0];
       }
       default:
         throw new Error(`Unsupported Redis type: ${type}`);
