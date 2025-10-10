@@ -20,6 +20,7 @@ interface RedisState {
   commandWordCount: number;
   commandTokens: Set<string>;
   wordPosition: number;
+  hasContentOnLine: boolean;
 }
 
 // Split command text into tokens and progressively match from most specific to least specific
@@ -51,6 +52,7 @@ export const redisStreamParser = StreamLanguage.define<RedisState>({
       commandWordCount: 0,
       commandTokens: new Set(),
       wordPosition: 0,
+      hasContentOnLine: false,
     };
   },
 
@@ -61,12 +63,13 @@ export const redisStreamParser = StreamLanguage.define<RedisState>({
       state.commandWordCount = 0;
       state.commandTokens = new Set();
       state.wordPosition = 0;
+      state.hasContentOnLine = false;
     }
 
     if (stream.eatSpace()) return null;
 
-    // Comments
-    if (stream.match(/^#.*/)) return "comment";
+    // Comments - only at start of line (after optional whitespace)
+    if (!state.hasContentOnLine && stream.match(/^#.*/)) return "comment";
 
     // String handling
     if (state.inString) {
@@ -87,16 +90,21 @@ export const redisStreamParser = StreamLanguage.define<RedisState>({
     if (stream.match(/^["']/)) {
       state.inString = true;
       state.stringDelim = stream.current();
+      state.hasContentOnLine = true;
       return "string";
     }
 
     // Numbers
-    if (stream.match(/^-?\d+(\.\d+)?/)) return "number";
+    if (stream.match(/^-?\d+(\.\d+)?/)) {
+      state.hasContentOnLine = true;
+      return "number";
+    }
 
     // Words
     if (stream.match(/^[^\s"']+/)) {
       const word = stream.current();
       const wordLower = word.toLowerCase();
+      state.hasContentOnLine = true;
 
       // Detect command once on first word
       if (!state.commandName) {
