@@ -24,7 +24,7 @@ interface RedisState {
 
 // Split command text into tokens and progressively match from most specific to least specific
 function findCommand(text: string): keyof typeof REDIS_COMMAND_DOCS | null {
-  let tokens = text.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const tokens = text.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
   while (tokens.length > 0) {
     const candidate = tokens.join(' ');
