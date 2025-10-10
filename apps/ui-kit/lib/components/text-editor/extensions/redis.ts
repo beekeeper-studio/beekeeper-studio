@@ -144,12 +144,13 @@ export function redisCompletion(
   // const endsWithSpace = false
   const completedWords = [...currentLine.text.matchAll(/\S /g)].length;
   const trimmedLine = currentLine.text.trim();
+  const trimmedLineLower = trimmedLine.toLowerCase();
 
   const visited = new Set<string>();
   const options: Completion[] = [];
 
   for (const [key, info] of Object.entries(REDIS_COMMAND_DOCS)) {
-    if (key.startsWith(trimmedLine)) {
+    if (key.startsWith(trimmedLineLower)) {
       const parts = key.split(" ").slice(completedWords, completedWords + 1);
       const label = parts.join(" ");
 
