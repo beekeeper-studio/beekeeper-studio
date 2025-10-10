@@ -40,6 +40,14 @@ const log = rawLog.scope("redis");
 
 const NEWLINE_RG = /[\r\n]+/;
 
+// Pre-compute normalized command lookup for O(1) access
+const COMMANDS_NORMALIZED = Object.fromEntries(
+  Object.entries(COMMANDS).map(([key, value]) => [
+    key.toLowerCase().replace(/\s/g, ''),
+    value
+  ])
+);
+
 const redisContext: AppContextProvider = {
   getExecutionContext() {
     return null;
@@ -98,10 +106,8 @@ function getKnownRedisCommandDef(
     // The rest should be handled here
     default: {
       const commandMerged = command.replaceAll(" ", "").toLowerCase();
-      for (const [key, value] of Object.entries(COMMANDS)) {
-        if (key.toLowerCase() === commandMerged) {
-          return value;
-        }
+      if (commandMerged in COMMANDS_NORMALIZED) {
+        return COMMANDS_NORMALIZED[commandMerged];
       }
     }
   }
