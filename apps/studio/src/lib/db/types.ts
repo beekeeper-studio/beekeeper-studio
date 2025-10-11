@@ -134,9 +134,11 @@ export const SurrealAuthTypes = [
   { name: 'Root', value: SurrealAuthType.Root },
   { name: 'Namespace', value: SurrealAuthType.Namespace },
   { name: 'Database', value: SurrealAuthType.Database },
-  { name: 'Record Access', value: SurrealAuthType.RecordAccess },
+  // NOTE (@day): disabling for now, as will take a bit more work
+  // { name: 'Record Access', value: SurrealAuthType.RecordAccess },
   { name: 'Token', value: SurrealAuthType.Token },
-  { name: 'Anonymous', value: SurrealAuthType.Anonymous }
+  // NOTE (@day): this doesn't seem to do anything? Won't be able to access tables or query data
+  // { name: 'Anonymous', value: SurrealAuthType.Anonymous }
 ];
 
 

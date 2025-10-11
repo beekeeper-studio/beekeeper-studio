@@ -3,7 +3,6 @@ import { State as RootState } from "../index";
 import _ from "lodash";
 import MenuBuilder from "@/common/menus/MenuBuilder";
 import ClientMenuActionHandler from "@/lib/menu/ClientMenuActionHandler";
-import config from "@/config";
 import RawLog from "@bksLogger";
 import { ExternalMenuItem } from "@/types";
 
@@ -48,7 +47,7 @@ export const MenuBarModule: Module<State, RootState> = {
       const builder = new MenuBuilder(
         rootGetters["settings/settings"],
         actionHandler,
-        config,
+        window.platformInfo,
         window.bksConfig
       );
 
