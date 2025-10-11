@@ -1,4 +1,4 @@
-import { TableColumn } from "@/lib/db/models";
+import { ExtendedTableColumn } from "@/lib/db/models";
 import { getDialectData } from "@shared/lib/dialects";
 import { AlterTableSpec, CreateIndexSpec, CreateRelationSpec, Dialect, DialectData, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from "lodash";
@@ -250,8 +250,8 @@ export abstract class ChangeBuilderBase {
     return specs.map((spec) => this.singleRelation(spec)).join(";")
   }
 
-  // shouldn't be abstract because not all clients support reordering a column 
-  reorderColumns(_oldColumnOrder: TableColumn[], _newColumnOrder: TableColumn[]): string {
+  // shouldn't be abstract because not all clients support reordering a column
+  reorderColumns(_oldColumnOrder: ExtendedTableColumn[], _newColumnOrder: ExtendedTableColumn[]): string {
     throw new Error('reorderColumns must be added via a subclass')
   }
 

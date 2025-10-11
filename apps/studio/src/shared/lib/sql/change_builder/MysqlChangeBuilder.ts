@@ -2,7 +2,10 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { MysqlData } from "@shared/lib/dialects/mysql";
 import { CreateIndexSpec, Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from 'lodash'
-import { TableColumn } from "@/lib/db/models";
+import { ExtendedTableColumn } from "@/lib/db/models";
+import rawLog from '@bksLogger';
+
+const log = rawLog.scope('MysqlChangeBuilder')
 
 export class MySqlChangeBuilder extends ChangeBuilderBase {
   dialect: Dialect = 'mysql'
@@ -15,7 +18,7 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     super(table)
     this.existingColumns = existingColumns
   }
-  
+
   defaultValue(defaultValue) {
     // MySQL is a cluster when it comes to default values.
     if (!defaultValue) return null
@@ -124,19 +127,34 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     return []
   }
 
-  reorderColumns(oldColumnOrder: TableColumn[], newColumnOrder: TableColumn[]): string {
+  reorderColumns(oldColumnOrder: ExtendedTableColumn[], newColumnOrder: ExtendedTableColumn[]): string {
+    log.info("COLUMN ORDER: ", oldColumnOrder, newColumnOrder)
     const newOrder = newColumnOrder.reduce((acc, NCO, index, arr) => {
       if ( oldColumnOrder.length < index + 1) return acc
-      const { columnName, dataType } = NCO
+      const { columnName, dataType, nullable, defaultValue, extra } = NCO
       const { columnName: oldColumnName } = oldColumnOrder[index]
       if ( columnName !== oldColumnName) {
+        let columnDef = `${this.wrapIdentifier(columnName)} ${dataType}`;
+
+        if (nullable === false) {
+          columnDef += ' NOT NULL'
+        }
+
+        if (defaultValue !== undefined && defaultValue !== null) {
+          columnDef += `DEFAULT ${this.defaultValue(defaultValue)}`;
+        }
+
+        if (extra) {
+          columnDef += extra;
+        }
+
         if (index === 0) {
-          acc.push(`MODIFY ${this.wrapIdentifier(columnName)} ${dataType} FIRST`)
+          acc.push(`MODIFY ${columnDef} FIRST`)
         } else {
-          acc.push(`MODIFY ${this.wrapIdentifier(columnName)} ${dataType} AFTER ${this.wrapIdentifier(arr[index - 1].columnName)}`)
+          acc.push(`MODIFY ${columnDef} AFTER ${this.wrapIdentifier(arr[index - 1].columnName)}`)
         }
       }
-      
+
       return acc
     }, [])
 
