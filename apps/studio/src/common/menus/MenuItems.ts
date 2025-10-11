@@ -117,6 +117,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Contact Support',
       click: actionHandler.contactSupport
     },
+    gettingStartedGuide: {
+      id: 'gettingStartedGuide',
+      label: 'Getting Started Guide',
+      click: actionHandler.openGettingStarted
+    },
     reload: {
       id: 'reload-window',
       label: "Reload Window",
@@ -183,7 +188,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'menu-secondary-sidebar',
       label: 'Toggle Secondary Sidebar',
       // accelerator: "Alt+S",
-      click: actionHandler.toggleSecondarySidebar,  
+      click: actionHandler.toggleSecondarySidebar,
       enabled: false,
     },
     themeToggle: {
