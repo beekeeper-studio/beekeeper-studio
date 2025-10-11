@@ -141,11 +141,11 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
         }
 
         if (defaultValue !== undefined && defaultValue !== null) {
-          columnDef += `DEFAULT ${this.defaultValue(defaultValue)}`;
+          columnDef += ` DEFAULT ${this.defaultValue(defaultValue)}`;
         }
 
         if (extra) {
-          columnDef += extra;
+          columnDef += ` ${extra}`;
         }
 
         if (index === 0) {
