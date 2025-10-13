@@ -53,6 +53,7 @@
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
+        :formatter-config="selectedFormatter ?? undefined"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
@@ -255,7 +256,7 @@
             :identifier-dialect="identifierDialect"
             :can-add-presets="true"
             :clipboard="$native.clipboard.writeText"
-            :starting-preset="selectedFormatter"
+            :starting-preset="selectedFormatter ?? undefined"
             :presets="formatterPresets"
             @bks-apply-preset="applyPreset"
             @bks-save-preset="savePreset"
@@ -467,7 +468,7 @@
         wrapText: false,
         vimKeymaps: [],
         formatterPresets: [],
-        selectedFormatter: {},
+        selectedFormatter: null,
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
          * if we want to switch focus. Why two states? We need a feedback from
@@ -784,8 +785,9 @@
             throw new Error(err)
           })
       },
-      applyPreset() {
+      applyPreset(presetConfig) {
         this.handleFormatterPresetModal({ showFormatter: false })
+        this.selectedFormatter = { ...presetConfig }
       },
       savePreset({id, config, name}) {
         let endpoint

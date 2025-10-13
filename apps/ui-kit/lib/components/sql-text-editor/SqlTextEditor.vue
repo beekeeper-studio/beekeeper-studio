@@ -50,6 +50,9 @@ export default Vue.extend({
       if (!this.textEditor) return;
       this.applyCompletionSource();
     },
+    formatterConfig() {
+      this.formatSql()
+    }
   },
 
   methods: {
@@ -92,9 +95,12 @@ export default Vue.extend({
     },
     // Non-TextEditor overrides
     formatSql() {
-      // this would probably be what's listening for the override too if there's one
+      if(this.value == null || this.value.trim() === '') return
+      console.log('~~~~ FORMATTER CONFIG!! ~~~')
+      console.log(this.formatterConfig)
       const formatted = format(this.value, {
         language: this.formatterDialect,
+        ...this.formatterConfig
       });
       this.$emit("bks-value-change", { value: formatted });
     },
@@ -108,6 +114,7 @@ export default Vue.extend({
         selectedQuery: this.selectedQuery,
       };
     });
+    this.formatSql()
   },
 });
 </script>

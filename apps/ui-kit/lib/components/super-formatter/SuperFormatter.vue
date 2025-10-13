@@ -286,7 +286,8 @@ export default Vue.extend({
       this.unsavedPreset = { ...this.selectedPreset }
     },
     applyFormat() {
-      this.$emit('bks-apply-preset', this.selectedPreset)
+      // TODO: Does it make more sense to have the unsaved or the save preset as what's sent over? What if they don't want to save it?
+      this.$emit('bks-apply-preset', { ...this.unsavedPreset, id: this.selectedPresetId })
     },
     copyToClipboard() {
       this.clipboard(this.value)
@@ -336,6 +337,7 @@ export default Vue.extend({
   mounted() {
     this.unsavedPreset = { ...this.unsavedPreset, ...this.startingPreset }
     this.selectedPreset = { ...this.selectedPreset, ...this.startingPreset }
+    if (this.startingPreset.id != null) this.selectedPresetId = this.startingPreset.id
   }
 })
 </script>

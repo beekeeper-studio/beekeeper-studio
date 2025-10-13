@@ -6,7 +6,7 @@ export default {
   canAddPresets: Boolean,
   clipboard: Object,
   startingPreset: {
-    type: Object,
+    type: Object as PropType<FormatOptions>,
     default: () => ({
       id: null,
       tabWidth: 2,
