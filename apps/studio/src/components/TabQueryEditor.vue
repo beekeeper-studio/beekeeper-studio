@@ -389,6 +389,7 @@
 
   import _ from 'lodash'
   import Split from 'split.js'
+  import Noty from 'noty'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
@@ -789,8 +790,9 @@
       savePreset({id, config, name}) {
         let endpoint
         let inputData = {}
-
+        let notyMessage = ''
         if (id == null){
+          notyMessage = 'Add new preset'
           endpoint = 'appdb/formatter/newPreset'
           inputData = {
             insertValues: {
@@ -799,6 +801,7 @@
             }
           }
         } else {
+          notyMessage = 'Updating preset'
           endpoint = 'appdb/formatter/updatePreset'
           inputData = {
             id,
@@ -810,12 +813,22 @@
 
         this.$util.send(endpoint, inputData)
           .then((presetValues) => {
+            this.$noty.success(`${notyMessage} complete`)
             this.selectedFormatter = { id: presetValues.id, ...presetValues.config }
-            return this.getPresets()
           })
           .catch(err => {
-            console.error(err)
+            const error_notice = this.$noty.error(`${notyMessage} failed: ${err.message}`, {
+              buttons: [
+                Noty.button('Close', 'btn btn-primary', () => {
+                  error_notice.close()
+                })
+              ]
+            }).setTimeout(60 * 1000)
+
             throw new Error(err)
+          })
+          .finally( () => {
+            return this.getPresets()
           })
         // use notify when it's been saved and all that jazz
       },

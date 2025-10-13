@@ -70,6 +70,7 @@ import createFormatterPresets from './20250831_create_formatter_presets'
 import populateFormatterPresets from './20250831_populate_formatter_presets'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
+import uniqueNameFormatterPresets from './20251013_unique_name_formatter_presets'
 
 import ultimate from './ultimate/index'
 
@@ -108,7 +109,7 @@ const realMigrations = [
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
   surrealDbOptions, upgradeSqliteExtensions,
-  createFormatterPresets, populateFormatterPresets
+  createFormatterPresets, populateFormatterPresets, uniqueNameFormatterPresets
 ]
 
 // fixtures require the models
