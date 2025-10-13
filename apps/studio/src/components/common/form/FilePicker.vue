@@ -12,7 +12,7 @@
       :disabled="disabled"
       :readonly="!editable"
       @click.prevent.stop="!editable && openFilePickerDialog()"
-      @input="$emit('input', $event.target.value)"
+      @input="$emit('input', $event)"
       :context-menu="editable"
     />
     <div
