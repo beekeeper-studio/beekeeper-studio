@@ -306,12 +306,11 @@ export default Vue.extend({
     savePreset() {
       this.selectedPreset = { ...this.unsavedPreset }
       if (this.addNewPreset) {
-        console.log('adding new preset. Should emit a thing')
         return this.$emit('bks-create-preset', {
-          config: this.selectedPreset
+          config: this.selectedPreset,
+          name: this.addNewPresetName
         })
       }
-      console.log('saving a preset. Should emit a thing')
       this.$emit('bks-save-preset', {
         id: this.selectedPresetId,
         config: this.selectedPreset
@@ -327,9 +326,11 @@ export default Vue.extend({
       }
     },
     presets() {
-      console.log('!!!new presets sent in!!!')
       this.addNewPresetName = null
       this.addNewPreset = false
+    },
+    startingPreset(sp) {
+      if (sp.id) return this.selectedPresetId = sp.id
     }
   },
   mounted() {

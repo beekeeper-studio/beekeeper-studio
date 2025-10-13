@@ -73,12 +73,13 @@ export class FormatterPreset extends ApplicationEntity {
     }
   }
 
-  static async addPreset(updateValues: FormatterPresetValues): Promise<TransportFormatterPreset>{
-    const { name, config } = updateValues
+  static async addPreset(insertValues: FormatterPresetValues): Promise<TransportFormatterPreset>{
+    const { name, config } = insertValues
     try {
       const formatterValues = new FormatterPreset()
       formatterValues.config = JSON.stringify(config),
       formatterValues.name = name
+      formatterValues.systemDefault = 0
       const savedFormat = await formatterValues.save()
       return {
         ...savedFormat,

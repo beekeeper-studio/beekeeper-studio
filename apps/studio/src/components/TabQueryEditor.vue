@@ -786,21 +786,37 @@
       applyPreset() {
         this.handleFormatterPresetModal({ showFormatter: false })
       },
-      savePreset({id, config}) {
-        console.log('ohai')
-        if (id == null) return console.log('add new booooi')
+      savePreset({id, config, name}) {
+        let endpoint
+        let inputData = {}
 
-        this.$util.send('appdb/formatter/updatePreset', {id, updateValues: { config }})
+        if (id == null){
+          endpoint = 'appdb/formatter/newPreset'
+          inputData = {
+            insertValues: {
+              name,
+              config
+            }
+          }
+        } else {
+          endpoint = 'appdb/formatter/updatePreset'
+          inputData = {
+            id,
+            updateValues: {
+              config
+            }
+          }
+        }
+
+        this.$util.send(endpoint, inputData)
           .then((presetValues) => {
-            this.selectedFormatter = presetValues.config
+            this.selectedFormatter = { id: presetValues.id, ...presetValues.config }
             return this.getPresets()
           })
           .catch(err => {
             console.error(err)
             throw new Error(err)
           })
-        // save the preset
-        // call the tabs with the id and set the formatterPresets and defaultPreset value as the id
         // use notify when it's been saved and all that jazz
       },
       isNumber(value: any) {

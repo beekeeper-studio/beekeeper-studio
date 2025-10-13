@@ -8,6 +8,7 @@ export default {
   startingPreset: {
     type: Object,
     default: () => ({
+      id: null,
       tabWidth: 2,
       useTabs: false,
       keywordCase: 'preserve',

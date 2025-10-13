@@ -15,7 +15,7 @@ export const FormatterPresetHandlers = {
   'appdb/formatter/deletePreset': async ({ id }: { id: number }): Promise<void> => {
     return await FormatterPreset.deletePreset(id)
   },
-  'appdb/formatter/newPreset': async ( {insertValues }: { insertValues: FormatterPresetValues }): Promise<TransportFormatterPreset> => {
+  'appdb/formatter/newPreset': async ( { insertValues }: { insertValues: FormatterPresetValues }): Promise<TransportFormatterPreset> => {
     return await FormatterPreset.addPreset(insertValues)
   }
 }
