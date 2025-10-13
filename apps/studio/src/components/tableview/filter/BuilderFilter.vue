@@ -19,8 +19,11 @@
       <select
         name="Filter Type"
         class="form-control"
-        v-model="filter.type"
-        @change="maybeClearValue()"
+        :value="filter.type"
+        @change="$emit('changed', index, {
+          ...filter,
+          type: $event.target.value,
+        })"
       >
         <option
           v-for="{ value, label } in filterTypes"
@@ -38,7 +41,11 @@
           :class="{ 'disabled-input': isNullFilter }"
           type="text"
           ref="filterInputs"
-          v-model="filter.value"
+          :value="filter.value"
+          @input="$emit('changed', index, {
+            ...filter,
+            value: $event,
+          })"
           @blur="$emit('blur')"
           :disabled="isNullFilter"
           :title="isNullFilter ?
@@ -54,7 +61,10 @@
           v-if="!isNullFilter"
           type="button"
           class="clear btn-link"
-          @click.prevent="$set(filter, 'value', '')"
+          @click.prevent="$emit('changed', index, {
+            ...filter,
+            value: '',
+          })"
         >
           <i class="material-icons">cancel</i>
         </button>
@@ -73,24 +83,19 @@ export default {
   data: () => ({
     filterTypes: TableFilterSymbols
   }),
-  watch: {
-    filter: {
-      deep: true,
-      handler() {
-        this.$emit('changed', this.index, this.filter)
-      }
-    }
-  },
   computed: {
     isNullFilter() {
       const typeOptions = this.filterTypes.find((f) => f.value === this.filter.type)
       return !!typeOptions.nullOnly
     }
   },
-  methods: {
-    maybeClearValue() {
+  watch: {
+    isNullFilter() {
       if (this.isNullFilter) {
-        this.$set(this.filter, 'value', null)
+        this.$emit('changed', this.index, {
+          ...this.filter,
+          value: '',
+        })
       }
     },
   }

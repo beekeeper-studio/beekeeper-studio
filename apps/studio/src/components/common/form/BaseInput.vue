@@ -1,7 +1,23 @@
 <template>
-  <component v-bind="$attrs" v-on="listeners" :is="type === 'textarea' ? 'textarea' : 'input'" :type="type"
-    @contextmenu.prevent="showContextMenu($event)" :value="value" @input="$emit('input', $event.target.value)"
-    ref="input" />
+  <textarea
+    v-if="type === 'textarea'"
+    v-bind="$attrs"
+    v-on="listeners"
+    @contextmenu.prevent="showContextMenu($event)"
+    :value="value"
+    @input="$emit('input', $event.target.value)"
+    ref="input"
+  />
+  <input
+    v-else
+    v-bind="$attrs"
+    v-on="listeners"
+    :type="type"
+    @contextmenu.prevent="showContextMenu($event)"
+    :value="value"
+    @input="$emit('input', $event.target.value)"
+    ref="input"
+  />
 </template>
 
 <script lang="ts">
@@ -33,9 +49,6 @@ export default Vue.extend({
         obj[key] = this.$listeners[key];
       }
       return obj;
-    },
-    input() {
-      return this.$refs.input;
     },
   },
 
