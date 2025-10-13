@@ -50,7 +50,7 @@ export default Vue.extend({
   mounted() {
     this.title = this.query.title
     this.$nextTick(() => {
-      this.$refs.input.focus()
+      this.$refs.input.input.focus()
     })
   },
   data: () => ({

@@ -50,6 +50,28 @@ export default Vue.extend({
       }
       return obj;
     },
+
+    /** Use this from parent components to get a reference to the input element.
+     *
+     * @example
+     *
+     * ```html
+     * <BaseInput ref="myBaseInput" />
+     * ```
+     *
+     * ```js
+     * export default {
+     *   mounted() {
+     *     this.nextTick(() =>
+     *       this.$refs.myBaseInput.input.focus()
+     *     );
+     *   }
+     * }
+     * ```
+     */
+    input() {
+      return this.$refs.input as HTMLInputElement | HTMLTextAreaElement;
+    },
   },
 
   methods: {
