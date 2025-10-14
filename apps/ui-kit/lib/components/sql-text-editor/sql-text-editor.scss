@@ -8,12 +8,21 @@
 }
 .text-editor-wrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  
+  .BksTextEditor {
+    flex: 1;
+    position: relative;
+  }
 }
 
 .BksIconButton {
   position: absolute;
-  right: 1rem;
+  right: 2rem;
   top: 1rem;
+  z-index: 10;
   // reset default button styles
   border: none;
   background: none;

@@ -778,6 +778,10 @@
       getPresets() {
         this.$util.send('appdb/formatter/getAll')
           .then((presets) => {
+            const selectedFormatter = presets.find(p => p.name === this.$bksConfig.ui.queryEditor.defaultFormatter)
+
+            if (selectedFormatter != null) this.selectedFormatter = { id: selectedFormatter.id, ...selectedFormatter.config }
+
             this.formatterPresets = presets
           })
           .catch(err => {
@@ -787,6 +791,8 @@
       },
       applyPreset(presetConfig) {
         this.handleFormatterPresetModal({ showFormatter: false })
+        console.log('~~~ ahhhh ~~~')
+        console.log(presetConfig)
         this.selectedFormatter = { ...presetConfig }
       },
       savePreset({id, config, name}) {
@@ -830,7 +836,7 @@
             throw new Error(err)
           })
           .finally( () => {
-            return this.getPresets()
+            return this.getPresets(true)
           })
         // use notify when it's been saved and all that jazz
       },

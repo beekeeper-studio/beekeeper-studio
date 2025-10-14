@@ -1,6 +1,5 @@
 <template>
   <div class="text-editor-wrapper">
-    <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor" />
     <button
       v-if="allowPresets"
       type="button"
@@ -11,6 +10,7 @@
     >
       <i class="material-icons">settings</i>
     </button>
+    <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor" />
   </div>
 </template>
 
@@ -96,8 +96,7 @@ export default Vue.extend({
     // Non-TextEditor overrides
     formatSql() {
       if(this.value == null || this.value.trim() === '') return
-      console.log('~~~~ FORMATTER CONFIG!! ~~~')
-      console.log(this.formatterConfig)
+
       const formatted = format(this.value, {
         language: this.formatterDialect,
         ...this.formatterConfig
