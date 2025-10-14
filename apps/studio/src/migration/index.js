@@ -71,6 +71,8 @@ import populateFormatterPresets from './20250831_populate_formatter_presets'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
 import uniqueNameFormatterPresets from './20251013_unique_name_formatter_presets'
+import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_column'
+import addTabDropdownAIShellHintShownSetting from './20251003_add_tab_dropdown_ai_shell_hint_shown_setting'
 
 import ultimate from './ultimate/index'
 
@@ -108,7 +110,7 @@ const realMigrations = [
   sqlAnywhereOptions,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
-  surrealDbOptions, upgradeSqliteExtensions,
+  surrealDbOptions, upgradeSqliteExtensions, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting,
   createFormatterPresets, populateFormatterPresets, uniqueNameFormatterPresets
 ]
 
