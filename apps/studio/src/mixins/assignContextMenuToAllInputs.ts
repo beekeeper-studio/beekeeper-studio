@@ -15,6 +15,10 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
     this.$el.addEventListener("contextmenu", this.ctxMenu_showContextMenu);
   },
 
+  beforeDestroy() {
+    this.$el.removeEventListener("contextmenu", this.ctxMenu_showContextMenu);
+  },
+
   methods: {
     ctxMenu_showContextMenu(event: MouseEvent) {
       if (
