@@ -44,12 +44,12 @@
         <div class="fixed query-filter">
           <div class="filter">
             <div class="filter-wrap">
-              <BaseInput
+              <input
                 class="filter-input"
                 type="text"
                 placeholder="Filter"
                 v-model="filterQuery"
-              />
+              >
               <x-buttons class="filter-actions">
                 <x-button
                   @click="clearFilter"
@@ -157,10 +157,9 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm, BaseInput },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm },
   data: function () {
     return {
       checkedFavorites: [],

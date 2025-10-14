@@ -29,13 +29,14 @@
         </div>
         <div class="expand filter filter-container">
           <div class="filter-wrap">
-            <BaseInput
+            <input
+              class="form-control"
               type="text"
               v-model="filterRaw"
               @blur="updateMinimalModeByFilterRaw"
               ref="valueInput"
               :placeholder="dialectData?.rawFilterPlaceholder || `Enter condition, eg: name like 'Matthew%'`"
-            />
+            >
             <button
               type="button"
               class="clear btn-link"
@@ -191,13 +192,12 @@ import { mapGetters, mapState } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
 import _ from 'lodash';
 import BuilderFilter from "./filter/BuilderFilter.vue";
-import BaseInput from '@/components/common/form/BaseInput.vue';
 
 const BUILDER = "builder";
 const RAW = "raw";
 
 export default Vue.extend({
-  components: { BuilderFilter, BaseInput },
+  components: { BuilderFilter },
   props: ["columns", "reactiveFilters"],
   data() {
     return {
@@ -243,7 +243,7 @@ export default Vue.extend({
     },
 
     focusOnInput() {
-      if (this.filterMode === RAW) this.$refs.valueInput.input.focus();
+      if (this.filterMode === RAW) this.$refs.valueInput.focus();
       else this.$refs.multipleFilters.querySelector('.filter-value')?.focus();
     },
     async toggleFilterMode() {

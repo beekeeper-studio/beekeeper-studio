@@ -12,11 +12,11 @@
         <error-alert :error="error" />
         <div class="form-group">
           <label for="account">Account</label>
-          <BaseInput name="account" id="account" :value="account" disabled />
+          <input name="account" id="account" :value="account" disabled>
         </div>
         <div class="form-group">
           <label for="workspace-name">Workspace Name</label>
-          <BaseInput id="workspace-name" name="workspace-name" v-model="workspaceName" type="text" ref="nameInput" placeholder="e.g. Matthew's Workspace" />
+          <input id="workspace-name" name="workspace-name" v-model="workspaceName" type="text" ref="nameInput" placeholder="e.g. Matthew's Workspace">
         </div>
       </div>
       <div class="vue-dialog-buttons flex-between">
@@ -39,10 +39,9 @@ import Vue from "vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { mapState } from "vuex";
-import BaseInput from '@/components/common/form/BaseInput.vue';
 
 export default Vue.extend({
-  components: { ErrorAlert, BaseInput },
+  components: { ErrorAlert },
   data() {
     return {
       modalName: "rename-workspace",
@@ -78,7 +77,7 @@ export default Vue.extend({
   },
   methods: {
     focus() {
-      this.$refs.nameInput.input.focus();
+      this.$refs.nameInput.focus();
     },
     open({ workspace, client }) {
       this.workspace = workspace

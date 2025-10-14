@@ -238,7 +238,7 @@
             </div>
             <div class="form-group">
               <label for="duplicateTableName">New table name</label>
-              <BaseInput
+              <input
                 type="text"
                 name="duplicateTableName"
                 class="form-control"
@@ -246,7 +246,7 @@
                 v-model="duplicateTableName"
                 autofocus
                 ref="duplicateTableNameInput"
-              />
+              >
             </div>
             <small>This will create a new table and copy all existing data into it. Keep in mind that any indexes,
               relations, or triggers associated with the original table will not be duplicated in the new table</small>
@@ -330,7 +330,6 @@ import Shell from './TabShell.vue'
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default Vue.extend({
   props: [],
@@ -355,7 +354,6 @@ export default Vue.extend({
     Shell,
     PluginShell,
     PluginBase,
-    BaseInput,
   },
   data() {
     return {
@@ -399,9 +397,9 @@ export default Vue.extend({
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection', 'connectionType', 'usedConfig']),
-    ...mapGetters({
-       'dialect': 'dialect',
-       'dialectData': 'dialectData',
+    ...mapGetters({ 
+       'dialect': 'dialect', 
+       'dialectData': 'dialectData', 
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
     }),
@@ -619,7 +617,7 @@ export default Vue.extend({
     sureOpened() {
       this.sureOpen = true
       if (this.$refs.duplicateTableNameInput) {
-        this.$refs.duplicateTableNameInput.input.focus()
+        this.$refs.duplicateTableNameInput.focus()
       } else {
         this.$refs.no.focus()
       }

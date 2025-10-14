@@ -10,11 +10,12 @@
         v-show="!empty"
       >
         <div class="filter-wrap">
-          <BaseInput
+          <input
+            class="form-control"
             type="text"
             placeholder="Filter keys by text or /regex/"
             v-model="debouncedFilter"
-          />
+          >
           <button
             type="button"
             class="clear btn-link"
@@ -95,12 +96,11 @@ import JsonSourceMap from "json-source-map";
 import JsonPointer from "json-pointer";
 import { typedArrayToString } from '@/common/utils'
 import { monokai } from "@uiw/codemirror-theme-monokai";
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 const log = rawLog.scope("json-viewer");
 
 export default Vue.extend({
-  components: { TextEditor, JsonViewerUpsell, BaseInput },
+  components: { TextEditor, JsonViewerUpsell },
   props: {
     value: {
       type: [Object, Array],

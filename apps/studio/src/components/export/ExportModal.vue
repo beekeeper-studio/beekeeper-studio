@@ -51,11 +51,11 @@
               <!-- File Name -->
               <div class="file-name form-group expand">
                 <label for="fileName">File Name</label>
-                <BaseInput
+                <input
                   type="text"
                   spellcheck="false"
                   v-model="fileName"
-                />
+                >
               </div>
 
               <!-- Format -->
@@ -117,14 +117,14 @@
               <div class="modal-form export-form export-advanced-options">
                 <div class="form-group row" v-if="!this.dialectData.disabledFeatures.chunkSizeStream">
                   <label title="How many records to read at once from the cursor">Chunk size</label>
-                  <BaseInput
+                  <input
                     v-model="options.chunkSize"
                     type="number"
                     class="form-control"
                     ref="paramInput"
                     min="10"
                     step="10"
-                  />
+                  >
                 </div>
                 <div class="form-group row">
                   <label
@@ -173,7 +173,6 @@ import rawlog from '@bksLogger'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "./forms"
 import FilePicker from '../common/form/FilePicker.vue'
 import { AppEvent } from '@/common/AppEvent'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 const log = rawlog.scope('export/export-modal')
 
 const exportFormats = [
@@ -200,7 +199,7 @@ const exportFormats = [
 ]
 
 export default {
-  components: { FilePicker, BaseInput },
+  components: { FilePicker },
   props: ['table', 'query', 'queryName', 'filters'],
   data() {
     return {

@@ -1,18 +1,16 @@
 <template>
-    <BaseInput
+    <input
       :type="computedType"
       :value="displayedValue"
       @input="handleInput"
       :readonly="privacyMode"
       class="form-control"
-    />
+    >
   </template>
-
+  
   <script>
-  import BaseInput from '@/components/common/form/BaseInput.vue';
   export default {
     name: 'MaskedInput',
-    components: { BaseInput },
     props: {
       value: {
         type: [String, Number],

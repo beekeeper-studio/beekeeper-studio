@@ -19,11 +19,8 @@
       <select
         name="Filter Type"
         class="form-control"
-        :value="filter.type"
-        @change="$emit('changed', index, {
-          ...filter,
-          type: $event.target.value,
-        })"
+        v-model="filter.type"
+        @change="maybeClearValue()"
       >
         <option
           v-for="{ value, label } in filterTypes"
@@ -36,16 +33,12 @@
     </div>
     <div class="expand filter">
       <div class="filter-wrap">
-        <BaseInput
+        <input
           class="form-control filter-value"
           :class="{ 'disabled-input': isNullFilter }"
           type="text"
           ref="filterInputs"
-          :value="filter.value"
-          @input="$emit('changed', index, {
-            ...filter,
-            value: $event,
-          })"
+          v-model="filter.value"
           @blur="$emit('blur')"
           :disabled="isNullFilter"
           :title="isNullFilter ?
@@ -56,15 +49,12 @@
               ? `Enter values separated by comma, eg: foo,bar`
               : 'Enter Value'
           "
-        />
+        >
         <button
           v-if="!isNullFilter"
           type="button"
           class="clear btn-link"
-          @click.prevent="$emit('changed', index, {
-            ...filter,
-            value: '',
-          })"
+          @click.prevent="$set(filter, 'value', '')"
         >
           <i class="material-icons">cancel</i>
         </button>
@@ -75,27 +65,30 @@
 </template>
 <script lang="js">
 import { TableFilterSymbols } from '@/lib/db/types';
-import BaseInput from '@/components/common/form/BaseInput.vue';
 
 export default {
-  components: { BaseInput },
   props: ['filter', 'columns', 'index'],
   data: () => ({
     filterTypes: TableFilterSymbols
   }),
+  watch: {
+    filter: {
+      deep: true,
+      handler() {
+        this.$emit('changed', this.index, this.filter)
+      }
+    }
+  },
   computed: {
     isNullFilter() {
       const typeOptions = this.filterTypes.find((f) => f.value === this.filter.type)
       return !!typeOptions.nullOnly
     }
   },
-  watch: {
-    isNullFilter() {
+  methods: {
+    maybeClearValue() {
       if (this.isNullFilter) {
-        this.$emit('changed', this.index, {
-          ...this.filter,
-          value: '',
-        })
+        this.$set(this.filter, 'value', null)
       }
     },
   }

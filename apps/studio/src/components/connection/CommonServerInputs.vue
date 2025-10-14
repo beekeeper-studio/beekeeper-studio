@@ -27,13 +27,13 @@
     >
       <div class="col form-group" :class="{ s9: supportsSocketPathWithCustomPort }">
         <label for="socketPath">Socket Path</label>
-        <BaseInput
+        <input
           id="socketPath"
           class="form-control"
           v-model="config.socketPath"
           type="text"
           name="socketPath"
-        />
+        >
       </div>
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
         <label for="port">Port</label>
@@ -176,11 +176,11 @@
       </div>
       <div class="col s6 form-group">
         <label for="password">Password</label>
-        <BaseInput
+        <input
           :type="togglePasswordInputType"
           v-model="config.password"
           class="password form-control"
-        />
+        >
         <i
           @click.prevent="togglePassword"
           class="material-icons password-icon"
@@ -197,11 +197,11 @@
         v-else
         for="defaultDatabase"
       >Keyspace <span class="optional-text">(optional)</span></label>
-      <BaseInput
+      <input
         type="text"
         class="form-control"
         v-model="config.defaultDatabase"
-      />
+      >
     </div>
   </div>
 </template>
@@ -213,7 +213,6 @@ import { findClient } from '@/lib/db/clients'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
 import { mapState } from 'vuex'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default {
   props: {
@@ -228,8 +227,7 @@ export default {
     FilePicker,
     ExternalLink,
     ToggleFormArea,
-    MaskedInput,
-    BaseInput,
+    MaskedInput
   },
   data() {
     return {

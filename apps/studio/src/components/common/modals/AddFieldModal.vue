@@ -15,7 +15,7 @@
           </div >
           <div class="form-group">
             <label for="field-name">Field Name</label>
-            <BaseInput type="text" id="field-name" name="field-name" ref="fieldInput" v-model="fieldName" />
+            <input type="text" id="field-name" name="field-name" ref="fieldInput" v-model="fieldName">
           </div>
           <div class="form-group">
             <label for="type-hint">Type Hint</label>
@@ -58,12 +58,10 @@ import { AppEvent } from '@/common/AppEvent'
 import vSelect from 'vue-select'
 import Vue from 'vue'
 import { mapGetters } from 'vuex'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default Vue.extend({
   components: {
     vSelect,
-    BaseInput,
   },
   data() {
     return {

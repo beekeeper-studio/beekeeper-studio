@@ -32,81 +32,77 @@
       </div>
       <div v-show="isProfileAuth" class="form-group">
         <label for="awsProfile"> AWS Profile </label>
-        <BaseInput
+        <input
           name="awsProfile"
           type="text"
           class="form-control"
           v-model="config.redshiftOptions.awsProfile"
-        />
+        >
       </div>
       <div v-show="isKeyAuth" >
         <div class="form-group">
           <label for="Access Key ID">
             Access Key ID
           </label>
-          <BaseInput
+          <input
             type="text"
             class="form-control"
             v-model="config.redshiftOptions.accessKeyId"
-          />
+          >
         </div>
         <div class="form-group">
           <label for="Secret Access Key">
             Secret Access Key
           </label>
-          <BaseInput
+          <input
             type="password"
             class="form-control"
             v-model="config.redshiftOptions.secretAccessKey"
-          />
+          >
         </div>
       </div>
       <div class="form-group">
         <label for="AWS Region">
           AWS Region
         </label>
-        <BaseInput
+        <input
           type="text"
           class="form-control"
           v-model="config.redshiftOptions.awsRegion"
-        />
+        >
       </div>
       <div v-show="isRedshift">
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
-          <BaseInput
+          <input
             type="text"
             class="form-control"
             v-model="config.redshiftOptions.clusterIdentifier"
-          />
+          >
         </div>
         <div class="form-group">
           <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
-          <BaseInput
+          <input
             type="text"
             class="form-control"
             v-model="config.redshiftOptions.databaseGroup"
-          />
+          >
         </div>
         <div class="form-group">
           <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
-          <BaseInput
+          <input
             type="text"
             class="form-control"
             v-model="config.redshiftOptions.tokenDurationSeconds"
-          />
+          >
         </div>
       </div>
     </div>
   </div>
 </template>
 <script>
-import BaseInput from '@/components/common/form/BaseInput.vue';
 
 export default {
-  components: {
-    BaseInput,
-  },
   props: ['config', 'authType'],
   data() {
     return {

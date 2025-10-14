@@ -18,12 +18,12 @@
       <div class="fixed">
         <div class="filter">
           <div class="filter-wrap">
-            <BaseInput
+            <input
               class="filter-input"
               type="text"
               placeholder="Filter"
               v-model="connFilter"
-            />
+            >
             <x-buttons class="filter-actions">
               <x-button
                 @click="clearFilter"
@@ -250,7 +250,6 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -261,8 +260,7 @@ export default {
     ErrorAlert,
     SidebarFolder,
     SidebarSortButtons,
-    WorkspaceSidebar,
-    BaseInput,
+    WorkspaceSidebar
   },
   props: ['selectedConfig'],
   data: () => ({

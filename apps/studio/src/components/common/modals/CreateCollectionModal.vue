@@ -15,7 +15,7 @@
           </div >
           <div class="form-group">
             <label for="collection-name">Collection Name</label>
-            <BaseInput type="text" id="collection-name" name="collection-name" ref="collectionInput" v-model="collectionName" />
+            <input type="text" id="collection-name" name="collection-name" ref="collectionInput" v-model="collectionName">
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -44,10 +44,8 @@
 import { AppEvent } from '@/common/AppEvent'
 import Vue from 'vue'
 import { mapState } from 'vuex'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default Vue.extend({
-  components: { BaseInput },
   data() {
     return {
       modalName: 'create-collection-modal',

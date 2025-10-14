@@ -22,7 +22,7 @@
           />
           <div class="form-group">
             <label for="element-name">Name</label>
-            <BaseInput id="element-name" name="name" v-model="elementNewName" type="text" ref="nameInput" />
+            <input id="element-name" name="name" v-model="elementNewName" type="text" ref="nameInput">
           </div>
         </div>
         <div class="vue-dialog-buttons">
@@ -70,12 +70,10 @@ import { DatabaseElement } from '@/lib/db/types'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import { format } from 'sql-formatter';
 import { FormatterDialect } from '@shared/lib/dialects/models'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default Vue.extend({
   components: {
     ErrorAlert,
-    BaseInput,
   },
   data() {
     return {
@@ -111,7 +109,7 @@ export default Vue.extend({
     },
     async opened() {
       await this.$nextTick()
-      this.$refs.nameInput.input.focus()
+      this.$refs.nameInput.focus()
     },
     close() {
       this.$modal.hide(this.modalName)

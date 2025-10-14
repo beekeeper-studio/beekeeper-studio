@@ -24,22 +24,22 @@
         <error-alert :error="error" />
         <div class="form-group">
           <label for="email">Email Address</label>
-          <BaseInput
+          <input
             ref="email"
             type="text"
             :disabled="lockEmail"
             v-model="email"
             placeholder="e.g. matthew@example.com"
-          />
+          >
         </div>
         <div class="form-group">
           <label for="password">Password</label>
-          <BaseInput
+          <input
             type="password"
             ref="password"
             v-model="password"
             placeholder="Shh..."
-          />
+          >
         </div>
       </div>
       <div class="vue-dialog-buttons flex-between">
@@ -74,9 +74,8 @@
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 export default Vue.extend({
-  components: { ErrorAlert, BaseInput },
+  components: { ErrorAlert },
   mounted() {
     this.registerHandlers(this.rootBindings)
   },
@@ -109,7 +108,7 @@ export default Vue.extend({
       this.$modal.show('workspace')
     },
     focus() {
-      const element = this.lockEmail ? this.$refs.password.input : this.$refs.email.input
+      const element = this.lockEmail ? this.$refs.password : this.$refs.email
       element.focus()
     },
     async login() {

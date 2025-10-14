@@ -24,7 +24,7 @@
           
           <div class="form-group form-group-password">
             <label for="input-pin">PIN</label>
-            <BaseInput
+            <input
               id="input-pin"
               name="pin"
               :type="showPin ? 'text' : 'password'"
@@ -69,10 +69,9 @@
 import Vue from "vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import ExternalLink from "@/components/common/ExternalLink.vue";
-import BaseInput from "@/components/common/form/BaseInput.vue";
 
 export default Vue.extend({
-  components: { ErrorAlert, ExternalLink, BaseInput },
+  components: { ErrorAlert, ExternalLink },
   data() {
     return {
       modalName: "input-pin-modal",
@@ -96,7 +95,7 @@ export default Vue.extend({
     },
     opened() {
       this.$nextTick(() => {
-        this.$refs.pinInput.input.focus();
+        this.$refs.pinInput.focus();
       });
     },
     close() {

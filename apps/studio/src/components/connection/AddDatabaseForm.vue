@@ -24,13 +24,13 @@
     </div>
 
     <div class="form-group">
-      <BaseInput
+      <input
         class="form-control"
         v-model="databaseName"
         @keydown.enter.prevent.stop="save"
         type="text"
         placeholder="Database Name"
-      />
+      >
     </div>
 
     <div
@@ -94,10 +94,8 @@
 
 <script>
   import { mapState } from 'vuex';
-  import BaseInput from '@/components/common/form/BaseInput.vue';
 
   export default {
-    components: { BaseInput },
     props: [],
     data() {
       return {

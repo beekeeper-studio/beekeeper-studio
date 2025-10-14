@@ -4,14 +4,14 @@
       Save Connection
     </h3>
     <div class="form-group">
-      <BaseInput
+      <input
         class="form-control"
         ref="nameInput"
         @keydown.enter.prevent.stop="save"
         type="text"
         v-model="config.name"
         placeholder="Connection Name"
-      />
+      >
     </div>
 
     <div class="row flex-middle">
@@ -58,13 +58,12 @@
 </template>
 <script>
 import ColorPicker from '../common/form/ColorPicker.vue';
-import BaseInput from "@/components/common/form/BaseInput.vue";
 export default {
-  components: { ColorPicker, BaseInput },
+  components: { ColorPicker },
   props: ['config', 'canCancel', 'selectInput'],
   mounted(){
     if(this.selectInput) {
-      const $input = this.$refs.nameInput.input
+      const $input = this.$refs.nameInput
       $input.focus()
       const len = $input.value.length
       $input.setSelectionRange(len, len)

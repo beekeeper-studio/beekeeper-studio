@@ -21,11 +21,11 @@
                   v-tooltip="fileFormatTooltip"
                 >help_outlined</i>
               </label>
-              <BaseInput
+              <input
                 type="text"
                 spellcheck="false"
                 v-model="fileName"
-              />
+              >
             </div>
             <div class="format form-group">
               <label for="exportFormat">Format</label>
@@ -83,14 +83,14 @@
             <div class="modal-form export-form export-advanced-options">
               <div class="form-group row">
                 <label title="How many records to read at once from the cursor">Chunk size</label>
-                <BaseInput
+                <input
                   v-model="options.chunkSize"
                   type="number"
                   class="form-control"
                   ref="paramInput"
                   min="10"
                   step="10"
-                />
+                >
               </div>
               <div class="form-group row">
                 <label
@@ -122,7 +122,6 @@ import { mapGetters, mapMutations, mapState } from "vuex"
 import rawlog from '@bksLogger'
 import { ExportFormCSV, ExportFormJSON, ExportFormSQL, ExportFormJsonLine } from "../export/forms"
 import FilePicker from '../common/form/FilePicker.vue'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 const log = rawlog.scope('export/multi-export-manager')
 
 const exportFormats = [
@@ -149,7 +148,7 @@ const exportFormats = [
 ]
 
 export default {
-  components: { FilePicker, BaseInput },
+  components: { FilePicker },
   props: [],
   data() {
     return {

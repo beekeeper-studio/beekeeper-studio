@@ -29,11 +29,11 @@
         </div>
         <div class="col s6 form-group">
           <label for="password">Password</label>
-          <BaseInput
+          <input
             :type="togglePasswordInputType"
             v-model="config.password"
             class="password form-control"
-          />
+          >
           <i
             @click.prevent="togglePassword"
             class="material-icons password-icon"
@@ -50,7 +50,7 @@
       </div>
       <div class="form-group expand">
         <label for="databaseName">Database Name</label>
-        <BaseInput type="text" class="form-control" v-model="config.defaultDatabase"/>
+        <input type="text" class="form-control" v-model="config.defaultDatabase">
       </div>
       <div class="form-group col">
         <div class="form-group">
@@ -70,11 +70,10 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import FilePicker from "@/components/common/form/FilePicker.vue"
 import MaskedInput from '@/components/MaskedInput.vue'
-import BaseInput from "@/components/common/form/BaseInput.vue"
 import { mapState } from 'vuex'
 
 export default {
-  components: { CommonServerInputs, FilePicker, MaskedInput, BaseInput },
+  components: { CommonServerInputs, FilePicker, MaskedInput },
   props: ['config'],
   data() {
     return {

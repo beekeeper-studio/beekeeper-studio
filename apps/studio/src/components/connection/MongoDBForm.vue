@@ -13,20 +13,18 @@
       <label for="url" required>
         Database URL
       </label>
-      <BaseInput v-model="config.url" id="url" type="text" class="form-control" name="url"/>
+      <input v-model="config.url" id="url" type="text" class="form-control" name="url">
     </div>
     <div class="form-group">
       <label for="defaultDatabase">Default Database</label>
-      <BaseInput type="text" class="form-control" v-model="config.defaultDatabase"/>
+      <input type="text" class="form-control" v-model="config.defaultDatabase">
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import BaseInput from "@/components/common/form/BaseInput.vue";
 
 export default {
-  components: { BaseInput },
   props: ['config']
 }
 </script>

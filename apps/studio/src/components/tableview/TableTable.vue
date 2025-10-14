@@ -98,10 +98,10 @@
           ><i
             class="material-icons"
           >navigate_before</i></a>
-          <BaseInput
+          <input
             type="number"
             v-model="page"
-          />
+          >
           <a
             v-if="hasNextPage"
             @click="page = page + 1"
@@ -315,7 +315,6 @@ import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import EditorModal from './EditorModal.vue'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -344,7 +343,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, BaseInput },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {

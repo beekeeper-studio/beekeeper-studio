@@ -36,24 +36,24 @@
           ssl-help="Requires your wallet to be already set up in TNS_ADMIN" :config="config" />
         <div class="form-group">
           <label for="serviceName">Service Name</label>
-          <BaseInput type="text" class="form-control" v-model="config.serviceName"/>
+          <input type="text" class="form-control" v-model="config.serviceName">
         </div>
         <common-advanced :config="config" />
       </div>
       <div v-if="connectionMethod === 'connectionString'">
         <div class="form-group gutter">
           <label for="connectionString">Connection String or TNS alias</label>
-          <BaseInput v-model="config.options.connectionString" name="connectionString" class="form-control" id=""
-            cols="30" rows="5" type="textarea" />
+          <textarea v-model="config.options.connectionString" name="connectionString" class="form-control" id=""
+            cols="30" rows="5" />
         </div>
         <div class="row gutter">
           <div class="col s6 form-group">
             <label for="user">User (optional)</label>
-            <BaseInput type="text" name="user" v-model="config.username" class="form-control"/>
+            <input type="text" name="user" v-model="config.username" class="form-control">
           </div>
           <div class="col s6 form-group">
             <label for="password">Password (optional)</label>
-            <BaseInput type="password" v-model="config.password" class="form-control"/>
+            <input type="password" v-model="config.password" class="form-control">
           </div>
         </div>
         <br>
@@ -81,11 +81,10 @@ import Noty from 'noty'
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import SettingsInput from '../common/SettingsInput.vue'
-import BaseInput from "@/components/common/form/BaseInput.vue";
 import { mapState } from 'vuex'
 
 export default Vue.extend({
-  components: { CommonServerInputs, CommonAdvanced, SettingsInput, BaseInput },
+  components: { CommonServerInputs, CommonAdvanced, SettingsInput },
   props: ['config'],
   data: () => ({
     help: "Optional, but required for advanced functionality like Native Network Encryption.",

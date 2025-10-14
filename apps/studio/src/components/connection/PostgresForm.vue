@@ -17,20 +17,20 @@
           <label for="server">
             Host
           </label>
-          <BaseInput name="server" type="text" class="form-control" v-model="config.host"/>
+          <input name="server" type="text" class="form-control" v-model="config.host">
         </div>
         <div class="form-group col s3">
           <label for="database">Port</label>
-          <BaseInput type="number" class="form-control" name="port" v-model.number="config.port"/>
+          <input type="number" class="form-control" name="port" v-model.number="config.port">
         </div>
       </div>
       <div class="form-group">
         <label for="database">Database</label>
-        <BaseInput name="database" type="text" class="form-control" v-model="config.defaultDatabase"/>
+        <input name="database" type="text" class="form-control" v-model="config.defaultDatabase">
       </div>
       <div class="form-group">
         <label for="user">User</label>
-        <BaseInput name="user" type="text" class="form-control" v-model="config.username"/>
+        <input name="user" type="text" class="form-control" v-model="config.username">
       </div>
     </div>
 
@@ -41,7 +41,7 @@
            v-tooltip="`Go to CockroachDB online -> Connect -> parameters only -> copy from 'options'`"
         >help_outlined</i>
       </label>
-      <BaseInput type="text" class="form-control" v-model="config.options.cluster"/>
+      <input type="text" class="form-control" v-model="config.options.cluster">
     </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
@@ -53,14 +53,13 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import CommonIam from './CommonIam.vue'
-import BaseInput from "@/components/common/form/BaseInput.vue";
 import {AppEvent} from "@/common/AppEvent";
 import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import { mapGetters } from 'vuex';
 import _ from "lodash";
 
 export default {
-  components: { CommonServerInputs, CommonAdvanced, CommonIam, BaseInput },
+  components: { CommonServerInputs, CommonAdvanced, CommonIam },
   props: ['config'],
   data() {
     return {

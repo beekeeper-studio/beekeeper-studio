@@ -22,11 +22,11 @@
           </a>
           <div class="modal-form">
             <div class="search-wrapper">
-              <BaseInput
+              <input
                 type="text"
                 placeholder="Filter"
                 v-model="searchQuery"
-              />
+              >
               <span
                 class="clear"
                 @click="searchQuery = ''"
@@ -119,10 +119,8 @@
 
 <script lang="ts">
   import _ from 'lodash'
-  import BaseInput from '@/components/common/form/BaseInput.vue'
 
   export default {
-    components: { BaseInput },
     props: ['modalName', 'columnsWithFilterAndOrder', 'hasPendingChanges'],
     data() {
       return {

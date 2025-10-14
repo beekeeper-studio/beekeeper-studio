@@ -23,11 +23,11 @@
                 v-tooltip="'Set \'domain\' to be logged in using Windows Integrated Authentication (NTLM)'"
               >help_outlined</i>
             </label>
-            <BaseInput
+            <input
               type="text"
               v-model="config.domain"
               class="form-control"
-            />
+            >
           </div>
           <div class="form-group">
             <label
@@ -65,21 +65,21 @@
                 html: true }"
             >help_outlined</i>
           </label>
-          <BaseInput
+          <input
             name="server"
             type="text"
             class="form-control"
             v-model="config.host"
-          />
+          >
         </div>
         <div class="form-group">
           <label for="database">Database</label>
-          <BaseInput
+          <input
             name="database"
             type="text"
             class="form-control"
             v-model="config.defaultDatabase"
-          />
+          >
         </div>
         <div class="advanced-connection-settings signed-in-as" v-if="hasAccessTokenCache">
           <div class="advanced-body">
@@ -97,21 +97,21 @@
         </div>
         <div class="form-group" v-show="showUser">
           <label for="user">User</label>
-          <BaseInput
+          <input
             name="user"
             type="text"
             class="form-control"
             v-model="config.username"
-          />
+          >
         </div>
         <div class="form-group" v-show="showPassword">
           <label for="password">Password</label>
-          <BaseInput
+          <input
             name="password"
             type="text"
             class="form-control"
             v-model="config.password"
-          />
+          >
         </div>
         <div class="form-group" v-show="showTenantId">
           <label for="tenantId">
@@ -123,30 +123,30 @@
                 html: true }"
             >help_outlined</i>
           </label>
-          <BaseInput
+          <input
             name="tenantId"
             type="text"
             class="form-control"
             v-model="config.azureAuthOptions.tenantId"
-          />
+          >
         </div>
         <div class="form-group" v-show="showClientSecret">
           <label for="clientSecret">Client Secret</label>
-          <BaseInput
+          <input
             name="clientSecret"
             type="text"
             class="form-control"
             v-model="config.azureAuthOptions.clientSecret"
-          />
+          >
         </div>
         <div class="form-group" v-show="showMsiEndpoint">
           <label for="msiEndpoint">MSI Endpoint</label>
-          <BaseInput
+          <input
             name="msiEndpoint"
             type="text"
             class="form-control"
             v-model="config.azureAuthOptions.msiEndpoint"
-          />
+          >
         </div>
       </div>
     </div>
@@ -156,14 +156,13 @@
 <script>
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
-  import BaseInput from '@/components/common/form/BaseInput.vue'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
   import { mapState, mapGetters } from 'vuex'
 
   export default {
-    components: { CommonServerInputs, CommonAdvanced, BaseInput },
+    components: { CommonServerInputs, CommonAdvanced },
     props: ['config'],
     mounted() {
       this.authType = this.config?.azureAuthOptions?.azureAuthType || 'default'

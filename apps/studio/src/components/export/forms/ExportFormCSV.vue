@@ -2,13 +2,13 @@
   <div>
     <div class="form-group">
       <label>Field Delimitor</label>
-      <BaseInput
+      <input
         v-model="options.delimiter"
         type="text"
         class="form-control"
         autofocus
         ref="paramInput"
-      />
+      >
     </div>
     <div class="form-group">
       <label
@@ -29,9 +29,7 @@
 </template>
 
 <script>
-import BaseInput from '@/components/common/form/BaseInput.vue'
 export default {
-  components: { BaseInput },
   props: {
     value: {
       required: true,

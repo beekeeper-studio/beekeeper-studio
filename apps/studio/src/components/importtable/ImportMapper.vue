@@ -30,19 +30,19 @@
         v-if="defaultSchema"
       >
         <label for="schema">Schema</label>
-        <BaseInput
+        <input
           type="text"
           v-model="newTableSchema"
           :placeholder="defaultSchema"
-        />
+        >
       </div>
       <div class="form-group">
         <label for="table">Table Name</label>
-        <BaseInput
+        <input
           type="text"
           v-model="newTableName"
           placeholder="untitled_table"
-        />
+        >
       </div>
     </form>
     <div
@@ -73,11 +73,10 @@ import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { getDialectData } from '@shared/lib/dialects'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
-import BaseInput from '@/components/common/form/BaseInput.vue'
 
 export default {
   components: {
-    BaseInput
+
   },
   props: {
     stepperProps: {
