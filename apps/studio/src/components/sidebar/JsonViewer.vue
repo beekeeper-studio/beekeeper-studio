@@ -1,6 +1,7 @@
 <template>
   <div
     class="json-viewer"
+    :class="{ 'empty': empty }"
     ref="sidebar"
     v-show="!hidden"
   >
@@ -59,7 +60,7 @@
         :fold-gutters="true"
       />
     </div>
-    <div class="empty-state" v-show="empty">
+    <div class="empty-text">
       Open a table to view its data
     </div>
     <json-viewer-upsell v-if="$store.getters.isCommunity" />
