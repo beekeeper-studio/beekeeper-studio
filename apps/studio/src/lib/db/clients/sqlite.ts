@@ -222,11 +222,12 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`
-    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-    return rows.map(row => ({
+    // Get foreign keys FROM this table (referencing other tables)
+    const outgoingSQL = `pragma foreign_key_list('${SD.escapeString(table)}')`
+    const { rows: outgoingRows } = await this.driverExecuteSingle(outgoingSQL, { overrideReadonly: true });
+
+    const outgoingKeys = outgoingRows.map(row => ({
       constraintName: row.id,
-      constraintType: 'FOREIGN',
       toTable: row.table,
       toSchema: '',
       fromSchema: '',
@@ -236,7 +237,36 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       onUpdate: row.on_update,
       onDelete: row.on_delete,
       isComposite: false
-    }))
+    }));
+
+    // Get foreign keys TO this table (other tables referencing this table)
+    const allTables = await this.listTables();
+    const incomingKeys: TableKey[] = [];
+
+    for (const t of allTables) {
+      const sql = `pragma foreign_key_list('${SD.escapeString(t.name)}')`;
+      const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
+
+      // Check if any foreign key points to our target table
+      for (const row of rows) {
+        if (row.table === table) {
+          incomingKeys.push({
+            constraintName: row.id,
+            toTable: table,
+            toSchema: '',
+            fromSchema: '',
+            fromTable: t.name,
+            fromColumn: row.from,
+            toColumn: row.to,
+            onUpdate: row.on_update,
+            onDelete: row.on_delete,
+            isComposite: false
+          });
+        }
+      }
+    }
+
+    return [...outgoingKeys, ...incomingKeys];
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
