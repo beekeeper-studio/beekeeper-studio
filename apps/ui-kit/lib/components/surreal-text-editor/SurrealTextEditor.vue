@@ -38,9 +38,9 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
+    contextMenuItemsModifier(_event, items: InternalContextItem<unknown>[], context) {
       const pivot = items.findIndex((o) => o.id === "find");
-      return [
+      const modifiedItems = [
         ...items.slice(0, pivot),
         {
           label: `Format Query`,
@@ -52,6 +52,10 @@ export default Vue.extend({
         divider,
         ...items.slice(pivot),
       ];
+      return {
+        items: modifiedItems,
+        context,
+      }
     },
 
     // Non text-editor overrides
@@ -61,7 +65,7 @@ export default Vue.extend({
     }
   },
   mounted() {
-    this.internalContextMenuItems = this.contextMenuItemsModifier;
+    this.contextMenuExtensions.push(this.contextMenuItemsModifier);
   }
 })
 </script>
