@@ -7,9 +7,11 @@ import Vue from "vue";
 import mixin from "../text-editor/mixin";
 import props from "./props";
 import ProxyEmit from "../mixins/ProxyEmit";
-import { divider, InternalContextItem } from "../context-menu";
+import { ContextMenuExtension, divider, InternalContextItem } from "../context-menu";
 import { SurrealTextEditor } from "./SurrealTextEditor";
 import { Entity } from "../types";
+import { SurrealTextEditorMenuContext } from "./types";
+import { TextEditorMenuContext } from "../text-editor";
 
 export default Vue.extend({
   mixins: [mixin, ProxyEmit],
@@ -38,7 +40,11 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    contextMenuItemsModifier(_event, items: InternalContextItem<unknown>[], context) {
+    contextMenuItemsModifier(
+      _event,
+      items: InternalContextItem<unknown>[],
+      context: TextEditorMenuContext
+    ): ReturnType<ContextMenuExtension<SurrealTextEditorMenuContext>> {
       const pivot = items.findIndex((o) => o.id === "find");
       const modifiedItems = [
         ...items.slice(0, pivot),
