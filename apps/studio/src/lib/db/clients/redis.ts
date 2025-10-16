@@ -159,7 +159,7 @@ function parseInfo(info: string) {
   );
 }
 
-function makeObjectResult(result: unknown) {
+function makeObjectResult(result: unknown, command: string) {
   const rows = Object.entries(result).map(([field, value]) => ({
     field,
     value,
@@ -172,6 +172,7 @@ function makeObjectResult(result: unknown) {
     ],
     rowCount: rows.length,
     affectedRows: 0,
+    command,
   };
 }
 
