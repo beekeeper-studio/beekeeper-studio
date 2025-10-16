@@ -146,11 +146,11 @@ describe('Redis', () => {
       expect(hmsetResult[0].rows).toEqual([{ result: 'OK' }]);
 
       const hgetallResult = await connection.executeQuery('HGETALL test:hash');
-      expect(hgetallResult[0].rows).toEqual([{
-        field1: "value1",
-        field2: "value2",
-        field3: "value3"
-      }]);
+      expect(hgetallResult[0].rows).toEqual([
+        { field: "field1", value: "value1" },
+        { field: "field2", value: "value2" },
+        { field: "field3", value: "value3" }
+      ]);
     });
 
     it('should execute HDEL command', async () => {
@@ -160,10 +160,10 @@ describe('Redis', () => {
       expect(hdelResult[0].rows[0].result).toBe(1);
 
       const hgetallResult = await connection.executeQuery('HGETALL test:hash');
-      expect(hgetallResult[0].rows).toEqual([{
-        field1: "value1",
-        field3: "value3"
-      }]);
+      expect(hgetallResult[0].rows).toEqual([
+        { field: "field1", value: "value1" },
+        { field: "field3", value: "value3" }
+      ]);
     });
 
     it('should execute HEXISTS command', async () => {
@@ -835,7 +835,9 @@ describe('Redis', () => {
 
     it('should execute PUBSUB NUMSUB command', async () => {
       const numsubResult = await connection.executeQuery('PUBSUB NUMSUB test:channel');
-      expect(numsubResult[0].rows).toEqual([{ "test:channel": "0" }]);
+      expect(numsubResult[0].rows).toEqual([
+        { field: "test:channel", value: "0" }
+      ]);
     });
 
     it('should execute PUBSUB NUMPAT command', async () => {
@@ -1025,14 +1027,20 @@ describe('Redis', () => {
       await connection.executeQuery('LPUSH test:list "item"');
 
       const blpopResult = await connection.executeQuery('BLPOP test:list 1');
-      expect(blpopResult[0].rows).toEqual([{ key: 'test:list', element: 'item' }]);
+      expect(blpopResult[0].rows).toEqual([
+        { field: 'key', value: 'test:list' },
+        { field: 'element', value: 'item' }
+      ]);
     });
 
     it('should execute BRPOP command with timeout', async () => {
       await connection.executeQuery('RPUSH test:list "item"');
 
       const brpopResult = await connection.executeQuery('BRPOP test:list 1');
-      expect(brpopResult[0].rows).toEqual([{ element: "item", key: "test:list" }]);
+      expect(brpopResult[0].rows).toEqual([
+        { field: 'key', value: 'test:list' },
+        { field: 'element', value: 'item' }
+      ]);
     });
 
     it('should execute LMOVE command', async () => {
@@ -1225,14 +1233,20 @@ describe('Redis', () => {
       await connection.executeQuery('ZADD test:zset 1 "one" 2 "two" 3 "three"');
 
       const zpopmaxResult = await connection.executeQuery('ZPOPMAX test:zset');
-      expect(zpopmaxResult[0].rows).toEqual([{ score: 3, value: "three" }]);
+      expect(zpopmaxResult[0].rows).toEqual([
+        { field: 'value', value: 'three' },
+        { field: 'score', value: 3 }
+      ]);
     });
 
     it('should execute ZPOPMIN command', async () => {
       await connection.executeQuery('ZADD test:zset 1 "one" 2 "two" 3 "three"');
 
       const zpopminResult = await connection.executeQuery('ZPOPMIN test:zset');
-      expect(zpopminResult[0].rows).toEqual([{ score: 1, value: "one" }]);
+      expect(zpopminResult[0].rows).toEqual([
+        { field: 'value', value: 'one' },
+        { field: 'score', value: 1 }
+      ]);
     });
   });
 
