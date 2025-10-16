@@ -13,7 +13,7 @@ export default Vue.extend({
       timeoutID: null,
       isShowingOnboardingNoty: false,
       upsellNotificationOptions: {
-        text: "👋 Beekeeper Studio is run by a small team. Buy the full version of Beekeeper Studio to support development and get more features. Thank you ♥",
+        text: "Upgrade for features like the JSON row viewer, AI shell, & NoSQL support. All purchases come with a <strong>lifetime usage license</strong>.",
         timeout: 1000 * 60 * 5,
         queue: "upsell",
         killer: 'upsell',
@@ -21,7 +21,7 @@ export default Vue.extend({
         closeWith: ['button'],
         buttons: [
           Noty.button('Close', 'btn btn-flat', () => Noty.closeAll('upsell')),
-          Noty.button('Get Started', 'btn btn-primary', () => window.main.openExternally('https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition'))
+          Noty.button('Get Started', 'btn btn-primary', () => window.main.openExternally('https://beekeeperstudio.io/pricing/'))
         ]
       },
       onboardingNoty: null as Noty | null,
@@ -57,7 +57,7 @@ export default Vue.extend({
         clearTimeout(this.timeoutID)
         this.timeoutID = null
       }
-      if (!this.isCommunity) { 
+      if (!this.isCommunity) {
         return
       }
 
@@ -99,13 +99,14 @@ export default Vue.extend({
               </div>
               <div class="noty-onboarding-body">
                 Double click the demo database to explore app features,
-                <a class="link" href="https://docs.beekeeperstudio.io">watch our 60s quickstart video</a>,
-                or <a class="link" href="https://docs.beekeeperstudio.io">read our getting started guide</a>.
+                watch our <a class="link" href="https://docs.beekeeperstudio.io">60s quickstart video</a>,
+                or read the <a class="link" href="https://docs.beekeeperstudio.io">getting started guide</a>.
               </div>`,
         closeWith: ['button'],
         layout: 'bottomRight',
         timeout: false,
         queue: 'onboarding',
+        killer: 'upsell',
         buttons: [
           Noty.button("Don't show again", 'btn btn-flat', () => {
             this.setOnboardingNotyShown()
