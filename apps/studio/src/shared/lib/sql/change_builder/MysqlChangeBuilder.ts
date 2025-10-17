@@ -131,9 +131,16 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     log.info("COLUMN ORDER: ", oldColumnOrder, newColumnOrder)
     const newOrder = newColumnOrder.reduce((acc, NCO, index, arr) => {
       if ( oldColumnOrder.length < index + 1) return acc
-      const { columnName, dataType, nullable, defaultValue, extra } = NCO
+      const { columnName, dataType, nullable, defaultValue, extra, generated } = NCO
       const { columnName: oldColumnName } = oldColumnOrder[index]
       if ( columnName !== oldColumnName) {
+        // Skip generated columns - we don't have their generation expression
+        // and cannot properly MODIFY them
+        if (generated) {
+          log.warn(`Skipping reordering of generated column: ${columnName}`)
+          return acc
+        }
+
         let columnDef = `${this.wrapIdentifier(columnName)} ${dataType}`;
 
         if (nullable === false) {
@@ -144,8 +151,25 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
           columnDef += ` DEFAULT ${this.defaultValue(defaultValue)}`;
         }
 
+        // Handle the 'extra' field:
+        // Possible values in MySQL's information_schema.columns.extra:
+        // - 'auto_increment' - VALID SQL, keep it
+        // - 'on update CURRENT_TIMESTAMP' - VALID SQL, keep it
+        // - 'DEFAULT_GENERATED' - metadata only, FILTER OUT
+        // - 'STORED GENERATED' / 'VIRTUAL GENERATED' - shouldn't reach here (filtered by 'generated' flag)
+        //
+        // Multiple values can be combined, e.g., "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+        // We need to filter out only 'DEFAULT_GENERATED' while keeping valid SQL clauses.
         if (extra) {
-          columnDef += ` ${extra}`;
+          // Remove 'DEFAULT_GENERATED' (case-insensitive) but preserve everything else
+          let processedExtra = extra.replace(/DEFAULT_GENERATED/gi, '');
+
+          // Clean up extra whitespace
+          processedExtra = processedExtra.replace(/\s+/g, ' ').trim();
+
+          if (processedExtra) {
+            columnDef += ` ${processedExtra}`;
+          }
         }
 
         if (index === 0) {

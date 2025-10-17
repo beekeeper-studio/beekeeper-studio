@@ -409,6 +409,385 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
       
     })
 
+    describe("Column Reordering", () => {
+      beforeEach(async () => {
+        if (readonly) return;
+
+        // Drop table if it exists from previous test
+        await util.knex.schema.dropTableIfExists("column_reorder_test")
+      })
+
+      it("Should reorder columns while preserving NOT NULL constraint", async () => {
+        if (readonly) return;
+
+        // Create table with NOT NULL columns
+        await util.knex.schema.createTable("column_reorder_test", (table) => {
+          table.integer("id").primary()
+          table.string("first_name", 100).notNullable()
+          table.string("last_name", 100).notNullable()
+          table.integer("age")
+        })
+
+        // Get initial column order
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder: move last_name to first position (after id)
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[2], // last_name
+          initialColumns[1], // first_name
+          initialColumns[3], // age
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        // Verify new column order
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("last_name")
+        expect(reorderedColumns[2].columnName).toBe("first_name")
+        expect(reorderedColumns[3].columnName).toBe("age")
+
+        // Verify NOT NULL constraint preserved on last_name
+        expect(reorderedColumns[1].nullable).toBe(false)
+        expect(reorderedColumns[2].nullable).toBe(false)
+
+        // Verify we can't insert null values
+        const insertWithNull = async () => {
+          await util.knex("column_reorder_test").insert({
+            id: 1,
+            last_name: null,
+            first_name: "John",
+            age: 30
+          })
+        }
+        await expect(insertWithNull()).rejects.toThrow()
+      })
+
+      it("Should reorder columns while preserving DEFAULT values", async () => {
+        if (readonly) return;
+
+        // Create table with default values
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            name VARCHAR(100),
+            status VARCHAR(20) DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            score INT DEFAULT 0
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder: move status to second position
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[2], // status (with DEFAULT 'active')
+          initialColumns[1], // name
+          initialColumns[3], // created_at
+          initialColumns[4], // score
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        // Verify column order
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+        expect(reorderedColumns[1].columnName).toBe("status")
+
+        // Verify DEFAULT value preserved
+        expect(reorderedColumns[1].defaultValue).toBe("active")
+
+        // Test that default value works
+        await util.knex("column_reorder_test").insert({
+          id: 1,
+          name: "Test"
+        })
+
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(result[0].status).toBe("active")
+        expect(result[0].score).toBe(0)
+      })
+
+      it("Should reorder columns while preserving AUTO_INCREMENT", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            name VARCHAR(100),
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(100)
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Move AUTO_INCREMENT column to first position
+        const newOrder = [
+          initialColumns[1], // id (with AUTO_INCREMENT)
+          initialColumns[0], // name
+          initialColumns[2], // email
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        // Verify column order
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+        expect(reorderedColumns[0].columnName).toBe("id")
+
+        // Verify AUTO_INCREMENT preserved
+        expect(reorderedColumns[0].extra).toBe("auto_increment")
+
+        // Test that AUTO_INCREMENT still works
+        await util.knex("column_reorder_test").insert({ name: "User1", email: "user1@test.com" })
+        await util.knex("column_reorder_test").insert({ name: "User2", email: "user2@test.com" })
+
+        const results = await util.knex("column_reorder_test").select()
+        expect(results.length).toBe(2)
+        expect(results[0].id).toBe(1)
+        expect(results[1].id).toBe(2)
+      })
+
+      it("Should reorder columns with multiple attributes (NOT NULL, DEFAULT, extra)", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            score INT DEFAULT 100,
+            description TEXT
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Complex reordering
+        const newOrder = [
+          initialColumns[0], // id (AUTO_INCREMENT, PRIMARY KEY)
+          initialColumns[2], // status (NOT NULL, DEFAULT 'pending')
+          initialColumns[3], // score (DEFAULT 100)
+          initialColumns[1], // name (NOT NULL)
+          initialColumns[4], // description
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        // Verify column order and all attributes
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[0].extra).toBe("auto_increment")
+
+        expect(reorderedColumns[1].columnName).toBe("status")
+        expect(reorderedColumns[1].nullable).toBe(false)
+        expect(reorderedColumns[1].defaultValue).toBe("pending")
+
+        expect(reorderedColumns[2].columnName).toBe("score")
+        expect(reorderedColumns[2].defaultValue).toBe("100")
+
+        expect(reorderedColumns[3].columnName).toBe("name")
+        expect(reorderedColumns[3].nullable).toBe(false)
+
+        // Test inserting data with defaults
+        await util.knex("column_reorder_test").insert({ name: "TestUser" })
+
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(result[0].status).toBe("pending")
+        expect(result[0].score).toBe(100)
+        expect(result[0].name).toBe("TestUser")
+
+        // Test that NOT NULL constraint still works
+        const insertWithoutName = async () => {
+          await util.knex("column_reorder_test").insert({ status: "active" })
+        }
+        await expect(insertWithoutName()).rejects.toThrow()
+      })
+
+      it("Should move column to FIRST position", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT,
+            name VARCHAR(100) NOT NULL DEFAULT 'unknown',
+            age INT
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Move 'name' to first position
+        const newOrder = [
+          initialColumns[1], // name (NOT NULL, DEFAULT 'unknown')
+          initialColumns[0], // id
+          initialColumns[2], // age
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        expect(reorderedColumns[0].columnName).toBe("name")
+        expect(reorderedColumns[0].nullable).toBe(false)
+        expect(reorderedColumns[0].defaultValue).toBe("unknown")
+
+        // Test that attributes work correctly
+        await util.knex("column_reorder_test").insert({ id: 1, age: 25 })
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(result[0].name).toBe("unknown")
+      })
+
+      it("Should handle reordering columns with UNSIGNED attribute", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT UNSIGNED NOT NULL,
+            count INT UNSIGNED DEFAULT 0,
+            name VARCHAR(100)
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder columns
+        const newOrder = [
+          initialColumns[2], // name
+          initialColumns[0], // id (UNSIGNED, NOT NULL)
+          initialColumns[1], // count (UNSIGNED, DEFAULT 0)
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        expect(reorderedColumns[0].columnName).toBe("name")
+        expect(reorderedColumns[1].columnName).toBe("id")
+        expect(reorderedColumns[2].columnName).toBe("count")
+
+        // Verify UNSIGNED is preserved (unsigned is part of dataType in MySQL)
+        expect(reorderedColumns[1].dataType).toContain("unsigned")
+        expect(reorderedColumns[2].dataType).toContain("unsigned")
+        expect(reorderedColumns[1].nullable).toBe(false)
+        expect(reorderedColumns[2].defaultValue).toBe("0")
+
+        // Test that unsigned constraint works
+        const insertNegative = async () => {
+          await util.knex("column_reorder_test").insert({
+            id: -1,
+            name: "Test"
+          })
+        }
+        if (tag !== '5.1') { // MySQL 5.1 doesn't properly enforce unsigned
+          await expect(insertNegative()).rejects.toThrow()
+        }
+      })
+
+      it("Should preserve all attributes when reordering multiple columns", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL,
+            username VARCHAR(50) NOT NULL,
+            status ENUM('active', 'inactive') DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NULL,
+            score INT UNSIGNED DEFAULT 0
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Completely reorder all columns
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[2], // username
+          initialColumns[1], // email
+          initialColumns[6], // score
+          initialColumns[3], // status
+          initialColumns[5], // updated_at
+          initialColumns[4], // created_at
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("username")
+        expect(reorderedColumns[2].columnName).toBe("email")
+        expect(reorderedColumns[3].columnName).toBe("score")
+        expect(reorderedColumns[4].columnName).toBe("status")
+        expect(reorderedColumns[5].columnName).toBe("updated_at")
+        expect(reorderedColumns[6].columnName).toBe("created_at")
+
+        // Verify all attributes preserved
+        expect(reorderedColumns[0].extra).toBe("auto_increment")
+        expect(reorderedColumns[1].nullable).toBe(false)
+        expect(reorderedColumns[2].nullable).toBe(false)
+        expect(reorderedColumns[3].defaultValue).toBe("0")
+        expect(reorderedColumns[4].defaultValue).toBe("active")
+
+        // Test actual functionality
+        await util.knex("column_reorder_test").insert({
+          email: "test@example.com",
+          username: "testuser"
+        })
+
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(result[0].status).toBe("active")
+        expect(result[0].score).toBe(0)
+        expect(result[0].email).toBe("test@example.com")
+      })
+    })
+
     describe("Param tests", () => {
       it("Should be able to handle positional (?) params", async () => {
         await util.paramTest(['?']);
