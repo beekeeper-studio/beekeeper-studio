@@ -394,14 +394,29 @@ jobs:
             const merge = mergeFiles();
             fs.writeFileSync('mac.yml', merge, 'utf8');
       - name: Upload fixed mac yml
-        uses: actions/upload-release-asset@v1
+        uses: actions/github-script@v7
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          RELEASE_ID: ${{ needs.create_draft_release.outputs.id }}
         with:
-          upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
-          asset_path: "./mac.yml"
-          asset_name: "latest-mac.yml"
-          asset_content_type: 'application/octet-stream'
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const releaseId = process.env.RELEASE_ID;
+
+            // Read the merged yml file
+            const ymlContent = fs.readFileSync('mac.yml', 'utf8');
+
+            // Upload the asset using the release ID
+            await github.rest.repos.uploadReleaseAsset({
+              owner: 'beekeeper-studio',
+              repo: 'beekeeper-studio',
+              release_id: releaseId,
+              name: 'latest-mac.yml',
+              data: ymlContent,
+              headers: {
+                'content-type': 'application/octet-stream'
+              }
+            });
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]
