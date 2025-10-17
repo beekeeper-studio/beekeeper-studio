@@ -131,17 +131,18 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     log.info("COLUMN ORDER: ", oldColumnOrder, newColumnOrder)
     const newOrder = newColumnOrder.reduce((acc, NCO, index, arr) => {
       if ( oldColumnOrder.length < index + 1) return acc
-      const { columnName, dataType, nullable, defaultValue, extra, generated } = NCO
+      const { columnName, dataType, nullable, defaultValue, extra, generated, generationExpression, comment, characterSet, collation } = NCO
       const { columnName: oldColumnName } = oldColumnOrder[index]
       if ( columnName !== oldColumnName) {
-        // Skip generated columns - we don't have their generation expression
-        // and cannot properly MODIFY them
-        if (generated) {
-          log.warn(`Skipping reordering of generated column: ${columnName}`)
-          return acc
+        let columnDef = `${this.wrapIdentifier(columnName)} ${dataType}`;
+
+        if (characterSet) {
+          columnDef += ` CHARACTER SET ${characterSet}`;
         }
 
-        let columnDef = `${this.wrapIdentifier(columnName)} ${dataType}`;
+        if (collation) {
+          columnDef += ` COLLATE ${collation}`;
+        }
 
         if (nullable === false) {
           columnDef += ' NOT NULL'
@@ -151,17 +152,7 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
           columnDef += ` DEFAULT ${this.defaultValue(defaultValue)}`;
         }
 
-        // Handle the 'extra' field:
-        // Possible values in MySQL's information_schema.columns.extra:
-        // - 'auto_increment' - VALID SQL, keep it
-        // - 'on update CURRENT_TIMESTAMP' - VALID SQL, keep it
-        // - 'DEFAULT_GENERATED' - metadata only, FILTER OUT
-        // - 'STORED GENERATED' / 'VIRTUAL GENERATED' - shouldn't reach here (filtered by 'generated' flag)
-        //
-        // Multiple values can be combined, e.g., "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        // We need to filter out only 'DEFAULT_GENERATED' while keeping valid SQL clauses.
-        if (extra) {
-          // Remove 'DEFAULT_GENERATED' (case-insensitive) but preserve everything else
+        if (extra && !generated) {
           let processedExtra = extra.replace(/DEFAULT_GENERATED/gi, '');
 
           // Clean up extra whitespace
@@ -170,6 +161,15 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
           if (processedExtra) {
             columnDef += ` ${processedExtra}`;
           }
+        } else if (generated && generationExpression) {
+          const isStored = /STORED GENERATED/gi.test(extra);
+          // MySQL stores generation expressions with escaped quotes, we need to unescape them
+          const unescapedExpression = generationExpression.replace(/\\'/g, "'");
+          columnDef += ` AS (${unescapedExpression}) ${isStored ? 'STORED' : 'VIRTUAL'}`;
+        }
+
+        if (comment) {
+          columnDef += ` COMMENT ${this.escapeString(comment, true)}`;
         }
 
         if (index === 0) {

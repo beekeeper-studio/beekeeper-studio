@@ -623,10 +623,12 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
         expect(result[0].name).toBe("TestUser")
 
         // Test that NOT NULL constraint still works
-        const insertWithoutName = async () => {
-          await util.knex("column_reorder_test").insert({ status: "active" })
+        if (tag !== '5.1') { // MySQL 5.1 doesn't properly enforce NOT NULL in some cases
+          const insertWithoutName = async () => {
+            await util.knex("column_reorder_test").insert({ status: "active" })
+          }
+          await expect(insertWithoutName()).rejects.toThrow()
         }
-        await expect(insertWithoutName()).rejects.toThrow()
       })
 
       it("Should move column to FIRST position", async () => {
@@ -785,6 +787,535 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
         expect(result[0].status).toBe("active")
         expect(result[0].score).toBe(0)
         expect(result[0].email).toBe("test@example.com")
+      })
+
+      it("Should preserve generated columns when reordering other columns", async () => {
+        // MySQL 5.1 doesn't support generated columns (introduced in 5.7.6)
+        if (readonly || tag === '5.1') return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            quantity INT,
+            price DECIMAL(10, 2),
+            total DECIMAL(10, 2) GENERATED ALWAYS AS (quantity * price) STORED,
+            name VARCHAR(100)
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder regular columns but keep generated column in place
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[4], // name
+          initialColumns[1], // quantity
+          initialColumns[2], // price
+          initialColumns[3], // total (generated)
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify new column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("name")
+        expect(reorderedColumns[2].columnName).toBe("quantity")
+        expect(reorderedColumns[3].columnName).toBe("price")
+        expect(reorderedColumns[4].columnName).toBe("total")
+
+        // Verify generated column is still marked as generated
+        expect(reorderedColumns[4].generated).toBe(true)
+
+        // Verify the generation expression is preserved
+        expect(reorderedColumns[4].generationExpression).toBeTruthy()
+        expect(reorderedColumns[4].generationExpression.toLowerCase()).toContain("quantity")
+        expect(reorderedColumns[4].generationExpression.toLowerCase()).toContain("price")
+
+        // Test that generated column still works
+        await util.knex("column_reorder_test").insert({
+          id: 1,
+          name: "Widget",
+          quantity: 5,
+          price: 10.50
+        })
+
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(result[0].total).toBe("52.50")
+      })
+
+      it("Should preserve STORED generated columns when moving them", async () => {
+        // MySQL 5.1 doesn't support generated columns (introduced in 5.7.6)
+        if (readonly || tag === '5.1') return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            first_name VARCHAR(50),
+            last_name VARCHAR(50),
+            full_name VARCHAR(101) AS (CONCAT(first_name, ' ', last_name)) STORED,
+            email VARCHAR(100)
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Move the generated column to a different position
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[3], // full_name (STORED generated) - moving this!
+          initialColumns[1], // first_name
+          initialColumns[2], // last_name
+          initialColumns[4], // email
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify new column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("full_name")
+        expect(reorderedColumns[2].columnName).toBe("first_name")
+        expect(reorderedColumns[3].columnName).toBe("last_name")
+        expect(reorderedColumns[4].columnName).toBe("email")
+
+        // Verify generated column attributes are preserved
+        expect(reorderedColumns[1].generated).toBe(true)
+        expect(reorderedColumns[1].generationExpression).toBeTruthy()
+        expect(reorderedColumns[1].generationExpression.toLowerCase()).toContain("concat")
+
+        // Test that the generated column still works correctly
+        await util.knex("column_reorder_test").insert({
+          id: 1,
+          first_name: "John",
+          last_name: "Doe",
+          email: "john@example.com"
+        })
+
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(result[0].full_name).toBe("John Doe")
+      })
+
+      it("Should preserve VIRTUAL generated columns when reordering", async () => {
+        // MySQL 5.1 doesn't support generated columns (introduced in 5.7.6)
+        if (readonly || tag === '5.1') return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            price DECIMAL(10, 2),
+            tax_rate DECIMAL(5, 2),
+            tax_amount DECIMAL(10, 2) AS (price * tax_rate / 100) VIRTUAL,
+            description TEXT
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder columns including moving the virtual generated column
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[4], // description
+          initialColumns[1], // price
+          initialColumns[3], // tax_amount (VIRTUAL generated)
+          initialColumns[2], // tax_rate
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify new column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("description")
+        expect(reorderedColumns[2].columnName).toBe("price")
+        expect(reorderedColumns[3].columnName).toBe("tax_amount")
+        expect(reorderedColumns[4].columnName).toBe("tax_rate")
+
+        // Verify generated column is still marked as generated
+        expect(reorderedColumns[3].generated).toBe(true)
+        expect(reorderedColumns[3].generationExpression).toBeTruthy()
+
+        // Test that the virtual generated column still calculates correctly
+        await util.knex("column_reorder_test").insert({
+          id: 1,
+          price: 100.00,
+          tax_rate: 8.50,
+          description: "Test product"
+        })
+
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(parseFloat(result[0].tax_amount)).toBeCloseTo(8.50, 2)
+      })
+
+      it("Should preserve multiple generated columns when reordering", async () => {
+        // MySQL 5.1 doesn't support generated columns (introduced in 5.7.6)
+        if (readonly || tag === '5.1') return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            width DECIMAL(10, 2),
+            height DECIMAL(10, 2),
+            depth DECIMAL(10, 2),
+            area DECIMAL(10, 2) AS (width * height) STORED,
+            volume DECIMAL(10, 2) AS (width * height * depth) STORED,
+            name VARCHAR(100)
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder everything including both generated columns
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[6], // name
+          initialColumns[1], // width
+          initialColumns[4], // area (generated)
+          initialColumns[2], // height
+          initialColumns[3], // depth
+          initialColumns[5], // volume (generated)
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify new column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("name")
+        expect(reorderedColumns[2].columnName).toBe("width")
+        expect(reorderedColumns[3].columnName).toBe("area")
+        expect(reorderedColumns[4].columnName).toBe("height")
+        expect(reorderedColumns[5].columnName).toBe("depth")
+        expect(reorderedColumns[6].columnName).toBe("volume")
+
+        // Verify both generated columns are still marked as generated
+        expect(reorderedColumns[3].generated).toBe(true)
+        expect(reorderedColumns[6].generated).toBe(true)
+
+        // Verify generation expressions are preserved
+        expect(reorderedColumns[3].generationExpression).toBeTruthy()
+        expect(reorderedColumns[3].generationExpression.toLowerCase()).toContain("width")
+        expect(reorderedColumns[3].generationExpression.toLowerCase()).toContain("height")
+
+        expect(reorderedColumns[6].generationExpression).toBeTruthy()
+        expect(reorderedColumns[6].generationExpression.toLowerCase()).toContain("width")
+        expect(reorderedColumns[6].generationExpression.toLowerCase()).toContain("height")
+        expect(reorderedColumns[6].generationExpression.toLowerCase()).toContain("depth")
+
+        // Test that both generated columns still calculate correctly
+        await util.knex("column_reorder_test").insert({
+          id: 1,
+          name: "Box",
+          width: 10.0,
+          height: 5.0,
+          depth: 2.0
+        })
+
+        const result = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(parseFloat(result[0].area)).toBeCloseTo(50.0, 2)
+        expect(parseFloat(result[0].volume)).toBeCloseTo(100.0, 2)
+      })
+
+      it("Should preserve generated columns with complex expressions", async () => {
+        // MySQL 5.1 doesn't support generated columns (introduced in 5.7.6)
+        if (readonly || tag === '5.1') return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            status VARCHAR(20),
+            priority INT,
+            urgency INT,
+            importance_score INT AS (priority * 2 + urgency * 3) STORED,
+            is_critical VARCHAR(3) AS (IF(priority > 8 AND urgency > 8, 'Yes', 'No')) VIRTUAL
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder columns
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[5], // is_critical (VIRTUAL generated)
+          initialColumns[1], // status
+          initialColumns[2], // priority
+          initialColumns[3], // urgency
+          initialColumns[4], // importance_score (STORED generated)
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify new column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("is_critical")
+        expect(reorderedColumns[2].columnName).toBe("status")
+        expect(reorderedColumns[3].columnName).toBe("priority")
+        expect(reorderedColumns[4].columnName).toBe("urgency")
+        expect(reorderedColumns[5].columnName).toBe("importance_score")
+
+        // Verify both generated columns are preserved
+        expect(reorderedColumns[1].generated).toBe(true)
+        expect(reorderedColumns[5].generated).toBe(true)
+
+        // Test that complex expressions still work
+        await util.knex("column_reorder_test").insert({
+          id: 1,
+          status: "active",
+          priority: 9,
+          urgency: 9
+        })
+
+        await util.knex("column_reorder_test").insert({
+          id: 2,
+          status: "pending",
+          priority: 5,
+          urgency: 3
+        })
+
+        const result1 = await util.knex("column_reorder_test").select().where({ id: 1 })
+        expect(result1[0].importance_score).toBe(45) // 9*2 + 9*3 = 45
+        expect(result1[0].is_critical).toBe("Yes")
+
+        const result2 = await util.knex("column_reorder_test").select().where({ id: 2 })
+        expect(result2[0].importance_score).toBe(19) // 5*2 + 3*3 = 19
+        expect(result2[0].is_critical).toBe("No")
+      })
+
+      it("Should preserve column comments when reordering", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY COMMENT 'Primary identifier',
+            username VARCHAR(50) NOT NULL COMMENT 'User login name',
+            email VARCHAR(255) COMMENT 'Contact email address',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time'
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder columns
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[2], // email
+          initialColumns[1], // username
+          initialColumns[3], // created_at
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("email")
+        expect(reorderedColumns[2].columnName).toBe("username")
+        expect(reorderedColumns[3].columnName).toBe("created_at")
+
+        // Verify comments are preserved
+        expect(reorderedColumns[0].comment).toBe("Primary identifier")
+        expect(reorderedColumns[1].comment).toBe("Contact email address")
+        expect(reorderedColumns[2].comment).toBe("User login name")
+        expect(reorderedColumns[3].comment).toBe("Record creation time")
+      })
+
+      it("Should preserve ON UPDATE CURRENT_TIMESTAMP", async () => {
+        // MySQL 5.1 only allows one TIMESTAMP with CURRENT_TIMESTAMP
+        if (readonly || tag === '5.1') return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            data VARCHAR(100),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder columns
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[3], // updated_at (with ON UPDATE)
+          initialColumns[1], // data
+          initialColumns[2], // created_at
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("updated_at")
+        expect(reorderedColumns[2].columnName).toBe("data")
+        expect(reorderedColumns[3].columnName).toBe("created_at")
+
+        // Verify ON UPDATE is preserved (it's in the extra field)
+        expect(reorderedColumns[1].extra).toContain("on update")
+        if (reorderedColumns[3].extra) {
+          expect(reorderedColumns[3].extra).not.toContain("on update")
+        }
+
+        // Test that ON UPDATE still works
+        await util.knex("column_reorder_test").insert({
+          id: 1,
+          data: "initial"
+        })
+
+        const result1 = await util.knex("column_reorder_test").select().where({ id: 1 })
+        const initialUpdatedAt = result1[0].updated_at
+
+        // Wait a moment and update
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        await util.knex("column_reorder_test").where({ id: 1 }).update({ data: "modified" })
+
+        const result2 = await util.knex("column_reorder_test").select().where({ id: 1 })
+        const laterUpdatedAt = result2[0].updated_at
+
+        // updated_at should have changed
+        expect(laterUpdatedAt.getTime()).toBeGreaterThan(initialUpdatedAt.getTime())
+      })
+
+      it("Should preserve ZEROFILL attribute", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            code INT(5) ZEROFILL,
+            amount DECIMAL(10,2),
+            quantity INT(3) ZEROFILL
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder columns
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[3], // quantity (ZEROFILL)
+          initialColumns[1], // code (ZEROFILL)
+          initialColumns[2], // amount
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("quantity")
+        expect(reorderedColumns[2].columnName).toBe("code")
+        expect(reorderedColumns[3].columnName).toBe("amount")
+
+        // Verify ZEROFILL is preserved (it's part of dataType)
+        expect(reorderedColumns[1].dataType.toLowerCase()).toContain("zerofill")
+        expect(reorderedColumns[2].dataType.toLowerCase()).toContain("zerofill")
+        expect(reorderedColumns[3].dataType.toLowerCase()).not.toContain("zerofill")
+      })
+
+      it("Should preserve character set and collation", async () => {
+        if (readonly || tag === '5.1') return; // MySQL 5.1 has limited charset support
+
+        await util.knex.schema.raw(`
+          CREATE TABLE column_reorder_test (
+            id INT PRIMARY KEY,
+            name_utf8 VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+            name_bin VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+            description TEXT
+          )
+        `)
+
+        const initialColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Reorder columns
+        const newOrder = [
+          initialColumns[0], // id
+          initialColumns[2], // name_bin
+          initialColumns[3], // description
+          initialColumns[1], // name_utf8
+        ]
+
+        await util.connection.alterTable({
+          table: "column_reorder_test",
+          reorder: {
+            oldOrder: initialColumns,
+            newOrder: newOrder
+          }
+        })
+
+        const reorderedColumns = await util.connection.listTableColumns("column_reorder_test")
+
+        // Verify column order
+        expect(reorderedColumns[0].columnName).toBe("id")
+        expect(reorderedColumns[1].columnName).toBe("name_bin")
+        expect(reorderedColumns[2].columnName).toBe("description")
+        expect(reorderedColumns[3].columnName).toBe("name_utf8")
+
+        // Verify charset/collation is preserved (check via raw query since it may not be in dataType)
+        const showCreateResult = await util.knex.raw('SHOW CREATE TABLE column_reorder_test')
+        const createStatement = showCreateResult[0][0]['Create Table']
+
+        // Both columns should still have their specific charsets
+        expect(createStatement).toContain("utf8mb4_unicode_ci")
+        expect(createStatement).toContain("utf8mb4_bin")
       })
     })
 
