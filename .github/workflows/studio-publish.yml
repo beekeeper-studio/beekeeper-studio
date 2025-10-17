@@ -14,6 +14,9 @@ jobs:
       assets_url: ${{ steps.create_release.outputs.assets_url }}
       id: ${{ steps.create_release.outputs.id }}
       json: ${{ steps.create_release.outputs.json }}
+      azure_client_id: ${{ steps.azure_creds.outputs.client_id }}
+      azure_tenant_id: ${{ steps.azure_creds.outputs.tenant_id }}
+      azure_keyvault_url: ${{ steps.azure_creds.outputs.keyvault_url }}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -31,6 +34,18 @@ jobs:
           script: |
             const script = require('./.github/scripts/create_draft_release.js')
             await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+
+      - name: Extract Azure credentials from existing secrets
+        id: azure_creds
+        env:
+          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+        run: |
+          CLIENT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.id')
+          TENANT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.tenant')
+          KEYVAULT_URL=$(echo "$KEYVAULT_AUTH" | jq -r '.url')
+          echo "client_id=$CLIENT_ID" >> $GITHUB_OUTPUT
+          echo "tenant_id=$TENANT_ID" >> $GITHUB_OUTPUT
+          echo "keyvault_url=$KEYVAULT_URL" >> $GITHUB_OUTPUT
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
   # outputs: latest, beta, alpha
@@ -101,6 +116,15 @@ jobs:
       - name: Install azuresigntool
         run: 'dotnet tool install --global AzureSignTool --version 6.0.1'
         if: matrix.os.type == 'windows'
+
+      - name: Azure Login
+        if: matrix.os.type == 'windows'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ needs.create_draft_release.outputs.azure_client_id }}
+          client-secret: ${{ secrets.keyvault_auth_secret }}
+          tenant-id: ${{ needs.create_draft_release.outputs.azure_tenant_id }}
+          subscription-id: ${{ secrets.azure_subscription_id }}
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -247,8 +271,7 @@ jobs:
       - name: Build & Publish (NT)
         if: matrix.os.type == 'windows'
         env:
-          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
-          KEYVAULT_AUTH_SECRET: "${{ secrets.keyvault_auth_secret }}"
+          KEYVAULT_URL: "${{ needs.create_draft_release.outputs.azure_keyvault_url }}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{'$PYTHON_PATH' }}"
           PYTHONPATH: "${{ '$PYTHONPATH' }}"
