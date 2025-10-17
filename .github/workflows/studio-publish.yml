@@ -121,6 +121,7 @@ jobs:
         if: matrix.os.type == 'windows'
         uses: azure/login@v2
         with:
+          auth-type: SERVICE_PRINCIPAL
           client-id: ${{ needs.create_draft_release.outputs.azure_client_id }}
           client-secret: ${{ secrets.keyvault_auth_secret }}
           tenant-id: ${{ needs.create_draft_release.outputs.azure_tenant_id }}
