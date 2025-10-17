@@ -34,6 +34,7 @@ exports.default = async function (configuration) {
     '-kvc', certificate,
     "-tr", timeserver,
     '-td', 'sha384',
+    '--max-degree-of-parallelism', '1',
     '-v'
   ]
 
