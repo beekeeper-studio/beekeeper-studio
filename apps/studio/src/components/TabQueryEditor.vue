@@ -775,13 +775,11 @@
           this.$modal.hide('super-formatter')
         }
       },
-      getPresets(presetName) {
-        console.log('~~ preset ~~')
-        console.log(presetName)
+      getPresets(presetId) {
         this.$util.send('appdb/formatter/getAll')
           .then((presets) => {
-            const presetToFind = typeof presetName == 'string' ? presetName : this.$bksConfig.ui.queryEditor.defaultFormatter
-            const selectedFormatter = presets.find(p => p.name.toLowerCase() === presetToFind.toLowerCase())
+            const presetToFind = typeof presetId === 'object' ? this.$bksConfig.ui.queryEditor.defaultFormatter : presetId
+            const selectedFormatter = presets.find(p => Number(p.id) === Number(presetToFind))
 
             if (selectedFormatter != null) this.selectedFormatter = { id: selectedFormatter.id, ...selectedFormatter.config }
 
@@ -793,17 +791,13 @@
           })
       },
       applyPreset(presetConfig) {
-        console.log('~~~ LOOK HERE ~~~')
-        console.log(presetConfig)
         this.handleFormatterPresetModal({ showFormatter: false })
         this.selectedFormatter = { ...presetConfig }
-        console.log('~~ SELECTED FORMATTER ~~')
-        console.log(this.selectedFormatter)
       },
       savePreset({id, config, name}) {
-        let presetName = name
         let inputData = {}
         let notyMessage = ''
+        let presetId = id
         let endpoint
 
         if (id == null){
@@ -830,7 +824,7 @@
           .then((presetValues) => {
             this.$noty.success(`${notyMessage} complete`)
             this.selectedFormatter = { id: presetValues.id, ...presetValues.config }
-            presetName = presetValues.name
+            presetId = presetValues.id
           })
           .catch(err => {
             const error_notice = this.$noty.error(`${notyMessage} failed: ${err.message}`, {
@@ -844,7 +838,7 @@
             throw new Error(err)
           })
           .finally( () => {
-            return this.getPresets(presetName)
+            return this.getPresets(presetId)
           })
         // use notify when it's been saved and all that jazz
       },
