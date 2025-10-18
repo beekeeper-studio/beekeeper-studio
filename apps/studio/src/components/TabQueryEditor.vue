@@ -791,8 +791,6 @@
       },
       applyPreset(presetConfig) {
         this.handleFormatterPresetModal({ showFormatter: false })
-        console.log('~~~ ahhhh ~~~')
-        console.log(presetConfig)
         this.selectedFormatter = { ...presetConfig }
       },
       savePreset({id, config, name}) {
@@ -836,7 +834,7 @@
             throw new Error(err)
           })
           .finally( () => {
-            return this.getPresets(true)
+            return this.getPresets()
           })
         // use notify when it's been saved and all that jazz
       },
