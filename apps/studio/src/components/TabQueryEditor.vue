@@ -775,10 +775,13 @@
           this.$modal.hide('super-formatter')
         }
       },
-      getPresets() {
+      getPresets(presetName) {
+        console.log('~~ preset ~~')
+        console.log(presetName)
         this.$util.send('appdb/formatter/getAll')
           .then((presets) => {
-            const selectedFormatter = presets.find(p => p.name === this.$bksConfig.ui.queryEditor.defaultFormatter)
+            const presetToFind = typeof presetName == 'string' ? presetName : this.$bksConfig.ui.queryEditor.defaultFormatter
+            const selectedFormatter = presets.find(p => p.name.toLowerCase() === presetToFind.toLowerCase())
 
             if (selectedFormatter != null) this.selectedFormatter = { id: selectedFormatter.id, ...selectedFormatter.config }
 
@@ -790,13 +793,19 @@
           })
       },
       applyPreset(presetConfig) {
+        console.log('~~~ LOOK HERE ~~~')
+        console.log(presetConfig)
         this.handleFormatterPresetModal({ showFormatter: false })
         this.selectedFormatter = { ...presetConfig }
+        console.log('~~ SELECTED FORMATTER ~~')
+        console.log(this.selectedFormatter)
       },
       savePreset({id, config, name}) {
-        let endpoint
+        let presetName = name
         let inputData = {}
         let notyMessage = ''
+        let endpoint
+
         if (id == null){
           notyMessage = 'Add new preset'
           endpoint = 'appdb/formatter/newPreset'
@@ -821,6 +830,7 @@
           .then((presetValues) => {
             this.$noty.success(`${notyMessage} complete`)
             this.selectedFormatter = { id: presetValues.id, ...presetValues.config }
+            presetName = presetValues.name
           })
           .catch(err => {
             const error_notice = this.$noty.error(`${notyMessage} failed: ${err.message}`, {
@@ -834,7 +844,7 @@
             throw new Error(err)
           })
           .finally( () => {
-            return this.getPresets()
+            return this.getPresets(presetName)
           })
         // use notify when it's been saved and all that jazz
       },
