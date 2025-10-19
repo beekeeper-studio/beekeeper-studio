@@ -120,7 +120,6 @@ export class FormatterPreset extends ApplicationEntity {
     } catch (e) {
       log.error(`Error deleting preset id: ${id}`, e)
       throw new Error(`Error deleting preset id: ${id}`)
-
     }
   }
 }

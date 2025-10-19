@@ -261,6 +261,7 @@
             @bks-apply-preset="applyPreset"
             @bks-save-preset="savePreset"
             @bks-create-preset="savePreset"
+            @bks-delete-preset="deletePreset"
           />
         </div>
       </modal>
@@ -793,6 +794,29 @@
       applyPreset(presetConfig) {
         this.handleFormatterPresetModal({ showFormatter: false })
         this.selectedFormatter = { ...presetConfig }
+      },
+      async deletePreset({ id }) {
+        if (!await this.$confirm('Are you sure you want to delete this configuation?')) {
+          return
+        }
+
+        this.$util.send('appdb/formatter/deletePreset', { id })
+          .then(() => {
+            this.$noty.success('Formatter Configuration successfully deleted')
+            this.selectedFormatter = null
+            this.handleFormatterPresetModal({ showFormatter: false })
+          })
+          .catch(err => {
+            const error_notice = this.$noty.error(`Formatter Configuration delete failed: ${err.message}`, {
+              buttons: [
+                Noty.button('Close', 'btn btn-primary', () => {
+                  error_notice.close()
+                })
+              ]
+            }).setTimeout(60 * 1000)
+
+            throw new Error(err)
+          })
       },
       savePreset({id, config, name}) {
         let inputData = {}

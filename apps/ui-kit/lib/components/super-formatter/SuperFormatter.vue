@@ -32,7 +32,7 @@
             type="text"
             ref="addNewPresetInput"
             v-model="addNewPresetName"
-          />
+          >
         </label>
         <button
           type="button"
@@ -52,7 +52,7 @@
             max="20"
             min="1"
             step="1"
-          />
+          >
         </label>
         <label class="formatter-settings__inputs switch">
           <span class="sr-only">Use Tabs</span>
@@ -160,21 +160,25 @@
         </label>
       </div>
       <div class="formatter-buttons">
-        <button
-          class="btn btn-small"
-          type="button"
-          @click.prevent="savePreset"
-          :disabled="!shouldBeSaved"
-          v-if="canAddPresets"
-        >
-          {{ saveText }}
-          <span 
-            v-if="shouldBeSaved"
-            class="material-icons-outlined"
+        <div class="formatter-buttons__btn-group">
+          <button
+            class="btn btn-small"
+            type="button"
+            @click.prevent="savePreset"
+            :disabled="!shouldBeSaved"
+            v-if="canAddPresets"
           >
-            pending
-          </span>
-        </button>
+            {{ saveText }}
+          </button>
+          <button
+            class="btn btn-danger"
+            type="button"
+            @click.prevent="deleteConfig"
+            v-if="canAddPresets && canDelete"
+          >
+            Delete Config
+          </button>
+        </div>
         <div class="formatter-buttons__btn-group">
           <button
             @click.prevent="copyToClipboard"
@@ -254,6 +258,10 @@ export default Vue.extend({
         { value: 'lower' }
       ]
     },
+    canDelete() {
+      const preset = this.presets.find(p => p.id === this.selectedPresetId)
+      return preset == null ? false : !preset.systemDefault
+    },
     presetList() {
       return this.presets.map(preset => ({
         value: preset.id,
@@ -276,6 +284,9 @@ export default Vue.extend({
     }
   },
   methods: {
+    deleteConfig() {
+      this.$emit('bks-delete-preset', { id: this.selectedPresetId })
+    },
     addPreset() {
       this.addNewPresetName = null
       this.addNewPreset = true
@@ -331,7 +342,7 @@ export default Vue.extend({
       this.addNewPreset = false
     },
     startingPreset(sp) {
-      if (sp.id) return this.selectedPresetId = sp.id
+      this.selectedPresetId = sp.id ?? 1
     }
   },
   mounted() {
