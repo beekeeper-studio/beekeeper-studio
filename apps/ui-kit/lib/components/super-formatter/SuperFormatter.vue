@@ -355,6 +355,8 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
   .BksSuperFormatter {
+    flex: 1;
+    min-height: 0;
     display: grid;
     grid-template-columns: 2fr 1fr; /* 2/3 and 1/3 */
     gap: 2rem;
