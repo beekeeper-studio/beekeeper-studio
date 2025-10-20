@@ -169,8 +169,6 @@ export abstract class ChangeBuilderBase {
     const reorderColumns = spec.reorder ? this.reorderColumns(spec.reorder.oldOrder, spec.reorder.newOrder) : null
     let alterTable = alterations.length ? `${beginning} ${alterations.join(", ")}` : null
 
-    console.log('{{reorderColumns}}')
-    console.log(reorderColumns)
     // some dbs (SQLITE) don't support multiple operations in a single ALTER
     if (this.multiStatementMode) {
       alterTable = alterations.map((a) => {
