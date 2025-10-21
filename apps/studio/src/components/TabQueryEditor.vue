@@ -628,6 +628,10 @@
         return FormatterDialect(dialectFor(this.queryDialect))
       },
       paramTypes() {
+        // TODO: Parameter replacement for redis
+        if (this.dialect === 'redis') {
+          return {};
+        }
         return this.$bksConfig.db[this.dialect]?.paramTypes
       },
       identifierDialect() {
