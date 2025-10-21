@@ -19,6 +19,9 @@ export interface IMenuActionHandler {
   zoomreset: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   zoomin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   zoomout: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  editorFontSizeReset: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  editorFontSizeIncrease: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  editorFontSizeDecrease: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   fullscreen: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
