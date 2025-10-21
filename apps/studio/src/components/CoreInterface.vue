@@ -180,10 +180,6 @@
           })
         })
       },
-
-      getSplitContainerWidth() {
-        return this.$refs.splitContainer.offsetWidth
-      },
     },
     mounted() {
       this.$store.dispatch('hideEntities/load')
@@ -334,6 +330,10 @@
           this.toggleOpenPrimarySidebar(true)
         }
         this.setGlobalSidebarActiveItem(item);
+      },
+
+      getSplitContainerWidth() {
+        return this.$refs.splitContainer.offsetWidth
       },
     }
   })
