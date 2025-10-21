@@ -114,5 +114,43 @@ export const SidebarModule: Module<State, RootState> = {
     setGlobalSidebarActiveItem(context, item: "tables" | "history" | "queries") {
       context.commit("globalSidebarActiveItem", item);
     },
+
+    /**
+     * Prior to this, we use percentages to determine widths of the sidebars.
+     * This function will make sure the percentages are transformed into
+     * pixels so upgrading users don't see the sidebars resizing.
+     *
+     * @param params.containerWidth - in pixels
+     */
+    readjustWidths(context, params: { containerWidth: number }) {
+      const PRIMARY_SIDEBAR_SIZE_KEY = "primarySidebarOpenSize-v2";
+      const SECONDARY_SIDEBAR_SIZE_KEY = "secondarySidebarCurrentSize-v2";
+
+      if (SmartLocalStorage.exists(PRIMARY_SIDEBAR_SIZE_KEY)) {
+        const size = SmartLocalStorage.getJSON(PRIMARY_SIDEBAR_SIZE_KEY);
+        if (_.isNumber(size)) {
+          const width = params.containerWidth * (size / 100);
+          const clampedWidth = Math.max(
+            Math.min(window.bksConfig.ui.layout.primarySidebarMaxWidth, width),
+            window.bksConfig.ui.layout.primarySidebarMinWidth
+          );
+          context.dispatch("setPrimarySidebarWidth", clampedWidth);
+          SmartLocalStorage.remove(PRIMARY_SIDEBAR_SIZE_KEY);
+        }
+      }
+
+      if (SmartLocalStorage.exists(SECONDARY_SIDEBAR_SIZE_KEY)) {
+        const size = SmartLocalStorage.getJSON(SECONDARY_SIDEBAR_SIZE_KEY);
+        if (_.isNumber(size)) {
+          const width = params.containerWidth * (size / 100);
+          const clampedWidth = Math.max(
+            Math.min(window.bksConfig.ui.layout.secondarySidebarMaxWidth, width),
+            window.bksConfig.ui.layout.secondarySidebarMinWidth
+          );
+          context.dispatch("setSecondarySidebarWidth", clampedWidth);
+          SmartLocalStorage.remove(SECONDARY_SIDEBAR_SIZE_KEY);
+        }
+      }
+    },
   },
 };

@@ -123,6 +123,9 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
+          this.readjustWidths({
+            containerWidth: this.getSplitContainerWidth(),
+          })
           const primarySidebarSize = this.primarySidebarOpen ? (this.primarySidebarWidth / this.getSplitContainerWidth()) * 100 : 0
           const secondarySidebarSize = this.secondarySidebarOpen ? (this.secondarySidebarWidth / this.getSplitContainerWidth()) * 100 : 0
           const mainContentSize = 100 - (primarySidebarSize + secondarySidebarSize)
@@ -220,6 +223,7 @@
         setSecondarySidebarOpen: "sidebar/setSecondarySidebarOpen",
         setSecondarySidebarWidth: "sidebar/setSecondarySidebarWidth",
         setGlobalSidebarActiveItem: "sidebar/setGlobalSidebarActiveItem",
+        readjustWidths: "sidebar/readjustWidths",
       }),
       showQuickSearch() {
         this.quickSearchShown = true
