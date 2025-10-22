@@ -55,7 +55,6 @@ export const MysqlData: DialectData = {
     alter: {
       multiStatement: true,
       renameSchema: true,
-      reorderColumn: true, // FIXME remove this once it's fixed
     },
     schema: true,
   },
