@@ -27,7 +27,7 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     // string, already quoted
     if (defaultValue.startsWith("'")) return this.wrapLiteral(defaultValue)
     // is a generated expression, so don't quote
-    if (isGenerated) return `(${defaultValue})`;
+    if (isGenerated) return `(${defaultValue.replace(/\\'/g, "'")})`;
     // string, not quoted.
     return this.escapeString(defaultValue.toString(), true);
   }
@@ -203,8 +203,9 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
           columnDef += ' NOT NULL'
         }
 
-        if (defaultValue !== undefined && defaultValue !== null) {
-          columnDef += ` DEFAULT ${this.defaultValue(defaultValue)}`;
+        if (!_.isNil(defaultValue)) {
+          const isGenerated = /DEFAULT_GENERATED/gi.test(extra);
+          columnDef += ` DEFAULT ${this.defaultValue(defaultValue, isGenerated)}`;
         }
 
         if (extra && !generated) {
