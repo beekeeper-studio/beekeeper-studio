@@ -266,7 +266,7 @@ export interface IBasicDatabaseClient {
   truncateAllTables(schema?: string): Promise<void>
 
 
-  getTableLength(table: string, schema?: string): Promise<number>,
+  getTableLength(table?: string, schema?: string): Promise<number>,
   selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>,
   selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>,
   selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>
