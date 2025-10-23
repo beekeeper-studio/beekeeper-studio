@@ -406,8 +406,6 @@ $cell-success:           $row-add;
         background-color: $row-add!important;
       }
       &.deleted {
-        --row-bg-color: #{$row-delete};
-        background-color: $row-delete!important;
         div.dynamic-action::after {
           content: "undo";
         }

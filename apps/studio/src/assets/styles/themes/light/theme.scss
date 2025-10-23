@@ -257,12 +257,6 @@ x-buttons {
           --row-bg-color: #{$row-add};
           --row-hover-bg-color: rgba($theme-base, 0.05);
         }
-        &.deleted,
-        &.deleted:hover {
-          background: $row-delete!important;
-          --row-bg-color: #{$row-delete};
-          --row-hover-bg-color: #{$row-delete};
-        }
         &.edit-error {
           background: $row-error!important;
           --row-bg-color: #{$row-error};

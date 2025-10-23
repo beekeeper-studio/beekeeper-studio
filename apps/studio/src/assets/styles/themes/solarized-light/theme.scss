@@ -255,10 +255,6 @@ x-buttons {
       &.inserted:hover {
         background: $row-add!important;
       }
-      &.deleted,
-      &.deleted:hover {
-        background: $row-delete!important;
-      }
       &.edit-error {
         background: $row-error!important;
       }

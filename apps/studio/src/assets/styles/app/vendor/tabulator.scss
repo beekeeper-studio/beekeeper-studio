@@ -66,7 +66,11 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     }
     &.deleted,
     &.deleted:hover {
-      background: $row-delete;
+      background-color: color-mix(in srgb, var(--brand-danger) 30%, var(--query-editor-bg));
+
+      &.tabulator-row-odd {
+        background-color: color-mix(in srgb, var(--brand-danger) 45%, var(--query-editor-bg));
+      }
     }
     &.edit-error {
       background: $cell-error!important;
