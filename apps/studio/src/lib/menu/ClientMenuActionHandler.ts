@@ -35,6 +35,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   restart = () => send('restart')
   opendocs = () => send('opendocs')
   contactSupport = () => send('contactSupport')
+  openGettingStarted = () => send('openGettingStarted')
   newWindow = () => send('newWindow')
   newQuery = () => send('newQuery')
   newTab = () => send('newTab')
