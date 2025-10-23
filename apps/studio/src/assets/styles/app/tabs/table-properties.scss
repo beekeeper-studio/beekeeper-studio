@@ -274,10 +274,7 @@ $cell-success:           $row-add;
     // Field Rows
     .tabulator-row {
       margin: $row-gutter 0;
-      &.tabulator-row-even {
-        --row-bg-color: #{rgba($theme-base, 0.05)};
-        background: rgba($theme-base, 0.05);
-      }
+      background-color: rgb(from var(--theme-base) r g b / 5%);
       .tabulator-cell {
         min-height: $row-height;
         height: $row-height;
@@ -409,7 +406,6 @@ $cell-success:           $row-add;
 
     &.tabulator-row-even {
       &.inserted {
-        --row-bg-color: #{$row-add};
         background-color: $row-add!important;
       }
       &.inserted, &.deleted {
