@@ -454,7 +454,9 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
   async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
     schema = schema || 'dbo';
-    const sql = `
+
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
+    const outgoingSQL = `
       SELECT
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS name,
         u_pri.user_name AS to_schema,
@@ -482,7 +484,41 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       ORDER BY name, sequence
     `;
 
-    const { rows } = await this.driverExecuteSingle(sql);
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const incomingSQL = `
+      SELECT
+        CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS name,
+        u_pri.user_name AS to_schema,
+        t_pri.table_name AS to_table,
+        c_pri.column_name AS to_column,
+        u_for.user_name AS from_schema,
+        t_for.table_name AS from_table,
+        c_for.column_name AS from_column,
+        CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
+        'NO ACTION' AS on_update,
+        'NO ACTION' AS on_delete,
+        ic_for.sequence AS sequence
+      FROM SYS.SYSFKEY fk
+      JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
+      JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
+      JOIN SYS.SYSTABLE t_for ON fk.foreign_table_id = t_for.table_id
+      JOIN SYS.SYSUSER u_for ON t_for.creator = u_for.user_id
+      JOIN SYS.SYSIDXCOL ic_pri ON fk.primary_index_id = ic_pri.index_id AND ic_pri.table_id = fk.primary_table_id
+      JOIN SYS.SYSCOLUMN c_pri ON ic_pri.table_id = c_pri.table_id AND ic_pri.column_id = c_pri.column_id
+      JOIN SYS.SYSTABLE t_pri ON fk.primary_table_id = t_pri.table_id
+      JOIN SYS.SYSUSER u_pri ON t_pri.creator = u_pri.user_id
+      WHERE t_pri.table_name = ${D.escapeString(table, true)}
+      AND u_pri.user_name = ${D.escapeString(schema, true)}
+      AND ic_for.sequence = ic_pri.sequence
+      ORDER BY name, sequence
+    `;
+
+    const [outgoing, incoming] = await Promise.all([
+      this.driverExecuteSingle(outgoingSQL),
+      this.driverExecuteSingle(incomingSQL)
+    ]);
+
+    const rows = [...outgoing.rows, ...incoming.rows];
     
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'name');

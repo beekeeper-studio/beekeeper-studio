@@ -152,7 +152,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const sql = `
+    // Query for foreign keys FROM this table (referencing other tables)
+    const outgoingSQL = `
       SELECT
         NULL as from_schema,
         f.table_name as from_table,
@@ -176,9 +177,39 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       AND con.constraint_type = 'FOREIGN KEY'
     `;
 
-    const data = await this.driverExecuteSingle(sql);
+    // Query for foreign keys TO this table (other tables referencing this table)
+    const incomingSQL = `
+      SELECT
+        NULL as from_schema,
+        f.table_name as from_table,
+        f.column_name as from_column,
+        NULL as to_schema,
+        t.table_name as to_table,
+        t.column_name as to_column,
+        f.constraint_name,
+        NULL as update_rule,
+        NULL as delete_rule
+      FROM
+        ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
+      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
+      ON f.constraint_name = t.constraint_name
+      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
+      ON f.constraint_catalog = con.constraint_catalog
+      AND f.constraint_schema = con.constraint_schema
+      AND f.constraint_name = con.constraint_name
+      WHERE f.table_schema = '${escapeString(this.db)}'
+      AND t.table_name = '${escapeString(table)}'
+      AND con.constraint_type = 'FOREIGN KEY'
+    `;
 
-    return data.rows.map((row) => ({
+    const [outgoing, incoming] = await Promise.all([
+      this.driverExecuteSingle(outgoingSQL),
+      this.driverExecuteSingle(incomingSQL)
+    ]);
+
+    const allRows = [...outgoing.rows, ...incoming.rows];
+
+    return allRows.map((row) => ({
       toTable: row.to_table,
       toSchema: row.to_schema,
       toColumn: row.to_column,

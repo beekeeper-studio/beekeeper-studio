@@ -1839,7 +1839,68 @@ export class DBTestUtil {
           )
         `)
       }
+    }
 
+    // Create tables specifically for testing incoming keys
+    // Table structure: products <- orders <- order_items
+    // This creates a chain where we can test incoming keys at each level
+    // Note: These use simple (non-composite) foreign keys, so they work even on databases
+    // that don't support composite keys well
+
+    if (this.dbType === 'oracle') {
+      await this.knex.schema.raw(`
+        CREATE TABLE products (
+          product_id NUMBER(10) NOT NULL,
+          product_name VARCHAR2(255) NOT NULL,
+          price NUMBER(10, 2),
+          CONSTRAINT pk_products PRIMARY KEY (product_id)
+        )
+      `);
+
+      await this.knex.schema.raw(`
+        CREATE TABLE orders (
+          order_id NUMBER(10) NOT NULL,
+          product_id NUMBER(10) NOT NULL,
+          quantity NUMBER(10),
+          CONSTRAINT pk_orders PRIMARY KEY (order_id),
+          CONSTRAINT fk_orders_product FOREIGN KEY (product_id)
+            REFERENCES products(product_id)
+        )
+      `);
+
+      await this.knex.schema.raw(`
+        CREATE TABLE order_items (
+          item_id NUMBER(10) NOT NULL,
+          order_id NUMBER(10) NOT NULL,
+          item_note VARCHAR2(255),
+          CONSTRAINT pk_order_items PRIMARY KEY (item_id),
+          CONSTRAINT fk_order_items_order FOREIGN KEY (order_id)
+            REFERENCES orders(order_id)
+        )
+      `);
+    } else {
+      // Products table (will have incoming keys from orders)
+      await this.knex.schema.createTable("products", (table) => {
+        table.integer("product_id").notNullable().primary();
+        table.string("product_name").notNullable();
+        table.decimal("price", 10, 2);
+      });
+
+      // Orders table (will have outgoing key to products, incoming keys from order_items)
+      await this.knex.schema.createTable("orders", (table) => {
+        table.integer("order_id").notNullable().primary();
+        table.integer("product_id").notNullable();
+        table.integer("quantity");
+        table.foreign("product_id").references("products.product_id");
+      });
+
+      // Order items table (will have outgoing key to orders)
+      await this.knex.schema.createTable("order_items", (table) => {
+        table.integer("item_id").notNullable().primary();
+        table.integer("order_id").notNullable();
+        table.string("item_note");
+        table.foreign("order_id").references("orders.order_id");
+      });
     }
   }
 
@@ -1881,6 +1942,74 @@ export class DBTestUtil {
     expect(toColumns).toContain('parent_id1');
     expect(toColumns).toContain('parent_id2');
     expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
+  }
+
+  async incomingKeyTests() {
+    // Note: This test uses simple (non-composite) foreign keys, so it should work on all databases
+    // that support foreign keys, even if they don't support composite keys well
+
+    // Test 1: Products table should have incoming key from orders
+    const productsKeys = (await this.connection.getTableKeys('products', this.defaultSchema))
+      .map(key => ({
+        ..._.pick(key, ['toTable', 'fromTable', 'toColumn', 'fromColumn']),
+        toTable: key.toTable.toLowerCase(),
+        fromTable: key.fromTable.toLowerCase(),
+        toColumn: key.toColumn.toString().toLowerCase(),
+        fromColumn: key.fromColumn.toString().toLowerCase(),
+      }));
+
+    expect(productsKeys).toStrictEqual([
+      {
+        toTable: 'products',
+        fromTable: 'orders',
+        toColumn: 'product_id',
+        fromColumn: 'product_id',
+      }
+    ]);
+
+    // Test 2: Orders table should have both incoming (from order_items) and outgoing (to products) keys
+    const ordersKeys = (await this.connection.getTableKeys('orders', this.defaultSchema))
+      .map(key => ({
+        ..._.pick(key, ['toTable', 'fromTable', 'toColumn', 'fromColumn']),
+        toTable: key.toTable.toLowerCase(),
+        fromTable: key.fromTable.toLowerCase(),
+        toColumn: key.toColumn.toString().toLowerCase(),
+        fromColumn: key.fromColumn.toString().toLowerCase(),
+      }));
+
+    expect(ordersKeys).toStrictEqual(expect.arrayContaining([
+      {
+        toTable: 'orders',
+        fromTable: 'order_items',
+        toColumn: 'order_id',
+        fromColumn: 'order_id',
+      },
+      {
+        toTable: 'products',
+        fromTable: 'orders',
+        toColumn: 'product_id',
+        fromColumn: 'product_id',
+      }
+    ]));
+
+    // Test 3: Order_items table should only have outgoing key to orders (no incoming keys)
+    const orderItemsKeys = (await this.connection.getTableKeys('order_items', this.defaultSchema))
+      .map(key => ({
+        ..._.pick(key, ['toTable', 'fromTable', 'toColumn', 'fromColumn']),
+        toTable: key.toTable.toLowerCase(),
+        fromTable: key.fromTable.toLowerCase(),
+        toColumn: key.toColumn.toString().toLowerCase(),
+        fromColumn: key.fromColumn.toString().toLowerCase(),
+      }));
+
+    expect(orderItemsKeys).toStrictEqual([
+      {
+        toTable: 'orders',
+        fromTable: 'order_items',
+        toColumn: 'order_id',
+        fromColumn: 'order_id',
+      }
+    ]);
   }
 
   async paramTest(params: string[]) {

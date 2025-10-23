@@ -976,8 +976,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    const result = await this.driverExecuteSingle(
-      `
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
+    const outgoingSQL = `
         SELECT
           TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
           TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
@@ -1000,12 +1000,43 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         ORDER BY
           CONSTRAINT_NAME,
           ISF.RDB$FIELD_POSITION
-    `,
-      { params: [table.toUpperCase()] }
-    );
+    `;
+
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const incomingSQL = `
+        SELECT
+          TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
+          TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
+          TRIM(FK.RDB$RELATION_NAME) AS FROM_TABLE,
+          TRIM(ISF.RDB$FIELD_NAME) AS FROM_COLUMN,
+          TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
+          TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
+          TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
+          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
+        FROM
+          RDB$RELATION_CONSTRAINTS PK
+          JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
+          JOIN RDB$RELATION_CONSTRAINTS FK ON FK.RDB$CONSTRAINT_NAME = RC.RDB$CONSTRAINT_NAME
+          JOIN RDB$INDEX_SEGMENTS ISF ON ISF.RDB$INDEX_NAME = FK.RDB$INDEX_NAME
+          JOIN RDB$INDEX_SEGMENTS ISP ON ISP.RDB$INDEX_NAME = PK.RDB$INDEX_NAME AND ISP.RDB$FIELD_POSITION = ISF.RDB$FIELD_POSITION
+        WHERE
+          PK.RDB$RELATION_NAME = ?
+          AND FK.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
+          AND PK.RDB$CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE')
+        ORDER BY
+          CONSTRAINT_NAME,
+          ISF.RDB$FIELD_POSITION
+    `;
+
+    const [outgoing, incoming] = await Promise.all([
+      this.driverExecuteSingle(outgoingSQL, { params: [table.toUpperCase()] }),
+      this.driverExecuteSingle(incomingSQL, { params: [table.toUpperCase()] })
+    ]);
+
+    const allRows = [...outgoing.rows, ...incoming.rows];
 
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
+    const groupedKeys = _.groupBy(allRows, "CONSTRAINT_NAME");
     
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
