@@ -7,33 +7,27 @@ function isEmpty(value) {
 exports.default = async function (configuration) {
 
   const certificate = process.env.KV_WIN_CERTIFICATE;
-  const auth_raw = process.env.KEYVAULT_AUTH;
-  const auth_secret = process.env.KEYVAULT_AUTH_SECRET;
+  const keyvaultUrl = process.env.KEYVAULT_URL;
+
   // this way we don't have to sign EVERY build
-  if(isEmpty(certificate) || isEmpty(auth_raw)) {
-    console.warn(`build/sign.js: Cannot sign exe, no KV_WIN_CERTIFICATE/KEYVAULT_AUTH provided for ${configuration.path}`);
+  if(isEmpty(certificate) || isEmpty(keyvaultUrl)) {
+    console.warn(`build/sign.js: Cannot sign exe, no KV_WIN_CERTIFICATE/KEYVAULT_URL provided for ${configuration.path}`);
     return null;
   }
 
-  const keyvault = JSON.parse(auth_raw)
   const timeserver = "http://timestamp.digicert.com"
 
-  // This took me 2 weeks to figure out.
-  // Hi there Matthew in 2026, hope this still works.
-
-  // Matthew in 2025 here, the secret expired in 24 months, but the cert expired in 36 months
-  // so I've had to patch this with another env variable for the secret. Yuck.
-  // 2026 Matthew -- you should move to Azure's managed keys which expire after like a day.
-  // Don't buy another cert from digisign.
+  // Updated to use Azure managed identity authentication via azure/login action
+  // This uses the token obtained from the azure/login step in the GitHub workflow
+  // The -kvm flag enables managed identity authentication (uses Azure CLI credentials)
   const command = [
     'azuresigntool.exe sign -fd sha384',
-    '-kvu', keyvault.url,
-    '-kvi', keyvault.id,
-    '-kvt', keyvault.tenant,
-    '-kvs', auth_secret,
+    '-kvu', keyvaultUrl,
+    '-kvm',  // Use managed identity / Azure CLI authentication
     '-kvc', certificate,
     "-tr", timeserver,
     '-td', 'sha384',
+    '--max-degree-of-parallelism', '1',
     '-v'
   ]
 

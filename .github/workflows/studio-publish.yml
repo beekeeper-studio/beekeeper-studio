@@ -14,6 +14,9 @@ jobs:
       assets_url: ${{ steps.create_release.outputs.assets_url }}
       id: ${{ steps.create_release.outputs.id }}
       json: ${{ steps.create_release.outputs.json }}
+      azure_client_id: ${{ steps.azure_creds.outputs.client_id }}
+      azure_tenant_id: ${{ steps.azure_creds.outputs.tenant_id }}
+      azure_keyvault_url: ${{ steps.azure_creds.outputs.keyvault_url }}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
@@ -31,6 +34,18 @@ jobs:
           script: |
             const script = require('./.github/scripts/create_draft_release.js')
             await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+
+      - name: Extract Azure credentials from existing secrets
+        id: azure_creds
+        env:
+          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
+        run: |
+          CLIENT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.id')
+          TENANT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.tenant')
+          KEYVAULT_URL=$(echo "$KEYVAULT_AUTH" | jq -r '.url')
+          echo "client_id=$CLIENT_ID" >> $GITHUB_OUTPUT
+          echo "tenant_id=$TENANT_ID" >> $GITHUB_OUTPUT
+          echo "keyvault_url=$KEYVAULT_URL" >> $GITHUB_OUTPUT
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
   # outputs: latest, beta, alpha
@@ -99,8 +114,14 @@ jobs:
         run: bash ./.github/scripts/install-build-deps.sh
 
       - name: Install azuresigntool
-        run: 'dotnet tool install --global AzureSignTool --version 4.0.1'
+        run: 'dotnet tool install --global AzureSignTool --version 6.0.1'
         if: matrix.os.type == 'windows'
+
+      - name: Azure Login
+        if: matrix.os.type == 'windows'
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ needs.create_draft_release.outputs.azure_client_id }}","clientSecret":"${{ secrets.keyvault_auth_secret }}","subscriptionId":"${{ secrets.azure_subscription_id }}","tenantId":"${{ needs.create_draft_release.outputs.azure_tenant_id }}"}'
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -247,8 +268,7 @@ jobs:
       - name: Build & Publish (NT)
         if: matrix.os.type == 'windows'
         env:
-          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
-          KEYVAULT_AUTH_SECRET: "${{ secrets.keyvault_auth_secret }}"
+          KEYVAULT_URL: "${{ needs.create_draft_release.outputs.azure_keyvault_url }}"
           KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
           PYTHON_PATH: "${{'$PYTHON_PATH' }}"
           PYTHONPATH: "${{ '$PYTHONPATH' }}"
@@ -374,14 +394,29 @@ jobs:
             const merge = mergeFiles();
             fs.writeFileSync('mac.yml', merge, 'utf8');
       - name: Upload fixed mac yml
-        uses: actions/upload-release-asset@v1
+        uses: actions/github-script@v7
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          RELEASE_ID: ${{ needs.create_draft_release.outputs.id }}
         with:
-          upload_url: ${{ needs.create_draft_release.outputs.upload_url}}
-          asset_path: "./mac.yml"
-          asset_name: "latest-mac.yml"
-          asset_content_type: 'application/octet-stream'
+          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const releaseId = process.env.RELEASE_ID;
+
+            // Read the merged yml file
+            const ymlContent = fs.readFileSync('mac.yml', 'utf8');
+
+            // Upload the asset using the release ID
+            await github.rest.repos.uploadReleaseAsset({
+              owner: 'beekeeper-studio',
+              repo: 'beekeeper-studio',
+              release_id: releaseId,
+              name: 'latest-mac.yml',
+              data: ymlContent,
+              headers: {
+                'content-type': 'application/octet-stream'
+              }
+            });
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]

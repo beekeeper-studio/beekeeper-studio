@@ -439,6 +439,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string,
     connection?: Connection
   ): Promise<ExtendedTableColumn[]> {
+    const hasGeneratedSupport = !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
     const clause = table ? `AND table_name = ?` : "";
     const sql = `
       SELECT
@@ -450,6 +451,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         column_default as 'column_default',
         ordinal_position as 'ordinal_position',
         COLUMN_COMMENT as 'column_comment',
+        CHARACTER_SET_NAME as 'character_set',
+        COLLATION_NAME as 'collation',
+        ${hasGeneratedSupport ? "GENERATION_EXPRESSION as 'generation_expression'," : ''}
         extra as 'extra'
       FROM information_schema.columns
       WHERE table_schema = database()
@@ -475,6 +479,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
       generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
+      generationExpression: row.generation_expression,
+      characterSet: row.character_set,
+      collation: row.collation,
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -727,13 +734,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const params = [table];
 
     const { rows } = await this.driverExecuteSingle(sql, { params });
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -751,8 +758,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           fromSchema: "",
           isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
