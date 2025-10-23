@@ -702,17 +702,16 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    const sql = `
+    // Query for foreign keys FROM this table (referencing other tables)
+    const outgoingSQL = `
     SELECT
       cu.constraint_name as 'constraint_name',
       cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table_name',
-      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
-      cu.REFERENCED_TABLE_NAME as referenced_table,
-      cu.REFERENCED_COLUMN_NAME as referenced_column,
+      cu.table_name as 'from_table',
+      cu.referenced_table_name as 'to_table',
+      cu.REFERENCED_COLUMN_NAME as 'to_column',
       rc.UPDATE_RULE as on_update,
       rc.DELETE_RULE as on_delete,
-      rc.CONSTRAINT_NAME as rc_constraint_name,
       cu.ORDINAL_POSITION as ordinal_position
     FROM information_schema.key_column_usage cu
     JOIN information_schema.referential_constraints rc
@@ -721,48 +720,69 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     WHERE table_schema = database()
     AND cu.table_name = ?
     AND cu.referenced_table_name IS NOT NULL
-    ORDER BY rc.CONSTRAINT_NAME, cu.ORDINAL_POSITION
+    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
+  `;
+
+    // Query for foreign keys TO this table (other tables referencing this table)
+    const incomingSQL = `
+    SELECT
+      cu.constraint_name as 'constraint_name',
+      cu.column_name as 'from_column',
+      cu.table_name as 'from_table',
+      cu.referenced_table_name as 'to_table',
+      cu.REFERENCED_COLUMN_NAME as 'to_column',
+      rc.UPDATE_RULE as on_update,
+      rc.DELETE_RULE as on_delete,
+      cu.ORDINAL_POSITION as ordinal_position
+    FROM information_schema.key_column_usage cu
+    JOIN information_schema.referential_constraints rc
+      on cu.constraint_name = rc.constraint_name
+      and cu.constraint_schema = rc.constraint_schema
+    WHERE table_schema = database()
+    AND cu.referenced_table_name = ?
+    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
   `;
 
     const params = [table];
 
-    const { rows } = await this.driverExecuteSingle(sql, { params });
-    
+    const [outgoing, incoming] = await Promise.all([
+      this.driverExecuteSingle(outgoingSQL, { params }),
+      this.driverExecuteSingle(incomingSQL, { params })
+    ]);
+
+    const allRows = [...outgoing.rows, ...incoming.rows];
+
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-    
+    const groupedKeys = _.groupBy(allRows, 'constraint_name');
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
         return {
           constraintName: `${row.constraint_name}`,
-          toTable: row.referenced_table,
-          toColumn: row.referenced_column,
-          fromTable: table,
-          fromColumn: row.column_name,
-          referencedTable: row.referenced_table_name,
-          keyType: `${row.key_type} KEY`,
+          toTable: row.to_table,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromColumn: row.column_name || row.from_column,
           onDelete: row.on_delete,
           onUpdate: row.on_update,
           toSchema: "",
           fromSchema: "",
           isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
         constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.referenced_table,
-        toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: table,
-        fromColumn: keyParts.map(p => p.column_name),
-        referencedTable: firstPart.referenced_table_name,
-        keyType: `${firstPart.key_type} KEY`,
+        toTable: firstPart.to_table,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromColumn: keyParts.map(p => p.column_name || p.from_column),
         onDelete: firstPart.on_delete,
         onUpdate: firstPart.on_update,
         toSchema: "",

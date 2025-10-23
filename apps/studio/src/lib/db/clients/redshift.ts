@@ -120,7 +120,8 @@ export class RedshiftClient extends PostgresClient {
   }
 
   async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    const sql = `
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
+    const outgoingSQL = `
       SELECT
 
         kcu.constraint_schema AS from_schema,
@@ -159,16 +160,56 @@ export class RedshiftClient extends PostgresClient {
         kcu.table_name = $1;
     `;
 
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const incomingSQL = `
+      SELECT
+        kcu.constraint_schema AS from_schema,
+        kcu.table_name AS from_table,
+        kcu.column_name AS from_column,
+        rc.unique_constraint_schema AS to_schema,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule,
+        (SELECT kcu2.table_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
+        (SELECT kcu2.column_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+      FROM
+        information_schema.key_column_usage AS kcu
+          JOIN
+        information_schema.table_constraints AS tc
+        ON
+          tc.constraint_name = kcu.constraint_name
+          JOIN
+        information_schema.referential_constraints AS rc
+        ON
+          rc.constraint_name = kcu.constraint_name
+      WHERE
+        tc.constraint_type = 'FOREIGN KEY' AND
+        kcu.table_schema NOT LIKE 'pg_%' AND
+        rc.unique_constraint_schema = $2 AND
+        (SELECT kcu2.table_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) = $1;
+    `;
+
     const params = [
       table,
       schema,
     ];
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const [outgoing, incoming] = await Promise.all([
+      this.driverExecuteSingle(outgoingSQL, { params }),
+      this.driverExecuteSingle(incomingSQL, { params })
+    ]);
+
+    const allRows = [...outgoing.rows, ...incoming.rows];
 
     // For now, treat all keys as non-composite until we can properly test with Redshift
     // TODO: Implement proper composite key detection for Redshift
-    return data.rows.map((row) => ({
+    return allRows.map((row) => ({
       toTable: row.to_table,
       toSchema: row.to_schema,
       toColumn: row.to_column,

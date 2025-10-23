@@ -358,9 +358,10 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const columns = await this.listTableColumns(table);
     const keys: TableKey[] = [];
 
+    // Outgoing keys: columns in THIS table that reference OTHER tables
+    const columns = await this.listTableColumns(table);
     for (const col of columns) {
       const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
       if (match) {
@@ -381,6 +382,39 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
             onUpdate: null,
             isComposite: targetTables.length > 1
           })
+        }
+      }
+    }
+
+    // Incoming keys: columns in OTHER tables that reference THIS table
+    const allTables = await this.listTables();
+    for (const otherTable of allTables) {
+      // Skip the current table (we already handled it above)
+      if (otherTable.name === table) continue;
+
+      const otherColumns = await this.listTableColumns(otherTable.name);
+      for (const col of otherColumns) {
+        const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+        if (match) {
+          const targetTables = match[1]
+            .split(',')
+            .map(t => t.trim());
+
+          // Check if any of the target tables is the current table
+          if (targetTables.includes(table)) {
+            keys.push({
+              constraintName: `${otherTable.name}_${col.columnName}_fkey`,
+              fromTable: otherTable.name,
+              fromColumn: col.columnName,
+              fromSchema: '',
+              toTable: table,
+              toColumn: 'id',
+              toSchema: '',
+              onDelete: null,
+              onUpdate: null,
+              isComposite: targetTables.length > 1
+            });
+          }
         }
       }
     }

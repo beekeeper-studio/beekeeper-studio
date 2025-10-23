@@ -530,8 +530,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     }))
   }
   async getTableKeys(table: string, schema?: string) {
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
     // https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
-    const sql = `
+    const outgoingSQL = `
     SELECT
       a.table_name,
       a.column_name,
@@ -561,11 +562,53 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   AND c_pk.constraint_type = 'P'
    AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
    ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
-  ORDER BY 
+  ORDER BY
     a.constraint_name,
     a.position
-    `
-    const response = await this.driverExecuteSimple(sql)
+    `;
+
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const incomingSQL = `
+    SELECT
+      a.table_name,
+      a.column_name,
+      a.constraint_name,
+      a.position,
+      c.owner,
+      c.delete_rule,
+       -- referenced
+      c.r_owner,
+      c_pk.table_name as R_TABLE_NAME,
+      c_pk.constraint_name as R_PK,
+      c_pk.owner as R_OWNER,
+      r_a.COLUMN_NAME as R_COLUMN,
+      r_a.position as R_POSITION
+  -- constraint columns
+  FROM all_cons_columns a
+  -- constraint info for those columns
+  JOIN all_constraints c ON a.owner = c.owner
+                        AND a.constraint_name = c.constraint_name
+
+  -- information on the columns we're referencing
+  JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
+                           AND c.r_constraint_name = c_pk.constraint_name
+
+    JOIN all_cons_columns r_a on c_pk.owner = r_a.owner and c_pk.CONSTRAINT_NAME = r_a.CONSTRAINT_NAME
+ WHERE c.constraint_type = 'R'
+  AND c_pk.constraint_type = 'P'
+   AND c_pk.table_name = ${D.escapeString(table.toUpperCase(), true)}
+   ${schema ? `AND c_pk.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+  ORDER BY
+    a.constraint_name,
+    a.position
+    `;
+
+    const [outgoing, incoming] = await Promise.all([
+      this.driverExecuteSimple(outgoingSQL),
+      this.driverExecuteSimple(incomingSQL)
+    ]);
+
+    const response = [...outgoing, ...incoming];
     
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
