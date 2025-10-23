@@ -20,7 +20,7 @@ import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import rawLog from "@bksLogger"
-import { validateOrReject } from "class-validator";
+import { validate } from "class-validator";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -30,6 +30,14 @@ function defaultTransform<T extends Transport>(obj: T, cls: any) {
   }
   const newObj = {} as unknown as T;
   return cls.merge(newObj, obj);
+}
+
+async function niceValidateOrReject(ent: any): Promise<void> {
+  const errors = await validate(ent);
+  if (errors && errors.length > 0) {
+    const err = errors.map((err) => err.toString(false, false, "", true)).join("\n");
+    throw new Error(err);
+  }
 }
 
 function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => T = defaultTransform) {
@@ -45,18 +53,18 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           const dbEntities = await cls.findBy({
             id: In(ids)
           });
-          const newEnts = obj.map((e) => {
+          const newEnts = await Promise.all(obj.map(async (e) => {
             const dbEnt = dbEntities.find((v) => v.id === e.id);
 
             if (dbEnt) {
-              validateOrReject(dbEnt)
+              await niceValidateOrReject(dbEnt)
               return cls.merge(dbEnt, e);
             }
 
             const newEnt = new cls().withProps(e);
-            validateOrReject(newEnt);
+            await niceValidateOrReject(newEnt);
             return newEnt;
-          });
+          }));
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
         let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
@@ -66,7 +74,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           dbObj = new cls().withProps(obj);
         }
         log.info(`Saving ${name}: `, dbObj);
-        validateOrReject(dbObj);
+        await niceValidateOrReject(dbObj);
         await dbObj.save();
         return transform(dbObj, cls);
       }

@@ -682,9 +682,6 @@
         this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
       },
-      fullQuery() {
-        this.initializeQueries();
-      },
       remoteDeleted() {
         if (this.remoteDeleted) {
           this.editor.readOnly = 'nocursor'
@@ -1145,7 +1142,8 @@
       } else if (this.tab.usedQueryId) {
         this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
       }
-      
+      this.initializeQueries();
+
       if (this.shouldInitialize) {
         await this.$nextTick()
         this.initialize()
