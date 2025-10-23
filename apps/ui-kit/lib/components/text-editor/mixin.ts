@@ -15,6 +15,7 @@ export default {
   data() {
     return {
       textEditor: null,
+      internalMenuContextModifiers: [],
       internalContextMenuItems: [],
       internalActionsKeymap: []
     };
@@ -307,7 +308,14 @@ export default {
         items as InternalContextItem<unknown>[],
         this.contextMenuItems
       );
-      openMenu({ event, options: items });
+      let context = {
+        text: this.textEditor.getValue(),
+        selectedText: this.textEditor.getSelection(),
+      }
+      for (const mod of this.internalMenuContextModifiers) {
+        context = mod(context);
+      }
+      openMenu({ event, options: items, item: context });
     },
   },
 

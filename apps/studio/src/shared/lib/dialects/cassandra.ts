@@ -44,6 +44,7 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 const UNWRAPPER = /^`(.*)`$/
 
 export const CassandraData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier(value: string) {
@@ -57,6 +58,15 @@ export const CassandraData: DialectData = {
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
+  },
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'text',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'int',
+    numberType: 'decimal',
+    defaultType: 'varchar(255)'
   },
   usesOffsetPagination: false,
   requireDataset: false,

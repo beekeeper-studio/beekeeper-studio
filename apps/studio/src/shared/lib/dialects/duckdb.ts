@@ -22,6 +22,7 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 const UNWRAPPER = /^(?:`(.*)`|'(.*)'|"(.*)")$/
 
 export const DuckDBData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   escapeString: defaultEscapeString,
@@ -29,6 +30,15 @@ export const DuckDBData: DialectData = {
   wrapIdentifier: defaultWrapIdentifier,
   usesOffsetPagination: true,
   requireDataset: false,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'varchar',
+    dateType: 'datetime',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   disallowedSortColumns: ['blob'],
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {

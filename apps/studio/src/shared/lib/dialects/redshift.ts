@@ -22,6 +22,7 @@ const defaultLength = (t: string) => {
 }
 
 export const RedshiftData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [],
   wrapIdentifier: (id: string) => `"${id.replaceAll(/"/g, '""')}"`,
@@ -32,6 +33,15 @@ export const RedshiftData: DialectData = {
   requireDataset: false,
   disallowedSortColumns: ['json', 'bytea', 'xml', 'hstore'],
   unwrapIdentifier: (s) => s,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'varchar(max)',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   textEditorMode: "text/x-pgsql",
   disabledFeatures: {
     shell: true,

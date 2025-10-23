@@ -1,4 +1,5 @@
-import { AppEvent } from "./common/AppEvent";
+import type { AppEvent } from "./common/AppEvent";
+import type { TransportOpenTabInit } from "./common/transport/TransportOpenTab";
 
 interface UtilProcReadyMessage {
   type: "ready";
@@ -15,16 +16,15 @@ export type UtilProcMessage =
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
-export type CustomMenuAction = {
-  event: AppEvent;
-  args?: JsonValue;
-}
+export type CustomMenuAction<TabContext = {}> =
+  | { event: AppEvent.newCustomTab; args: TransportOpenTabInit<TabContext>; }
+  | { event: Exclude<AppEvent, AppEvent.newCustomTab>; args?: JsonValue; };
 
-export type ExternalMenuItem = {
+export type ExternalMenuItem<TabContext = {}> = {
   id: string;
   parentId: string;
   label: string;
-  enableWhenConnected?: boolean;
-  action: CustomMenuAction;
+  disableWhenDisconnected?: boolean;
+  action: CustomMenuAction<TabContext>;
 };
 
