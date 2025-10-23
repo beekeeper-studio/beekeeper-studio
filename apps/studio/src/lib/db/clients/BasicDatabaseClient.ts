@@ -308,7 +308,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   // ****************************************************************************
 
   // For TableTable *************************************************************
-  abstract getTableLength(table: string, schema?: string): Promise<number>;
+  abstract getTableLength(table?: string, schema?: string): Promise<number>;
   abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
   abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;
   abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
