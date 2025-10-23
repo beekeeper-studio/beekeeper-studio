@@ -10,7 +10,7 @@ function getCommandClient(state: State) {
   return state.isRestore ? state.restoreClient : state.backupClient;
 }
 
-interface State { 
+interface State {
   backupClient: BaseCommandClient,
   restoreClient: BaseCommandClient,
   // TODO (@day): these may need to be removed somehow,
@@ -132,18 +132,22 @@ export const BackupModule: Module<State, RootState> = {
     },
     setConnectionConfigs(context, {config, supportedFeatures, serverConfig}) {
       const clients = commandClientsFor(config.connectionType)
-      context.commit('setBackupClient', clients.backup);
-      context.commit('setRestoreClient', clients.restore);
 
-      // set callback for notifications
-      context.getters.commandClient.notificationCallback = (notif: Notification) => {
+      const notifCallback = (notif: Notification) => {
         new Noty({
           text: notif.text,
           layout: 'bottomRight',
           timeout: 2000,
           type: notif.type
         }).show();
-      }
+      };
+
+      // set callback for notifications
+      clients.backup.notificationCallback = notifCallback;
+      clients.restore.notificationCallback = notifCallback;
+
+      context.commit('setBackupClient', clients.backup);
+      context.commit('setRestoreClient', clients.restore);
 
       context.commit('setClientSupportedFeatures', supportedFeatures);
       context.commit('setClientConnectionConfig', config);
