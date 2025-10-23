@@ -163,9 +163,17 @@ $black: #333;
   z-index: 1000000;
   background-color: $light-grey;
   border-bottom-width: 0px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: system-ui,
+          -apple-system, BlinkMacSystemFont,
+          "Segoe UI",
+          "Roboto",
+          "Oxygen",
+          "Ubuntu",
+          "Cantarell",
+          "Fira Sans",
+          "Droid Sans",
+          "Helvetica Neue",
+          Arial, sans-serif;
   box-shadow: 0 3px 6px 0 rgba($black, 0.2);
   border-radius: 4px;
 

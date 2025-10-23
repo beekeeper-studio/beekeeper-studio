@@ -1,6 +1,5 @@
 import {
   Manifest,
-  ManifestV0,
   OnViewRequestListener,
   WebPluginContext,
   WebPluginViewInstance,
@@ -11,12 +10,15 @@ import {
   PluginRequestData,
   GetAppInfoResponse,
   GetViewContextResponse,
+  GetConnectionInfoResponse,
+  GetTablesResponse,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -70,32 +72,18 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
-    // Backward compatibility: used by AI Shell
-    if (this.isManifestV0(this.manifest)) {
-      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
-        this.pluginStore.addTabTypeConfigV0({
-          pluginId: this.manifest.id,
-          pluginTabTypeId: tabType.id,
-          name: tabType.name,
-          kind: tabType.kind,
-          icon: this.manifest.icon,
-        });
-      });
-    } else {
-      // Newer plugins could use the Manifest V2.
-      // Views are always embedded in tabs (for now).
-      this.pluginStore.addTabTypeConfigs(this.manifest);
-      this.menu.register();
-    }
+    // Backward compatibility: Early version of AI Shell.
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
+
+    this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
+    this.menu.register(views, menu);
 
     if (!this.listening) {
       this.registerEvents();
       this.onReadyListeners.forEach((fn) => fn());
     }
-  }
-
-  private isManifestV0(m: Manifest): m is ManifestV0 {
-    return m.manifestVersion === undefined || m.manifestVersion === 0;
   }
 
   private handleMessage(event: MessageEvent) {
@@ -155,7 +143,7 @@ export default class WebPluginLoader {
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getTables":
-          response.result = this.pluginStore.getTables();
+          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
           break;
         case "getColumns":
           response.result = await this.pluginStore.getColumns(
@@ -182,7 +170,7 @@ export default class WebPluginLoader {
           response.result = view.context as GetViewContextResponse['result'];
           break;
         case "getConnectionInfo":
-          response.result = this.pluginStore.getConnectionInfo();
+          response.result = this.pluginStore.getConnectionInfo() as GetConnectionInfoResponse['result'];
           break;
         case "getData":
         case "getEncryptedData": {
@@ -347,17 +335,12 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    if (this.isManifestV0(this.manifest)) {
-      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
-        this.pluginStore.removeTabTypeConfigV0({
-          pluginId: this.manifest.id,
-          pluginTabTypeId: tabType.id,
-        });
-      });
-    } else {
-      this.pluginStore.removeTabTypeConfigs(this.manifest);
-      this.menu.unregister();
-    }
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
+
+    this.menu.unregister(views, menu);
+    this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);
   }
 
   addListener(listener: OnViewRequestListener) {

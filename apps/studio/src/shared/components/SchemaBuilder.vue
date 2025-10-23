@@ -317,12 +317,11 @@ export default Vue.extend({
     // Field Rows
     .tabulator-row {
       margin: 4px 0;
-      background: rgba($theme-base, 0.05)!important;
+      background: rgba($theme-base, 0.05);
       border-radius: 5px;
       &.tabulator-row-even,
       &:nth-child(odd) {
         background: rgba($theme-base, 0.05);
-        --row-bg-color: #{rgba($theme-base, 0.05)};
       }
       .tabulator-cell {
         min-height: $row-height;
@@ -340,8 +339,20 @@ export default Vue.extend({
           height: $row-height;
           line-height: $row-height;
           box-shadow: inset 0 1px $theme-base;
-          pre, input:not([type="checkbox"]) {
-            font-family: 'Roboto';
+
+          pre,
+          input:not([type="checkbox"]) {
+            font-family: system-ui,
+              -apple-system, BlinkMacSystemFont,
+              "Segoe UI",
+              "Roboto",
+              "Oxygen",
+              "Ubuntu",
+              "Cantarell",
+              "Fira Sans",
+              "Droid Sans",
+              "Helvetica Neue",
+              Arial, sans-serif;
             min-height: $row-height;
             line-height: $row-height;
             padding: 0 $cell-padding!important;
@@ -381,7 +392,6 @@ export default Vue.extend({
         // Read Only
         &.read-only,
         &.read-only:hover {
-          --row-bg-color: transparent;
           --row-hover-bg-color: transparent;
           background: transparent!important;
           cursor: default;

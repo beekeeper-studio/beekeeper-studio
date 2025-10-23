@@ -30,29 +30,28 @@
         />
       </Draggable>
       <!-- </div> -->
-      <span class="actions expand">
+      <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
-        ><i class=" material-icons">add_circle</i></a>
+        ><i class=" material-icons">add</i></a>
         <x-button
-          class="add-tab-dropdown"
+          class="btn-fab add-tab-dropdown"
           menu
-          v-if="tabTypeConfigs.length > 1"
+          v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <template v-for="(config, index) in tabTypeConfigs">
+            <template v-for="(menuItem, index) in newTabDropdownItems">
               <x-menuitem
-                v-if="config.menuItem"
                 :key="index"
-                @click.prevent="createTab(config)"
+                @click.prevent="createTab(menuItem.config)"
               >
                 <x-label>
-                  <i class="material-icons">{{ config.icon }}</i>
-                  {{ config.menuItem.label }}
+                  <i class="material-icons">{{ menuItem.config.icon }}</i>
+                  {{ menuItem.label }}
                 </x-label>
-                <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
+                <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
               </x-menuitem>
             </template>
           </x-menu>
@@ -330,6 +329,7 @@ import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
   props: [],
@@ -381,8 +381,9 @@ export default Vue.extend({
     async usedConfig() {
       await this.$store.dispatch('tabs/load')
       if (!this.tabItems?.length) {
-        this.createQuery()
+        await this.createQuery()
       }
+      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
@@ -400,7 +401,7 @@ export default Vue.extend({
        'dialect': 'dialect', 
        'dialectData': 'dialectData', 
        'dialectTitle': 'dialectTitle',
-       'tabTypeConfigs': 'tabs/tabTypeConfigs',
+       'newTabDropdownItems': 'tabs/newTabDropdownItems',
     }),
     tabIcon() {
       return {

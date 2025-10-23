@@ -100,6 +100,9 @@ export interface ExtendedTableColumn extends SchemaItem {
   tableName: string
   hasDefault?: boolean
   generated?: boolean
+  generationExpression?: string
+  characterSet?: string
+  collation?: string
   array?: boolean
   bksField: BksField
 }
