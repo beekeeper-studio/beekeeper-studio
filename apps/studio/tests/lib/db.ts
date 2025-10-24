@@ -1948,6 +1948,16 @@ export class DBTestUtil {
     // Note: This test uses simple (non-composite) foreign keys, so it should work on all databases
     // that support foreign keys, even if they don't support composite keys well
 
+    // MySQL 5.1 and earlier doesn't support incoming foreign keys properly
+    // Check version and skip if needed
+    if (this.dbType === 'mysql' && this.connection.versionInfo) {
+      const version = this.connection.versionInfo;
+      if (version.major <= 5 && version.minor < 5) {
+        // Skip incoming keys test for MySQL < 5.5
+        return;
+      }
+    }
+
     // Test 1: Products table should have incoming key from orders
     const productsKeys = (await this.connection.getTableKeys('products', this.defaultSchema))
       .map(key => ({

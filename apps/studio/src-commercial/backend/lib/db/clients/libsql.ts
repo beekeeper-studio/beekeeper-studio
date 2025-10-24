@@ -94,6 +94,65 @@ export class LibSQLClient extends SqliteClient {
     }
   }
 
+  async getTableKeys(table: string, schema?: string): Promise<import("@/lib/db/models").TableKey[]> {
+    if (!this.isRemote) {
+      return super.getTableKeys(table, schema);
+    }
+
+    // For remote connections, add delays to prevent rate limiting
+    const SD = this.dialectData;
+    const { TableKey } = await import("@/lib/db/models");
+
+    // Get foreign keys FROM this table (referencing other tables)
+    const outgoingSQL = `pragma foreign_key_list('${SD.escapeString(table)}')`;
+    const { rows: outgoingRows } = await this.driverExecuteSingle(outgoingSQL, { overrideReadonly: true });
+
+    const outgoingKeys = outgoingRows.map(row => ({
+      constraintName: row.id,
+      toTable: row.table,
+      toSchema: '',
+      fromSchema: '',
+      fromTable: table,
+      fromColumn: row.from,
+      toColumn: row.to,
+      onUpdate: row.on_update,
+      onDelete: row.on_delete,
+      isComposite: false
+    }));
+
+    // Get foreign keys TO this table (other tables referencing this table)
+    const allTables = await this.listTables();
+    const incomingKeys: import("@/lib/db/models").TableKey[] = [];
+
+    for (const t of allTables) {
+      const sql = `pragma foreign_key_list('${SD.escapeString(t.name)}')`;
+      const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
+
+      // Check if any foreign key points to our target table
+      for (const row of rows) {
+        if (row.table === table) {
+          incomingKeys.push({
+            constraintName: row.id,
+            toTable: table,
+            toSchema: '',
+            fromSchema: '',
+            fromTable: t.name,
+            fromColumn: row.from,
+            toColumn: row.to,
+            onUpdate: row.on_update,
+            onDelete: row.on_delete,
+            isComposite: false
+          });
+        }
+      }
+
+      // Add delay to prevent rate limiting on remote server
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    return [...outgoingKeys, ...incomingKeys];
+  }
+
   // FIXME (azmi): we need this until array mode is fixed
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options.arrayMode;
