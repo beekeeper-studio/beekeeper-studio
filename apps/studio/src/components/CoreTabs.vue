@@ -707,19 +707,24 @@ export default Vue.extend({
       result.unsavedChanges = false;
       await this.addTab(result);
     },
-    async createQuery(optionalText, queryTitle?) {
-      // const text = optionalText ? optionalText : ""
-      console.log("Creating tab")
-      let qNum = 0
-      let tabName = "New Query"
+    getNextQueryTitle(queryTitle?) {
+      let qNum = 0;
+      let tabName = "New Query";
       if (queryTitle) {
         tabName = queryTitle
       } else {
         do {
-          qNum = qNum + 1
-          tabName = `Query #${qNum}`
+          qNum = qNum + 1;
+          tabName = `Query #${qNum}`;
         } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       }
+
+      return tabName;
+    },
+    async createQuery(optionalText, queryTitle?) {
+      // const text = optionalText ? optionalText : ""
+      console.log("Creating tab")
+      const tabName = this.getNextQueryTitle(queryTitle);
 
       const result = {} as TransportOpenTab;
       result.tabType = 'query'
@@ -1161,8 +1166,19 @@ export default Vue.extend({
       this.addTab(tab)
 
     },
-    createQueryFromItem(item) {
-      this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
+    async createQueryFromItem(item) {
+      const tab = {} as TransportOpenTab;
+      tab.tabType = 'query';
+      tab.title = this.getNextQueryTitle();
+      if (item.id) {
+        tab.usedQueryId = item.id;
+      }
+      tab.unsavedChanges = false;
+
+      const existing = this.tabItems.find((t) => matches(t, tab))
+      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+
+      this.addTab(tab);
     },
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
