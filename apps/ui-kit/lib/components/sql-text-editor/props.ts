@@ -51,7 +51,11 @@ export default {
   allowPresets: {
     type: Boolean,
     default: false
-  }
+  },
+  presets: {
+    type: Array,
+    default: () => []
+  },
 
   // --- replaced with languageId
   // mode: {
