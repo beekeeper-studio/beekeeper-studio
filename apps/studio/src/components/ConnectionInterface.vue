@@ -345,10 +345,21 @@ export default Vue.extend({
         this.config = conn;
       })
     },
-    edit(config) {
+    async edit(config) {
       this.config = _.clone(config)
       this.errors = null
       this.connectionError = null
+
+       // If user didn't renew ultimate subscription, default read-only mode to false
+      if (this.config.readOnlyMode && !this.isUltimate) {
+        this.config.readOnlyMode = false;
+
+        try {
+          await this.$store.dispatch("data/connections/save", this.config);
+        } catch (error) {
+          console.error("failed to update readOnlyMode:", error);
+        }
+      }
     },
     async remove(config) {
       if (this.config === config) {
