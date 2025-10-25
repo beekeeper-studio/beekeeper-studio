@@ -61,7 +61,6 @@
         @bks-query-selection-change="handleQuerySelectionChange"
         @bks-show-formatter-presets="handleFormatterPresetModal"
       />
-      <span class="expand" />
       <div
         class="toolbar text-right"
         ref="toolbar"
