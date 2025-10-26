@@ -206,18 +206,13 @@
           {{ formattedCode }}
         </code>
       </pre>
-      <!-- <textarea
-        class="formatter-textarea"
-        readonly
-        v-model="value"
-      /> -->
     </div>
   </section>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import 'highlight.js/styles/stackoverflow-light.css'
+import './highlight-beekeeper.css'
 import hljs from 'highlight.js/lib/core'
 import sql from 'highlight.js/lib/languages/sql'
 import isEqual from 'lodash/isEqual'
@@ -296,6 +291,18 @@ export default Vue.extend({
     }
   },
   methods: {
+    highlightCode() {
+      console.log('ohai there we are highlighting stuff')
+      this.$nextTick(() => {
+        const codeBlock = this.$refs.superFormatterCodeBlock
+        if (codeBlock) {
+          // Remove previous highlighting
+          delete codeBlock.dataset.highlighted
+          // Apply new highlighting
+          hljs.highlightElement(codeBlock)
+        }
+      })
+    },
     deleteConfig() {
       this.$emit('bks-delete-preset', { id: this.selectedPresetId })
     },
@@ -341,8 +348,11 @@ export default Vue.extend({
     }
   },
   watch: {
-    value(newValue) {
-      this.formattedCode = newValue || ''
+    value() {
+      this.updatePreview()
+    },
+    formattedCode() {
+      this.highlightCode()
     },
     addNewPreset(addingNewPreset) {
       if (addingNewPreset) {
@@ -360,10 +370,11 @@ export default Vue.extend({
     }
   },
   mounted() {
-    this.formattedCode = this.value || ''
+    // this.formattedCode = this.value || ''
     this.unsavedPreset = { ...this.unsavedPreset, ...this.startingPreset }
     this.selectedPreset = { ...this.selectedPreset, ...this.startingPreset }
     if (this.startingPreset.id != null) this.selectedPresetId = this.startingPreset.id
+    this.updatePreview()
   }
 })
 </script>
@@ -374,18 +385,8 @@ export default Vue.extend({
     min-height: 0;
     padding: 1rem;
     border-radius: 8px;
-    background: #f6f8fa;
     overflow-x: scroll;
     overflow-y: auto;
-  }
-
-  ::v-deep .hljs {
-    display: block;
-    padding: 1rem;
-    border-radius: 8px;
-    background: #f6f8fa;
-    overflow-x: scroll;
-    color: #24292e;
   }
 
   .BksSuperFormatter {
