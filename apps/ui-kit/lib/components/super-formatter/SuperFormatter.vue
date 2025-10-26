@@ -201,13 +201,15 @@
       <p>
         Preview
       </p>
-      <pre>
-        <code
-          ref="superFormatterCodeBlock"
-          class="language-sql"
-          v-html="formattedCode"
-        />
-      </pre>
+      <!--
+        This formatting for pre > code is very important because it's adding all the whitespace
+        to the first line of the code presented. Very silly decision
+       -->
+      <pre><code
+        ref="superFormatterCodeBlock"
+        class="language-sql"
+        v-html="formattedCode"
+      /></pre>
     </div>
   </section>
 </template>
@@ -387,7 +389,6 @@ export default Vue.extend({
     flex: 1;
     min-height: 0;
     padding: 1rem;
-    border-radius: 8px;
     overflow-x: scroll;
     overflow-y: auto;
   }
