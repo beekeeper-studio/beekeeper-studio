@@ -68,10 +68,10 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "@surrealdb/codemirror": "^1.0.0-beta.21",
     "@marimo-team/codemirror-languageserver": "azmy60/codemirror-languageserver#b815a92e5f9120a845385ddfb89e85b0fa60fbde",
     "@replit/codemirror-emacs": "^6.1.0",
-    "@replit/codemirror-vim": "^6.3.0"
+    "@replit/codemirror-vim": "^6.3.0",
+    "@surrealdb/codemirror": "^1.0.0-beta.21"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.4",
@@ -90,7 +90,8 @@
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21",
-    "ansi-to-html": "^0.7.2"
+    "ansi-to-html": "^0.7.2",
+    "highlight.js": "^11.11.1"
   },
   "devDependencies": {
     "@open-rpc/client-js": "^1.8.1",
@@ -103,8 +104,8 @@
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
-    "ist": "^1.1.7",
     "happy-dom": "^18.0.1",
+    "ist": "^1.1.7",
     "lodash": "^4.17.21",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",

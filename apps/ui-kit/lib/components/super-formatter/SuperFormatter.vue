@@ -201,24 +201,36 @@
       <p>
         Preview
       </p>
-      <textarea
+      <pre>
+        <code ref="superFormatterCodeBlock" class="language-sql">
+          {{ formattedCode }}
+        </code>
+      </pre>
+      <!-- <textarea
         class="formatter-textarea"
         readonly
         v-model="value"
-      />
+      /> -->
     </div>
   </section>
 </template>
 
 <script lang="ts">
-import Vue from "vue"
+import Vue from 'vue'
+import 'highlight.js/styles/stackoverflow-light.css'
+import hljs from 'highlight.js/lib/core'
+import sql from 'highlight.js/lib/languages/sql'
 import isEqual from 'lodash/isEqual'
 import props from './props'
 import { format } from 'sql-formatter'
 
+// Register SQL language with highlight.js
+hljs.registerLanguage('sql', sql)
+
 export default Vue.extend({
   data() {
     return {
+      formattedCode: '',
       unsavedPreset: {
         tabWidth: 2,
         useTabs: false,
@@ -297,14 +309,13 @@ export default Vue.extend({
       this.unsavedPreset = { ...this.selectedPreset }
     },
     applyFormat() {
-      // TODO: Does it make more sense to have the unsaved or the save preset as what's sent over? What if they don't want to save it?
       this.$emit('bks-apply-preset', { ...this.unsavedPreset, id: this.selectedPresetId })
     },
     copyToClipboard() {
-      this.clipboard(this.value)
+      this.clipboard(this.formattedCode)
     },
     updatePreview() {
-      this.value = format(this.value, {
+      this.formattedCode = format(this.value, {
         language: this.formatterDialect,
         ...this.unsavedPreset
       })
@@ -330,6 +341,9 @@ export default Vue.extend({
     }
   },
   watch: {
+    value(newValue) {
+      this.formattedCode = newValue || ''
+    },
     addNewPreset(addingNewPreset) {
       if (addingNewPreset) {
         this.$nextTick(() => {
@@ -346,6 +360,7 @@ export default Vue.extend({
     }
   },
   mounted() {
+    this.formattedCode = this.value || ''
     this.unsavedPreset = { ...this.unsavedPreset, ...this.startingPreset }
     this.selectedPreset = { ...this.selectedPreset, ...this.startingPreset }
     if (this.startingPreset.id != null) this.selectedPresetId = this.startingPreset.id
@@ -354,11 +369,30 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
+  pre {
+    flex: 1;
+    min-height: 0;
+    padding: 1rem;
+    border-radius: 8px;
+    background: #f6f8fa;
+    overflow-x: scroll;
+    overflow-y: auto;
+  }
+
+  ::v-deep .hljs {
+    display: block;
+    padding: 1rem;
+    border-radius: 8px;
+    background: #f6f8fa;
+    overflow-x: scroll;
+    color: #24292e;
+  }
+
   .BksSuperFormatter {
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: 2fr 1fr; /* 2/3 and 1/3 */
+    grid-template-columns: 3fr 2fr; /* 3/5 and 2/5 */
     gap: 2rem;
     align-items: stretch;
   }
@@ -366,6 +400,8 @@ export default Vue.extend({
   .core-columns {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    min-height: 0;
   }
 
   .formatter-settings {
