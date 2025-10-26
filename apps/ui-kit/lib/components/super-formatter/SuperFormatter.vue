@@ -202,9 +202,11 @@
         Preview
       </p>
       <pre>
-        <code ref="superFormatterCodeBlock" class="language-sql">
-          {{ formattedCode }}
-        </code>
+        <code
+          ref="superFormatterCodeBlock"
+          class="language-sql"
+          v-html="formattedCode"
+        />
       </pre>
     </div>
   </section>
@@ -326,6 +328,7 @@ export default Vue.extend({
         language: this.formatterDialect,
         ...this.unsavedPreset
       })
+      console.log('formatted code was changed', this.formattedCode)
     },
     handlePresetChange() {
       const presetValues = this.presets.find(p => p.id === this.selectedPresetId)
