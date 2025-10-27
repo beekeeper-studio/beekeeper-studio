@@ -1,6 +1,7 @@
 import {  DialectData } from "./models";
 
 export const RedisData: DialectData = {
+  sqlLabel: "code",
   columnTypes: [],
   usesOffsetPagination: true,
   queryDialectOverride: 'generic',

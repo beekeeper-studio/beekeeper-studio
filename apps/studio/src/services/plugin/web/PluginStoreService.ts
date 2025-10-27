@@ -7,10 +7,7 @@ import type {
   TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
 import {
-  GetAllTabsResponse,
   GetColumnsResponse,
-  GetConnectionInfoResponse,
-  GetTablesResponse,
   RunQueryResponse,
   TabResponse,
   ThemeChangedNotification,
@@ -28,6 +25,7 @@ import {
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 /**
  * An interface that bridges plugin system and Vuex. It also stores some states
@@ -231,8 +229,7 @@ export default class PluginStoreService {
   }
 
   /** Register plugin views as tabs */
-  addTabTypeConfigs(manifest: Manifest): void {
-    const views = manifest.capabilities.views as PluginView[];
+  addTabTypeConfigs(manifest: Manifest, views: PluginView[]): void {
     views.forEach((view) => {
       const ref: TabTypeConfig.PluginRef = {
         pluginId: manifest.id,
@@ -251,8 +248,7 @@ export default class PluginStoreService {
     });
   }
 
-  removeTabTypeConfigs(manifest: Manifest): void {
-    const views = manifest.capabilities.views as PluginView[];
+  removeTabTypeConfigs(manifest: Manifest, views: PluginView[]): void {
     views.forEach((view) => {
       const ref: TabTypeConfig.PluginRef = {
         pluginId: manifest.id,
@@ -288,7 +284,7 @@ export default class PluginStoreService {
     this.store.commit("tabs/unsetMenuItem", ref);
   }
 
-  getTables(): GetTablesResponse {
+  getTables() {
     return this.store.state.tables.map((t) => ({
       name: t.name,
       schema: t.schema,
@@ -332,28 +328,17 @@ export default class PluginStoreService {
     }));
   }
 
-  getConnectionInfo(): GetConnectionInfoResponse {
+  getConnectionInfo() {
     return {
+      id: this.store.state.usedConfig.id,
+      workspaceId: this.store.state.workspaceId,
+      connectionName: this.store.state.usedConfig.name || "",
       connectionType: this.store.state.connectionType,
       databaseType: this.store.state.connectionType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
-  }
-
-  getActiveTab(): GetActiveTabResponse {
-    const activeTab: TransportOpenTab = this.store.state.tabs.active;
-
-    if (!activeTab) {
-      return null;
-    }
-
-    return this.serializeTab(activeTab);
-  }
-
-  getAllTabs(): GetAllTabsResponse {
-    return this.store.state.tabs.tabs.map((tab) => this.serializeTab(tab));
   }
 
   serializeTab(tab: TransportOpenTab): TabResponse {
@@ -468,8 +453,16 @@ export default class PluginStoreService {
       title = `${options.manifest.name} #${tNum}`;
     } while (tabItems.filter((t) => t.title === title).length > 0);
 
+    const views = isManifestV0(options.manifest)
+      ? mapViewsAndMenuFromV0ToV1(options.manifest).views
+      : options.manifest.capabilities.views;
+    const view = views.find((v) => v.id === options.viewId);
+    const tabType: PluginTabType = view.type.includes("shell")
+      ? "plugin-shell"
+      : "plugin-base";
+
     return {
-      tabType: "plugin-shell", // FIXME(azmi): We only support shell for now
+      tabType,
       title: options.manifest.name,
       unsavedChanges: false,
       context: {

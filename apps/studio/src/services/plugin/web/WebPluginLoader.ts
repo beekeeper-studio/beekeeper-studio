@@ -2,19 +2,23 @@ import {
   Manifest,
   OnViewRequestListener,
   WebPluginContext,
+  WebPluginViewInstance,
 } from "../types";
 import {
   PluginNotificationData,
   PluginResponseData,
   PluginRequestData,
   GetAppInfoResponse,
-  LoadViewParams,
+  GetViewContextResponse,
+  GetConnectionInfoResponse,
+  GetTablesResponse,
 } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -27,7 +31,7 @@ windowEventMap.set("KeyboardEvent", KeyboardEvent);
 windowEventMap.set("Event", Event);
 
 export default class WebPluginLoader {
-  private iframes: HTMLIFrameElement[] = [];
+  private viewInstances: WebPluginViewInstance[] = [];
   private onReadyListeners: Function[] = [];
   private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
@@ -69,22 +73,12 @@ export default class WebPluginLoader {
     window.addEventListener("message", this.handleMessage);
 
     // Backward compatibility: Early version of AI Shell.
-    // TODO(azmi): Remove this in the future
-    if (!_.isArray(this.manifest.capabilities.views)) {
-      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
-        this.pluginStore.addTabTypeConfigV0({
-          pluginId: this.manifest.id,
-          pluginTabTypeId: tabType.id,
-          name: tabType.name,
-          kind: tabType.kind,
-          icon: this.manifest.icon,
-        });
-      });
-    } else {
-      // Views are always embedded in tabs (for now).
-      this.pluginStore.addTabTypeConfigs(this.manifest);
-      this.menu.register();
-    }
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
+
+    this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
+    this.menu.register(views, menu);
 
     if (!this.listening) {
       this.registerEvents();
@@ -93,9 +87,10 @@ export default class WebPluginLoader {
   }
 
   private handleMessage(event: MessageEvent) {
-    const source = this.iframes.find(
-      (iframe) => iframe.contentWindow === event.source
+    const view = this.viewInstances.find(
+      ({ iframe }) => iframe.contentWindow === event.source
     );
+    const source = view?.iframe;
 
     // Check if the message is from our iframe
     if (source) {
@@ -148,11 +143,17 @@ export default class WebPluginLoader {
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getTables":
-          response.result = this.pluginStore.getTables();
+          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
           break;
         case "getColumns":
           response.result = await this.pluginStore.getColumns(
             request.args.table
+          );
+          break;
+        case "getTableKeys":
+          response.result = await this.utilityConnection.send(
+              'conn/getTableKeys',
+            { table: request.args.table, schema: request.args.schema }
           );
           break;
         case "getAppInfo":
@@ -161,14 +162,15 @@ export default class WebPluginLoader {
             version: this.context.appVersion,
           } as GetAppInfoResponse['result'];
           break;
+        case "getViewContext":
+          const view = this.viewInstances.find((ins) => ins.iframe === source);
+          if (!view) {
+            throw new Error("View context not found.");
+          }
+          response.result = view.context as GetViewContextResponse['result'];
+          break;
         case "getConnectionInfo":
-          response.result = this.pluginStore.getConnectionInfo();
-          break;
-        case "getActiveTab":
-          response.result = this.pluginStore.getActiveTab();
-          break;
-        case "getAllTabs":
-          response.result = this.pluginStore.getAllTabs();
+          response.result = this.pluginStore.getConnectionInfo() as GetConnectionInfoResponse['result'];
           break;
         case "getData":
         case "getEncryptedData": {
@@ -182,7 +184,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard()
+          response.result = window.main.readTextFromClipboard();
           break;
         case "checkForUpdate":
           response.result = await this.context.utility.send("plugin/checkForUpdates", {
@@ -205,7 +207,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(request.args.text)
+          window.main.writeTextToClipboard(request.args.text);
           break;
 
         // ======== UI ACTIONS ===========
@@ -282,7 +284,7 @@ export default class WebPluginLoader {
         break;
       }
       case "broadcast": {
-        this.iframes.forEach((iframe) => {
+        this.viewInstances.forEach(({ iframe }) => {
           if (iframe === source) {
             return;
           }
@@ -301,34 +303,20 @@ export default class WebPluginLoader {
     }
   }
 
-  registerIframe(iframe: HTMLIFrameElement, options: { command: string; params?: LoadViewParams }) {
-    this.iframes.push(iframe);
-
-    iframe.onload = () => {
-      this.postMessage(iframe, {
-        name: "viewLoaded",
-        args: {
-          command: options.command,
-          params: options.params,
-        },
-      })
-    };
+  registerViewInstance(options: WebPluginViewInstance) {
+    this.viewInstances.push(options);
   }
 
-  unregisterIframe(iframe: HTMLIFrameElement) {
-    this.iframes = _.without(this.iframes, iframe);
+  unregisterViewInstance(iframe: HTMLIFrameElement) {
+    this.viewInstances = this.viewInstances.filter((ins) => ins.iframe !== iframe);
   }
 
   postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
-    if (!this.iframes) {
-      this.log.warn("Cannot post message, iframe not registered.");
-      return;
-    }
     iframe.contentWindow.postMessage(data, "*");
   }
 
   broadcast(data: PluginNotificationData) {
-    this.iframes.forEach((iframe) => {
+    this.viewInstances.forEach(({ iframe }) => {
       this.postMessage(iframe, data);
     });
   }
@@ -347,19 +335,12 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    // Backward compatibility: Early version of AI Shell.
-    // TODO(azmi): Remove this in the future
-    if (!_.isArray(this.manifest.capabilities.views)) {
-      this.manifest.capabilities.views.tabTypes?.forEach((tabType) => {
-        this.pluginStore.removeTabTypeConfigV0({
-          pluginId: this.manifest.id,
-          pluginTabTypeId: tabType.id,
-        });
-      });
-    } else {
-      this.pluginStore.removeTabTypeConfigs(this.manifest);
-      this.menu.unregister();
-    }
+    const { views, menu } = isManifestV0(this.context.manifest)
+      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
+      : this.context.manifest.capabilities;
+
+    this.menu.unregister(views, menu);
+    this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);
   }
 
   addListener(listener: OnViewRequestListener) {

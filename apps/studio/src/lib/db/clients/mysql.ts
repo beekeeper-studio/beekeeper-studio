@@ -439,6 +439,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     _schema?: string,
     connection?: Connection
   ): Promise<ExtendedTableColumn[]> {
+    const hasGeneratedSupport = !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
     const clause = table ? `AND table_name = ?` : "";
     const sql = `
       SELECT
@@ -450,6 +451,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
         column_default as 'column_default',
         ordinal_position as 'ordinal_position',
         COLUMN_COMMENT as 'column_comment',
+        CHARACTER_SET_NAME as 'character_set',
+        COLLATION_NAME as 'collation',
+        ${hasGeneratedSupport ? "GENERATION_EXPRESSION as 'generation_expression'," : ''}
         extra as 'extra'
       FROM information_schema.columns
       WHERE table_schema = database()
@@ -475,6 +479,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
       generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
+      generationExpression: row.generation_expression,
+      characterSet: row.character_set,
+      collation: row.collation,
       bksField: this.parseTableColumn(row),
     }));
   }

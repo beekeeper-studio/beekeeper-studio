@@ -10,6 +10,7 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import { LoadViewParams } from "@beekeeperstudio/plugin";
+import { ThemeChangedNotification } from "@beekeeperstudio/plugin";
 
 export default Vue.extend({
   name: "IsolatedPluginView",
@@ -82,6 +83,17 @@ export default Vue.extend({
       iframe.src = this.baseUrl;
       iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
       iframe.allow = "clipboard-read; clipboard-write;";
+
+      // HACK(azmi): Trigger an initial `themeChanged` notification because
+      // older versions of AI Shell don't automatically handle theme state on load.
+      iframe.onload = () => {
+        this.$plugin.notify(this.pluginId, {
+          name: "themeChanged",
+          args: this.$plugin.loaders
+            .get(this.pluginId)
+            .context.store.getTheme(),
+        } as ThemeChangedNotification);
+      };
 
       this.$plugin.registerIframe(
         this.pluginId,

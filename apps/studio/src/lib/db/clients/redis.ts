@@ -68,22 +68,12 @@ type RedisTableRow = {
   value: unknown;
 };
 
-function makeQueryResult(command: string, result: unknown): NgQueryResult {
-  return {
-    command: command,
-    rows: Array.isArray(result)
-      ? result.map((r) => ({ result: r }))
-      : [{ result }],
-    fields: [{ name: "result", id: "result" }],
-    rowCount: Array.isArray(result) ? result.length : 1,
-    affectedRows: 0,
-  };
-}
 
 const NEWLINE_RG = /[\r\n]+/;
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   redis: Redis;
+  commands: Set<string>;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, redisContext, server, database);
@@ -95,13 +85,19 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     const config: RedisOptions = {
       host: this.server.config.host || "localhost",
       port: this.server.config.port || 6379,
+      username: this.server.config.user || undefined,
       password: this.server.config.password || "",
       db: parseInt(this.database.database, 10) || 0,
       lazyConnect: true, // needed to return promise
     };
 
     this.redis = new Redis(config);
-    return this.redis.connect();
+    const connection = await this.redis.connect();
+
+    const commands = await this.redis.command("LIST");
+    this.commands = new Set<string>(commands as string[]);
+
+    return connection
   }
 
   async versionString(): Promise<string> {
@@ -278,10 +274,16 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     const results: NgQueryResult[] = [];
 
     for (const command of commands) {
-      const args = splitargs(command);
+      const [commandName, ...args] = splitargs(command);
+      const lowerCommandName = commandName.toLowerCase();
       try {
-        const result = await this.redis.call.call(this.redis, ...args);
-        results.push(makeQueryResult(command, result));
+        let result;
+        if (this.commands.has(lowerCommandName) && typeof this.redis[lowerCommandName] === 'function') {
+          result = await this.redis[lowerCommandName](...args);
+        } else {
+          result = await this.redis.call.call(this.redis, commandName, ...args);
+        }
+        results.push(this.makeQueryResult(command, result));
       } catch (error) {
         results.push(makeQueryError(command, error));
       }
@@ -844,5 +846,26 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getQueryForFilter(): Promise<string> {
     return "";
+  }
+
+  private makeQueryResult(command: string, result: unknown): NgQueryResult {
+    let fields = [{ name: "result", id: "result" }];
+    let rows: any = Array.isArray(result) ?
+      result.map((r) => ({ result: r })) :
+      [{ result }];
+    if (_.isObject(result) && !_.isArray(result)) {
+      fields = [{ name: "key", id: "key" }, { name: "value", id: "value" }];
+      rows = Object.entries(result).map(([key, value]) => ({
+        key,
+        value
+      }));
+    }
+    return {
+      command: command,
+      rows,
+      fields,
+      rowCount: Array.isArray(result) ? result.length : 1,
+      affectedRows: 0,
+    };
   }
 }

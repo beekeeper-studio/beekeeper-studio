@@ -2,6 +2,7 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import {
   PluginMenuItem,
   PluginMenuItemPlacement,
+  PluginView,
   WebPluginContext,
 } from "@/services/plugin/types";
 import _ from "lodash";
@@ -31,18 +32,19 @@ export class PluginMenuManager {
     return this.contextMenus[contextMenuId];
   }
 
-  public register() {
-    this.applyMenuItems("add");
+  public register(views: PluginView[], menu: PluginMenuItem[]) {
+    this.applyMenuItems("add", views, menu);
   }
 
-  public unregister() {
-    this.applyMenuItems("remove");
+  public unregister(views: PluginView[], menu: PluginMenuItem[]) {
+    this.applyMenuItems("remove", views, menu);
   }
 
-  private applyMenuItems(handlerType: keyof MenuHandler) {
-    const menu = this.context.manifest.capabilities.menu || [];
-    const views = this.context.manifest.capabilities.views || [];
-
+  private applyMenuItems(
+    handlerType: keyof MenuHandler,
+    views: PluginView[],
+    menu: PluginMenuItem[]
+  ) {
     if (!menu || !views || !_.isArray(views)) {
       return;
     }

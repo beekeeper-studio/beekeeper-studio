@@ -94,6 +94,7 @@ export function surrealEscapeValue(value: any): string {
 }
 
 export const SurrealDBData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],
   usesOffsetPagination: false, // not sure about this

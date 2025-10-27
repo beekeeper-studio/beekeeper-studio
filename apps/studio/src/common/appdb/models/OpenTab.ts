@@ -1,12 +1,10 @@
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
-import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn } from "typeorm";
+import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn, BeforeInsert, BeforeUpdate } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
-import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import { TabType, TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
-
-type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
 
@@ -55,6 +53,9 @@ export class OpenTab extends ApplicationEntity {
   @Column({ type: 'integer', nullable: true })
   queryId?: number
 
+  @Column({ type: 'integer', nullable: true })
+  usedQueryId?: number
+
   @Column({type: 'text', nullable: true})
   unsavedQueryText?: string
 
@@ -82,11 +83,29 @@ export class OpenTab extends ApplicationEntity {
   /** Context is a generic object. It can be used to store anything. */
   context: any
 
+  /**
+   * Auto-generated from context.pluginId. Do not set this column directly.
+   * Instead, set the pluginId in the context object: `tab.context = { pluginId: 'your-plugin-id' }`
+   * This column is automatically synced on insert/update via @BeforeInsert and @BeforeUpdate hooks.
+   */
+  @Column({type: 'text', nullable: true})
+  generatedPluginId?: string
+
   @Column({type: 'datetime', nullable: true})
   lastActive?: Date
 
   @DeleteDateColumn()
   deletedAt?: Date
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  private syncPluginId() {
+    if (this.context?.pluginId) {
+      this.generatedPluginId = this.context.pluginId;
+    } else {
+      this.generatedPluginId = null;
+    }
+  }
 
   public setFilters(filters: Nullable<TableFilter[]>) {
     if (filters && _.isArray(filters)) {
@@ -184,7 +203,7 @@ export class OpenTab extends ApplicationEntity {
       withDeleted: true
     })
   }
-  
+
   static async clearOldDeletedTabs(connectionIds: ConnectionIds, xDays: number): Promise<void> {
     const { connectionId, workspaceId } = connectionIds
     const deletedAtThreshold = new Date()
