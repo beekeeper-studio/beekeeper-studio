@@ -90,7 +90,7 @@
     "jsonc-parser": "^3.3.1",
     "knex": "^2.4.1",
     "knex-firebird-dialect": "1.4.6",
-    "libsql": "^0.4.7",
+    "libsql": "^0.5.22",
     "lodash": "^4.17.21",
     "markdown-table": "^3.0.2",
     "marked": "^15.0.7",

@@ -946,12 +946,11 @@ export class DBTestUtil {
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
       const expectedResults = {
         common: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
-        noArrayMode: [{ id: 'c0', name: 'total' }],
         clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
         oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
         duckdb: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
       }
-      expect(fields).toMatchObject(expectedResults[this.dialect] || (this.supportsArrayMode ? expectedResults.common : expectedResults.noArrayMode))
+      expect(fields).toMatchObject(expectedResults[this.dialect] || expectedResults.common)
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex
