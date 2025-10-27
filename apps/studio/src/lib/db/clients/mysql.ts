@@ -713,14 +713,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const outgoingSQL = `
     SELECT
       cu.constraint_name as 'constraint_name',
-      cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table_name',
-      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
-      cu.REFERENCED_TABLE_NAME as referenced_table,
-      cu.REFERENCED_COLUMN_NAME as referenced_column,
+      cu.table_name as 'from_table',
+      cu.column_name as 'from_column',
+      cu.REFERENCED_TABLE_NAME as 'to_table',
+      cu.REFERENCED_COLUMN_NAME as 'to_column',
       rc.UPDATE_RULE as on_update,
       rc.DELETE_RULE as on_delete,
-      rc.CONSTRAINT_NAME as rc_constraint_name,
       cu.ORDINAL_POSITION as ordinal_position
     FROM information_schema.key_column_usage cu
     JOIN information_schema.referential_constraints rc
@@ -736,8 +734,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const incomingSQL = `
     SELECT
       cu.constraint_name as 'constraint_name',
-      cu.column_name as 'from_column',
       cu.table_name as 'from_table',
+      cu.column_name as 'from_column',
       cu.referenced_table_name as 'to_table',
       cu.REFERENCED_COLUMN_NAME as 'to_column',
       rc.UPDATE_RULE as on_update,
@@ -775,7 +773,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           toTable: row.to_table,
           toColumn: row.to_column,
           fromTable: row.from_table,
-          fromColumn: row.column_name || row.from_column,
+          fromColumn: row.from_column,
           onDelete: row.on_delete,
           onUpdate: row.on_update,
           toSchema: "",
@@ -791,7 +789,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         toTable: firstPart.to_table,
         toColumn: keyParts.map(p => p.to_column),
         fromTable: firstPart.from_table,
-        fromColumn: keyParts.map(p => p.column_name || p.from_column),
+        fromColumn: keyParts.map(p => p.from_column),
         onDelete: firstPart.on_delete,
         onUpdate: firstPart.on_update,
         toSchema: "",

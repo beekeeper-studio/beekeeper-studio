@@ -545,68 +545,121 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
-    return [];
+    const defaultSchema = schema || await this.defaultSchema();
 
-    // FIXME this is broken because an internal error. see https://github.com/duckdb/duckdb/issues/15897
+    // Query to get both outgoing and incoming foreign keys
     const { rows } = await this.driverExecuteSingle(
       `
+      -- Outgoing foreign keys (from this table to other tables)
       SELECT
         kcu.constraint_schema AS from_schema,
         kcu.table_name AS from_table,
-        STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
-        rc.unique_constraint_schema AS to_schema,
+        kcu.column_name AS from_column,
         tc.constraint_name,
         rc.update_rule,
         rc.delete_rule,
-        (
-          SELECT STRING_AGG(kcu2.column_name, ',' ORDER BY kcu2.ordinal_position)
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name
-        ) AS to_column,
-        (
-          SELECT kcu2.table_name
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name LIMIT 1
-        ) AS to_table
+        kcu_ref.constraint_schema AS to_schema,
+        kcu_ref.table_name AS to_table,
+        kcu_ref.column_name AS to_column
       FROM
         information_schema.key_column_usage AS kcu
       JOIN
         information_schema.table_constraints AS tc
       ON
         tc.constraint_name = kcu.constraint_name
+        AND tc.constraint_schema = kcu.constraint_schema
       JOIN
         information_schema.referential_constraints AS rc
       ON
         rc.constraint_name = kcu.constraint_name
+        AND rc.constraint_schema = kcu.constraint_schema
+      JOIN
+        information_schema.key_column_usage AS kcu_ref
+      ON
+        kcu_ref.constraint_name = rc.unique_constraint_name
+        AND kcu_ref.constraint_schema = rc.unique_constraint_schema
+        AND kcu_ref.ordinal_position = kcu.ordinal_position
       WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema = ? AND
-        kcu.table_name = ? AND
-        (to_column IS NOT NULL OR to_table IS NOT NULL)
-      GROUP BY
-        kcu.constraint_schema,
-        kcu.table_name,
-        rc.unique_constraint_schema,
-        rc.unique_constraint_name,
+        tc.constraint_type = 'FOREIGN KEY'
+        AND kcu.table_schema = ?
+        AND kcu.table_name = ?
+
+      UNION ALL
+
+      -- Incoming foreign keys (from other tables to this table)
+      SELECT
+        kcu.constraint_schema AS from_schema,
+        kcu.table_name AS from_table,
+        kcu.column_name AS from_column,
         tc.constraint_name,
         rc.update_rule,
-        rc.delete_rule;
+        rc.delete_rule,
+        kcu_ref.constraint_schema AS to_schema,
+        kcu_ref.table_name AS to_table,
+        kcu_ref.column_name AS to_column
+      FROM
+        information_schema.key_column_usage AS kcu
+      JOIN
+        information_schema.table_constraints AS tc
+      ON
+        tc.constraint_name = kcu.constraint_name
+        AND tc.constraint_schema = kcu.constraint_schema
+      JOIN
+        information_schema.referential_constraints AS rc
+      ON
+        rc.constraint_name = kcu.constraint_name
+        AND rc.constraint_schema = kcu.constraint_schema
+      JOIN
+        information_schema.key_column_usage AS kcu_ref
+      ON
+        kcu_ref.constraint_name = rc.unique_constraint_name
+        AND kcu_ref.constraint_schema = rc.unique_constraint_schema
+        AND kcu_ref.ordinal_position = kcu.ordinal_position
+      WHERE
+        tc.constraint_type = 'FOREIGN KEY'
+        AND kcu_ref.table_schema = ?
+        AND kcu_ref.table_name = ?
+      ORDER BY from_schema, from_table, constraint_name, from_column
     `,
-      { params: [schema || await this.defaultSchema(), table] }
+      { params: [defaultSchema, table, defaultSchema, table] }
     );
 
-    return rows.map((row) => ({
-      toTable: row.to_table as string,
-      toSchema: row.to_schema as string,
-      toColumn: row.to_column as string,
-      fromTable: row.from_table as string,
-      fromSchema: row.from_schema as string,
-      fromColumn: row.from_column as string,
-      constraintName: row.constraint_name as string,
-      onUpdate: row.update_rule as string,
-      onDelete: row.delete_rule as string,
-      isComposite: false
-    }));
+    // Group by constraint_name to handle composite keys
+    const groupedKeys = new Map<string, TableKey>();
+
+    for (const row of rows) {
+      const key = row.constraint_name as string;
+
+      if (!groupedKeys.has(key)) {
+        groupedKeys.set(key, {
+          toTable: row.to_table as string,
+          toSchema: row.to_schema as string,
+          toColumn: row.to_column as string,
+          fromTable: row.from_table as string,
+          fromSchema: row.from_schema as string,
+          fromColumn: row.from_column as string,
+          constraintName: row.constraint_name as string,
+          onUpdate: row.update_rule as string,
+          onDelete: row.delete_rule as string,
+          isComposite: false
+        });
+      } else {
+        // This is a composite key
+        const existing = groupedKeys.get(key);
+        existing.isComposite = true;
+
+        // Convert to arrays if not already
+        if (!Array.isArray(existing.fromColumn)) {
+          existing.fromColumn = [existing.fromColumn];
+          existing.toColumn = [existing.toColumn];
+        }
+
+        (existing.fromColumn as string[]).push(row.from_column as string);
+        (existing.toColumn as string[]).push(row.to_column as string);
+      }
+    }
+
+    return Array.from(groupedKeys.values());
   }
 
   async defaultSchema(): Promise<string> {
