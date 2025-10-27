@@ -1948,6 +1948,11 @@ export class DBTestUtil {
     // Note: This test uses simple (non-composite) foreign keys, so it should work on all databases
     // that support foreign keys, even if they don't support composite keys well
 
+    // Skip if database doesn't support foreign keys
+    if (this.data.disabledFeatures?.foreignKeys) {
+      return expect.anything();
+    }
+
     // MySQL 5.1 and earlier doesn't support incoming foreign keys properly
     // Check version and skip if needed
     if (this.dbType === 'mysql' && this.connection.versionInfo) {
