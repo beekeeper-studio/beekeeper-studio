@@ -714,11 +714,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     SELECT
       cu.constraint_name as 'constraint_name',
       cu.column_name as 'column_name',
-      cu.table_name as 'from_table',
-      cu.referenced_table_name as 'to_table',
-      cu.REFERENCED_COLUMN_NAME as 'to_column',
+      cu.referenced_table_name as 'referenced_table_name',
+      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
+      cu.REFERENCED_TABLE_NAME as referenced_table,
+      cu.REFERENCED_COLUMN_NAME as referenced_column,
       rc.UPDATE_RULE as on_update,
       rc.DELETE_RULE as on_delete,
+      rc.CONSTRAINT_NAME as rc_constraint_name,
       cu.ORDINAL_POSITION as ordinal_position
     FROM information_schema.key_column_usage cu
     JOIN information_schema.referential_constraints rc
@@ -727,7 +729,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     WHERE table_schema = database()
     AND cu.table_name = ?
     AND cu.referenced_table_name IS NOT NULL
-    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
+    ORDER BY rc.CONSTRAINT_NAME, cu.ORDINAL_POSITION
   `;
 
     // Query for foreign keys TO this table (other tables referencing this table)
