@@ -22,8 +22,9 @@ export abstract class GenericController<T extends HasId> {
 
   async list(updatedSince?: number): Promise<T[]> {
     const params = updatedSince ? {
-      updated_since: updatedSince
-    } : {}
+      updated_since: updatedSince,
+      slim: true
+    } : { slim: true }
     const response = await this.axios.get(url(this.path), { params })
     return res(response, this.plural)
   }

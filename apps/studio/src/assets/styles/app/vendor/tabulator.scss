@@ -35,6 +35,10 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
 // Add/Delete/Clone row
 // -------------------------------
 
+.tabulator {
+  --tabulator-row-odd-deleted-bg-color: #{color-mix(in srgb, var(--brand-danger) 45%, var(--query-editor-bg))};
+  --tabulator-row-even-deleted-bg-color: #{color-mix(in srgb, var(--brand-danger) 30%, var(--query-editor-bg))};
+}
 
 .tabulator .tabulator-tableholder .tabulator-table {
 
@@ -66,7 +70,11 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     }
     &.deleted,
     &.deleted:hover {
-      background: $row-delete;
+      background-color: var(--tabulator-row-even-deleted-bg-color);
+
+      &.tabulator-row-odd {
+        background-color: var(--tabulator-row-odd-deleted-bg-color);
+      }
     }
     &.edit-error {
       background: $cell-error!important;

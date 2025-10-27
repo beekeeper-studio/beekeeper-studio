@@ -42,7 +42,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   database: IDbConnectionDatabase;
   client: bq.BigQuery;
   config: any = {};
-  
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, bigqueryContext, server, database);
   }
@@ -56,11 +56,11 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
-    return { 
-      customRoutines: false, 
-      comments: false, 
-      properties: true, 
-      partitions: false, 
+    return {
+      customRoutines: false,
+      comments: false,
+      properties: true,
+      partitions: false,
       editPartitions: false,
       backups: false,
       backDirFormat: false,
@@ -86,7 +86,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
     log.debug("configDatabase config: ", this.config)
 
-    
+
     this.knex = knexlib({
       client: BigQueryKnexClient as Client,
       connection: { ...this.config }
@@ -221,7 +221,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       onDelete: row.delete_rule,
       isComposite: false
     }));
-  }  
+  }
 
   async query(queryText: string, options: any = {}): Promise<CancelableQuery> {
     log.debug('bigQuery query: ' + queryText);
@@ -240,7 +240,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         [job] = await this.client.createQueryJob(jobOptions)
         log.debug("created job: ", job.id)
 
-        if (options.dryRun) {
+        if (options?.dryRun) {
           const metadata = job.metadata;
           return [this.parseDryRunMetadata(metadata)];
         }
@@ -277,7 +277,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // if (queryText instanceof String) {
     //   queryText = { query: queries }
     // }
-    let job = options.job;
+    let job = options?.job;
     log.info("BIGQUERY, executing", queryText)
     if (!job) {
       [job] = await this.client.createQueryJob({query: queryText})
@@ -539,7 +539,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const queryArgs = {query: q, ...options };
     if (!job) {
       [job] = await this.client.createQueryJob(queryArgs);
-    } 
+    }
 
     // Wait for the query to finish
     const results = await job.getQueryResults();
@@ -569,10 +569,10 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     log.debug(`listTablesOrViews for type:${type} data: `, data);
     return data;
   }
-  
+
   // wtf typescript
   // eslint-disable-next-line
-  // @ts-ignore 
+  // @ts-ignore
   private parseDryRunMetadata(metadata) {
     const queryStatistics = metadata.statistics.query;
     // bytes -> TiB * bq price per TiB processed

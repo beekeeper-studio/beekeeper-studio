@@ -11,6 +11,7 @@ const types = [
 const supportsLength = [];
 
 export const TrinoData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
   wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
