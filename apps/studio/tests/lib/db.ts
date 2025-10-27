@@ -1554,8 +1554,16 @@ export class DBTestUtil {
 
     await this.connection.importFile(table, importScriptOptions, read)
 
-    const [hats] = await this.knex(tableName).count(hatColumn)
-    const [dataLength] = _.values(hats)
+    const hatsResult = await this.knex(tableName).count(hatColumn)
+    let dataLength;
+    if (this.dialect === 'clickhouse') {
+      // ClickHouse returns [[results], [results2], {metadata}]
+      const [[hats]] = hatsResult;
+      dataLength = Object.values(hats)[0];
+    } else {
+      const [hats] = hatsResult;
+      [dataLength] = _.values(hats);
+    }
     expect(Number(dataLength)).toBe(4)
   }
 
@@ -1568,7 +1576,9 @@ export class DBTestUtil {
       return expect.anything()
     }
 
-    if (['sqlite'].includes(this.dialect)) {
+    // ClickHouse uses async inserts and doesn't support traditional transaction rollback
+    // SQLite also doesn't support rollback properly in this context
+    if (['sqlite', 'clickhouse'].includes(this.dialect)) {
       expectedLength = 4
     }
     const read = async (_options: any, executeOptions: any) => {
@@ -1590,8 +1600,16 @@ export class DBTestUtil {
       // empty on purpose
     }
 
-    const [hats] = await this.knex(tableName).count(hatColumn)
-    const [dataLength] = _.values(hats)
+    const hatsResult = await this.knex(tableName).count(hatColumn)
+    let dataLength;
+    if (this.dialect === 'clickhouse') {
+      // ClickHouse returns [[results], [results2], {metadata}]
+      const [[hats]] = hatsResult;
+      dataLength = Object.values(hats)[0];
+    } else {
+      const [hats] = hatsResult;
+      [dataLength] = _.values(hats);
+    }
     expect(Number(dataLength)).toBe(expectedLength)
   }
 

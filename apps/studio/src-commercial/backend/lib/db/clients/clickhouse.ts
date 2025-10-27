@@ -1066,24 +1066,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return { totalRows, columns, cursor };
   }
 
-  async importCommitCommand(
-    table: TableOrView,
-    importOptions?: ImportFuncOptions
-  ): Promise<any> {
-    return await this.interactiveImport({
-      client: importOptions.executeOptions.connection,
-      tableName: table.name,
-      filePath: importOptions.storeValues.fileName,
-      fileType: importOptions.storeValues.fileType,
-      csvOptions: {
-        delimiter: importOptions.importerOptions.delimeter,
-        header: importOptions.storeValues.useHeaders,
-        skipEmptyLines: importOptions.storeValues.skipEmptyLines,
-        trimWhitespaces: importOptions.storeValues.trimWhitespaces,
-      }
-    });
-  }
-
   async importFile(
     table: TableOrView,
     importScriptOptions: ImportFuncOptions,
@@ -1093,10 +1075,91 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       c?: string
     ) => Promise<any>
   ) {
-    if (importScriptOptions.storeValues.fileType === 'csv') {
-      return await super.importFile(table, importScriptOptions, async () => ({}));
+    // For ClickHouse, use native streaming import instead of SQL-based approach
+    const { storeValues } = importScriptOptions;
+
+    // If it's a file-based import, use the streaming approach
+    if (storeValues.fileName) {
+      return await this.runWithConnection(async (client) => {
+        try {
+          await this.importBeginCommand(table, importScriptOptions);
+
+          if (storeValues.truncateTable) {
+            await this.importTruncateCommand(table, importScriptOptions);
+          }
+
+          await this.interactiveImport({
+            client,
+            tableName: table.name,
+            filePath: storeValues.fileName,
+            fileType: storeValues.fileType,
+            csvOptions: {
+              delimiter: importScriptOptions.importerOptions?.delimeter,
+              header: storeValues.useHeaders,
+              skipEmptyLines: storeValues.skipEmptyLines,
+              trimWhitespaces: storeValues.trimWhitespaces,
+            }
+          });
+        } catch (err) {
+          log.error('Error importing data: ', err);
+          await this.importRollbackCommand(table, importScriptOptions);
+          throw err;
+        } finally {
+          await this.importFinalCommand(table, importScriptOptions);
+        }
+      });
     }
-    return await super.importFile(table, importScriptOptions, readStream);
+
+    // For SQL-based imports (like in tests), use the standard approach
+    // but execute directly via streaming rather than individual statements
+    return await super.importFile(table, importScriptOptions, async (importerOptions, executeOptions, fileName) => {
+      // Get the formatted data from the read stream callback
+      const result = await readStream(importerOptions, executeOptions, fileName);
+      return result;
+    });
+  }
+
+  async importLineReadCommand(
+    table: TableOrView,
+    sqlString: string | string[],
+    importOptions: ImportFuncOptions
+  ): Promise<any> {
+    // For SQL-based imports, execute the queries
+    // Note: This is used by tests but not the optimal path for production
+    const sqls = Array.isArray(sqlString) ? sqlString : [sqlString];
+    const results = [];
+    for (const sql of sqls) {
+      const result = await this.driverExecuteMultiple(sql, importOptions.executeOptions);
+      results.push(result);
+    }
+    return results;
+  }
+
+  async getImportSQL(
+    importedData: any[],
+    tableName: string,
+    schema: string = null,
+    _runAsUpsert = false
+  ): Promise<string | string[]> {
+    // ClickHouse doesn't support standard UPSERT syntax
+    // Build simple INSERT statements for SQL-based imports (e.g., tests)
+    // Note: For production, file-based streaming imports are preferred
+    const queries = [];
+    for (const item of importedData) {
+      const data = item.data[0]; // Each item has a data array with one row
+      const columns = Object.keys(data);
+      const values = columns.map(col => {
+        const val = data[col];
+        if (val === null) return 'NULL';
+        if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+        return String(val);
+      });
+
+      const columnsStr = columns.map(c => this.wrapIdentifier(c)).join(', ');
+      const valuesStr = values.join(', ');
+      queries.push(`INSERT INTO ${this.wrapIdentifier(tableName)} (${columnsStr}) VALUES (${valuesStr})`);
+    }
+    return queries;
   }
 
   protected async runWithConnection<T>(
@@ -1135,10 +1198,11 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     };
 
     let format: DataFormat;
+    const fsStream = fs.createReadStream(options.filePath);
+    onCleanup = () => fsStream.close();
+    values = fsStream;
+
     if (options.fileType === "csv") {
-      const fsStream = fs.createReadStream(options.filePath);
-      onCleanup = () => fsStream.close();
-      values = fsStream
       format = options.csvOptions.header ? "CSVWithNames" : "CSV";
       settings.format_csv_delimiter = options.csvOptions.delimiter;
       settings.input_format_csv_trim_whitespaces = bool(

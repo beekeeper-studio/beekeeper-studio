@@ -135,7 +135,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("primary key tests", async () => {
       await getUtil().primaryKeyTests()
     })
-    
+
     test("composite key tests", async () => {
       await getUtil().compositeKeyTests()
     })
@@ -237,7 +237,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
   })
 
-  describe.only("Import Scripts", () => {
+  describe("Import Scripts", () => {
     beforeEach(async() => {
       await prepareImportTable(getUtil())
     })
