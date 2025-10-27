@@ -17,7 +17,7 @@
         v-if="filterMode === RAW"
         class="filter-group row gutter expand"
       >
-        <div class="btn-wrap">
+        <div class="btn-wrap" v-if="canBuilderFilter">
           <button
             class="btn btn-flat btn-fab"
             type="button"
@@ -35,7 +35,7 @@
               v-model="filterRaw"
               @blur="updateMinimalModeByFilterRaw"
               ref="valueInput"
-              placeholder="Enter condition, eg: name like 'Matthew%'"
+              :placeholder="dialectData?.rawFilterPlaceholder || `Enter condition, eg: name like 'Matthew%'`"
             >
             <button
               type="button"
@@ -62,7 +62,7 @@
         class="filter-group row gutter expand"
       >
         <div class="left-section">
-          <div class="btn-wrap">
+          <div class="btn-wrap" v-if="canRawFilter">
             <button
               class="btn btn-flat btn-fab"
               type="button"
@@ -204,7 +204,7 @@ export default Vue.extend({
       hideInMinimalMode: true,
       filters: this.reactiveFilters,
       filterRaw: "",
-      filterMode: BUILDER,
+      filterMode: BUILDER, // Will be changed in mounted()
       submittedWithEmptyValue: false,
       RAW,
       BUILDER,
@@ -221,13 +221,19 @@ export default Vue.extend({
       return additional;
     },
     keymap() {
-      return {
-        [this.ctrlOrCmd('f')]: this.focusOnInput,
-      }
+      return this.$vHotkeyKeymap({
+        'tableTable.focusOnFilterInput': this.focusOnInput,
+      });
     },
     externalFilters() {
       return this.reactiveFilters;
     },
+    canRawFilter() {
+      return !this.dialectData?.disabledFeatures?.rawFilters;
+    },
+    canBuilderFilter() {
+      return !this.dialectData?.disabledFeatures?.builderFilters;
+    }
   },
   methods: {
     singleFilterChanged(index, filter) {
@@ -240,28 +246,16 @@ export default Vue.extend({
       if (this.filterMode === RAW) this.$refs.valueInput.focus();
       else this.$refs.multipleFilters.querySelector('.filter-value')?.focus();
     },
-    toggleFilterMode() {
+    async toggleFilterMode() {
       const filters: TableFilter[] = normalizeFilters(this.filters);
       const filterMode = this.filterMode === BUILDER ? RAW : BUILDER;
 
       // Populate raw filter query with existing filter if raw filter is empty
       if (filterMode === RAW && filters.length && !this.filterRaw) {
-        const allFilters = filters.map((filter) => {
-          let where;
-          if (filter.type == 'is') {
-            where = this.connection.knex
-              .whereNull(filter.field);
-          } else if (filter.type == 'is not') {
-            where = this.connection.knex
-              .whereNotNull(filter.field);
-          } else {
-            where = this.connection.knex
-              .where(filter.field, filter.type, filter.value);
-          }
-          return where.toString()
-            .split("where")[1]
-            .trim();
-        });
+        const allFilters = []
+        for (const filter of filters) {
+          allFilters.push(await this.connection.getQueryForFilter(filter))
+        }
         const filterString = joinFilters(allFilters, filters);
         this.filterRaw = filterString;
       }
@@ -333,13 +327,6 @@ export default Vue.extend({
     filterMode() {
       this.submit();
     },
-    filterRaw() {
-      const focusIsOnInput = document.activeElement.isSameNode(this.$refs.valueInput)
-      if (!focusIsOnInput) {
-        this.updateMinimalModeByFilterRaw()
-      }
-      this.submit();
-    },
     externalFilters() {
       this.hideInMinimalMode = checkEmptyFilters(this.externalFilters)
       if (this.isCommunity) {
@@ -349,6 +336,12 @@ export default Vue.extend({
       }
       this.submittedWithEmptyValue = false
     },
+  },
+  mounted() {
+    // Set initial filter mode based on disabled features
+    if (this.dialectData?.disabledFeatures?.builderFilters) {
+      this.filterMode = RAW;
+    }
   },
 });
 </script>

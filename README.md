@@ -1,22 +1,29 @@
-# Beekeeper Studio (Community Edition)
+# Beekeeper Studio
 
-Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows. Beekeeper Studio Community Edition is GPL licensed so it is free (libre) and free (gratis).
+Beekeeper Studio is a cross-platform SQL editor and database manager available for Linux, Mac, and Windows.
 
-[Download the community edition here](https://beekeeperstudio.io/get-community)
+
+[Download Beekeeper Studio](https://beekeeperstudio.io/get-community)
 
 We publish binaries for MacOS, Windows, and Linux.
 
-![image](https://user-images.githubusercontent.com/279769/203650152-4a34af1f-8a38-47cf-a273-d34d1c84feeb.png)
+[![image](https://user-images.githubusercontent.com/279769/203650152-4a34af1f-8a38-47cf-a273-d34d1c84feeb.png)](https://beekeeperstudio.io/get)
 
 
-👉 [Join the community Slack](https://launchpass.com/beekeeperstud-lvg5276)
+Beekeeper Studio is free to download and provides a lot of features for free, no sign-up, registration, or credit card required. The app provides some premium features for a reasonable cost license fee. [Learn more here](https://beekeeperstudio.io/pricing)
+
+
+Most of the code in this repo is open source under the GPLv3 license. Paid features are also in this repository under a commercial source-available license.
+
+We welcome community contributions!
 
 
 ## Supported Databases
 
+<!-- Don't edit this, it gets built automatically from docs/includes/supported_databases.md -->
 <!-- SUPPORT_BEGIN -->
 
-| Database                                                 | Support                      | Community | Ultimate |                             Beekeeper Links |
+| Database                                                 | Support                      | Community | Paid Editions |                             Beekeeper Links |
 | :------------------------------------------------------- | :--------------------------- | :-------: | :------: | -----------------------------------------: |
 | [PostgreSQL](https://postgresql.org)                     | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/postgres-client) |
 | [MySQL](https://www.mysql.com/)                          | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/mysql-client)|
@@ -26,18 +33,19 @@ We publish binaries for MacOS, Windows, and Linux.
 | [CockroachDB](https://www.cockroachlabs.com/)            | ⭐ Full Support              |    ✅     |    ✅    | [Features](https://beekeeperstudio.io/db/cockroachdb-client)|
 | [MariaDB](https://mariadb.org/)                          | ⭐ Full Support              |    ✅     |    ✅    |     [Features](https://beekeeperstudio.io/db/mariadb-client) |
 | [TiDB](https://pingcap.com/products/tidb/)               | ⭐ Full Support              |    ✅     |    ✅    |        [Features](https://beekeeperstudio.io/db/tidb-client) |
-| [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ Full Support             |    ✅     |    ✅    |    [Features](https://beekeeperstudio.io/db/google-big-query-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
+| [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ Full Support             |    ✅      |    ✅    |    [Features](https://beekeeperstudio.io/db/google-big-query-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
+| [Redis](https://redis.io/)                               | ⭐ Full Support               |    ✅    |    ✅    |       [Features](https://www.beekeeperstudio.io/db/redis-client/) |
 | [Oracle Database](https://www.oracle.com/database/)      | ⭐ Full Support              |           |    ✅    |      [Features](https://beekeeperstudio.io/db/oracle-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
 | [Cassandra](http://cassandra.apache.org/)                | ⭐ Full Support              |           |    ✅    |   [Features](https://beekeeperstudio.io/db/cassandra-client) |
-| [Firebird](https://firebirdsql.org/)                     | 🅱 Beta Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
-| [LibSQL](https://libsql.org/)                            | 🅱 Beta Support               |           |    ✅    |      [Features](https://beekeeperstudio.io/db/libsql-client) |
-| [ClickHouse](https://clickhouse.tech/)                   | ⏳ Coming Soon                |           |    ✅    |  -- |
+| [Firebird](https://firebirdsql.org/)                     | ⭐ Full Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
+| [LibSQL](https://libsql.org/)                            | ⭐ Full Support               |          |    ✅    |      [Features](https://beekeeperstudio.io/db/libsql-client) |
+| [ClickHouse](https://clickhouse.tech/)                   | ⭐ Full Support                |         |    ✅    |  [Features](https://www.beekeeperstudio.io/db/clickhouse-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse) |
+| [DuckDB](https://duckdb.org/)                            | ⭐ Full Support                |         |    ✅    |      [Features](https://www.beekeeperstudio.io/db/duckdb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
+| [SQL Anywhere](https://www.sap.com/products/technology-platform/sql-anywhere.html)  | ⭐ Full Support    |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/sql-anywhere-client/) |
+| [MongoDB](https://www.mongodb.com/)                      | ⭐ Full Support               |          |    ✅    |     [Features](https://www.beekeeperstudio.io/db/mongodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
+| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ Full Support                |           |    ✅    |    [Features](https://www.beekeeperstudio.io/db/trino-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/trino/) |
 | [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
-| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⏳ Coming Soon                |           |    ✅    |      -- |
-| [DuckDB](https://duckdb.org/)                            | ⏳ Coming Soon                |           |    ✅    |      -- |
-| [MongoDB](https://www.mongodb.com/)                      | 🗓️ Planned for V5               |           |    ✅    |     -- |
-| [Redis](https://redis.io/)                               | 🗓️ Planned for V5               |           |    ✅    |       -- |
-| [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🗓️ Planned for V5               |           |    ✅    |       -- |
+| [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🗓️ Planned               |           |    ✅    |       -- |
 
 
 
@@ -46,13 +54,11 @@ We publish binaries for MacOS, Windows, and Linux.
 
 ## Editions of Beekeeper Studio
 
-1. **Beekeeper Studio Ultimate Edition** - The full version of Beekeeper Studio with all features. Buying Beekeeper Studio is also the best way to support the community edition. [Download link](https://beekeeperstudio.io/get)
+Beekeeper Studio is a single download with in-app upgrades for premium features.
 
-2. **Beekeeper Studio Community Edition** - This repository. This is the open source version of Beekeeper Studio. It is a full featured database management client that is totally free and open source. [Download Link](https://beekeeperstudio.io/get-community)
+We'd love to make Beekeeper Studio totally free for everyone, but building good software is hard work and expensive. We think our paid editions are fairly priced, I hope you do too.
 
-
-👉 [Compare Beekeeper Studio Editions](https://beekeeperstudio.io/get)
-
+👉 [Compare Beekeeper Studio Editions](https://beekeeperstudio.io/pricing)
 
 ## Beekeeper Studio Features
 
@@ -65,29 +71,28 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 - Sensible keyboard-shortcuts
 - Save queries for later
 - Query run-history, so you can find that one query you got working 3 days ago
-- Default dark theme
+- Great dark theme
+- Import/export
+- Backup/restore
+- View data as JSON
+- Loads more
 
-Features exclusive to the full commercial edition ([available on our website](https://beekeeperstudio.io/get)):
-
-- More themes
-- Online storage for queries and connections with [Workspaces](https://www.beekeeperstudio.io/features/workspace)
-- Easy data formatting with [Query magics](https://docs.beekeeperstudio.io/docs/query-magics)
-- Multi-table export (v4+)
-- Easy database backup using native tools (v4+)
-- Easy database restore using native tools (coming soon)
-- Oracle Database support
-- Cassandra database support
+## Our approach to UX
 
 One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created Beekeeper Studio!
+
+Generally our guiding star is to only build software that 'feels good' to use. That means at the very least we value Beekeeper being fast, straightforward to use, and modern. If a new feature compromises this vision, we kill it.
 
 
 ## Supporting Beekeeper Studio
 
-I love working on Beekeeper Studio, and I'd love to keep growing and improving it forever. To do that I need your help.
+We love working on Beekeeper Studio, and we'd love to keep growing and improving it forever. To do that I need your help.
 
-The best way to support Beekeeper Studio is to purchase the [Ultimate Edition](https://beekeeperstudio.io/get). Every purchase directly supports my work on Beekeeper Studio.
+The best way to support Beekeeper Studio is to purchase a paid [license](https://beekeeperstudio.io/pricing). Every purchase directly supports our work on Beekeeper Studio.
 
-If you can't afford a license, please consider [becoming a project sponsor](https://github.com/sponsors/beekeeper-studio).
+If you're at a business and using Beekeeper Studio for your job, you should probably get your boss to [buy you a license](https://beekeeperstudio.io/pricing).
+
+If you can't afford a license, please use the free version, that's why we make a free version!
 
 Thank you for your continued support!
 

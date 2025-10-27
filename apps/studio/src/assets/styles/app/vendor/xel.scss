@@ -1,3 +1,4 @@
+@use "sass:color";
 /*
  * @copyright
  *   © 2016-2017 Jarosław Foksa
@@ -422,7 +423,7 @@ x-button {
     transition: background 0.15s ease-in-out;
     &:hover, &:focus {
       // background: rgba($theme-base, 0.44);
-      background: lighten($theme-primary, 8%);
+      background: color.adjust($theme-primary, $lightness: 8%);
       color: rgba(black, 0.87);
     }
   }
@@ -757,7 +758,7 @@ x-doctab {
  */
 
 x-menu {
-  background: lighten($theme-bg, 5%);
+  background: color.adjust($theme-bg, $lightness: 5%);
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
   box-shadow: var(--elevation-5);
@@ -840,6 +841,12 @@ x-menuitem {
   }
   img + x-label, x-swatch + x-label, x-icon + x-label, x-label + x-shortcut {
     margin-left: 12px;
+  }
+  &[togglable] {
+    --checkmark-margin: 4px;
+    --checkmark-width: 16px;
+    --checkmark-height: 16px;
+    padding-left: 2px;
   }
 }
 

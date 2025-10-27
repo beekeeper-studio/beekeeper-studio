@@ -30,6 +30,7 @@ const charsets = [
 const UNWRAPPER = /^"(.*)"$/
 
 export const PostgresData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
@@ -39,14 +40,28 @@ export const PostgresData: DialectData = {
   usesOffsetPagination: true,
   defaultSchema: 'public',
   requireDataset: false,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'text',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
+  disallowedSortColumns: ['json', 'jsonb', 'geometry', 'bytea', 'xml', 'hstore'],
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
   textEditorMode: "text/x-pgsql",
   disabledFeatures: {
+    shell: true,
     informationSchema: {
       extra: true
+    },
+    alter: {
+      reorderColumn: true
     }
   },
   charsets

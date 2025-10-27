@@ -6,7 +6,7 @@ import { createServer } from './db/server'
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
-    const sqliteExtension = settings?.sqliteExtensionFile?.stringValue || undefined
+    const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
     const ssh = config.sshEnabled ? {
       host: config.sshHost ? config.sshHost.trim() : null,
       port: config.sshPort,
@@ -24,6 +24,8 @@ export default {
       client: config.connectionType ?? config._connectionType,
       host: config.host ? config.host.trim() : null,
       port: config.port,
+      // for mongo
+      url: config.url,
       serviceName: config.serviceName || null,
       domain: config.domain || null,
       socketPath: config.socketPath,
@@ -48,7 +50,9 @@ export default {
       azureAuthOptions: config.azureAuthOptions,
       authId: config.authId,
       libsqlOptions: config.libsqlOptions,
-      runtimeExtensions: sqliteExtension ? [sqliteExtension] : []
+      sqlAnywhereOptions: config.sqlAnywhereOptions,
+      surrealDbOptions: config.surrealDbOptions,
+      runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : []
     }
   },
 

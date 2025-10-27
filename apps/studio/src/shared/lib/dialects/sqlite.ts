@@ -22,13 +22,24 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 const UNWRAPPER = /^(?:`(.*)`|'(.*)'|"(.*)")$/
 
 export const SqliteData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   escapeString: defaultEscapeString,
   wrapLiteral: defaultWrapLiteral,
   wrapIdentifier: defaultWrapIdentifier,
   usesOffsetPagination: true,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'text',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'integer',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   requireDataset: false,
+  disallowedSortColumns: ['blob'],
   editorFriendlyIdentifier: (s) => s,
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
@@ -37,8 +48,10 @@ export const SqliteData: DialectData = {
   },
   textEditorMode: "text/x-sqlite",
   disabledFeatures: {
+    shell: true,
     schema: true,
     comments: true,
+    compositeKeys: true,
     alter: {
       alterColumn: true,
       multiStatement: true,
@@ -46,10 +59,12 @@ export const SqliteData: DialectData = {
       dropConstraint: true,
       renameView: true,
       renameSchema: true,
+      reorderColumn: true,
     },
     informationSchema: {
       extra: true
     },
+    multipleDatabases: true,
   },
   notices: {
     infoSchema: "Note: SQLite does not support any column alterations except renaming"

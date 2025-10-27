@@ -1,20 +1,25 @@
 <template>
   <div
-    class="connection-button flex flex-middle"
+    class="connection-button"
     v-if="config"
-    :title="$bks.buildConnectionString(config)"
+    :title="privacyMode ?
+      'Connection details hidden by Privacy Mode' :
+      $bks.buildConnectionString(config)"
+    :class="classes"
   >
     <x-button
       class="btn btn-link btn-icon"
       menu
     >
       <i class="material-icons">link</i>
-      <span class="connection-name truncate expand">{{ connectionName }}</span>
+      <span class="connection-name truncate expand">
+        {{ connectionName }}
+      </span>
       <span
         class="connection-type badge truncate"
         v-tooltip="databaseVersion"
       >{{ connectionType }}</span>
-      <x-menu>
+      <x-menu @close="isQuickSwitcherVisible = false">
         <x-menuitem
           @click.prevent="disconnect(false)"
           class="red"
@@ -38,9 +43,19 @@
             <i class="material-icons">sync</i>Sync Database
           </x-label>
         </x-menuitem>
+        <x-menuitem @click.stop.prevent="showQuickSwitcher">
+            <x-label class="flex items-center justify-between">
+              <span class="flex items-center">
+                <i class="material-icons">swap_horiz</i>
+                Switch Connection
+              </span>
+              <span style="font-size: 22px;">
+                {{ isQuickSwitcherVisible ? '‹' : '›' }}
+              </span>
+            </x-label>
+        </x-menuitem>
       </x-menu>
     </x-button>
-
     <portal to="modals">
       <modal
         class="vue-dialog beekeeper-modal save-connection-modal"
@@ -116,12 +131,46 @@
         </form>
       </modal>
     </portal>
+    <portal to="menus">
+      <div
+        class="quick-switcher-panel"
+        ref="quickSwitcherPanel"
+        v-if="isQuickSwitcherVisible"
+        @click.stop
+      >
+        <div class="quick-switcher-header">
+          {{ showingMore ? 'saved connections:' : 'recent connections:' }}
+        </div>
+        <div class="quick-switcher-list-wrapper">
+          <div class="quick-switcher-list">
+            <button
+              v-for="conn in displayedConnections"
+              :key="conn.id"
+              :config="conn"
+              :show-duplicate="false"
+              class="quick-switcher-item"
+              @click="selectConnection(conn)"
+            >
+              {{ conn.name }}
+            </button>
+          </div>
+        </div>
+        <div class="quick-switcher-footer">
+          <button class="quick-switcher-item more" @click.stop="toggleMore">
+            <span class="label">{{ showingMore ? 'less' : 'more' }}</span>
+            <span style="font-size: 22px;">
+              {{ showingMore ? '‹' : '›' }}
+            </span>
+          </button>
+        </div>
+      </div>
+    </portal>
   </div>
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex'
 import SaveConnectionForm from '../../connection/SaveConnectionForm.vue'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('app.vue')
 
@@ -131,21 +180,53 @@ export default {
   },
   data() {
     return {
-      errors: null
+      errors: null,
+      isQuickSwitcherVisible: false,
+      showingMore: false,
+      recentConnections: [],
     }
   },
   computed: {
-      ...mapState({'config': 'usedConfig', 'connection': 'connection', 'versionString': 'versionString'}),
-      ...mapGetters({'hasRunningExports': 'exports/hasRunningExports', 'workspace': 'workspace'}),
-      connectionName() {
-        return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
-      },
-      connectionType() {
-        return `${this.config.connectionType}`
-      },
-      databaseVersion() {
-        return this.versionString
+    ...mapState({
+      config: state => state.usedConfig,
+      connection: state => state.connection,
+      versionString: state => state.versionString
+    }),
+    ...mapState('settings', ['privacyMode']),
+    ...mapState('data/connections', {'connectionConfigs': 'items'}),
+    ...mapGetters({
+      hasRunningExports: 'exports/hasRunningExports',
+      workspace: 'workspace',
+      connectionColor: 'connectionColor',
+      savedConnections: 'data/connections/filteredConnections',
+    }),
+    connectionName() {
+      return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
+    },
+    connectionType() {
+      return `${this.config.connectionType}`
+    },
+    databaseVersion() {
+      return this.versionString
+    },
+    recentConnectionsConfigs() {
+      return this.$store.getters['data/usedconnections/orderedUsedConfigs'] || []
+    },
+    displayedConnections() {
+      const connections = this.showingMore ? this.savedConnections : this.recentConnections;
+
+      return connections.filter(conn =>
+        conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
+      );
+    },
+    classes() {
+      const result = {
+        'connection-button': true
       }
+
+      result[this.connectionColor] = true
+      return result;
+    }
   },
   methods: {
 
@@ -177,7 +258,44 @@ export default {
         log.error(error)
         this.$noty.error(error.message)
       }
-    }
+    },
+    showQuickSwitcher() {
+      this.isQuickSwitcherVisible = !this.isQuickSwitcherVisible;
+      if (this.isQuickSwitcherVisible) {
+        this.populateRecentConnections();
+      }
+    },
+    async selectConnection(config) {
+      await this.$store.dispatch('disconnect')
+      try {
+        await this.$store.dispatch('connect', config)
+      } catch (ex) {
+        log.error(ex)
+        this.$noty.error("Error establishing a connection")
+      }
+      this.isQuickSwitcherVisible = false
+    },
+    toggleMore() {
+      this.showingMore = !this.showingMore;
+    },
+    populateRecentConnections() {
+      if (!this.config.id || !this.config.workspaceId) {
+        console.log('Missing id or workspaceId:', {
+          id: this.config.id,
+          workspaceId: this.config.workspaceId
+        });
+        return
+      }
+
+      const filteredRecent = this.recentConnectionsConfigs
+        .map(rc => this.connectionConfigs.find(c =>
+          c.id === rc.connectionId &&
+          c.workspaceId === rc.workspaceId &&
+          (c.id !== this.config.id || c.workspaceId !== this.config.workspaceId)
+        ))
+        .filter(Boolean);
+      this.recentConnections = filteredRecent.slice(0, 5)
+    },
   }
 }
 </script>

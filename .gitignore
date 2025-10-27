@@ -3,6 +3,7 @@
 .cache/
 .vscode/
 ./data/
+.local
 node_modules/
 dist/
 site/
@@ -23,3 +24,5 @@ cli.zip
 apps/studio/test-results
 *.db
 *.log
+*.orig
+surreal_data/

@@ -43,21 +43,26 @@
     class="material-icons item-icon"
   >import_export</i>
   <i
+    v-else-if="tab.tabType === 'shell'"
+    class="material-icons item-icon query"
+  >terminal</i>
+  <i
     v-else
     class="material-icons item-icon"
-  >new_releases</i>
+  >{{ tabTypeConfig?.icon || 'new_releases' }}</i>
 </template>
 <script lang="ts">
 import Vue, { PropType } from 'vue'
 import TableIcon from '../common/TableIcon.vue'
 import LoadingSpinner from '../common/loading/LoadingSpinner.vue'
-import { OpenTab } from '@/common/appdb/models/OpenTab'
+import { mapGetters } from 'vuex'
+import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
 
 export default Vue.extend({
   components: { TableIcon, LoadingSpinner },
   props: {
     tab: {
-      type: Object as PropType<OpenTab>
+      type: Object as PropType<TransportOpenTab>
     },
     forceIcon: {
       type: Boolean,
@@ -65,10 +70,21 @@ export default Vue.extend({
     }
   },
   computed: {
+    ...mapGetters({
+      'tabTypeConfigs': 'tabs/tabTypeConfigs',
+    }),
     iconClass() {
       const result = {}
       result[`${this.tab.entityType}-icon`] = true
       return result
+    },
+    tabTypeConfig() {
+      return this.tabTypeConfigs.find((config) => {
+        return (
+          config.type === this.tab.tabType &&
+          config.pluginId === this.tab.context.pluginId
+        );
+      });
     },
   }
 })

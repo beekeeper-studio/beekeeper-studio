@@ -2,7 +2,7 @@ import { TableOrView } from '../db/models'
 import { Magic } from './Magic'
 import { MagicColumn } from './MagicColumn'
 import magics from './magics'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import _ from 'lodash';
 
 const log = rawLog.scope('MagicColumnBuilder')
@@ -19,7 +19,7 @@ const MagicColumnBuilder = {
     log.debug("finding magics for", parts)
     if (parts.length < 2) return null
     const topLevel = magicFor(parts[1], magics)
-    if (parts[2] && topLevel.subMagics?.length) {
+    if (parts[2] && topLevel?.subMagics?.length) {
       const result = magicFor(parts[2], topLevel.subMagics) || topLevel
       return result
     } else {

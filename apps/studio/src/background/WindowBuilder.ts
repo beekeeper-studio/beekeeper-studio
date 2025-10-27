@@ -1,10 +1,10 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, Rectangle } from "electron"
+import { BrowserWindow, globalShortcut, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import querystring from 'query-string'
 
 
@@ -60,7 +60,7 @@ class BeekeeperWindow {
 
     const devUrl = 'http://localhost:3003'
     const startUrl = 'app://./index.html'
-    let appUrl = platformInfo.isDevelopment ? devUrl : startUrl
+    const appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
@@ -123,23 +123,24 @@ class BeekeeperWindow {
 
   private async initialize() {
     // Install Vue Devtools
-    try {
-      // log.debug("installing vue devtools")
-      // installExtension({
-          // id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
-          // electron: '>=1.2.1'
-      // })
-      // log.debug("devtools loaded", name)
-    } catch (e) {
-      log.error('devtools failed to install:', e.toString())
-    }
+    // try {
+    //   log.debug("installing vue devtools")
+    //   installExtension({
+    //       id: 'ljjemllljcmogpfapbkkighbhhppjdbg',
+    //       electron: '>=1.2.1'
+    //   })
+    //   log.debug("devtools loaded", name)
+    // } catch (e) {
+    //   log.error('devtools failed to install:', e.toString())
+    // }
 
     await this.win.loadURL(this.appUrl)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+      globalShortcut.register('F12', this.win.webContents.toggleDevTools.bind(this.win.webContents))
+      globalShortcut.register('CommandOrControl+Shift+I', this.win.webContents.toggleDevTools.bind(this.win.webContents))
+
       this.win.webContents.openDevTools()
     }
-
-
   }
 
   private getWindowPosition(settings: IGroupedUserSettings) {

@@ -21,6 +21,7 @@
               <i class="clear material-icons">cancel</i>
             </x-button>
             <x-button
+              v-if="this.dialect != 'mongodb'"
               :title="entitiesHidden ? 'Filter active' : 'No filters'"
               class="btn btn-fab btn-link action-item"
               :class="{active: entitiesHidden}"
@@ -122,15 +123,36 @@
           >
             <i class="material-icons">refresh</i>
           </button>
-          <button
-            @click.prevent="newTable"
-            title="New Table"
-            class="create-table"
-            :disabled="tablesLoading"
-            v-if="canCreateTable"
+
+          <x-button
+            class="settings-btn"
+            menu
           >
             <i class="material-icons">add</i>
-          </button>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem
+                :disabled="tablesLoading"
+                @click.prevent="newTable"
+              >
+                <x-label>
+                  {{ newTableOrCollection }}
+                </x-label>
+              </x-menuitem>
+              <x-menuitem
+                :disabled="tablesLoading"
+                @click.prevent="newTableFromFile"
+              >
+                <x-label>
+                  {{ newTableOrCollection }} from File
+                  <i
+                    v-if="$store.getters.isCommunity"
+                    class="material-icons menu-icon"
+                  >stars</i>
+                </x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
         </div>
       </div>
 
@@ -190,9 +212,16 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     computed: {
-      ...mapGetters(['dialectData']),
+      ...mapGetters(['dialectData', 'dialect']),
+      ...mapState({currentDatabase: 'database'}),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
+      },
+      newTableOrCollection() {
+        // FIXME: shouldn't be doing dialect checks like this.
+        if (this.dialect === 'mongodb') return 'New Collection'
+
+        return 'New Table'
       },
       totalEntities() {
         return this.tables.length + this.routines.length - this.hiddenEntities.length
@@ -244,7 +273,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
           this.$refs.tables
         ]
       },
-      async supportsRoutines() {
+      supportsRoutines() {
         return this.supportedFeatures.customRoutines
       },
       canCreateTable() {
@@ -258,7 +287,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
           { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
         ]
       },
-      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures']),
+      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures', 'connectionType']),
       ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
       ...mapGetters({
           pinnedEntities: 'pins/pinnedEntities',
@@ -269,6 +298,9 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }),
     },
     watch: {
+      currentDatabase(){
+        this.filterQuery = null
+      },
       loadedWithPins (loaded, oldloaded) {
         if (loaded && (!oldloaded)) {
           this.$nextTick(() => {
@@ -317,6 +349,9 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       newTable() {
         this.$root.$emit(AppEvent.createTable)
       },
+      newTableFromFile() {
+        this.$root.$emit(AppEvent.createTableFromFile)
+      },
       maybeUnselect(e) {
         if (this.selectedSidebarItem) {
           if (this.$refs.wrapper.contains(e.target)) {
@@ -339,7 +374,6 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     mounted() {
-      document.addEventListener('mousedown', this.maybeUnselect)
       const components = [this.$refs.pinned, this.$refs.tables]
       this.split = Split(components, {
         elementStyle: (_dimension, size) => ({
@@ -363,6 +397,11 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
   .table-action-wrapper{
     display: flex;
     flex-direction: row;
+  }
+  .settings-btn {
+    width: auto;
+    padding: 0;
+    box-shadow: none;
   }
   p.no-entities {
     width: 100%;

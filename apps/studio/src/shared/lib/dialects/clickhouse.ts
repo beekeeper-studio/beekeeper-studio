@@ -54,6 +54,7 @@ class ClickHouseColumnType extends ColumnType {
 }
 
 export const ClickHouseData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ClickHouseColumnType(t, false, defaultLength(t))),
   constraintActions: [],
   wrapIdentifier(value: string) {
@@ -67,6 +68,7 @@ export const ClickHouseData: DialectData = {
     return quote ? `'${result}'` : result
   },
   requireDataset: false,
+  disallowedSortColumns: ['longblob', 'mediumblob', 'tinyblob', 'blob', 'json', 'array(t)', 'map(k, v)'],
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   },
@@ -74,14 +76,32 @@ export const ClickHouseData: DialectData = {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
+  importDataType: {
+    stringType: 'String',
+    longStringType: 'String',
+    dateType: 'Date',
+    booleanType: 'Bool',
+    integerType: 'INT',
+    numberType: 'DOUBLE',
+    defaultType: 'String'
+  },
   textEditorMode: "text/x-mysql",
+  versionWarnings: [
+    {
+      minVersion: { major: 23, minor: 0, patch: 0},
+      warning: "FYI: Beekeeper Studio supports ClickHouse v23+, you may experience buggy behavior for earlier versions"
+    }
+  ],
   disabledFeatures: {
+    shell: true,
     triggers: true,
+    compositeKeys: true,
     createIndex: true,
     generatedColumns: true,
     alter: {
       multiStatement: true,
       renameSchema: true,
+      reorderColumn: true
     },
     transactions: true,
     chunkSizeStream: true,

@@ -43,7 +43,7 @@
           class="list saved-connection-list expand"
           ref="pinnedConnectionList"
           v-show="!noPins && !connFilter"
-          >
+        >
           <div class="list-group">
             <div class="list-heading">
               <div class="flex">
@@ -53,6 +53,9 @@
               </div>
               <span class="expand" />
               <div class="actions">
+                <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
+                  <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
+                </a>
                 <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
               </div>
             </div>
@@ -75,6 +78,7 @@
                 :selected-config="selectedConfig"
                 :show-duplicate="true"
                 :pinned="true"
+                :privacy-mode="privacyMode"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -103,7 +107,12 @@
                     v-if="isCloud"
                     @click.prevent="importFromLocal"
                     title="Import connections from local workspace"
-                  ><i class="material-icons">save_alt</i></a>
+                  >
+                    <i class="material-icons">save_alt</i>
+                  </a>
+                  <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
+                    <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
+                  </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
                     v-model="sort"
@@ -170,6 +179,7 @@
                   :selected-config="selectedConfig"
                   :show-duplicate="true"
                   :pinned="pinnedConnections.includes(c)"
+                  :privacy-mode="privacyMode"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
@@ -183,6 +193,7 @@
                 :selected-config="selectedConfig"
                 :show-duplicate="true"
                 :pinned="pinnedConnections.includes(c)"
+                :privacy-mode="privacyMode"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -214,6 +225,7 @@
                 :selected-config="selectedConfig"
                 :is-recent-list="true"
                 :show-duplicate="false"
+                :privacy-mode="privacyMode"
                 @edit="edit"
                 @remove="removeUsedConfig"
                 @doubleClick="connect"
@@ -229,20 +241,27 @@
 <script>
 import _ from 'lodash'
 import WorkspaceSidebar from './WorkspaceSidebar.vue'
-import { mapState, mapGetters } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
 export default {
-  components: { ConnectionListItem, SidebarLoading, ErrorAlert, SidebarFolder, SidebarSortButtons, WorkspaceSidebar },
+  components: {
+    ConnectionListItem,
+    SidebarLoading,
+    ErrorAlert,
+    SidebarFolder,
+    SidebarSortButtons,
+    WorkspaceSidebar
+  },
   props: ['selectedConfig'],
   data: () => ({
     split: null,
@@ -262,15 +281,25 @@ export default {
     },
   },
   computed: {
-    ...mapState('data/connections', {'connectionsLoading': 'loading', 'connectionsError': 'error', 'connectionFilter': 'filter'}),
-    ...mapState('data/connectionFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
+    ...mapState('data/connections', {
+      connectionsLoading: 'loading',
+      connectionsError: 'error',
+      connectionFilter: 'filter'
+    }),
+    ...mapState('data/connectionFolders', {
+      folders: 'items',
+      foldersLoading: 'loading',
+      foldersError: 'error',
+      foldersUnsupported: 'unsupported'
+    }),
+    ...mapState('settings', ['privacyMode']),
     ...mapGetters({
-      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
-      'settings': 'settings/settings',
-      'isCloud': 'isCloud',
-      'activeWorkspaces': 'credentials/activeWorkspaces',
-      'pinnedConnections': 'pinnedConnections/pinnedConnections',
-      'filteredConnections': 'data/connections/filteredConnections'
+      usedConfigs: 'data/usedconnections/orderedUsedConfigs',
+      settings: 'settings/settings',
+      isCloud: 'isCloud',
+      activeWorkspaces: 'credentials/activeWorkspaces',
+      pinnedConnections: 'pinnedConnections/pinnedConnections',
+      filteredConnections: 'data/connections/filteredConnections'
     }),
     connFilter: {
       get() {
@@ -298,14 +327,10 @@ export default {
     foldersWithConnections() {
       if (this.loading) return []
 
-      const result = this.folders.map((folder) => {
-        return {
-          folder,
-          connections: this.sortedConnections.filter((c) => c.connectionFolderId === folder.id)
-        }
-      })
-
-      return result
+      return this.folders.map((folder) => ({
+        folder,
+        connections: this.sortedConnections.filter((c) => c.connectionFolderId === folder.id)
+      }));
     },
     loading() {
       return this.connectionsLoading || this.foldersLoading
@@ -340,8 +365,7 @@ export default {
       } else {
         result = _.orderBy(this.filteredConnections, this.sort.field)
       }
-
-      if (this.sort.order == 'desc') result = result.reverse()
+      if (this.sort.order === 'desc') result = result.reverse()
       return result;
     },
   },
@@ -350,11 +374,14 @@ export default {
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
       this.$settings.get('connectionsSortOrder', 'asc')
-    ])
+    ]);
     this.sort.field = field
     this.sort.order = order
   },
   methods: {
+    ...mapActions({
+      togglePrivacyMode: 'settings/togglePrivacyMode',
+    }),
     clearFilter() {
       this.connFilter = null;
     },

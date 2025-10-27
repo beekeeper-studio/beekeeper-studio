@@ -1,3 +1,4 @@
+@import "@beekeeperstudio/ui-kit/style.css";
 @import "codemirror/lib/codemirror";
 @import "codemirror/addon/hint/show-hint";
 @import "noty/lib/noty";
@@ -6,6 +7,7 @@
 @import "codemirror/addon/merge/merge";
 @import "codemirror/addon/search/matchesonscrollbar";
 @import "vue-select/dist/vue-select";
+@import "driver.js/dist/driver.css";
 
 @import './app/normalize';
 @import './app/variables';
@@ -20,6 +22,7 @@ body.theme-system {
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/dark/theme.scss';
+    @import './themes/scssvars-to-cssprops.scss';
   }
 
   @media (prefers-color-scheme: light) {
@@ -29,15 +32,18 @@ body.theme-system {
     @import './vendor.scss';
     @import './app/_all.scss';
     @import './themes/light/theme.scss';
+    @import './themes/scssvars-to-cssprops.scss';
   }
 }
 
 body.theme-dark {
+  @import './themes/dark/variables.scss';
   @import './app/mixins';
   @import './components/all';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/dark/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }
 
 body.theme-light {
@@ -47,6 +53,7 @@ body.theme-light {
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }
 
 body.theme-solarized-dark {
@@ -56,6 +63,7 @@ body.theme-solarized-dark {
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/solarized-dark/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }
 
 
@@ -67,4 +75,5 @@ body.theme-solarized {
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/solarized-light/theme.scss';
+  @import './themes/scssvars-to-cssprops.scss';
 }

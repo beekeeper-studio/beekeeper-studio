@@ -1,7 +1,7 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
-import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -18,26 +18,34 @@ export const ConnectionTypes = [
   { name: 'Cassandra', value: 'cassandra' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
+  { name: 'DuckDB', value: 'duckdb' },
   { name: 'ClickHouse', value: 'clickhouse' },
+  { name: 'MongoDB', value: 'mongodb' },
+  { name: 'SqlAnywhere', value: 'sqlanywhere' },
+  { name: 'Trino', value: 'trino' },
+  { name: 'SurrealDB', value: 'surrealdb' },
+  { name: 'Redis', value: 'redis' }
 ]
 
+/** `value` should be recognized by codemirror */
 export const keymapTypes = [
   { name: "Default", value: "default" },
   { name: "Vim", value: "vim" }
-]
+] as const
 
+// if you update this, you may need to update `translateOperator` in the mongodb driver
 export const TableFilterSymbols = [
   { value: '=', label: 'equals' },
   { value: '!=', label: 'does not equal'},
   { value: 'like', label: 'like' },
+  { value: 'not like', label: 'not like' },
   { value: '<', label: 'less than' },
-  { label: 'less than or equal', value: '<=' },
+  { value: '<=', label: 'less than or equal' },
   { value: '>', label: 'greater than'},
-  { label: "greater than or equal", value:">=" },
-  { label: 'in', value:"in", arrayInput: true },
-  { label: "is null", value: "is", nullOnly: true },
-  { label: "is not null", value: "is not", nullOnly: true }
-
+  { value: ">=", label: "greater than or equal" },
+  { value: "in", label: 'in', arrayInput: true },
+  { value: "is", label: "is null", nullOnly: true },
+  { value: "is not", label: "is not null", nullOnly: true }
 ]
 
 export enum AzureAuthType {
@@ -49,7 +57,8 @@ export enum AzureAuthType {
 }
 
 export const IamAuthTypes = [
-  { name: 'IAM Authentication Using Credentials File', value: 'iam' }
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -63,6 +72,7 @@ export const AzureAuthTypes = [
 ];
 
 export interface RedshiftOptions {
+  awsProfile?: string
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
@@ -70,6 +80,8 @@ export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
   tokenDurationSeconds?: number;
+  isServerless?: boolean;
+  authType?: string;
 }
 
 export interface CassandraOptions {
@@ -96,6 +108,40 @@ export interface LibSQLOptions {
   syncPeriod?: number;
 }
 
+export interface SQLAnywhereOptions {
+  mode: 'server' | 'file';
+  serverName?: string;
+  databaseFile?: string;
+}
+
+export interface SurrealDBOptions {
+  authType?: SurrealAuthType;
+  protocol?: 'http' | 'https' | 'ws' | 'wss';
+  namespace?: string;
+  token?: string;
+}
+
+export enum SurrealAuthType {
+  Root,
+  Namespace,
+  Database,
+  RecordAccess,
+  Token,
+  Anonymous
+}
+
+export const SurrealAuthTypes = [
+  { name: 'Root', value: SurrealAuthType.Root },
+  { name: 'Namespace', value: SurrealAuthType.Namespace },
+  { name: 'Database', value: SurrealAuthType.Database },
+  // NOTE (@day): disabling for now, as will take a bit more work
+  // { name: 'Record Access', value: SurrealAuthType.RecordAccess },
+  { name: 'Token', value: SurrealAuthType.Token },
+  // NOTE (@day): this doesn't seem to do anything? Won't be able to access tables or query data
+  // { name: 'Anonymous', value: SurrealAuthType.Anonymous }
+];
+
+
 export enum DatabaseElement {
   TABLE = 'TABLE',
   VIEW = 'VIEW',
@@ -108,6 +154,8 @@ export interface IDbConnectionDatabase {
   database: string,
   connected: Nullable<boolean>,
   connecting: boolean,
+  // Only used for surrealdb
+  namespace: string
 }
 
 export interface IDbConnectionServerSSHConfig {
@@ -153,6 +201,8 @@ export interface IDbConnectionServerConfig {
   azureAuthOptions?: AzureAuthOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
+  sqlAnywhereOptions?: SQLAnywhereOptions
+  surrealDbOptions?: SurrealDBOptions
   runtimeExtensions?: string[]
 }
 
@@ -163,6 +213,8 @@ export interface IBasicDatabaseClient {
   listCharsets(): Promise<string[]>,
   getDefaultCharset(): Promise<string>,
   listCollations(charset: string): Promise<string[]>,
+  getCompletions(cmd: string): Promise<string[]>,
+  getShellPrompt(): Promise<string>,
 
   connect(): Promise<void>,
   disconnect(): Promise<void>,
@@ -178,6 +230,7 @@ export interface IBasicDatabaseClient {
   getTableReferences(table: string, schema?: string): Promise<string[]>,
   getTableKeys(table: string, schema?: string): Promise<TableKey[]>,
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
+  executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, options?: any): Promise<CancelableQuery>,
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
@@ -187,12 +240,15 @@ export interface IBasicDatabaseClient {
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,
   getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]>;
 
-  createDatabase(databaseName: string, charset: string, collation: string): Promise<void>,
+  createDatabase(databaseName: string, charset: string, collation: string): Promise<string>,
   createDatabaseSQL(): Promise<string>,
   getTableCreateScript(table: string, schema?: string): Promise<string>,
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,
   getMaterializedViewCreateScript(view: string, schema?: string): Promise<string[]>,
   getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>,
+  createTable(table: CreateTableSpec): Promise<void>,
+  getCollectionValidation(collection: string): Promise<any>,
+  setCollectionValidation(params: any): Promise<void>,
 
   alterTableSql(change: AlterTableSpec): Promise<string>,
   alterTable(change: AlterTableSpec): Promise<void>,
@@ -222,7 +278,7 @@ export interface IBasicDatabaseClient {
   duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void>
   duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string>
 
-  getInsertQuery(tableInsert: TableInsert): Promise<string>
+  getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
   syncDatabase(): Promise<void>
 
   importStepZero(table: TableOrView): Promise<any>
@@ -232,4 +288,7 @@ export interface IBasicDatabaseClient {
   importCommitCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
   importRollbackCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
   importFinalCommand (table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>
+
+  /** Returns a query for the given filter */
+  getQueryForFilter(filter: TableFilter): Promise<string>
 }

@@ -5,7 +5,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('StateManager')
 export default Vue.extend({
@@ -21,16 +21,16 @@ export default Vue.extend({
     database: {
       deep: true,
       handler(newDb, oldDb) {
-        const newIds = newDb.map((i) => i.id)
-        const oldIds = oldDb.map((i)=> i.id)
-        const removed = oldDb.filter((i) => !newIds.includes(i.id))
+        const newIds = new Set(newDb.map((i) => i.id))
+        const oldIds = new Set(oldDb.map((i)=> i.id))
+        const removed = oldDb.filter((i) => !newIds.has(i.id))
         log.debug("removing from search index", removed.length)
         removed.forEach((blob) => {
           this.searchIndex.removeAsync(blob.id)
         })
 
 
-        const newItems = newDb.filter((i) => !oldIds.includes(i.id))
+        const newItems = newDb.filter((i) => !oldIds.has(i.id))
         log.debug("adding to search index", newItems.length)
         this.updateDatabase(newItems)
       }

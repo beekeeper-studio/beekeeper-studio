@@ -1,7 +1,10 @@
 import _ from 'lodash'
-import { identify } from 'sql-query-identifier'
+import { identify, Options } from 'sql-query-identifier'
 import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
+import { format } from 'sql-formatter'
+import { Dialect, FormatterDialect } from '@/shared/lib/dialects/models'
+import { ParamItems } from 'sql-formatter/lib/src/formatter/Params'
 
 export function splitQueries(queryText: string, dialect) {
   if(_.isEmpty(queryText.trim())) {
@@ -11,9 +14,38 @@ export function splitQueries(queryText: string, dialect) {
   return result
 }
 
+// can only have positional params OR non-positional
+export function canDeparameterize(params: string[]) {
+  return !(params.includes('?') && params.some((val) => val != '?'));
+}
+
+export function convertParamsForReplacement(placeholders: string[], values: string[]): ParamItems | string[] {
+  if (placeholders.includes('?')) {
+    return values;
+  } else {
+    // TODO (@day): this might not work with quoted params
+    // this will need to be more complex if we allow truly custom params
+    return placeholders.reduce((obj, val, index) => {
+      obj[val.slice(1)] = values[index];
+      return obj;
+    }, {});
+  }
+}
+
+export function deparameterizeQuery(queryText: string, dialect: Dialect, params: ParamItems | string[], paramTypes: Options["paramTypes"]) {
+  // for if we want custom params in the future
+  // paramTypes.custom = paramTypes.custom.map((reg: string) => ({ regex: reg }));
+  const result = format(queryText, {
+    language: FormatterDialect(dialect),
+    paramTypes,
+    params
+  });
+  return result;
+}
+
 export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   const tables = rawTables.filter((table) => {
-    return (table.entityType === 'table' && allFilters.showTables && 
+    return (table.entityType === 'table' && allFilters.showTables &&
       ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
       (table.entityType === 'view' && allFilters.showViews) ||
       (table.entityType === 'materialized-view' && allFilters.showViews) ||
@@ -53,3 +85,24 @@ export function removeQueryQuotes(possibleQuery: string, dialect: any): string {
 
   return possibleQuery;
 }
+
+export function isTextSelected(
+  textStart: number,
+  textEnd: number,
+  selectionStart: number,
+  selectionEnd: number
+) {
+  const cursorMin = Math.min(selectionStart, selectionEnd);
+  const cursorMax = Math.max(selectionStart, selectionEnd);
+  const queryMin = Math.min(textStart, textEnd);
+  const queryMax = Math.max(textStart, textEnd);
+  if (
+    (cursorMin >= queryMin && cursorMin <= queryMax) ||
+    (cursorMax > queryMin && cursorMax <= queryMax) ||
+    (cursorMin <= queryMin && cursorMax >= queryMax)
+  ) {
+    return true;
+  }
+  return false;
+}
+

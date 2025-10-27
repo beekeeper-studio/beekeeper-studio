@@ -1,9 +1,17 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
-import logRaw from 'electron-log'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate } from '../models'
+import logRaw from '@bksLogger'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import {fromIni} from "@aws-sdk/credential-providers";
+import {Signer} from "@aws-sdk/rds-signer";
+import globals from "@/common/globals";
+import {
+  AWSCredentials
+} from "@/lib/db/authentication/amazon-redshift";
+import {RedshiftOptions} from "@/lib/db/types";
+import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
 const log = logRaw.scope('db/util')
 
@@ -105,6 +113,8 @@ export function buildFilterString(filters: TableFilter[], columns = []) {
     })
     filterString = "WHERE " + joinFilters(allFilters, filters)
 
+    log.info('FILTER: ', filterString)
+
     filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
       return _.isArray(item.value) ? item.value : [item.value]
     })
@@ -162,7 +172,7 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
     ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
     ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
     `
-    return {query: sql, countQuery: countSQL, params: filterParams}
+  return {query: sql, countQuery: countSQL, params: filterParams}
 }
 
 export async function executeSelectTop(queries, conn, executor) {
@@ -179,8 +189,9 @@ export async function genericSelectTop(conn, table, offset, limit, orderBy, filt
   return await executeSelectTop(queries, conn, executor)
 }
 
-export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitConversionFunc: any = _.toNumber) {
+export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitConversionFunc = _.toNumber, runAsUpsert = false, primaryKeys = [] as string[], createUpsertFunc = null }: BuildInsertOptions = {}) {
   const data = _.cloneDeep(insert.data)
+  const canRunAsUpsert = _.intersection(Object.keys(data[0]), primaryKeys).length === primaryKeys.length && runAsUpsert
   data.forEach((item) => {
     const insertColumns = Object.keys(item)
     insertColumns.forEach((ic) => {
@@ -194,7 +205,6 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
       } else if (matching && matching.dataType && matching.dataType.startsWith('bit') && _.isBoolean(item[ic])) {
         item[ic] = item[ic] ? 1 : 0;
       }
-
       // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
       if (ic.includes('?')) {
         const newIc = ic.replaceAll('?', '\\?');
@@ -204,20 +214,33 @@ export function buildInsertQuery(knex, insert: TableInsert, columns = [], bitCon
     })
 
   })
+
   const table = insert.dataset ? `${insert.dataset}.${insert.table}` : insert.table;
   const builder = knex(table);
+
   if (insert.schema) {
     builder.withSchema(insert.schema)
   }
-  const query = builder
+
+  if (canRunAsUpsert && typeof(createUpsertFunc) === 'function'){
+    return createUpsertFunc({ schema: insert.schema, name: insert.table, entityType: 'table' }, data, primaryKeys)
+  } else if (canRunAsUpsert) {
+    // https://knexjs.org/guide/query-builder.html#onconflict
+    return builder
+      .insert(data)
+      .onConflict(primaryKeys)
+      .merge()
+      .toQuery()
+  }
+
+  return builder
     .insert(data)
     .toQuery()
-  return query
 }
 
-export function buildInsertQueries(knex, inserts) {
+export function buildInsertQueries(knex, inserts, { runAsUpsert = false, primaryKeys = [], createUpsertFunc = null } = {}) {
   if (!inserts) return []
-  return inserts.map(insert => buildInsertQuery(knex, insert))
+  return inserts.map(insert => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }))
 }
 
 export function buildUpdateQueries(knex, updates: TableUpdate[]) {
@@ -265,6 +288,21 @@ export function buildSelectQueriesFromUpdates(knex, updates: TableUpdate[]) {
   })
 }
 
+interface Releasable {
+  release: () => Promise<any>
+}
+
+export async function withReleasable<T>(item: Releasable, func: (x: Releasable) => Promise<T>) {
+  try {
+    return await func(item)
+  } finally {
+    if (item) {
+      await item.release()
+    }
+  }
+}
+
+
 export async function withClosable<T>(item, func): Promise<T> {
   try {
     return await func(item)
@@ -275,7 +313,6 @@ export async function withClosable<T>(item, func): Promise<T> {
   }
 
 }
-
 
 export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   if (!deletes) return []
@@ -302,4 +339,85 @@ export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], rea
 
 export const errorMessages = {
   readOnly: 'Write action(s) not allowed in Read-Only Mode.'
+}
+
+export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): Promise<AWSCredentials> {
+  if (redshiftOptions.accessKeyId && redshiftOptions.secretAccessKey) {
+    return {
+      accessKeyId: redshiftOptions.accessKeyId,
+      secretAccessKey: redshiftOptions.secretAccessKey,
+    };
+  }
+
+  // Fallback to AWS profile-based credentials
+  const provider = fromIni({
+    profile: redshiftOptions.awsProfile || "default",
+  });
+  return provider();
+}
+
+export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
+  const {awsProfile, accessKeyId, secretAccessKey} = redshiftOptions
+  let {awsRegion: region} = redshiftOptions
+
+  let credentials: {
+    profile?: string,
+    accessKeyId?: string,
+    secretAccessKey?: string,
+  } = {
+    profile: awsProfile || "default"
+  }
+
+  if (!region) {
+    const { configFile } = await loadSharedConfigFiles();
+    region = configFile[awsProfile || "default"]?.region;
+    if (!region) {
+      throw new Error(`Region not found in profile "${awsProfile}" and no region explicitly provided.`);
+    }
+  }
+
+  if(accessKeyId && secretAccessKey) {
+    credentials = {
+      profile: awsProfile || "default",
+      accessKeyId,
+      secretAccessKey
+    }
+  }
+
+  const nodeProviderChainCredentials = fromIni(credentials);
+  const signer = new Signer({
+    credentials: nodeProviderChainCredentials,
+    hostname,
+    region,
+    port,
+    username,
+  });
+  return  await signer.getAuthToken();
+}
+
+let resolvedPw: string | undefined;
+let tokenExpiryTime: number | null = null;
+let redshiftOptionsCheck: RedshiftOptions | null = null
+
+export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, server: any, port: number): Promise<string> {
+  if(!redshiftOptions?.iamAuthenticationEnabled){
+    return null
+  }
+
+  const now = Date.now();
+
+  if (redshiftOptionsCheck != redshiftOptions || (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime)) { // Refresh 2 minutes before expiry
+    redshiftOptionsCheck = redshiftOptions
+    log.info("Refreshing IAM token...");
+    resolvedPw = await getIAMPassword(
+      redshiftOptions,
+      server.config.host,
+      server.config.port || port,
+      server.config.user
+    );
+
+    tokenExpiryTime = now + globals.iamExpiryTime; // Tokens last 15 minutes
+  }
+
+  return resolvedPw;
 }

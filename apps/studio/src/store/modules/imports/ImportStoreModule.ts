@@ -3,7 +3,7 @@ import { Module } from 'vuex'
 import { TableOrView } from '../../../lib/db/models'
 
 interface ImportOptions {
-  fileName: string
+  fileName: string | null
   columnDelimeter: string | null
   quoteCharacter: string | null
   escapeCharacter: string | null
@@ -13,9 +13,11 @@ interface ImportOptions {
   truncateTable: boolean
   useHeaders: boolean
   fileType: string
-  table: TableOrView
+  table: TableOrView | null
   importMap: ImportMap[] | null
   sheet: string | null
+  runAsUpsert: boolean
+  createNewTable: boolean
 }
 
 interface ImportMap {
@@ -23,7 +25,7 @@ interface ImportMap {
   tableColumn: string
 }
 
-interface ImportTable{
+interface ImportTable {
   table: string
   importOptions: ImportOptions
 }

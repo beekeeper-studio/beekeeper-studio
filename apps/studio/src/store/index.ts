@@ -10,7 +10,7 @@ import { CoreTab, EntityFilter } from './models'
 import { entityFilter } from '../lib/db/sql_tools'
 import { BeekeeperPlugin } from '../plugins/BeekeeperPlugin'
 
-import RawLog from 'electron-log/renderer'
+import RawLog from '@bksLogger'
 import { Dialect, DialectTitles, dialectFor } from '@shared/lib/dialects/models'
 import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
@@ -33,7 +33,12 @@ import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
-import { ConnectionTypes } from '@/lib/db/types'
+import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
+import { SidebarModule } from './modules/SidebarModule'
+import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
+import { PopupMenuModule } from './modules/PopupMenuModule'
+import { WebPluginManagerStatus } from '@/services/plugin'
+import { MenuBarModule } from './modules/MenuBarModule'
 
 
 const log = RawLog.scope('store/index')
@@ -70,9 +75,13 @@ export interface State {
   defaultSchema: string,
   versionString: string,
   connError: string
-  expandFKDetailsByDefault: boolean
-  openDetailView: boolean
-  tableTableSplitSizes: number[]
+  expandFKDetailsByDefault: boolean,
+
+  // SurrealDB only
+  namespace: Nullable<string>,
+  namespaceList: string[],
+
+  pluginManagerStatus: WebPluginManagerStatus,
 }
 
 Vue.use(Vuex)
@@ -92,7 +101,10 @@ const store = new Vuex.Store<State>({
     pinnedConnections: PinConnectionModule,
     multiTableExports: MultiTableExportStoreModule,
     imports: ImportStoreModule,
-    backups: BackupModule
+    backups: BackupModule,
+    sidebar: SidebarModule,
+    popupMenu: PopupMenuModule,
+    menuBar: MenuBarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -126,8 +138,9 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
-    openDetailView: SmartLocalStorage.getBool('openDetailView', true),
-    tableTableSplitSizes: SmartLocalStorage.getJSON('tableTableSplitSizes', globals.defaultTableTableSplitSizes),
+    namespace: null,
+    namespaceList: [],
+    pluginManagerStatus: "initializing",
   },
 
   getters: {
@@ -221,7 +234,7 @@ const store = new Vuex.Store<State>({
       return getters.schemas.length > 1
     },
     connectionColor(state) {
-      return state.usedConfig ? state.usedConfig.labelColor : 'default'
+      return state.usedConfig?.labelColor ?? 'default'
     },
     schemas(state) {
       if (state.tables.find((t) => !!t.schema)) {
@@ -248,9 +261,14 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
-    openDetailView(state) {
-      return state.openDetailView
+    aiShellHintShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
     },
+    aiShellAvailable(_state, getters) {
+      return getters["tabs/newTabDropdownItems"].some(
+        ({ config }) => config.pluginId === "bks-ai-shell"
+      );
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -292,6 +310,7 @@ const store = new Vuex.Store<State>({
     newConnection(state, config: Nullable<IConnection>) {
       state.usedConfig = config
       state.database = config?.defaultDatabase
+      state.namespace = config?.surrealDbOptions?.namespace;
     },
     // this shouldn't be used at all
     clearConnection(state) {
@@ -301,6 +320,8 @@ const store = new Vuex.Store<State>({
       state.server = null
       state.database = null
       state.databaseList = []
+      state.namespace = null
+      state.namespaceList = []
       state.tables = []
       state.routines = []
       state.entityFilter = {
@@ -311,12 +332,17 @@ const store = new Vuex.Store<State>({
         showPartitions: false
       }
     },
-    updateConnection(state, {database}) {
-      // state.connection = connection
+    database(state, database: string) {
       state.database = database
     },
     databaseList(state, dbs: string[]) {
       state.databaseList = dbs
+    },
+    namespaceList(state, nss: string[]) {
+      state.namespaceList = nss;
+    },
+    namespace(state, namespace: string) {
+      state.namespace = namespace;
     },
     unloadTables(state) {
       state.tables = []
@@ -385,11 +411,8 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
-    openDetailView(state, value: boolean) {
-      state.openDetailView = value
-    },
-    tableTableSplitSizes(state, value: number[]) {
-      state.tableTableSplitSizes = value
+    webPluginManagerStatus(state, status: WebPluginManagerStatus) {
+      state.pluginManagerStatus = status
     },
   },
   actions: {
@@ -402,9 +425,9 @@ const store = new Vuex.Store<State>({
       context.commit('setUsername', name)
     },
 
-    async openUrl(context, url: string) {
+    async openUrl(context, { url, auth }: { url: string, auth?: { input: string; mode: 'pin'; }}) {
       const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
-      await context.dispatch('connect', conn)
+      await context.dispatch('connect', { config: conn, auth })
     },
 
     updateWindowTitle(context) {
@@ -412,12 +435,12 @@ const store = new Vuex.Store<State>({
       let title = config
         ? `${BeekeeperPlugin.buildConnectionName(config)} - Beekeeper Studio`
         : 'Beekeeper Studio'
-      if (context.getters.isUltimate) {
-        title += ' Ultimate Edition'
-      }
       if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
         title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
+      }
+      if (context.getters.isCommunity) {
+        title += ' - Free Version'
       }
       context.commit('updateWindowTitle', title)
       window.main.setWindowTitle(title);
@@ -429,9 +452,9 @@ const store = new Vuex.Store<State>({
       if(isConnected) context.dispatch('updateWindowTitle', config)
     },
 
-    async connect(context, config: IConnection) {
+    async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
       if (context.state.username) {
-        await Vue.prototype.$util.send('conn/create', { config, osUser: context.state.username })
+        await Vue.prototype.$util.send('conn/create', { config, auth, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
@@ -441,21 +464,43 @@ const store = new Vuex.Store<State>({
           context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
         }
 
+        window.main.enableConnectionMenuItems();
+
         context.commit('defaultSchema', defaultSchema);
         context.commit('connectionType', config.connectionType);
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
+        config = await context.dispatch('data/usedconnections/recordUsed', config)
         context.commit('newConnection', config)
 
+        if (context.state.usedConfig.connectionType === 'surrealdb' &&
+          context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
+          await context.dispatch('updateNamespaceList');
+        }
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        await context.dispatch('data/usedconnections/recordUsed', config)
         context.dispatch('updateWindowTitle', config)
 
+        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
+
+        await context.dispatch('checkVersion');
       } else {
         throw "No username provided"
+      }
+    },
+    async checkVersion(context) {
+      const data = context.getters['dialectData'];
+      if (data?.versionWarnings && data?.versionWarnings.length > 0) {
+        const version = context.state['versionString'];
+        const parsed = parseVersion(version);
+
+        for (const warning of data.versionWarnings) {
+          if (!isVersionLessThanOrEqual(warning.minVersion, parsed)) {
+            Vue.prototype.$noty.warning(warning.warning, { timeout: 5000 })
+          }
+        }
       }
     },
     async reconnect(context) {
@@ -464,8 +509,12 @@ const store = new Vuex.Store<State>({
       }
     },
     async disconnect(context) {
-      const server = context.state.server
-      server?.disconnect()
+      if (context.state.connection) {
+        await context.state.connection.disconnect();
+      }
+
+      window.main.disableConnectionMenuItems();
+
       context.commit('clearConnection')
       context.commit('newConnection', null)
       context.dispatch('updateWindowTitle')
@@ -476,11 +525,29 @@ const store = new Vuex.Store<State>({
     },
     async changeDatabase(context, newDatabase: string) {
       log.info("Pool changing database to", newDatabase)
-      await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase });
-      context.commit('updateConnection', {database: newDatabase})
+
+      let databaseForServer = newDatabase;
+      if (context.state.connectionType === 'surrealdb') {
+        databaseForServer = `${context.state.namespace}::${newDatabase || ''}`;
+      }
+
+      await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase: databaseForServer });
+      context.commit('database', newDatabase)
       await context.dispatch('updateTables')
       await context.dispatch('updateDatabaseList')
       await context.dispatch('updateRoutines')
+    },
+    async changeNamespace(context, newNamespace: string) {
+      if (newNamespace === context.state.namespace) return;
+      log.info("Pool changing namespace to ", newNamespace);
+
+      const dbs = await context.state.connection.listDatabases({ namespace: newNamespace });
+      log.info("DatabaseList:::", dbs)
+      context.commit('databaseList', dbs);
+      context.commit('namespace', newNamespace);
+      context.commit('database', null);
+      context.commit('tables', []);
+      context.commit('routines', []);
     },
 
     async updateTableColumns(context, table: TableOrView) {
@@ -505,7 +572,14 @@ const store = new Vuex.Store<State>({
     },
     async updateDatabaseList(context) {
       const databaseList = await context.state.connection.listDatabases();
+      log.info("databaseList: ", databaseList)
       context.commit('databaseList', databaseList)
+    },
+    async updateNamespaceList(context) {
+      // Just reuse listSchemas cause we don't use it and it's kinda comparable, may be a not great idea
+      const namespaceList = await context.state.connection.listSchemas();
+      log.info("namespaceList: ", namespaceList);
+      context.commit("namespaceList", namespaceList);
     },
     async updateTables(context) {
       // FIXME: We should only load tables for the active/default schema
@@ -604,20 +678,14 @@ const store = new Vuex.Store<State>({
       context.commit(flag, value)
       return value
     },
-    toggleOpenDetailView(context, value?: boolean) {
-      if (typeof value === 'undefined') {
-        value = !context.state.openDetailView
-      }
-      SmartLocalStorage.setBool('openDetailView', value)
-      context.commit('openDetailView', value)
-      return value
-    },
-    setTableTableSplitSizes(context, value: number[]) {
-      SmartLocalStorage.addItem('tableTableSplitSizes', value)
-      context.commit('tableTableSplitSizes', value)
-    },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    setAiShellHintShown(context) {
+      context.dispatch("settings/save", {
+        key: "tabDropdownAIShellHintShown",
+        value: new Date(),
+      });
     },
   },
   plugins: []

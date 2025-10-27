@@ -10,6 +10,7 @@
 </template>
 
 <script lang="ts">
+import "codemirror/addon/display/autorefresh";
 import "codemirror/addon/comment/comment";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/search/search";
@@ -39,6 +40,17 @@ import {
   applyConfig,
   Register,
 } from "@/lib/editor/vim";
+import { AppEvent } from "@/common/AppEvent";
+import { keymapTypes } from "@/lib/db/types"
+import { EditorMarker, LineGutter } from "@/lib/editor/utils";
+import { TextEditorPlugin } from "@/lib/editor/plugins/TextEditorPlugin";
+import rawLog from '@bksLogger'
+
+interface InitializeOptions {
+  userKeymap?: typeof keymapTypes[number]['value']
+}
+
+const log = rawLog.scope('TextEditor')
 
 export default {
   props: [
@@ -59,19 +71,16 @@ export default {
     "selection",
     "cursor",
     "initialized",
-    // Use forcedValue if you want to set the value programmatically and
-    // honestly, I forgot why do we need this.
-    "forcedValue",
     "plugins",
     "autoFocus",
     "lineNumbers",
     "foldGutter",
-    "foldWithoutLineNumbers",
     "removeJsonRootBrackets",
-    "forceInitizalize",
+    "forceInitialize",
     "bookmarks",
     "foldAll",
     "unfoldAll",
+    "lineGutters",
   ],
   data() {
     return {
@@ -79,19 +88,15 @@ export default {
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
+      activeLineGutters: [],
       wasEditorFocused: false,
+      firstInitialization: true,
+      initializedPlugins: [],
     };
   },
   computed: {
     keymapTypes() {
       return this.$config.defaults.keymapTypes;
-    },
-    userKeymap() {
-      const settings = this.$store.state.settings?.settings;
-      const value = settings?.keymap?.value;
-      return value && this.keymapTypes.map((k) => k.value).includes(value)
-        ? value
-        : "default";
     },
     hasSelectedText() {
       return this.editorInitialized ? !!this.editor.getSelection() : false;
@@ -104,28 +109,30 @@ export default {
     },
     valueAndStatus() {
       return {
-        value: this.forcedValue,
+        value: this.value,
         status: this.editor != null
       }
-    }
+    },
+    rootBindings() {
+      return [
+        { event: AppEvent.switchUserKeymap, handler: this.handleSwitchUserKeymap },
+      ]
+    },
   },
   watch: {
     valueAndStatus() {
       const { value, status } = this.valueAndStatus;
       if (!status || !this.editor) return;
+      if (this.editor.getValue() === value) return; // Only setValue when necessary, as it can reset the cursor position, cause infinite loops, and whatnot.
       this.foundRootFold = false;
       const scrollInfo = this.editor.getScrollInfo();
       this.editor.setValue(value);
       this.editor.scrollTo(scrollInfo.left, scrollInfo.top);
     },
-    forceInitizalize() {
-      this.initialize();
-    },
-    userKeymap() {
-      this.initialize();
-    },
-    vimConfig() {
-      this.initialize();
+    forceInitialize() {
+      this.initialize({
+        userKeymap: this.$store.getters['settings/userKeymap'],
+      });
     },
     mode() {
       this.editor?.setOption("mode", this.mode);
@@ -177,11 +184,20 @@ export default {
     bookmarks() {
       this.initializeBookmarks();
     },
+    lineGutters() {
+      this.initializeLineGutters();
+    },
     foldAll() {
       CodeMirror.commands.foldAll(this.editor)
     },
     unfoldAll() {
       CodeMirror.commands.unfoldAll(this.editor)
+    },
+    plugins() {
+      this.destroyPlugins();
+      if (this.editor) {
+        this.initializePlugins(this.editor);
+      }
     },
   },
   methods: {
@@ -197,10 +213,11 @@ export default {
         this.wasEditorFocused = true;
       }
     },
-    async initialize() {
+    async initialize(options: InitializeOptions = {}) {
       this.destroyEditor();
 
       const cm = CodeMirror.fromTextArea(this.$refs.editor, {
+        autoRefresh: true,
         lineNumbers: this.lineNumbers ?? true,
         tabSize: 2,
         theme: "monokai",
@@ -211,21 +228,16 @@ export default {
           [this.cmCtrlOrCmd("R")]: "replace",
           [this.cmCtrlOrCmd("Shift-R")]: "replaceAll",
         },
-        // @ts-expect-error not fully typed
         options: {
           closeOnBlur: false,
         },
         mode: this.mode,
         hint: this.hint,
         hintOptions: this.hintOptions,
-        keyMap: this.userKeymap,
+        keyMap: options.userKeymap,
         getColumns: this.columnsGetter,
         ...(this.foldGutter && {
           gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          foldGutter: true,
-        }),
-        ...(this.foldWithoutLineNumbers && {
-          // gutters: ["CodeMirror-foldgutter"],
           foldGutter: true,
         }),
         // Remove JSON root key from folding
@@ -245,10 +257,6 @@ export default {
       });
 
       const classNames = ["text-editor"];
-
-      if (this.foldWithoutLineNumbers) {
-        classNames.push("fold-without-line-numbers");
-      }
 
       if (this.removeJsonRootBrackets) {
         classNames.push("remove-json-root-brackets");
@@ -279,7 +287,7 @@ export default {
         cm.setOption("lineWrapping", this.lineWrapping);
       }
 
-      cm.on("change", (cm) => {
+      cm.on("change", async (cm) => {
         this.$emit("input", cm.getValue());
       });
 
@@ -312,13 +320,17 @@ export default {
           "update:cursorIndex",
           cm.getDoc().indexFromPos(cm.getCursor())
         );
+        this.$emit(
+          "update:cursorIndexAnchor",
+          cm.getDoc().indexFromPos(cm.getCursor('anchor'))
+        );
       });
 
       const cmEl = this.$refs.editor.parentNode.querySelector(".CodeMirror");
 
       cmEl.addEventListener("contextmenu", this.showContextMenu);
 
-      if (this.userKeymap === "vim") {
+      if (options.userKeymap === "vim") {
         const codeMirrorVimInstance = cmEl.CodeMirror.constructor.Vim;
 
         if (!codeMirrorVimInstance) {
@@ -341,22 +353,24 @@ export default {
         }
       }
 
-      if (this.plugins) {
-        this.plugins.forEach((plugin: (cm: CodeMirror.Editor) => void) => {
-          plugin(cm);
-        });
+      this.initializePlugins(cm)
+
+      if (this.firstInitialization && this.focus) {
+        cm.focus();
       }
 
       this.editor = cm;
+      this.firstInitialization = false;
 
       this.$nextTick(() => {
         this.initializeMarkers();
         this.initializeBookmarks();
+        this.initializeLineGutters();
         this.$emit("update:initialized", true);
       })
     },
     initializeMarkers() {
-      const markers = this.markers || [];
+      const markers: EditorMarker[] = this.markers || [];
       if (!this.editor) return;
 
       // Cleanup existing bookmarks
@@ -367,7 +381,8 @@ export default {
         let markInstance: TextMarker;
         if (marker.type === "error") {
           markInstance = this.editor.markText(marker.from, marker.to, {
-            className: "error",
+            className: "bks-error-marker",
+            attributes: { title: marker.message },
           });
         } else if (marker.type === "highlight") {
           markInstance = this.editor.markText(marker.from, marker.to, {
@@ -414,12 +429,53 @@ export default {
         this.bookmarkInstances.push(mark);
       }
     },
+    initializeLineGutters() {
+      const lineGutters = this.lineGutters || [];
+      if (!this.editor) return;
+
+      // Cleanup existing line gutters
+      this.activeLineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.removeLineClass(lineGutter.line, "gutter", "changed");
+      })
+      this.activeLineGutters = []
+
+      lineGutters.forEach((lineGutter: LineGutter) => {
+        this.editor.addLineClass(lineGutter.line, "gutter", "changed");
+        this.activeLineGutters.push(lineGutter)
+      })
+    },
+    initializePlugins(editor: CodeMirror.Editor) {
+      this.plugins?.forEach((plugin: ((editor: CodeMirror.Editor) => Function) | TextEditorPlugin) => {
+        try {
+          if (typeof plugin === "function") {
+            const destroy = plugin(editor);
+            this.initializedPlugins.push({ destroy });
+          } else {
+            plugin.initialize(editor);
+            this.initializedPlugins.push(plugin);
+          }
+        } catch (e) {
+          log.error("Error initializing plugin", e)
+        }
+      });
+    },
     destroyEditor() {
+      this.destroyPlugins();
       if (this.editor) {
         this.editor
           .getWrapperElement()
           .parentNode.removeChild(this.editor.getWrapperElement());
       }
+    },
+    destroyPlugins() {
+      this.initializedPlugins.forEach((plugin: TextEditorPlugin) => {
+        try {
+          plugin.destroy()
+        } catch (e) {
+          log.error("Error destroying plugin", e)
+        }
+      })
+      this.initializedPlugins = []
     },
     showContextMenu(event) {
       const hasSelectedText = this.editor.getSelection();
@@ -521,9 +577,18 @@ export default {
         menu.options = menu.options.filter((option) => !option.write);
       }
 
-      const customOptions = this.contextMenuOptions
-        ? this.contextMenuOptions(event, menu.options)
-        : undefined;
+      let customOptions: typeof menu.options | false | undefined;
+
+      for (const plugin of this.initializedPlugins) {
+        if (plugin.beforeOpeningContextMenu) {
+          customOptions = plugin.beforeOpeningContextMenu(event, menu.options)
+        }
+      }
+
+      // FIXME remove this in favor of plugin
+      if (this.contextMenuOptions) {
+        customOptions = this.contextMenuOptions(event, customOptions || menu.options);
+      }
 
       if (customOptions === false) {
         return;
@@ -538,19 +603,23 @@ export default {
         });
       }
     },
+    handleSwitchUserKeymap(value) {
+      this.initialize({ userKeymap: value });
+    },
   },
-  mounted() {
-    this.initialize();
-    if (this.focus) {
-      this.editor.focus();
-    }
+  async mounted() {
+    await this.initialize({
+      userKeymap: this.$store.getters['settings/userKeymap'],
+    });
     window.addEventListener('focus', this.focusEditor);
     window.addEventListener('blur', this.handleBlur);
+    this.registerHandlers(this.rootBindings);
   },
   beforeDestroy() {
     window.removeEventListener('focus', this.focusEditor);
     window.removeEventListener('blur', this.handleBlur);
     this.destroyEditor();
+    this.unregisterHandlers(this.rootBindings);
   },
 };
 </script>

@@ -1,0 +1,101 @@
+// Original file source copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
+
+@use "sass:color";
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.BksContextMenu-list {
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  display: none;
+  list-style: none;
+  position: absolute;
+  z-index: 1000000;
+  background-color: color.adjust($theme-bg, $lightness: 5%);
+  color: $text;
+  padding: ($gutter-h * 0.75) 0;
+  border-radius: 6px;
+  box-shadow: var(--elevation-5);
+  font-size: 0.85rem;
+  text-transform: none;
+  font-weight: 400;
+  min-width: 150px;
+  border: 0;
+  @include card-shadow-hover;
+
+  &.BksContextMenu-active {
+    display: block;
+  }
+
+  &>li:first-of-type {
+    margin-top: 0;
+  }
+
+  &>li:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.BksContextMenu-item {
+  display: flex;
+  padding: 0 $gutter-w;
+  font-size: 0.9rem;
+  min-height: 28px;
+  color: $text-dark;
+  cursor: pointer;
+  align-items: center;
+
+  &:hover {
+    background-color: rgba($theme-base, 0.05);
+  }
+
+  &.BksContextMenu-item-disabled {
+    pointer-events: none;
+    color: color.adjust($text-dark, $lightness: -25%);
+    background-color: color.adjust(rgba($theme-base, 0.05), $lightness: -25%);
+  }
+}
+
+.BksContextMenu-item-label {
+  width: 100%;
+}
+
+.BksContextMenu-item-shortcut {
+  font-size: 0.9rem;
+  line-height: 1;
+  color: rgba($text-dark, 0.5);
+  margin-left: 0.4rem;
+}
+
+.BksContextMenu-item-icon-container i {
+  height: 24px;
+  line-height: 24px;
+  width: 24px;
+  opacity: 0.6;
+}
+
+.BksContextMenu-item-submenu-icon i {
+  width: 14px;
+}
+
+.BksContextMenu-checkbox-icon {
+  margin-left: 0;
+}
+
+.BksContextMenu-item-divider {
+  min-height: 0;
+  width: 100%;
+  height: 1px;
+  margin: ($gutter-h * 0.75) 0;
+  box-sizing: border-box;
+  background-color: transparent;
+  border: 0;
+  border-top: 1px solid $border-color;
+  pointer-events: none;
+
+  &:last-child {
+    display: none;
+  }
+}

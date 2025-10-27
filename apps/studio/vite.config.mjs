@@ -16,14 +16,23 @@ export default defineConfig({
   plugins: [vue(), commonjs()],
   base: '/', // Set the base URL for the app
   optimizeDeps: {
-    exclude: []
-  },
+    exclude: [
+      // Exclude native modules from optimization
+      // Without this, the build fails :(
+      'cpu-features',
+      'ssh2',
+      'kerberos',
+      'better-sqlite3',
+      'oracledb'
+    ]
+},
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@commercial": path.resolve(__dirname, "./src-commercial"),
       "@shared": path.resolve(__dirname, "./src/shared"),
       "assets": path.resolve(__dirname, './src/assets'),
+      "@bksLogger": path.resolve(__dirname, './src/lib/log/rendererLogger')
     },
   },
   build: {

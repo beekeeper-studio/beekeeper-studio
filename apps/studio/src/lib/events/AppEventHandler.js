@@ -1,5 +1,5 @@
 import { AppEvent } from "../../common/AppEvent"
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 
 const log = rawLog.scope("AppEventHandler")
@@ -18,7 +18,9 @@ export default class {
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
-    this.forward(AppEvent.toggleSidebar)
+    this.forward(AppEvent.newCustomTab)
+    this.forward(AppEvent.togglePrimarySidebar)
+    this.forward(AppEvent.toggleSecondarySidebar)
     this.forward(AppEvent.quickSearch)
     this.forward(AppEvent.enterLicense)
     this.forward(AppEvent.backupDatabase);
@@ -26,12 +28,15 @@ export default class {
     this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
+    this.forward(AppEvent.updatePin)
+    this.forward(AppEvent.settingsChanged)
+    this.forward(AppEvent.openPluginManager)
   }
 
   forward(event) {
-    const emit = () => {
+    const emit = (_e, ...args) => {
       log.debug("Received from electron, forwarding to app", event)
-      this.vueApp.$emit(event)
+      this.vueApp.$emit(event, ...args)
     }
     window.main.on(event, emit.bind(this))
   }
@@ -41,7 +46,7 @@ export default class {
   }
 
   async addBeekeeper() {
-    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: {where: { defaultDatabase: platformInfo.appDbPath }}});
+    const existing = await this.vueApp.$util.send('appdb/saved/findOneBy', { options: { defaultDatabase: platformInfo.appDbPath }});
     if (!existing) {
       const nu = {};
       nu.connectionType = 'sqlite'

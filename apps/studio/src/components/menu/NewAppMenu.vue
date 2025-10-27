@@ -5,6 +5,9 @@
     v-hotkey="allHotkeys"
     :class="{active: menuActive}"
     ref="nav"
+    tabindex="-1"
+    role="menubar"
+    @keydown="maybeCaptureKeydown"
   >
     <!-- TOP MENU, eg File, Edit -->
     <ul class="menu-bar">
@@ -25,7 +28,7 @@
         <ul>
           <li
             class="menu-item"
-            :class="{'has-children': !!item.submenu, ...hoverClass(item)}"
+            :class="{'has-children': !!item.submenu, ...hoverClass(item), 'disabled-app-menu': isMenuItemDisabled(item.id)}"
             v-for="(item, idx) in (menu.submenu || [])"
             :key="item.id || idx"
           >
@@ -36,8 +39,8 @@
               :class="hoverClass(item)"
             >
               <span class="label">
-                <span 
-                  class="material-icons" 
+                <span
+                  class="material-icons"
                   v-if="item.checked"
                 >done</span>
                 <span>{{ item.label }}</span>
@@ -78,7 +81,7 @@
 import _ from 'lodash'
 import ClientMenuActionHandler from '../../lib/menu/ClientMenuActionHandler'
 import MenuBuilder from '../../common/menus/MenuBuilder'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 
 export default {
@@ -88,7 +91,6 @@ export default {
     return {
       menuBuilder: null,
       actionHandler: new ClientMenuActionHandler(),
-      menus: [],
       menuActive: false,
       selected: null,
       hovered: null,
@@ -100,7 +102,7 @@ export default {
         "ArrowRight": this.moveRight,
         "Escape": this.closeMenu,
         "Enter": this.clickHovered
-      }
+      },
     }
   },
   computed: {
@@ -120,16 +122,10 @@ export default {
     menuElements() {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
     },
-    ...mapGetters({'settings': 'settings/settings'})
+    ...mapGetters('menuBar', ['menus', 'connectionMenuItems']),
+    ...mapState(['connected'])
   },
   watch: {
-    settings: {
-      deep: true,
-      handler() {
-        this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
-        this.menus = this.menuBuilder.buildTemplate()
-      }
-    },
     menuActive() {
       if (!this.menuActive) {
         this.selected = null
@@ -142,6 +138,9 @@ export default {
     }
   },
   methods: {
+    isMenuItemDisabled(itemId){
+      return this.connectionMenuItems.includes(itemId) && !this.connected;
+    },
     getNext(array, item) {
       const selectedIndex = item ? _.indexOf(array, item) : -1
       const newIndex = selectedIndex >= array.length -1 ? 0 : selectedIndex + 1
@@ -232,6 +231,7 @@ export default {
     setActive(item) {
       this.menuActive = !this.menuActive
       this.selected = item
+      this.$nextTick(() => this.$refs.nav?.focus())
     },
     setSelected(item) {
       this.selected = item
@@ -262,14 +262,10 @@ export default {
     }
   },
   async mounted() {
-    this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config)
-    this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
-    window.addEventListener('keydown', this.maybeCaptureKeydown, false)
   },
   beforeDestroy() {
     document.removeEventListener('click', this.maybeHideMenu)
-    window.removeEventListener('keydown', this.maybeCaptureKeydown, false)
   }
 
 

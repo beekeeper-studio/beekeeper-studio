@@ -1,0 +1,35 @@
+// Translate Sass variables to CSS custom properties for plugin system
+// Other properties like --bks-text-editor are already css properties
+
+& {
+  --theme-bg: #{$theme-bg};
+  --theme-base: #{$theme-base};
+  --theme-primary: #{$theme-primary};
+  --theme-secondary: #{$theme-secondary};
+
+  --text-dark: #{$text-dark};
+  --text: #{$text};
+  --text-light: #{$text-light};
+  --text-lighter: #{$text-lighter};
+  --text-hint: #{$text-hint};
+  --text-disabled: #{$text-disabled};
+
+  --brand-info: #{$brand-info};
+  --brand-success: #{$brand-success};
+  --brand-warning: #{$brand-warning};
+  --brand-danger: #{$brand-danger};
+  --brand-default: #{$brand-default};
+  --brand-purple: #{$brand-purple};
+  --brand-pink: #{$brand-pink};
+
+  --border-color: #{$border-color};
+  --link-color: #{$link-color};
+  --placeholder: #{$placeholder};
+  --selection: #{$selection};
+  --input-highlight: #{$input-highlight};
+
+  --query-editor-bg: #{$query-editor-bg};
+
+  --scrollbar-track: #{$scrollbar-track};
+  --scrollbar-thumb: #{$scrollbar-thumb};
+}

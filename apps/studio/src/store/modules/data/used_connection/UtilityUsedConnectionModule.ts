@@ -1,7 +1,9 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import _ from "lodash";
-import rawLog from "electron-log";
+import rawLog from "@bksLogger";
+import { safely } from "../StoreHelpers";
+import Vue from "vue";
 
 const log = rawLog.scope('data/usedconnections');
 
@@ -32,8 +34,17 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
         lastUsedConnection.updatedAt = new Date();
         await context.dispatch('save', lastUsedConnection);
       } else {
-        await context.dispatch('save', config);
+        const id = await context.dispatch('save', config);
+        config = context.state.items.find((item) => item.id === id);
       }
+      return config;
+    },
+    async load(context) {
+      context.commit("error", null);
+      await safely(context, async () => {
+        const items = await Vue.prototype.$util.send(`appdb/used/find`, { options: { where: { workspaceId: context.rootState.workspaceId } } });
+        context.commit('set', items);
+      })
     }
   }),
   getters: {

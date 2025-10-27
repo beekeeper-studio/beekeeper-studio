@@ -1,0 +1,22 @@
+@use 'sass:color';
+@import '../../styles/_variables.scss';
+
+:root {
+  --bks-mongo-shell-mongo-prompt-fg: #{color.adjust($theme-primary, $lightness: -20%)};
+  --bks-mongo-shell-ansi-output-fg: #{$text-dark};
+}
+
+.BksMongoShell {
+  .cm-mongo-prompt > span {
+    color: var(--bks-mongo-shell-mongo-prompt-fg);
+    font-weight: bold;
+  }
+
+  .ansi-output {
+    user-select: text !important;
+    white-space: pre-wrap;
+    color: var(--bks-mongo-shell-ansi-output-fg);
+    padding: 4px;
+    margin: 0;
+  }
+}

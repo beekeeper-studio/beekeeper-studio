@@ -18,7 +18,7 @@
         <div class="dialog-content">
           <div class="top">
             <div class="dialog-c-title">
-              Editing as
+              {{ isReadOnly ? "Viewing " : "Editing " }}as
             </div>
 
             <select
@@ -49,16 +49,23 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu style="--align: end">
                 <x-menuitem
+                  togglable
                   @click.prevent="format"
                   v-show="!language.noBeautify"
                 >
                   <x-label>Format {{ language.label }}</x-label>
                 </x-menuitem>
-                <x-menuitem @click.prevent="minify">
+                <x-menuitem @click.prevent="minify" togglable>
                   <x-label>Minify text</x-label>
                 </x-menuitem>
-                <x-menuitem @click.prevent="toggleWrapText">
-                  <x-label>{{ wrapText ? 'Unwrap text' : 'Wrap text' }}</x-label>
+                <x-menuitem
+                  togglable
+                  :toggled="wrapText"
+                  @click.prevent="toggleWrapText"
+                >
+                  <x-label class="flex-between">
+                    Wrap Text
+                  </x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -72,12 +79,14 @@
             @keyup="$event.key === 'Tab' && $event.stopPropagation()"
           >
             <text-editor
-              v-model="content"
-              :mode="language.editorMode"
+              :value="content"
+              :language-id="language.languageId"
               :line-wrapping="wrapText"
-              :height="editorHeight"
-              :focus="editorFocus"
+              :is-focused="editorFocus"
+              :readOnly="isReadOnly"
+              :replace-extensions="replaceExtensions"
               @focus="editorFocus = $event"
+              @bks-value-change="content = $event.value"
             />
           </div>
         </div>
@@ -105,17 +114,20 @@
               v-if="language.noMinify"
               class="btn btn-primary btn-sm"
               @click.prevent="save"
+              :disabled="isReadOnly"
             >
               <x-label>Apply</x-label>
             </x-button>
             <x-buttons v-else>
               <x-button
                 class="btn btn-primary btn-small"
+                :disabled="isReadOnly"
                 @click.prevent="saveAndMinify"
               >
                 <x-label>Minify & Apply</x-label>
               </x-button>
               <x-button
+                :disabled="isReadOnly"
                 class="btn btn-primary btn-small"
                 menu
               >
@@ -150,19 +162,24 @@ import { Languages, LanguageData, TextLanguage, getLanguageByContent } from '../
 import { uuidv4 } from "@/lib/uuid"
 import _ from 'lodash'
 import { mapGetters } from 'vuex'
-import TextEditor from '@/components/common/texteditor/TextEditor.vue'
+import TextEditor from '@beekeeperstudio/ui-kit/vue/text-editor'
+import { typedArrayToString } from "@/common/utils";
+import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 
 export default Vue.extend({
   name: "CellEditorModal",
+  props: {
+    binaryEncoding: String,
+  },
   data() {
     return {
       editorFocus: false,
-      editorHeight: 100,
       error: "",
       languageName: "text",
       content: "",
       eventParams: null,
       wrapText: TextLanguage.wrapTextByDefault,
+      isReadOnly: false
     }
   },
   components: { TextEditor },
@@ -197,8 +214,8 @@ export default Vue.extend({
     openModal(content: any, language: LanguageData, eventParams?: any) {
       if (content === null) {
         content = ""
-      } else if (ArrayBuffer.isView(content)) {
-        content = content.toString()
+      } else if (_.isTypedArray(content)) {
+        content = typedArrayToString(content, this.binaryEncoding)
       } else if (typeof content !== 'string') {
         content = JSON.stringify(content)
       }
@@ -210,6 +227,7 @@ export default Vue.extend({
         this.content = content
       }
       this.eventParams = eventParams
+      this.isReadOnly = eventParams?.isReadOnly
       this.wrapText = language.wrapTextByDefault ?? false
       this.$modal.show(this.modalName)
     },
@@ -224,7 +242,7 @@ export default Vue.extend({
       this.save()
     },
     save() {
-      this.$emit('save', this.content, this.language, this.eventParams)
+      this.$emit('save', this.content, this.language, this.eventParams?.cell)
       this.$modal.hide(this.modalName)
     },
 
@@ -232,23 +250,11 @@ export default Vue.extend({
       await this.$nextTick();
       this.$refs.editorContainer.style.height = undefined
       this.editorFocus = true
-      this.$nextTick(this.resizeHeightToFitContent)
     },
     async onBeforeClose() {
       // Hack: keep the modal height as it was before.
       this.$refs.editorContainer.style.height = this.$refs.editorContainer.offsetHeight + 'px'
       this.editorFocus = false
-    },
-    resizeHeightToFitContent() {
-      const wrapperEl = this.$refs.editorContainer.querySelector('.CodeMirror')
-      const wrapperStyle = window.getComputedStyle(wrapperEl)
-
-      const minHeight = parseInt(wrapperStyle.minHeight)
-      const maxHeight = parseInt(wrapperStyle.maxHeight)
-
-      const sizerEl = wrapperEl.querySelector(".CodeMirror-sizer")
-
-      this.editorHeight = _.clamp(sizerEl.offsetHeight, minHeight, maxHeight)
     },
     debouncedCheckForErrors: _.debounce(function() {
       const isValid = this.language.isValid(this.content)
@@ -259,16 +265,26 @@ export default Vue.extend({
     },
     format() {
       this.content = this.language.beautify(this.content)
-      this.$nextTick(this.resizeHeightToFitContent)
     },
     minify() {
       this.content = this.language.minify(this.content)
     },
     handleKeyUp(e: KeyboardEvent) {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && this.userKeymap !== 'vim') {
         this.$modal.hide(this.modalName)
       }
-    }
+    },
+    replaceExtensions(extensions) {
+      return [
+        ...extensions,
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+          },
+        }),
+      ]
+    },
   }
 });
 </script>
@@ -355,14 +371,12 @@ div.vue-dialog div.dialog-content {
   }
 
   .editor-container::v-deep {
-    & * {
-      box-sizing: initial;
-    }
-    .CodeMirror {
+    .BksTextEditor {
       height: 300px;
       min-height: 300px;
       max-height: 55vh;
       resize: vertical;
+      overflow: auto;
     }
   }
 }

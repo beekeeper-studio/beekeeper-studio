@@ -1,4 +1,4 @@
-#sidebar {
+.sidebar {
   flex: 0 1 100%;
   max-height: 100%;
   min-width: 300px;
@@ -31,7 +31,7 @@
   .sidebar-heading {
     display: flex;
     align-items: center;
-    padding: $gutter-h $gutter-w;
+    padding: $gutter-h 1rem;
     height: $tab-height;
     font-size: 14px;
     line-height: 28px;
@@ -43,6 +43,22 @@
       padding: 0 $gutter-h;
       // box-shadow: 0 1px darken($theme-bg, 6%);
       box-shadow: 0 1px $border-color;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: $gutter-h;
+      margin-left: auto;
+    }
+    .btn .material-icons {
+      font-size: 18px;
+      color: $text-light;
+    }
+    .close-btn {
+      // color: $text;
+      &:not(:hover) {
+        background-color: transparent;
+      }
     }
   }
   .tab-content {
@@ -601,4 +617,78 @@
     }
   }
 
+}
+.quick-switcher-panel {
+  position: fixed;
+  bottom: $statusbar-height;
+  left: $sidebar-min-w * 0.77;
+  width: $sidebar-min-w;
+  padding: $gutter-w * 0.5;
+  margin-bottom: $gutter-w * 0.3;
+  background: $theme-bg;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 4px;
+  z-index: 1000;
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba($theme-base, 0.1);
+}
+
+.quick-switcher-content {
+  padding: $gutter-w;
+  overflow-y: auto;
+  color: $theme-base;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-switcher-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 6px;
+}
+
+.quick-switcher-item {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 4px 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: $theme-base;
+  white-space: nowrap;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+  transition: background 0.15s ease-in-out;
+
+  &:hover {
+    background: rgba($theme-base, 0.05);
+  }
+}
+
+.quick-switcher-header {
+  color: $text-dark;
+  background-color: $theme-bg;
+  padding: 4px 6px;
+  flex-shrink: 0;
+}
+
+.quick-switcher-footer {
+  background-color: $theme-bg;
+  padding: 0px 6px;
+  flex-shrink: 0;
+}
+
+.quick-switcher-list-wrapper {
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: calc(50vh - 70px);
 }

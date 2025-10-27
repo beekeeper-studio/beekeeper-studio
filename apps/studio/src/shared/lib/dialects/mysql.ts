@@ -23,15 +23,26 @@ const defaultLength = (t: string) => t.startsWith('var') ? 255 : 8
 const UNWRAPPER = /^`(.*)`$/
 
 export const MysqlData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions, 'RESTRICT'],
   wrapIdentifier(value: string) {
     return (value !== '*' ? `\`${value.replaceAll(/`/g, '``')}\`` : '*');
   },
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'text',
+    dateType: 'date',
+    booleanType: 'boolean',
+    integerType: 'int',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
   usesOffsetPagination: true,
   editorFriendlyIdentifier: (s) => s,
   escapeString: defaultEscapeString,
   requireDataset: false,
+  disallowedSortColumns: ['json', 'blob', 'varbinary', 'geometry'],
   wrapLiteral(value: string) {
     return value.replaceAll(';', '')
   },
@@ -41,10 +52,12 @@ export const MysqlData: DialectData = {
   },
   textEditorMode: "text/x-mysql",
   disabledFeatures: {
+    shell: true,
     alter: {
       multiStatement: true,
       renameSchema: true,
-    }
+    },
+    schema: true,
   },
   notices: {
     infoIndexes: 'Only ascending indexes are supported in MySQL before version 8.0.'

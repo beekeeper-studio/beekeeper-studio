@@ -1,6 +1,6 @@
 <template>
   <div class="host-port-user-password">
-    <slot name="header"></slot>
+    <slot name="header" />
     <div class="row">
       <div
         class="form-group col"
@@ -20,10 +20,12 @@
           </option>
         </select>
       </div>
-      <div
-        class="form-group col"
-        v-show="config.socketPathEnabled"
-      >
+    </div>
+    <div
+      class="row gutter"
+      v-show="config.socketPathEnabled"
+    >
+      <div class="col form-group" :class="{ s9: supportsSocketPathWithCustomPort }">
         <label for="socketPath">Socket Path</label>
         <input
           id="socketPath"
@@ -33,6 +35,15 @@
           name="socketPath"
         >
       </div>
+      <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
+        <label for="port">Port</label>
+        <masked-input
+          :value="config.port"
+          :privacy-mode="privacyMode"
+          :type="'number'"
+          @input="val => config.port = val"
+        />
+      </div>
     </div>
     <div
       class="row gutter"
@@ -40,28 +51,26 @@
     >
       <div class="col s9 form-group">
         <label for="Host">Host</label>
-        <input
-          type="text"
-          class="form-control"
-          @paste="onPaste"
-          name="host"
-          v-model="config.host"
-        >
+        <masked-input
+          :value="config.host"
+          :privacy-mode="privacyMode"
+          @input="val => config.host = val"
+        />
       </div>
       <div class="col s3 form-group">
         <label for="port">Port</label>
-        <input
-          type="number"
-          class="form-control"
-          name="port"
-          v-model.number="config.port"
-        >
+        <masked-input
+          :value="config.port"
+          :privacy-mode="privacyMode"
+          :type="'number'"
+          @input="val => config.port = val"
+        />
       </div>
     </div>
 
     <toggle-form-area
       title="Enable SSL"
-      v-if="supportComplexSSL"
+      v-if="supportComplexSSL && supportsSsl"
     >
       <template v-slot:header>
         <x-switch
@@ -76,7 +85,7 @@
             <i class="material-icons-outlined">info</i>
             <div>
               Providing certificate files is optional. By default Beekeeper will just trust the server certificate.
-              <external-link href="https://docs.beekeeperstudio.io/pages/first-page#ssl">
+              <external-link href="https://docs.beekeeperstudio.io/user_guide/connecting/connecting/#ssl">
                 Read More
               </external-link>
             </div>
@@ -138,7 +147,7 @@
 
     <!-- Simple SSL -->
     <div
-      v-else
+      v-else-if="supportsSsl"
       class="advanced-connection-settings"
     >
       <div class="flex flex-middle">
@@ -159,12 +168,11 @@
     <div class="row gutter">
       <div class="col s6 form-group">
         <label for="user">User</label>
-        <input
-          type="text"
-          name="user"
-          v-model="config.username"
-          class="form-control"
-        >
+        <masked-input
+          :value="config.username"
+          :privacy-mode="privacyMode"
+          @input="val => config.username = val"
+        />
       </div>
       <div class="col s6 form-group">
         <label for="password">Password</label>
@@ -184,7 +192,7 @@
       <label
         v-if="config.connectionType !== 'cassandra'"
         for="defaultDatabase"
-      >Default Database</label>
+      >Default {{ topLevelEntityName }}</label>
       <label
         v-else
         for="defaultDatabase"
@@ -203,80 +211,93 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import { findClient } from '@/lib/db/clients'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
+import MaskedInput from '@/components/MaskedInput.vue'
+import { mapState } from 'vuex'
 
-  export default {
-    props: {
-      config: Object,
-      sslHelp: String,
-      supportComplexSSL: {
-        type: Boolean,
-        default: true
-      }
-    },
-    components: {
-      FilePicker,
-      ExternalLink,
-      ToggleFormArea
-    },
-    data() {
-      return {
-        sslToggled: false,
-        showPassword: false,
-      }
-    },
-    computed: {
-      hasAdvancedSsl() {
-        return this.config.sslCaFile || this.config.sslCertFile || this.config.sslKeyFile
-      },
-      toggleIcon() {
-        return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
-      },
-      togglePasswordIcon() {
-        return this.showPassword ? "visibility_off" : "visibility"
-      },
-      togglePasswordInputType() {
-        return this.showPassword ? "text" : "password"
-      },
-      supportsSocketPath() {
-        return findClient(this.config.connectionType).supportsSocketPath
-      },
-    },
-    methods: {
-      async onPaste(event) {
-        const data = event.clipboardData.getData('text')
-        try {
-          await this.$util.send('appdb/saved/parseUrl', { url: data });
-          event.preventDefault();
-        } catch {
-          return;
-        }
-      },
-      toggleSsl() {
-        this.config.ssl = !this.config.ssl
-
-        // Remove CA file when disabling ssl
-        if (!this.config.ssl) {
-          this.config.sslCaFile = null
-          this.config.sslCertFile = null
-          this.config.sslKeyFile = null
-        }
-      },
-      toggleSslAdvanced() {
-        this.sslToggled = !this.sslToggled;
-      },
-      togglePassword() {
-        this.showPassword = !this.showPassword
-      }
-    },
-    mounted() {
-      this.sslToggled = this.hasAdvancedSsl
+export default {
+  props: {
+    config: Object,
+    sslHelp: String,
+    supportComplexSSL: {
+      type: Boolean,
+      default: true
     }
+  },
+  components: {
+    FilePicker,
+    ExternalLink,
+    ToggleFormArea,
+    MaskedInput
+  },
+  data() {
+    return {
+      sslToggled: false,
+      showPassword: false,
+    }
+  },
+  computed: {
+    ...mapState('settings', ['privacyMode']),
+    hasAdvancedSsl() {
+      return this.config.sslCaFile || this.config.sslCertFile || this.config.sslKeyFile
+    },
+    toggleIcon() {
+      return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
+    },
+    togglePasswordIcon() {
+      return this.showPassword ? "visibility_off" : "visibility"
+    },
+    togglePasswordInputType() {
+      return this.showPassword ? "text" : "password"
+    },
+    supportsSsl() {
+      return findClient(this.config.connectionType).supports('server:ssl')
+    },
+    supportsSocketPath() {
+      return findClient(this.config.connectionType).supportsSocketPath
+    },
+    supportsSocketPathWithCustomPort() {
+      return findClient(this.config.connectionType).supportsSocketPathWithCustomPort
+    },
+    topLevelEntityName() {
+      return findClient(this.config.connectionType).topLevelEntity || 'Database'
+    }
+  },
+  methods: {
+    async onPaste(event) {
+      const data = event.clipboardData.getData('text')
+      try {
+        await this.$util.send('appdb/saved/parseUrl', { url: data });
+        event.preventDefault();
+      } catch {
+        return;
+      }
+    },
+    toggleSsl() {
+      this.config.ssl = !this.config.ssl
+
+      // Remove CA file when disabling ssl
+      if (!this.config.ssl) {
+        this.config.sslCaFile = null
+        this.config.sslCertFile = null
+        this.config.sslKeyFile = null
+      }
+    },
+    toggleSslAdvanced() {
+      this.sslToggled = !this.sslToggled;
+    },
+    togglePassword() {
+      this.showPassword = !this.showPassword
+    }
+  },
+  mounted() {
+    this.sslToggled = this.hasAdvancedSsl
   }
+}
 </script>
 
 <style lang="scss" scoped>
-  .optional-text {
-    font-style: italic;
-    padding-left: .2rem;
-  }
+.optional-text {
+  font-style: italic;
+  padding-left: .2rem;
+}
 </style>

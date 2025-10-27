@@ -1,4 +1,3 @@
-
 import yargs from 'yargs-parser'
 import _ from 'lodash'
 import { resolve, join } from 'path'
@@ -47,7 +46,11 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
-  const oracleSupported = isMac && isArm ? false : true
+  // previous builds of Beekeeper Studio required native libs for Oracle,
+  // but now it should work on all platforms
+  // FIXME: Windows ARM - this needs to be disabled
+  // as instant client not available there
+  const oracleSupported = true
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
   let userDirectory = testMode ? './tmp' : e.app.getPath("userData")
@@ -56,6 +59,7 @@ export function mainPlatformInfo(): IPlatformInfo {
   if (p.env.PORTABLE_EXECUTABLE_DIR) {
     userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
   }
+  const pluginsDirectory = join(userDirectory, 'plugins')
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
@@ -93,16 +97,17 @@ export function mainPlatformInfo(): IPlatformInfo {
     userDirectory,
     downloadsDirectory,
     homeDirectory,
+    pluginsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     updatesDisabled,
     appVersion,
     parsedAppVersion,
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
-    cloudUrl: 'https://app.beekeeperstudio.io',
+    // cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
 
-    // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
+    cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }
 }
 

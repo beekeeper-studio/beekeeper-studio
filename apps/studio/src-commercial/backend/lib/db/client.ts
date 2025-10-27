@@ -14,7 +14,13 @@ import { FirebirdClient } from "./clients/firebird";
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
 import { LibSQLClient } from "./clients/libsql";
+import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
+import { MongoDBClient } from "./clients/mongodb";
+import { SQLAnywhereClient } from "./clients/anywhere";
+import { TrinoClient } from "./clients/trino";
+import { SurrealDBClient } from "./clients/surrealdb";
+import { RedisClient } from '@/lib/db/clients/redis';
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -30,13 +36,19 @@ const clients = new Map<ConnectionType, any>([
   ['oracle', OracleClient],
   ['cassandra', CassandraClient],
   ['libsql', LibSQLClient],
+  ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
+  ['mongodb', MongoDBClient],
+  ['sqlanywhere', SQLAnywhereClient],
+  ['trino', TrinoClient],
+  ['surrealdb', SurrealDBClient],
+  ['redis', RedisClient]
 ], );
 
 
 class FriendlyErrorClient {
   constructor() {
-    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src/lib/db/client.ts")
+    throw new Error("Unknown DB type. You need to add a driver -> class mapping in src-commercial/backend/lib/db/client.ts")
   }
 }
 

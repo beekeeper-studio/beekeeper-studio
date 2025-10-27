@@ -9,12 +9,12 @@
     :hint-options="hintOptions"
     :columns-getter="columnsGetter"
     :context-menu-options="handleContextMenuOptions"
-    :forced-value="dataForcedValue"
     :plugins="plugins"
     :auto-focus="true"
     @update:focus="$emit('update:focus', $event)"
     @update:selection="$emit('update:selection', $event)"
     @update:cursorIndex="$emit('update:cursorIndex', $event)"
+    @update:cursorIndexAnchor="$emit('update:cursorIndexAnchor', $event)"
     @update:initialized="$emit('update:initialized', $event)"
   />
 </template>
@@ -30,12 +30,7 @@ import CodeMirror from "codemirror";
 
 export default Vue.extend({
   components: { TextEditor },
-  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions", "forcedValue"],
-  data() {
-    return {
-      dataForcedValue: this.value,
-    };
-  },
+  props: ["value", "connectionType", "extraKeybindings", "contextMenuOptions"],
   computed: {
     ...mapGetters(['defaultSchema', 'dialectData', 'isUltimate']),
     ...mapState(["tables"]),
@@ -86,24 +81,22 @@ export default Vue.extend({
       const editorPlugins = [
         plugins.autoquote,
         plugins.autoComplete,
-        plugins.autoRemoveQueryQuotes(this.connectionType),
+        plugins.autoRemoveQueryQuotes(this.queryDialect),
         plugins.queryMagic(() => this.defaultSchema, () => this.tables)
       ];
 
       return editorPlugins;
     },
-  },
-  watch: {
-    async forcedValue() {
-      await this.setEditorValue(this.forcedValue);
-    },
+    queryDialect() {
+      return this.dialectData.queryDialectOverride ?? this.connectionType
+    }
   },
   methods: {
-    async formatSql() {
+    formatSql() {
       const formatted = format(this.value, {
-        language: FormatterDialect(dialectFor(this.connectionType)),
+        language: FormatterDialect(dialectFor(this.queryDialect)),
       });
-      await this.setEditorValue(formatted);
+      this.$emit("input", formatted);
     },
     async columnsGetter(tableName: string) {
       let tableToFind = this.tables.find(
@@ -141,11 +134,6 @@ export default Vue.extend({
       }
 
       return newOptions;
-    },
-    async setEditorValue(value: string) {
-      this.dataForcedValue = this.value;
-      await this.$nextTick();
-      this.dataForcedValue = value;
     },
   },
 });

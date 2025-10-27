@@ -18,16 +18,19 @@
           </div>
         </div>
       </div>
-      <div class="form-group">
-        <label for="awsRegion"> AWS Region </label>
-        <input
-          name="awsRegion"
-          type="text"
-          class="form-control"
-          v-model="config.redshiftOptions.awsRegion"
+      <div v-show="isRedshift" class="flex flex-middle mb-3">
+        <h4
+          class="advanced-heading flex"
+          :class="{enabled: config.redshiftOptions.isServerless}"
         >
+          <span class="expand">Is Serverless Instance</span>
+          <x-switch
+            @click.prevent="toggleServerless"
+            :toggled="config.redshiftOptions.isServerless"
+          />
+        </h4>
       </div>
-      <div class="form-group">
+      <div v-show="isProfileAuth" class="form-group">
         <label for="awsProfile"> AWS Profile </label>
         <input
           name="awsProfile"
@@ -36,24 +39,96 @@
           v-model="config.redshiftOptions.awsProfile"
         >
       </div>
+      <div v-show="isKeyAuth" >
+        <div class="form-group">
+          <label for="Access Key ID">
+            Access Key ID
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.accessKeyId"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Secret Access Key">
+            Secret Access Key
+          </label>
+          <input
+            type="password"
+            class="form-control"
+            v-model="config.redshiftOptions.secretAccessKey"
+          >
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="AWS Region">
+          AWS Region
+        </label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="config.redshiftOptions.awsRegion"
+        >
+      </div>
+      <div v-show="isRedshift">
+        <div class="form-group">
+          <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.clusterIdentifier"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.databaseGroup"
+          >
+        </div>
+        <div class="form-group">
+          <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
+          <input
+            type="text"
+            class="form-control"
+            v-model="config.redshiftOptions.tokenDurationSeconds"
+          >
+        </div>
+      </div>
     </div>
   </div>
 </template>
 <script>
 
 export default {
-  props: ['config'],
+  props: ['config', 'authType'],
   data() {
     return {
-      iamAuthenticationEnabled:
-      this.config.redshiftOptions?.iamAuthenticationEnabled,
+      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
+      isServerless: this.config.redshiftOptions?.isServerless
     };
+  },
+  computed: {
+    isRedshift(){
+      return this.config.connectionType === 'redshift'
+    },
+    isKeyAuth() {
+      return this.authType === 'iam_key';
+    },
+    isProfileAuth() {
+      return this.authType === 'iam_file';
+    }
   },
   methods: {
     toggleIAMAuthentication() {
       this.iamAuthenticationEnabled = !this.iamAuthenticationEnabled
       this.config.redshiftOptions.iamAuthenticationEnabled =
         this.iamAuthenticationEnabled;
+    },
+    toggleServerless() {
+      this.config.redshiftOptions.isServerless = !this.config.redshiftOptions.isServerless
     },
   }
 }

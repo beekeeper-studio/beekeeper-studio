@@ -8,7 +8,7 @@ import {
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData, rowHeaderField } from "@/common/utils";
+import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
@@ -112,7 +112,7 @@ export function createMenuItem(label: string, shortcut = "", ultimate = false) {
 
 export async function copyRanges(options: {
   ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown";
+  type: "plain" | "tsv" | "json" | "markdown" | "columnName" | "asIn";
 }): Promise<void>;
 export async function copyRanges(options: {
   ranges: RangeComponent[];
@@ -122,7 +122,7 @@ export async function copyRanges(options: {
 }): Promise<void>;
 export async function copyRanges(options: {
   ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown" | "sql";
+  type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
   table?: string;
   schema?: string;
 }) {
@@ -166,6 +166,21 @@ export async function copyRanges(options: {
       ]);
       break;
     }
+    case "asIn": {
+      const [colDataType] = Object.keys(rangeData[0])
+      const columns = await Vue.prototype.$util.send("conn/listTableColumns", {
+        table: options.table,
+        schema: options.schema
+      });
+      const dataType = columns.find(c => c.columnName === colDataType)?.dataType
+      const isNumericType = isNumericDataType(dataType)
+      const textArr = rangeData.map(rd => {
+        const [data] = Object.values(rd)
+        return isNumericType ? data : `'${data}'`
+      })
+      text = `(\n${textArr.join(',\n')}\n)`
+      break
+    }
     case "sql":
       text = await Vue.prototype.$util.send("conn/getInsertQuery", {
         tableInsert: {
@@ -174,6 +189,9 @@ export async function copyRanges(options: {
           data: rangeData,
         },
       });
+      break;
+    case "columnName":
+      text = Object.keys(extractedData.data[0]).join(" ");
       break;
   }
   ElectronPlugin.clipboard.writeText(text);
@@ -186,8 +204,13 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
   if (ranges.length === 0) return;
 
   if (ranges.length === 1) {
+    const rangeData = ranges[0].getData() as RangeData;
+    // Replace column identifiers with column titles
+    const columns = ranges[0].getColumns();
+    const mappedData = mapColumnIdsToTitles(rangeData, columns);
+
     return {
-      data: ranges[0].getData() as RangeData,
+      data: mappedData,
       sources: [ranges[0]],
     };
   }
@@ -210,8 +233,13 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
   }
 
   if (sameColumns) {
+    const allData = ranges.reduce((data, range) => data.concat(range.getData()), []);
+    // Replace column identifiers with column titles
+    const columns = ranges[0].getColumns();
+    const mappedData = mapColumnIdsToTitles(allData, columns);
+
     return {
-      data: ranges.reduce((data, range) => data.concat(range.getData()), []),
+      data: mappedData,
       sources: ranges,
     };
   }
@@ -221,21 +249,33 @@ function extractRanges(ranges: RangeComponent[]): ExtractedData {
     const rows = sorted[0].getData() as RangeData;
     for (let i = 1; i < sorted.length; i++) {
       const data = sorted[i].getData() as RangeData;
-      for (let i = 0; i < data.length; i++) {
-        _.forEach(data[i], (value, key) => {
-          rows[i][key] = value;
+      for (let j = 0; j < data.length; j++) {
+        _.forEach(data[j], (value, key) => {
+          rows[j][key] = value;
         });
       }
     }
+
+    // Replace column identifiers with column titles
+    const allColumns = sorted.reduce((cols, range) => cols.concat(range.getColumns()), []);
+    const uniqueColumns = _.uniqBy(allColumns, col => col.getField());
+    const mappedData = mapColumnIdsToTitles(rows, uniqueColumns);
+
     return {
-      data: rows,
+      data: mappedData,
       sources: ranges,
     };
   }
 
   const source = _.first(ranges);
+  const rangeData = source.getData() as RangeData;
+
+  // Replace column identifiers with column titles
+  const columns = source.getColumns();
+  const mappedData = mapColumnIdsToTitles(rangeData, columns);
+
   return {
-    data: source.getData() as RangeData,
+    data: mappedData,
     sources: [source],
   };
 }
@@ -290,16 +330,43 @@ export function setCellValue(cell: CellComponent, value: string) {
   if (editable) cell.setValue(value);
 }
 
+// Helper function to map column IDs to column titles
+function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): RangeData {
+  if (!data || !data.length || !columns || !columns.length) return data;
+
+  const colIdToTitleMap = new Map();
+  columns.forEach(col => {
+    const field = col.getField();
+    if (field === rowHeaderField) return; // Skip row header
+    const title = col.getDefinition().title;
+    if (title) colIdToTitleMap.set(field, title);
+  });
+
+  return data.map(row => {
+    const newRow = {};
+    Object.entries(row).forEach(([key, value]) => {
+      const newKey = colIdToTitleMap.get(key) || key;
+      newRow[newKey] = value;
+    });
+    return newRow;
+  });
+}
+
 export function copyActionsMenu(options: {
   ranges: RangeComponent[];
   table?: string;
   schema?: string;
 }) {
   const { ranges, table, schema } = options;
-  return [
+  const columnCount = ranges[0].getColumns().length
+  const copyActions = [
     {
       label: createMenuItem("Copy", "Control+C"),
       action: () => copyRanges({ ranges, type: "plain" }),
+    },
+    {
+      label: createMenuItem("Copy Column Name"),
+      action: () => copyRanges({ ranges, type: "columnName" }),
     },
     {
       label: createMenuItem("Copy as TSV for Excel"),
@@ -324,6 +391,15 @@ export function copyActionsMenu(options: {
         }),
     },
   ];
+
+  if (columnCount === 1) {
+    copyActions.push({
+      label: createMenuItem("Copy for IN statement"),
+      action: () => copyRanges({ ranges, type: "asIn", table, schema }),
+    })
+  }
+
+  return copyActions
 }
 
 export function pasteActionsMenu(range: RangeComponent) {

@@ -1,14 +1,25 @@
 ---
 title: Oracle Database
 summary: "Specific instructions for making connections with Oracle Database"
+description: "Beekeeper Studio supports connecting to Oracle databases in both thin and thick mode. This guide provides instructions for setting up the Oracle Instant Client and connecting to your database."
 old_url: "https://docs.beekeeperstudio.io/docs/oracle-database"
+icon: material/database
 ---
 
-## Requirements
+# How To Connect to Oracle Database
+
+Beekeeper Studio supports connecting to Oracle databases in two modes:
+
+1. **Thin Mode**: This is the default mode and does not require any additional configuration. Not all connection options are available in this mode. If you get a `thin mode` error, you may need to use `Thick Mode`.
+2. **Thick Mode**: This mode requires the Oracle Instant Client to be installed on your system. It allows for more advanced connection options and is recommended for most users.
+
+For a comparison of how thin and thick mode differ, see the Oracle Database documentation on [the Oracle website](https://node-oracledb.readthedocs.io/en/latest/user_guide/appendix_a.html#oracle-database-features-supported-by-node-oracledb)
+
+## Thick Mode Requirements
 
 1. On all operating systems you must have the Oracle Instant Client installed.
-2. On Linux you must have `libaio` installed.
-3. On MacOS you must be using the `Intel` version of Beekeeper Studio. This is because Oracle does not publish an `Apple Silicon` version of the Instant Client.
+2. On Linux you must have `libaio-dev` (apt) / `libaio-devel` (yum/dnf) installed.
+3. For Ubuntu 24.04+ You also need to make a symlink: `sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1`
 
 Below are specific instructions for each of the above requirements
 
@@ -28,7 +39,7 @@ sudo apt-get install libaio1 libaio-dev #debian/ubuntu
 sudo yum install libaio #redhat/fedora
 ```
 
-## Connecting To Oracle Database
+## Connecting To Oracle Databases
 
 There are a number of ways you can connect to an Oracle database using Beekeeper Studio.
 
@@ -37,17 +48,9 @@ There are a number of ways you can connect to an Oracle database using Beekeeper
 2. TSA alias
 3. Host and port
 
+## Using tnsnames.ora
 
-### Before You Connect: Set Instant Client Location
-
-Before you can connect to Oracle at all you need to tell Beekeeper where on your computer the Oracle Instant Client libraries are stored.
-
-This is an Oracle requirement and not something Beekeeper Studio controls.
-
-In Beekeeper Studio you can choose the location of the instant client in the `Global Configuration` section before making your first connection:
-
-![Set oracle instant client](../../assets/images/oracle-database-62.png)
-
+You can specify your 'config' directory when adding an Oracle connection. Beekeeper Studio will use this to find your tnsnames.ora file, you can then use an alias in your connection string.
 
 ### Enter Your Oracle Connection String
 

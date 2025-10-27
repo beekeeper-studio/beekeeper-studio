@@ -44,7 +44,7 @@
       </div>
     </div>
     <div class="expand" />
-    <status-bar class="tabulator-footer">
+    <status-bar class="tabulator-footer" :active="active">
       <span class="expand" />
       <div class="col flex-right statusbar-actions">
         <x-buttons class="pending-changes">
@@ -72,6 +72,15 @@
                 <x-label>Copy to SQL</x-label>
                 <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
+              <!-- <x-menuitem @click.prevent="createAndImport"> -->
+              <!--   <x-label> -->
+              <!--     Create Table and Import Data from File -->
+              <!--     <i -->
+              <!--       v-if="$store.getters.isCommunity" -->
+              <!--       class="material-icons menu-icon" -->
+              <!--     >stars</i> -->
+              <!--   </x-label> -->
+              <!-- </x-menuitem> -->
             </x-menu>
           </x-button>
         </x-buttons>
@@ -126,12 +135,11 @@ export default Vue.extend({
       if (!this.active) {
         return {}
       }
-      const results = {}
-
-      results[this.ctrlOrCmd('s')] = this.create.bind(this)
-      results[this.ctrlOrCmd('shift+s')] = this.sql.bind(this)
-      results[this.ctrlOrCmd('n')] = () => this.$refs.sb.addRow()
-      return results
+      return this.$vHotkeyKeymap({
+        'general.save': this.create.bind(this),
+        'general.openInSqlEditor': this.sql.bind(this),
+        'general.addRow': () => this.$refs.sb.addRow(),
+      })
     },
     fixedSchema(): string | undefined {
       if (_.isNil(this.tableSchema) || _.isEmpty(this.tableSchema)) {
@@ -185,6 +193,10 @@ export default Vue.extend({
       } finally {
         this.running = false
       }
+    },
+    async createAndImport() {
+      this.$noty.error("Why god, why?")
+      this.$root.$emit(AppEvent.beginImport, {})
     },
     async sql() {
       this.error = undefined

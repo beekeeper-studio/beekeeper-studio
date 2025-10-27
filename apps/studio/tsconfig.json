@@ -18,7 +18,10 @@
       "@/*": ["./src/*"],
       "@shared/*": ["./src/shared/*"],
       "@commercial/*": ["./src-commercial/*"],
-      "@tests/*": ["./tests/*"]
+      "@tests/*": ["./tests/*"],
+      "@bksLogger": ["./src/lib/log/bksLogger.ts"],
+      "@beekeeperstudio/ui-kit": ["../ui-kit/dist"],
+      "@beekeeperstudio/ui-kit/*": ["../ui-kit/dist/*"]
     },
     "lib": [
       "esnext",

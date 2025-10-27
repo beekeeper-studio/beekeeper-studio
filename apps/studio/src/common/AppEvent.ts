@@ -1,5 +1,5 @@
 import Vue from "vue"
-import rawLog from 'electron-log'
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('AppEvent')
 
@@ -7,23 +7,32 @@ export enum AppEvent {
   menuClick = 'menu-click',
   settingsChanged = "sc-refresh",
   newTab = 'nt',
+  /** Create a new custom tab. First argument is `TransportOpenTab`. */
+  newCustomTab = 'nct',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
   disconnect = 'dc',
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',
-  toggleSidebar = 'ts',
+  togglePrimarySidebar = 'ts',
+  toggleSecondarySidebar = 'toggleSecondarySidebar',
+  selectSecondarySidebarTab = 'selectSecondarySidebarTab',
   beginExport = 'be',
   beginImport = 'beginImport',
   createTable = 'new_table',
+  createTableFromFile = 'new_table_from_file',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
+  promptCreateWorkspace = 'cloud_create_workspace',
+  promptRenameWorkspace = 'cloud_rename_workspace',
   promptQueryImport = 'cloud_q_import',
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
   promptSqlFilesImport = 'q_files_import',
+  openCreateCollectionModal = 'create_collection_modal',
+  openAddFieldModal = 'add_field_modal',
   enterLicense = 'enter_license',
   hideEntity = 'hideEntity',
   hideSchema = 'hideSchema',
@@ -50,7 +59,21 @@ export enum AppEvent {
   /** Triggered when the license support date has expired */
   licenseSupportDateExpired = 'licenseSupportDateExpired',
   switchLicenseState = 'switchLicenseState',
-  toggleBeta = 'toggleBeta'
+  toggleBeta = 'toggleBeta',
+  switchUserKeymap = 'switchUserKeymap',
+  openPluginManager = 'openPluginManager',
+  updateJsonViewerSidebar = 'updateJsonViewerSidebar',
+  jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
+  jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
+  /** A tab is about to be switched. First argument is the tab. */
+  switchingTab = 'switchingTab',
+  /** A tab has been switched. First argument is the tab. */
+  switchedTab = 'switchedTab',
+  /** A tab is about to be closed. First argument is the tab. */
+  closingTab = 'closingTab',
+  updatePin = 'updatePin',
+  /** The theme has been changed. */
+  changedTheme = 'changedTheme',
 }
 
 export interface RootBinding {

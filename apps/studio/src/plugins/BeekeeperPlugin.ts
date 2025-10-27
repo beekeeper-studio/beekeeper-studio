@@ -17,6 +17,8 @@ export interface ContextOption {
 }
 
 interface MenuProps {
+  /** The id of the menu. Not to be confused with the `elementId`. */
+  id?: string
   options: ContextOption[],
   elementId?: string
   item: any,
@@ -63,8 +65,12 @@ export const BeekeeperPlugin = {
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
-    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
+    if (config.connectionType?.match(/sqlite|libsql|duckdb/)) {
       return config.defaultDatabase || "./unknown.db"
+    } else if (config.connectionType === 'mongodb') {
+      return config.url
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -83,12 +89,16 @@ export const BeekeeperPlugin = {
     if (config.socketPathEnabled) return config.socketPath;
 
     let connectionString = `${config.host}:${config.port}`;
-    if (config.connectionType === 'sqlite' || config.connectionType === 'libsql') {
+    if (config.connectionType?.match(/sqlite|libsql|duckdb/)) {
       return window.main.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
     } else if (config.connectionType === 'bigquery') {
       connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
+    } else if (config.connectionType === 'mongodb') {
+      return config.url;
+    } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
+      return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
@@ -109,7 +119,20 @@ export const BeekeeperPlugin = {
       }
     })
     return fixed
-  }
+  },
+  /** If the bksConfig.security.lockMode is 'pin', calling this will prompt the
+  * user for a pin. Otherwise, it will do nothing. */
+  async unlock(): Promise<{ auth?: { input: string; mode: 'pin' }, cancelled: boolean }> {
+    if (window.bksConfig.security.lockMode === 'pin') {
+      return new Promise((resolve) => {
+        Vue.prototype.$modal.show('input-pin-modal', {
+          onSubmit: (pin: string) => resolve({ auth: { input: pin, mode: 'pin' }, cancelled: false }),
+          onCancel: () => resolve({ cancelled: true }),
+        })
+      })
+    }
+    return { cancelled: false }
+  },
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin

@@ -4,7 +4,7 @@ import { IGroupedUserSettings } from '../transport/TransportUserSetting'
 import { IPlatformInfo } from '../IPlatformInfo'
 
 export default class extends DefaultMenu {
-  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo) {
+  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo, private bksConfig: IBksConfig) {
     super(settings, handler, platformInfo)
   }
 
@@ -17,7 +17,9 @@ export default class extends DefaultMenu {
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
-        this.menuItems.sidebarToggle,
+        this.menuItems.primarySidebarToggle,
+        this.menuItems.secondarySidebarToggle,
+        this.menuItems.reload,
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]
@@ -27,6 +29,7 @@ export default class extends DefaultMenu {
 
   devMenu() {
     return {
+      id: 'dev',
       label: 'Dev',
       submenu: [
         this.menuItems.reload,
@@ -37,6 +40,7 @@ export default class extends DefaultMenu {
 
   helpMenu() {
     const helpMenu = {
+      id: "help",
       label: "Help",
       submenu: [
         this.menuItems.enterLicense,
@@ -46,6 +50,7 @@ export default class extends DefaultMenu {
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
         this.menuItems.about,
+        this.menuItems.restart,
       ]
     };
 
@@ -73,6 +78,7 @@ export default class extends DefaultMenu {
     }
 
     const fileMenu = {
+      id: 'file',
       label: 'File',
       submenu: [
         this.menuItems.newWindow,
@@ -97,6 +103,7 @@ export default class extends DefaultMenu {
       ...appMenu,
       fileMenu,
       {
+        id: 'edit',
         label: 'Edit',
         submenu: [
           this.menuItems.undo,
@@ -109,11 +116,14 @@ export default class extends DefaultMenu {
       },
       this.viewMenu(),
       {
+        id: "tools",
         label: "Tools",
         submenu: [
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
-          this.menuItems.exportTables
+          this.menuItems.exportTables,
+          this.menuItems.managePlugins,
+          ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : [])
         ]
       },
       ...windowMenu,

@@ -1,8 +1,8 @@
 import _ from 'lodash'
 import { Module } from "vuex";
 import { State as RootState } from '../index'
-import rawLog from 'electron-log'
-import { TransportOpenTab, duplicate, matches } from '@/common/transport/TransportOpenTab';
+import rawLog from '@bksLogger'
+import { TransportOpenTab, duplicate, matches, TabTypeConfig } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
@@ -11,6 +11,8 @@ interface State {
   tabs: TransportOpenTab[],
   active?: TransportOpenTab,
   lastClosedTabs: TransportOpenTab[]
+  /** All tab type configurations available. */
+  allTabTypeConfigs: TabTypeConfig.Config[];
 }
 
 
@@ -20,8 +22,39 @@ export const TabModule: Module<State, RootState> = {
     tabs: [],
     active: undefined,
     lastClosedTabs: [],
+    allTabTypeConfigs: [
+      {
+        type: 'query',
+        name: "Query",
+        menuItem: { label: 'Add Query', shortcut: 'Control+T' },
+      },
+      {
+        type: 'shell',
+        name: "Shell",
+        menuItem: { label: 'Add Shell' },
+      },
+    ],
   }),
   getters: {
+    tabTypeConfigs(state, _getters, _rootState, rootGetters) {
+      return state.allTabTypeConfigs.filter((tab) => {
+        if (tab.type === "shell" && rootGetters.dialectData?.disabledFeatures?.shell) {
+          return false;
+        }
+        if (tab.type === "plugin-shell" || tab.type === "plugin-base") {
+          return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
+        }
+        return true;
+      })
+    },
+    newTabDropdownItems(_state, getters) {
+      const items = [];
+      for (const config of getters.tabTypeConfigs) {
+        if (!config.menuItem) continue;
+        items.push({ ...config.menuItem, config });
+      }
+      return items;
+    },
     sortedTabs(state) {
       return _.sortBy(state.tabs, 'position')
     },
@@ -63,7 +96,54 @@ export const TabModule: Module<State, RootState> = {
       state.lastClosedTabs.push(...tabs.map((tab) => duplicate(tab)))
     },
     setActive(state, tab?: TransportOpenTab) {
+      const tabs = state.tabs.map(t => {
+        t.active = t.id === tab.id
+        return t
+      })
       state.active = tab
+      state.tabs = tabs
+    },
+
+    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginConfig) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        state.allTabTypeConfigs.push(newConfig)
+      } else if (newConfig.menuItem) {
+        // If tabTypeConfig already exists, update the menuItem
+        Vue.set(found, 'menuItem', newConfig.menuItem)
+      }
+    },
+
+    removeTabTypeConfig(state, config: TabTypeConfig.PluginConfig) {
+      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginConfig) => {
+        if (t.type !== "plugin-shell" && t.type !== "plugin-base") {
+          return true;
+        }
+        const matches = t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
+        return !matches;
+      })
+    },
+
+    setMenuItem(state, newConfig: TabTypeConfig.PluginRef & { menuItem: TabTypeConfig.PluginConfig['menuItem'] }) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${newConfig.pluginId} does not exist`)
+      }
+      found.menuItem = newConfig.menuItem
+    },
+
+    unsetMenuItem(state, config: TabTypeConfig.PluginRef) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${config.pluginId} does not exist`)
+      }
+      found.menuItem = undefined
     },
   },
   actions: {
@@ -78,7 +158,7 @@ export const TabModule: Module<State, RootState> = {
               workspaceId: context.rootState.workspaceId
             }
           }
-        });
+        })
         context.commit('set', tabs || [])
         if (tabs?.length) {
           const active = tabs.find((t) => t.active) || tabs[0]
@@ -87,25 +167,28 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
-      await Vue.prototype.$util.send('appdb/tabs/remove', { obj: context.state.tabs })
-      context.commit('remove', context.state.tabs)
+      await context.dispatch('remove', context.state.tabs)
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
-      // Walk through array in reverse to check if it belongs to the current connection
-      for (let i = context.state.lastClosedTabs.length - 1; i >= 0; i--) {
-        const tab = context.state.lastClosedTabs[i]
-        // Does this tab belong to the current connection?
-        if (tab.connectionId === context.rootState.usedConfig?.id && tab.workspaceId === context.rootState.workspaceId) {
+      const { usedConfig, workspaceId } = context.rootState
+
+      try {
+        const tab = await Vue.prototype.$util.send('appdb/tabhistory/getLastDeletedTab', { workspaceId: workspaceId, connectionId: usedConfig.id });
+        if (tab) {
+          tab.deletedAt = null
           await context.dispatch('add', { item: tab })
           await context.dispatch('setActive', tab)
-          break
         }
+      }catch (err) {
+        console.error(err)
       }
     },
     async add(context, options: { item: TransportOpenTab, endOfPosition?: boolean }) {
       const { usedConfig } = context.rootState
-      let { item, endOfPosition } = options
+      const { endOfPosition } = options
+      let { item } = options
+
       if (endOfPosition) {
         item.position = (context.getters.sortedTabs.reverse()[0]?.position || 0) + 1
       }
@@ -113,7 +196,9 @@ export const TabModule: Module<State, RootState> = {
         log.info("saving tab", item)
         item.workspaceId = context.rootState.workspaceId
         item.connectionId = usedConfig.id
-        item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item });
+        item.deletedAt = null
+        item.active = true
+        item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item })
       }
       context.commit('add', item)
       return item;
@@ -122,22 +207,27 @@ export const TabModule: Module<State, RootState> = {
       items.forEach((p, idx) => p.position = idx)
       const { usedConfig } = context.rootState
       context.commit('set', items)
-      if (usedConfig?.id) await Vue.prototype.$util.send('appdb/tabs/save', { obj: items });
+      if (usedConfig?.id) await Vue.prototype.$util.send('appdb/tabs/save', { obj: items })
     },
     async remove(context, rawItems: TransportOpenTab | TransportOpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
-      items.forEach((tab) => context.commit('remove', tab))
+      items.forEach((tab) => {
+        tab.deletedAt = new Date()
+        tab.position = 99
+        context.commit('remove', tab)
+      })
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
-        await Vue.prototype.$util.send('appdb/tabs/remove', { obj: items });
+        await Vue.prototype.$util.send('appdb/tabs/save', { obj: items })
       }
     },
     async save(context, rawTabs: TransportOpenTab[] | TransportOpenTab) {
       try {
+        if (rawTabs == null) return
         const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
         const { usedConfig } = context.rootState
         if (usedConfig?.id) {
-          await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs });
+          await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs })
         }
       } catch (ex) {
         console.error("tab/save", ex)
@@ -149,7 +239,6 @@ export const TabModule: Module<State, RootState> = {
       } catch (ex) {
         console.error("tab/saveAll", ex)
       }
-      
     },
     async setActive(context, tab: TransportOpenTab) {
       const oldActive = context.state.active
@@ -158,8 +247,10 @@ export const TabModule: Module<State, RootState> = {
         oldActive.active = false
       }
       tab.active = true
-      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))
+      tab.lastActive = new Date()
+      tab.deletedAt = null
 
+      await context.dispatch('save', [tab, oldActive].filter((x) => !!x))
     }
 
   }

@@ -1,3 +1,4 @@
+@use "sass:color";
 
 .import-export {
   &__container {
@@ -36,7 +37,7 @@
     li {
       padding: 1rem;
       margin: 0.75rem 0 0.75rem 0;
-      background: lighten($theme-bg, 2%);
+      background: color.adjust($theme-bg, $lightness: 2%);
       border-radius: 0.5rem;
       display: flex;
       flex-direction: column;
@@ -82,7 +83,7 @@
           padding: 0.5rem;
 
           &:hover {
-            background: lighten($theme-bg, 6%);
+            background: color.adjust($theme-bg, $lightness: 6%);
           }
         }
       }
@@ -90,7 +91,7 @@
       .progress .progress-bg {
         margin-top: 0.5rem;
         height: 0.65rem;
-        background: lighten($theme-bg, 6%);
+        background: color.adjust($theme-bg, $lightness: 6%);
         border-radius: 0.35rem;
         position: relative;
         .progress-fill {
@@ -107,5 +108,10 @@
     span {
       display: inline-block;
     }
+  }
+  &:has(.mapper-wrapper--create) {
+    max-width: 800px;
+    width: 800px;
+    overflow: visible;
   }
 }

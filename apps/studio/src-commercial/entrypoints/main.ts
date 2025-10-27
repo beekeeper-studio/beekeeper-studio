@@ -2,17 +2,13 @@
 import * as fs from 'fs'
 import path from 'path'
 import { app, protocol } from 'electron'
-import log from 'electron-log/main'
 import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
+import log from '@bksLogger'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
-log.initialize();
-log.transports.console.level = 'info'
-log.transports.file.level = "info"
-log.catchErrors({ showDialog: false})
 log.info("initializing background")
 
 
@@ -22,6 +18,7 @@ import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
+import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -30,11 +27,11 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
+import { initializeSecurity } from '@/backend/lib/security'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
-
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -51,7 +48,8 @@ async function createUtilityProcess() {
   }
 
   const args = {
-    bksPlatformInfo: JSON.stringify(platformInfo)
+    bksPlatformInfo: JSON.stringify(platformInfo),
+    bksConfigSource: JSON.stringify(bksConfig.source),
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -59,26 +57,17 @@ async function createUtilityProcess() {
     [],
     {
       env: { ...process.env, ...args },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', 'inherit', 'inherit'],
       serviceName: 'BeekeeperUtility'
     }
   );
 
-  const utilLog = log.scope('UTILITY')
-
-  utilityProcess.stdout.on('data', (chunk) => {
-    utilLog.log(chunk.toString())
-  })
-
-  utilityProcess.stderr.on('data', (chunk) => {
-    utilLog.error(chunk.toString())
-  })
 
   utilityProcess.on('exit', async (code) => {
     // if non zero exit code
-    console.log("UTILITY DEAD", code)
+    log.log("UTILITY DEAD", code)
     if (code) {
-      utilLog.info('Utility process died, restarting')
+      log.info('Utility process died, restarting')
       utilityProcess = null;
       await createUtilityProcess();
       createAndSendPorts(false, true);
@@ -126,11 +115,14 @@ let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
 let initialized = false
 
 async function initBasics() {
   // this creates the app:// protocol we use for loading assets
   ProtocolBuilder.createAppProtocol()
+  // this creates the plugin:// protocol we use for loading plugins
+  ProtocolBuilder.createPluginProtocol()
   if (initialized) return settings
   initialized = true
   await ormConnection.connect()
@@ -156,7 +148,7 @@ async function initBasics() {
   }
 
   log.debug("setting up the menu")
-  menuHandler = new MenuHandler(electron, settings)
+  menuHandler = new MenuHandler(electron, settings, bksConfig)
   menuHandler.initialize()
   log.debug("Building the window")
   log.debug("managing updates")
@@ -173,6 +165,8 @@ async function initBasics() {
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
+  ipcMain.emit("disable-connection-menu-items");
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -180,6 +174,10 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('platformInfo', () => {
   return platformInfo;
+})
+
+ipcMain.handle('bksConfigSource', () => {
+  return bksConfig.source;
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {
@@ -206,7 +204,7 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
 
-      installExtension(VUEJS_DEVTOOLS)
+      installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
         .then((name) => console.log(`Added Extension:  ${name}`))
         .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because
@@ -228,6 +226,7 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
+      initializeSecurity(app);
       await createUtilityProcess()
 
       await buildWindow(settings)
@@ -236,7 +235,7 @@ app.on('ready', async () => {
 
 })
 
-function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
+function createAndSendPorts(filter: boolean, utilDied = false) {
   getActiveWindows().forEach((w) => {
     if (!filter || newWindows.includes(w.winId)) {
       const { port1, port2 } = new electron.MessageChannelMain();

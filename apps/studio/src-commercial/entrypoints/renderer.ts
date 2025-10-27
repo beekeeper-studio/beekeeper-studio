@@ -1,3 +1,9 @@
+// Uint8Array pollyfills https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/fromBase64
+import 'core-js/actual/typed-array/from-base64'
+import 'core-js/actual/typed-array/from-hex'
+import 'core-js/actual/typed-array/to-base64'
+import 'core-js/actual/typed-array/to-hex'
+
 import Vue from 'vue'
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
@@ -24,16 +30,22 @@ import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
-import rawLog from 'electron-log/renderer'
+import rawLog from '@bksLogger'
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
+import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
+import { WebPluginManager } from '@/services/plugin/web'
+import PluginStoreService from '@/services/plugin/web/PluginStoreService'
+import * as UIKit from '@beekeeperstudio/ui-kit'
+import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
 (async () => {
 
   await window.main.requestPlatformInfo();
+  await window.main.requestBksConfigSource();
   rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
@@ -64,13 +76,29 @@ import App from '@/App.vue'
       }
     });
 
+    UIKit.setClipboard(
+      new (class extends EventTarget implements Clipboard {
+        async writeText(text: string) {
+          window.main.writeTextToClipboard(text)
+        }
+        async readText() {
+          return window.main.readTextFromClipboard()
+        }
+        async read(): Promise<ClipboardItem[]> {
+          throw new Error("Not implemented")
+        }
+        async write(_items: ClipboardItem[]) {
+          throw new Error("Not implemented")
+        }
+      })()
+    );
 
     window.main.setTlsMinVersion("TLSv1");
     TimeAgo.addLocale(en)
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule]);
+    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
 
     (window as any).$ = $;
@@ -113,9 +141,13 @@ import App from '@/App.vue'
       }
     })
 
+    const utility = new UtilityConnection()
 
     Vue.config.productionTip = false
-    Vue.use(VueHotkey)
+    Vue.use(VueHotkey, {
+      "pageup": 33,
+      "pagedown": 34
+    })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
     Vue.use(VueClipboard)
@@ -132,20 +164,21 @@ import App from '@/App.vue'
       closeWith: ['button', 'click'],
     })
     Vue.use(VueKeyboardTrapDirectivePlugin)
+    Vue.use(ProductTourPlugin, { store, utility })
 
     const app = new Vue({
       render: h => h(App),
       store,
     })
 
-    Vue.prototype.$util = new UtilityConnection();
+    Vue.prototype.$util = utility;
     window.main.attachPortListener();
     window.onmessage = (event) => {
       if (event.source === window && event.data.type === 'port') {
         const [port] = event.ports;
         const { sId } = event.data;
+        log.log('Received port in renderer with sId: ', sId);
 
-        log.log('GOT PORT: ', port, sId)
         Vue.prototype.$util.setPort(port, sId);
         app.$store.dispatch('settings/initializeSettings');
       }
@@ -154,6 +187,24 @@ import App from '@/App.vue'
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
+    const webPluginManager = new WebPluginManager(
+      Vue.prototype.$util,
+      new PluginStoreService(store, {
+        emit: (...args) => app.$root.$emit(...args),
+        on: (...args) => app.$root.$on(...args),
+        off: (...args) => app.$root.$off(...args),
+      }),
+      window.platformInfo.appVersion
+    )
+    webPluginManager.initialize().then(() => {
+      store.commit("webPluginManagerStatus", "ready")
+    }).catch((e) => {
+      log.error("Error initializing web plugin manager", e)
+      store.commit("webPluginManagerStatus", "failed-to-initialize")
+    })
+    Vue.prototype.$plugin = webPluginManager;
+    Vue.prototype.$bksPlugin = webPluginManager;
+    window.bksPlugin = webPluginManager; // For debugging
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")
