@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
+import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
@@ -20,6 +20,7 @@ import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import rawLog from "@bksLogger"
+import { validate } from "class-validator";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -29,6 +30,14 @@ function defaultTransform<T extends Transport>(obj: T, cls: any) {
   }
   const newObj = {} as unknown as T;
   return cls.merge(newObj, obj);
+}
+
+async function niceValidateOrReject(ent: any): Promise<void> {
+  const errors = await validate(ent);
+  if (errors && errors.length > 0) {
+    const err = errors.map((err) => err.toString(false, false, "", true)).join("\n");
+    throw new Error(err);
+  }
 }
 
 function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => T = defaultTransform) {
@@ -44,15 +53,18 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           const dbEntities = await cls.findBy({
             id: In(ids)
           });
-          const newEnts = obj.map((e) => {
+          const newEnts = await Promise.all(obj.map(async (e) => {
             const dbEnt = dbEntities.find((v) => v.id === e.id);
 
             if (dbEnt) {
+              await niceValidateOrReject(dbEnt)
               return cls.merge(dbEnt, e);
             }
 
-            return new cls().withProps(e);
-          });
+            const newEnt = new cls().withProps(e);
+            await niceValidateOrReject(newEnt);
+            return newEnt;
+          }));
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
         let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
@@ -62,6 +74,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           dbObj = new cls().withProps(obj);
         }
         log.info(`Saving ${name}: `, dbObj);
+        await niceValidateOrReject(dbObj);
         await dbObj.save();
         return transform(dbObj, cls);
       }
@@ -84,8 +97,11 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         return transform(value, cls);
       })
     },
-    [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
+    [`appdb/${name}/findOneBy`]: async function({ options }: { options: FindOptionsWhere<any> | string | number }) {
       return transform(await cls.findOneBy(options), cls)
+    },
+    [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
+      return transform(await cls.findOne(options), cls)
     },
     [`appdb/${name}/count`]: async function(args: FindManyOptions<any> | { options?: FindManyOptions<any> }) {
       // Support both direct options or wrapped in { options: ... }

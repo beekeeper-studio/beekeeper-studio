@@ -2,11 +2,15 @@ import { ValueTransformer } from 'typeorm';
 import Encryptor, { SimpleEncryptor } from 'simple-encryptor'
 import { AzureAuthOptions } from '../models/saved_connection';
 import { SurrealDBOptions } from '@/lib/db/types';
+import _ from 'lodash'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope("Transformers")
 
 
 export class EncryptTransformer implements ValueTransformer {
   private encryptor: SimpleEncryptor
-  
+
   constructor(key: string) {
     this.encryptor = Encryptor(key)
   }
@@ -29,11 +33,12 @@ export class SurrealDbEncryptTransformer implements ValueTransformer {
   }
 
   to(value: SurrealDBOptions): SurrealDBOptions {
-    if (value?.token) {
-      value.token = this.encryptor.encrypt(value.token);
+    const newVal = _.cloneDeep(value)
+    if (newVal?.token) {
+      newVal.token = this.encryptor.encrypt(value.token);
     }
 
-    return value;
+    return newVal;
   }
 
   from(value: SurrealDBOptions): SurrealDBOptions {
@@ -54,15 +59,16 @@ export class AzureCredsEncryptTransformer implements ValueTransformer {
   }
 
   to(value: AzureAuthOptions): AzureAuthOptions {
-    if (value?.tenantId) {
-      value.tenantId = this.encryptor.encrypt(value.tenantId);
+    const newVal = _.cloneDeep(value);
+    if (newVal?.tenantId) {
+      newVal.tenantId = this.encryptor.encrypt(newVal.tenantId);
     }
 
-    if (value?.clientSecret) {
-      value.clientSecret = this.encryptor.encrypt(value.clientSecret);
+    if (newVal?.clientSecret) {
+      newVal.clientSecret = this.encryptor.encrypt(newVal.clientSecret);
     }
 
-    return value;
+    return newVal;
   }
 
   from(value: AzureAuthOptions): AzureAuthOptions {
