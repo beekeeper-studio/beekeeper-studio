@@ -7,6 +7,8 @@ export enum AppEvent {
   menuClick = 'menu-click',
   settingsChanged = "sc-refresh",
   newTab = 'nt',
+  /** Create a new custom tab. First argument is `TransportOpenTab`. */
+  newCustomTab = 'nct',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
   disconnect = 'dc',
@@ -18,6 +20,7 @@ export enum AppEvent {
   beginExport = 'be',
   beginImport = 'beginImport',
   createTable = 'new_table',
+  createTableFromFile = 'new_table_from_file',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
   quickSearch = 'quickSearch',

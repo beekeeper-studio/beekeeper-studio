@@ -85,6 +85,12 @@ describe("Firebird Tests", () => {
     runCommonTests(() => util);
   });
 
+  describe("Param tests", () => {
+    it("Should be able to handle positional (?) params", async () => {
+      await util.paramTest(['?']);
+    })
+  })
+
   describe("NodeFirebirdWrapper", () => {
     let config: Firebird.Options;
 

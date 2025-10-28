@@ -33,9 +33,12 @@ import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
-import { ConnectionTypes } from '@/lib/db/types'
+import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
+import { PopupMenuModule } from './modules/PopupMenuModule'
+import { WebPluginManagerStatus } from '@/services/plugin'
+import { MenuBarModule } from './modules/MenuBarModule'
 
 
 const log = RawLog.scope('store/index')
@@ -72,7 +75,13 @@ export interface State {
   defaultSchema: string,
   versionString: string,
   connError: string
-  expandFKDetailsByDefault: boolean
+  expandFKDetailsByDefault: boolean,
+
+  // SurrealDB only
+  namespace: Nullable<string>,
+  namespaceList: string[],
+
+  pluginManagerStatus: WebPluginManagerStatus,
 }
 
 Vue.use(Vuex)
@@ -94,6 +103,8 @@ const store = new Vuex.Store<State>({
     imports: ImportStoreModule,
     backups: BackupModule,
     sidebar: SidebarModule,
+    popupMenu: PopupMenuModule,
+    menuBar: MenuBarModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -127,6 +138,9 @@ const store = new Vuex.Store<State>({
     versionString: null,
     connError: null,
     expandFKDetailsByDefault: SmartLocalStorage.getBool('expandFKDetailsByDefault'),
+    namespace: null,
+    namespaceList: [],
+    pluginManagerStatus: "initializing",
   },
 
   getters: {
@@ -247,6 +261,14 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
+    aiShellHintShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
+    },
+    aiShellAvailable(_state, getters) {
+      return getters["tabs/newTabDropdownItems"].some(
+        ({ config }) => config.pluginId === "bks-ai-shell"
+      );
+    }
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -288,6 +310,7 @@ const store = new Vuex.Store<State>({
     newConnection(state, config: Nullable<IConnection>) {
       state.usedConfig = config
       state.database = config?.defaultDatabase
+      state.namespace = config?.surrealDbOptions?.namespace;
     },
     // this shouldn't be used at all
     clearConnection(state) {
@@ -297,6 +320,8 @@ const store = new Vuex.Store<State>({
       state.server = null
       state.database = null
       state.databaseList = []
+      state.namespace = null
+      state.namespaceList = []
       state.tables = []
       state.routines = []
       state.entityFilter = {
@@ -307,12 +332,17 @@ const store = new Vuex.Store<State>({
         showPartitions: false
       }
     },
-    updateConnection(state, {database}) {
-      // state.connection = connection
+    database(state, database: string) {
       state.database = database
     },
     databaseList(state, dbs: string[]) {
       state.databaseList = dbs
+    },
+    namespaceList(state, nss: string[]) {
+      state.namespaceList = nss;
+    },
+    namespace(state, namespace: string) {
+      state.namespace = namespace;
     },
     unloadTables(state) {
       state.tables = []
@@ -381,6 +411,9 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state, value: boolean) {
       state.expandFKDetailsByDefault = value
     },
+    webPluginManagerStatus(state, status: WebPluginManagerStatus) {
+      state.pluginManagerStatus = status
+    },
   },
   actions: {
     async test(context, config: IConnection) {
@@ -441,12 +474,16 @@ const store = new Vuex.Store<State>({
         config = await context.dispatch('data/usedconnections/recordUsed', config)
         context.commit('newConnection', config)
 
+        if (context.state.usedConfig.connectionType === 'surrealdb' &&
+          context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
+          await context.dispatch('updateNamespaceList');
+        }
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
         context.dispatch('updateWindowTitle', config)
 
-        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id }) 
+        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
       } else {
@@ -488,11 +525,29 @@ const store = new Vuex.Store<State>({
     },
     async changeDatabase(context, newDatabase: string) {
       log.info("Pool changing database to", newDatabase)
-      await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase });
-      context.commit('updateConnection', {database: newDatabase})
+
+      let databaseForServer = newDatabase;
+      if (context.state.connectionType === 'surrealdb') {
+        databaseForServer = `${context.state.namespace}::${newDatabase || ''}`;
+      }
+
+      await Vue.prototype.$util.send('conn/changeDatabase', { newDatabase: databaseForServer });
+      context.commit('database', newDatabase)
       await context.dispatch('updateTables')
       await context.dispatch('updateDatabaseList')
       await context.dispatch('updateRoutines')
+    },
+    async changeNamespace(context, newNamespace: string) {
+      if (newNamespace === context.state.namespace) return;
+      log.info("Pool changing namespace to ", newNamespace);
+
+      const dbs = await context.state.connection.listDatabases({ namespace: newNamespace });
+      log.info("DatabaseList:::", dbs)
+      context.commit('databaseList', dbs);
+      context.commit('namespace', newNamespace);
+      context.commit('database', null);
+      context.commit('tables', []);
+      context.commit('routines', []);
     },
 
     async updateTableColumns(context, table: TableOrView) {
@@ -519,6 +574,12 @@ const store = new Vuex.Store<State>({
       const databaseList = await context.state.connection.listDatabases();
       log.info("databaseList: ", databaseList)
       context.commit('databaseList', databaseList)
+    },
+    async updateNamespaceList(context) {
+      // Just reuse listSchemas cause we don't use it and it's kinda comparable, may be a not great idea
+      const namespaceList = await context.state.connection.listSchemas();
+      log.info("namespaceList: ", namespaceList);
+      context.commit("namespaceList", namespaceList);
     },
     async updateTables(context) {
       // FIXME: We should only load tables for the active/default schema
@@ -619,6 +680,12 @@ const store = new Vuex.Store<State>({
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    setAiShellHintShown(context) {
+      context.dispatch("settings/save", {
+        key: "tabDropdownAIShellHintShown",
+        value: new Date(),
+      });
     },
   },
   plugins: []

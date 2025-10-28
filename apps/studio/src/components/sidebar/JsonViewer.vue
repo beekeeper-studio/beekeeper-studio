@@ -13,7 +13,7 @@
           <input
             class="form-control"
             type="text"
-            placeholder="Filter fields"
+            placeholder="Filter keys by text or /regex/"
             v-model="debouncedFilter"
           >
           <button
@@ -188,14 +188,9 @@ export default Vue.extend({
       }, 500),
     },
     sourceMap() {
-      let replacedFilteredValue = this.filteredValue;
-      try {
-        // run the replacer on the filteredValue
-        replacedFilteredValue = JSON.parse(JSON.stringify(this.filteredValue, this.replacer));
-      } catch (error) {
-        log.warn("Failed to replace filtered value", error);
-      }
-      return JsonSourceMap.stringify(replacedFilteredValue, null, 2);
+      // Since JsonSourceMap.stringify doesn't support replacer functions,
+      // we've already applied the replacer in processedValue/filteredValue
+      return JsonSourceMap.stringify(this.filteredValue, null, 2);
     },
     filteredValue() {
       if (this.empty) {
@@ -213,7 +208,15 @@ export default Vue.extend({
           _.set(clonedValue, path, (value as string).slice(0, globals.maxDetailViewTextLength))
         }
       })
-      return clonedValue
+      
+      // Apply the replacer function to ensure consistency between filtered and unfiltered views
+      // This is necessary because JsonSourceMap.stringify doesn't support replacer functions
+      try {
+        return JSON.parse(JSON.stringify(clonedValue, this.replacer));
+      } catch (error) {
+        log.warn("Failed to apply replacer to processed value", error);
+        return clonedValue;
+      }
     },
     truncatablePaths() {
       return getPaths(this.value).filter((path) => {

@@ -1,4 +1,4 @@
-name: Studio - Unit Tests
+name: Studio Tests
 
 on:
   # Trigger the workflow on push or pull request,
@@ -30,7 +30,7 @@ jobs:
         name: Set Chunks
         run: echo "::set-output name=test-chunks::$(./bin/get-db-files-as-json.sh)"
   unit:
-    name: Non-terrible tests
+    name: Unit tests
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
@@ -64,6 +64,9 @@ jobs:
 
       - name: Non-DB Integration Tests
         run: yarn workspace beekeeper-studio run test:ci --ci --silent
+
+      - name: Unit Tests (UI Kit)
+        run: yarn workspace @beekeeperstudio/ui-kit run test --silent
 
 
   integration:
@@ -164,12 +167,12 @@ jobs:
             cat server.log  # (Optional: see if it launched correctly)
             yarn workspace beekeeper-studio test:e2e:ci
           '
-        env: 
+        env:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
           ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
 
-  
+
       # - name: Run E2E Tests
       #   run: yarn test:e2e:ci
       #   continue-on-error: true

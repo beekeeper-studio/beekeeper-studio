@@ -3,6 +3,7 @@ import { BksField } from "../models";
 import rawLog from "@bksLogger";
 import { DuckDBBlobValue } from "@duckdb/node-api";
 import { ObjectId } from "mongodb";
+import { RecordId, StringRecordId } from "surrealdb";
 
 const log = rawLog.scope("transcoders");
 
@@ -11,6 +12,26 @@ export interface Transcoder<T, U> {
   deserialize(value: U): T;
   serializeCheckByField(field: BksField): boolean;
   deserializeCheckByValue(value: unknown): value is U;
+}
+
+export const SurrealDBRecordTranscoder: Transcoder<RecordId | StringRecordId, string> = {
+  serialize(value) {
+    if (!(value instanceof RecordId) && !(value instanceof StringRecordId)) {
+      log.warn("SurrealDBRecordTranscoder: cannot serialize non-recordid value");
+      return value;
+    }
+    return value.toString();
+  },
+  deserialize(value) {
+    return new StringRecordId(value)
+  },
+  serializeCheckByField(field): boolean {
+    return field.bksType === 'SURREALID';
+  },
+  deserializeCheckByValue(value): value is string {
+    // This may be too permissive but we'll see
+    return _.isString(value) && /^(?:[a-zA-Z_][a-zA-Z0-9_\-]*|⟨[^⟩]+⟩):.+$/.test(value);
+  }
 }
 
 export const MongoDBObjectIdTranscoder: Transcoder<ObjectId, Uint8Array> = {

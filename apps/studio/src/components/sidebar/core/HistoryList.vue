@@ -23,6 +23,10 @@
             </div>
           </div>
         </div>
+        <div class="show-all-history-container" title="By default, only the history executed on the current connection are shown.">
+          <input type="checkbox" id="show-all-history-checkbox" v-model="showAllHistory"/>
+          <label for="show-all-history-checkbox" class="show-all-history-text">Show all</label>
+        </div>
         <error-alert
           v-if="error"
           :error="error"
@@ -30,7 +34,7 @@
         />
         <sidebar-loading v-else-if="loading" />
         <div
-          v-else-if="!history.length"
+          v-else-if="!currentHistory.length"
           class="empty"
         >
           No recent queries
@@ -42,20 +46,20 @@
           <div
             class="list-item"
             @contextmenu.prevent.stop="openContextMenu($event, item)"
-            v-for="item in history"
+            v-for="item in currentHistory"
             :key="item.id"
           >
             <a
               class="list-item-btn"
               @click.prevent="select(item)"
               @dblclick.prevent="click(item)"
-              :title="item.text"
+              :title="item.excerpt"
               :class="{selected: item === selected}"
             >
               <i class="item-icon query material-icons">code</i>
               <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
               <div class="list-title flex-col">
-                <span class="item-text expand truncate">{{ nicelySized(item.text) }}</span>
+                <span class="item-text expand truncate">{{ nicelySized(item.excerpt) }}</span>
                 <span class="subtitle"><span>{{ item.numberOfRecords || 0 }} Results</span>, {{ formatTimeAgo(item) }}</span>
               </div>
             </a>
@@ -83,14 +87,23 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
       return {
         checkedHistoryQueries: [],
         timeAgo: new TimeAgo('en-US'),
-        selected: null
+        selected: null,
+        showAllHistory: false
       }
     },
     computed: {
+      ...mapState(['usedConfig']),
       ...mapState('data/usedQueries', { 'history': 'items', 'loading': 'loading', 'error': 'error'},),
       removeTitle() {
         return `Remove ${this.checkedHistoryQueries.length} saved history queries`;
-      }
+      },
+      currentHistory(){
+        if(this.showAllHistory){
+          return this.history;
+        } else {
+          return this.history.filter(item => item.connectionId === this.usedConfig?.id);
+        }
+      },
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)

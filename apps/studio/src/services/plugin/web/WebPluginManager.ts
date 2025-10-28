@@ -1,12 +1,15 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginNotificationData } from "../types";
+import { Manifest, OnViewRequestListener, PluginContext } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { LoadViewParams, PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
 
 const log = rawLog.scope("WebPluginManager");
 
 export default class WebPluginManager {
+  plugins: PluginContext[] = [];
   /** A map of plugin id -> loader */
   loaders: Map<string, WebPluginLoader> = new Map();
 
@@ -14,7 +17,8 @@ export default class WebPluginManager {
 
   constructor(
     private utilityConnection: UtilityConnection,
-    public readonly pluginStore: PluginStoreService
+    public readonly pluginStore: PluginStoreService,
+    public readonly appVersion: string
   ) {}
 
   async initialize() {
@@ -23,11 +27,21 @@ export default class WebPluginManager {
       return;
     }
 
-    const enabledPlugins: Manifest[] = await this.utilityConnection.send(
-      "plugin/enabledPlugins"
+    await this.utilityConnection.send("plugin/waitForInit");
+
+    this.plugins = await this.utilityConnection.send(
+      "plugin/plugins"
     );
 
-    for (const manifest of enabledPlugins) {
+    for (const { loadable, manifest } of this.plugins) {
+      if (!loadable) {
+        log.warn(`Plugin "${manifest.id}" is not loadable. Skipping...`);
+        continue;
+      }
+      if (window.bksConfig.plugins[manifest.id]?.disabled) {
+        log.info(`Plugin "${manifest.id}" is disabled. Skipping...`);
+        continue;
+      }
       try {
         await this.loadPlugin(manifest);
       } catch (e) {
@@ -66,6 +80,7 @@ export default class WebPluginManager {
       throw new Error("Plugin not found: " + id);
     }
     await loader.unload();
+    loader.dispose();
     this.loaders.delete(id);
   }
 
@@ -78,14 +93,15 @@ export default class WebPluginManager {
     await loader.load(manifest);
   }
 
-  /** If the plugin uses iframes, please register the iframe so we can send
-   * and receive messages. Make sure to register after the iframe is fully loaded. */
-  registerIframe(pluginId: string, iframe: HTMLIFrameElement) {
+  /** For plugins that use iframes, they need to be registered so that we can
+   * communicate. Please call this BEFORE the iframe is loaded.
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event} */
+  registerIframe(pluginId: string, iframe: HTMLIFrameElement, context: PluginViewContext) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.registerIframe(iframe);
+    loader.registerViewInstance({ iframe, context });
   }
 
   unregisterIframe(pluginId: string, iframe: HTMLIFrameElement) {
@@ -93,7 +109,7 @@ export default class WebPluginManager {
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.unregisterIframe(iframe);
+    loader.unregisterViewInstance(iframe);
   }
 
   /** Send a notification to a specific plugin */
@@ -102,22 +118,22 @@ export default class WebPluginManager {
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.postMessage(data);
+    loader.broadcast(data);
   }
 
   /** Send a notification to all plugins */
   async notifyAll(data: PluginNotificationData) {
     this.loaders.forEach((loader) => {
-      loader.postMessage(data);
+      loader.broadcast(data);
     })
   }
 
-  manifestOf(pluginId: string) {
-    const loader = this.loaders.get(pluginId);
-    if (!loader) {
+  pluginOf(pluginId: string) {
+    const plugin = this.plugins.find((p) => p.manifest.id === pluginId);
+    if (!plugin) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    return loader.manifest;
+    return plugin;
   }
 
   buildUrlFor(pluginId: string, entry: string) {
@@ -134,7 +150,46 @@ export default class WebPluginManager {
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    loader.addListener(listener);
+    return loader.addListener(listener);
+  }
+
+  resolveContextMenuOptions(
+    contextId: "tab-header",
+    options: ContextOption[]
+  ) {
+    const extraOptions = [];
+
+    this.loaders.forEach((loader) => {
+      extraOptions.push(...loader.menu.getContextMenu(contextId));
+    });
+
+    if (extraOptions.length === 0) {
+      return options;
+    }
+
+    return [
+      ...options,
+      { type: "divider" },
+      ...extraOptions,
+    ]
+  }
+
+  /** Subscribe to when a plugin is ready to be used. */
+  onReady(pluginId: string, fn: Function) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.onReady(fn);
+  }
+
+  /** Subscribe to when a plugin is disposed. */
+  onDispose(pluginId: string, fn: Function) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+    return loader.onDispose(fn);
   }
 
   private async loadPlugin(manifest: Manifest) {
@@ -143,7 +198,13 @@ export default class WebPluginManager {
       return this.loaders.get(manifest.id);
     }
 
-    const loader = new WebPluginLoader(manifest, this.pluginStore, this.utilityConnection);
+    const loader = new WebPluginLoader({
+      manifest,
+      store: this.pluginStore,
+      utility: this.utilityConnection,
+      log: rawLog.scope(`Plugin:${manifest.id}`),
+      appVersion: this.appVersion,
+    });
     await loader.load();
     this.loaders.set(manifest.id, loader);
     return loader;

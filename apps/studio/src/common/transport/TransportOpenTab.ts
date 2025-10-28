@@ -2,8 +2,12 @@ import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Transport } from ".";
 import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
+import { JsonValue } from "@/types";
+import { LoadViewParams } from "@beekeeperstudio/plugin";
 
-export type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'plugin-shell'
+export type PluginTabType = 'plugin-base' | 'plugin-shell';
+export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
+export type TabType = CoreTabType | PluginTabType
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
 
@@ -16,6 +20,7 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   position: number,
   active: boolean,
   queryId?: number,
+  usedQueryId?: number,
   unsavedQueryText?: string,
   tableName?: string,
   schemaName?: string,
@@ -29,43 +34,72 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   context: Context
 }
 
-export type TransportPluginShellTab = TransportOpenTab<{
+/** Used when creating a new tab */
+export type TransportOpenTabInit<Context = {}> = Omit<
+  TransportOpenTab<Context>,
+  | "id"
+  | "createdAt"
+  | "updatedAt"
+  | "version"
+  | "isRunning"
+  | "connectionId"
+  | "alert"
+  | "position"
+  | "active"
+>;
+
+export type TransportPluginShellTab = TransportOpenTab<PluginTabContext>;
+export type TransportPluginTab = TransportOpenTab<PluginTabContext>;
+
+export type PluginTabContext = {
   pluginId: string;
   pluginTabTypeId: string;
   /** A plugin can save the state of the tab here. For example, an AI plugin
      * can save the chat conversation here */
-  data: any;
-}>
+  data?: JsonValue;
+  /** The command to execute on the plugin. Plugins cannot change this.
+   * @since 5.4.0 */
+  command?: string;
+  /** Parameters to be passed to the plugin. Plugins cannot change this.
+   * @since 5.4.0 */
+  params?: LoadViewParams;
+};
 
 export namespace TabTypeConfig {
-  interface BaseTabTypeConfig {
+  interface BaseConfig {
     type: TabType;
     name: string;
     /** Used for the dropdown menu next to the "new tab" icon. */
-    menuItem: {
+    menuItem?: {
       label: string;
       shortcut?: string;
+      /** For plugins */
+      command: string;
+      /** For plugins */
+      params?: LoadViewParams;
     };
   }
 
-  interface DefaultConfig extends BaseTabTypeConfig {
-    type: Exclude<TabType, "plugin-shell">;
+  interface CoreConfig extends BaseConfig {
+    type: CoreTabType;
   }
 
   /** `"plugin-shell"` consists of two parts; an iframe at the top and a table at
    * the bottom. This tab looks almost identical to the query tab. The only
    * difference is, in this tab, the result table can be collapsed completely. */
-  export interface PluginShellConfig extends BaseTabTypeConfig, PluginShellConfigIdentifiers {
-    type: "plugin-shell";
+  export interface PluginConfig extends BaseConfig, PluginRef {
+    type: PluginTabType;
     icon?: string; // from material-icons
   }
 
-  export interface PluginShellConfigIdentifiers {
+  export interface PluginRef {
+    /** Use plugin id from the manifest */
     pluginId: string;
+    /** Use view id from the manifest. */
     pluginTabTypeId: string;
   }
 
-  export type Config = DefaultConfig | PluginShellConfig;
+  export type Config = CoreConfig | PluginConfig;
 }
 
 export function setFilters(obj: TransportOpenTab, filters: Nullable<TableFilter[]>) {
@@ -137,7 +171,8 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
       // at a time.
       return obj.tabType === 'import-export-database'
     case 'query':
-      return obj.queryId === other.queryId
+      return (obj.queryId === other.queryId && obj.queryId !== null && other.queryId !== null) ||
+        (obj.usedQueryId === other.usedQueryId && obj.usedQueryId !== null && other.queryId !== null)
     case 'backup':
       return obj.tabType === 'backup';
     case 'restore':

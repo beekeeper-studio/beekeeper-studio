@@ -84,6 +84,7 @@ export interface TableProperties {
   partitions?: TablePartition[]
   owner?: string,
   createdAt?: string
+  permissionWarnings?: string[]
 }
 
 export interface TableColumn {
@@ -99,6 +100,9 @@ export interface ExtendedTableColumn extends SchemaItem {
   tableName: string
   hasDefault?: boolean
   generated?: boolean
+  generationExpression?: string
+  characterSet?: string
+  collation?: string
   array?: boolean
   bksField: BksField
 }
@@ -119,9 +123,13 @@ export interface DatabaseFilterOptions {
   database?: string;
   only?: string[];
   ignore?: string[];
+
+  // surrealdb only
+  namespace?: string;
 }
 
 export interface SchemaFilterOptions {
+  database?: string;
   schema?: string;
   only?: string[];
   ignore?: string[];
@@ -159,7 +167,7 @@ export interface BksField {
   bksType: BksFieldType;
 }
 
-export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID';
+export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID' | 'SURREALID';
 
 export interface TableChanges {
   inserts: TableInsert[];

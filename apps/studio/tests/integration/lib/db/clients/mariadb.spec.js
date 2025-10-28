@@ -76,4 +76,10 @@ describe("MariaDB Tests", () => {
     expect(fields).toStrictEqual(expectedBksFields);
     
   })
+
+  describe("Param tests", () => {
+    it("Should be able to handle positional (?) params", async () => {
+      await util.paramTest(['?']);
+    })
+  })
 })
