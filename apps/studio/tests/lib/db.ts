@@ -1963,14 +1963,13 @@ export class DBTestUtil {
     }
 
     // Test 1: Products table should have incoming key from orders
-    const productsKeys = (await this.connection.getTableKeys('products', this.defaultSchema))
-      .map(key => ({
-        ..._.pick(key, ['toTable', 'fromTable', 'toColumn', 'fromColumn']),
-        toTable: key.toTable.toLowerCase(),
-        fromTable: key.fromTable.toLowerCase(),
-        toColumn: key.toColumn.toString().toLowerCase(),
-        fromColumn: key.fromColumn.toString().toLowerCase(),
-      }));
+    const productsKeys = this.connection
+      .getTableKeys("products", this.defaultSchema)
+      .then((keys) =>
+        keys.map((key) =>
+          _.pick(key, ["toTable", "fromTable", "toColumn", "fromColumn"])
+        )
+      );
 
     expect(productsKeys).toStrictEqual([
       {
@@ -1982,14 +1981,13 @@ export class DBTestUtil {
     ]);
 
     // Test 2: Orders table should have both incoming (from order_items) and outgoing (to products) keys
-    const ordersKeys = (await this.connection.getTableKeys('orders', this.defaultSchema))
-      .map(key => ({
-        ..._.pick(key, ['toTable', 'fromTable', 'toColumn', 'fromColumn']),
-        toTable: key.toTable.toLowerCase(),
-        fromTable: key.fromTable.toLowerCase(),
-        toColumn: key.toColumn.toString().toLowerCase(),
-        fromColumn: key.fromColumn.toString().toLowerCase(),
-      }));
+    const ordersKeys = this.connection
+      .getTableKeys("orders", this.defaultSchema)
+      .then((keys) =>
+        keys.map((key) =>
+          _.pick(key, ["toTable", "fromTable", "toColumn", "fromColumn"])
+        )
+      );
 
     expect(ordersKeys).toStrictEqual(expect.arrayContaining([
       {

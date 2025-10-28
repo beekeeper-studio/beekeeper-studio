@@ -10,6 +10,7 @@ import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { NgQueryResult, BksField } from "@/lib/db/models";
+import { TableKey } from "@shared/lib/dialects/models";
 import { LibSQLBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("libsql");
@@ -94,14 +95,13 @@ export class LibSQLClient extends SqliteClient {
     }
   }
 
-  async getTableKeys(table: string, schema?: string): Promise<import("@/lib/db/models").TableKey[]> {
+  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
     if (!this.isRemote) {
       return super.getTableKeys(table, schema);
     }
 
     // For remote connections, add delays to prevent rate limiting
     const SD = this.dialectData;
-    const { TableKey } = await import("@/lib/db/models");
 
     // Get foreign keys FROM this table (referencing other tables)
     const outgoingSQL = `pragma foreign_key_list('${SD.escapeString(table)}')`;
@@ -122,7 +122,7 @@ export class LibSQLClient extends SqliteClient {
 
     // Get foreign keys TO this table (other tables referencing this table)
     const allTables = await this.listTables();
-    const incomingKeys: import("@/lib/db/models").TableKey[] = [];
+    const incomingKeys: TableKey[] = [];
 
     for (const t of allTables) {
       const sql = `pragma foreign_key_list('${SD.escapeString(t.name)}')`;
