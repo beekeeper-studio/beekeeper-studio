@@ -276,11 +276,9 @@ export default Vue.extend({
           field: 'extra',
           tooltip: true,
           headerTooltip: 'eg AUTO_INCREMENT',
-          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          editable: false,
           cssClass: this.customColumnCssClass('alterColumn'),
           formatter: this.cellFormatter,
-          cellEdited: this.cellEdited,
-          editor: vueEditor(NullableInputEditorVue),
           minWidth: 90,
         }),
         (this.disabledFeatures?.comments ? null : {

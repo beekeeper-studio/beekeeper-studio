@@ -1,6 +1,6 @@
 {
   "name": "beekeeper-studio",
-  "version": "5.4.0",
+  "version": "5.4.9",
   "private": true,
   "description": "An easy-to use SQL query editor and database UI for Mac, Windows, and Linux",
   "author": {
@@ -64,6 +64,7 @@
     "bytes": "^3.1.0",
     "cassandra-driver": "^4.6.4",
     "cassandra-knex": "beekeeper-studio/cassandra-knex#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a",
+    "class-validator": "^0.14.1",
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "connection-string": "^3.4.2",
@@ -207,7 +208,7 @@
     "sass": "~1.77.1",
     "sass-embedded": "^1.77.1",
     "testcontainers": "~10.25.0",
-    "tmp": "^0.2.3",
+    "tmp": "^0.2.4",
     "ts-jest": "^29.1.5",
     "tsx": "^4.20.3",
     "typescript": "~5.8.3",
