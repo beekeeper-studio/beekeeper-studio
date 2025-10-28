@@ -212,7 +212,7 @@
     "ts-jest": "^29.1.5",
     "tsx": "^4.20.3",
     "typescript": "~5.8.3",
-    "vite": "~5.4.19",
+    "vite": "~5.4.21",
     "vite-plugin-commonjs": "^0.10.1",
     "vue-template-compiler": "^2.7.16",
     "xvfb-maybe": "^0.2.1"
