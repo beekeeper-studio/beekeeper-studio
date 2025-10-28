@@ -229,6 +229,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, redisContext, server, database);
+    this.readOnlyMode = server?.config?.readOnlyMode;
   }
 
   private async getRespVersion() {
