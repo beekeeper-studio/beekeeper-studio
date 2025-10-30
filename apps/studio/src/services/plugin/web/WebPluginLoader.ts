@@ -57,6 +57,7 @@ export default class WebPluginLoader {
     this.menu = new PluginMenuManager(context);
 
     this.handleMessage = this.handleMessage.bind(this);
+    this.onTableChanged = this.onTableChanged.bind(this);
   }
 
   /** Starts the plugin */
@@ -143,7 +144,9 @@ export default class WebPluginLoader {
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getTables":
-          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
+          response.result = this.pluginStore.getTables(
+            request.args.schema
+          ) as GetTablesResponse['result'];
           break;
         case "getColumns":
           response.result = await this.pluginStore.getColumns(
@@ -362,13 +365,17 @@ export default class WebPluginLoader {
     this.onDisposeListeners.forEach((fn) => fn());
   }
 
+  /** Register all events here. */
   private registerEvents() {
     // Add event listener for messages from iframe
+    this.context.store.on("tablesChanged", this.onTableChanged);
     window.addEventListener("message", this.handleMessage);
     this.listening = true;
   }
 
+  /** Unregister all events here. */
   private unregisterEvents() {
+    this.context.store.off("tablesChanged", this.onTableChanged);
     window.removeEventListener("message", this.handleMessage);
     this.listening = false;
   }
@@ -391,5 +398,9 @@ export default class WebPluginLoader {
     return () => {
       this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
     }
+  }
+
+  private onTableChanged() {
+    this.broadcast({ name: "tablesChanged" });
   }
 }

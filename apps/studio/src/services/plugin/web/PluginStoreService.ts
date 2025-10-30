@@ -32,6 +32,8 @@ import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
  * for context menu because they don't exist in Vuex.
  */
 export default class PluginStoreService {
+  private tablesChangedListeners: Set<() => void> = new Set();
+
   constructor(
     private store: Store<RootState>,
     public appEventBus: {
@@ -39,7 +41,22 @@ export default class PluginStoreService {
       on: (event: AppEvent, listener: (...args: any) => void) => void;
       off: (event: AppEvent, listener: (...args: any) => void) => void;
     }
-  ) {}
+  ) {
+    this.store.subscribe((mutation) => {
+      if (mutation.type === "tables") {
+        this.tablesChangedListeners.forEach((listener) => listener());
+      }
+    })
+  }
+
+  on(name: 'tablesChanged', listener: () => void) {
+    this.tablesChangedListeners.add(listener);
+    return () => this.tablesChangedListeners.delete(listener);
+  }
+
+  off(name: 'tablesChanged', listener: () => void) {
+    this.tablesChangedListeners.delete(listener);
+  }
 
   getTheme(): ThemeChangedNotification["args"] {
     const cssProps = [
@@ -284,11 +301,15 @@ export default class PluginStoreService {
     this.store.commit("tabs/unsetMenuItem", ref);
   }
 
-  getTables() {
-    return this.store.state.tables.map((t) => ({
-      name: t.name,
-      schema: t.schema,
-    }));
+  getTables(schema?: string) {
+    const tables = [];
+    for (const table of this.store.state.tables) {
+      if (schema && table.schema !== schema) {
+        continue;
+      }
+      tables.push({ name: table.name, schema: table.schema });
+    }
+    return tables;
   }
 
   private findTable(name: string, schema?: string) {
