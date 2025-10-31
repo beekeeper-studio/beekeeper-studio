@@ -1448,10 +1448,18 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async reserveConnection(tabId: number): Promise<void> {
-    this.conn.pool.getConnection((err, conn) => {
-      if (!err) {
-        this.pushConnection(tabId, conn);
-      }
+    return new Promise((resolve, reject) => {
+      this.conn.pool.getConnection((err, conn) => {
+        if (!err) {
+          try {
+            this.pushConnection(tabId, conn);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        }
+        reject(err);
+      })
     })
   }
 
