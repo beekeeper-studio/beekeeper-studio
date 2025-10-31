@@ -303,30 +303,16 @@
 .material-icons.menu-icon {
   margin-left: 10px !important;
 }
-/* JSON syntax highlighting */
-.json-cell { white-space: pre; font-family: var(--font-monospace, monospace); }
-.json-tooltip { 
-  font-family: var(--font-monospace, monospace); 
-  max-width: 600px; 
-  max-height: 400px;
-  overflow: auto; 
-  background: #1e1e1e; 
-  color: #d4d4d4; 
-  padding: 8px 10px; 
-  border: 1px solid #333; 
-  border-radius: 4px; 
-  line-height: 1.25; 
-  box-shadow: 0 2px 6px rgba(0,0,0,.4);
-}
-/* Light theme fallback (detect if body has light class if such convention exists) */
-body.light .json-tooltip { background: #fafafa; color: #333; border-color: #ccc; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
-.json-type .json-key, .json-key { color: #c792ea; }
-.json-type .json-string, .json-string { color: #ecc48d; }
-.json-type .json-number, .json-number { color: #d8dee9; font-weight: bold; }
-.json-type .json-boolean, .json-boolean { color: #82aaff; font-weight: bold; }
-.json-type .json-null, .json-null { color: #ff5370; font-style: italic; }
-/* Keep pre tags selectable */
-pre.json-cell, pre.json-tooltip { margin: 0; }
+/* JSON cell styling via CodeMirror tokens */
+.json-cell { white-space: pre; font-family: var(--font-monospace, monospace); margin: 0; }
+.cm-number { font-weight: 600; }
+.cm-atom { font-weight: 600; }
+/* Balanced palette: purple keys, tan strings, soft green numbers, blue atoms, grey punctuation */
+.json-cell .cm-property { color: #c792ea; }
+.json-cell .cm-string { color: #98c379; }
+.json-cell .cm-number { color: #61afef; }
+.json-cell .cm-atom { color: #d19a66; }
+.json-cell .cm-punctuation { color: #5c6370; }
 </style>
 
 <script lang="ts">
