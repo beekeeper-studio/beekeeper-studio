@@ -959,14 +959,25 @@ export class DBTestUtil {
 
     await this.checkForPoolConnectionReleasing()
 
+    // `query` and `executeQuery` should have the same result
+    const abQuery = this.dbType === "firebird" ?
+      "select trim('a') as a, trim('b') as b from rdb$database" :
+      "select 'a' as a, 'b' as b from one_record";
+    const executeQueryResult = await this.connection.executeQuery(abQuery, {
+      // FIXME might want to unify these
+      arrayMode: true, // sqlite, mysql, postgres, duckdb
+      rowsAsArray: true, // firebird
+      arrayRowMode: true, // sqlserver
+    });
+    const queryResult = await this.connection.query(abQuery).then((q) => q.execute());
+    expect(executeQueryResult[0]).toStrictEqual(queryResult[0]);
+
     if (this.data.disabledFeatures?.alter?.multiStatement) {
       return;
     }
 
     const q2 = await this.connection.query(
-      this.dbType === 'firebird' ?
-        "select trim('a') as a from rdb$database; select trim('b') as b from rdb$database" :
-        "select 'a' as a from one_record; select 'b' as b from one_record"
+      "select 'a' as a from one_record; select 'b' as b from one_record"
     );
     if (!q2) throw "No query result"
     const r2 = await q2.execute()
