@@ -102,7 +102,7 @@
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
     "ist": "^1.1.7",
-    "happy-dom": "^18.0.1",
+    "happy-dom": "^20.0.2",
     "lodash": "^4.17.21",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
