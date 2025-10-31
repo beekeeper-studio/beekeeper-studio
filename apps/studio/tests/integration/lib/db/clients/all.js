@@ -135,9 +135,13 @@ export function runCommonTests(getUtil, opts = {}) {
     test("primary key tests", async () => {
       await getUtil().primaryKeyTests()
     })
-    
+
     test("composite key tests", async () => {
       await getUtil().compositeKeyTests()
+    })
+
+    test("incoming key tests", async () => {
+      await getUtil().incomingKeyTests()
     })
 
     describe("Table Structure", () => {

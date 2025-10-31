@@ -10,6 +10,7 @@ import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { NgQueryResult, BksField } from "@/lib/db/models";
+import { TableKey } from "@shared/lib/dialects/models";
 import { LibSQLBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("libsql");
@@ -92,6 +93,15 @@ export class LibSQLClient extends SqliteClient {
     if (this._rawConnection) {
       this._rawConnection.sync();
     }
+  }
+
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+    const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
+    const result = await this.driverExecuteSingle(query);
+    const columns = await this.listTableColumns(table);
+    const fields: BksField[] = columns.map((column) => column.bksField);
+    const rows = await this.serializeQueryResult(result, fields);
+    return { result: rows, fields };
   }
 
   // FIXME (azmi): we need this until array mode is fixed
@@ -200,29 +210,5 @@ export class LibSQLClient extends SqliteClient {
 
   private get libsqlOptions() {
     return this.server.config.libsqlOptions;
-  }
-
-  parseQueryResultColumns(qr: SqliteResult): BksField[] {
-    if (qr.columns.length > 0) {
-      return super.parseQueryResultColumns(qr);
-    }
-
-    const columns: BksField[] = [];
-
-    if (qr.rows[0]) {
-      Object.keys(qr.rows[0]).forEach((key) => {
-        const isBlob = qr.rows.some(
-          (row: any) =>
-            !_.isNil(row[key]) &&
-              (_.isBuffer(row[key]) || _.isArrayBuffer(row[key]))
-        );
-        columns.push({
-          name: key,
-          bksType: isBlob ? "BINARY" : "UNKNOWN",
-        });
-      });
-    }
-
-    return columns;
   }
 }
