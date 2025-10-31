@@ -12,6 +12,8 @@ import {
   InsertParams,
   ResponseJSON,
   ClickHouseClient as NodeClickHouseClient,
+  ClickHouseSettings,
+  DataFormat,
 } from "@clickhouse/client";
 import {
   BksField,
@@ -19,6 +21,7 @@ import {
   DatabaseFilterOptions,
   ExtendedTableColumn,
   FilterOptions,
+  ImportFuncOptions,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -50,7 +53,7 @@ import {
   IndexColumn,
   TableKey,
 } from "@shared/lib/dialects/models";
-import { Stream } from "stream";
+import { Readable, Stream } from "stream";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { ClickHouseChangeBuilder } from "@shared/lib/sql/change_builder/ClickHouseChangeBuilder";
 import {
@@ -63,6 +66,8 @@ import { errors } from "@/lib/errors";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
+import fs from "fs";
+import { wait } from "@/shared/lib/wait";
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -84,11 +89,17 @@ interface ResultColumn {
 
 interface BaseResult {
   rows: any[][] | Record<string, any>[];
-  columns: ResultColumn[]
+  columns: ResultColumn[];
   arrayMode: boolean;
 }
 
 type Result = BaseResult & JSONOrStreamResult;
+
+type QueryLogType =
+  | "QueryStart"
+  | "QueryFinish"
+  | "ExceptionBeforeStart"
+  | "ExceptionWhileProcessing";
 
 interface ExecuteQueryOptions {
   params?: Record<string, any>;
@@ -122,10 +133,15 @@ const knex = knexlib({ client: ClickhouseKnexClient });
 const RE_NULLABLE = /^Nullable\((.*)\)$/;
 const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/i;
 
+function bool(bool: boolean) {
+  return bool ? 1 : 0;
+}
+
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
   client: NodeClickHouseClient;
   supportsTransaction: boolean;
+  connectionType = "clickhouse" as const;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, clickhouseContext, server, database);
@@ -136,19 +152,30 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   async connect(): Promise<void> {
     await super.connect();
 
+    this.client = this.createClient();
+    const result = await this.driverExecuteSingle(
+      "SELECT version() AS version"
+    );
+    const json = result.data as ResponseJSON<{ version: string }>;
+    const str = json.data[0].version;
+    this.version = str.trim();
+    this.supportsTransaction = await this.checkTransactionSupport();
+  }
+
+  private createClient(): NodeClickHouseClient {
     let url: string;
 
     if (this.server.config.url) {
-      url = this.server.config.url
+      url = this.server.config.url;
     } else {
-      const urlObj = new URL('http://example.com/');
+      const urlObj = new URL("http://example.com/");
       urlObj.hostname = this.server.config.host;
       urlObj.port = this.server.config.port.toString();
-      urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
+      urlObj.protocol = this.server.config.ssl ? "https:" : "http:";
       url = urlObj.toString();
     }
 
-    this.client = createClient({
+    return createClient({
       url,
       username: this.server.config.user,
       password: this.server.config.password,
@@ -159,13 +186,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       },
       request_timeout: 120_000, // 2 minutes
     });
-    const result = await this.driverExecuteSingle(
-      "SELECT version() AS version"
-    );
-    const json = result.data as ResponseJSON<{ version: string }>;
-    const str = json.data[0].version;
-    this.version = str.trim();
-    this.supportsTransaction = await this.checkTransactionSupport();
   }
 
   async disconnect(): Promise<void> {
@@ -685,6 +705,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     let queryId = uuidv4();
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
     return {
+      queryId,
       execute: async (): Promise<NgQueryResult[]> => {
         try {
           const data = await Promise.race([
@@ -830,7 +851,14 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         data = result.stream;
         resultType = "stream";
       }
-      results.push({ statement, data, resultType, rows, columns, arrayMode: options.arrayMode });
+      results.push({
+        statement,
+        data,
+        resultType,
+        rows,
+        columns,
+        arrayMode: options.arrayMode,
+      });
     }
 
     log.info(`Running Query Finished`);
@@ -1036,6 +1064,222 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       chunkSize,
     });
     return { totalRows, columns, cursor };
+  }
+
+  async importFile(
+    table: TableOrView,
+    importScriptOptions: ImportFuncOptions,
+    readStream: (
+      b: { [key: string]: any },
+      executeOptions?: any,
+      c?: string
+    ) => Promise<any>
+  ) {
+    // For ClickHouse, use native streaming import instead of SQL-based approach
+    const { storeValues } = importScriptOptions;
+
+    // If it's a file-based import, use the streaming approach
+    if (storeValues.fileName) {
+      return await this.runWithConnection(async (client) => {
+        try {
+          await this.importBeginCommand(table, importScriptOptions);
+
+          if (storeValues.truncateTable) {
+            await this.importTruncateCommand(table, importScriptOptions);
+          }
+
+          await this.interactiveImport({
+            client,
+            tableName: table.name,
+            filePath: storeValues.fileName,
+            fileType: storeValues.fileType,
+            csvOptions: {
+              delimiter: importScriptOptions.importerOptions?.delimeter,
+              header: storeValues.useHeaders,
+              skipEmptyLines: storeValues.skipEmptyLines,
+              trimWhitespaces: storeValues.trimWhitespaces,
+            }
+          });
+        } catch (err) {
+          log.error('Error importing data: ', err);
+          await this.importRollbackCommand(table, importScriptOptions);
+          throw err;
+        } finally {
+          await this.importFinalCommand(table, importScriptOptions);
+        }
+      });
+    }
+
+    // For SQL-based imports (like in tests), use the standard approach
+    // but execute directly via streaming rather than individual statements
+    return await super.importFile(table, importScriptOptions, async (importerOptions, executeOptions, fileName) => {
+      // Get the formatted data from the read stream callback
+      const result = await readStream(importerOptions, executeOptions, fileName);
+      return result;
+    });
+  }
+
+  async importLineReadCommand(
+    table: TableOrView,
+    sqlString: string | string[],
+    importOptions: ImportFuncOptions
+  ): Promise<any> {
+    // For SQL-based imports, execute the queries
+    // Note: This is used by tests but not the optimal path for production
+    const sqls = Array.isArray(sqlString) ? sqlString : [sqlString];
+    const results = [];
+    for (const sql of sqls) {
+      const result = await this.driverExecuteMultiple(sql, importOptions.executeOptions);
+      results.push(result);
+    }
+    return results;
+  }
+
+  async getImportSQL(
+    importedData: any[],
+    tableName: string,
+    schema: string = null,
+    _runAsUpsert = false
+  ): Promise<string | string[]> {
+    // ClickHouse doesn't support standard UPSERT syntax
+    // Build simple INSERT statements for SQL-based imports (e.g., tests)
+    // Note: For production, file-based streaming imports are preferred
+    const queries = [];
+    for (const item of importedData) {
+      const data = item.data[0]; // Each item has a data array with one row
+      const columns = Object.keys(data);
+      const values = columns.map(col => {
+        const val = data[col];
+        if (val === null) return 'NULL';
+        if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+        return String(val);
+      });
+
+      const columnsStr = columns.map(c => this.wrapIdentifier(c)).join(', ');
+      const valuesStr = values.join(', ');
+      queries.push(`INSERT INTO ${this.wrapIdentifier(tableName)} (${columnsStr}) VALUES (${valuesStr})`);
+    }
+    return queries;
+  }
+
+  protected async runWithConnection<T>(
+    run: (c: any) => Promise<T>
+  ): Promise<T> {
+    const client = this.createClient();
+    const result = await run(client);
+    await client.close();
+    return result;
+  }
+
+  // We don't need this once this is implemented -> https://github.com/ClickHouse/ClickHouse/issues/49683
+  private async interactiveImport(options: {
+    client: NodeClickHouseClient;
+    tableName: string;
+    filePath: string;
+    fileType: string;
+    csvOptions?: {
+      delimiter: string;
+      // quoteChar: string; TODO clickhouse doesn't have this option.
+      //                    How to implement? Maybe best to use our current
+      //                    CSV parser if this option is used.
+      // escapeChar: string; TODO
+      // newline: string; TODO
+      header: string;
+      skipEmptyLines: boolean;
+      trimWhitespaces: boolean;
+    };
+  }) {
+    const queryId = uuidv4();
+    let values: Readable;
+    let onCleanup = () => {};
+    const settings: ClickHouseSettings = {
+      async_insert: 1,
+      wait_for_async_insert: 0,
+    };
+
+    let format: DataFormat;
+    const fsStream = fs.createReadStream(options.filePath);
+    onCleanup = () => fsStream.close();
+    values = fsStream;
+
+    if (options.fileType === "csv") {
+      format = options.csvOptions.header ? "CSVWithNames" : "CSV";
+      settings.format_csv_delimiter = options.csvOptions.delimiter;
+      settings.input_format_csv_trim_whitespaces = bool(
+        options.csvOptions.trimWhitespaces
+      );
+      settings.input_format_csv_skip_trailing_empty_lines = bool(
+        options.csvOptions.skipEmptyLines
+      );
+      settings.format_csv_null_representation = 'NULL';
+    } else if (options.fileType === "json") {
+      format = "JSON";
+    } else if (options.fileType === "jsonl") {
+      format = "JSONEachRow";
+    }
+
+    await options.client.insert({
+      table: options.tableName,
+      format,
+      query_id: queryId,
+      clickhouse_settings: settings,
+      values,
+    });
+
+    const checkLog = async () => {
+      const log = await this.findQueryLog(queryId, options.client)
+
+      if (log === 'QueryFinish') {
+        return { status: 'finished' as const }
+      } else if (log === 'ExceptionBeforeStart' || log === 'ExceptionWhileProcessing') {
+        return { status: 'error' as const, message: log }
+      }
+
+      return { status: 'running' as const }
+    }
+
+    let abort = false;
+
+    let status: 'running' | 'finished' | 'error';
+    let message: string;
+
+    while(!abort) {
+      const log = await checkLog()
+      status = log.status
+      message = log.message
+      if (log.status !== 'running') {
+        break
+      }
+      await wait(1000)
+    }
+
+    onCleanup()
+
+    if (status === 'error') {
+      throw new Error(`Exception while importing ${options.tableName}: ${message}`);
+    }
+  }
+
+  async findQueryLog(
+    queryId: string,
+    client?: NodeClickHouseClient
+  ): Promise<QueryLogType | undefined> {
+    if (!client) {
+      client = this.client;
+    }
+    const resultSet = await client.query({
+      query: `
+        SELECT type
+        FROM system.query_log
+        WHERE query_id = '${queryId}' AND type != 'QueryStart'
+        LIMIT 1
+      `,
+      format: "JSONEachRow",
+    });
+    const rows = await resultSet.json<{
+      type: QueryLogType
+    }>();
+    return rows?.[0]?.type;
   }
 
   queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {

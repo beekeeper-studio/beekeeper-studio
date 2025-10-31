@@ -1409,6 +1409,16 @@ export class DBTestUtil {
       let batch = []
       const maxBatch = this.dbType === 'firebird' ? 255 : 233
 
+      if (this.dbType === 'clickhouse') {
+        await this.connection.client.insert({
+          table: 'organizations',
+          values: fileStream,
+          format: 'CSVWithNames',
+        })
+        fileStream.close()
+        return resolve()
+      }
+
       const execBatch = async (batch: Record<string, any>[]) => {
         if (this.dbType === 'firebird') {
           const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
@@ -1456,6 +1466,7 @@ export class DBTestUtil {
             batch = [];
           }
           Promise.all(promises).then(() => resolve()).catch(reject);
+          fileStream.close()
         },
         error: (err) => reject(err),
       });
@@ -1535,8 +1546,7 @@ export class DBTestUtil {
   async importScriptsTests({ tableName, table, formattedData, importScriptOptions, hatColumn }) {
     // cassandra and big query don't allow import so no need to test!
     // oracle doesn't want to find the table, so it doesn't get to have nice things
-    // clickhouse and duckdb have its own import command we don't support yet
-    if (['cassandra', 'bigquery', 'oracle', 'clickhouse', 'duckdb'].includes(this.dialect)) {
+    if (['cassandra', 'bigquery', 'oracle', 'duckdb'].includes(this.dialect)) {
       return expect.anything()
     }
 
@@ -1555,8 +1565,16 @@ export class DBTestUtil {
 
     await this.connection.importFile(table, importScriptOptions, read)
 
-    const [hats] = await this.knex(tableName).count(hatColumn)
-    const [dataLength] = _.values(hats)
+    const hatsResult = await this.knex(tableName).count(hatColumn)
+    let dataLength;
+    if (this.dialect === 'clickhouse') {
+      // ClickHouse returns [[results], [results2], {metadata}]
+      const [[hats]] = hatsResult;
+      dataLength = Object.values(hats)[0];
+    } else {
+      const [hats] = hatsResult;
+      [dataLength] = _.values(hats);
+    }
     expect(Number(dataLength)).toBe(4)
   }
 
@@ -1565,11 +1583,13 @@ export class DBTestUtil {
     // mysql was added to the list because a timeout was required to get the rollback number ot show
     // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
     let expectedLength = 0
-    if (['cassandra','bigquery', 'mysql', 'oracle', 'clickhouse', 'duckdb'].includes(this.dialect)) {
+    if (['cassandra','bigquery', 'mysql', 'oracle', 'duckdb'].includes(this.dialect)) {
       return expect.anything()
     }
 
-    if (['sqlite'].includes(this.dialect)) {
+    // ClickHouse uses async inserts and doesn't support traditional transaction rollback
+    // SQLite also doesn't support rollback properly in this context
+    if (['sqlite', 'clickhouse'].includes(this.dialect)) {
       expectedLength = 4
     }
     const read = async (_options: any, executeOptions: any) => {
@@ -1591,8 +1611,16 @@ export class DBTestUtil {
       // empty on purpose
     }
 
-    const [hats] = await this.knex(tableName).count(hatColumn)
-    const [dataLength] = _.values(hats)
+    const hatsResult = await this.knex(tableName).count(hatColumn)
+    let dataLength;
+    if (this.dialect === 'clickhouse') {
+      // ClickHouse returns [[results], [results2], {metadata}]
+      const [[hats]] = hatsResult;
+      dataLength = Object.values(hats)[0];
+    } else {
+      const [hats] = hatsResult;
+      [dataLength] = _.values(hats);
+    }
     expect(Number(dataLength)).toBe(expectedLength)
   }
 
