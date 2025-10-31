@@ -85,11 +85,13 @@ import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 
 import rawLog from '@bksLogger'
+import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
 
 const log = rawLog.scope('app.vue')
 
 export default Vue.extend({
   name: 'App',
+  mixins: [assignContextMenuToAllInputs],
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
