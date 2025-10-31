@@ -3,10 +3,8 @@ import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn, BeforeInsert, BeforeUpdate } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
-import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import { TabType, TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
-
-type TabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
 
@@ -54,6 +52,9 @@ export class OpenTab extends ApplicationEntity {
   // QUERY TAB
   @Column({ type: 'integer', nullable: true })
   queryId?: number
+
+  @Column({ type: 'integer', nullable: true })
+  usedQueryId?: number
 
   @Column({type: 'text', nullable: true})
   unsavedQueryText?: string
@@ -202,7 +203,7 @@ export class OpenTab extends ApplicationEntity {
       withDeleted: true
     })
   }
-  
+
   static async clearOldDeletedTabs(connectionIds: ConnectionIds, xDays: number): Promise<void> {
     const { connectionId, workspaceId } = connectionIds
     const deletedAtThreshold = new Date()

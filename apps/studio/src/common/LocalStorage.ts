@@ -68,6 +68,13 @@ export const SmartLocalStorage = {
         expiry: now.getTime() + ttl,
       }
     localStorage.setItem(key, JSON.stringify(item))
-  }
+  },
+  /** Returns `true` if the key exists */
+  exists(key: string) {
+    return localStorage.getItem(key) != null;
+  },
+  remove(key: string) {
+    localStorage.removeItem(key);
+  },
 
 }

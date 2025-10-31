@@ -56,6 +56,7 @@ import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
 import addNewUrlField from './20250128_add_new_url_field'
 import tabHistoryIndex from './20250211_add_tab_history_index'
 import fixOracleData from './20250225_oracle_default_connection_method'
+import queryExcerpts from './20250228_query_excerpts'
 import addInstallationId from './20250404_add_installation_id'
 import sqlAnywhereOptions from './20250414_add_anywhere_options'
 import disabledPluginAutoUpdates from './20250522_add_disabled_plugin_auto_updates'
@@ -68,6 +69,7 @@ import createPluginData from './20250630_create_plugin_data'
 import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
+import addUsedQueryId from './20250620_add_used_query_id'
 import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_column'
 import addTabDropdownAIShellHintShownSetting from './20251003_add_tab_dropdown_ai_shell_hint_shown_setting'
 
@@ -105,9 +107,11 @@ const realMigrations = [
   fixOracleData,
   addInstallationId,
   sqlAnywhereOptions,
+  queryExcerpts,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
-  surrealDbOptions, upgradeSqliteExtensions, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting
+  surrealDbOptions, upgradeSqliteExtensions,
+  addUsedQueryId, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting
 ]
 
 // fixtures require the models
