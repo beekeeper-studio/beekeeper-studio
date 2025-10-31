@@ -71,7 +71,7 @@ export const SmartLocalStorage = {
   },
   /** Returns `true` if the key exists */
   exists(key: string) {
-    return localStorage.getItem(key) !== null;
+    return localStorage.getItem(key) != null;
   },
   remove(key: string) {
     localStorage.removeItem(key);
