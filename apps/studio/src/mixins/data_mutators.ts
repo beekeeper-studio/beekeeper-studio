@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
-import { TabulatorFormatterParams } from '@/common/tabulator'
 import helpers, { escapeHtml } from '@shared/lib/tabulator'
+import { highlightJsonToHtml } from '@/lib/highlight/jsonRunMode'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
 
@@ -46,15 +46,16 @@ export default {
       _event,
       cell: CellComponent
     ) {
-      const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams || {}
-      let cellValue = cell.getValue()
+    // formatterParams can be heterogeneous; avoid over-constrained type assertion
+    const params = cell.getColumn().getDefinition().formatterParams || {}
+        let cellValue = cell.getValue()
 
-      if (cellValue instanceof Uint8Array) {
-        const binaryEncoding = params.binaryEncoding || 'hex'
-        cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
-      } else if (
-        !params?.fk &&
-        !params?.isPK &&
+        if (cellValue instanceof Uint8Array) {
+    const binaryEncoding = (params as any).binaryEncoding || 'hex'
+          cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
+        } else if (
+    !(params as any)?.fk &&
+    !(params as any)?.isPK &&
         _.isInteger(Number(cellValue))
       ) {
         try {
@@ -65,7 +66,22 @@ export default {
       }
       
       const nullValue = emptyResult(cellValue)
-      return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
+      if (nullValue) return nullValue
+
+      // If value is valid JSON, pretty-print (plain text) for readability
+      if (_.isString(cellValue)) {
+        const trimmed = cellValue.trim()
+        if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+          try {
+            const parsed = JSON.parse(cellValue)
+            const pretty = JSON.stringify(parsed, null, 2)
+            const maxLen = 5000
+            const display = pretty.length > maxLen ? pretty.slice(0, maxLen) + '\n… (truncated)' : pretty
+            return display // plain text (Tabulator will escape and show as default tooltip)
+          } catch (e) { /* ignore if not valid JSON */ }
+        }
+      }
+      return escapeHtml(this.niceString(cellValue, true))
     },
     cellFormatter(
       cell: CellComponent,
@@ -86,8 +102,13 @@ export default {
       cellValue = this.niceString(cellValue, true, params.binaryEncoding)
       cellValue = cellValue.replace(/\n/g, ' ↩ ');
 
-      // removing the <pre> will break selection / copy paste, see ResultTable
-      let result = `<pre>${escapeHtml(cellValue)}</pre>`
+      let result: string
+      if (_.isString(cellValue)) {
+        const highlighted = highlightJsonToHtml(cellValue, { singleLine: true })
+        result = highlighted || `<pre>${escapeHtml(cellValue)}</pre>`
+      } else {
+        result = `<pre>${escapeHtml(cellValue)}</pre>`
+      }
       let tooltip = ''
 
       if (params?.fk) {
@@ -110,3 +131,6 @@ export default {
     ...Mutators
   }
 }
+
+// JSON highlighting now handled by CodeMirror runMode (see highlightJsonToHtml helper)
+

@@ -303,6 +303,16 @@
 .material-icons.menu-icon {
   margin-left: 10px !important;
 }
+/* JSON cell styling via CodeMirror tokens */
+.json-cell { white-space: pre; font-family: var(--font-monospace, monospace); margin: 0; }
+.cm-number { font-weight: 600; }
+.cm-atom { font-weight: 600; }
+/* Balanced palette: purple keys, tan strings, soft green numbers, blue atoms, grey punctuation */
+.json-cell .cm-property { color: #c792ea; }
+.json-cell .cm-string { color: #98c379; }
+.json-cell .cm-number { color: #61afef; }
+.json-cell .cm-atom { color: #d19a66; }
+.json-cell .cm-punctuation { color: #5c6370; }
 </style>
 
 <script lang="ts">
