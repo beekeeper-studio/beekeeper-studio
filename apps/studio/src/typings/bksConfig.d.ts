@@ -224,6 +224,8 @@ declare interface IBksConfig {
         queryEditor: {
             closeTableFilter: string;
             copyResultSelection: string;
+            manualCommit: string;
+            manualRollback: string;
             openTableFilter: string;
             selectEditor: string;
             selectNextResult: string;

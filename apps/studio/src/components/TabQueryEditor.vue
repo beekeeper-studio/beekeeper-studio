@@ -142,6 +142,33 @@
               </x-menu>
             </x-button>
           </x-buttons>
+          <x-buttons v-show="canManageTransactions" class="">
+            <x-button
+              :disabled="running"
+              @click.prevent="toggleCommitMode"
+              class="btn btn-flat btn-small"
+              :class="{ 'btn-rounded': !isManualCommit }"
+            >
+              <x-label>{{ commitModeLabel }}</x-label>
+            </x-button>
+            <x-button v-if="isManualCommit" class="btn btn-flat btn-small" menu>
+              <i class="material-icons">arrow_drop_down</i>
+              <x-menu>
+                <x-menuitem
+                  :disabled="!this.hasActiveTransaction"
+                  @click.prevent="manualCommit"
+                >
+                  <x-label>Commit</x-label>
+                </x-menuitem>
+                <x-menuitem
+                  :disabled="!this.hasActiveTransaction"
+                  @click.prevent="manualRollback"
+                >
+                  <x-label>Rollback</x-label>
+                </x-menuitem>
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
     </div>
@@ -370,6 +397,7 @@
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+import { IdentifyResult } from 'sql-query-identifier/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -435,6 +463,8 @@
         individualQueries: [],
         currentlySelectedQuery: null,
         queryMagic: queryMagicExtension(),
+        isManualCommit: false,
+        hasActiveTransaction: false
       }
     },
     computed: {
@@ -448,6 +478,9 @@
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      canManageTransactions() {
+        return !this.dialectData?.disabledFeatures?.manualCommit;
+      },
       editorComponent() {
         return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
       },
@@ -539,6 +572,8 @@
           'queryEditor.selectEditor': this.selectEditor,
           'queryEditor.submitQueryToFile': this.submitQueryToFile,
           'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.manualCommit': this.manualCommit,
+          'queryEditor.manualRollback': this.manualRollback,
         })
       },
       queryParameterPlaceholders() {
@@ -655,6 +690,9 @@
           ]
         }
       },
+      commitModeLabel() {
+        return this.isManualCommit ? 'Manual Commit Mode' : 'Auto Commit Mode'
+      }
     },
     watch: {
       error() {
@@ -912,7 +950,7 @@
         if(this.running) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
-          this.submitQuery(this.currentlySelectedQuery.text)
+          await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -936,6 +974,11 @@
           await this.cancelQuery();
         }
 
+        if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
+          await this.connection.startTransaction(this.tab.id);
+          this.hasActiveTransaction = true
+        }
+
         this.tab.isRunning = true
         this.running = true
         this.error = null
@@ -945,6 +988,18 @@
         let identification = []
         try {
           identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+
+          if (this.canManageTransactions && !this.isManualCommit) {
+            const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
+            const endTransaction = identification.filter((value: IdentifyResult) => value.type === "COMMIT" || value.type === "ROLLBACK").length
+
+            if (startTransaction > endTransaction) {
+              await this.toggleCommitMode()
+              this.hasActiveTransaction = true
+            }
+          }
+
+          log.info("IDENTIFICATION: ", identification)
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -965,7 +1020,7 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun});
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
@@ -1038,6 +1093,10 @@
           if(this.running) {
             this.error = ex
           }
+          if (this.hasActiveTransaction) {
+            this.error = ex
+            this.manualRollback()
+          }
         } finally {
           this.running = false
           this.tab.isRunning = false
@@ -1095,6 +1154,29 @@
           }, 1000)
           this.focusingElement = 'none'
         })
+      },
+      async toggleCommitMode() {
+        if (!this.canManageTransactions) return
+        if (this.isManualCommit) {
+          if (this.hasActiveTransaction) {
+            this.connection.rollbackTransaction(this.tab.id);
+          }
+          this.hasActiveTransaction = false;
+          this.connection.releaseConnection(this.tab.id);
+        } else if (!this.isManualCommit) {
+          await this.connection.reserveConnection(this.tab.id);
+        }
+        this.isManualCommit = !this.isManualCommit;
+      },
+      async manualCommit() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
+        this.connection.commitTransaction(this.tab.id);
+        this.hasActiveTransaction = false;
+      },
+      async manualRollback() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
+        this.connection.rollbackTransaction(this.tab.id)
+        this.hasActiveTransaction = false
       },
       async columnsGetter(tableName: string) {
         let table = this.tables.find(
@@ -1165,6 +1247,7 @@
       if(this.split) {
         this.split.destroy()
       }
+      this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
     },
   }

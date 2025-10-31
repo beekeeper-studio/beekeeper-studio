@@ -140,8 +140,8 @@ export default {
       }
     },
     title() {
-      return this.privacyMode ? 
-        'Connection details hidden by Privacy Mode' : 
+      return this.privacyMode ?
+        'Connection details hidden by Privacy Mode' :
         this.$bks.buildConnectionString(this.config)
     },
     savedConnection() {
