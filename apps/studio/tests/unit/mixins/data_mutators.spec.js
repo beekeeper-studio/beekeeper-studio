@@ -63,4 +63,31 @@ describe("cellFormatter", () => {
     expect(formatted).toBe(shouldBe)
   })
 
+  it('formats JSON cell with syntax classes', () => {
+    const jsonValue = '{"foo": 1, "bar": true, "baz": null}'
+    const input = {
+      getValue: () => jsonValue,
+      getElement: () => document.createElement('div'),
+      getColumn: () => ({ getDefinition: () => ({}) }),
+    }
+    const formatted = mutators.methods.cellFormatter(input)
+    expect(formatted).toContain('json-cell')
+    expect(formatted).toContain('json-key')
+    expect(formatted).toContain('json-number')
+    expect(formatted).toContain('json-boolean')
+    expect(formatted).toContain('json-null')
+  })
+
+  it('pretty prints JSON in tooltip', () => {
+    const jsonValue = '{"a":1,"b":[true,false,null]}'
+    const input = {
+      getValue: () => jsonValue,
+      getElement: () => document.createElement('div'),
+      getColumn: () => ({ getDefinition: () => ({ formatterParams: {} }) }),
+    }
+    const tt = mutators.methods.cellTooltip(null, input)
+    expect(tt).toContain('json-tooltip')
+    expect(tt).toContain('\n') // pretty formatted newlines
+  })
+
 })
