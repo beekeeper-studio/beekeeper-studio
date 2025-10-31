@@ -116,7 +116,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
         ctrlOrCmd(key) {
           const keys = key.split('+');
           // First letter is uppercase
-          key = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join('+');
+          key = keys.map(k => _.upperFirst(k)).join('+');
           if (this.$config.isMac) return `Meta+${key}`
           return `Ctrl+${key}`
         },
