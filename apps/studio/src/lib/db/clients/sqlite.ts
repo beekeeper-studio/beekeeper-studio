@@ -222,51 +222,47 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    // Get foreign keys FROM this table (referencing other tables)
-    const outgoingSQL = `pragma foreign_key_list('${SD.escapeString(table)}')`
-    const { rows: outgoingRows } = await this.driverExecuteSingle(outgoingSQL, { overrideReadonly: true });
+    const sql = `
+      SELECT
+        '${SD.escapeString(table)}' AS from_table,
+        p."from" AS from_column,
+        p."table" AS to_table,
+        p."to" AS to_column,
+        p.on_update as on_update,
+        p.on_delete as on_delete,
+        p.id as id
+      FROM pragma_foreign_key_list('${SD.escapeString(table)}') p
 
-    const outgoingKeys = outgoingRows.map(row => ({
+      UNION ALL
+
+      SELECT
+        m.name AS from_table,
+        p."from" AS from_column,
+        p."table" AS to_table,
+        p."to" AS to_column,
+        p.on_update as on_update,
+        p.on_delete as on_delete,
+        p.id as id
+      FROM sqlite_master AS m
+      JOIN pragma_foreign_key_list(m.name) AS p
+      WHERE p."table" = '${SD.escapeString(table)}'
+
+      ORDER BY id, from_table;
+    `
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
+    return rows.map(row => ({
       constraintName: row.id,
-      toTable: row.table,
+      constraintType: 'FOREIGN',
+      toTable: row.to_table,
       toSchema: '',
       fromSchema: '',
-      fromTable: table,
-      fromColumn: row.from,
-      toColumn: row.to,
+      fromTable: row.from_table,
+      fromColumn: row.from_column,
+      toColumn: row.to_column,
       onUpdate: row.on_update,
       onDelete: row.on_delete,
       isComposite: false
-    }));
-
-    // Get foreign keys TO this table (other tables referencing this table)
-    const allTables = await this.listTables();
-    const incomingKeys: TableKey[] = [];
-
-    for (const t of allTables) {
-      const sql = `pragma foreign_key_list('${SD.escapeString(t.name)}')`;
-      const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-
-      // Check if any foreign key points to our target table
-      for (const row of rows) {
-        if (row.table === table) {
-          incomingKeys.push({
-            constraintName: row.id,
-            toTable: table,
-            toSchema: '',
-            fromSchema: '',
-            fromTable: t.name,
-            fromColumn: row.from,
-            toColumn: row.to,
-            onUpdate: row.on_update,
-            onDelete: row.on_delete,
-            isComposite: false
-          });
-        }
-      }
-    }
-
-    return [...outgoingKeys, ...incomingKeys];
+    }))
   }
 
   async query(queryText: string): Promise<CancelableQuery> {

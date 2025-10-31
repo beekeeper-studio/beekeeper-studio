@@ -3,7 +3,7 @@ import knex from 'knex'
 import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
 import log from '@bksLogger'
 import platformInfo from '../../src/common/platform_info'
-import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
+import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange, TableKey } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex, TableOrView } from '../../src/lib/db/models'
@@ -1962,33 +1962,38 @@ export class DBTestUtil {
       }
     }
 
-    // Test 1: Products table should have incoming key from orders
-    const productsKeys = this.connection
-      .getTableKeys("products", this.defaultSchema)
-      .then((keys) =>
-        keys.map((key) =>
-          _.pick(key, ["toTable", "fromTable", "toColumn", "fromColumn"])
-        )
-      );
+    function normalize(
+      keys: TableKey[]
+    ): Pick<TableKey, "toTable" | "fromTable" | "toColumn" | "fromColumn">[] {
+      return keys.map((key) => ({
+        toTable: key.toTable.toLowerCase(),
+        fromTable: key.fromTable.toLowerCase(),
+        toColumn: key.toColumn.toString().toLowerCase(),
+        fromColumn: key.fromColumn.toString().toLowerCase(),
+      }));
+    }
 
-    expect(productsKeys).toStrictEqual([
+    // Test 1: Products table should have incoming key from orders
+    const productsKeys = await this.connection
+      .getTableKeys("products", this.defaultSchema)
+      .then(normalize);
+
+    expect(productsKeys).toHaveLength(1);
+    expect(productsKeys).toStrictEqual(expect.arrayContaining([
       {
         toTable: 'products',
         fromTable: 'orders',
         toColumn: 'product_id',
         fromColumn: 'product_id',
       }
-    ]);
+    ]));
 
     // Test 2: Orders table should have both incoming (from order_items) and outgoing (to products) keys
-    const ordersKeys = this.connection
+    const ordersKeys = await this.connection
       .getTableKeys("orders", this.defaultSchema)
-      .then((keys) =>
-        keys.map((key) =>
-          _.pick(key, ["toTable", "fromTable", "toColumn", "fromColumn"])
-        )
-      );
+      .then(normalize);
 
+    expect(ordersKeys).toHaveLength(2);
     expect(ordersKeys).toStrictEqual(expect.arrayContaining([
       {
         toTable: 'orders',
@@ -2005,23 +2010,19 @@ export class DBTestUtil {
     ]));
 
     // Test 3: Order_items table should only have outgoing key to orders (no incoming keys)
-    const orderItemsKeys = (await this.connection.getTableKeys('order_items', this.defaultSchema))
-      .map(key => ({
-        ..._.pick(key, ['toTable', 'fromTable', 'toColumn', 'fromColumn']),
-        toTable: key.toTable.toLowerCase(),
-        fromTable: key.fromTable.toLowerCase(),
-        toColumn: key.toColumn.toString().toLowerCase(),
-        fromColumn: key.fromColumn.toString().toLowerCase(),
-      }));
+    const orderItemsKeys = await this.connection
+      .getTableKeys('order_items', this.defaultSchema)
+      .then(normalize);
 
-    expect(orderItemsKeys).toStrictEqual([
+    expect(orderItemsKeys).toHaveLength(1);
+    expect(orderItemsKeys).toStrictEqual(expect.arrayContaining([
       {
         toTable: 'orders',
         fromTable: 'order_items',
         toColumn: 'order_id',
         fromColumn: 'order_id',
       }
-    ]);
+    ]));
   }
 
   async paramTest(params: string[]) {
