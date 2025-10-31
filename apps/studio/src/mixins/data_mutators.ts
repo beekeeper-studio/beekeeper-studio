@@ -67,16 +67,16 @@ export default {
       _event,
       cell: CellComponent
     ) {
-  // formatterParams can be heterogeneous; avoid over-constrained type assertion
-  const params = cell.getColumn().getDefinition().formatterParams || {}
-      let cellValue = cell.getValue()
+    // formatterParams can be heterogeneous; avoid over-constrained type assertion
+    const params = cell.getColumn().getDefinition().formatterParams || {}
+        let cellValue = cell.getValue()
 
-      if (cellValue instanceof Uint8Array) {
-  const binaryEncoding = (params as any).binaryEncoding || 'hex'
-        cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
-      } else if (
-  !(params as any)?.fk &&
-  !(params as any)?.isPK &&
+        if (cellValue instanceof Uint8Array) {
+    const binaryEncoding = (params as any).binaryEncoding || 'hex'
+          cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
+        } else if (
+    !(params as any)?.fk &&
+    !(params as any)?.isPK &&
         _.isInteger(Number(cellValue))
       ) {
         try {
