@@ -33,19 +33,27 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ] as const
 
+export const iLikeFilterSymbol = {
+  value: 'ilike', label: 'ilike'
+}
+
 // if you update this, you may need to update `translateOperator` in the mongodb driver
 export const TableFilterSymbols = [
-  { value: '=', label: 'equals' },
-  { value: '!=', label: 'does not equal'},
-  { value: 'like', label: 'like' },
-  { value: 'not like', label: 'not like' },
-  { value: '<', label: 'less than' },
-  { value: '<=', label: 'less than or equal' },
-  { value: '>', label: 'greater than'},
-  { value: ">=", label: "greater than or equal" },
-  { value: "in", label: 'in', arrayInput: true },
-  { value: "is", label: "is null", nullOnly: true },
-  { value: "is not", label: "is not null", nullOnly: true }
+  [
+    { value: '=', label: 'equals' },
+    { value: '!=', label: 'does not equal'},
+    { value: 'like', label: 'like' },
+    { value: 'not like', label: 'not like' }
+  ],
+  [
+    { value: '<', label: 'less than' },
+    { value: '<=', label: 'less than or equal' },
+    { value: '>', label: 'greater than'},
+    { value: ">=", label: "greater than or equal" },
+    { value: "in", label: 'in', arrayInput: true },
+    { value: "is", label: "is null", nullOnly: true },
+    { value: "is not", label: "is not null", nullOnly: true }
+  ]
 ]
 
 export enum AzureAuthType {
