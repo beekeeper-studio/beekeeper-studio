@@ -249,6 +249,7 @@ export interface SupportedFeatures {
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
   transactions: boolean;
+  iLike?: boolean;
 }
 
 export interface FieldDescriptor {

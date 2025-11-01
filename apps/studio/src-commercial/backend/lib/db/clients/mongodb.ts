@@ -98,7 +98,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: false
+      transactions: false,
+      iLike: true
     }
   }
 
@@ -1058,6 +1059,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       "=": "$eq",
       "!=": "$ne",
       "like": "$regex", // special case for regex
+      "ilike": "$regex", // special case for regex
       "not like": "$not", // special case for not regex
       "<": "$lt",
       "<=": "$lte",
@@ -1096,7 +1098,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         }
         const value = filter.value.map((v) => this.convertValueForFilter(v));
         condition = { [filter.field]: { [mongoOp]: value }};
-      } else if (filter.type === "like" && _.isString(filter.value)) {
+      } else if (['like', 'ilike'].includes(filter.type) && _.isString(filter.value)) {
         const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
         condition = {
           [filter.field]: {
