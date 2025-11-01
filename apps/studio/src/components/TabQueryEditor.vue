@@ -54,6 +54,7 @@
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
         :formatter-config="selectedFormatter ?? undefined"
+        :formatter-modal-id="superFormatterId"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
@@ -227,8 +228,8 @@
     <portal to="modals">
       <modal
         class="vue-dialog beekeeper-modal super-formatter-modal"
-        name="super-formatter"
         @opened="getPresets"
+        :name="superFormatterId"
         :scrollable="true"
         min-height="80%"
         min-width="90%"
@@ -244,7 +245,7 @@
               class="btn btn-fab"
               aria-label="Close super formatter"
               title="Close super formatter"
-              @click="handleFormatterPresetModal({ showFormatter: false })"
+              @click="handleFormatterPresetModal({ showFormatter: false, modalName: superFormatterId })"
             >
               X
             </button>
@@ -504,6 +505,9 @@
       },
       disableRunToFile() {
         return this.dialectData?.disabledFeatures?.export?.stream
+      },
+      superFormatterId() {
+        return `super-formatter-${this.tab.id}`
       },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
@@ -768,12 +772,11 @@
       },
     },
     methods: {
-      handleFormatterPresetModal({ showFormatter }){
-        // this will open the modal and stuff and get us down the path of doing a great job!!
+      handleFormatterPresetModal({ showFormatter, modalName }){
         if (showFormatter) {
-          this.$modal.show('super-formatter')
+          this.$modal.show(modalName)
         } else {
-          this.$modal.hide('super-formatter')
+          this.$modal.hide(modalName)
         }
       },
       getPresets(presetId) {
@@ -792,7 +795,7 @@
           })
       },
       applyPreset(presetConfig) {
-        this.handleFormatterPresetModal({ showFormatter: false })
+        this.handleFormatterPresetModal({ showFormatter: false, modalName: this.superFormatterId })
         this.selectedFormatter = { ...presetConfig }
       },
       async deletePreset({ id }) {
@@ -804,7 +807,7 @@
           .then(() => {
             this.$noty.success('Formatter Configuration successfully deleted')
             this.selectedFormatter = null
-            this.handleFormatterPresetModal({ showFormatter: false })
+            this.handleFormatterPresetModal({ showFormatter: false, modalName: this.superFormatterId })
           })
           .catch(err => {
             const error_notice = this.$noty.error(`Formatter Configuration delete failed: ${err.message}`, {

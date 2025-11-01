@@ -56,7 +56,6 @@ export default Vue.extend({
   },
 
   methods: {
-    // TextEditor overrides
     constructTextEditor() {
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
@@ -103,9 +102,8 @@ export default Vue.extend({
       ];
     },
     formatterPreset() {
-      this.$emit("bks-show-formatter-presets", { showFormatter: true });
+      this.$emit("bks-show-formatter-presets", { showFormatter: true, modalName: this.formatterModalId });
     },
-    // Non-TextEditor overrides
     formatSql() {
       if(this.value == null || this.value.trim() === '') return
 

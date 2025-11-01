@@ -56,6 +56,10 @@ export default {
     type: Array,
     default: () => []
   },
+  formatterModalId: {
+    type: String,
+    default: ''
+  }
 
   // --- replaced with languageId
   // mode: {

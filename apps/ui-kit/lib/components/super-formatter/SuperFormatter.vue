@@ -330,7 +330,6 @@ export default Vue.extend({
         language: this.formatterDialect,
         ...this.unsavedPreset
       })
-      console.log('formatted code was changed', this.formattedCode)
     },
     handlePresetChange() {
       const presetValues = this.presets.find(p => p.id === this.selectedPresetId)
