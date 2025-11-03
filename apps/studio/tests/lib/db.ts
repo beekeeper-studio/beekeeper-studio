@@ -1954,12 +1954,13 @@ export class DBTestUtil {
 
     function normalize(
       keys: TableKey[]
-    ): Pick<TableKey, "toTable" | "fromTable" | "toColumn" | "fromColumn">[] {
+    ): Pick<TableKey, "toTable" | "fromTable" | "toColumn" | "fromColumn" | "direction">[] {
       return keys.map((key) => ({
         toTable: key.toTable.toLowerCase(),
         fromTable: key.fromTable.toLowerCase(),
         toColumn: key.toColumn.toString().toLowerCase(),
         fromColumn: key.fromColumn.toString().toLowerCase(),
+        direction: key.direction,
       }));
     }
 
@@ -1975,6 +1976,7 @@ export class DBTestUtil {
         fromTable: 'orders',
         toColumn: 'product_id',
         fromColumn: 'product_id',
+        direction: 'incoming',
       }
     ]));
 
@@ -1990,12 +1992,14 @@ export class DBTestUtil {
         fromTable: 'order_items',
         toColumn: 'order_id',
         fromColumn: 'order_id',
+        direction: 'incoming',
       },
       {
         toTable: 'products',
         fromTable: 'orders',
         toColumn: 'product_id',
         fromColumn: 'product_id',
+        direction: 'outgoing',
       }
     ]));
 
@@ -2011,6 +2015,7 @@ export class DBTestUtil {
         fromTable: 'order_items',
         toColumn: 'order_id',
         fromColumn: 'order_id',
+        direction: 'outgoing',
       }
     ]));
   }

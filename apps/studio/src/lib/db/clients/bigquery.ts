@@ -163,7 +163,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         t.column_name as to_column,
         f.constraint_name,
         NULL as update_rule,
-        NULL as delete_rule
+        NULL as delete_rule,
+        'outgoing' as direction
       FROM
         ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
       JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
@@ -188,7 +189,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         t.column_name as to_column,
         f.constraint_name,
         NULL as update_rule,
-        NULL as delete_rule
+        NULL as delete_rule,
+        'incoming' as direction
       FROM
         ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
       JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
@@ -219,7 +221,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
       onDelete: row.delete_rule,
-      isComposite: false
+      isComposite: false,
+      direction: row.direction
     }));
   }
 

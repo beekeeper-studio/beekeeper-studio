@@ -986,7 +986,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
           TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
           TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
-          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
+          ISF.RDB$FIELD_POSITION AS FIELD_POSITION,
+          TRIM('outgoing') AS DIRECTION
         FROM
           RDB$RELATION_CONSTRAINTS PK
           JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
@@ -1012,7 +1013,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
           TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
           TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
-          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
+          ISF.RDB$FIELD_POSITION AS FIELD_POSITION,
+          TRIM('incoming') AS DIRECTION
         FROM
           RDB$RELATION_CONSTRAINTS PK
           JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
@@ -1054,7 +1056,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           constraintName: row["CONSTRAINT_NAME"],
           onUpdate: row["ON_UPDATE"],
           onDelete: row["ON_DELETE"],
-          isComposite: false
+          isComposite: false,
+          direction: row["DIRECTION"]
         };
       } 
       
@@ -1070,7 +1073,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         constraintName: firstPart["CONSTRAINT_NAME"],
         onUpdate: firstPart["ON_UPDATE"],
         onDelete: firstPart["ON_DELETE"],
-        isComposite: true
+        isComposite: true,
+        direction: firstPart["DIRECTION"]
       };
     });
   }

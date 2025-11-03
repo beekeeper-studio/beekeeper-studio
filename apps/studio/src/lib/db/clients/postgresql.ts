@@ -574,7 +574,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN 'd' THEN 'SET DEFAULT'
           ELSE c.confdeltype::text
         END AS delete_rule,
-        pos AS ordinal_position
+        pos AS ordinal_position,
+        'outgoing' AS direction
       FROM
         pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
@@ -619,7 +620,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN 'd' THEN 'SET DEFAULT'
           ELSE c.confdeltype::text
         END AS delete_rule,
-        pos AS ordinal_position
+        pos AS ordinal_position,
+        'incoming' AS direction
       FROM
         pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
@@ -674,7 +676,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           fromColumn: row.column_name || row.from_column,
           onUpdate: row.update_rule,
           onDelete: row.delete_rule,
-          isComposite: false
+          isComposite: false,
+          direction: row.direction
         };
       }
 
@@ -690,7 +693,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         fromColumn: keyParts.map(p => p.column_name || p.from_column),
         onUpdate: firstPart.update_rule,
         onDelete: firstPart.delete_rule,
-        isComposite: true
+        isComposite: true,
+        direction: firstPart.direction
       };
     });
   }

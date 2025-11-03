@@ -48,7 +48,7 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { DuckDBChangeBuilder } from "@shared/lib/sql/change_builder/DuckDBChangeBuilder";
 import { DuckDBData } from "@shared/lib/dialects/duckdb";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { TableKey } from "@shared/lib/dialects/models";
+import { TableKey, TableKeyDirection } from "@shared/lib/dialects/models";
 import { DuckDBBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("duckdb");
@@ -560,7 +560,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         rc.delete_rule,
         kcu_ref.constraint_schema AS to_schema,
         kcu_ref.table_name AS to_table,
-        kcu_ref.column_name AS to_column
+        kcu_ref.column_name AS to_column,
+        'outgoing' AS direction
       FROM
         information_schema.key_column_usage AS kcu
       JOIN
@@ -596,7 +597,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         rc.delete_rule,
         kcu_ref.constraint_schema AS to_schema,
         kcu_ref.table_name AS to_table,
-        kcu_ref.column_name AS to_column
+        kcu_ref.column_name AS to_column,
+        'incoming' AS direction
       FROM
         information_schema.key_column_usage AS kcu
       JOIN
@@ -641,7 +643,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
           constraintName: row.constraint_name as string,
           onUpdate: row.update_rule as string,
           onDelete: row.delete_rule as string,
-          isComposite: false
+          isComposite: false,
+          direction: row.direction as TableKeyDirection,
         });
       } else {
         // This is a composite key

@@ -546,7 +546,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       c_pk.constraint_name as R_PK,
       c_pk.owner as R_OWNER,
       r_a.COLUMN_NAME as R_COLUMN,
-      r_a.position as R_POSITION
+      r_a.position as R_POSITION,
+      'outgoing' AS direction
   -- constraint columns
   FROM all_cons_columns a
   -- constraint info for those columns
@@ -582,7 +583,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       c_pk.constraint_name as R_PK,
       c_pk.owner as R_OWNER,
       r_a.COLUMN_NAME as R_COLUMN,
-      r_a.position as R_POSITION
+      r_a.position as R_POSITION,
+      'incoming' AS direction
   -- constraint columns
   FROM all_cons_columns a
   -- constraint info for those columns
@@ -618,7 +620,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       
       // Sort key parts by position to ensure correct column order
       const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (sortedKeyParts.length === 1) {
         const row = sortedKeyParts[0];
@@ -631,7 +633,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           fromSchema: row.OWNER,
           fromColumn: row.COLUMN_NAME,
           onDelete: row.DELETE_RULE,
-          isComposite: false
+          isComposite: false,
+          direction: row.DIRECTION,
         };
       } 
       
@@ -646,7 +649,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         fromSchema: firstPart.OWNER,
         fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
         onDelete: firstPart.DELETE_RULE,
-        isComposite: true
+        isComposite: true,
+        direction: firstPart.DIRECTION,
       };
     })
   }

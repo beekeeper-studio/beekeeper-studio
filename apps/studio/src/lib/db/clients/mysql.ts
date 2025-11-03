@@ -722,7 +722,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       rc.UPDATE_RULE as on_update,
       rc.DELETE_RULE as on_delete,
       rc.CONSTRAINT_NAME as rc_constraint_name,
-      cu.ORDINAL_POSITION as ordinal_position
+      cu.ORDINAL_POSITION as ordinal_position,
+      'outgoing' AS direction
     FROM information_schema.key_column_usage cu
     JOIN information_schema.referential_constraints rc
       on cu.constraint_name = rc.constraint_name
@@ -743,7 +744,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       cu.REFERENCED_COLUMN_NAME as 'referenced_column',
       rc.UPDATE_RULE as on_update,
       rc.DELETE_RULE as on_delete,
-      cu.ORDINAL_POSITION as ordinal_position
+      cu.ORDINAL_POSITION as ordinal_position,
+      'incoming' AS direction
     FROM information_schema.key_column_usage cu
     JOIN information_schema.referential_constraints rc
       on cu.constraint_name = rc.constraint_name
@@ -784,6 +786,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           toSchema: "",
           fromSchema: "",
           isComposite: false,
+          direction: row.direction,
         };
       }
 
@@ -801,7 +804,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         onUpdate: firstPart.on_update,
         toSchema: "",
         fromSchema: "",
-        isComposite: true
+        isComposite: true,
+        direction: firstPart.direction,
       };
     });
   }

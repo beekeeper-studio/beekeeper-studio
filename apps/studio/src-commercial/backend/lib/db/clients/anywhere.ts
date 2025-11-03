@@ -468,7 +468,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
         'NO ACTION' AS on_update,
         'NO ACTION' AS on_delete,
-        ic_for.sequence AS sequence
+        ic_for.sequence AS sequence,
+        'outgoing' AS direction
       FROM SYS.SYSFKEY fk
       JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
       JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
@@ -497,7 +498,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
         'NO ACTION' AS on_update,
         'NO ACTION' AS on_delete,
-        ic_for.sequence AS sequence
+        ic_for.sequence AS sequence,
+        'incoming' AS direction
       FROM SYS.SYSFKEY fk
       JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
       JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
@@ -542,7 +544,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
           fromColumn: row.from_column,
           onUpdate: row.on_update,
           onDelete: row.on_delete,
-          isComposite: false
+          isComposite: false,
+          direction: row.direction,
         };
       } 
       
@@ -558,7 +561,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         fromColumn: sortedKeyParts.map(p => p.from_column),
         onUpdate: firstPart.on_update,
         onDelete: firstPart.on_delete,
-        isComposite: true
+        isComposite: true,
+        direction: firstPart.direction,
       };
     });
     

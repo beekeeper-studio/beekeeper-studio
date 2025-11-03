@@ -139,7 +139,8 @@ export class RedshiftClient extends PostgresClient {
          WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
         (SELECT kcu2.column_name
          FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column,
+        'outgoing' AS direction
       FROM
         information_schema.key_column_usage AS kcu
 
@@ -175,7 +176,8 @@ export class RedshiftClient extends PostgresClient {
          WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
         (SELECT kcu2.column_name
          FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column,
+        'incoming' AS direction
       FROM
         information_schema.key_column_usage AS kcu
           JOIN
@@ -219,7 +221,8 @@ export class RedshiftClient extends PostgresClient {
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
       onDelete: row.delete_rule,
-      isComposite: false
+      isComposite: false,
+      direction: row.direction
     }));
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {

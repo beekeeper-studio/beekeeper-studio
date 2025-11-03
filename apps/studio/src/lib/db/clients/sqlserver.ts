@@ -380,7 +380,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async getTableKeys(table: string, schema?: string) {
-    // Query for foreign keys FROM this table (outgoing - referencing other tables)
+    // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
     const outgoingSQL = `
       SELECT
         name = FK.CONSTRAINT_NAME,
@@ -393,7 +393,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         constraint_name = C.CONSTRAINT_NAME,
         on_update = C.UPDATE_RULE,
         on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position
+        CU.ORDINAL_POSITION as ordinal_position,
+        direction = 'outgoing'
       FROM
           INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
       INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
@@ -433,7 +434,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         constraint_name = C.CONSTRAINT_NAME,
         on_update = C.UPDATE_RULE,
         on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position
+        CU.ORDINAL_POSITION as ordinal_position,
+        direction = 'incoming'
       FROM
           INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
       INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
@@ -487,7 +489,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           fromColumn: row.from_column,
           onUpdate: row.on_update,
           onDelete: row.on_delete,
-          isComposite: false
+          isComposite: false,
+          direction: row.direction
         };
       }
 
@@ -503,7 +506,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         fromColumn: keyParts.map(p => p.from_column),
         onUpdate: firstPart.on_update,
         onDelete: firstPart.on_delete,
-        isComposite: true
+        isComposite: true,
+        direction: firstPart.direction
       };
     });
 
