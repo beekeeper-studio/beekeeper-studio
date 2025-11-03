@@ -230,7 +230,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         p."to" AS to_column,
         p.on_update as on_update,
         p.on_delete as on_delete,
-        p.id as id
+        p.id as id,
+        'outgoing' AS direction
       FROM pragma_foreign_key_list('${SD.escapeString(table)}') p
 
       UNION ALL
@@ -242,7 +243,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         p."to" AS to_column,
         p.on_update as on_update,
         p.on_delete as on_delete,
-        p.id as id
+        p.id as id,
+        'incoming' AS direction
       FROM sqlite_master AS m
       JOIN pragma_foreign_key_list(m.name) AS p
       WHERE p."table" = '${SD.escapeString(table)}'
@@ -261,7 +263,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       toColumn: row.to_column,
       onUpdate: row.on_update,
       onDelete: row.on_delete,
-      isComposite: false
+      isComposite: false,
+      direction: row.direction,
     }))
   }
 
