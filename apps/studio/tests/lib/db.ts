@@ -85,7 +85,6 @@ export interface Options {
   skipGeneratedColumns?: boolean
   skipCreateDatabase?: boolean
   skipTransactions?: boolean
-  supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
   beforeCreatingTables?: () => void | Promise<void>
   /**
@@ -120,10 +119,6 @@ export class DBTestUtil {
 
   get expectedTables() {
     return this.extraTables + 8
-  }
-
-  get supportsArrayMode() {
-    return this.options.supportsArrayMode == undefined || this.options.supportsArrayMode
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options) {
@@ -936,12 +931,7 @@ export class DBTestUtil {
     try {
       const result = await q.execute()
 
-      // FIXME (azmi): we need this until array mode is fixed in libsql
-      if (this.supportsArrayMode) {
-        expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
-      } else {
-        expect(result[0].rows).toMatchObject([{ c0: "b" }])
-      }
+      expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
       const expectedResults = {

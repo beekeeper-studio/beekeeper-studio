@@ -312,7 +312,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
       if (isSelect && arrayMode) {
         rows = data.map((row: any[]) =>
-          row.reduce((obj, val, idx) => {
+          Array.prototype.reduce.call(row, (obj, val, idx) => {
             obj[`c${idx}`] = val;
             return obj
           }, {})
