@@ -361,8 +361,44 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const keys: TableKey[] = [];
 
+    // First, get list of all tables
+    const tables = await this.listTables();
+
+    // Build a multi-statement query to fetch all table structures at once
+    const structureQueries = tables.map(({ name }) => `INFO FOR TABLE ${name} STRUCTURE`).join('; ');
+    const structureResults = await this.driverExecuteMultiple(structureQueries);
+
+    // Create a map of table name to fields for quick lookup
+    const tableFieldsMap = new Map<string, SurrealFieldInfo[]>();
+    tables.forEach(({ name }, index) => {
+      const fields = structureResults[index]?.rows[0]?.fields || [];
+      tableFieldsMap.set(name, fields);
+    });
+
+    // Helper function to extract columns from fields
+    const getColumnsFromFields = (fields: SurrealFieldInfo[], tableName: string) => {
+      const parentFields: string[] = [];
+      return fields
+        .filter((fieldInfo) => {
+          if (fieldInfo.kind.startsWith('array<') || fieldInfo.kind.startsWith('object')) {
+            parentFields.push(fieldInfo.name);
+          }
+          const isObjectOrArrayChild = parentFields.some((v) => {
+            return fieldInfo.name.startsWith(`${v}.`) ||
+              fieldInfo.name.startsWith(`${v}[*]`);
+          });
+          return !isObjectOrArrayChild;
+        })
+        .map((fieldInfo) => ({
+          columnName: fieldInfo.name,
+          dataType: fieldInfo.kind
+        }));
+    };
+
     // Outgoing keys: columns in THIS table that reference OTHER tables
-    const columns = await this.listTableColumns(table);
+    const currentTableFields = tableFieldsMap.get(table) || [];
+    const columns = getColumnsFromFields(currentTableFields, table);
+
     for (const col of columns) {
       const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
       if (match) {
@@ -388,12 +424,11 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     }
 
     // Incoming keys: columns in OTHER tables that reference THIS table
-    const allTables = await this.listTables();
-    for (const otherTable of allTables) {
+    for (const [otherTableName, otherFields] of tableFieldsMap.entries()) {
       // Skip the current table (we already handled it above)
-      if (otherTable.name === table) continue;
+      if (otherTableName === table) continue;
 
-      const otherColumns = await this.listTableColumns(otherTable.name);
+      const otherColumns = getColumnsFromFields(otherFields, otherTableName);
       for (const col of otherColumns) {
         const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
         if (match) {
@@ -404,8 +439,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
           // Check if any of the target tables is the current table
           if (targetTables.includes(table)) {
             keys.push({
-              constraintName: `${otherTable.name}_${col.columnName}_fkey`,
-              fromTable: otherTable.name,
+              constraintName: `${otherTableName}_${col.columnName}_fkey`,
+              fromTable: otherTableName,
               fromColumn: col.columnName,
               fromSchema: '',
               toTable: table,
