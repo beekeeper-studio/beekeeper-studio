@@ -714,11 +714,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     SELECT
       cu.constraint_name as 'constraint_name',
       cu.table_name as 'from_table',
-      cu.column_name as 'from_column',
-      cu.REFERENCED_TABLE_NAME as 'to_table',
-      cu.REFERENCED_COLUMN_NAME as 'to_column',
+      cu.column_name as 'column_name',
+      cu.referenced_table_name as 'referenced_table_name',
+      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
+      cu.REFERENCED_TABLE_NAME as referenced_table,
+      cu.REFERENCED_COLUMN_NAME as referenced_column,
       rc.UPDATE_RULE as on_update,
       rc.DELETE_RULE as on_delete,
+      rc.CONSTRAINT_NAME as rc_constraint_name,
       cu.ORDINAL_POSITION as ordinal_position
     FROM information_schema.key_column_usage cu
     JOIN information_schema.referential_constraints rc
@@ -735,9 +738,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     SELECT
       cu.constraint_name as 'constraint_name',
       cu.table_name as 'from_table',
-      cu.column_name as 'from_column',
-      cu.referenced_table_name as 'to_table',
-      cu.REFERENCED_COLUMN_NAME as 'to_column',
+      cu.column_name as 'column_name',
+      cu.referenced_table_name as 'referenced_table',
+      cu.REFERENCED_COLUMN_NAME as 'referenced_column',
       rc.UPDATE_RULE as on_update,
       rc.DELETE_RULE as on_delete,
       cu.ORDINAL_POSITION as ordinal_position
@@ -770,10 +773,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         const row = keyParts[0];
         return {
           constraintName: `${row.constraint_name}`,
-          toTable: row.to_table,
-          toColumn: row.to_column,
+          toTable: row.referenced_table,
+          toColumn: row.referenced_column,
           fromTable: row.from_table,
-          fromColumn: row.from_column,
+          fromColumn: row.column_name,
+          referencedTable: row.referenced_table_name,
+          keyType: `${row.key_type} KEY`,
           onDelete: row.on_delete,
           onUpdate: row.on_update,
           toSchema: "",
@@ -786,10 +791,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       const firstPart = keyParts[0];
       return {
         constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.to_table,
-        toColumn: keyParts.map(p => p.to_column),
+        toTable: firstPart.referenced_table,
+        toColumn: keyParts.map(p => p.referenced_column),
         fromTable: firstPart.from_table,
-        fromColumn: keyParts.map(p => p.from_column),
+        fromColumn: keyParts.map(p => p.column_name),
+        referencedTable: firstPart.referenced_table_name,
+        keyType: `${firstPart.key_type} KEY`,
         onDelete: firstPart.on_delete,
         onUpdate: firstPart.on_update,
         toSchema: "",
