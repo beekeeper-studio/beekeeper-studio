@@ -261,7 +261,8 @@ export default Vue.extend({
       return this.canDrop ? [...results, trashButton(this.removeRow)] : results
     },
     tableData() {
-      return this.properties.relations.filter((r: TableKey) => r.direction === "outgoing") || []
+      return (this.properties.relations || [])
+        .filter((r: TableKey) => r.direction === "outgoing")
     },
   },
   watch: {
