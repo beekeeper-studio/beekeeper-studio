@@ -661,32 +661,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         connection = await this.pool.getConnection()
 
         try {
-          const results = await this.driverExecuteMultiple(queryText, {
-            rowAsArray: true,
-            connection,
-          });
-          return results.map(({ rows, columns: meta }) => {
-            const fields = meta.map((field, idx) => ({
-              id: `c${idx}`,
-              name: field.alias || field.field,
-              // TODO add dataType prop
-            }));
-
-            rows = rows.map((row: Record<string, any>) => {
-              const transformedRow = {};
-              Object.keys(row).forEach((key, idx) => {
-                let val = row[key];
-                if (TRIM_END_CHAR && meta[idx].type === 452) {
-                  // SQLVarText or CHAR
-                  val = val.trimEnd();
-                }
-                transformedRow[`c${idx}`] = val;
-              });
-              return transformedRow;
-            });
-
-            return { fields, rows };
-          });
+          return this.executeQuery(queryText, { rowAsArray: true, connection })
         } finally {
           // release happens in rawExecuteQuery, not needed here
           // await connection.release();
@@ -1084,17 +1059,34 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ rows, statement, columns: meta }) => ({
-      fields: meta.map((field, idx) => ({
+    return result.map(({ rows, statement, columns: meta }) => {
+      const fields = meta.map((field, idx) => ({
         id: `c${idx}`,
         name: field.alias || field.field,
         // TODO add dataType prop
-      })),
-      affectedRows: undefined, // TODO implement affectedRows
-      command: statement.type,
-      rows: rows,
-      rowCount: rows.length,
-    }));
+      }));
+
+      rows = rows.map((row: Record<string, any>) => {
+        const transformedRow = {};
+        Object.keys(row).forEach((key, idx) => {
+          let val = row[key];
+          if (TRIM_END_CHAR && meta[idx].type === 452) {
+            // SQLVarText or CHAR
+            val = val.trimEnd();
+          }
+          transformedRow[`c${idx}`] = val;
+        });
+        return transformedRow;
+      });
+
+      return {
+        fields,
+        rows,
+        affectedRows: undefined, // TODO implement affectedRows
+        command: statement.type,
+        rowCount: rows.length,
+      };
+    });
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
