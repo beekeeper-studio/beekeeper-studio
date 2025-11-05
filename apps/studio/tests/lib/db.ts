@@ -63,6 +63,18 @@ function normalizeTables(tables: TableOrView[], dbType: string): TableOrView[] {
   return tables;
 }
 
+function normalizeTableKeys(
+  keys: TableKey[]
+): Pick<TableKey, "toTable" | "fromTable" | "toColumn" | "fromColumn" | "direction">[] {
+  return keys.map((key) => ({
+    toTable: key.toTable.toLowerCase(),
+    fromTable: key.fromTable.toLowerCase(),
+    toColumn: Array.isArray(key.toColumn) ? key.toColumn.map((c) => c.toLowerCase()) : key.toColumn.toLowerCase(),
+    fromColumn: Array.isArray(key.fromColumn) ? key.fromColumn.map((c) => c.toLowerCase()) : key.fromColumn.toLowerCase(),
+    direction: key.direction,
+  }));
+}
+
 const KnexTypes: any = {
   postgresql: 'pg',
   'mysql': 'mysql2',
@@ -1963,22 +1975,10 @@ export class DBTestUtil {
       }
     }
 
-    function normalize(
-      keys: TableKey[]
-    ): Pick<TableKey, "toTable" | "fromTable" | "toColumn" | "fromColumn" | "direction">[] {
-      return keys.map((key) => ({
-        toTable: key.toTable.toLowerCase(),
-        fromTable: key.fromTable.toLowerCase(),
-        toColumn: key.toColumn.toString().toLowerCase(),
-        fromColumn: key.fromColumn.toString().toLowerCase(),
-        direction: key.direction,
-      }));
-    }
-
     // Test 1: Products table should have incoming key from orders
     const productsKeys = await this.connection
       .getTableKeys("products", this.defaultSchema)
-      .then(normalize);
+      .then(normalizeTableKeys);
 
     expect(productsKeys).toHaveLength(1);
     expect(productsKeys).toStrictEqual(expect.arrayContaining([
@@ -1994,7 +1994,7 @@ export class DBTestUtil {
     // Test 2: Orders table should have both incoming (from order_items) and outgoing (to products) keys
     const ordersKeys = await this.connection
       .getTableKeys("orders", this.defaultSchema)
-      .then(normalize);
+      .then(normalizeTableKeys);
 
     expect(ordersKeys).toHaveLength(2);
     expect(ordersKeys).toStrictEqual(expect.arrayContaining([
@@ -2017,7 +2017,7 @@ export class DBTestUtil {
     // Test 3: Order_items table should only have outgoing key to orders (no incoming keys)
     const orderItemsKeys = await this.connection
       .getTableKeys('order_items', this.defaultSchema)
-      .then(normalize);
+      .then(normalizeTableKeys);
 
     expect(orderItemsKeys).toHaveLength(1);
     expect(orderItemsKeys).toStrictEqual(expect.arrayContaining([
@@ -2027,6 +2027,32 @@ export class DBTestUtil {
         toColumn: 'order_id',
         fromColumn: 'order_id',
         direction: 'outgoing',
+      }
+    ]));
+  }
+
+  async incomingKeyTestsCompositePK() {
+    if (this.data.disabledFeatures?.foreignKeys) {
+      return expect.anything();
+    }
+
+    if (this.data.disabledFeatures?.compositeKeys) {
+      return expect.anything();
+    }
+
+    // Test composite foreign keys functionality
+    const tableKeys = await this.connection
+      .getTableKeys('composite_parent', this.defaultSchema)
+      .then(normalizeTableKeys);
+
+    expect(tableKeys).toHaveLength(1);
+    expect(tableKeys).toStrictEqual(expect.arrayContaining([
+      {
+        toTable: 'composite_parent',
+        fromTable: 'composite_child',
+        toColumn: ['parent_id1', 'parent_id2'],
+        fromColumn: ['ref_id1', 'ref_id2'],
+        direction: 'incoming',
       }
     ]));
   }
