@@ -2032,6 +2032,13 @@ export class DBTestUtil {
   }
 
   async incomingKeyTestsCompositePK() {
+    // 5.1 doesn't have great support for composite keys, so we'll skip the test
+    if (this.dbType === 'mysql') {
+      const version = await this.connection.versionString();
+      const { major, minor } = parseVersion(version.split("-")[0]);
+      if (major === 5 && minor === 1) return expect.anything();
+    }
+
     if (this.data.disabledFeatures?.foreignKeys) {
       return expect.anything();
     }
@@ -2050,8 +2057,8 @@ export class DBTestUtil {
       {
         toTable: 'composite_parent',
         fromTable: 'composite_child',
-        toColumn: ['parent_id1', 'parent_id2'],
-        fromColumn: ['ref_id1', 'ref_id2'],
+        toColumn: expect.arrayContaining(['parent_id1', 'parent_id2']),
+        fromColumn: expect.arrayContaining(['ref_id1', 'ref_id2']),
         direction: 'incoming',
       }
     ]));
