@@ -158,10 +158,21 @@ export default class WebPluginLoader {
           );
           break;
         case "getTableIndexes":
-          response.result = await this.utilityConnection.send(
-            'conn/listTableIndexes',
-            { table: request.args.table, schema: request.args.schema }
-          );
+          response.result = await this.utilityConnection
+            .send("conn/listTableIndexes", {
+              table: request.args.table,
+              schema: request.args.schema,
+            });
+          break;
+        case "getPrimaryKeys":
+          response.result = await this.utilityConnection
+            .send("conn/getPrimaryKeys", {
+              table: request.args.table,
+              schema: request.args.schema,
+            })
+            .then((keys: PrimaryKeyColumn[]) =>
+              keys.map((key) => ({ ...key, name: key.columnName }))
+            );
           break;
         case "getAppInfo":
           response.result = {
