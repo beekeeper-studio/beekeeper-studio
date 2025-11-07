@@ -157,13 +157,11 @@ export default class WebPluginLoader {
             { table: request.args.table, schema: request.args.schema }
           );
           break;
-        case "getPrimaryKeys":
+        case "getTableIndexes":
           response.result = await this.utilityConnection.send(
-              'conn/getPrimaryKeys',
+            'conn/listTableIndexes',
             { table: request.args.table, schema: request.args.schema }
-          ).then((keys: PrimaryKeyColumn[]) => keys.map((key) => ({
-              name: key.columnName,
-          })));
+          );
           break;
         case "getAppInfo":
           response.result = {
