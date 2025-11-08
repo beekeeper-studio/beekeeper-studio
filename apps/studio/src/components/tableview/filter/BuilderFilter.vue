@@ -63,7 +63,7 @@
   </div>
 </template>
 <script lang="js">
-import { TableFilterSymbols, iLikeFilterSymbol } from '@/lib/db/types';
+import { TableFilterSymbols } from '@/lib/db/types';
 import {mapState} from 'vuex'
 
 export default {
@@ -80,20 +80,9 @@ export default {
   computed: {
     ...mapState(['supportedFeatures']),
     filterTypes() {
-      const [firstHalf, secondHalf] = TableFilterSymbols
-
-      if (this.supportedFeatures.iLike){
-        return [
-          ...firstHalf,
-          iLikeFilterSymbol,
-          ...secondHalf
-        ]
-      } 
-
-      return [
-        ...firstHalf,
-        ...secondHalf
-      ]
+      const filterTypes = this.supportedFeatures.filterTypes ?? ['standard']
+      
+      return TableFilterSymbols.filter(tf => filterTypes.includes(tf.type))
     },
     isNullFilter() {
       const typeOptions = this.filterTypes.find((f) => f.value === this.filter.type)

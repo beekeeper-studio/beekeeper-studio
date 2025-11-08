@@ -123,7 +123,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
       transactions: true,
-      iLike: true
+      filterTypes: ['standard', 'ilike']
     };
   }
 

@@ -33,27 +33,21 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ] as const
 
-export const iLikeFilterSymbol = {
-  value: 'ilike', label: 'ilike'
-}
-
 // if you update this, you may need to update `translateOperator` in the mongodb driver
 export const TableFilterSymbols = [
-  [
-    { value: '=', label: 'equals' },
-    { value: '!=', label: 'does not equal'},
-    { value: 'like', label: 'like' },
-    { value: 'not like', label: 'not like' }
-  ],
-  [
-    { value: '<', label: 'less than' },
-    { value: '<=', label: 'less than or equal' },
-    { value: '>', label: 'greater than'},
-    { value: ">=", label: "greater than or equal" },
-    { value: "in", label: 'in', arrayInput: true },
-    { value: "is", label: "is null", nullOnly: true },
-    { value: "is not", label: "is not null", nullOnly: true }
-  ]
+    { value: '=', label: 'equals', type: 'standard' },
+    { value: '!=', label: 'does not equal', type: 'standard'},
+    { value: 'like', label: 'like', type: 'standard' },
+    { value: 'not like', label: 'not like', type: 'standard' },
+    { value: 'ilike', label: 'ilike', type: 'ilike' },
+    { value: 'not ilike', label: 'not ilike', type: 'ilike' },
+    { value: '<', label: 'less than', type: 'standard' },
+    { value: '<=', label: 'less than or equal', type: 'standard' },
+    { value: '>', label: 'greater than', type: 'standard'},
+    { value: ">=", label: "greater than or equal", type: 'standard' },
+    { value: "in", label: 'in', arrayInput: true, type: 'standard' },
+    { value: "is", label: "is null", nullOnly: true, type: 'standard' },
+    { value: "is not", label: "is not null", nullOnly: true, type: 'standard' }
 ]
 
 export enum AzureAuthType {

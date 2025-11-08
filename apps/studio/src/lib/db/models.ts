@@ -236,6 +236,8 @@ export interface Routine extends DatabaseEntity {
   type: RoutineType;
 }
 
+export type IncludedFilterTypes = 'standard' | 'ilike'
+
 // NOTE (day): note sure if this is really where we want to put edit partitions?
 export interface SupportedFeatures {
   customRoutines: boolean;
@@ -249,7 +251,7 @@ export interface SupportedFeatures {
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
   transactions: boolean;
-  iLike?: boolean;
+  filterTypes: IncludedFilterTypes[];
 }
 
 export interface FieldDescriptor {

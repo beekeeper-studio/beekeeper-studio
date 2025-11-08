@@ -20,7 +20,7 @@ export class CockroachClient extends PostgresClient {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
-      iLike: true
+      filterTypes: ['standard', 'ilike']
     };
   }
 
