@@ -206,7 +206,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return rows.map((row, idx) => ({
       id: row.seq,
       name: row.name,
-      unique: row.unique === 1,
+      unique: !!row.unique && row.unique !== BigInt(0),
       primary: row.origin === 'pk',
       columns: indexColumns[idx],
       schema: '',
