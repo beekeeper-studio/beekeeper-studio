@@ -596,6 +596,30 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     }
   }
 
+  async getFilteredDataCount(table: string, schema: string | null, filter: string ): Promise<string> {
+    if (!this.knex) {
+      return ''
+    }
+
+    try {
+      const query = await this.knex(schema ? `${schema}.${table}` : table)
+        .count('*')
+        .whereRaw(filter)
+        .toString()
+      
+      const { rows } = await this.driverExecuteSingle(query)
+      const [dataCount] = rows
+      const [countKey] = Object.keys(dataCount)
+      console.log('~~~')
+      console.log(dataCount[countKey])
+  
+      return dataCount[countKey]
+    } catch (err) {
+      log.error(err)
+      return ''
+    }
+  }
+
   async getQueryForFilter(filter: TableFilter): Promise<string> {
     if (!this.knex) {
       log.warn("No knex instance found. Cannot get query for filter.");
