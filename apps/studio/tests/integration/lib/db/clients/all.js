@@ -138,7 +138,11 @@ export function runCommonTests(getUtil, opts = {}) {
     test("primary key tests", async () => {
       await getUtil().primaryKeyTests()
     })
-    
+
+    test("unique key tests", async () => {
+      await getUtil().uniqueKeyTests()
+    })
+
     test("composite key tests", async () => {
       await getUtil().compositeKeyTests()
     })
