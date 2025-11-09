@@ -56,6 +56,7 @@
         <table-length
           v-if="!minimalMode"
           :table="table"
+          :filters="filters"
         />
         <a
           @click="refreshTable"
