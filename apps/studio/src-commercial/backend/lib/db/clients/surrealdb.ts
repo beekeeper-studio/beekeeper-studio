@@ -403,8 +403,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       }
     }
 
-    for (const col of currentTableColumns) {
-      const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+    for (const column of currentTableColumns) {
+      const match = column.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
       if (match) {
         const targetTables = match[1]
           .split(',')
@@ -414,7 +414,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
           keys.push(buildKey({
             fromTable: table,
             toTable,
-            column: col,
+            column,
             isComposite: targetTables.length > 1,
           }));
         }
@@ -426,8 +426,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       // Skip the current table (we already handled it above)
       if (otherTableName === table) continue;
 
-      for (const col of otherColumns) {
-        const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+      for (const column of otherColumns) {
+        const match = column.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
         if (match) {
           const targetTables = match[1]
             .split(',')
@@ -438,7 +438,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
             keys.push(buildKey({
               fromTable: otherTableName,
               toTable: table,
-              column: col,
+              column,
               isComposite: targetTables.length > 1,
             }));
           }
