@@ -19,6 +19,7 @@ import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { PrimaryKeyColumn } from "@/lib/db/models";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -158,6 +159,23 @@ export default class WebPluginLoader {
               'conn/getTableKeys',
             { table: request.args.table, schema: request.args.schema }
           );
+          break;
+        case "getTableIndexes":
+          response.result = await this.utilityConnection
+            .send("conn/listTableIndexes", {
+              table: request.args.table,
+              schema: request.args.schema,
+            });
+          break;
+        case "getPrimaryKeys":
+          response.result = await this.utilityConnection
+            .send("conn/getPrimaryKeys", {
+              table: request.args.table,
+              schema: request.args.schema,
+            })
+            .then((keys: PrimaryKeyColumn[]) =>
+              keys.map((key) => ({ ...key, name: key.columnName }))
+            );
           break;
         case "getAppInfo":
           response.result = {

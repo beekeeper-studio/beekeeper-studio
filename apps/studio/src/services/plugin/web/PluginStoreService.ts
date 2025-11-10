@@ -14,7 +14,7 @@ import {
 } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { NgQueryResult } from "@/lib/db/models";
+import { ExtendedTableColumn, NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
@@ -336,16 +336,22 @@ export default class PluginStoreService {
   async getColumns(
     tableName: string,
     schema?: string
-  ): Promise<GetColumnsResponse['result']> {
+  ) {
     const table = this.findTableOrThrow(tableName, schema);
 
     if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);
     }
 
-    return this.findTable(tableName, schema).columns.map((c) => ({
+    return this.findTable(tableName, schema).columns.map((c: ExtendedTableColumn) => ({
       name: c.columnName,
       type: c.dataType,
+      comment: c.comment ?? "",
+      nullable: c.nullable ?? false,
+      defaultValue: c.defaultValue,
+      extra: c.extra ?? "",
+      generated: c.generated ?? false,
+      ordinalPosition: c.ordinalPosition,
     }));
   }
 
