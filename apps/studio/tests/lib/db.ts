@@ -904,6 +904,49 @@ export class DBTestUtil {
     expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
+  async uniqueKeyTests() {
+    // ClickHouse doesn't support traditional unique constraints
+    if (this.dbType === 'clickhouse') {
+      return expect.anything()
+    }
+
+    // Test single column unique constraint
+    const indexes = await this.connection.listTableIndexes('with_unique_constraint', this.defaultSchema)
+
+    // Find unique indexes (excluding primary key)
+    const uniqueIndexes = indexes.filter(idx => idx.unique && !idx.primary)
+
+    expect(uniqueIndexes.length).toBeGreaterThan(0)
+
+    // Find the unique constraint on email column
+    const emailUniqueIndex = uniqueIndexes.find(idx => {
+      const columns = idx.columns.map(c => c.name.toLowerCase())
+      return columns.includes('email')
+    })
+
+    expect(emailUniqueIndex).toBeDefined()
+    expect(emailUniqueIndex.unique).toBe(true)
+    expect(emailUniqueIndex.primary).toBe(false)
+
+    // Test composite unique constraint
+    if (!this.data.disabledFeatures?.compositeKeys) {
+      const compositeIndexes = await this.connection.listTableIndexes('with_composite_unique', this.defaultSchema)
+      const compositeUniqueIndexes = compositeIndexes.filter(idx => idx.unique && !idx.primary)
+
+      expect(compositeUniqueIndexes.length).toBeGreaterThan(0)
+
+      const compositeUniqueIndex = compositeUniqueIndexes.find(idx => {
+        const columns = idx.columns.map(c => c.name.toLowerCase())
+        return columns.includes('first_name') && columns.includes('last_name')
+      })
+
+      expect(compositeUniqueIndex).toBeDefined()
+      expect(compositeUniqueIndex.unique).toBe(true)
+      expect(compositeUniqueIndex.primary).toBe(false)
+      expect(compositeUniqueIndex.columns.length).toBe(2)
+    }
+  }
+
   async checkForPoolConnectionReleasing() {
     // libsql freaks out on this test for some reason
     // so we're just going to skip for now
@@ -1913,6 +1956,46 @@ export class DBTestUtil {
         table.string("item_note");
         table.foreign("order_id").references("orders.order_id");
       });
+    }
+
+    // Create table with unique constraints
+    if (this.dbType === 'firebird') {
+      // Firebird doesn't support .unique() in Knex, create manually
+      await this.knex.schema.raw(`
+        CREATE TABLE WITH_UNIQUE_CONSTRAINT (
+          ID INTEGER PRIMARY KEY,
+          EMAIL VARCHAR(255),
+          USERNAME VARCHAR(255) NOT NULL,
+          CONSTRAINT WITH_UNIQUE_CONSTRAINT_EMAIL_UQ UNIQUE (EMAIL)
+        )
+      `)
+    } else {
+      await this.knex.schema.createTable('with_unique_constraint', (table) => {
+        table.integer('id').primary()
+        table.string('email').unique()
+        table.string('username').notNullable()
+      })
+    }
+
+    // Create table with composite unique constraint
+    if (!this.data.disabledFeatures?.compositeKeys) {
+      if (this.dbType === 'firebird') {
+        await this.knex.schema.raw(`
+          CREATE TABLE WITH_COMPOSITE_UNIQUE (
+            ID INTEGER PRIMARY KEY,
+            FIRST_NAME VARCHAR(255),
+            LAST_NAME VARCHAR(255),
+            CONSTRAINT WITH_COMPOSITE_UNIQUE_NAME_UQ UNIQUE (FIRST_NAME, LAST_NAME)
+          )
+        `)
+      } else {
+        await this.knex.schema.createTable('with_composite_unique', (table) => {
+          table.integer('id').primary()
+          table.string('first_name')
+          table.string('last_name')
+          table.unique(['first_name', 'last_name'])
+        })
+      }
     }
   }
 
