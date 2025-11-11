@@ -12,7 +12,7 @@ import fs from "fs";
 import tmp from 'tmp';
 
 export interface TempFile {
-  fileObject: tmp.FileSyncObject,
+  fileObject: tmp.FileResult,
   fileHandle: fs.promises.FileHandle
 }
 
@@ -21,6 +21,7 @@ class State {
   server: IDbConnectionPublicServer = null;
   usedConfig: IConnection = null;
   connection: BasicDatabaseClient<any, any> = null;
+  transactionTimeouts: Map<number, NodeJS.Timeout> = new Map();
   database: string = null;
   username: string = null;
   queries: Map<string, CancelableQuery> = new Map();

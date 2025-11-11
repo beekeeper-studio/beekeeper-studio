@@ -45,7 +45,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, withClosable, withReleasable } from "@/lib/db/clients/utils";
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, errorMessages, withClosable, withReleasable } from "@/lib/db/clients/utils";
 import {
   Pool,
   Connection,
@@ -58,6 +58,7 @@ import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 import globals from "@/common/globals";
+import BksConfig from "@/common/bksConfig";
 
 type FirebirdResult = {
   rows: any[];
@@ -226,7 +227,12 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[], { runAsUpsert = 
   return inserts.map((insert) => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }));
 }
 
-export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
+interface FirebirdReservedConnection {
+  connection: Connection,
+  transaction: Transaction
+}
+
+export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, FirebirdReservedConnection> {
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
@@ -653,8 +659,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async query(queryText: string, tabId: number): Promise<CancelableQuery> {
     let connection: Connection | undefined;
+    const hasReserved = this.reservedConnections.has(tabId);
 
     return {
       execute: async () => {
@@ -664,6 +671,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           const results = await this.driverExecuteMultiple(queryText, {
             rowAsArray: true,
             connection,
+            tabId
           });
           return results.map(({ rows, columns: meta }) => {
             const fields = meta.map((field, idx) => ({
@@ -695,7 +703,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       },
       cancel: async () => {
         try {
-          await connection?.release();
+          if (!hasReserved) {
+            await connection?.release();
+          }
         } catch (ex) {
           log.warn("Unable to release connection", ex.message)
         }
@@ -1006,10 +1016,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -1025,8 +1035,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           onDelete: row["ON_DELETE"],
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
@@ -1086,23 +1096,25 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   protected async rawExecuteQuery(
     queryText: string,
     options: {
-      connection?: Connection;
+      connection?: Connection | Transaction;
       multiple?: boolean;
       params?: any[];
       rowAsArray?: boolean;
+      tabId?: number;
     } = {}
   ): Promise<FirebirdResult | FirebirdResult[]> {
     const queries = identifyCommands(queryText);
     const params = options.params ?? [];
 
     const results: FirebirdResult[] = [];
+    const hasReserved = this.reservedConnections.has(options.tabId);
+    const conn = options.connection ?? await this.pool.getConnection()
 
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
       const query = queries[index];
-      const conn = options.connection ?? await this.pool.getConnection()
 
-      await withReleasable(conn, async () => {
+      const runQuery = async () => {
         const data = await conn.query(query.text, params, options.rowAsArray);
         results.push({
           columns: data.meta,
@@ -1110,7 +1122,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           statement: query,
           arrayMode: options.rowAsArray,
         });
-      })
+      };
+
+      await runQuery();
+    }
+
+    if (!hasReserved && conn instanceof Connection) {
+      conn.release();
     }
 
     return options.multiple ? results : results[0];
@@ -1340,6 +1358,44 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
     return await clientExtras.transaction.rollback()
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    if (this.reservedConnections.size >= BksConfig.db.firebird.maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections);
+    }
+
+    const conn = await this.pool.getConnection();
+    this.pushConnection(tabId, { connection: conn, transaction: null });
+  }
+
+  async releaseConnection(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      try {
+        if (conn.transaction) {
+          await conn.transaction.rollback();
+        }
+        await conn.connection.release();
+      } catch (e) {
+        log.error("Error releasing reserved firebird connection: ", e)
+      }
+    }
+  }
+
+  async startTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    conn.transaction = await conn.connection.transaction();
+  }
+
+  async commitTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.transaction.commit();
+  }
+
+  async rollbackTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.transaction.rollback();
   }
 
   parseQueryResultColumns(qr: FirebirdResult): BksField[] {

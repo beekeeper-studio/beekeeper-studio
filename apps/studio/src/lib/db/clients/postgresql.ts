@@ -10,7 +10,7 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
@@ -1189,6 +1189,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   // Manual transaction management
   async reserveConnection(tabId: number) {
+    const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+    if (this.reservedConnections.size >= BksConfig.db[connectionType].maxConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
     const conn = await this.conn.pool.connect();
     this.pushConnection(tabId, conn);
   }
@@ -1398,7 +1403,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       port: server.config.port || undefined,
       password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
-      max: 8, // max idle connections per time (30 secs)
+      max: BksConfig.db.postgres.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };
@@ -1601,6 +1606,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const isCockroach = version.toLowerCase().includes('cockroachdb')
     const isRedshift = version.toLowerCase().includes('redshift')
     const isPostgres = !isCockroach && !isRedshift
+
     const number = parseInt(
       version.split(" ")[isPostgres ? 1 : 2].replace(/(^v)|(,$)/ig, '').split(".").map((s: string) => s.padStart(2, "0")).join("").padEnd(6, "0"),
       10

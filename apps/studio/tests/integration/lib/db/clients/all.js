@@ -466,8 +466,6 @@ export function runCommonTests(getUtil, opts = {}) {
 
     test("should support concurrent transactions on different tabs", async () => {
       if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions) return
-      // SQL Server locks tables during transactions, so skip this test
-      if (getUtil().dbType === 'sqlserver') return
       await itShouldSupportConcurrentTransactions(getUtil())
     })
   })
@@ -1153,6 +1151,76 @@ export async function prepareImportTests (util) {
 
 // Manual Commit Tests
 
+/**
+ * Helper function to get the properly formatted table name for manual commit tests
+ * @param {string} dbType - The database type
+ * @returns {string} - The formatted table name
+ */
+function getManualCommitTableName(dbType) {
+  switch (dbType) {
+    case 'sqlserver':
+      return '[dbo].[manual_commit_test]'
+    case 'oracle':
+      return 'BEEKEEPER."manual_commit_test"'
+    default:
+      return 'manual_commit_test'
+  }
+}
+
+/**
+ * Helper function to wrap column names for specific database types
+ * @param {string} dbType - The database type
+ * @param {string} columnName - The column name to wrap
+ * @returns {string} - The wrapped column name
+ */
+function wrapColumn(dbType, columnName) {
+  if (dbType === 'oracle') {
+    return `"${columnName}"`
+  }
+  return columnName
+}
+
+/**
+ * Helper function to build INSERT query for manual commit tests
+ * @param {string} dbType - The database type
+ * @param {number} id - The ID value
+ * @param {string} name - The name value
+ * @returns {string} - The INSERT query
+ */
+function buildInsertQuery(dbType, id, name) {
+  const tableName = getManualCommitTableName(dbType)
+  const idCol = wrapColumn(dbType, 'id')
+  const nameCol = wrapColumn(dbType, 'name')
+  return `INSERT INTO ${tableName} (${idCol}, ${nameCol}) VALUES (${id}, '${name}')`
+}
+
+/**
+ * Helper function to build SELECT query for manual commit tests
+ * @param {string} dbType - The database type
+ * @param {string} [orderBy] - Optional ORDER BY clause
+ * @returns {string} - The SELECT query
+ */
+function buildSelectQuery(dbType, orderBy = '') {
+  const tableName = getManualCommitTableName(dbType)
+  const orderColumn = orderBy ? wrapColumn(dbType, orderBy) : ''
+  const orderClause = orderBy ? ` ORDER BY ${orderColumn}` : ''
+  return `SELECT * FROM ${tableName}${orderClause}`
+}
+
+/**
+ * Helper function to build UPDATE query for manual commit tests
+ * @param {string} dbType - The database type
+ * @param {number} id - The ID value to match
+ * @param {string} name - The new name value
+ * @returns {string} - The UPDATE query
+ */
+function buildUpdateQuery(dbType, id, name) {
+  const tableName = getManualCommitTableName(dbType)
+  const idCol = wrapColumn(dbType, 'id')
+  const nameCol = wrapColumn(dbType, 'name')
+  return `UPDATE ${tableName} SET ${nameCol} = '${name}' WHERE ${idCol} = ${id}`
+}
+
 const prepareManualCommitTestTable = async function(util) {
   await util.knex.schema.dropTableIfExists("manual_commit_test")
   await util.knex.schema.createTable("manual_commit_test", (table) => {
@@ -1186,35 +1254,13 @@ export const itShouldIsolateChangesUntilCommit = async function(util) {
   await util.connection.startTransaction(tabId)
 
   // Insert data within the transaction
-  // @claude turn things like this into a switch or if/else statement. This tertiary chain is a nightmare
-  const insertQuery = util.dbType === 'postgresql'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (1, 'Test User')`
-    : util.dbType === 'sqlserver'
-    ? `INSERT INTO [dbo].[manual_commit_test] (id, name) VALUES (1, 'Test User')`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (1, 'Test User')`
-    : util.dbType === 'oracle'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (1, 'Test User')`
-    : util.dbType === 'firebird'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (1, 'Test User')`
-    : `INSERT INTO manual_commit_test (id, name) VALUES (1, 'Test User')`
+  const insertQuery = buildInsertQuery(util.dbType, 1, 'Test User')
 
   const query = await util.connection.query(insertQuery, tabId)
   await query.execute();
 
   // Query from outside the transaction (simulate user checking from another tab) - should NOT see the data
-  // @claude same here
-  const selectQuery = util.dbType === 'postgresql'
-    ? `SELECT * FROM manual_commit_test`
-    : util.dbType === 'sqlserver'
-    ? `SELECT * FROM [dbo].[manual_commit_test]`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `SELECT * FROM manual_commit_test`
-    : util.dbType === 'oracle'
-    ? `SELECT * FROM manual_commit_test`
-    : util.dbType === 'firebird'
-    ? `SELECT * FROM manual_commit_test`
-    : `SELECT * FROM manual_commit_test`
+  const selectQuery = buildSelectQuery(util.dbType)
 
   const queryBeforeCommit = await util.connection.query(selectQuery)
   const resultsBeforeCommit = await queryBeforeCommit.execute()
@@ -1240,17 +1286,7 @@ export const itShouldRollbackUncommittedChanges = async function(util) {
   await util.connection.startTransaction(tabId)
 
   // Insert data within the transaction
-  const insertQuery = util.dbType === 'postgresql'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (2, 'Rollback Test')`
-    : util.dbType === 'sqlserver'
-    ? `INSERT INTO [dbo].[manual_commit_test] (id, name) VALUES (2, 'Rollback Test')`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (2, 'Rollback Test')`
-    : util.dbType === 'oracle'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (2, 'Rollback Test')`
-    : util.dbType === 'firebird'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (2, 'Rollback Test')`
-    : `INSERT INTO manual_commit_test (id, name) VALUES (2, 'Rollback Test')`
+  const insertQuery = buildInsertQuery(util.dbType, 2, 'Rollback Test')
 
   const query = await util.connection.query(insertQuery, tabId)
   await query.execute();
@@ -1259,17 +1295,7 @@ export const itShouldRollbackUncommittedChanges = async function(util) {
   await util.connection.rollbackTransaction(tabId)
 
   // Query from outside - should NOT see the rolled back data
-  const selectQuery = util.dbType === 'postgresql'
-    ? `SELECT * FROM manual_commit_test`
-    : util.dbType === 'sqlserver'
-    ? `SELECT * FROM [dbo].[manual_commit_test]`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `SELECT * FROM manual_commit_test`
-    : util.dbType === 'oracle'
-    ? `SELECT * FROM manual_commit_test`
-    : util.dbType === 'firebird'
-    ? `SELECT * FROM manual_commit_test`
-    : `SELECT * FROM manual_commit_test`
+  const selectQuery = buildSelectQuery(util.dbType)
 
   const queryAfterRollback = await util.connection.query(selectQuery)
   const results = await queryAfterRollback.execute()
@@ -1287,41 +1313,9 @@ export const itShouldHandleMultipleQueriesInTransaction = async function(util) {
   await util.connection.startTransaction(tabId)
 
   // Execute multiple queries in the same transaction
-  const insertQuery1 = util.dbType === 'postgresql'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (3, 'User 1')`
-    : util.dbType === 'sqlserver'
-    ? `INSERT INTO [dbo].[manual_commit_test] (id, name) VALUES (3, 'User 1')`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (3, 'User 1')`
-    : util.dbType === 'oracle'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (3, 'User 1')`
-    : util.dbType === 'firebird'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (3, 'User 1')`
-    : `INSERT INTO manual_commit_test (id, name) VALUES (3, 'User 1')`
-
-  const insertQuery2 = util.dbType === 'postgresql'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (4, 'User 2')`
-    : util.dbType === 'sqlserver'
-    ? `INSERT INTO [dbo].[manual_commit_test] (id, name) VALUES (4, 'User 2')`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (4, 'User 2')`
-    : util.dbType === 'oracle'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (4, 'User 2')`
-    : util.dbType === 'firebird'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (4, 'User 2')`
-    : `INSERT INTO manual_commit_test (id, name) VALUES (4, 'User 2')`
-
-  const updateQuery = util.dbType === 'postgresql'
-    ? `UPDATE manual_commit_test SET name = 'Updated User' WHERE id = 3`
-    : util.dbType === 'sqlserver'
-    ? `UPDATE [dbo].[manual_commit_test] SET name = 'Updated User' WHERE id = 3`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `UPDATE manual_commit_test SET name = 'Updated User' WHERE id = 3`
-    : util.dbType === 'oracle'
-    ? `UPDATE manual_commit_test SET name = 'Updated User' WHERE id = 3`
-    : util.dbType === 'firebird'
-    ? `UPDATE manual_commit_test SET name = 'Updated User' WHERE id = 3`
-    : `UPDATE manual_commit_test SET name = 'Updated User' WHERE id = 3`
+  const insertQuery1 = buildInsertQuery(util.dbType, 3, 'User 1')
+  const insertQuery2 = buildInsertQuery(util.dbType, 4, 'User 2')
+  const updateQuery = buildUpdateQuery(util.dbType, 3, 'Updated User')
 
   const query1 = await util.connection.query(insertQuery1, tabId)
   await query1.execute()
@@ -1331,17 +1325,7 @@ export const itShouldHandleMultipleQueriesInTransaction = async function(util) {
   await query3.execute()
 
   // Verify from outside transaction - should see nothing
-  const selectQuery = util.dbType === 'postgresql'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : util.dbType === 'sqlserver'
-    ? `SELECT * FROM [dbo].[manual_commit_test] ORDER BY id`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : util.dbType === 'oracle'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : util.dbType === 'firebird'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : `SELECT * FROM manual_commit_test ORDER BY id`
+  const selectQuery = buildSelectQuery(util.dbType, 'id')
 
   const queryBeforeCommit = await util.connection.query(selectQuery)
   const resultsBeforeCommit = await queryBeforeCommit.execute()
@@ -1372,29 +1356,8 @@ export const itShouldSupportConcurrentTransactions = async function(util) {
   await util.connection.startTransaction(tabId2)
 
   // Insert different data in each transaction
-  const insertQuery1 = util.dbType === 'postgresql'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (5, 'Tab 1 User')`
-    : util.dbType === 'sqlserver'
-    ? `INSERT INTO [dbo].[manual_commit_test] (id, name) VALUES (5, 'Tab 1 User')`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (5, 'Tab 1 User')`
-    : util.dbType === 'oracle'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (5, 'Tab 1 User')`
-    : util.dbType === 'firebird'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (5, 'Tab 1 User')`
-    : `INSERT INTO manual_commit_test (id, name) VALUES (5, 'Tab 1 User')`
-
-  const insertQuery2 = util.dbType === 'postgresql'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (6, 'Tab 2 User')`
-    : util.dbType === 'sqlserver'
-    ? `INSERT INTO [dbo].[manual_commit_test] (id, name) VALUES (6, 'Tab 2 User')`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (6, 'Tab 2 User')`
-    : util.dbType === 'oracle'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (6, 'Tab 2 User')`
-    : util.dbType === 'firebird'
-    ? `INSERT INTO manual_commit_test (id, name) VALUES (6, 'Tab 2 User')`
-    : `INSERT INTO manual_commit_test (id, name) VALUES (6, 'Tab 2 User')`
+  const insertQuery1 = buildInsertQuery(util.dbType, 5, 'Tab 1 User')
+  const insertQuery2 = buildInsertQuery(util.dbType, 6, 'Tab 2 User')
 
   const query1 = await util.connection.query(insertQuery1, tabId1)
   await query1.execute()
@@ -1405,17 +1368,7 @@ export const itShouldSupportConcurrentTransactions = async function(util) {
   await util.connection.commitTransaction(tabId1)
 
   // Check that only tab1's data is visible outside transactions
-  const selectQuery = util.dbType === 'postgresql'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : util.dbType === 'sqlserver'
-    ? `SELECT * FROM [dbo].[manual_commit_test] ORDER BY id`
-    : util.dbType === 'mysql' || util.dbType === 'mariadb'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : util.dbType === 'oracle'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : util.dbType === 'firebird'
-    ? `SELECT * FROM manual_commit_test ORDER BY id`
-    : `SELECT * FROM manual_commit_test ORDER BY id`
+  const selectQuery = buildSelectQuery(util.dbType, 'id')
 
   const queryAfterFirstCommit = await util.connection.query(selectQuery)
   const resultsAfterFirstCommit = await queryAfterFirstCommit.execute()

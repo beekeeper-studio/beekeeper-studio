@@ -4,6 +4,7 @@ import { parse as bytesParse } from 'bytes'
 import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request, Transaction } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
+import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'
 
 import { DatabaseElement, IDbConnectionDatabase } from "../types"
@@ -15,7 +16,8 @@ import {
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  buildInsertQuery
+  buildInsertQuery,
+  errorMessages
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
@@ -1055,6 +1057,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async reserveConnection(tabId: number): Promise<void> {
+    if (this.reservedConnections.size >= BksConfig.db.sqlserver.maxConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
     const conn = this.pool.transaction();
     this.pushConnection(tabId, conn);
   }
@@ -1064,7 +1070,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     if (conn) {
       try {
         // This may throw if the connection hasn't been begun yet, so just to be safe we'll catch
-        conn.rollback();
+        await conn.rollback();
       } catch {}
     }
   }
@@ -1141,7 +1147,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       requestTimeout: Infinity,
       appName: 'beekeeperstudio',
       pool: {
-        max: 10
+        max: BksConfig.db.sqlserver.maxConnections
       }
     };
 

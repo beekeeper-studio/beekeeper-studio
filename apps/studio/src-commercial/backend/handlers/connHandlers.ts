@@ -13,6 +13,9 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("connHandlers");
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -49,7 +52,7 @@ export interface IConnectionHandlers {
   'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
   'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
-  'conn/query': ({ queryText, options, tabId, sId }: { queryText: string, options?: any, tabId: string, sId: string }) => Promise<string>,
+  'conn/query': ({ queryText, options, tabId, hasActiveTransaction, sId }: { queryText: string, options?: any, tabId: number, hasActiveTransaction: boolean, sId: string }) => Promise<string>,
   'conn/getCompletions': ({ cmd, sId }: { cmd: string, sId: string }) => Promise<string[]>,
   'conn/getShellPrompt': ({ sId }: { sId: string }) => Promise<string>,
   'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
@@ -122,7 +125,7 @@ export interface IConnectionHandlers {
   'conn/releaseConnection': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
   'conn/startTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
   'conn/commitTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
-  'conn/rollbackTransaction': ({ tabId, sId}: { tabId: number, sId: string }) => Promise<void>
+  'conn/rollbackTransaction': ({ tabId, sId}: { tabId: number, sId: string }) => Promise<void>,
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -326,11 +329,12 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.executeCommand(commandText);
   },
 
-  'conn/query': async function({ queryText, options, tabId, sId }: { queryText: string, options?: any, tabId: string, sId: string }) {
+  'conn/query': async function({ queryText, options, tabId, hasActiveTransaction, sId }: { queryText: string, options?: any, tabId: number, hasActiveTransaction: boolean, sId: string }) {
     checkConnection(sId);
     const query = await state(sId).connection.query(queryText, tabId, options);
     const id = uuidv4();
     state(sId).queries.set(id, query);
+    createOrResetTransactionTimeout(sId, tabId, !hasActiveTransaction);
     return id;
   },
 
@@ -583,15 +587,42 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/startTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.startTransaction(tabId);
+    createOrResetTransactionTimeout(sId, tabId);
   },
 
   'conn/commitTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.commitTransaction(tabId);
+    clearTransactionTimeout(sId, tabId);
   },
 
   'conn/rollbackTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.rollbackTransaction(tabId);
+    clearTransactionTimeout(sId, tabId);
   }
+}
+
+function clearTransactionTimeout(sId: string, tabId: number) {
+  if (state(sId).transactionTimeouts.has(tabId)) {
+    const timeout = state(sId).transactionTimeouts.get(tabId);
+    clearTimeout(timeout);
+  }
+}
+
+function createOrResetTransactionTimeout(sId: string, tabId: number, mustExist: boolean = false) {
+  if (mustExist && !state(sId).transactionTimeouts.has(tabId)) {
+    return;
+  }
+
+  clearTransactionTimeout(sId, tabId);
+
+  let connectionType: string = state(sId).connection.connectionType;
+  connectionType = connectionType === 'postgresql' ? 'postgres' : connectionType;
+  const timeout = setTimeout(() => {
+    state(sId).port.postMessage({
+      type: `transactionTimedOut/${tabId}`
+    });
+  }, bksConfig.db[connectionType].manualTransactionTimeout)
+  state(sId).transactionTimeouts.set(tabId, timeout);
 }

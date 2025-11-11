@@ -18,7 +18,8 @@ import {
   buildSelectTopQuery,
   escapeString,
   getIAMPassword,
-  ClientError, refreshTokenIfNeeded
+  ClientError, refreshTokenIfNeeded,
+  errorMessages
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -147,6 +148,7 @@ async function configDatabase(
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,
+    connectionLimit: BksConfig.db.mysql.maxConnections,
     connectTimeout: BksConfig.db.mysql.connectTimeout,
   };
 
@@ -1448,6 +1450,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async reserveConnection(tabId: number): Promise<void> {
+    if (this.reservedConnections.size >= BksConfig.db[this.connectionType].maxConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
     return new Promise((resolve, reject) => {
       this.conn.pool.getConnection((err, conn) => {
         if (!err) {

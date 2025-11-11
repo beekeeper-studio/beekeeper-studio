@@ -142,31 +142,20 @@
               </x-menu>
             </x-button>
           </x-buttons>
-          <x-buttons v-show="canManageTransactions" class="">
+          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
             <x-button
-              :disabled="running"
-              @click.prevent="toggleCommitMode"
+              @click.prevent="manualCommit"
               class="btn btn-flat btn-small"
-              :class="{ 'btn-rounded': !isManualCommit }"
             >
-              <x-label>{{ commitModeLabel }}</x-label>
+              <x-label>Commit</x-label>
             </x-button>
-            <x-button v-if="isManualCommit" class="btn btn-flat btn-small" menu>
-              <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
-                <x-menuitem
-                  :disabled="!this.hasActiveTransaction"
-                  @click.prevent="manualCommit"
-                >
-                  <x-label>Commit</x-label>
-                </x-menuitem>
-                <x-menuitem
-                  :disabled="!this.hasActiveTransaction"
-                  @click.prevent="manualRollback"
-                >
-                  <x-label>Rollback</x-label>
-                </x-menuitem>
-              </x-menu>
+          </x-buttons>
+          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
+            <x-button
+              @click.prevent="manualRollback"
+              class="btn btn-flat btn-small"
+            >
+              <x-label>Rollback</x-label>
             </x-button>
           </x-buttons>
         </div>
@@ -236,6 +225,9 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
+        :canManageTransactions="canManageTransactions"
+        :isManualCommit="isManualCommit"
+        @toggleCommitMode="toggleCommitMode"
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
@@ -365,6 +357,12 @@
         </form>
       </modal>
     </portal>
+    <transaction-timeout-modal
+      :tab-id="tab.id"
+      :show="showTransactionTimeoutModal"
+      @rollback="rollbackFromModal"
+      @continueTransaction="continueTransaction"
+    />
   </div>
 </template>
 
@@ -382,6 +380,7 @@
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
+  import TransactionTimeoutModal from "@/components/TransactionTimeoutModal.vue"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -405,7 +404,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, TransactionTimeoutModal },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -464,7 +463,9 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         currentlySelectedQuery: null,
         queryMagic: queryMagicExtension(),
         isManualCommit: false,
-        hasActiveTransaction: false
+        hasActiveTransaction: false,
+        transactionTimeoutListenerId: null,
+        showTransactionTimeoutModal: false
       }
     },
     computed: {
@@ -690,9 +691,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           ]
         }
       },
-      commitModeLabel() {
-        return this.isManualCommit ? 'Manual Commit Mode' : 'Auto Commit Mode'
-      }
+
     },
     watch: {
       error() {
@@ -922,6 +921,15 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
+      addTransactionTimeoutListener() {
+        this.transactionTimeoutListenerId = this.$util.addListener(`transactionTimedOut/${this.tab.id}`, () => {
+          this.$store.dispatch('tabs/setActive', this.tab)
+          this.showTransactionTimeoutModal = true;
+        })
+      },
+      removeTransactionTimeoutListener() {
+        this.$util.removeListener(this.transactionTimeoutListenerId);
+      },
       async submitQueryToFile() {
         if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
@@ -1020,7 +1028,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun});
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun}, this.hasActiveTransaction);
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
@@ -1178,6 +1186,14 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         this.connection.rollbackTransaction(this.tab.id)
         this.hasActiveTransaction = false
       },
+      async rollbackFromModal() {
+        await this.manualRollback();
+        await this.toggleCommitMode();
+        this.showTransactionTimeoutModal = false;
+      },
+      async continueTransaction() {
+        this.showTransactionTimeoutModal = false;
+      },
       async columnsGetter(tableName: string) {
         let table = this.tables.find(
           (t: TableOrView) => t.name === tableName || `${t.schema}.${t.name}` === tableName
@@ -1242,6 +1258,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       }
 
       this.vimKeymaps = await getVimKeymapsFromVimrc()
+      this.addTransactionTimeoutListener();
     },
     beforeDestroy() {
       if(this.split) {
@@ -1249,6 +1266,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       }
       this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
+      this.removeTransactionTimeoutListener();
     },
   }
 </script>
