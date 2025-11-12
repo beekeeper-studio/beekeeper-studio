@@ -20,11 +20,7 @@ test.describe("Export Results Verifications", () => {
 
     beforeEach(async () => {
         electronApp = await electron.launch({
-            args: ['dist/main.js'],
-            // contextOptions: {
-            //     acceptDownloads: false,
-            //     downloadsPath: './tests'
-            // }
+            args: ['dist/main.js']
         });
         window = await electronApp.firstWindow();
         queryTab = new QueryTab(window);
