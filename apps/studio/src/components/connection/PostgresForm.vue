@@ -9,30 +9,7 @@
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="!iamAuthenticationEnabled" :config="config" />
-
-    <div v-show="iamAuthenticationEnabled && !isCockroach" class="host-port-user-password">
-      <div class="row gutter">
-        <div class="form-group col s9">
-          <label for="server">
-            Host
-          </label>
-          <input name="server" type="text" class="form-control" v-model="config.host">
-        </div>
-        <div class="form-group col s3">
-          <label for="database">Port</label>
-          <input type="number" class="form-control" name="port" v-model.number="config.port">
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="database">Database</label>
-        <input name="database" type="text" class="form-control" v-model="config.defaultDatabase">
-      </div>
-      <div class="form-group">
-        <label for="user">User</label>
-        <input name="user" type="text" class="form-control" v-model="config.username">
-      </div>
-    </div>
+    <common-server-inputs v-show="showServerInputs" :config="config" />
 
     <div class="form-group" v-if="isCockroach">
       <label for="Cluster ID">
@@ -45,6 +22,7 @@
     </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-advanced :config="config" />
+    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
   </div>
 </template>
 
@@ -57,15 +35,20 @@ import {AppEvent} from "@/common/AppEvent";
 import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import { mapGetters } from 'vuex';
 import _ from "lodash";
+import CommonEntraId from "@/components/connection/CommonEntraId.vue";
 
 export default {
-  components: { CommonServerInputs, CommonAdvanced, CommonIam },
+  components: {CommonEntraId, CommonServerInputs, CommonAdvanced, CommonIam },
   props: ['config'],
+  mounted() {
+    this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+  },
   data() {
     return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
-      authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
+      azureAuthEnabled: !!this.config?.azureAuthOptions?.azureAuthEnabled,
+      iamAuthenticationEnabled: !!this.config.iamAuthOptions?.iamAuthenticationEnabled,
+      authType: this.config.iamAuthOptions?.authType || this.config.azureAuthOptions?.azureAuthType || 'default',
+      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes.filter(auth => auth.value === AzureAuthType.CLI)],
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
@@ -81,14 +64,17 @@ export default {
     async authType() {
       if (this.authType === 'default') {
         this.iamAuthenticationEnabled = false
+        this.azureAuthEnabled = false
       } else {
         if (this.isCommunity) {
           // we want to display a modal
           this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
           this.authType = 'default'
         } else {
-          this.config.redshiftOptions.authType = this.authType
-          this.iamAuthenticationEnabled = this.authType.includes('iam')
+          this.config.iamAuthOptions.authType = this.authType
+          this.iamAuthenticationEnabled = typeof this.authType === 'string' && this.authType.includes('iam')
+          this.config.azureAuthOptions.azureAuthType = this.authType
+          this.azureAuthEnabled = this.authType === AzureAuthType.CLI
         }
       }
 
@@ -99,8 +85,11 @@ export default {
         this.accountName = null
       }
     },
+    azureAuthEnabled() {
+      this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
+    },
     iamAuthenticationEnabled() {
-      this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
+      this.config.iamAuthOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
     }
   },
   computed: {
@@ -108,6 +97,9 @@ export default {
     isCockroach() {
       return this.config.connectionType === 'cockroachdb'
     },
+    showServerInputs() {
+      return !this.azureAuthEnabled
+    }
   }
 };
 </script>
