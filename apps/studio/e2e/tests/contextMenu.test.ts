@@ -52,10 +52,10 @@ test.describe("Using the context menu", () => {
     await expect(queryTabText).toContain(POSTGRES_QUERY);
     });
 
-    test.only("paste a password using context menu", async () => {
+    test("paste a password using context menu", async () => {
     // adding a default text to be asserted later
     await window.evaluate((clipboardText) => navigator.clipboard.writeText(clipboardText), POSTGRES_QUERY);
-
+    
     await queryTab.queryTabTextArea.click({
     button: 'right'
   });
