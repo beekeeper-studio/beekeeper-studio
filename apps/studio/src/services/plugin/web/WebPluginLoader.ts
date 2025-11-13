@@ -143,12 +143,16 @@ export default class WebPluginLoader {
 
       switch (request.name) {
         // ========= READ ACTIONS ===========
+        case "getSchemas":
+          response.result = await this.utilityConnection.send("conn/listSchemas");
+          break;
         case "getTables":
-          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
+          response.result = this.pluginStore.getTables(request.args.schema) as GetTablesResponse['result'];
           break;
         case "getColumns":
           response.result = await this.pluginStore.getColumns(
-            request.args.table
+            request.args.table,
+            request.args.schema
           );
           break;
         case "getTableKeys":

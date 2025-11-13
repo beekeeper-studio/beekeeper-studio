@@ -284,11 +284,11 @@ export default class PluginStoreService {
     this.store.commit("tabs/unsetMenuItem", ref);
   }
 
-  getTables() {
+  getTables(schema?: string) {
     return this.store.state.tables.map((t) => ({
       name: t.name,
       schema: t.schema,
-    }));
+    })).filter((s) => !schema || s.schema === schema);
   }
 
   private findTable(name: string, schema?: string) {
