@@ -660,15 +660,15 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
   }
 
   async query(queryText: string, tabId: number): Promise<CancelableQuery> {
-    let connection: Connection | undefined;
+    let connection: Connection | Transaction | undefined;
     const hasReserved = this.reservedConnections.has(tabId);
 
     return {
       execute: async () => {
-        connection = await this.pool.getConnection()
+        connection = hasReserved ? this.peekConnection(tabId).transaction : await this.pool.getConnection()
 
         try {
-          return this.executeQuery(queryText, { rowAsArray: true, connection })
+          return this.executeQuery(queryText, { rowAsArray: true, connection, tabId })
         } finally {
           // release happens in rawExecuteQuery, not needed here
           // await connection.release();
@@ -677,7 +677,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
       },
       cancel: async () => {
         try {
-          if (!hasReserved) {
+          if (!hasReserved && connection instanceof Connection) {
             await connection?.release();
           }
         } catch (ex) {
