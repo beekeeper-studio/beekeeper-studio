@@ -90,6 +90,25 @@
             Save
           </x-button>
 
+          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
+            <x-button
+              @click.prevent="manualCommit"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Commit</x-label>
+            </x-button>
+          </x-buttons>
+          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
+            <x-button
+              @click.prevent="manualRollback"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Rollback</x-label>
+            </x-button>
+          </x-buttons>
+
           <x-buttons class="">
             <x-button
               class="btn btn-primary btn-small"
@@ -140,24 +159,6 @@
                   </i>
                 </x-menuitem>
               </x-menu>
-            </x-button>
-          </x-buttons>
-          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
-            <x-button
-              @click.prevent="manualCommit"
-              class="btn btn-flat btn-small"
-              :disabled="!hasActiveTransaction"
-            >
-              <x-label>Commit</x-label>
-            </x-button>
-          </x-buttons>
-          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
-            <x-button
-              @click.prevent="manualRollback"
-              class="btn btn-flat btn-small"
-              :disabled="!hasActiveTransaction"
-            >
-              <x-label>Rollback</x-label>
             </x-button>
           </x-buttons>
         </div>
