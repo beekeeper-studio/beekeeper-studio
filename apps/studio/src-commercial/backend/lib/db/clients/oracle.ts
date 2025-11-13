@@ -1019,7 +1019,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
 
   async reserveConnection(tabId: number): Promise<void> {
-    if (this.reservedConnections.size >= BksConfig.db.oracle.maxConnections) {
+    if (this.reservedConnections.size >= BksConfig.db.oracle.maxReservedConnections) {
       throw new Error(errorMessages.maxReservedConnections)
     }
 

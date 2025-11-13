@@ -13,9 +13,6 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
-import rawLog from "@bksLogger";
-
-const log = rawLog.scope("connHandlers");
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -126,6 +123,8 @@ export interface IConnectionHandlers {
   'conn/startTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
   'conn/commitTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
   'conn/rollbackTransaction': ({ tabId, sId}: { tabId: number, sId: string }) => Promise<void>,
+
+  'conn/resetTransactionTimeout': ({ tabId, sId}: {tabId: number, sId: string}) => Promise<void>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -600,6 +599,10 @@ export const ConnHandlers: IConnectionHandlers = {
     checkConnection(sId);
     await state(sId).connection.rollbackTransaction(tabId);
     clearTransactionTimeout(sId, tabId);
+  },
+
+  'conn/resetTransactionTimeout': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    createOrResetTransactionTimeout(sId, tabId, true);
   }
 }
 

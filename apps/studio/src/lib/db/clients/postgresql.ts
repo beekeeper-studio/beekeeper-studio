@@ -1190,7 +1190,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // Manual transaction management
   async reserveConnection(tabId: number) {
     const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
-    if (this.reservedConnections.size >= BksConfig.db[connectionType].maxConnections) {
+    if (this.reservedConnections.size >= BksConfig.db[connectionType].maxReservedConnections) {
       throw new Error(errorMessages.maxReservedConnections)
     }
 

@@ -997,13 +997,15 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         try {
           identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
 
-          if (this.canManageTransactions && !this.isManualCommit) {
+          if (this.canManageTransactions) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
             const endTransaction = identification.filter((value: IdentifyResult) => value.type === "COMMIT" || value.type === "ROLLBACK").length
 
-            if (startTransaction > endTransaction) {
-              await this.toggleCommitMode()
+            if (!this.isManualCommit && !this.hasActiveTransaction && startTransaction > endTransaction) {
+              await this.toggleCommitMode();
               this.hasActiveTransaction = true
+            } else if (this.isManualCommit && this.hasActiveTransaction && endTransaction > startTransaction) {
+              await this.toggleCommitMode();
             }
           }
 
@@ -1170,9 +1172,14 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
             this.connection.rollbackTransaction(this.tab.id);
           }
           this.hasActiveTransaction = false;
-          this.connection.releaseConnection(this.tab.id);
+          await this.connection.releaseConnection(this.tab.id);
         } else if (!this.isManualCommit) {
-          await this.connection.reserveConnection(this.tab.id);
+          try {
+            await this.connection.reserveConnection(this.tab.id);
+          } catch (e) {
+            this.$noty.error(e.message);
+            return;
+          }
         }
         this.isManualCommit = !this.isManualCommit;
       },
@@ -1193,6 +1200,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       },
       async continueTransaction() {
         this.showTransactionTimeoutModal = false;
+        await this.$util.send('conn/resetTransactionTimeout', { tabId: this.tab.id });
       },
       async columnsGetter(tableName: string) {
         let table = this.tables.find(

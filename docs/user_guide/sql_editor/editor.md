@@ -38,6 +38,25 @@ Beekeeper allows you to:
 
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-12.gif)
 
+## Transaction Management
+
+Transactions run within the query editor will be automatically detected by Beekeeper, which will then reserve a connection for your current query tab until that transaction is committed or rolled back.
+
+You can also enter this mode manually by switching to the `Manual` transaction mode in the bottom right corner of the status bar. This will also reserve a connection for you and automatically begin a transaction for you, while also providing the option to commit or rollback your changes.
+
+![Image Alt Tag](../../assets/images/manual-transaction-mode.png)
+
+You can change some of the defaults for this system using the [config file](../configuration.md) (for every database, or just a specific database system).
+
+```ini
+[db.default]
+maxReservedConnections = 2 ; Allow two active transactions at a time
+manualTransactionTimeout = 600000 ; 10 Minutes
+
+[db.postgres]
+maxReservedConnections = 4 ; Allow 4 active transactions at a time (only for postgres)
+```
+
 ## Query Parameters
 
 You can parameterize your queries and Beekeeper will prompt you for values when you run it.
