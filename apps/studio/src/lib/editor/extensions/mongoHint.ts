@@ -40,7 +40,7 @@ async function completionSource(
   const completions = await getCompletionsFn(cmd);
 
   if (!completions || completions.length === 0) {
-    return null;
+    return null; 
   }
 
   const options = completions.map((c) => ({
