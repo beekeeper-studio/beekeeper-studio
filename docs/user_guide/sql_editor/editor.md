@@ -57,6 +57,8 @@ manualTransactionTimeout = 600000 ; 10 Minutes
 maxReservedConnections = 4 ; Allow 4 active transactions at a time (only for postgres)
 ```
 
+This functionality is currently only available for Postgres, CockroachDB, Redshift, MySQL, MariaDB, SQLServer, Firebird, and Oracle.
+
 ## Query Parameters
 
 You can parameterize your queries and Beekeeper will prompt you for values when you run it.
