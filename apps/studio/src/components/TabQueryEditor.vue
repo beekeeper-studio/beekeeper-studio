@@ -146,6 +146,7 @@
             <x-button
               @click.prevent="manualCommit"
               class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
             >
               <x-label>Commit</x-label>
             </x-button>
@@ -154,6 +155,7 @@
             <x-button
               @click.prevent="manualRollback"
               class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
             >
               <x-label>Rollback</x-label>
             </x-button>
@@ -1185,13 +1187,15 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       },
       async manualCommit() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
-        this.connection.commitTransaction(this.tab.id);
+        await this.connection.commitTransaction(this.tab.id);
         this.hasActiveTransaction = false;
+        this.$noty.success("Successfully committed transaction")
       },
       async manualRollback() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
-        this.connection.rollbackTransaction(this.tab.id)
+        await this.connection.rollbackTransaction(this.tab.id)
         this.hasActiveTransaction = false
+        this.$noty.success("Successfully rolled back transaction")
       },
       async rollbackFromModal() {
         await this.manualRollback();
