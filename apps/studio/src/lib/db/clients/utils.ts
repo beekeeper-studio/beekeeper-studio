@@ -338,7 +338,8 @@ export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], rea
 }
 
 export const errorMessages = {
-  readOnly: 'Write action(s) not allowed in Read-Only Mode.'
+  readOnly: 'Write action(s) not allowed in Read-Only Mode.',
+  maxReservedConnections: 'You have reserved the max connections available for manual transactions. Stop one of your active transactions to start a new one.'
 }
 
 export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): Promise<AWSCredentials> {

@@ -90,6 +90,25 @@
             Save
           </x-button>
 
+          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
+            <x-button
+              @click.prevent="manualCommit"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Commit</x-label>
+            </x-button>
+          </x-buttons>
+          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
+            <x-button
+              @click.prevent="manualRollback"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Rollback</x-label>
+            </x-button>
+          </x-buttons>
+
           <x-buttons class="">
             <x-button
               class="btn btn-primary btn-small"
@@ -209,6 +228,9 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
+        :canManageTransactions="canManageTransactions"
+        :isManualCommit="isManualCommit"
+        @toggleCommitMode="toggleCommitMode"
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
@@ -338,6 +360,12 @@
         </form>
       </modal>
     </portal>
+    <transaction-timeout-modal
+      :tab-id="tab.id"
+      :show="showTransactionTimeoutModal"
+      @rollback="rollbackFromModal"
+      @continueTransaction="continueTransaction"
+    />
   </div>
 </template>
 
@@ -355,6 +383,7 @@
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
+  import TransactionTimeoutModal from "@/components/TransactionTimeoutModal.vue"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -370,6 +399,7 @@
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+import { IdentifyResult } from 'sql-query-identifier/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -377,7 +407,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, TransactionTimeoutModal },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -435,6 +465,10 @@
         individualQueries: [],
         currentlySelectedQuery: null,
         queryMagic: queryMagicExtension(),
+        isManualCommit: false,
+        hasActiveTransaction: false,
+        transactionTimeoutListenerId: null,
+        showTransactionTimeoutModal: false
       }
     },
     computed: {
@@ -448,6 +482,9 @@
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      canManageTransactions() {
+        return !this.dialectData?.disabledFeatures?.manualCommit;
+      },
       editorComponent() {
         return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
       },
@@ -539,6 +576,8 @@
           'queryEditor.selectEditor': this.selectEditor,
           'queryEditor.submitQueryToFile': this.submitQueryToFile,
           'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.manualCommit': this.manualCommit,
+          'queryEditor.manualRollback': this.manualRollback,
         })
       },
       queryParameterPlaceholders() {
@@ -655,6 +694,7 @@
           ]
         }
       },
+
     },
     watch: {
       error() {
@@ -884,6 +924,15 @@
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
+      addTransactionTimeoutListener() {
+        this.transactionTimeoutListenerId = this.$util.addListener(`transactionTimedOut/${this.tab.id}`, () => {
+          this.$store.dispatch('tabs/setActive', this.tab)
+          this.showTransactionTimeoutModal = true;
+        })
+      },
+      removeTransactionTimeoutListener() {
+        this.$util.removeListener(this.transactionTimeoutListenerId);
+      },
       async submitQueryToFile() {
         if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
@@ -912,7 +961,7 @@
         if(this.running) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
-          this.submitQuery(this.currentlySelectedQuery.text)
+          await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -936,6 +985,11 @@
           await this.cancelQuery();
         }
 
+        if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
+          await this.connection.startTransaction(this.tab.id);
+          this.hasActiveTransaction = true
+        }
+
         this.tab.isRunning = true
         this.running = true
         this.error = null
@@ -945,6 +999,20 @@
         let identification = []
         try {
           identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+
+          if (this.canManageTransactions) {
+            const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
+            const endTransaction = identification.filter((value: IdentifyResult) => value.type === "COMMIT" || value.type === "ROLLBACK").length
+
+            if (!this.isManualCommit && !this.hasActiveTransaction && startTransaction > endTransaction) {
+              await this.toggleCommitMode();
+              this.hasActiveTransaction = true
+            } else if (this.isManualCommit && this.hasActiveTransaction && endTransaction > startTransaction) {
+              await this.toggleCommitMode();
+            }
+          }
+
+          log.info("IDENTIFICATION: ", identification)
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -965,7 +1033,7 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun}, this.hasActiveTransaction);
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
@@ -1038,6 +1106,10 @@
           if(this.running) {
             this.error = ex
           }
+          if (this.hasActiveTransaction) {
+            this.error = ex
+            this.manualRollback()
+          }
         } finally {
           this.running = false
           this.tab.isRunning = false
@@ -1095,6 +1167,45 @@
           }, 1000)
           this.focusingElement = 'none'
         })
+      },
+      async toggleCommitMode() {
+        if (!this.canManageTransactions) return
+        if (this.isManualCommit) {
+          if (this.hasActiveTransaction) {
+            this.connection.rollbackTransaction(this.tab.id);
+          }
+          this.hasActiveTransaction = false;
+          await this.connection.releaseConnection(this.tab.id);
+        } else if (!this.isManualCommit) {
+          try {
+            await this.connection.reserveConnection(this.tab.id);
+          } catch (e) {
+            this.$noty.error(e.message);
+            return;
+          }
+        }
+        this.isManualCommit = !this.isManualCommit;
+      },
+      async manualCommit() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
+        await this.connection.commitTransaction(this.tab.id);
+        this.hasActiveTransaction = false;
+        this.$noty.success("Successfully committed transaction")
+      },
+      async manualRollback() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
+        await this.connection.rollbackTransaction(this.tab.id)
+        this.hasActiveTransaction = false
+        this.$noty.success("Successfully rolled back transaction")
+      },
+      async rollbackFromModal() {
+        await this.manualRollback();
+        await this.toggleCommitMode();
+        this.showTransactionTimeoutModal = false;
+      },
+      async continueTransaction() {
+        this.showTransactionTimeoutModal = false;
+        await this.$util.send('conn/resetTransactionTimeout', { tabId: this.tab.id });
       },
       async columnsGetter(tableName: string) {
         let table = this.tables.find(
@@ -1160,12 +1271,15 @@
       }
 
       this.vimKeymaps = await getVimKeymapsFromVimrc()
+      this.addTransactionTimeoutListener();
     },
     beforeDestroy() {
       if(this.split) {
         this.split.destroy()
       }
+      this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
+      this.removeTransactionTimeoutListener();
     },
   }
 </script>

@@ -13,9 +13,9 @@ const UNWRAPPER = /^\[(.*)\]$/;
 // SQL Anywhere data types based on SAP documentation
 const types = [
   ...SpecialTypes,
-  'bigint', 'binary', 'bit', 'char', 'date', 'datetime', 'decimal', 'double', 
-  'float', 'image', 'int', 'integer', 'long binary', 'long varchar', 'money', 
-  'numeric', 'real', 'smalldatetime', 'smallint', 'smallmoney', 'text', 
+  'bigint', 'binary', 'bit', 'char', 'date', 'datetime', 'decimal', 'double',
+  'float', 'image', 'int', 'integer', 'long binary', 'long varchar', 'money',
+  'numeric', 'real', 'smalldatetime', 'smallint', 'smallmoney', 'text',
   'time', 'timestamp', 'tinyint', 'varbinary', 'varchar'
 ];
 
@@ -54,6 +54,7 @@ export const SqlAnywhereData: DialectData = {
   textEditorMode: "text/x-sql",
   disabledFeatures: {
     shell: true,
+    manualCommit: true,
     comments: true,
     alter: {
       multiStatement: true,

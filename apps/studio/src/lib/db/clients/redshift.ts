@@ -256,7 +256,7 @@ export class RedshiftClient extends PostgresClient {
       port: server.config.port || undefined,
       password: passwordResolver || server.config.password || undefined,
       database: database.database,
-      max: 5, // max idle connections per time (30 secs)
+      max: BksConfig.db.redshift.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
     };
