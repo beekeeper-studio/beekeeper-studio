@@ -379,7 +379,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async getTableKeys(table: string, schema?: string) {
+  async getOutgoingKeys(table: string, schema?: string) {
     // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
     const sql = `
       SELECT
@@ -414,7 +414,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
                       i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
                 ) PT
           ON PT.TABLE_NAME = PK.TABLE_NAME
-      WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA =${this.wrapValue(schema)}
+      WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA = ${this.wrapValue(schema)}
       ORDER BY
         FK.CONSTRAINT_NAME,
         CU.ORDINAL_POSITION
@@ -445,7 +445,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         };
       }
 
-      // If there are multiple parts, it's a composite mekey
+      // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
         constraintName: firstPart.name,
@@ -461,7 +461,95 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       };
     });
 
-    this.logger().debug("tableKeys result", result);
+    this.logger().debug("outgoingKeys result", result);
+    return result;
+  }
+
+  async getIncomingKeys(table: string, schema?: string) {
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const sql = `
+      SELECT
+        name = FK.CONSTRAINT_NAME,
+        from_schema = FK.TABLE_SCHEMA,
+        from_table = FK.TABLE_NAME,
+        from_column = CU.COLUMN_NAME,
+        to_schema = PK.TABLE_SCHEMA,
+        to_table = PK.TABLE_NAME,
+        to_column = PT.COLUMN_NAME,
+        constraint_name = C.CONSTRAINT_NAME,
+        on_update = C.UPDATE_RULE,
+        on_delete = C.DELETE_RULE,
+        CU.ORDINAL_POSITION as ordinal_position
+      FROM
+          INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
+      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
+          ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
+      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
+          ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
+      INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
+          ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
+      INNER JOIN (
+                  SELECT
+                      i1.TABLE_NAME,
+                      i2.COLUMN_NAME,
+                      i2.ORDINAL_POSITION
+                  FROM
+                      INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
+                  INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
+                      ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
+                  WHERE
+                      i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                ) PT
+          ON PT.TABLE_NAME = PK.TABLE_NAME AND CU.ORDINAL_POSITION = PT.ORDINAL_POSITION
+      WHERE PK.TABLE_NAME = ${this.wrapValue(table)} AND PK.TABLE_SCHEMA = ${this.wrapValue(schema)}
+      ORDER BY
+        FK.CONSTRAINT_NAME,
+        CU.ORDINAL_POSITION
+    `;
+
+    const { data } = await this.driverExecuteSingle(sql);
+    const recordset = data.recordset || [];
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(recordset, 'name');
+
+    const result = Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.on_update,
+          onDelete: row.on_delete,
+          isComposite: false
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.from_column),
+        onUpdate: firstPart.on_update,
+        onDelete: firstPart.on_delete,
+        isComposite: true
+      };
+    });
+
+    this.logger().debug("incomingKeys result", result);
     return result;
   }
 

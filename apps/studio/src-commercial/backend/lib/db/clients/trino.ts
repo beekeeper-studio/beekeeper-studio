@@ -221,8 +221,12 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     return null
   }
 
-  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
-    return await []
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return []
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return []
   }
 
   async listTableTriggers(
