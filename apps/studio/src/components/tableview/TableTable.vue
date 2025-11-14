@@ -1145,10 +1145,10 @@ export default Vue.extend({
             .filter(v => v !== null && v !== undefined);
           return selectedValues.length > 0 ? selectedValues : [clickedValue];
         }
-        
+
         case 'like':
           return `%${clickedValue}%`;
-        
+
         default:
           return clickedValue;
       }
@@ -1165,9 +1165,9 @@ export default Vue.extend({
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
-              const newFilter = [{ 
-                field: cell.getField(), 
-                type: s, 
+              const newFilter = [{
+                field: cell.getField(),
+                type: s,
                 value: this.getActionValue(cell, s)
               }]
               this.tableFilters = newFilter
@@ -2037,6 +2037,14 @@ export default Vue.extend({
       ])
     },
     handleJsonValueChange({key, value}) {
+      const column = this.table.columns.find((c) => c.columnName === key);
+      if (column) {
+        const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+        if (isJsonColumn && _.isObject(value)) {
+          value = JSON.stringify(value)
+        }
+      }
       this.selectedRow?.getCell(key).setValue(value)
     },
     debouncedSaveTab: _.debounce(function(tab) {
