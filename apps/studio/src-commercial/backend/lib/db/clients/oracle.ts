@@ -565,8 +565,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   ORDER BY
     a.constraint_name,
     a.position
-    `;
-
+    `
     const response = await this.driverExecuteSimple(sql);
 
     // Group by constraint name to identify composite keys
@@ -605,7 +604,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         fromSchema: firstPart.OWNER,
         fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
         onDelete: firstPart.DELETE_RULE,
-        isComposite: true,
+        isComposite: true
       };
     })
   }
