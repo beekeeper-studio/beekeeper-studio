@@ -531,7 +531,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -565,7 +565,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 

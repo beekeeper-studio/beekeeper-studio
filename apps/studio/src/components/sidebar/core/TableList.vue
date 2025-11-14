@@ -125,6 +125,7 @@
           </button>
 
           <x-button
+            v-if="!usedConfig.readOnlyMode"
             class="settings-btn"
             menu
           >
@@ -213,7 +214,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
     },
     computed: {
       ...mapGetters(['dialectData', 'dialect']),
-      ...mapState({currentDatabase: 'database'}),
+      ...mapState({currentDatabase: 'database', 'usedConfig': 'usedConfig'}),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
       },

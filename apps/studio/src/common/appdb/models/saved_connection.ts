@@ -7,6 +7,7 @@ import { AzureCredsEncryptTransformer, EncryptTransformer, SurrealDbEncryptTrans
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
+import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
@@ -196,6 +197,7 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false })
   sslRejectUnauthorized = true
 
+  @ReadOnlyOrDefault()
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
