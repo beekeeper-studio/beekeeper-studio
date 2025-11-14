@@ -252,6 +252,7 @@ export class TextEditor {
 
   replaceSelection(value: string) {
     this.view.dispatch({
+      annotations: Transaction.userEvent.of("input.paste"),
       changes: {
         from: this.view.state.selection.main.from,
         to: this.view.state.selection.main.to,
