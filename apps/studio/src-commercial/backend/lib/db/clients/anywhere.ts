@@ -452,11 +452,11 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     return rows.map(row => row.referenced_table);
   }
 
-  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema?: string): Promise<TableKey[]> {
     schema = schema || 'dbo';
 
     // Query for foreign keys FROM this table (outgoing - referencing other tables)
-    const outgoingSQL = `
+    const sql = `
       SELECT
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS name,
         u_pri.user_name AS to_schema,
@@ -468,8 +468,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
         'NO ACTION' AS on_update,
         'NO ACTION' AS on_delete,
-        ic_for.sequence AS sequence,
-        'outgoing' AS direction
+        ic_for.sequence AS sequence
       FROM SYS.SYSFKEY fk
       JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
       JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
@@ -485,8 +484,59 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       ORDER BY name, sequence
     `;
 
+    const { rows } = await this.driverExecuteSingle(sql);
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'name');
+
+    const result = Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // Sort key parts by sequence to ensure correct column order
+      const sortedKeyParts = _.sortBy(keyParts, 'sequence');
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (sortedKeyParts.length === 1) {
+        const row = sortedKeyParts[0];
+        return {
+          constraintName: row.name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.on_update,
+          onDelete: row.on_delete,
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = sortedKeyParts[0];
+      return {
+        constraintName: firstPart.name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: sortedKeyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: sortedKeyParts.map(p => p.from_column),
+        onUpdate: firstPart.on_update,
+        onDelete: firstPart.on_delete,
+        isComposite: true,
+      };
+    });
+
+    log.debug("outgoing keys result", result);
+    return result;
+  }
+
+  async getIncomingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    schema = schema || 'dbo';
+
     // Query for foreign keys TO this table (incoming - other tables referencing this table)
-    const incomingSQL = `
+    const sql = `
       SELECT
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS name,
         u_pri.user_name AS to_schema,
@@ -498,8 +548,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
         'NO ACTION' AS on_update,
         'NO ACTION' AS on_delete,
-        ic_for.sequence AS sequence,
-        'incoming' AS direction
+        ic_for.sequence AS sequence
       FROM SYS.SYSFKEY fk
       JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
       JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
@@ -515,22 +564,17 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       ORDER BY name, sequence
     `;
 
-    const [outgoing, incoming] = await Promise.all([
-      this.driverExecuteSingle(outgoingSQL),
-      this.driverExecuteSingle(incomingSQL)
-    ]);
+    const { rows } = await this.driverExecuteSingle(sql);
 
-    const rows = [...outgoing.rows, ...incoming.rows];
-    
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'name');
-    
+
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // Sort key parts by sequence to ensure correct column order
       const sortedKeyParts = _.sortBy(keyParts, 'sequence');
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (sortedKeyParts.length === 1) {
         const row = sortedKeyParts[0];
@@ -545,10 +589,9 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
           onUpdate: row.on_update,
           onDelete: row.on_delete,
           isComposite: false,
-          direction: row.direction,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = sortedKeyParts[0];
       return {
@@ -562,11 +605,10 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         onUpdate: firstPart.on_update,
         onDelete: firstPart.on_delete,
         isComposite: true,
-        direction: firstPart.direction,
       };
     });
-    
-    log.debug("tableKeys result", result);
+
+    log.debug("incoming keys result", result);
     return result;
   }
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {

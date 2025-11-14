@@ -170,10 +170,8 @@ describe('SurrealDB Integration Tests', () => {
 
       expect(customerKey).toBeDefined()
       expect(customerKey.toTable).toBe('person')
-      expect(customerKey.direction).toBe('outgoing')
       expect(productKey).toBeDefined()
       expect(productKey.toTable).toBe('product')
-      expect(productKey.direction).toBe('outgoing')
     })
 
     it('should get table keys for schemaless tables with record references', async () => {
@@ -208,12 +206,10 @@ describe('SurrealDB Integration Tests', () => {
         expect(customerKey).toBeDefined()
         expect(customerKey.toTable).toBe('person')
         expect(customerKey.fromTable).toBe(testTable)
-        expect(customerKey.direction).toBe('outgoing')
 
         expect(productKey).toBeDefined()
         expect(productKey.toTable).toBe('product')
         expect(productKey.fromTable).toBe(testTable)
-        expect(productKey.direction).toBe('outgoing')
       } finally {
         // Clean up
         try {
@@ -225,7 +221,7 @@ describe('SurrealDB Integration Tests', () => {
     })
 
     it('should get incoming keys for tables referenced by others', async () => {
-      const keys = await connection.getTableKeys('person')
+      const keys = await connection.getIncomingKeys('person')
 
       expect(keys.length).toBeGreaterThan(0)
 
@@ -234,7 +230,6 @@ describe('SurrealDB Integration Tests', () => {
 
       expect(incomingKey).toBeDefined()
       expect(incomingKey.toTable).toBe('person')
-      expect(incomingKey.direction).toBe('incoming')
     })
 
     it('should get table properties', async () => {

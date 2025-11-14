@@ -379,9 +379,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async getTableKeys(table: string, schema?: string) {
-    // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
-    const outgoingSQL = `
+  async getOutgoingKeys(table: string, schema?: string) {
+    // Get foreign keys FROM this table (outgoing - this table references other tables)
+    const sql = `
       SELECT
         name = FK.CONSTRAINT_NAME,
         from_schema = PK.TABLE_SCHEMA,
@@ -393,8 +393,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         constraint_name = C.CONSTRAINT_NAME,
         on_update = C.UPDATE_RULE,
         on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position,
-        direction = 'outgoing'
+        CU.ORDINAL_POSITION as ordinal_position
       FROM
           INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
       INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
@@ -421,8 +420,55 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         CU.ORDINAL_POSITION
     `;
 
+    const { data } = await this.driverExecuteSingle(sql);
+    const recordset = data.recordset || [];
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(recordset, 'name');
+
+    const result = Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.on_update,
+          onDelete: row.on_delete,
+          isComposite: false
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.from_column),
+        onUpdate: firstPart.on_update,
+        onDelete: firstPart.on_delete,
+        isComposite: true
+      };
+    });
+
+    this.logger().debug("outgoingKeys result", result);
+    return result;
+  }
+
+  async getIncomingKeys(table: string, schema?: string) {
     // Query for foreign keys TO this table (incoming - other tables referencing this table)
-    const incomingSQL = `
+    const sql = `
       SELECT
         name = FK.CONSTRAINT_NAME,
         from_schema = FK.TABLE_SCHEMA,
@@ -434,8 +480,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         constraint_name = C.CONSTRAINT_NAME,
         on_update = C.UPDATE_RULE,
         on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position,
-        direction = 'incoming'
+        CU.ORDINAL_POSITION as ordinal_position
       FROM
           INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
       INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
@@ -463,15 +508,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         CU.ORDINAL_POSITION
     `;
 
-    const [outgoing, incoming] = await Promise.all([
-      this.driverExecuteSingle(outgoingSQL),
-      this.driverExecuteSingle(incomingSQL)
-    ]);
-
-    const allRecords = [...outgoing.data.recordset, ...incoming.data.recordset];
+    const { data } = await this.driverExecuteSingle(sql);
+    const recordset = data.recordset || [];
 
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(allRecords, 'name');
+    const groupedKeys = _.groupBy(recordset, 'name');
 
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
@@ -489,12 +530,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
           fromColumn: row.from_column,
           onUpdate: row.on_update,
           onDelete: row.on_delete,
-          isComposite: false,
-          direction: row.direction
+          isComposite: false
         };
       }
 
-      // If there are multiple parts, it's a composite mekey
+      // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
         constraintName: firstPart.name,
@@ -506,12 +546,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         fromColumn: keyParts.map(p => p.from_column),
         onUpdate: firstPart.on_update,
         onDelete: firstPart.on_delete,
-        isComposite: true,
-        direction: firstPart.direction
+        isComposite: true
       };
     });
 
-    this.logger().debug("tableKeys result", result);
+    this.logger().debug("incomingKeys result", result);
     return result;
   }
 

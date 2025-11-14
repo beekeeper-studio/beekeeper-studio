@@ -47,6 +47,8 @@ export interface IConnectionHandlers {
   'conn/listSchemas': ({ filter, sId }: { filter?: SchemaFilterOptions, sId: string }) => Promise<string[]>,
   'conn/getTableReferences': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
+  'conn/getOutgoingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
+  'conn/getIncomingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
   'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
   'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
@@ -308,6 +310,16 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/getTableKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.getTableKeys(table, schema);
+  },
+
+  'conn/getIncomingKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getIncomingKeys(table, schema);
+  },
+
+  'conn/getOutgoingKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getOutgoingKeys(table, schema);
   },
 
   'conn/listTablePartitions': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {

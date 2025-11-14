@@ -151,9 +151,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return [];
   }
 
-  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     // Query for foreign keys FROM this table (referencing other tables)
-    const outgoingSQL = `
+    const sql = `
       SELECT
         NULL as from_schema,
         f.table_name as from_table,
@@ -163,8 +163,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         t.column_name as to_column,
         f.constraint_name,
         NULL as update_rule,
-        NULL as delete_rule,
-        'outgoing' as direction
+        NULL as delete_rule
       FROM
         ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
       JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
@@ -178,8 +177,25 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       AND con.constraint_type = 'FOREIGN KEY'
     `;
 
+    const result = await this.driverExecuteSingle(sql);
+
+    return result.rows.map((row) => ({
+      toTable: row.to_table,
+      toSchema: row.to_schema,
+      toColumn: row.to_column,
+      fromTable: row.from_table,
+      fromSchema: row.from_schema,
+      fromColumn: row.from_column,
+      constraintName: row.constraint_name,
+      onUpdate: row.update_rule,
+      onDelete: row.delete_rule,
+      isComposite: false
+    }));
+  }
+
+  async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     // Query for foreign keys TO this table (other tables referencing this table)
-    const incomingSQL = `
+    const sql = `
       SELECT
         NULL as from_schema,
         f.table_name as from_table,
@@ -189,8 +205,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
         t.column_name as to_column,
         f.constraint_name,
         NULL as update_rule,
-        NULL as delete_rule,
-        'incoming' as direction
+        NULL as delete_rule
       FROM
         ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
       JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
@@ -204,14 +219,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       AND con.constraint_type = 'FOREIGN KEY'
     `;
 
-    const [outgoing, incoming] = await Promise.all([
-      this.driverExecuteSingle(outgoingSQL),
-      this.driverExecuteSingle(incomingSQL)
-    ]);
+    const result = await this.driverExecuteSingle(sql);
 
-    const allRows = [...outgoing.rows, ...incoming.rows];
-
-    return allRows.map((row) => ({
+    return result.rows.map((row) => ({
       toTable: row.to_table,
       toSchema: row.to_schema,
       toColumn: row.to_column,
@@ -221,8 +231,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
       onDelete: row.delete_rule,
-      isComposite: false,
-      direction: row.direction
+      isComposite: false
     }));
   }
 

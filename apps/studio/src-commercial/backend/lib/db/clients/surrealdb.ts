@@ -358,27 +358,11 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     return [];
   }
 
-  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const keys: TableKey[] = [];
 
-    // First, get list of all tables
-    const tables = await this.listTables();
-
-    // Create a map of table name to columns for quick lookup
-    // Using listTableColumns handles both schemaful and schemaless tables
-    const tableColumnsMap = new Map<string, { columnName: string; dataType: string }[]>();
-
-    for (const { name } of tables) {
-      const columns = await this.listTableColumns(name);
-      const columnData = columns.map(col => ({
-        columnName: col.columnName,
-        dataType: col.dataType
-      }));
-      tableColumnsMap.set(name, columnData);
-    }
-
-    // Outgoing keys: columns in THIS table that reference OTHER tables
-    const currentTableColumns = tableColumnsMap.get(table) || [];
+    // Get columns for the current table
+    const currentTableColumns = await this.listTableColumns(table);
 
     const buildKey = (params: {
       toTable: string;
@@ -397,9 +381,6 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
         onDelete: null, // TODO (@day): pull this from table info definitions
         onUpdate: null,
         isComposite: params.isComposite,
-        direction: params.fromTable === table
-          ? 'outgoing' as const
-          : 'incoming' as const,
       }
     }
 
@@ -414,16 +395,60 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
           keys.push(buildKey({
             fromTable: table,
             toTable,
-            column,
+            column: {
+              columnName: column.columnName,
+              dataType: column.dataType
+            },
             isComposite: targetTables.length > 1,
           }));
         }
       }
     }
 
+    return keys;
+  }
+
+  async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    const keys: TableKey[] = [];
+
+    // Get list of all tables
+    const tables = await this.listTables();
+
+    // Create a map of table name to columns for quick lookup
+    const tableColumnsMap = new Map<string, { columnName: string; dataType: string }[]>();
+
+    for (const { name } of tables) {
+      const columns = await this.listTableColumns(name);
+      const columnData = columns.map(col => ({
+        columnName: col.columnName,
+        dataType: col.dataType
+      }));
+      tableColumnsMap.set(name, columnData);
+    }
+
+    const buildKey = (params: {
+      toTable: string;
+      fromTable: string;
+      column: { columnName: string; dataType: string };
+      isComposite: boolean;
+    }) => {
+      return {
+        constraintName: `${params.fromTable}_${params.column.columnName}_fkey`,
+        fromTable: params.fromTable,
+        fromColumn: params.column.columnName,
+        fromSchema: '',
+        toTable: params.toTable,
+        toColumn: 'id',
+        toSchema: '',
+        onDelete: null, // TODO (@day): pull this from table info definitions
+        onUpdate: null,
+        isComposite: params.isComposite,
+      }
+    }
+
     // Incoming keys: columns in OTHER tables that reference THIS table
     for (const [otherTableName, otherColumns] of tableColumnsMap.entries()) {
-      // Skip the current table (we already handled it above)
+      // Skip the current table
       if (otherTableName === table) continue;
 
       for (const column of otherColumns) {

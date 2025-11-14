@@ -353,10 +353,7 @@ export interface TableKey {
   constraintName?: string;
   onUpdate?: string;
   onDelete?: string;
-  direction: TableKeyDirection;
 }
-
-export type TableKeyDirection = "outgoing" | "incoming";
 
 export interface RelationAlterations {
   additions: CreateRelationSpec[],

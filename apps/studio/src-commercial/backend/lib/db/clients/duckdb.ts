@@ -544,13 +544,12 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return rows.map((row) => row.table_name as string);
   }
 
-  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema?: string): Promise<TableKey[]> {
     const defaultSchema = schema || await this.defaultSchema();
 
-    // Query to get both outgoing and incoming foreign keys
+    // Query to get outgoing foreign keys (from this table to other tables)
     const { rows } = await this.driverExecuteSingle(
       `
-      -- Outgoing foreign keys (from this table to other tables)
       SELECT
         kcu.constraint_schema AS from_schema,
         kcu.table_name AS from_table,
@@ -560,8 +559,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         rc.delete_rule,
         kcu_ref.constraint_schema AS to_schema,
         kcu_ref.table_name AS to_table,
-        kcu_ref.column_name AS to_column,
-        'outgoing' AS direction
+        kcu_ref.column_name AS to_column
       FROM
         information_schema.key_column_usage AS kcu
       JOIN
@@ -584,10 +582,20 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         tc.constraint_type = 'FOREIGN KEY'
         AND kcu.table_schema = ?
         AND kcu.table_name = ?
+      ORDER BY from_schema, from_table, constraint_name, from_column
+    `,
+      { params: [defaultSchema, table] }
+    );
 
-      UNION ALL
+    return this.groupTableKeys(rows);
+  }
 
-      -- Incoming foreign keys (from other tables to this table)
+  async getIncomingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    const defaultSchema = schema || await this.defaultSchema();
+
+    // Query to get incoming foreign keys (from other tables to this table)
+    const { rows } = await this.driverExecuteSingle(
+      `
       SELECT
         kcu.constraint_schema AS from_schema,
         kcu.table_name AS from_table,
@@ -597,8 +605,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         rc.delete_rule,
         kcu_ref.constraint_schema AS to_schema,
         kcu_ref.table_name AS to_table,
-        kcu_ref.column_name AS to_column,
-        'incoming' AS direction
+        kcu_ref.column_name AS to_column
       FROM
         information_schema.key_column_usage AS kcu
       JOIN
@@ -623,9 +630,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         AND kcu_ref.table_name = ?
       ORDER BY from_schema, from_table, constraint_name, from_column
     `,
-      { params: [defaultSchema, table, defaultSchema, table] }
+      { params: [defaultSchema, table] }
     );
 
+    return this.groupTableKeys(rows);
+  }
+
+  private groupTableKeys(rows: any[]): TableKey[] {
     // Group by constraint_name to handle composite keys
     const groupedKeys = new Map<string, TableKey>();
 
@@ -644,7 +655,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
           onUpdate: row.update_rule as string,
           onDelete: row.delete_rule as string,
           isComposite: false,
-          direction: row.direction as TableKeyDirection,
         });
       } else {
         // This is a composite key

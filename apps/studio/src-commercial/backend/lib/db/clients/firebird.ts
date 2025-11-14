@@ -949,7 +949,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  async getTableKeys(
+  async getOutgoingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
@@ -963,8 +963,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
           TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
           TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
-          ISF.RDB$FIELD_POSITION AS FIELD_POSITION,
-          TRIM('outgoing') AS DIRECTION
+          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
         FROM
           RDB$RELATION_CONSTRAINTS PK
           JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
@@ -980,6 +979,52 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           ISF.RDB$FIELD_POSITION
     `;
 
+    const result = await this.driverExecuteSingle(outgoingSQL, { params: [table.toUpperCase()] });
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          fromTable: row["FROM_TABLE"],
+          fromColumn: row["FROM_COLUMN"],
+          fromSchema: "",
+          toTable: row["TO_TABLE"],
+          toColumn: row["TO_COLUMN"],
+          toSchema: "",
+          constraintName: row["CONSTRAINT_NAME"],
+          onUpdate: row["ON_UPDATE"],
+          onDelete: row["ON_DELETE"],
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        fromTable: firstPart["FROM_TABLE"],
+        fromColumn: keyParts.map(p => p["FROM_COLUMN"]),
+        fromSchema: "",
+        toTable: firstPart["TO_TABLE"],
+        toColumn: keyParts.map(p => p["TO_COLUMN"]),
+        toSchema: "",
+        constraintName: firstPart["CONSTRAINT_NAME"],
+        onUpdate: firstPart["ON_UPDATE"],
+        onDelete: firstPart["ON_DELETE"],
+        isComposite: true,
+      };
+    });
+  }
+
+  async getIncomingKeys(
+    table: string,
+    _schema?: string
+  ): Promise<TableKey[]> {
     // Query for foreign keys TO this table (incoming - other tables referencing this table)
     const incomingSQL = `
         SELECT
@@ -990,8 +1035,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
           TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
           TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
-          ISF.RDB$FIELD_POSITION AS FIELD_POSITION,
-          TRIM('incoming') AS DIRECTION
+          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
         FROM
           RDB$RELATION_CONSTRAINTS PK
           JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
@@ -1007,19 +1051,14 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           ISF.RDB$FIELD_POSITION
     `;
 
-    const [outgoing, incoming] = await Promise.all([
-      this.driverExecuteSingle(outgoingSQL, { params: [table.toUpperCase()] }),
-      this.driverExecuteSingle(incomingSQL, { params: [table.toUpperCase()] })
-    ]);
-
-    const allRows = [...outgoing.rows, ...incoming.rows];
+    const result = await this.driverExecuteSingle(incomingSQL, { params: [table.toUpperCase()] });
 
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(allRows, "CONSTRAINT_NAME");
-    
+    const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -1034,10 +1073,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           onUpdate: row["ON_UPDATE"],
           onDelete: row["ON_DELETE"],
           isComposite: false,
-          direction: row["DIRECTION"]
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
@@ -1051,7 +1089,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         onUpdate: firstPart["ON_UPDATE"],
         onDelete: firstPart["ON_DELETE"],
         isComposite: true,
-        direction: firstPart["DIRECTION"]
       };
     });
   }

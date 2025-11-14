@@ -547,7 +547,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.referenced_table_name);
   }
 
-  async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query for foreign keys FROM this table (referencing other tables)
     const outgoingSQL = `
       SELECT
@@ -574,8 +574,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN 'd' THEN 'SET DEFAULT'
           ELSE c.confdeltype::text
         END AS delete_rule,
-        pos AS ordinal_position,
-        'outgoing' AS direction
+        pos AS ordinal_position
       FROM
         pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
@@ -594,6 +593,50 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         pos;
     `;
 
+    const params = [schema, table];
+    const { rows } = await this.driverExecuteSingle(outgoingSQL, { params });
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.constraint_name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.column_name,
+          onUpdate: row.update_rule,
+          onDelete: row.delete_rule,
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.constraint_name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.column_name),
+        onUpdate: firstPart.update_rule,
+        onDelete: firstPart.delete_rule,
+        isComposite: true,
+      };
+    });
+  }
+
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query for foreign keys TO this table (other tables referencing this table)
     const incomingSQL = `
       SELECT
@@ -620,8 +663,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           WHEN 'd' THEN 'SET DEFAULT'
           ELSE c.confdeltype::text
         END AS delete_rule,
-        pos AS ordinal_position,
-        'incoming' AS direction
+        pos AS ordinal_position
       FROM
         pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
@@ -640,30 +682,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         pos;
     `;
 
-    const params = [
-      schema,
-      table,
-    ];
-
-    const [outgoing, incoming] = await Promise.all([
-      this.driverExecuteSingle(outgoingSQL, { params }),
-      this.driverExecuteSingle(incomingSQL, { params })
-    ]);
-
-    const allRows = [...outgoing.rows, ...incoming.rows];
-
-    // Remove duplicates (e.g., self-referencing foreign keys that appear in both queries)
-    const uniqueRows = _.uniqBy(allRows, (row) =>
-      `${row.constraint_name}:${row.from_schema}.${row.from_table}.${row.column_name || row.from_column}:${row.to_schema}.${row.to_table}.${row.to_column}`
-    );
+    const params = [schema, table];
+    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
 
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(uniqueRows, 'constraint_name');
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
 
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
 
-      // If there's only one part, return a simple key (backward compatibility)
+      // If there's only one part, return a simple key
       if (keyParts.length === 1) {
         const row = keyParts[0];
         return {
@@ -673,11 +701,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           toColumn: row.to_column,
           fromTable: row.from_table,
           fromSchema: row.from_schema,
-          fromColumn: row.column_name || row.from_column,
+          fromColumn: row.from_column,
           onUpdate: row.update_rule,
           onDelete: row.delete_rule,
           isComposite: false,
-          direction: row.direction
         };
       }
 
@@ -690,11 +717,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         toColumn: keyParts.map(p => p.to_column),
         fromTable: firstPart.from_table,
         fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.column_name || p.from_column),
+        fromColumn: keyParts.map(p => p.from_column),
         onUpdate: firstPart.update_rule,
         onDelete: firstPart.delete_rule,
         isComposite: true,
-        direction: firstPart.direction
       };
     });
   }

@@ -159,13 +159,20 @@ export default class WebPluginLoader {
           );
           break;
         case "getTableKeys":
-          response.result = await this.utilityConnection.send(
-              'conn/getTableKeys',
+        case "getOutgoingKeys":
+          response.result = await this.context.utility.send(
+              'conn/getOutgoingKeys',
+            { table: request.args.table, schema: request.args.schema }
+          );
+          break;
+        case "getIncomingKeys":
+          response.result = await this.context.utility.send(
+              'conn/getIncomingKeys',
             { table: request.args.table, schema: request.args.schema }
           );
           break;
         case "getTableIndexes":
-          response.result = await this.utilityConnection
+          response.result = await this.context.utility
             .send("conn/listTableIndexes", {
               table: request.args.table,
               schema: request.args.schema,

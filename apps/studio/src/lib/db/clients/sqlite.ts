@@ -221,7 +221,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]); // TODO: not implemented yet
   }
 
-  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `
       SELECT
         '${SD.escapeString(table)}' AS from_table,
@@ -230,12 +230,28 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         p."to" AS to_column,
         p.on_update as on_update,
         p.on_delete as on_delete,
-        p.id as id,
-        'outgoing' AS direction
+        p.id as id
       FROM pragma_foreign_key_list('${SD.escapeString(table)}') p
+      ORDER BY id;
+    `
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
+    return rows.map(row => ({
+      constraintName: row.id,
+      constraintType: 'FOREIGN',
+      toTable: row.to_table,
+      toSchema: '',
+      fromSchema: '',
+      fromTable: row.from_table,
+      fromColumn: row.from_column,
+      toColumn: row.to_column,
+      onUpdate: row.on_update,
+      onDelete: row.on_delete,
+      isComposite: false,
+    }))
+  }
 
-      UNION ALL
-
+  async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    const sql = `
       SELECT
         m.name AS from_table,
         p."from" AS from_column,
@@ -243,12 +259,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         p."to" AS to_column,
         p.on_update as on_update,
         p.on_delete as on_delete,
-        p.id as id,
-        'incoming' AS direction
+        p.id as id
       FROM sqlite_master AS m
       JOIN pragma_foreign_key_list(m.name) AS p
       WHERE p."table" = '${SD.escapeString(table)}'
-
       ORDER BY id, from_table;
     `
     const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
@@ -264,7 +278,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       onUpdate: row.on_update,
       onDelete: row.on_delete,
       isComposite: false,
-      direction: row.direction,
     }))
   }
 

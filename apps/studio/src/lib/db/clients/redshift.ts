@@ -119,9 +119,9 @@ export class RedshiftClient extends PostgresClient {
     }
   }
 
-  async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getOutgoingKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query for foreign keys FROM this table (outgoing - referencing other tables)
-    const outgoingSQL = `
+    const sql = `
       SELECT
 
         kcu.constraint_schema AS from_schema,
@@ -139,8 +139,7 @@ export class RedshiftClient extends PostgresClient {
          WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
         (SELECT kcu2.column_name
          FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column,
-        'outgoing' AS direction
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
       FROM
         information_schema.key_column_usage AS kcu
 
@@ -161,8 +160,32 @@ export class RedshiftClient extends PostgresClient {
         kcu.table_name = $1;
     `;
 
+    const params = [
+      table,
+      schema,
+    ];
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    // For now, treat all keys as non-composite until we can properly test with Redshift
+    // TODO: Implement proper composite key detection for Redshift
+    return data.rows.map((row) => ({
+      toTable: row.to_table,
+      toSchema: row.to_schema,
+      toColumn: row.to_column,
+      fromTable: row.from_table,
+      fromSchema: row.from_schema,
+      fromColumn: row.from_column,
+      constraintName: row.constraint_name,
+      onUpdate: row.update_rule,
+      onDelete: row.delete_rule,
+      isComposite: false
+    }));
+  }
+
+  async getIncomingKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query for foreign keys TO this table (incoming - other tables referencing this table)
-    const incomingSQL = `
+    const sql = `
       SELECT
         kcu.constraint_schema AS from_schema,
         kcu.table_name AS from_table,
@@ -176,8 +199,7 @@ export class RedshiftClient extends PostgresClient {
          WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
         (SELECT kcu2.column_name
          FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column,
-        'incoming' AS direction
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
       FROM
         information_schema.key_column_usage AS kcu
           JOIN
@@ -202,16 +224,11 @@ export class RedshiftClient extends PostgresClient {
       schema,
     ];
 
-    const [outgoing, incoming] = await Promise.all([
-      this.driverExecuteSingle(outgoingSQL, { params }),
-      this.driverExecuteSingle(incomingSQL, { params })
-    ]);
-
-    const allRows = [...outgoing.rows, ...incoming.rows];
+    const data = await this.driverExecuteSingle(sql, { params });
 
     // For now, treat all keys as non-composite until we can properly test with Redshift
     // TODO: Implement proper composite key detection for Redshift
-    return allRows.map((row) => ({
+    return data.rows.map((row) => ({
       toTable: row.to_table,
       toSchema: row.to_schema,
       toColumn: row.to_column,
@@ -221,8 +238,7 @@ export class RedshiftClient extends PostgresClient {
       constraintName: row.constraint_name,
       onUpdate: row.update_rule,
       onDelete: row.delete_rule,
-      isComposite: false,
-      direction: row.direction
+      isComposite: false
     }));
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
