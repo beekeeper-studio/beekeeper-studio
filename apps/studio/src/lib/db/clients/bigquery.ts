@@ -66,7 +66,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     };
   }
 

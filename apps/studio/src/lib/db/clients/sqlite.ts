@@ -81,6 +81,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
+      filterTypes: ['standard']
     };
   }
 

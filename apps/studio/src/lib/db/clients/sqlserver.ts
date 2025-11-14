@@ -1023,7 +1023,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     }
   }
 

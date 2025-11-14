@@ -225,6 +225,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: false,
+      filterTypes: ['standard']
     };
   }
 

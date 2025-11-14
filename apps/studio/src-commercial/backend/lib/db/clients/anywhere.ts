@@ -113,7 +113,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     }
   }
 

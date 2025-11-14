@@ -107,8 +107,7 @@
             :columns="columns"
             @changed="singleFilterChanged"
             @blur="updateMinimalModeByFilters"
-          >
-        </builder-filter>
+          />
         </div>
         <div class="right-section">
           <div class="ghost-add-apply">
