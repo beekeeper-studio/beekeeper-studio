@@ -710,10 +710,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string
   ): Promise<TableKey[]> {
     // Query for foreign keys FROM this table (referencing other tables)
-    const outgoingSQL = `
+    const sql = `
     SELECT
       cu.constraint_name as 'constraint_name',
-      cu.table_name as 'from_table',
       cu.column_name as 'column_name',
       cu.referenced_table_name as 'referenced_table_name',
       IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
@@ -734,7 +733,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
   `;
 
     const params = [table];
-    const { rows } = await this.driverExecuteSingle(outgoingSQL, { params });
+
+    const { rows } = await this.driverExecuteSingle(sql, { params });
 
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
@@ -742,14 +742,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
 
-      // If there's only one part, return a simple key
+      // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
         return {
           constraintName: `${row.constraint_name}`,
           toTable: row.referenced_table,
           toColumn: row.referenced_column,
-          fromTable: row.from_table,
+          fromTable: table,
           fromColumn: row.column_name,
           referencedTable: row.referenced_table_name,
           keyType: `${row.key_type} KEY`,
@@ -767,7 +767,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         constraintName: `${firstPart.constraint_name}`,
         toTable: firstPart.referenced_table,
         toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: firstPart.from_table,
+        fromTable: table,
         fromColumn: keyParts.map(p => p.column_name),
         referencedTable: firstPart.referenced_table_name,
         keyType: `${firstPart.key_type} KEY`,
@@ -775,7 +775,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         onUpdate: firstPart.on_update,
         toSchema: "",
         fromSchema: "",
-        isComposite: true,
+        isComposite: true
       };
     });
   }

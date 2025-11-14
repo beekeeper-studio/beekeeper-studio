@@ -48,7 +48,7 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { DuckDBChangeBuilder } from "@shared/lib/sql/change_builder/DuckDBChangeBuilder";
 import { DuckDBData } from "@shared/lib/dialects/duckdb";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { TableKey, TableKeyDirection } from "@shared/lib/dialects/models";
+import { TableKey } from "@shared/lib/dialects/models";
 import { DuckDBBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("duckdb");
@@ -551,38 +551,33 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     const { rows } = await this.driverExecuteSingle(
       `
       SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        kcu.column_name AS from_column,
-        tc.constraint_name,
+        kcu1.constraint_schema AS from_schema,
+        kcu1.table_name AS from_table,
+        kcu1.column_name AS from_column,
+        kcu1.constraint_name,
         rc.update_rule,
         rc.delete_rule,
-        kcu_ref.constraint_schema AS to_schema,
-        kcu_ref.table_name AS to_table,
-        kcu_ref.column_name AS to_column
+        kcu2.constraint_schema AS to_schema,
+        kcu2.table_name AS to_table,
+        kcu2.column_name AS to_column
       FROM
-        information_schema.key_column_usage AS kcu
-      JOIN
-        information_schema.table_constraints AS tc
-      ON
-        tc.constraint_name = kcu.constraint_name
-        AND tc.constraint_schema = kcu.constraint_schema
+        information_schema.key_column_usage AS kcu1
       JOIN
         information_schema.referential_constraints AS rc
       ON
-        rc.constraint_name = kcu.constraint_name
-        AND rc.constraint_schema = kcu.constraint_schema
+        kcu1.constraint_name = rc.constraint_name
+        AND kcu1.constraint_schema = rc.constraint_schema
       JOIN
-        information_schema.key_column_usage AS kcu_ref
+        information_schema.key_column_usage AS kcu2
       ON
-        kcu_ref.constraint_name = rc.unique_constraint_name
-        AND kcu_ref.constraint_schema = rc.unique_constraint_schema
-        AND kcu_ref.ordinal_position = kcu.ordinal_position
+        kcu2.constraint_name = rc.unique_constraint_name
+        AND kcu2.constraint_schema = rc.unique_constraint_schema
+        AND kcu2.ordinal_position = kcu1.ordinal_position
       WHERE
-        tc.constraint_type = 'FOREIGN KEY'
-        AND kcu.table_schema = ?
-        AND kcu.table_name = ?
-      ORDER BY from_schema, from_table, constraint_name, from_column
+        kcu1.table_schema = ?
+        AND kcu1.table_name = ?
+        AND rc.constraint_name = kcu1.constraint_name
+      ORDER BY from_schema, from_table, kcu1.constraint_name, from_column
     `,
       { params: [defaultSchema, table] }
     );
@@ -597,38 +592,33 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     const { rows } = await this.driverExecuteSingle(
       `
       SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        kcu.column_name AS from_column,
-        tc.constraint_name,
+        kcu1.constraint_schema AS from_schema,
+        kcu1.table_name AS from_table,
+        kcu1.column_name AS from_column,
+        kcu1.constraint_name,
         rc.update_rule,
         rc.delete_rule,
-        kcu_ref.constraint_schema AS to_schema,
-        kcu_ref.table_name AS to_table,
-        kcu_ref.column_name AS to_column
+        kcu2.constraint_schema AS to_schema,
+        kcu2.table_name AS to_table,
+        kcu2.column_name AS to_column
       FROM
-        information_schema.key_column_usage AS kcu
-      JOIN
-        information_schema.table_constraints AS tc
-      ON
-        tc.constraint_name = kcu.constraint_name
-        AND tc.constraint_schema = kcu.constraint_schema
+        information_schema.key_column_usage AS kcu1
       JOIN
         information_schema.referential_constraints AS rc
       ON
-        rc.constraint_name = kcu.constraint_name
-        AND rc.constraint_schema = kcu.constraint_schema
+        kcu1.constraint_name = rc.constraint_name
+        AND kcu1.constraint_schema = rc.constraint_schema
       JOIN
-        information_schema.key_column_usage AS kcu_ref
+        information_schema.key_column_usage AS kcu2
       ON
-        kcu_ref.constraint_name = rc.unique_constraint_name
-        AND kcu_ref.constraint_schema = rc.unique_constraint_schema
-        AND kcu_ref.ordinal_position = kcu.ordinal_position
+        kcu2.constraint_name = rc.unique_constraint_name
+        AND kcu2.constraint_schema = rc.unique_constraint_schema
+        AND kcu2.ordinal_position = kcu1.ordinal_position
       WHERE
-        tc.constraint_type = 'FOREIGN KEY'
-        AND kcu_ref.table_schema = ?
-        AND kcu_ref.table_name = ?
-      ORDER BY from_schema, from_table, constraint_name, from_column
+        kcu2.table_schema = ?
+        AND kcu2.table_name = ?
+        AND rc.constraint_name = kcu1.constraint_name
+      ORDER BY from_schema, from_table, kcu1.constraint_name, from_column
     `,
       { params: [defaultSchema, table] }
     );

@@ -359,48 +359,29 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    const columns = await this.listTableColumns(table);
     const keys: TableKey[] = [];
 
-    // Get columns for the current table
-    const currentTableColumns = await this.listTableColumns(table);
-
-    const buildKey = (params: {
-      toTable: string;
-      fromTable: string;
-      column: { columnName: string; dataType: string };
-      isComposite: boolean;
-    }) => {
-      return {
-        constraintName: `${params.fromTable}_${params.column.columnName}_fkey`,
-        fromTable: params.fromTable,
-        fromColumn: params.column.columnName,
-        fromSchema: '',
-        toTable: params.toTable,
-        toColumn: 'id',
-        toSchema: '',
-        onDelete: null, // TODO (@day): pull this from table info definitions
-        onUpdate: null,
-        isComposite: params.isComposite,
-      }
-    }
-
-    for (const column of currentTableColumns) {
-      const match = column.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+    for (const col of columns) {
+      const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
       if (match) {
         const targetTables = match[1]
           .split(',')
           .map(t => t.trim());
 
         for (const toTable of targetTables) {
-          keys.push(buildKey({
+          keys.push({
+            constraintName: `${table}_${col.columnName}_fkey`,
             fromTable: table,
+            fromColumn: col.columnName,
+            fromSchema: '',
             toTable,
-            column: {
-              columnName: column.columnName,
-              dataType: column.dataType
-            },
-            isComposite: targetTables.length > 1,
-          }));
+            toColumn: 'id',
+            toSchema: '',
+            onDelete: null, // TODO (@day): pull this from table info definitions
+            onUpdate: null,
+            isComposite: targetTables.length > 1
+          })
         }
       }
     }

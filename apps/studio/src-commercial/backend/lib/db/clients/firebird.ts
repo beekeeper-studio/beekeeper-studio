@@ -954,7 +954,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     _schema?: string
   ): Promise<TableKey[]> {
     // Query for foreign keys FROM this table (outgoing - referencing other tables)
-    const outgoingSQL = `
+    const result = await this.driverExecuteSingle(
+      `
         SELECT
           TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
           TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
@@ -977,9 +978,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         ORDER BY
           CONSTRAINT_NAME,
           ISF.RDB$FIELD_POSITION
-    `;
-
-    const result = await this.driverExecuteSingle(outgoingSQL, { params: [table.toUpperCase()] });
+    `,
+      { params: [table.toUpperCase()] }
+    );
 
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
@@ -1016,7 +1017,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
         constraintName: firstPart["CONSTRAINT_NAME"],
         onUpdate: firstPart["ON_UPDATE"],
         onDelete: firstPart["ON_DELETE"],
-        isComposite: true,
+        isComposite: true
       };
     });
   }

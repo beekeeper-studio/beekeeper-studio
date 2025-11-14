@@ -380,7 +380,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   async getOutgoingKeys(table: string, schema?: string) {
-    // Get foreign keys FROM this table (outgoing - this table references other tables)
+    // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
     const sql = `
       SELECT
         name = FK.CONSTRAINT_NAME,
@@ -421,10 +421,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     `;
 
     const { data } = await this.driverExecuteSingle(sql);
-    const recordset = data.recordset || [];
 
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(recordset, 'name');
+    const groupedKeys = _.groupBy(data.recordset, 'name');
 
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];

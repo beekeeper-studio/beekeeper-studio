@@ -190,7 +190,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    // Cassandra doesn't support foreign keys, this returns partition keys
     const sql = `
       SELECT column_name
       FROM system_schema.columns
@@ -211,7 +210,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
-    // Cassandra doesn't support foreign keys
     return [];
   }
 

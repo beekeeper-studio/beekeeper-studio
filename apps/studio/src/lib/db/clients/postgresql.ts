@@ -549,7 +549,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query for foreign keys FROM this table (referencing other tables)
-    const outgoingSQL = `
+    const sql = `
       SELECT
         c.conname AS constraint_name,
         a.attname AS column_name,
@@ -593,8 +593,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         pos;
     `;
 
-    const params = [schema, table];
-    const { rows } = await this.driverExecuteSingle(outgoingSQL, { params });
+    const params = [
+      schema,
+      table,
+    ];
+
+    const { rows } = await this.driverExecuteSingle(sql, { params });
 
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
@@ -602,7 +606,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
 
-      // If there's only one part, return a simple key
+      // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
         return {
@@ -615,7 +619,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
           fromColumn: row.column_name,
           onUpdate: row.update_rule,
           onDelete: row.delete_rule,
-          isComposite: false,
+          isComposite: false
         };
       }
 
@@ -631,7 +635,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         fromColumn: keyParts.map(p => p.column_name),
         onUpdate: firstPart.update_rule,
         onDelete: firstPart.delete_rule,
-        isComposite: true,
+        isComposite: true
       };
     });
   }

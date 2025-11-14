@@ -145,15 +145,15 @@ export default class WebPluginLoader {
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getSchemas":
-          response.result = await this.utilityConnection.send("conn/listSchemas");
+          response.result = await this.context.utility.send("conn/listSchemas");
           break;
         case "getTables":
-          response.result = this.pluginStore.getTables(
+          response.result = this.context.store.getTables(
             request.args.schema
           ) as GetTablesResponse['result'];
           break;
         case "getColumns":
-          response.result = await this.pluginStore.getColumns(
+          response.result = await this.context.store.getColumns(
             request.args.table,
             request.args.schema
           );
@@ -179,7 +179,7 @@ export default class WebPluginLoader {
             });
           break;
         case "getPrimaryKeys":
-          response.result = await this.utilityConnection
+          response.result = await this.context.utility
             .send("conn/getPrimaryKeys", {
               table: request.args.table,
               schema: request.args.schema,

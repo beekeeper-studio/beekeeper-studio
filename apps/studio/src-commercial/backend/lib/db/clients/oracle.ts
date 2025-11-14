@@ -532,7 +532,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   async getOutgoingKeys(table: string, schema?: string) {
     // Query for foreign keys FROM this table (outgoing - referencing other tables)
     // https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
-    const outgoingSQL = `
+    const sql = `
     SELECT
       a.table_name,
       a.column_name,
@@ -567,10 +567,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     a.position
     `;
 
-    const outgoing = await this.driverExecuteSimple(outgoingSQL);
+    const response = await this.driverExecuteSimple(sql);
 
     // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(outgoing, 'CONSTRAINT_NAME');
+    const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
 
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
@@ -590,7 +590,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           fromSchema: row.OWNER,
           fromColumn: row.COLUMN_NAME,
           onDelete: row.DELETE_RULE,
-          isComposite: false,
+          isComposite: false
         };
       }
 

@@ -177,9 +177,9 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       AND con.constraint_type = 'FOREIGN KEY'
     `;
 
-    const result = await this.driverExecuteSingle(sql);
+    const data = await this.driverExecuteSingle(sql);
 
-    return result.rows.map((row) => ({
+    return data.rows.map((row) => ({
       toTable: row.to_table,
       toSchema: row.to_schema,
       toColumn: row.to_column,
