@@ -65,6 +65,10 @@ export default defineConfig({
           __dirname,
           "lib/components/data-editor/define.ts"
         ),
+        "super-formatter": resolve(
+          __dirname,
+          "lib/components/super-formatter/define.ts"
+        ),
         "text-editor": resolve(
           __dirname,
           "lib/components/text-editor/define.ts"
@@ -93,6 +97,10 @@ export default defineConfig({
         "vue/surreal-text-editor": resolve(
           __dirname,
           "lib/components/surreal-text-editor/SurrealTextEditor.vue"
+        ),
+        "vue/super-formatter": resolve(
+          __dirname,
+          "lib/components/super-formatter/SuperFormatter.vue"
         ),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },

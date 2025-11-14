@@ -1,5 +1,17 @@
 <template>
-  <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor"></div>
+  <div class="text-editor-wrapper">
+    <button
+      v-if="allowPresets"
+      type="button"
+      class="BksIconButton"
+      aria-label="Open preset formatter"
+      title="Open preset formatter"
+      @click="formatterPreset"
+    >
+      <i class="material-icons">settings</i>
+    </button>
+    <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor" />
+  </div>
 </template>
 
 <script lang="ts">
@@ -38,10 +50,12 @@ export default Vue.extend({
       if (!this.textEditor) return;
       this.applyCompletionSource();
     },
+    formatterConfig() {
+      this.formatSql()
+    }
   },
 
   methods: {
-    // TextEditor overrides
     constructTextEditor() {
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
@@ -72,14 +86,30 @@ export default Vue.extend({
           id: "text-format",
           handler: this.formatSql,
           shortcut: "Control+Shift+F",
+          // items: [
+          //   {
+          //     label: "Standard",
+          //     id: "format-standard",
+          //     handler: () => this.formatSqlWithPreset('standard'),
+          //   },
+          //   {
+          //     label: "Compact",
+          //     id: "format-compact",
+          //     handler: () => this.formatSqlWithPreset('compact'),
+          //   },
+          // ]
         }
       ];
     },
-
-    // Non-TextEditor overrides
+    formatterPreset() {
+      this.$emit("bks-show-formatter-presets", { showFormatter: true, modalName: this.formatterModalId });
+    },
     formatSql() {
+      if(this.value == null || this.value.trim() === '') return
+
       const formatted = format(this.value, {
         language: this.formatterDialect,
+        ...this.formatterConfig
       });
       this.$emit("bks-value-change", { value: formatted });
     },
@@ -93,6 +123,7 @@ export default Vue.extend({
         selectedQuery: this.selectedQuery,
       };
     });
+    this.formatSql()
   },
 });
 </script>

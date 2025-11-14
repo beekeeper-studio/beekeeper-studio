@@ -1,6 +1,5 @@
 <template>
-  <div class="BksUiKit BksTextEditor" ref="editor">
-  </div>
+  <div class="BksUiKit BksTextEditor" ref="editor" />
 </template>
 
 <script lang="ts">
