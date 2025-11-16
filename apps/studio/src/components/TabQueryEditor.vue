@@ -255,7 +255,7 @@
             :formatter-dialect="formatterDialect"
             :identifier-dialect="identifierDialect"
             :can-add-presets="true"
-            :clipboard="$native.clipboard.writeText"
+            :clipboard="$native.clipboard"
             :starting-preset="selectedFormatter ?? undefined"
             :presets="formatterPresets"
             @bks-apply-preset="applyPreset"

@@ -4,7 +4,7 @@ import { FormatOptions } from "sql-formatter"
 export default {
   value: String,
   canAddPresets: Boolean,
-  clipboard: Object,
+  clipboard: Object as PropType<Clipboard>,
   startingPreset: {
     type: Object as PropType<FormatOptions>,
     default: () => ({
