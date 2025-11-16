@@ -4,14 +4,14 @@ For examples and usage details, visit the [Super Formatter][super-formatter] pag
 
 ## Properties
 
-| Name               | Type                     | Description                                                                                                                                       | Default                  |
-| ------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `value`            | `string`                 | The SQL text to format and preview.                                                                                                               | `''`                     |
-| `canAddPresets`    | `boolean`                | Enable preset management features (add, save, delete). When `false`, only formatting controls are shown.                                          | `false`                  |
-| `clipboard`        | `object`                 | Clipboard handler for copy functionality. Must implement `writeText(text: string)` method.                                                        | `undefined`              |
-| `startingPreset`   | `FormatOptions`          | Initial formatting configuration to load. Can include an optional `id` property to select a specific preset.                                      | See below                |
-| `presets`          | `Preset[]`               | Array of available formatting presets. See [Preset Object](#preset-object) below.                                                                 | `[]`                     |
-| `formatterDialect` | `string`                 | SQL dialect for formatting. See [sql-formatter's language](https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md) docs. | `'sql'`                  |
+| Name               | Type                     | Description                                                                                                                                       | Default                  | Status |
+| ------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------ |
+| `value`            | `string`                 | The SQL text to format and preview.                                                                                                               | `''`  | ✅     |                   |
+| `canAddPresets`    | `boolean`                | Enable preset management features (add, save, delete). When `false`, only formatting controls are shown.    | false | ✅     |                                      | `false`                  |
+| `clipboard`         | `Clipboard`                                               | Custom clipboard handler for the editor used in vim. If provided, it must implement a `write` method to copy text to the clipboard. See [MDN Clipboard API](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard) for more details. | `undefined` | ✅     |
+| `startingPreset`   | `FormatOptions`          | Initial formatting configuration to load. Can include an optional `id` property to select a specific preset.                                      | See below                | ✅     | 
+| `presets`          | `Preset[]`               | Array of available formatting presets. See [Preset Object](#preset-object) below.                                                                 | `[] | ✅     |`                     |
+| `formatterDialect` | `string`                 | SQL dialect for formatting. See [sql-formatter's language](https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md) docs. | `'sql'`                  | ✅     |
 
 ### Default Starting Preset
 

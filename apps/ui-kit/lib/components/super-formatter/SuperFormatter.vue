@@ -323,7 +323,7 @@ export default Vue.extend({
       this.$emit('bks-apply-preset', { ...this.unsavedPreset, id: this.selectedPresetId })
     },
     copyToClipboard() {
-      this.clipboard(this.formattedCode)
+      this.clipboard.writeText(this.formattedCode)
     },
     updatePreview() {
       this.formattedCode = format(this.value, {
@@ -374,7 +374,6 @@ export default Vue.extend({
     }
   },
   mounted() {
-    // this.formattedCode = this.value || ''
     this.unsavedPreset = { ...this.unsavedPreset, ...this.startingPreset }
     this.selectedPreset = { ...this.selectedPreset, ...this.startingPreset }
     if (this.startingPreset.id != null) this.selectedPresetId = this.startingPreset.id
