@@ -31,8 +31,11 @@ $form-control-font-size: 0.831rem; // ~13.3px
   box-sizing: border-box;
 }
 :root {
-  font-size: $base-font-size;
-  font-family: $font-family;
+  --font-size: #{$base-font-size};
+  --font-family: #{$font-family};
+  --font-family-mono: #{$font-family-mono};
+  font-size: var(--font-size);
+  font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   font-weight: normal;
   -webkit-user-select: none;
