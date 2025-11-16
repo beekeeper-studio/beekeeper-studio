@@ -610,8 +610,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
       const { rows } = await this.driverExecuteSingle(query)
       const [dataCount] = rows
       const [countKey] = Object.keys(dataCount)
-      console.log('~~~')
-      console.log(dataCount[countKey])
   
       return dataCount[countKey]
     } catch (err) {

@@ -654,19 +654,20 @@ export const testGetFilteredDataCount = async function(util) {
   // Prepare test data
   await prepareTestTable(util)
 
-  const inserts = [
-    {
-      table: 'test_inserts',
-      schema: util.options.defaultSchema,
-      data: [
-        { id: 1, first_name: 'Alice', last_name: 'Smith' },
-        { id: 2, first_name: 'Bob', last_name: 'Jones' },
-        { id: 3, first_name: 'Charlie', last_name: 'Smith' },
-        { id: 4, first_name: 'Diana', last_name: 'Brown' },
-        { id: 5, first_name: 'Eve', last_name: 'Smith' }
-      ]
-    }
+  const insertData = [
+    { id: 1, first_name: 'Alice', last_name: 'Smith' },
+    { id: 2, first_name: 'Bob', last_name: 'Jones' },
+    { id: 3, first_name: 'Charlie', last_name: 'Smith' },
+    { id: 4, first_name: 'Diana', last_name: 'Brown' },
+    { id: 5, first_name: 'Eve', last_name: 'Smith' }
   ]
+
+  const inserts = insertData.map(d => ({
+    table: 'test_inserts',
+    schema: util.options.defaultSchema,
+    data: [d]
+  }))
+
   await util.connection.applyChanges({ inserts })
 
   const tableName = 'test_inserts'
