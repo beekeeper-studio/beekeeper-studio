@@ -373,7 +373,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     backDirFormat: false,
     restore: false,
     indexNullsNotDistinct: false,
-    transactions: true
+    transactions: true,
+    filterTypes: ['standard']
   });
 
   // List Oracle stored procedures, functions, and packages

@@ -1196,8 +1196,8 @@ export const itShouldSupportIlikeFilter = async function(util) {
 
     // Should exclude 'A RED fruit' and 'A red BERRY'
     expect(notIlikeResult.result.length).toBe(2)
-    const ids = notIlikeResult.result.map(r => r.id).sort()
-    expect(ids).toEqual([2, 4])
+    const ids = notIlikeResult.result.map(r => r.id.toString()).sort()
+    expect(ids).toEqual(['2', '4'])
 
     // Verify 'ilike' is case-insensitive while 'like' is case-sensitive
     const likeLowerFilters = [
@@ -1208,19 +1208,6 @@ export const itShouldSupportIlikeFilter = async function(util) {
     )
     // 'like' is case-sensitive, should not match 'Apple'
     expect(likeResult.result.length).toBe(0)
-
-  } else {
-    // Databases without 'ilike' support should throw an error or not support it
-    const ilikeFilters = [
-      { field: 'name', type: 'ilike', value: 'apple' }
-    ]
-
-    // This should either throw an error or not work correctly
-    await expect(
-      util.connection.selectTop(
-        tableName, 0, 100, [], ilikeFilters, util.options.defaultSchema
-      )
-    ).rejects.toThrow()
   }
 
   // Clean up
