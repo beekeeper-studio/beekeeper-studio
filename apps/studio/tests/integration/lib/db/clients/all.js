@@ -126,6 +126,15 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().filterTests()
     })
 
+    describe("Filter Types", () => {
+      test("should have correct filterTypes in supportedFeatures", async () => {
+        await itShouldHaveCorrectFilterTypes(getUtil())
+      })
+
+      test("should support ilike filter for case-insensitive search", async () => {
+        await itShouldSupportIlikeFilter(getUtil())
+      })
+    })
 
     test("table triggers", async () => {
       if (getUtil().data.disabledFeatures?.triggers) return
@@ -1106,4 +1115,114 @@ export async function prepareImportTests (util) {
   return {
     tableName, table, formattedData, importScriptOptions, hatColumn
   }
+}
+
+/** @param {DBTestUtil} util */
+export const itShouldHaveCorrectFilterTypes = async function(util) {
+  const features = await util.connection.supportedFeatures()
+
+  // All databases should have 'standard' filterTypes
+  expect(features.filterTypes).toContain('standard')
+  expect(Array.isArray(features.filterTypes)).toBe(true)
+  expect(features.filterTypes.length).toBeGreaterThan(0)
+
+  // PostgreSQL-based databases should have 'ilike'
+  const ilikeSupported = ['postgresql', 'psql', 'cockroachdb', 'redshift']
+  if (ilikeSupported.includes(util.dbType) || ilikeSupported.includes(util.dialect)) {
+    expect(features.filterTypes).toContain('ilike')
+    expect(features.filterTypes).toEqual(['standard', 'ilike'])
+  } else {
+    // Other databases should NOT have 'ilike'
+    expect(features.filterTypes).not.toContain('ilike')
+    expect(features.filterTypes).toEqual(['standard'])
+  }
+}
+
+/** @param {DBTestUtil} util */
+export const itShouldSupportIlikeFilter = async function(util) {
+  // Create a test table with mixed case data
+  const tableName = 'filter_type_test'
+  await util.knex.schema.dropTableIfExists(tableName)
+  await util.knex.schema.createTable(tableName, (table) => {
+    table.integer("id").primary()
+    table.string("name")
+    table.string("description")
+  })
+
+  // Insert test data with various cases
+  await util.knex(tableName).insert([
+    { id: 1, name: 'Apple', description: 'A RED fruit' },
+    { id: 2, name: 'BANANA', description: 'A yellow fruit' },
+    { id: 3, name: 'Cherry', description: 'A red BERRY' },
+    { id: 4, name: 'orange', description: 'An ORANGE citrus' }
+  ])
+
+  const features = await util.connection.supportedFeatures()
+  const ilikeSupported = features.filterTypes.includes('ilike')
+
+  if (ilikeSupported) {
+    // Test case-insensitive search with 'ilike'
+    const ilikeFilters = [
+      { field: 'name', type: 'ilike', value: 'apple' }
+    ]
+
+    const ilikeResult = await util.connection.selectTop(
+      tableName, 0, 100, [], ilikeFilters, util.options.defaultSchema
+    )
+
+    expect(ilikeResult.result.length).toBe(1)
+    expect(ilikeResult.result[0].name).toBe('Apple')
+
+    // Test 'ilike' with wildcard patterns
+    const wildcardFilters = [
+      { field: 'description', type: 'ilike', value: '%fruit%' }
+    ]
+
+    const wildcardResult = await util.connection.selectTop(
+      tableName, 0, 100, [], wildcardFilters, util.options.defaultSchema
+    )
+
+    // Should match both 'A RED fruit' and 'A yellow fruit'
+    expect(wildcardResult.result.length).toBe(2)
+
+    // Test 'not ilike' filter
+    const notIlikeFilters = [
+      { field: 'description', type: 'not ilike', value: '%red%' }
+    ]
+
+    const notIlikeResult = await util.connection.selectTop(
+      tableName, 0, 100, [], notIlikeFilters, util.options.defaultSchema
+    )
+
+    // Should exclude 'A RED fruit' and 'A red BERRY'
+    expect(notIlikeResult.result.length).toBe(2)
+    const ids = notIlikeResult.result.map(r => r.id).sort()
+    expect(ids).toEqual([2, 4])
+
+    // Verify 'ilike' is case-insensitive while 'like' is case-sensitive
+    const likeLowerFilters = [
+      { field: 'name', type: 'like', value: 'apple' }
+    ]
+    const likeResult = await util.connection.selectTop(
+      tableName, 0, 100, [], likeLowerFilters, util.options.defaultSchema
+    )
+    // 'like' is case-sensitive, should not match 'Apple'
+    expect(likeResult.result.length).toBe(0)
+
+  } else {
+    // Databases without 'ilike' support should throw an error or not support it
+    const ilikeFilters = [
+      { field: 'name', type: 'ilike', value: 'apple' }
+    ]
+
+    // This should either throw an error or not work correctly
+    await expect(
+      util.connection.selectTop(
+        tableName, 0, 100, [], ilikeFilters, util.options.defaultSchema
+      )
+    ).rejects.toThrow()
+  }
+
+  // Clean up
+  await util.knex.schema.dropTableIfExists(tableName)
 }
