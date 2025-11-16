@@ -46,7 +46,6 @@
         :keymap="userKeymap"
         :vim-keymaps="vimKeymaps"
         :entities="entities"
-        :allow-presets="true"
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :language-id="languageIdForDialect"
@@ -54,13 +53,11 @@
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
         :formatter-config="selectedFormatter ?? undefined"
-        :formatter-modal-id="superFormatterId"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
-        @bks-show-formatter-presets="handleFormatterPresetModal"
       />
       <div
         class="toolbar text-right"
@@ -85,6 +82,13 @@
               type="checkbox"
               v-model="dryRun"
             >
+          </x-button>
+          <x-button
+            @click.prevent="formatterPreset"
+            class="btn btn-flat btn-small"
+          >
+            Open Formatter
+            <i class="material-icons-outlined">style</i>
           </x-button>
           <x-button
             @click.prevent="triggerSave"
@@ -772,6 +776,9 @@
       },
     },
     methods: {
+      formatterPreset() {
+        this.handleFormatterPresetModal({ showFormatter: true, modalName: this.superFormatterId })
+      },
       handleFormatterPresetModal({ showFormatter, modalName }){
         if (showFormatter) {
           this.$modal.show(modalName)

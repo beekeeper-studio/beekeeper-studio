@@ -1,17 +1,5 @@
 <template>
-  <div class="text-editor-wrapper">
-    <button
-      v-if="allowPresets"
-      type="button"
-      class="BksIconButton"
-      aria-label="Open preset formatter"
-      title="Open preset formatter"
-      @click="formatterPreset"
-    >
-      <i class="material-icons">settings</i>
-    </button>
-    <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor" />
-  </div>
+  <div class="BksUiKit BksTextEditor BksSqlTextEditor" ref="editor" />
 </template>
 
 <script lang="ts">
@@ -100,9 +88,6 @@ export default Vue.extend({
           // ]
         }
       ];
-    },
-    formatterPreset() {
-      this.$emit("bks-show-formatter-presets", { showFormatter: true, modalName: this.formatterModalId });
     },
     formatSql() {
       if(this.value == null || this.value.trim() === '') return
