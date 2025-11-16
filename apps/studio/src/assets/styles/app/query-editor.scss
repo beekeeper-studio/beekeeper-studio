@@ -131,16 +131,8 @@
 
   }
 
-  .text-editor-wrapper {
-    height: auto;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-  }
-
   .BksSqlTextEditor {
     min-height: 0;
-    height: 100%;
     .CodeMirror {
       padding-bottom: 0.25rem;
     }

@@ -74,18 +74,6 @@ export default Vue.extend({
           id: "text-format",
           handler: this.formatSql,
           shortcut: "Control+Shift+F",
-          // items: [
-          //   {
-          //     label: "Standard",
-          //     id: "format-standard",
-          //     handler: () => this.formatSqlWithPreset('standard'),
-          //   },
-          //   {
-          //     label: "Compact",
-          //     id: "format-compact",
-          //     handler: () => this.formatSqlWithPreset('compact'),
-          //   },
-          // ]
         }
       ];
     },

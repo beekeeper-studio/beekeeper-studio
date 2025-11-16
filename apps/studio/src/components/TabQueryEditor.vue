@@ -88,7 +88,6 @@
             class="btn btn-flat btn-small"
           >
             Open Formatter
-            <i class="material-icons-outlined">style</i>
           </x-button>
           <x-button
             @click.prevent="triggerSave"
@@ -874,7 +873,6 @@
           .finally( () => {
             return this.getPresets(presetId)
           })
-        // use notify when it's been saved and all that jazz
       },
       isNumber(value: any) {
         return _.isNumber(value);
