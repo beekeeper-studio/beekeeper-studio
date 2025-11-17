@@ -94,7 +94,7 @@ export default class WebPluginLoader {
 
     // Check if the message is from our iframe
     if (source) {
-      if (event.data.id) {
+      if (event.data.id !== undefined) {
         this.handleViewRequest(
           {
             id: event.data.id,
@@ -143,11 +143,12 @@ export default class WebPluginLoader {
       switch (request.name) {
         // ========= READ ACTIONS ===========
         case "getTables":
-          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
+          response.result = this.pluginStore.getTables(request.args.schema) as GetTablesResponse['result'];
           break;
         case "getColumns":
           response.result = await this.pluginStore.getColumns(
-            request.args.table
+            request.args.table,
+            request.args.schema
           );
           break;
         case "getTableKeys":

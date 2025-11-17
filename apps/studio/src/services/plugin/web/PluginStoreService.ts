@@ -14,7 +14,7 @@ import {
 } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { NgQueryResult } from "@/lib/db/models";
+import { NgQueryResult, TableOrView } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
@@ -26,6 +26,11 @@ import {
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
+
+type Table = {
+  name: string;
+  schema?: string;
+};
 
 /**
  * An interface that bridges plugin system and Vuex. It also stores some states
@@ -284,11 +289,29 @@ export default class PluginStoreService {
     this.store.commit("tabs/unsetMenuItem", ref);
   }
 
-  getTables() {
-    return this.store.state.tables.map((t) => ({
-      name: t.name,
-      schema: t.schema,
-    }));
+  getTables(schema?: string): Table[] {
+    const tables: Table[] = [];
+
+    // If no schema is provided, use the default schema
+    const effectiveSchema = typeof schema === "undefined"
+      ? this.store.state.defaultSchema
+      : schema;
+
+    for (const table of this.store.state.tables) {
+      // Special case: "*" means all tables
+      if (effectiveSchema === "*") {
+        tables.push({
+          name: table.name,
+          schema: table.schema,
+        });
+      } else if (table.schema === effectiveSchema) {
+        tables.push({
+          name: table.name,
+          schema: table.schema,
+        });
+      }
+    }
+    return tables;
   }
 
   private findTable(name: string, schema?: string) {
