@@ -298,13 +298,7 @@ export default class PluginStoreService {
       : schema;
 
     for (const table of this.store.state.tables) {
-      // Special case: "*" means all tables
-      if (effectiveSchema === "*") {
-        tables.push({
-          name: table.name,
-          schema: table.schema,
-        });
-      } else if (table.schema === effectiveSchema) {
+      if (table.schema && table.schema === effectiveSchema) {
         tables.push({
           name: table.name,
           schema: table.schema,
