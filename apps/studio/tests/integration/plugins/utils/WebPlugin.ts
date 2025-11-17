@@ -16,12 +16,12 @@ export class WebPlugin {
     params?: any;
   };
 
-  constructor(manifest: Pick<Manifest, "id" | "name">) {
+  constructor() {
     // Create default manifest
     this.manifest = {
       manifestVersion: 1,
-      id: manifest.id,
-      name: manifest.name,
+      id: "test-plugin",
+      name: "Test Plugin",
       author: "Test Author",
       description: "Test Description",
       version: "1.0.0",
@@ -56,7 +56,7 @@ export class WebPlugin {
 
     this.context = {
       command: "test-command",
-      pluginId: manifest.id,
+      pluginId: this.manifest.id,
     };
   }
 

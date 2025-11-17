@@ -19,17 +19,11 @@ describe("WebPluginManager", () => {
     });
 
     // Create plugin
-    plugin = new WebPlugin({
-      id: "test-plugin",
-      name: "Test Plugin",
-    });
+    plugin = new WebPlugin();
   });
 
   afterEach(() => {
-    // Clean up plugin
-    if (plugin) {
-      plugin.dispose();
-    }
+    plugin?.dispose();
   });
 
   describe("Plugin Loading", () => {
@@ -38,7 +32,7 @@ describe("WebPluginManager", () => {
 
       const enabledPlugins = await host.getLoadedPlugins();
       expect(enabledPlugins).toHaveLength(1);
-      expect(enabledPlugins[0].id).toBe("test-plugin");
+      expect(enabledPlugins[0].id).toBe(plugin.manifest.id);
     });
   });
 
