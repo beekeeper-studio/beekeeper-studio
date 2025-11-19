@@ -230,6 +230,9 @@ export default class WebPluginLoader {
         case "clipboard.writeText":
           window.main.writeTextToClipboard(request.args.text);
           break;
+        case "clipboard.writeImage":
+          response.result = window.main.writeImageToClipboard(request.args.data);
+          break;
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
@@ -255,6 +258,17 @@ export default class WebPluginLoader {
         case "openTab":
           this.pluginStore.openTab(request.args);
           break;
+
+        // ========= SYSTEM ACTIONS ===========
+        case "requestFileSave":
+          const isSaved = await this.context.fileHelpers.save({
+            content: request.args.data,
+            fileName: request.args.fileName,
+            encoding: request.args.encoding,
+            filters: request.args.filters,
+          });
+          response.result = { isSaved };
+        break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);

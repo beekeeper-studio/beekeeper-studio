@@ -187,15 +187,16 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
-    const webPluginManager = new WebPluginManager(
-      Vue.prototype.$util,
-      new PluginStoreService(store, {
+    const webPluginManager = new WebPluginManager({
+      utilityConnection: Vue.prototype.$util,
+      pluginStore: new PluginStoreService(store, {
         emit: (...args) => app.$root.$emit(...args),
         on: (...args) => app.$root.$on(...args),
         off: (...args) => app.$root.$off(...args),
       }),
-      window.platformInfo.appVersion
-    )
+      appVersion: window.platformInfo.appVersion,
+      fileHelpers: window.main.fileHelpers,
+    });
     webPluginManager.initialize().then(() => {
       store.commit("webPluginManagerStatus", "ready")
     }).catch((e) => {

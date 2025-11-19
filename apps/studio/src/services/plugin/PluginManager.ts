@@ -13,7 +13,6 @@ import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
-import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 const log = rawLog.scope("PluginManager");
 

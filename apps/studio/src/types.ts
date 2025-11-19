@@ -1,3 +1,4 @@
+import type { SaveFileOptions } from "./backend/lib/FileHelpers";
 import type { AppEvent } from "./common/AppEvent";
 import type { TransportOpenTabInit } from "./common/transport/TransportOpenTab";
 
@@ -27,4 +28,8 @@ export type ExternalMenuItem<TabContext = {}> = {
   disableWhenDisconnected?: boolean;
   action: CustomMenuAction<TabContext>;
 };
+
+export type FileHelpers = {
+  save: (options: SaveFileOptions) => Promise<void>;
+}
 

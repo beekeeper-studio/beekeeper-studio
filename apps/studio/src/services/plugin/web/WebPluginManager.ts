@@ -4,9 +4,17 @@ import { Manifest, OnViewRequestListener, PluginContext } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { LoadViewParams, PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
+import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
+import { FileHelpers } from "@/types";
 
 const log = rawLog.scope("WebPluginManager");
+
+export type WebPluginManagerParams = {
+  utilityConnection: UtilityConnection;
+  pluginStore: PluginStoreService;
+  appVersion: string;
+  fileHelpers: FileHelpers;
+}
 
 export default class WebPluginManager {
   plugins: PluginContext[] = [];
@@ -14,12 +22,17 @@ export default class WebPluginManager {
   loaders: Map<string, WebPluginLoader> = new Map();
 
   private initialized = false;
+  private utilityConnection: UtilityConnection;
+  public readonly pluginStore: PluginStoreService;
+  public readonly appVersion: string;
+  public readonly fileHelpers: FileHelpers;
 
-  constructor(
-    private utilityConnection: UtilityConnection,
-    public readonly pluginStore: PluginStoreService,
-    public readonly appVersion: string
-  ) {}
+  constructor(params: WebPluginManagerParams) {
+    this.utilityConnection = params.utilityConnection;
+    this.pluginStore = params.pluginStore;
+    this.appVersion = params.appVersion;
+    this.fileHelpers = params.fileHelpers
+  }
 
   async initialize() {
     if (this.initialized) {
@@ -204,6 +217,7 @@ export default class WebPluginManager {
       utility: this.utilityConnection,
       log: rawLog.scope(`Plugin:${manifest.id}`),
       appVersion: this.appVersion,
+      fileHelpers: this.fileHelpers,
     });
     await loader.load();
     this.loaders.set(manifest.id, loader);
