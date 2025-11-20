@@ -624,8 +624,22 @@ function createOrResetTransactionTimeout(sId: string, tabId: number, mustExist: 
   connectionType = connectionType === 'postgresql' ? 'postgres' : connectionType;
   const timeout = setTimeout(() => {
     state(sId).port.postMessage({
-      type: `transactionTimedOut/${tabId}`
+      type: `transactionTimeoutWarning/${tabId}`
     });
-  }, bksConfig.db[connectionType].manualTransactionTimeout)
+
+    const warningWindowTimeout = setTimeout(async () => {
+      checkConnection(sId);
+      await state(sId).connection.rollbackTransaction(tabId);
+      clearTransactionTimeout(sId, tabId);
+
+      state(sId).port.postMessage({
+        type: `transactionTimedOut/${tabId}`
+      });
+
+    }, bksConfig.db[connectionType].autoRollbackWarningWindow);
+
+    state(sId).transactionTimeouts.set(tabId, warningWindowTimeout);
+
+  }, bksConfig.db[connectionType].manualTransactionTimeout - bksConfig.db[connectionType].autoRollbackWarningWindow)
   state(sId).transactionTimeouts.set(tabId, timeout);
 }

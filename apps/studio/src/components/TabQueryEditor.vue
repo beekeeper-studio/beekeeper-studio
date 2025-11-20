@@ -8,6 +8,14 @@
       class="top-panel"
       ref="topPanel"
     >
+      <div v-if="isManualCommit" class="manual-commit-notice">
+        <div class="alert">
+          <i class="material-icons">info_outlined</i>
+          <div class="alert-body">
+            Manual Commit Mode Enabled.
+          </div>
+        </div>
+      </div>
       <merge-manager
         v-if="query && query.id"
         :original-text="originalText"
@@ -63,6 +71,15 @@
         class="toolbar text-right"
         ref="toolbar"
       >
+        <div class="actions" v-if="canManageTransactions">
+          <span class="labelled-switch">
+            <x-switch
+              @click.prevent="toggleCommitMode"
+              :toggled="isManualCommit"
+            />
+            Manual Commit
+          </span>
+        </div>
         <div class="editor-help expand" />
         <div class="expand" />
         <div class="actions btn-group">
@@ -90,6 +107,14 @@
             Save
           </x-button>
 
+          <x-buttons v-show="canManageTransactions && isManualCommit && showKeepAlive" class="">
+            <x-button
+              @click.prevent="keepAliveTransaction"
+              class="btn btn-flat btn-small"
+            >
+              <x-label>Keep Alive</x-label>
+            </x-button>
+          </x-buttons>
           <x-buttons v-show="canManageTransactions && isManualCommit" class="">
             <x-button
               @click.prevent="manualCommit"
@@ -114,7 +139,7 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
-              :disabled="running"
+              :disabled="this.tab.isRunning || running"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
@@ -228,9 +253,6 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
-        :canManageTransactions="canManageTransactions"
-        :isManualCommit="isManualCommit"
-        @toggleCommitMode="toggleCommitMode"
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
@@ -360,12 +382,6 @@
         </form>
       </modal>
     </portal>
-    <transaction-timeout-modal
-      :tab-id="tab.id"
-      :show="showTransactionTimeoutModal"
-      @rollback="rollbackFromModal"
-      @continueTransaction="continueTransaction"
-    />
   </div>
 </template>
 
@@ -375,6 +391,7 @@
   import Split from 'split.js'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
+  import Noty from 'noty'
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
@@ -383,7 +400,6 @@
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
-  import TransactionTimeoutModal from "@/components/TransactionTimeoutModal.vue"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -407,7 +423,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, TransactionTimeoutModal },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -467,8 +483,10 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         queryMagic: queryMagicExtension(),
         isManualCommit: false,
         hasActiveTransaction: false,
+        transactionTimeoutWarningListenerId: null,
         transactionTimeoutListenerId: null,
-        showTransactionTimeoutModal: false
+        showKeepAlive: false,
+        warningNoty: null
       }
     },
     computed: {
@@ -482,6 +500,11 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      queryTabTitle() {
+        if (this.tab.query && this.tab.query.title) {
+          return this.tab.query.title;
+        }
+      },
       canManageTransactions() {
         return !this.dialectData?.disabledFeatures?.manualCommit;
       },
@@ -760,6 +783,9 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       },
     },
     methods: {
+      updateTab() {
+        this.$emit('update-tab', this.tab)
+      },
       isNumber(value: any) {
         return _.isNumber(value);
       },
@@ -850,6 +876,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       async cancelQuery() {
         if (this.running && this.runningQuery) {
           this.running = false
+          this.tab.isRunning = false
           this.info = 'Query Execution Cancelled'
           await this.runningQuery.cancel();
           this.runningQuery = null;
@@ -925,12 +952,32 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
       addTransactionTimeoutListener() {
+        const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        this.transactionTimeoutWarningListenerId = this.$util.addListener(`transactionTimeoutWarning/${this.tab.id}`, () => {
+          this.showKeepAlive = true;
+          this.warningNoty = this.$noty.warning(`The Transaction in ${this.tab?.query?.title ?? this.tab?.title } will be automatically rolled back soon!`, {
+            buttons: [
+              Noty.button('Show Tab', "btn btn-primary", () => {
+                this.$store.dispatch('tabs/setActive', this.tab);
+              })
+            ],
+            timeout: this.$bksConfig.db[connectionType].autoRollbackWarningWindow
+          })
+        })
+
         this.transactionTimeoutListenerId = this.$util.addListener(`transactionTimedOut/${this.tab.id}`, () => {
-          this.$store.dispatch('tabs/setActive', this.tab)
-          this.showTransactionTimeoutModal = true;
+          this.toggleCommitMode();
+          this.$noty.info("Transaction timed out and was automatically rolled back.", {
+            buttons: [
+              Noty.button('Show Tab', "btn btn-primary", () => {
+                this.$store.dispatch('tabs/setActive', this.tab);
+              })
+            ]
+          })
         })
       },
       removeTransactionTimeoutListener() {
+        this.$util.removeListener(this.transactionTimeoutWarningListenerId);
         this.$util.removeListener(this.transactionTimeoutListenerId);
       },
       async submitQueryToFile() {
@@ -990,7 +1037,10 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           this.hasActiveTransaction = true
         }
 
+        this.showKeepAlive = false
+        this.maybeCloseWarningNoty();
         this.tab.isRunning = true
+        this.updateTab();
         this.running = true
         this.error = null
         this.queryForExecution = rawQuery
@@ -1011,8 +1061,6 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
               await this.toggleCommitMode();
             }
           }
-
-          log.info("IDENTIFICATION: ", identification)
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -1168,6 +1216,12 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           this.focusingElement = 'none'
         })
       },
+      maybeCloseWarningNoty() {
+        if (this.warningNoty) {
+          this.warningNoty.close();
+          this.warningNoty = null;
+        }
+      },
       async toggleCommitMode() {
         if (!this.canManageTransactions) return
         if (this.isManualCommit) {
@@ -1175,19 +1229,26 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
             this.connection.rollbackTransaction(this.tab.id);
           }
           this.hasActiveTransaction = false;
+          this.tab.isTransaction = false;
           await this.connection.releaseConnection(this.tab.id);
         } else if (!this.isManualCommit) {
           try {
             await this.connection.reserveConnection(this.tab.id);
+            this.tab.isTransaction = true;
           } catch (e) {
             this.$noty.error(e.message);
             return;
           }
         }
+        this.updateTab();
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
         this.isManualCommit = !this.isManualCommit;
       },
       async manualCommit() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
         await this.connection.commitTransaction(this.tab.id);
         this.hasActiveTransaction = false;
         this.$noty.success("Successfully committed transaction")
@@ -1195,16 +1256,18 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       async manualRollback() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
         await this.connection.rollbackTransaction(this.tab.id)
-        this.hasActiveTransaction = false
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
+        this.hasActiveTransaction = false;
         this.$noty.success("Successfully rolled back transaction")
       },
       async rollbackFromModal() {
         await this.manualRollback();
         await this.toggleCommitMode();
-        this.showTransactionTimeoutModal = false;
       },
-      async continueTransaction() {
-        this.showTransactionTimeoutModal = false;
+      async keepAliveTransaction() {
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
         await this.$util.send('conn/resetTransactionTimeout', { tabId: this.tab.id });
       },
       async columnsGetter(tableName: string) {
@@ -1283,4 +1346,23 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
     },
   }
 </script>
+
+<style lang="scss" scoped>
+  @use "sass:color";
+  @import '../assets/styles/app/_variables';
+
+  .manual-commit-notice {
+    margin: 0;
+    > i {
+      line-height: 26px; // button height;
+    }
+    .alert {
+      margin: 0;
+      border-radius: 0;
+
+      background: color.adjust($brand-danger, $lightness: 5%);
+      color: black;
+    }
+  }
+</style>
 

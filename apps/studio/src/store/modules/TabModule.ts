@@ -145,6 +145,12 @@ export const TabModule: Module<State, RootState> = {
       }
       found.menuItem = undefined
     },
+    replaceTab(state, tab: TransportOpenTab) {
+      const index = state.tabs.findIndex((t) => t.id === tab.id);
+      if (index !== -1) {
+        Vue.set(state.tabs, index, tab);
+      }
+    }
   },
   actions: {
     async load(context) {

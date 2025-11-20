@@ -1,5 +1,5 @@
 <template>
-  <loading-spinner v-if="tab.isRunning && !forceIcon" />
+  <loading-spinner v-if="isRunning && !forceIcon" />
   <table-icon
     v-else-if="tab.tabType === 'table'"
     :table="tab"
@@ -11,7 +11,7 @@
   <i
     v-else-if="tab.tabType === 'query'"
     class="material-icons item-icon query"
-  >code</i>
+  >{{ tab.isTransaction ? 'commit' : 'code'}}</i>
   <i
     v-else-if="tab.tabType === 'import-table'"
     class="material-icons-outlined item-icon table-properties"
@@ -67,6 +67,19 @@ export default Vue.extend({
     forceIcon: {
       type: Boolean,
       default: false
+    }
+  },
+  data() {
+    return {
+      isRunning: false,
+    }
+  },
+  watch: {
+    tab: {
+      deep: true,
+      handler(value) {
+        this.isRunning = value.isRunning;
+      }
     }
   },
   computed: {

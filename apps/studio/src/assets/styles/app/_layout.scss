@@ -80,6 +80,9 @@ hr {
   background: transparent;
 }
 
+.labelled-switch {
+  @include labelled-switch;
+}
 
 // Buttons
 // ---------------------------------------

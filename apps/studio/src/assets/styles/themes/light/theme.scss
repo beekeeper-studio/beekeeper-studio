@@ -222,6 +222,17 @@ x-buttons {
           );
         }
       }
+      &.active-transaction {
+        background: color.adjust($brand-danger, $lightness: 5%);
+        color: black;
+        .tab-action {
+          background: linear-gradient(
+            90deg,
+            rgba(color.adjust($brand-danger, $lightness: 5%),0) 0%,
+            rgba(color.adjust($brand-danger, $lightness: 5%),1) 20%
+          );
+        }
+      }
     }
     .tab-action {
       top: 1px;

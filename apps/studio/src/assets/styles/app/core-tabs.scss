@@ -74,7 +74,7 @@
       overflow: hidden;
     }
     .nav-item-wrap-chosen {
-      background: color.adjust($theme-bg, $lightness: 3%);
+      /* background: color.adjust($theme-bg, $lightness: 3%); */
       opacity: 0.5;
     }
     .nav-item {
@@ -113,6 +113,12 @@
             display: inline-block;
           }
 
+        }
+      }
+      &.active-transaction {
+        border: solid 2px color.adjust($brand-danger, $lightness: 5%);
+        &.active {
+          border-bottom: 0;
         }
       }
       &:hover {

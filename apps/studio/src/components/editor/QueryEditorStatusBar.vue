@@ -76,14 +76,6 @@
       </span>
     </template>
     <span class="expand" />
-    <span v-if="canManageTransactions" class="empty">Transaction Mode: </span>
-    <x-button
-      v-if="canManageTransactions"
-      class="btn btn-flat btn-icon end"
-      @click.prevent="toggleCommitMode"
-    >
-      {{ commitModeLabel }}
-    </x-button>
     <x-button
       class="btn btn-flat btn-icon end"
       :disabled="results?.length === 0"
@@ -197,7 +189,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'canManageTransactions', 'isManualCommit'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime'],
   components: { Statusbar },
   data() {
     return {
@@ -230,9 +222,6 @@ export default {
   computed: {
     ...mapGetters(['dialect']),
     ...mapState('settings', ['settings']),
-    commitModeLabel() {
-      return this.isManualCommit ? 'Manual' : 'Auto'
-    },
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;
@@ -298,9 +287,6 @@ export default {
     }
   },
   methods: {
-    toggleCommitMode() {
-      this.$emit('toggleCommitMode');
-    },
     changeSelectedResult(direction) {
       const newIndex =  this.selectedResult + direction;
       if (newIndex >= 0 && newIndex < this.results?.length) {
