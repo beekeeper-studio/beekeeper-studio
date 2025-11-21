@@ -275,7 +275,7 @@ export default {
       const dt = new Set(dataTypes)
       dt.delete('null')
 
-      if (dt.size > 1) {
+      if (dt.size < 1) {
         return this.importDataTypes.defaultType
       }
 
