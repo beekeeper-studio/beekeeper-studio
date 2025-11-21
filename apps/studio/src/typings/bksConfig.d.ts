@@ -265,6 +265,9 @@ declare interface IBksConfig {
         "bks-ai-shell": {
             disabled: boolean;
         };
+        config: {
+            queryResultLimit: number;
+        };
     };
     security: {
         disconnectOnIdle: boolean;

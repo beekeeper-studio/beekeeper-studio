@@ -390,20 +390,25 @@ export default class PluginStoreService {
   }
 
   private serializeQueryResponse(result: NgQueryResult) {
+    const queryResultLimit = window.bksConfig.plugins.config.queryResultLimit;
+    const rows = result.rows.length > queryResultLimit
+      ? result.rows.slice(0, queryResultLimit)
+      : result.rows;
     return {
       fields: result.fields.map((field) => ({
         id: field.id,
         name: field.name,
         dataType: field.dataType,
       })),
-      rows: result.rows,
-      rowCount: result.rowCount,
+      rows,
+      rowCount: rows.length,
+      actualRowCount: result.rowCount,
       affectedRows: result.affectedRows,
     };
   }
 
   /* Run query in the background */
-  async runQuery(query: string): Promise<RunQueryResponse> {
+  async runQuery(query: string) {
     const results = await this.store.state.connection.executeQuery(query);
 
     return {
