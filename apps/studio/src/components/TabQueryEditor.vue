@@ -248,7 +248,7 @@
               class="btn btn-flat btn-fab"
               aria-label="Close super formatter"
               title="Close super formatter"
-              @click="handleFormatterPresetModal({ showFormatter: false, modalName: superFormatterId })"
+              @click="handleFormatterPresetModal({ showFormatter: false })"
             >
               X
             </button>
@@ -776,13 +776,13 @@
     },
     methods: {
       formatterPreset() {
-        this.handleFormatterPresetModal({ showFormatter: true, modalName: this.superFormatterId })
+        this.handleFormatterPresetModal({ showFormatter: true })
       },
-      handleFormatterPresetModal({ showFormatter, modalName }){
+      handleFormatterPresetModal({ showFormatter }){
         if (showFormatter) {
-          this.$modal.show(modalName)
+          this.$modal.show(this.superFormatterId)
         } else {
-          this.$modal.hide(modalName)
+          this.$modal.hide(this.superFormatterId)
         }
       },
       getPresets(presetId) {
@@ -801,7 +801,7 @@
           })
       },
       applyPreset(presetConfig) {
-        this.handleFormatterPresetModal({ showFormatter: false, modalName: this.superFormatterId })
+        this.handleFormatterPresetModal({ showFormatter: false })
         this.selectedFormatter = { ...presetConfig }
       },
       async deletePreset({ id }) {
@@ -813,7 +813,7 @@
           .then(() => {
             this.$noty.success('Formatter Configuration successfully deleted')
             this.selectedFormatter = null
-            this.handleFormatterPresetModal({ showFormatter: false, modalName: this.superFormatterId })
+            this.handleFormatterPresetModal({ showFormatter: false })
           })
           .catch(err => {
             const error_notice = this.$noty.error(`Formatter Configuration delete failed: ${err.message}`, {
@@ -1286,6 +1286,11 @@
       editorContextMenu(_event, _context, items) {
         return [
           ...items,
+          {
+            label: "Open Formatter Query",
+            id: "formatter",
+            handler: this.formatterPreset
+          },
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
       },
