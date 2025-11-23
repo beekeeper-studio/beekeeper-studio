@@ -40,18 +40,47 @@ export default Vue.extend({
     },
     contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
       const pivot = items.findIndex((o) => o.id === "find");
+
+      const formatItem: InternalContextItem<unknown> = {
+        label: `Format Query`,
+        id: "text-format",
+        handler: this.formatSql,
+        shortcut: "Shift+F",
+        disabled: true
+      };
+
+      if (this.allowPresets && this.presets?.length > 0) {
+        const currentFormatterId = this.formatterConfig?.id;
+
+        formatItem.items = [
+          {
+            label: "Format with current config",
+            id: "format-default",
+            handler: this.formatSql,
+            shortcut: "Control+Shift+F"
+          },
+          divider,
+          ...this.presets.map((preset) => ({
+            label: `${preset.name}${preset.id === currentFormatterId ? ' *' : ''}`,
+            id: `format-preset-${preset.id}`,
+            handler: () => this.applyAndFormatPreset(preset),
+          }))
+        ];
+
+        delete formatItem.handler;
+        delete formatItem.shortcut;
+      }
+
       return [
         ...items.slice(0, pivot),
-        {
-          label: `Format Query`,
-          id: "text-format",
-          handler: this.formatSql,
-          shortcut: "Shift+F",
-          disabled: true
-        },
+        formatItem,
         divider,
         ...items.slice(pivot),
       ];
+    },
+
+    applyAndFormatPreset(preset) {
+      this.$emit("bks-apply-preset", { id: preset.id, ...preset.config });
     },
 
     // Non text-editor overrides

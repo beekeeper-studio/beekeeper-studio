@@ -53,11 +53,14 @@
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
         :formatter-config="selectedFormatter ?? undefined"
+        :allow-presets="true"
+        :presets="formatterPresets"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
+        @bks-apply-preset="applyPreset"
       />
       <div
         class="toolbar text-right"
@@ -1319,6 +1322,9 @@
       }
 
       this.vimKeymaps = await getVimKeymapsFromVimrc()
+
+      // Load formatter presets for context menu
+      this.getPresets(this.$bksConfig.ui.queryEditor.defaultFormatter)
     },
     beforeDestroy() {
       if(this.split) {
