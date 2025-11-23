@@ -162,7 +162,7 @@
       <div class="formatter-buttons">
         <div class="formatter-buttons__btn-group">
           <button
-            class="btn btn-small"
+            class="btn btn-flat btn-small"
             type="button"
             @click.prevent="savePreset"
             :disabled="!shouldBeSaved"
@@ -182,13 +182,13 @@
         <div class="formatter-buttons__btn-group">
           <button
             @click.prevent="copyToClipboard"
-            class="btn btn-small"
+            class="btn btn-flat btn-small"
             type="button"
           >
             Copy to Clipboard
           </button>
           <button
-            class="btn btn-small"
+            class="btn btn-primary btn-small"
             type="button"
             @click.prevent="applyFormat"
           >
@@ -453,8 +453,8 @@ export default Vue.extend({
     .switch-control {
       position: relative;
       display: inline-block;
-      width: 50px;
-      height: 28px;
+      width: 2.6em;
+      height: 1.5em;
 
       input {
         opacity: 0;
@@ -465,29 +465,31 @@ export default Vue.extend({
 
       .slider {
         position: absolute;
+        cursor: pointer;
         inset: 0;
-        background-color: #ccc;
-        border-radius: 28px;
-        transition: background-color 0.3s;
+        background-color: rgb(from var(--theme-base) r g b / 30%);
+        border-radius: 9999px;
+        transition: 0.15s;
 
         &::before {
-          content: "";
           position: absolute;
-          height: 20px;
-          width: 20px;
-          left: 4px;
-          bottom: 4px;
-          background: white;
-          border-radius: 50%;
-          transition: transform 0.3s;
+          content: "";
+          height: 1em;
+          width: 1em;
+          left: 0.3em;
+          bottom: 0.25em;
+          background-color: var(--text);
+          -webkit-transition: 0.15s;
+          transition: 0.15s;
+          border-radius: 9999px;
         }
       }
 
       input:checked + .slider {
-        background-color: #4CAF50;
+        background-color: rgb(from var(--theme-primary) r g b / 60%);
 
         &::before {
-          transform: translateX(22px);
+          transform: translateX(1em);
         }
       }
     }

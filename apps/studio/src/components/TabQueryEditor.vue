@@ -245,7 +245,7 @@
             </p>
             <button
               type="button"
-              class="btn btn-fab"
+              class="btn btn-flat btn-fab"
               aria-label="Close super formatter"
               title="Close super formatter"
               @click="handleFormatterPresetModal({ showFormatter: false, modalName: superFormatterId })"
