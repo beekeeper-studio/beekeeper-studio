@@ -640,13 +640,27 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     >;
   }
 
-  private prepareZset(value: unknown): Record<string, string> {
-    const hash = this.prepareHash(value);
-    for (const score of Object.values(hash)) {
-      if (Number.isNaN(Number(score)))
-        throw new Error(`Invalid score: ${score}`);
-    }
-    return hash as Record<string, string>;
+  private prepareZset(value: unknown): Array<{ value: string; score: number }> {
+    if (typeof value === "string") value = JSON.parse(value);
+    if (!Array.isArray(value)) throw new Error(`Value should be an array of {value, score} objects`);
+
+    return value.map((entry) => {
+      if (typeof entry !== 'object' || entry === null)
+        throw new Error(`Each entry should be an object with value and score`);
+      if (entry.value === undefined)
+        throw new Error(`Missing value field`);
+      if (entry.score === undefined)
+        throw new Error(`Missing score field`);
+
+      const score = Number(entry.score);
+      if (Number.isNaN(score))
+        throw new Error(`Invalid score: ${entry.score}`);
+
+      return {
+        value: this.preparePrimitive(entry.value),
+        score,
+      };
+    });
   }
 
   private prepareStream(value: unknown) {
@@ -663,15 +677,62 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     });
   }
 
+  /**
+   * Infer the Redis type from the value structure
+   */
+  private inferTypeFromValue(value: unknown): RedisKeyType {
+    try {
+      const parsed = typeof value === "string" ? JSON.parse(value) : value;
+
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0];
+
+        // Try zset: array of objects with value and score
+        if (first?.value !== undefined && first?.score !== undefined) {
+          return "zset";
+        }
+
+        // Try stream: array of objects with id and message
+        if (first?.id !== undefined && first?.message !== undefined) {
+          return "stream";
+        }
+
+        // Otherwise it's a list
+        return "list";
+      }
+
+      // Object → hash
+      if (_.isObject(parsed) && !Array.isArray(parsed)) {
+        return "hash";
+      }
+
+      // Default to string
+      return "string";
+    } catch {
+      return "string";
+    }
+  }
+
   private async setRedisValue(
     key: string,
     type: RedisKeyType,
     value: unknown
   ): Promise<void> {
     switch (type) {
-      case "string":
-        await this.redis.set(key, this.preparePrimitive(value));
+      case "string": {
+        // Try to parse if it's a JSON string, otherwise use as-is
+        let stringValue = value;
+        if (typeof value === "string") {
+          try {
+            stringValue = JSON.parse(value);
+          } catch {
+            // Not valid JSON, use the raw string
+            stringValue = value;
+          }
+        }
+        await this.redis.set(key, this.preparePrimitive(stringValue));
         break;
+      }
       case "list": {
         const list = this.prepareList(value);
         await this.redis.del(key);
@@ -700,13 +761,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         break;
       }
       case "zset": {
-        const zset = this.prepareZset(value);
+        const members = this.prepareZset(value);
         await this.redis.del(key);
-        const members = Object.entries(zset).map(([value, score]) => ({
-          score: Number(score),
-          value,
-        }));
-        await this.redis.zAdd(key, members);
+        if (members.length > 0) {
+          await this.redis.zAdd(key, members);
+        }
         break;
       }
       case "stream": {
@@ -739,10 +798,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       case "set":
         return this.redis.sMembers(key);
       case "zset": {
-        const result = await this.redis.zRangeWithScores(key, 0, -1);
-        return Object.fromEntries(
-          result.map(({ value, score }) => [value, score])
-        );
+        // Return as array of {value, score} objects to avoid ambiguity with hashes
+        return await this.redis.zRangeWithScores(key, 0, -1);
       }
       case "hash":
         return this.redis.hGetAll(key);
@@ -968,13 +1025,24 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   async executeApplyChanges(
     changes: TableChanges
   ): Promise<TableUpdateResult[]> {
-    log.debug("Redis executeApplyChanges called with:", changes);
+    log.log("Redis executeApplyChanges called with:", JSON.stringify(changes));
 
     // Handle deletions first
     for (const deleteOp of changes.deletes || []) {
       if (deleteOp.table === "keys") {
         const key = this.getOpKey(deleteOp);
         await this.redis.del(key);
+      }
+    }
+
+    // Handle inserts (limited support - mainly for creating empty keys)
+    // Process inserts before updates so keys exist when we try to update them
+    for (const insertOp of changes.inserts || []) {
+      if (insertOp.table === "keys") {
+        const keyName = insertOp.data[0]?.key;
+        if (keyName) {
+          await this.redis.set(keyName, "");
+        }
       }
     }
 
@@ -996,22 +1064,18 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           }
         } else if (column === "value" && originalKey) {
           // Handle value updates from Value Editor
-          const keyType = await this.redis.type(originalKey);
+          let keyType = await this.redis.type(originalKey);
+
+          // If key doesn't exist or is an empty string (from insert), infer type from value
+          if (keyType === "none" || (keyType === "string" && (await this.redis.get(originalKey)) === "")) {
+            keyType = this.inferTypeFromValue(newValue);
+          }
+
           await this.setRedisValue(
             originalKey,
             keyType as RedisKeyType,
             newValue
           );
-        }
-      }
-    }
-
-    // Handle inserts (limited support - mainly for creating empty keys)
-    for (const insertOp of changes.inserts || []) {
-      if (insertOp.table === "keys") {
-        const keyName = insertOp.data[0]?.key;
-        if (keyName) {
-          await this.redis.set(keyName, "");
         }
       }
     }

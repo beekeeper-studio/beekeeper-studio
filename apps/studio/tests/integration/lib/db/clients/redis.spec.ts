@@ -1478,6 +1478,9 @@ describe('Redis', () => {
     });
 
     it('should retrieve different data types correctly', async () => {
+      // Create a zset for testing
+      await connection.executeQuery('ZADD test:zset 1 "member1" 2 "member2"');
+
       const result = await connection.selectTop('keys', 0, 100, [], []);
 
       const stringKey = result.result.find((r: any) => r.key === 'test:string:1');
@@ -1494,6 +1497,16 @@ describe('Redis', () => {
       expect(hashKey).toBeDefined();
       expect(hashKey.type).toBe('hash');
       expect(typeof hashKey.value).toBe('object');
+      expect(!Array.isArray(hashKey.value)).toBe(true);
+
+      const zsetKey = result.result.find((r: any) => r.key === 'test:zset');
+      expect(zsetKey).toBeDefined();
+      expect(zsetKey.type).toBe('zset');
+      expect(Array.isArray(zsetKey.value)).toBe(true);
+      expect(zsetKey.value[0]).toHaveProperty('value');
+      expect(zsetKey.value[0]).toHaveProperty('score');
+      expect(zsetKey.value[0].value).toBe('member1');
+      expect(zsetKey.value[0].score).toBe(1);
     });
 
     it('should get table length (DBSIZE)', async () => {
@@ -1737,7 +1750,10 @@ describe('Redis', () => {
             table: 'keys',
             primaryKeys: [{ column: 'key', value: 'test:zset' }],
             column: 'value',
-            value: JSON.stringify({ newmember1: '1', newmember2: '2' })
+            value: JSON.stringify([
+              { value: 'newmember1', score: 1 },
+              { value: 'newmember2', score: 2 }
+            ])
           }
         ],
         deletes: []
@@ -2251,6 +2267,12 @@ describe('Redis', () => {
     });
 
     it('should handle zset with zero scores', async () => {
+      const zsetData = [
+        { value: 'member1', score: 0 },
+        { value: 'member2', score: 0 },
+        { value: 'member3', score: 1 }
+      ];
+
       const changes = {
         inserts: [
           { table: 'keys', data: [{ key: 'test:zeroscores' }] }
@@ -2260,7 +2282,7 @@ describe('Redis', () => {
             table: 'keys',
             primaryKeys: [{ column: 'key', value: 'test:zeroscores' }],
             column: 'value',
-            value: JSON.stringify({ member1: '0', member2: '0', member3: '1' })
+            value: JSON.stringify(zsetData)
           }
         ],
         deletes: []
@@ -2269,30 +2291,38 @@ describe('Redis', () => {
       await connection.applyChanges(changes);
 
       const result = await connection.executeQuery('ZRANGE test:zeroscores 0 -1 WITHSCORES');
-      expect(result[0].rows.length).toBe(6); // 3 members * 2 (value + score each)
+      // node-redis transforms WITHSCORES into objects with value and score properties
+      expect(result[0].rows.length).toBe(3); // 3 members as objects
+      expect(result[0].rows[0]).toEqual({ value: 'member1', score: 0 });
+      expect(result[0].rows[1]).toEqual({ value: 'member2', score: 0 });
+      expect(result[0].rows[2]).toEqual({ value: 'member3', score: 1 });
 
       // Check that zero scores are preserved
       const scoreResults = await connection.executeQuery('ZSCORE test:zeroscores member1');
       expect(Number(scoreResults[0].rows[0].result)).toBe(0);
     });
 
-    it('should reject invalid zset scores', async () => {
+    it('should handle string values that look like JSON', async () => {
+      // To store the literal string "[1,2,3]", you need to double-stringify
       const changes = {
-        inserts: [
-          { table: 'keys', data: [{ key: 'test:invalidscores' }] }
-        ],
-        updates: [
-          {
-            table: 'keys',
-            primaryKeys: [{ column: 'key', value: 'test:invalidscores' }],
-            column: 'value',
-            value: JSON.stringify({ member1: 'notanumber' })
-          }
-        ],
+        inserts: [{ table: 'keys', data: [{ key: 'test:jsonstring' }] }],
+        updates: [{
+          table: 'keys',
+          primaryKeys: [{ column: 'key', value: 'test:jsonstring' }],
+          column: 'value',
+          value: JSON.stringify("[1,2,3]") // Double-stringified: "\"[1,2,3]\""
+        }],
         deletes: []
       };
 
-      await expect(connection.applyChanges(changes)).rejects.toThrow('Invalid score');
+      await connection.applyChanges(changes);
+
+      // Verify it's a string, not a list
+      const typeResult = await connection.executeQuery('TYPE test:jsonstring');
+      expect(typeResult[0].rows[0].result).toBe('string');
+
+      const valueResult = await connection.executeQuery('GET test:jsonstring');
+      expect(valueResult[0].rows[0].result).toBe('[1,2,3]');
     });
   });
 });
