@@ -1,4 +1,4 @@
-name: Studio - Unit Tests
+name: Studio Tests
 
 on:
   # Trigger the workflow on push or pull request,
@@ -30,7 +30,7 @@ jobs:
         name: Set Chunks
         run: echo "::set-output name=test-chunks::$(./bin/get-db-files-as-json.sh)"
   unit:
-    name: Non-terrible tests
+    name: Unit tests
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
@@ -58,6 +58,9 @@ jobs:
 
       - name: Check for bad log imports
         run: bin/check-for-electron-log-imports.sh
+
+      - name: Check for missing lodash imports
+        run: bin/check-lodash.sh
 
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent

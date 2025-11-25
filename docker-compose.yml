@@ -9,6 +9,7 @@ volumes:
   psql14:
   psql13:
   psql15_load_test_data:
+  psql17:
   mariadb:
   cockroachdb:
   oracle18:
@@ -79,6 +80,19 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5434:5432
+
+  psql17:
+    image: postgres:17
+    platform: linux/amd64
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: saklia
+    volumes:
+      - psql17:/var/lib/postgresql/data
+      - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
+    ports:
+      - 5437:5432
 
   psql14:
     image: postgres:14

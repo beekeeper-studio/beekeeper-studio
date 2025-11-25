@@ -43,7 +43,6 @@ export interface SurrealDBFunctionInfo {
   permissions: boolean
 }
 
-// TODO (@day): are both of these necessary?
 export interface SurrealDBResult {
   result: any[];
   status: string;
@@ -89,7 +88,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       namespace: this.database.namespace,
       database: this.db,
       auth: config,
-      reconnect: true
+      reconnect: true,
+      versionCheck: false
     });
 
     // Test the pool
@@ -117,8 +117,9 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       port = this.server.config.localPort;
     }
 
+    const portString = port ? `:${port}` : '';
     const protocol = surrealDbOptions?.protocol || 'wss';
-    this.connectionString = `${protocol}://${host || 'localhost'}:${port || 8000}/rpc`;
+    this.connectionString = `${protocol}://${host || 'localhost'}${portString}/rpc`;
 
     switch (surrealDbOptions.authType) {
       case SurrealAuthType.Root:
@@ -171,7 +172,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: false
+      transactions: false,
+      filterTypes: ['standard']
     };
   }
 

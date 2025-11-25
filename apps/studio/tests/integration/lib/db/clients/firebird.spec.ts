@@ -326,8 +326,6 @@ describe("Firebird Tests", () => {
     // Test that composite keys are detected correctly
     const tableKeys = await util.connection.getTableKeys('composite_child_test');
     
-    console.log('All foreign keys:', JSON.stringify(tableKeys, null, 2));
-    
     // Get the composite key
     const compositeKey = tableKeys.find(key => key.isComposite);
     

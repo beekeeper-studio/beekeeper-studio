@@ -311,6 +311,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      filterTypes: ['standard']
     };
   }
 

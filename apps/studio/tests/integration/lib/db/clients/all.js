@@ -126,6 +126,19 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().filterTests()
     })
 
+    test("get filtered data count", async () => {
+      await testGetFilteredDataCount(getUtil())
+    })
+
+    describe("Filter Types", () => {
+      test("should have correct filterTypes in supportedFeatures", async () => {
+        await itShouldHaveCorrectFilterTypes(getUtil())
+      })
+
+      test("should support ilike filter for case-insensitive search", async () => {
+        await itShouldSupportIlikeFilter(getUtil())
+      })
+    })
 
     test("table triggers", async () => {
       if (getUtil().data.disabledFeatures?.triggers) return
@@ -135,7 +148,11 @@ export function runCommonTests(getUtil, opts = {}) {
     test("primary key tests", async () => {
       await getUtil().primaryKeyTests()
     })
-    
+
+    test("unique key tests", async () => {
+      await getUtil().uniqueKeyTests()
+    })
+
     test("composite key tests", async () => {
       await getUtil().compositeKeyTests()
     })
@@ -643,6 +660,70 @@ export const itShouldNotCommitOnChangeError = async function(util) {
 
 }
 
+export const testGetFilteredDataCount = async function(util) {
+  // Prepare test data
+  await prepareTestTable(util)
+
+  const insertData = [
+    { id: 1, first_name: 'Alice', last_name: 'Smith' },
+    { id: 2, first_name: 'Bob', last_name: 'Jones' },
+    { id: 3, first_name: 'Charlie', last_name: 'Smith' },
+    { id: 4, first_name: 'Diana', last_name: 'Brown' },
+    { id: 5, first_name: 'Eve', last_name: 'Smith' }
+  ]
+
+  const inserts = insertData.map(d => ({
+    table: 'test_inserts',
+    schema: util.options.defaultSchema,
+    data: [d]
+  }))
+
+  await util.connection.applyChanges({ inserts })
+
+  const tableName = 'test_inserts'
+  const schema = util.options.defaultSchema
+
+  // Test 1: Filter for last_name = 'Smith' (should return 3)
+  const filter1 = await util.connection.getQueryForFilter({
+    field: 'last_name',
+    type: '=',
+    value: 'Smith'
+  })
+  const count1 = await util.connection.getFilteredDataCount(tableName, schema, filter1)
+  expect(count1.toString()).toBe('3')
+
+  // Test 2: Filter for id > 3 (should return 2)
+  const filter2 = await util.connection.getQueryForFilter({
+    field: 'id',
+    type: '>',
+    value: 3
+  })
+  const count2 = await util.connection.getFilteredDataCount(tableName, schema, filter2)
+  expect(count2.toString()).toBe('2')
+
+  // Test 3: Filter for id = 1 (should return 1)
+  const filter3 = await util.connection.getQueryForFilter({
+    field: 'id',
+    type: '=',
+    value: 1
+  })
+  const count3 = await util.connection.getFilteredDataCount(tableName, schema, filter3)
+  expect(count3.toString()).toBe('1')
+
+  // Test 4: Filter that matches nothing (should return 0)
+  const filter4 = await util.connection.getQueryForFilter({
+    field: 'first_name',
+    type: '=',
+    value: 'NonExistent'
+  })
+  const count4 = await util.connection.getFilteredDataCount(tableName, schema, filter4)
+  expect(count4.toString()).toBe('0')
+
+  // Test 5: Invalid filter (should return empty string)
+  const count5 = await util.connection.getFilteredDataCount(tableName, schema, 'invalid filter syntax!!!')
+  expect(count5).toBe('')
+}
+
 // composite primary key
 
 const prepareTestTableCompositePK = async function(util) {
@@ -1102,4 +1183,94 @@ export async function prepareImportTests (util) {
   return {
     tableName, table, formattedData, importScriptOptions, hatColumn
   }
+}
+
+/** @param {DBTestUtil} util */
+export const itShouldHaveCorrectFilterTypes = async function(util) {
+  const features = await util.connection.supportedFeatures()
+
+  // All databases should have 'standard' filterTypes
+  expect(features.filterTypes).toContain('standard')
+  expect(Array.isArray(features.filterTypes)).toBe(true)
+  expect(features.filterTypes.length).toBeGreaterThan(0)
+
+  // PostgreSQL-based databases should have 'ilike'
+  const ilikeSupported = ['postgresql', 'psql', 'cockroachdb', 'redshift']
+  if (ilikeSupported.includes(util.dbType) || ilikeSupported.includes(util.dialect)) {
+    expect(features.filterTypes).toContain('ilike')
+    expect(features.filterTypes).toEqual(['standard', 'ilike'])
+  } else {
+    // Other databases should NOT have 'ilike'
+    expect(features.filterTypes).not.toContain('ilike')
+    expect(features.filterTypes).toEqual(['standard'])
+  }
+}
+
+/** @param {DBTestUtil} util */
+export const itShouldSupportIlikeFilter = async function(util) {
+  const features = await util.connection.supportedFeatures()
+  const ilikeSupported = features.filterTypes.includes('ilike')
+  
+  if (!ilikeSupported) return
+  
+  const tableName = 'filter_type_test'
+  await util.knex.schema.dropTableIfExists(tableName)
+  await util.knex.schema.createTable(tableName, (table) => {
+    table.integer("id").primary()
+    table.string("name")
+    table.string("description")
+  })
+
+  await util.knex(tableName).insert([
+    { id: 1, name: 'Apple', description: 'A RED fruit' },
+    { id: 2, name: 'BANANA', description: 'A yellow fruit' },
+    { id: 3, name: 'Cherry', description: 'A red BERRY' },
+    { id: 4, name: 'orange', description: 'An ORANGE citrus' }
+  ])
+
+
+  if (ilikeSupported) {
+    const ilikeFilters = [
+      { field: 'name', type: 'ilike', value: 'apple' }
+    ]
+
+    const ilikeResult = await util.connection.selectTop(
+      tableName, 0, 100, [], ilikeFilters, util.options.defaultSchema
+    )
+
+    expect(ilikeResult.result.length).toBe(1)
+    expect(ilikeResult.result[0].name).toBe('Apple')
+
+    const wildcardFilters = [
+      { field: 'description', type: 'ilike', value: '%fruit%' }
+    ]
+
+    const wildcardResult = await util.connection.selectTop(
+      tableName, 0, 100, [], wildcardFilters, util.options.defaultSchema
+    )
+
+    expect(wildcardResult.result.length).toBe(2)
+
+    const notIlikeFilters = [
+      { field: 'description', type: 'not ilike', value: '%red%' }
+    ]
+
+    const notIlikeResult = await util.connection.selectTop(
+      tableName, 0, 100, [], notIlikeFilters, util.options.defaultSchema
+    )
+
+    expect(notIlikeResult.result.length).toBe(2)
+    const ids = notIlikeResult.result.map(r => r.id.toString()).sort()
+    expect(ids).toEqual(['2', '4'])
+
+    const likeLowerFilters = [
+      { field: 'name', type: 'like', value: 'apple' }
+    ]
+    const likeResult = await util.connection.selectTop(
+      tableName, 0, 100, [], likeLowerFilters, util.options.defaultSchema
+    )
+    expect(likeResult.result.length).toBe(0)
+  }
+
+  await util.knex.schema.dropTableIfExists(tableName)
 }

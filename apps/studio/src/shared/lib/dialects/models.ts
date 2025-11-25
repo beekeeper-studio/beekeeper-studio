@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
+import { ExtendedTableColumn } from '@/lib/db/models'
 
 const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'redis'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino'] as const
@@ -9,7 +10,7 @@ export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
 interface ImportDefaultDataTypes {
   stringType?: string
-  longStringType?: string 
+  longStringType?: string
   dateType?: string
   booleanType?: string
   integerType?: string
@@ -121,6 +122,8 @@ export interface DialectData {
   requireDataset?: boolean,
   disallowedSortColumns?: string[],
   rawFilterPlaceholder?: string,
+  /** Is it called "sql" or "code" in this dialect? */
+  sqlLabel: "SQL" | "code";
   disabledFeatures?: {
     rawFilters?: boolean
     builderFilters?: boolean
@@ -273,7 +276,7 @@ export interface AlterTableSpec {
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]
-  reorder? : { newOrder: SchemaItem[], oldOrder: SchemaItem[] } | null
+  reorder? : { newOrder: ExtendedTableColumn[], oldOrder: ExtendedTableColumn[] } | null
 }
 
 export interface PartitionExpressionChange {

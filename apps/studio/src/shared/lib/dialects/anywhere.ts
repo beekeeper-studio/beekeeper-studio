@@ -33,6 +33,7 @@ const defaultLength = (t: string) => t.includes('var') ? 255 : 8;
 
 export const SqlAnywhereData: DialectData = {
   defaultSchema: 'dbo',
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => {
     const supportsLen = supportsLength.includes(t);
     const supportsPrecScale = supportsPrecisionScale.includes(t);
