@@ -56,6 +56,7 @@
         <table-length
           v-if="!minimalMode"
           :table="table"
+          :filters="filters"
         />
         <a
           @click="refreshTable"
@@ -2047,6 +2048,14 @@ export default Vue.extend({
       ])
     },
     handleJsonValueChange({key, value}) {
+      const column = this.table.columns.find((c) => c.columnName === key);
+      if (column) {
+        const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+        if (isJsonColumn && _.isObject(value)) {
+          value = JSON.stringify(value)
+        }
+      }
       this.selectedRow?.getCell(key).setValue(value)
     },
     debouncedSaveTab: _.debounce(function(tab) {

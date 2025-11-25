@@ -1,6 +1,7 @@
 <template>
   <div
     class="json-viewer"
+    :class="{ 'empty': empty }"
     ref="sidebar"
     v-show="!hidden"
   >
@@ -59,7 +60,7 @@
         :fold-gutters="true"
       />
     </div>
-    <div class="empty-state" v-show="empty">
+    <div class="empty-text">
       Open a table to view its data
     </div>
     <json-viewer-upsell v-if="$store.getters.isCommunity" />
@@ -95,7 +96,7 @@ import globals from '@/common/globals'
 import JsonSourceMap from "json-source-map";
 import JsonPointer from "json-pointer";
 import { typedArrayToString } from '@/common/utils'
-import { monokai } from "@uiw/codemirror-theme-monokai";
+import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 
 const log = rawLog.scope("json-viewer");
 
@@ -387,7 +388,12 @@ export default Vue.extend({
     replaceExtensions(extensions) {
       return [
         extensions,
-        monokai,
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+          },
+        }),
         this.persistJsonFold.extensions,
         this.partialReadonly.extensions(this.editableRanges),
       ]
