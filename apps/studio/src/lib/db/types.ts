@@ -291,4 +291,5 @@ export interface IBasicDatabaseClient {
 
   /** Returns a query for the given filter */
   getQueryForFilter(filter: TableFilter): Promise<string>
+  getFilteredDataCount(table: string, schema: string | null, filter: string ): Promise<string>
 }

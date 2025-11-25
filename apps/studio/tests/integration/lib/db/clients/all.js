@@ -126,6 +126,9 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().filterTests()
     })
 
+    test("get filtered data count", async () => {
+      await testGetFilteredDataCount(getUtil())
+    })
 
     test("table triggers", async () => {
       if (getUtil().data.disabledFeatures?.triggers) return
@@ -645,6 +648,70 @@ export const itShouldNotCommitOnChangeError = async function(util) {
     last_name: 'Tester'
   })
 
+}
+
+export const testGetFilteredDataCount = async function(util) {
+  // Prepare test data
+  await prepareTestTable(util)
+
+  const insertData = [
+    { id: 1, first_name: 'Alice', last_name: 'Smith' },
+    { id: 2, first_name: 'Bob', last_name: 'Jones' },
+    { id: 3, first_name: 'Charlie', last_name: 'Smith' },
+    { id: 4, first_name: 'Diana', last_name: 'Brown' },
+    { id: 5, first_name: 'Eve', last_name: 'Smith' }
+  ]
+
+  const inserts = insertData.map(d => ({
+    table: 'test_inserts',
+    schema: util.options.defaultSchema,
+    data: [d]
+  }))
+
+  await util.connection.applyChanges({ inserts })
+
+  const tableName = 'test_inserts'
+  const schema = util.options.defaultSchema
+
+  // Test 1: Filter for last_name = 'Smith' (should return 3)
+  const filter1 = await util.connection.getQueryForFilter({
+    field: 'last_name',
+    type: '=',
+    value: 'Smith'
+  })
+  const count1 = await util.connection.getFilteredDataCount(tableName, schema, filter1)
+  expect(count1.toString()).toBe('3')
+
+  // Test 2: Filter for id > 3 (should return 2)
+  const filter2 = await util.connection.getQueryForFilter({
+    field: 'id',
+    type: '>',
+    value: 3
+  })
+  const count2 = await util.connection.getFilteredDataCount(tableName, schema, filter2)
+  expect(count2.toString()).toBe('2')
+
+  // Test 3: Filter for id = 1 (should return 1)
+  const filter3 = await util.connection.getQueryForFilter({
+    field: 'id',
+    type: '=',
+    value: 1
+  })
+  const count3 = await util.connection.getFilteredDataCount(tableName, schema, filter3)
+  expect(count3.toString()).toBe('1')
+
+  // Test 4: Filter that matches nothing (should return 0)
+  const filter4 = await util.connection.getQueryForFilter({
+    field: 'first_name',
+    type: '=',
+    value: 'NonExistent'
+  })
+  const count4 = await util.connection.getFilteredDataCount(tableName, schema, filter4)
+  expect(count4.toString()).toBe('0')
+
+  // Test 5: Invalid filter (should return empty string)
+  const count5 = await util.connection.getFilteredDataCount(tableName, schema, 'invalid filter syntax!!!')
+  expect(count5).toBe('')
 }
 
 // composite primary key
