@@ -143,12 +143,21 @@
     }
   }
 
-  .empty-state {
+  .empty-text {
     position: absolute;
     inset: 0;
     z-index: 10;
     padding-inline: var(--hoz-gutter);
     color: $text-light;
+  }
+
+  &:not(.empty) .empty-text {
+    display: none;
+  }
+
+  &.empty {
+    --bks-text-editor-activeline-bg-color: transparent;
+    --bks-text-editor-activeline-gutter-bg-color: transparent;
   }
 }
 
