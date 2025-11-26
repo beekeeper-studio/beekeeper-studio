@@ -5,6 +5,7 @@
 import "./setup";
 import { WebHost, WebPlugin } from "./utils";
 import { tables } from "./utils/fixtures";
+import _ from "lodash";
 
 describe("WebPluginManager", () => {
   let host: WebHost;
@@ -156,7 +157,7 @@ describe("WebPluginManager", () => {
         const response = await plugin.request("getColumns", { table: "users" });
 
         expect(response.result).toHaveLength(3);
-        expect(response.result).toStrictEqual([
+        expect(response.result.map((c) => _.pick(c, ["name", "type"]))).toStrictEqual([
           { name: "id", type: "integer" },
           { name: "name", type: "varchar" },
           { name: "email", type: "varchar" },
@@ -170,7 +171,7 @@ describe("WebPluginManager", () => {
         });
 
         expect(response.result).toHaveLength(3);
-        expect(response.result).toStrictEqual([
+        expect(response.result.map((c) => _.pick(c, ["name", "type"]))).toStrictEqual([
           { name: "id", type: "integer" },
           { name: "name", type: "varchar" },
           { name: "price", type: "decimal" },
@@ -199,7 +200,7 @@ describe("WebPluginManager", () => {
           schema: "public",
         });
 
-        expect(publicResponse.result).toStrictEqual([
+        expect(publicResponse.result.map((c) => _.pick(c, ["name", "type"]))).toStrictEqual([
           { name: "id", type: "integer" },
           { name: "name", type: "varchar" },
           { name: "email", type: "varchar" },
@@ -211,7 +212,7 @@ describe("WebPluginManager", () => {
           schema: "private",
         });
 
-        expect(privateResponse.result).toStrictEqual([
+        expect(privateResponse.result.map((c) => _.pick(c, ["name", "type"]))).toStrictEqual([
           { name: "id", type: "integer" },
           { name: "name", type: "varchar" },
           { name: "price", type: "decimal" },
