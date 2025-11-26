@@ -96,7 +96,7 @@ export default class WebPluginLoader {
 
     // Check if the message is from our iframe
     if (source) {
-      if (event.data.id) {
+      if (event.data.id !== undefined) {
         this.handleViewRequest(
           {
             id: event.data.id,

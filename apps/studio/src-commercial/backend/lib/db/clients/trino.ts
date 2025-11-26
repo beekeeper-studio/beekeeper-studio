@@ -452,7 +452,8 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: this.supportsTransaction
+      transactions: this.supportsTransaction,
+      filterTypes: ['standard']
     }
   }
 

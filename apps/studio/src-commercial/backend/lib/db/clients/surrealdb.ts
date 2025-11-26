@@ -172,7 +172,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: false
+      transactions: false,
+      filterTypes: ['standard']
     };
   }
 
