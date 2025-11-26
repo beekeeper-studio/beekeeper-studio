@@ -478,6 +478,46 @@ x-buttons {
   }
 }
 
+x-buttons.selectbutton {
+  > x-button {
+    padding: 0.25rem;
+    background-color: color-mix(
+      in srgb,
+      var(--theme-base) 6%,
+      var(--query-editor-bg));
+    color: color-mix(in srgb, var(--theme-base) 60%, var(--query-editor-bg));
+    height: auto;
+    line-height: 1.15rem;
+    box-shadow: none;
+
+    .togglebutton-content {
+      display: inline-flex;
+      padding: 0.0325rem 0.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    &[toggled] .togglebutton-content {
+      background-color: color-mix(
+        in srgb,
+        var(--theme-base) 15%,
+        var(--query-editor-bg));
+      color: var(--theme-base);
+    }
+
+    &:first-child {
+      border-start-start-radius: 8px;
+      border-end-start-radius: 8px;
+    }
+
+    &:last-child {
+      border-start-end-radius: 8px;
+      border-end-end-radius: 8px;
+    }
+  }
+}
+
 x-button {
   &[skin="flat"] {
     color: var(--primary-color);

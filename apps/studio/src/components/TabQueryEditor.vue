@@ -72,13 +72,21 @@
         ref="toolbar"
       >
         <div class="actions" v-if="canManageTransactions">
-          <span class="labelled-switch">
-            <x-switch
-              @click.prevent="toggleCommitMode"
+          Tx:
+          <x-buttons class="selectbutton" style="margin-left: 0.5rem;">
+            <x-button
+              :toggled="!isManualCommit"
+              @click.prevent="toggleCommitMode('auto')"
+            >
+              <span class="togglebutton-content">Auto</span>
+            </x-button>
+            <x-button
               :toggled="isManualCommit"
-            />
-            Manual Commit
-          </span>
+              @click.prevent="toggleCommitMode('manual')"
+            >
+              <span class="togglebutton-content">Manual</span>
+            </x-button>
+          </x-buttons>
         </div>
         <div class="editor-help expand" />
         <div class="expand" />
@@ -1222,16 +1230,22 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           this.warningNoty = null;
         }
       },
-      async toggleCommitMode() {
+      async toggleCommitMode(mode?: "manual" | "auto") {
         if (!this.canManageTransactions) return
-        if (this.isManualCommit) {
+        if (_.isNil(mode)) {
+          mode = this.isManualCommit ? "auto" : "manual";
+        } else if ((mode === "manual" && this.isManualCommit)
+          || (mode === "auto" && !this.isManualCommit)) {
+          return
+        }
+        if (mode === "auto") {
           if (this.hasActiveTransaction) {
             this.connection.rollbackTransaction(this.tab.id);
           }
           this.hasActiveTransaction = false;
           this.tab.isTransaction = false;
           await this.connection.releaseConnection(this.tab.id);
-        } else if (!this.isManualCommit) {
+        } else if (mode === "manual") {
           try {
             await this.connection.reserveConnection(this.tab.id);
             this.tab.isTransaction = true;
@@ -1243,7 +1257,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         this.updateTab();
         this.showKeepAlive = false;
         this.maybeCloseWarningNoty();
-        this.isManualCommit = !this.isManualCommit;
+        this.isManualCommit = mode === "manual";
       },
       async manualCommit() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
