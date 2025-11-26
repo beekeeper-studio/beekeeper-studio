@@ -310,4 +310,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   async getQueryForFilter(filter: TableFilter): Promise<string> {
     return await Vue.prototype.$util.send('conn/getQueryForFilter', { filter });
   }
+
+  async getFilteredDataCount(table: string, schema: string | null, filter: string): Promise<string> {
+    return await Vue.prototype.$util.send('conn/getFilteredDataCount', { table, schema, filter });
+  }
 }

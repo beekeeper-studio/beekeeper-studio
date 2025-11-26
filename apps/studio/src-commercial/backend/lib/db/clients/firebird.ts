@@ -783,7 +783,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return Object.keys(grouped).map((name) => {
       const blob = grouped[name];
       const order = blob[0]["RDB$INDEX_TYPE"] === 1 ? "DESC" : "ASC";
-      const unique = blob[0]["RDB$UNIQUE_FLAG"] === 1;
+      const uniqueFlag = blob[0]["RDB$UNIQUE_FLAG"];
+      // Handle different types that might be returned by the driver
+      const unique = uniqueFlag === 1 || uniqueFlag === true || uniqueFlag === '1';
       const primary =
         blob.findIndex((b) => b["RDB$CONSTRAINT_TYPE"] === "PRIMARY KEY") !==
         -1;
@@ -1065,7 +1067,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     };
   }
 
