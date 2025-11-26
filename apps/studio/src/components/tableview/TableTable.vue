@@ -208,7 +208,8 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${$bksConfig.keybindings.general.addRow})`"
+          v-tooltip="addRowTooltip"
+          :disabled="usedConfig.readOnlyMode"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -238,7 +239,7 @@
             <x-menuitem @click="showColumnFilterModal">
               <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
-            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile">
+            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile || usedConfig.readOnlyMode">
               <x-label>
                 Import from file
                 <i
@@ -501,11 +502,20 @@ export default Vue.extend({
       return this.pendingChanges.deletes.length > 0
     },
     editable() {
-      return this.primaryKeys?.length &&
+      return !this.usedConfig.readOnlyMode &&
+        this.primaryKeys?.length &&
         this.table.entityType === 'table' &&
         !this.dialectData.disabledFeatures?.tableTable
     },
+    addRowTooltip() {
+      return this.usedConfig.readOnlyMode ?
+        "Read Only Mode is enabled for this connection. Cannot add rows." :
+        `Add row (${this.$bksConfig.keybindings.general.addRow})`;
+    },
     readOnlyNotice() {
+      if (this.usedConfig.readOnlyMode) {
+        return "Read Only Mode is enabled for this connection. Editing is disabled."
+      }
       return this.dialectData.notices?.tableTable ||
         "Tables without a primary key column only support inserts. Editing of existing records is disabled."
     },

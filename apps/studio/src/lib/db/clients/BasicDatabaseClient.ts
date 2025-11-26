@@ -85,8 +85,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   }
 
   async checkAllowReadOnly() {
+    if (platformInfo.testMode) return true;
     const status = await LicenseKey.getLicenseStatus()
-    return status.isUltimate || platformInfo.testMode;
+    return status.isUltimate;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -531,7 +532,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -565,7 +566,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -606,11 +607,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
         .count('*')
         .whereRaw(filter)
         .toString()
-      
+
       const { rows } = await this.driverExecuteSingle(query)
       const [dataCount] = rows
       const [countKey] = Object.keys(dataCount)
-  
+
       return dataCount[countKey]
     } catch (err) {
       log.error(err)
