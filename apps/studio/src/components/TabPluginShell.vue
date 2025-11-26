@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="isCommunity && tab.context.pluginId === 'bks-ai-shell'"
+    v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
     class="tab-upsell-wrapper"
   >
     <upsell-content />
