@@ -1053,7 +1053,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         try {
           identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
 
-          if (this.canManageTransactions) {
+          if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
             const endTransaction = identification.filter((value: IdentifyResult) => value.type === "COMMIT" || value.type === "ROLLBACK").length
 
