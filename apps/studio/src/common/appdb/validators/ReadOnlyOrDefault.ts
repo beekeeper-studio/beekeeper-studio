@@ -12,8 +12,10 @@ export function ReadOnlyOrDefault(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         async validate(value: any, args: ValidationArguments) {
+          if (platformInfo.testMode) return true;
+
           const status = await LicenseKey.getLicenseStatus();
-          const canSaveReadOnly = status.isUltimate || platformInfo.testMode;
+          const canSaveReadOnly = status.isUltimate;
 
           if (canSaveReadOnly) {
             return true;
