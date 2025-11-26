@@ -8,12 +8,15 @@ import props from "./props";
 import { SqlTextEditor } from "./SqlTextEditor";
 import { Entity } from "../types";
 import {
+  ContextMenuExtension,
   InternalContextItem,
   divider,
 } from "../context-menu";
 import { format } from "sql-formatter";
 import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";
+import { TextEditorMenuContext } from "../text-editor";
+import { SqlTextEditorMenuContext } from "./types";
 
 export default Vue.extend({
   data() {
@@ -67,7 +70,11 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
+    contextMenuItemsModifier(
+      _event,
+      items: InternalContextItem<unknown>[],
+      context: TextEditorMenuContext
+    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
       const formatItem: InternalContextItem<unknown> = {
         label: `Format Query`,
         id: "text-format",
@@ -92,15 +99,19 @@ export default Vue.extend({
             handler: () => this.applyAndFormatPreset(preset),
           }))
         ];
-
-        delete formatItem.handler;
-        delete formatItem.shortcut;
       }
-
-      return [
+      
+      const modifiedItems = [
         ...items,
         formatItem
       ];
+      return {
+        items: modifiedItems,
+        context: {
+          ...context,
+          selectedQuery: this.selectedQuery,
+        },
+      };
     },
     applyAndFormatPreset(preset) {
       this.$emit("bks-apply-preset", { id: preset.id, ...preset.config });
@@ -117,14 +128,7 @@ export default Vue.extend({
   },
 
   mounted() {
-    this.internalContextMenuItems = this.contextMenuItemsModifier;
-    this.internalMenuContextModifiers.push((context) => {
-      return {
-        ...context,
-        selectedQuery: this.selectedQuery,
-      };
-    });
-    this.formatSql()
+    this.contextMenuExtensions.push(this.contextMenuItemsModifier);
   },
 });
 </script>

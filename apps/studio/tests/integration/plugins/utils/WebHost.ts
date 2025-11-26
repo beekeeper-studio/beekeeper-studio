@@ -72,6 +72,7 @@ export class WebHost {
       },
       commit: jest.fn(),
       dispatch: jest.fn(),
+      subscribe: jest.fn(),
     } as any as Store<RootState>;
 
     // Create plugin store service

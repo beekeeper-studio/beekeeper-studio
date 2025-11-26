@@ -145,3 +145,8 @@ export interface TextEditorEventMap extends HTMLElementEventMap {
   "bks-initialized": TextEditorInitializedEvent;
 }
 
+export type TextEditorMenuContext = {
+  text: string;
+  selectedText: string;
+}
+
