@@ -481,11 +481,8 @@ x-buttons {
 x-buttons.selectbutton {
   > x-button {
     padding: 0.25rem;
-    background-color: color-mix(
-      in srgb,
-      var(--theme-base) 6%,
-      var(--query-editor-bg));
-    color: color-mix(in srgb, var(--theme-base) 60%, var(--query-editor-bg));
+    color: var(--togglebutton-color);
+    background: var(--togglebutton-background);
     height: auto;
     line-height: 1.15rem;
     box-shadow: none;
@@ -499,11 +496,8 @@ x-buttons.selectbutton {
     }
 
     &[toggled] .togglebutton-content {
-      background-color: color-mix(
-        in srgb,
-        var(--theme-base) 15%,
-        var(--query-editor-bg));
-      color: var(--theme-base);
+      color: var(--togglebutton-content-checked-color);
+      background: var(--togglebutton-content-checked-background);
     }
 
     &:first-child {

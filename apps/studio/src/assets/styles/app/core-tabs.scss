@@ -116,9 +116,24 @@
         }
       }
       &.active-transaction {
-        border: solid 2px color.adjust($brand-danger, $lightness: 5%);
-        &.active {
-          border-bottom: 0;
+        .tab-title,
+        .item-icon {
+          color: var(--brand-danger);
+        }
+
+        &:not(.active) {
+          background-color: color-mix(
+            in srgb,
+            var(--brand-danger) 20%,
+            hsl(from var(--theme-bg) h s calc(l + 3)));
+
+          .tab-action {
+            background: transparent;
+
+            .tab-close .material-icons {
+              color: var(--brand-danger);
+            }
+          }
         }
       }
       &:hover {

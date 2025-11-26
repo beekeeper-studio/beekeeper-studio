@@ -8,14 +8,6 @@
       class="top-panel"
       ref="topPanel"
     >
-      <div v-if="isManualCommit" class="manual-commit-notice">
-        <div class="alert">
-          <i class="material-icons">info_outlined</i>
-          <div class="alert-body">
-            Manual Commit Mode Enabled.
-          </div>
-        </div>
-      </div>
       <merge-manager
         v-if="query && query.id"
         :original-text="originalText"
@@ -71,9 +63,12 @@
         class="toolbar text-right"
         ref="toolbar"
       >
-        <div class="actions" v-if="canManageTransactions">
-          Tx:
-          <x-buttons class="selectbutton" style="margin-left: 0.5rem;">
+        <div class="actions" v-if="canManageTransactions" :data-manual-commit="isManualCommit">
+          <label for="commit-mode">Commit</label>
+          <x-buttons
+            id="commit-mode"
+            class="selectbutton"
+          >
             <x-button
               :toggled="!isManualCommit"
               @click.prevent="toggleCommitMode('auto')"
@@ -1365,17 +1360,60 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
   @use "sass:color";
   @import '../assets/styles/app/_variables';
 
-  .manual-commit-notice {
-    margin: 0;
-    > i {
-      line-height: 26px; // button height;
-    }
-    .alert {
-      margin: 0;
-      border-radius: 0;
+  label[for="commit-mode"] {
+    color: var(--text);
+  }
 
-      background: color.adjust($brand-danger, $lightness: 5%);
-      color: black;
+  #commit-mode {
+    margin-left: 0.5rem;
+
+    --togglebutton-color: color-mix(
+      in srgb,
+      var(--theme-base) 60%,
+      var(--query-editor-bg)
+      );
+    --togglebutton-background: color-mix(
+      in srgb,
+      var(--theme-base) 6%,
+      var(--query-editor-bg));
+    --togglebutton-content-checked-color: var(--theme-base);
+    --togglebutton-content-checked-background: color-mix(
+      in srgb,
+      var(--theme-base) 15%,
+      var(--query-editor-bg));
+  }
+  [data-manual-commit] {
+    label {
+      color: var(--brand-danger);
+    }
+    #commit-mode {
+      --togglebutton-color: color-mix(
+        in srgb,
+        var(--brand-danger) 60%,
+        var(--query-editor-bg));
+      --togglebutton-background: color-mix(
+        in srgb,
+        var(--brand-danger) 6%,
+        var(--query-editor-bg));
+      --togglebutton-content-checked-color: var(--brand-danger);
+      --togglebutton-content-checked-background: color-mix(
+        in srgb,
+        var(--brand-danger) 15%,
+        var(--query-editor-bg));
+    }
+  }
+
+  .manual-commit-notice {
+    display: flex;
+    gap: 0.5rem;
+    padding-block: 0.5rem;
+    padding-inline: 0.75rem;
+    margin-bottom: -0.75rem;
+    color: $brand-danger;
+    font-size: 0.85rem;
+
+    [class^="material-icons"] {
+      font-size: 1.2em;
     }
   }
 </style>

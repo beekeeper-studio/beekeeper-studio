@@ -11,7 +11,7 @@
   <i
     v-else-if="tab.tabType === 'query'"
     class="material-icons item-icon query"
-  >{{ tab.isTransaction ? 'commit' : 'code'}}</i>
+  >code</i>
   <i
     v-else-if="tab.tabType === 'import-table'"
     class="material-icons-outlined item-icon table-properties"
