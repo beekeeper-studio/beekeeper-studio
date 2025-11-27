@@ -487,6 +487,10 @@ x-buttons.selectbutton {
     line-height: 1.15rem;
     box-shadow: none;
 
+    &:hover {
+      color: var(--togglebutton-hover-color);
+    }
+
     .togglebutton-content {
       display: inline-flex;
       padding: 0.0325rem 0.75rem;
