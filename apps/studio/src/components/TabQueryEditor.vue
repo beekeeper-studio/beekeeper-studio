@@ -63,25 +63,61 @@
         class="toolbar text-right"
         ref="toolbar"
       >
-        <div class="actions" v-if="canManageTransactions" :data-manual-commit="isManualCommit">
-          <label for="commit-mode">Commit</label>
-          <x-buttons
-            id="commit-mode"
-            class="selectbutton"
-          >
-            <x-button
-              :toggled="!isManualCommit"
-              @click.prevent="toggleCommitMode('auto')"
+        <div class="actions" v-if="canManageTransactions">
+          <transition name="fade-swap">
+            <x-buttons
+              id="commit-mode"
+              class="selectbutton"
+              v-if="!hasActiveTransaction"
             >
-              <span class="togglebutton-content">Auto</span>
-            </x-button>
-            <x-button
-              :toggled="isManualCommit"
-              @click.prevent="toggleCommitMode('manual')"
+              <x-button
+                :toggled="!isManualCommit"
+                @click.prevent="toggleCommitMode('auto')"
+                v-tooltip="getCommitModeVTooltip({
+                  title: 'Auto commit mode',
+                  description: 'This is the way it works by default. No need to worry about it.',
+                })"
+              >
+                <span class="togglebutton-content">
+                  {{ !isManualCommit ? 'Auto Commit' : 'Auto' }}
+                </span>
+              </x-button>
+              <x-button
+                :toggled="isManualCommit"
+                @click.prevent="toggleCommitMode('manual')"
+                v-tooltip="getCommitModeVTooltip({
+                  title: 'Manual commit mode',
+                  description: 'This is new! It helps you running transactions.',
+                  learnMoreLink: 'https://beekeeperstudio.io/',
+                })"
+              >
+                <span class="togglebutton-content">
+                  {{ isManualCommit ? 'Manual Commit' : 'Manual' }}
+                </span>
+              </x-button>
+            </x-buttons>
+          </transition>
+          <transition name="fade-swap">
+            <div
+              v-if="hasActiveTransaction"
+              class="transaction-indicator"
+              v-tooltip="{
+                ...getCommitModeVTooltip({
+                  title: `<i class='material-icons'>commit</i><span>Transaction active</span>`,
+                  description: 'Once committed or rolled back, it will be deactivated.',
+                  learnMoreLink: 'https://beekeeperstudio.io/',
+                  className: 'transaction-active',
+                  show: showTransactionActiveTooltip,
+                  onClose() {
+                    showTransactionActiveTooltip = false
+                  },
+                }),
+              }"
             >
-              <span class="togglebutton-content">Manual</span>
-            </x-button>
-          </x-buttons>
+              <i class="material-icons">commit</i>
+              <span>Transaction active</span>
+            </div>
+          </transition>
         </div>
         <div class="editor-help expand" />
         <div class="expand" />
@@ -418,11 +454,13 @@
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+  import { SmartLocalStorage } from '@/common/LocalStorage';
 import { IdentifyResult } from 'sql-query-identifier/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
   const editorDefault = "\n\n\n\n\n\n\n\n\n\n"
+  const hasUsedTransactionsKey = "hasUsedTransactions";
 
   export default {
     // this.queryText holds the current editor value, always
@@ -489,7 +527,8 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         transactionTimeoutWarningListenerId: null,
         transactionTimeoutListenerId: null,
         showKeepAlive: false,
-        warningNoty: null
+        warningNoty: null,
+        showTransactionActiveTooltip: false,
       }
     },
     computed: {
@@ -1038,6 +1077,12 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
           await this.connection.startTransaction(this.tab.id);
           this.hasActiveTransaction = true
+          if (SmartLocalStorage.exists(hasUsedTransactionsKey)) {
+            this.showTransactionActiveTooltip = false;
+          } else {
+            SmartLocalStorage.setBool(hasUsedTransactionsKey, true);
+            this.showTransactionActiveTooltip = true;
+          }
         }
 
         this.showKeepAlive = false
@@ -1318,6 +1363,51 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
       },
+      getCommitModeVTooltip(options: {
+        title: string;
+        description: string;
+        learnMoreLink?: string;
+        className?: string;
+        show?: boolean;
+        onClose?: () => void;
+      }) {
+        const actions = `
+          <div class="actions">
+            ${options.learnMoreLink ? `<a href="${options.learnMoreLink}" class="btn btn-flat">Learn more</a>` : ''}
+            ${options.show ? `<button class="btn btn-flat" data-close="true">Close</button>` : ''}
+          </div>
+        `;
+        return {
+          template: `
+<div class="tooltip commit-mode-tooltip" role="tooltip">
+  <div class="tooltip-arrow"></div>
+  <div class="tooltip-inner"></div>
+  <div class="tooltip-boundary"></div>
+</div>`,
+          content: `
+<div class="commit-mode-tooltip-content ${options.className || ''}">
+  <h2>${options.title}</h2>
+  <p>${options.description}</p>
+  ${(options.learnMoreLink || options.show) ? actions : ''}
+  </div>
+</div>`,
+          delay: { show: 750 },
+          html: true,
+          autoHide: false,
+          show: options.show,
+          popperOptions: {
+            onCreate(popper) {
+              if (options.show && options.onClose) {
+                popper.instance.popper.addEventListener("click", (e) => {
+                  if (e.target.dataset?.close) {
+                    options.onClose()
+                  }
+                })
+              }
+            },
+          }
+        };
+      }
     },
     async mounted() {
       if (this.tab.queryId) {
@@ -1365,8 +1455,6 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
   }
 
   #commit-mode {
-    margin-left: 0.5rem;
-
     --togglebutton-color: color-mix(
       in srgb,
       var(--theme-base) 60%,
@@ -1382,26 +1470,6 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       var(--theme-base) 15%,
       var(--query-editor-bg));
   }
-  [data-manual-commit] {
-    label {
-      color: var(--brand-danger);
-    }
-    #commit-mode {
-      --togglebutton-color: color-mix(
-        in srgb,
-        var(--brand-danger) 60%,
-        var(--query-editor-bg));
-      --togglebutton-background: color-mix(
-        in srgb,
-        var(--brand-danger) 6%,
-        var(--query-editor-bg));
-      --togglebutton-content-checked-color: var(--brand-danger);
-      --togglebutton-content-checked-background: color-mix(
-        in srgb,
-        var(--brand-danger) 15%,
-        var(--query-editor-bg));
-    }
-  }
 
   .manual-commit-notice {
     display: flex;
@@ -1414,6 +1482,53 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
 
     [class^="material-icons"] {
       font-size: 1.2em;
+    }
+  }
+
+  .fade-swap-enter-active,
+  .fade-swap-leave-active {
+    transition: opacity 0.25s ease;
+  }
+
+  .fade-swap-enter,
+  .fade-swap-leave-to {
+    opacity: 0;
+  }
+
+  .fade-swap-leave-active {
+    position: absolute;
+  }
+
+  .transaction-indicator {
+    line-height: 1;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--brand-warning);
+    font-weight: bold;
+    background: color-mix(
+      in srgb,
+      var(--brand-warning) 4%,
+      var(--query-editor-bg));
+    border-radius: 9999px;
+    padding: 0.215rem 0.75rem;
+    box-shadow: 0 0 6px 0 rgb(from var(--brand-warning) r g b / 0.7);
+    animation: glowAndDrop 0.9s cubic-bezier(0.33, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes glowAndDrop {
+    0% {
+      box-shadow: 0 0 0px 0 rgb(from var(--brand-warning) r g b / 0);
+    }
+
+    60% {
+      box-shadow: 0 0 10px 0px rgb(from var(--brand-warning) r g b / 1);
+    }
+
+    100% {
+      box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
     }
   }
 </style>
