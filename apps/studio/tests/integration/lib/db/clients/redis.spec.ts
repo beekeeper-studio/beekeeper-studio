@@ -147,9 +147,9 @@ describe('Redis', () => {
 
       const hgetallResult = await connection.executeQuery('HGETALL test:hash');
       expect(hgetallResult[0].rows).toEqual([
-        { key: 'field1', value: 'value1' },
-        { key: 'field2', value: 'value2' },
-        { key: 'field3', value: 'value3' }
+        { field: "field1", value: "value1" },
+        { field: "field2", value: "value2" },
+        { field: "field3", value: "value3" }
       ]);
     });
 
@@ -161,8 +161,8 @@ describe('Redis', () => {
 
       const hgetallResult = await connection.executeQuery('HGETALL test:hash');
       expect(hgetallResult[0].rows).toEqual([
-        { key: 'field1', value: 'value1' },
-        { key: 'field3', value: 'value3' }
+        { field: "field1", value: "value1" },
+        { field: "field3", value: "value3" }
       ]);
     });
 
@@ -244,7 +244,7 @@ describe('Redis', () => {
       await connection.executeQuery('ZADD test:zset 2.5 "member1"');
 
       const zscoreResult = await connection.executeQuery('ZSCORE test:zset "member1"');
-      expect(zscoreResult[0].rows).toEqual([{ result: '2.5' }]);
+      expect(zscoreResult[0].rows).toEqual([{ result: 2.5 }]);
     });
   });
 
@@ -538,10 +538,10 @@ describe('Redis', () => {
       await connection.executeQuery('ZADD test:zset 1 "member1"');
 
       const zincrbyResult = await connection.executeQuery('ZINCRBY test:zset 2 "member1"');
-      expect(zincrbyResult[0].rows).toEqual([{ result: '3' }]);
+      expect(zincrbyResult[0].rows).toEqual([{ result: 3 }]);
 
       const zscoreResult = await connection.executeQuery('ZSCORE test:zset "member1"');
-      expect(zscoreResult[0].rows).toEqual([{ result: '3' }]);
+      expect(zscoreResult[0].rows).toEqual([{ result: 3 }]);
     });
 
     it('should execute ZRANK command', async () => {
@@ -835,9 +835,9 @@ describe('Redis', () => {
 
     it('should execute PUBSUB NUMSUB command', async () => {
       const numsubResult = await connection.executeQuery('PUBSUB NUMSUB test:channel');
-      expect(numsubResult[0].rows).toHaveLength(2);
-      expect(numsubResult[0].rows[0].result).toBe('test:channel');
-      expect(numsubResult[0].rows[1].result).toBe(0); // No subscribers
+      expect(numsubResult[0].rows).toEqual([
+        { field: "test:channel", value: "0" }
+      ]);
     });
 
     it('should execute PUBSUB NUMPAT command', async () => {
@@ -888,9 +888,10 @@ describe('Redis', () => {
       expect(geoaddResult[0].rows[0].result).toBe(2);
 
       const geoposResult = await connection.executeQuery('GEOPOS test:geo "Palermo" "Catania"');
-      expect(geoposResult[0].rows).toHaveLength(2);
-      expect(geoposResult[0].rows[0].result).toHaveLength(2); // [longitude, latitude]
-      expect(geoposResult[0].rows[1].result).toHaveLength(2);
+      expect(geoposResult[0].rows).toEqual([
+        { "longitude": "13.361389338970184", "latitude": "38.1155563954963" },
+        { "longitude": "15.087267458438873", "latitude": "37.50266842333162" }
+      ]);
     });
 
     it('should execute GEODIST command', async () => {
@@ -1026,18 +1027,20 @@ describe('Redis', () => {
       await connection.executeQuery('LPUSH test:list "item"');
 
       const blpopResult = await connection.executeQuery('BLPOP test:list 1');
-      expect(blpopResult[0].rows).toHaveLength(2);
-      expect(blpopResult[0].rows[0].result).toBe('test:list');
-      expect(blpopResult[0].rows[1].result).toBe('item');
+      expect(blpopResult[0].rows).toEqual([
+        { field: 'key', value: 'test:list' },
+        { field: 'element', value: 'item' }
+      ]);
     });
 
     it('should execute BRPOP command with timeout', async () => {
       await connection.executeQuery('RPUSH test:list "item"');
 
       const brpopResult = await connection.executeQuery('BRPOP test:list 1');
-      expect(brpopResult[0].rows).toHaveLength(2);
-      expect(brpopResult[0].rows[0].result).toBe('test:list');
-      expect(brpopResult[0].rows[1].result).toBe('item');
+      expect(brpopResult[0].rows).toEqual([
+        { field: 'key', value: 'test:list' },
+        { field: 'element', value: 'item' }
+      ]);
     });
 
     it('should execute LMOVE command', async () => {
@@ -1230,18 +1233,20 @@ describe('Redis', () => {
       await connection.executeQuery('ZADD test:zset 1 "one" 2 "two" 3 "three"');
 
       const zpopmaxResult = await connection.executeQuery('ZPOPMAX test:zset');
-      expect(zpopmaxResult[0].rows).toHaveLength(2);
-      expect(zpopmaxResult[0].rows[0].result).toBe('three');
-      expect(zpopmaxResult[0].rows[1].result).toBe('3');
+      expect(zpopmaxResult[0].rows).toEqual([
+        { field: 'value', value: 'three' },
+        { field: 'score', value: 3 }
+      ]);
     });
 
     it('should execute ZPOPMIN command', async () => {
       await connection.executeQuery('ZADD test:zset 1 "one" 2 "two" 3 "three"');
 
       const zpopminResult = await connection.executeQuery('ZPOPMIN test:zset');
-      expect(zpopminResult[0].rows).toHaveLength(2);
-      expect(zpopminResult[0].rows[0].result).toBe('one');
-      expect(zpopminResult[0].rows[1].result).toBe('1');
+      expect(zpopminResult[0].rows).toEqual([
+        { field: 'value', value: 'one' },
+        { field: 'score', value: 1 }
+      ]);
     });
   });
 
@@ -1304,6 +1309,1020 @@ describe('Redis', () => {
 
       const ttlResult = await connection.executeQuery('TTL test:expireat');
       expect(ttlResult[0].rows[0].result).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Client Metadata Operations', () => {
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should get database version', async () => {
+      const version = await connection.versionString();
+      expect(version).toBeDefined();
+      expect(typeof version).toBe('string');
+      expect(version).not.toBe('Unknown');
+    });
+
+    it('should list databases', async () => {
+      const databases = await connection.listDatabases();
+      expect(databases).toBeDefined();
+      expect(Array.isArray(databases)).toBe(true);
+      expect(databases.length).toBeGreaterThanOrEqual(1);
+      expect(databases).toContain('0'); // Database 0 should always exist
+    });
+
+    it('should list tables (keys and info views)', async () => {
+      const tables = await connection.listTables();
+      expect(tables).toBeDefined();
+      expect(Array.isArray(tables)).toBe(true);
+      expect(tables.length).toBe(1);
+      expect(tables[0]).toMatchObject({
+        name: 'keys',
+        entityType: 'table',
+        schema: null
+      });
+    });
+
+    it('should list views (info view)', async () => {
+      const views = await connection.listViews();
+      expect(views).toBeDefined();
+      expect(Array.isArray(views)).toBe(true);
+      expect(views.length).toBe(1);
+      expect(views[0]).toMatchObject({
+        name: 'info',
+        entityType: 'view',
+        schema: null
+      });
+    });
+
+    it('should list table columns for keys table', async () => {
+      const columns = await connection.listTableColumns('keys');
+      expect(columns).toBeDefined();
+      expect(Array.isArray(columns)).toBe(true);
+      expect(columns.length).toBe(6);
+
+      const columnNames = columns.map(c => c.columnName);
+      expect(columnNames).toContain('key');
+      expect(columnNames).toContain('value');
+      expect(columnNames).toContain('type');
+      expect(columnNames).toContain('encoding');
+      expect(columnNames).toContain('ttl');
+      expect(columnNames).toContain('memory');
+    });
+
+    it('should list table columns for info view', async () => {
+      const columns = await connection.listTableColumns('info');
+      expect(columns).toBeDefined();
+      expect(Array.isArray(columns)).toBe(true);
+      expect(columns.length).toBeGreaterThan(0);
+
+      const columnNames = columns.map(c => c.columnName);
+      expect(columnNames).toContain('redis_version');
+    });
+
+    it('should get primary keys for keys table', async () => {
+      const primaryKeys = await connection.getPrimaryKeys('keys');
+      expect(primaryKeys).toBeDefined();
+      expect(Array.isArray(primaryKeys)).toBe(true);
+      expect(primaryKeys.length).toBe(1);
+      expect(primaryKeys[0]).toMatchObject({ columnName: 'key' });
+    });
+
+    it('should return empty arrays for unsupported metadata', async () => {
+      // Redis doesn't support these features
+      expect(await connection.listSchemas()).toEqual([]);
+      expect(await connection.listRoutines()).toEqual([]);
+      expect(await connection.listTableIndexes()).toEqual([]);
+      expect(await connection.listTableTriggers()).toEqual([]);
+      expect(await connection.getTableKeys()).toEqual([]);
+      expect(await connection.getTableReferences()).toEqual([]);
+    });
+
+    it('should return supported features correctly', async () => {
+      const features = await connection.supportedFeatures();
+      expect(features).toMatchObject({
+        customRoutines: false,
+        comments: false,
+        properties: true,
+        partitions: false,
+        editPartitions: false,
+        backups: false,
+        backDirFormat: false,
+        restore: false,
+        indexNullsNotDistinct: false,
+        transactions: true
+      });
+    });
+  });
+
+  describe('Data Retrieval Operations', () => {
+    beforeEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+      // Set up test data
+      await connection.executeQuery('SET test:string:1 "value1"');
+      await connection.executeQuery('SET test:string:2 "value2"');
+      await connection.executeQuery('SET test:string:3 "value3"');
+      await connection.executeQuery('LPUSH test:list "item1" "item2"');
+      await connection.executeQuery('HSET test:hash field1 "value1" field2 "value2"');
+    });
+
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should select top from keys table', async () => {
+      const result = await connection.selectTop('keys', 0, 10, [], []);
+
+      expect(result).toBeDefined();
+      expect(result.result).toBeDefined();
+      expect(Array.isArray(result.result)).toBe(true);
+      expect(result.result.length).toBeGreaterThan(0);
+      expect(result.fields).toBeDefined();
+
+      // Check that results have the expected structure
+      const firstRow = result.result[0];
+      expect(firstRow).toHaveProperty('key');
+      expect(firstRow).toHaveProperty('value');
+      expect(firstRow).toHaveProperty('type');
+      expect(firstRow).toHaveProperty('ttl');
+      expect(firstRow).toHaveProperty('memory');
+      expect(firstRow).toHaveProperty('encoding');
+    });
+
+    it('should filter keys by pattern', async () => {
+      const result = await connection.selectTop('keys', 0, 10, [], [
+        { field: 'key', type: '=', value: 'test:string:*' }
+      ]);
+
+      expect(result.result.length).toBe(3);
+      result.result.forEach((row: any) => {
+        expect(row.key).toMatch(/^test:string:/);
+      });
+    });
+
+    it('should handle pagination correctly', async () => {
+      const page1 = await connection.selectTop('keys', 0, 2, [], []);
+      const page2 = await connection.selectTop('keys', 2, 2, [], []);
+
+      expect(page1.result.length).toBeLessThanOrEqual(2);
+      expect(page2.result.length).toBeLessThanOrEqual(2);
+
+      // Keys should be different
+      const page1Keys = page1.result.map((r: any) => r.key);
+      const page2Keys = page2.result.map((r: any) => r.key);
+
+      page2Keys.forEach((key: string) => {
+        expect(page1Keys).not.toContain(key);
+      });
+    });
+
+    it('should retrieve different data types correctly', async () => {
+      // Create a zset for testing
+      await connection.executeQuery('ZADD test:zset 1 "member1" 2 "member2"');
+
+      const result = await connection.selectTop('keys', 0, 100, [], []);
+
+      const stringKey = result.result.find((r: any) => r.key === 'test:string:1');
+      expect(stringKey).toBeDefined();
+      expect(stringKey.type).toBe('string');
+      expect(stringKey.value).toBe('value1');
+
+      const listKey = result.result.find((r: any) => r.key === 'test:list');
+      expect(listKey).toBeDefined();
+      expect(listKey.type).toBe('list');
+      expect(Array.isArray(listKey.value)).toBe(true);
+
+      const hashKey = result.result.find((r: any) => r.key === 'test:hash');
+      expect(hashKey).toBeDefined();
+      expect(hashKey.type).toBe('hash');
+      expect(typeof hashKey.value).toBe('object');
+      expect(!Array.isArray(hashKey.value)).toBe(true);
+
+      const zsetKey = result.result.find((r: any) => r.key === 'test:zset');
+      expect(zsetKey).toBeDefined();
+      expect(zsetKey.type).toBe('zset');
+      expect(Array.isArray(zsetKey.value)).toBe(true);
+      expect(zsetKey.value[0]).toHaveProperty('value');
+      expect(zsetKey.value[0]).toHaveProperty('score');
+      expect(zsetKey.value[0].value).toBe('member1');
+      expect(zsetKey.value[0].score).toBe(1);
+    });
+
+    it('should get table length (DBSIZE)', async () => {
+      const length = await connection.getTableLength();
+      expect(length).toBeDefined();
+      expect(typeof length).toBe('number');
+      expect(length).toBeGreaterThan(0);
+    });
+
+    it('should select from info view', async () => {
+      const result = await connection.selectTop('info', 0, 100, [], []);
+
+      expect(result).toBeDefined();
+      expect(result.result).toBeDefined();
+      expect(result.result.length).toBe(1);
+
+      const info = result.result[0];
+      expect(info).toHaveProperty('redis_version');
+      expect(info).toHaveProperty('os');
+      expect(info).toHaveProperty('tcp_port');
+    });
+
+    it('should generate select top query', async () => {
+      const query = await connection.getQuerySelectTop('keys', 50);
+      expect(query).toBe('SCAN 0 MATCH * COUNT 50');
+    });
+  });
+
+  describe('Data Modification Operations', () => {
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should insert new keys via applyChanges', async () => {
+      const changes = {
+        inserts: [
+          {
+            table: 'keys',
+            data: [{ key: 'test:new:key' }]
+          }
+        ],
+        updates: [],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('GET test:new:key');
+      expect(result[0].rows[0].result).toBe('');
+    });
+
+    it('should update key values via applyChanges', async () => {
+      await connection.executeQuery('SET test:update "old value"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:update' }],
+            column: 'value',
+            value: 'new value'
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('GET test:update');
+      expect(result[0].rows[0].result).toBe('new value');
+    });
+
+    it('should rename keys via applyChanges', async () => {
+      await connection.executeQuery('SET test:old:name "value"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:old:name' }],
+            column: 'key',
+            value: 'test:new:name'
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const oldResult = await connection.executeQuery('GET test:old:name');
+      expect(oldResult[0].rows[0].result).toBeNull();
+
+      const newResult = await connection.executeQuery('GET test:new:name');
+      expect(newResult[0].rows[0].result).toBe('value');
+    });
+
+    it('should update TTL via applyChanges', async () => {
+      await connection.executeQuery('SET test:ttl "value"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:ttl' }],
+            column: 'ttl',
+            value: '300'
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('TTL test:ttl');
+      expect(result[0].rows[0].result).toBeGreaterThan(0);
+      expect(result[0].rows[0].result).toBeLessThanOrEqual(300);
+    });
+
+    it('should remove TTL via applyChanges (PERSIST)', async () => {
+      await connection.executeQuery('SETEX test:persist 100 "value"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:persist' }],
+            column: 'ttl',
+            value: '-1'
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('TTL test:persist');
+      expect(result[0].rows[0].result).toBe(-1);
+    });
+
+    it('should delete keys via applyChanges', async () => {
+      await connection.executeQuery('SET test:delete "value"');
+
+      const changes = {
+        inserts: [],
+        updates: [],
+        deletes: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:delete' }]
+          }
+        ]
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('GET test:delete');
+      expect(result[0].rows[0].result).toBeNull();
+    });
+
+    it('should update complex data types (list)', async () => {
+      await connection.executeQuery('LPUSH test:list "item1"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:list' }],
+            column: 'value',
+            value: JSON.stringify(['new1', 'new2', 'new3'])
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('LRANGE test:list 0 -1');
+      expect(result[0].rows.map(r => r.result)).toEqual(['new1', 'new2', 'new3']);
+    });
+
+    it('should update complex data types (hash)', async () => {
+      await connection.executeQuery('HSET test:hash field1 "value1"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:hash' }],
+            column: 'value',
+            value: JSON.stringify({ newfield1: 'newvalue1', newfield2: 'newvalue2' })
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('HGETALL test:hash');
+      expect(result[0].rows).toEqual([
+        { field: 'newfield1', value: 'newvalue1' },
+        { field: 'newfield2', value: 'newvalue2' }
+      ]);
+    });
+
+    it('should update complex data types (set)', async () => {
+      await connection.executeQuery('SADD test:set "member1"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:set' }],
+            column: 'value',
+            value: JSON.stringify(['newmember1', 'newmember2'])
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('SMEMBERS test:set');
+      const members = result[0].rows.map(r => r.result).sort();
+      expect(members).toEqual(['newmember1', 'newmember2']);
+    });
+
+    it('should update complex data types (sorted set)', async () => {
+      await connection.executeQuery('ZADD test:zset 1 "member1"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:zset' }],
+            column: 'value',
+            value: JSON.stringify([
+              { value: 'newmember1', score: 1 },
+              { value: 'newmember2', score: 2 }
+            ])
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('ZRANGE test:zset 0 -1');
+      expect(result[0].rows.map(r => r.result)).toEqual(['newmember1', 'newmember2']);
+    });
+
+    it('should truncate all keys (FLUSHDB)', async () => {
+      await connection.executeQuery('SET key1 "value1"');
+      await connection.executeQuery('SET key2 "value2"');
+
+      await connection.truncateAllTables();
+
+      const size = await connection.getTableLength();
+      expect(size).toBe(0);
+    });
+
+    it('should handle multiple changes in one transaction', async () => {
+      await connection.executeQuery('SET test:key1 "value1"');
+      await connection.executeQuery('SET test:key2 "value2"');
+
+      const changes = {
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:key3' }] }
+        ],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:key1' }],
+            column: 'value',
+            value: 'updated1'
+          }
+        ],
+        deletes: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:key2' }]
+          }
+        ]
+      };
+
+      await connection.applyChanges(changes);
+
+      const key1 = await connection.executeQuery('GET test:key1');
+      expect(key1[0].rows[0].result).toBe('updated1');
+
+      const key2 = await connection.executeQuery('GET test:key2');
+      expect(key2[0].rows[0].result).toBeNull();
+
+      const key3 = await connection.executeQuery('GET test:key3');
+      expect(key3[0].rows[0].result).toBe('');
+    });
+  });
+
+  describe('Error Handling', () => {
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should handle invalid commands gracefully', async () => {
+      const result = await connection.executeQuery('INVALIDCOMMAND arg1 arg2');
+      expect(result).toBeDefined();
+      expect(result[0].rows).toBeDefined();
+      expect(result[0].rows[0]).toHaveProperty('error');
+    });
+
+    it('should handle syntax errors gracefully', async () => {
+      const result = await connection.executeQuery('SET key');
+      expect(result).toBeDefined();
+      expect(result[0].rows).toBeDefined();
+      expect(result[0].rows[0]).toHaveProperty('error');
+    });
+
+    it('should handle operations on wrong data types', async () => {
+      await connection.executeQuery('SET test:wrongtype "string"');
+
+      const result = await connection.executeQuery('LPUSH test:wrongtype "item"');
+      expect(result).toBeDefined();
+      expect(result[0].rows[0]).toHaveProperty('error');
+    });
+  });
+
+  describe('Connection Management', () => {
+    it('should connect successfully', async () => {
+      expect(connection).toBeDefined();
+      // If we got here, connection already succeeded in beforeAll
+    });
+
+    it('should reconnect after disconnect', async () => {
+      await connection.disconnect();
+      await connection.connect();
+
+      const result = await connection.executeQuery('PING');
+      expect(result[0].rows[0].result).toBe('PONG');
+    });
+  });
+
+  describe('Comment Handling', () => {
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should ignore comment lines', async () => {
+      const commands = `
+        # This is a comment
+        SET test:key1 "value1"
+        # Another comment
+        SET test:key2 "value2"
+      `;
+
+      const results = await connection.executeQuery(commands);
+      expect(results.length).toBe(2); // Only 2 SET commands executed
+    });
+  });
+
+  describe('Read-Only Mode', () => {
+    let readOnlyConnection: BasicDatabaseClient<any>;
+
+    beforeAll(async () => {
+      const readOnlyConfig = { ...config };
+      readOnlyConfig.readOnlyMode = true;
+      const server = createServer(readOnlyConfig);
+      readOnlyConnection = server.createConnection('0');
+      await readOnlyConnection.connect();
+    });
+
+    afterAll(async () => {
+      if (readOnlyConnection) {
+        await readOnlyConnection.disconnect();
+      }
+    });
+
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should allow read-only commands', async () => {
+      await connection.executeQuery('SET test:readonly "value"');
+
+      const result = await readOnlyConnection.executeQuery('GET test:readonly');
+      expect(result[0].rows[0].result).toBe('value');
+    });
+
+    it('should block SET command in read-only mode', async () => {
+      const result = await readOnlyConnection.executeQuery('SET test:blocked "value"');
+      expect(result[0].rows[0]).toHaveProperty('error');
+      expect(result[0].rows[0].error).toContain('not allowed in Read-Only mode');
+    });
+
+    it('should block DEL command in read-only mode', async () => {
+      await connection.executeQuery('SET test:delete "value"');
+
+      const result = await readOnlyConnection.executeQuery('DEL test:delete');
+      expect(result[0].rows[0]).toHaveProperty('error');
+      expect(result[0].rows[0].error).toContain('not allowed in Read-Only mode');
+    });
+
+    it('should block LPUSH command in read-only mode', async () => {
+      const result = await readOnlyConnection.executeQuery('LPUSH test:list "item"');
+      expect(result[0].rows[0]).toHaveProperty('error');
+      expect(result[0].rows[0].error).toContain('not allowed in Read-Only mode');
+    });
+
+    it('should block HSET command in read-only mode', async () => {
+      const result = await readOnlyConnection.executeQuery('HSET test:hash field "value"');
+      expect(result[0].rows[0]).toHaveProperty('error');
+      expect(result[0].rows[0].error).toContain('not allowed in Read-Only mode');
+    });
+
+    it('should block SADD command in read-only mode', async () => {
+      const result = await readOnlyConnection.executeQuery('SADD test:set "member"');
+      expect(result[0].rows[0]).toHaveProperty('error');
+      expect(result[0].rows[0].error).toContain('not allowed in Read-Only mode');
+    });
+
+    it('should block ZADD command in read-only mode', async () => {
+      const result = await readOnlyConnection.executeQuery('ZADD test:zset 1 "member"');
+      expect(result[0].rows[0]).toHaveProperty('error');
+      expect(result[0].rows[0].error).toContain('not allowed in Read-Only mode');
+    });
+
+    it('should block FLUSHDB command in read-only mode', async () => {
+      const result = await readOnlyConnection.executeQuery('FLUSHDB');
+      expect(result[0].rows[0]).toHaveProperty('error');
+      expect(result[0].rows[0].error).toContain('not allowed in Read-Only mode');
+    });
+
+    it('should allow SCAN command in read-only mode', async () => {
+      await connection.executeQuery('SET test:scan1 "value1"');
+      await connection.executeQuery('SET test:scan2 "value2"');
+
+      const result = await readOnlyConnection.executeQuery('SCAN 0');
+      expect(result[0].rows).toBeDefined();
+      expect(result[0].rows.length).toBeGreaterThan(0);
+    });
+
+    it('should allow INFO command in read-only mode', async () => {
+      const result = await readOnlyConnection.executeQuery('INFO');
+      expect(result[0].rows).toBeDefined();
+      expect(result[0].fields).toBeDefined();
+    });
+  });
+
+  describe('Scanning with TYPE Filter', () => {
+    beforeEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+      // Create keys of different types
+      await connection.executeQuery('SET test:string:1 "value1"');
+      await connection.executeQuery('SET test:string:2 "value2"');
+      await connection.executeQuery('LPUSH test:list:1 "item1"');
+      await connection.executeQuery('LPUSH test:list:2 "item2"');
+      await connection.executeQuery('HSET test:hash:1 field "value"');
+      await connection.executeQuery('SADD test:set:1 "member"');
+      await connection.executeQuery('ZADD test:zset:1 1 "member"');
+    });
+
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should filter keys by string type', async () => {
+      const result = await connection.executeQuery('SCAN 0 TYPE string');
+      const keys = result[0].rows.map(r => r.value);
+
+      expect(keys.length).toBeGreaterThan(0);
+      keys.forEach((key: string) => {
+        if (key && key !== '0') { // Skip cursor
+          expect(key).toMatch(/test:string:/);
+        }
+      });
+    });
+
+    it('should filter keys by list type', async () => {
+      const result = await connection.executeQuery('SCAN 0 TYPE list');
+      const keys = result[0].rows.map(r => r.value).filter((k: string) => k !== '0');
+
+      expect(keys.length).toBeGreaterThan(0);
+      keys.forEach((key: string) => {
+        expect(key).toMatch(/test:list:/);
+      });
+    });
+
+    it('should filter keys by hash type', async () => {
+      const result = await connection.executeQuery('SCAN 0 TYPE hash');
+      const keys = result[0].rows.map(r => r.value).filter((k: string) => k !== '0');
+
+      expect(keys.length).toBeGreaterThan(0);
+      keys.forEach((key: string) => {
+        expect(key).toMatch(/test:hash:/);
+      });
+    });
+
+    it('should use selectTop with TYPE filter in pattern', async () => {
+      // Set up additional string keys
+      const result = await connection.selectTop('keys', 0, 100, [], [
+        { field: 'key', type: '=', value: 'test:string:*' }
+      ]);
+
+      expect(result.result.length).toBe(2);
+      result.result.forEach((row: any) => {
+        expect(row.type).toBe('string');
+        expect(row.key).toMatch(/test:string:/);
+      });
+    });
+  });
+
+  describe('Stream Data Type via applyChanges', () => {
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should update stream values via applyChanges', async () => {
+      // Create initial stream
+      await connection.executeQuery('XADD test:stream * field1 value1 field2 value2');
+
+      const streamData = [
+        { id: '*', message: { newfield1: 'newvalue1', newfield2: 'newvalue2' } },
+        { id: '*', message: { newfield3: 'newvalue3' } }
+      ];
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:stream' }],
+            column: 'value',
+            value: JSON.stringify(streamData)
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('XLEN test:stream');
+      expect(result[0].rows[0].result).toBe(2);
+
+      const rangeResult = await connection.executeQuery('XRANGE test:stream - +');
+      expect(rangeResult[0].rows.length).toBe(2);
+    });
+
+    it('should retrieve stream data correctly from selectTop', async () => {
+      await connection.executeQuery('XADD test:stream:1 * field1 value1');
+      await connection.executeQuery('XADD test:stream:1 * field2 value2');
+
+      const result = await connection.selectTop('keys', 0, 100, [], [
+        { field: 'key', type: '=', value: 'test:stream:*' }
+      ]);
+
+      const streamKey = result.result.find((r: any) => r.key === 'test:stream:1');
+      expect(streamKey).toBeDefined();
+      expect(streamKey.type).toBe('stream');
+      expect(Array.isArray(streamKey.value)).toBe(true);
+      expect(streamKey.value.length).toBe(2);
+      expect(streamKey.value[0]).toHaveProperty('id');
+      expect(streamKey.value[0]).toHaveProperty('message');
+    });
+
+    it('should create new stream via applyChanges', async () => {
+      const streamData = [
+        { id: '*', message: { field1: 'value1' } }
+      ];
+
+      const changes = {
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:newstream' }] }
+        ],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:newstream' }],
+            column: 'value',
+            value: JSON.stringify(streamData)
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const typeResult = await connection.executeQuery('TYPE test:newstream');
+      expect(typeResult[0].rows[0].result).toBe('stream');
+
+      const lenResult = await connection.executeQuery('XLEN test:newstream');
+      expect(lenResult[0].rows[0].result).toBe(1);
+    });
+  });
+
+  describe('Empty Value Edge Cases', () => {
+    afterEach(async () => {
+      await connection.executeQuery('FLUSHDB');
+    });
+
+    it('should handle empty list updates', async () => {
+      await connection.executeQuery('LPUSH test:list "item1" "item2"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:list' }],
+            column: 'value',
+            value: JSON.stringify([])
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const existsResult = await connection.executeQuery('EXISTS test:list');
+      expect(existsResult[0].rows[0].result).toBe(0); // Key should be deleted when empty
+    });
+
+    it('should handle empty set updates', async () => {
+      await connection.executeQuery('SADD test:set "member1" "member2"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:set' }],
+            column: 'value',
+            value: JSON.stringify([])
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const existsResult = await connection.executeQuery('EXISTS test:set');
+      expect(existsResult[0].rows[0].result).toBe(0); // Key should be deleted when empty
+    });
+
+    it('should handle empty hash updates', async () => {
+      await connection.executeQuery('HSET test:hash field1 "value1" field2 "value2"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:hash' }],
+            column: 'value',
+            value: JSON.stringify({})
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const existsResult = await connection.executeQuery('EXISTS test:hash');
+      expect(existsResult[0].rows[0].result).toBe(0); // Key should be deleted when empty
+    });
+
+    it('should handle empty string updates', async () => {
+      await connection.executeQuery('SET test:string "value"');
+
+      const changes = {
+        inserts: [],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:string' }],
+            column: 'value',
+            value: ''
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('GET test:string');
+      expect(result[0].rows[0].result).toBe('');
+    });
+
+    it('should handle list with empty string values', async () => {
+      const changes = {
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:emptystrings' }] }
+        ],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:emptystrings' }],
+            column: 'value',
+            value: JSON.stringify(['', 'value', ''])
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('LRANGE test:emptystrings 0 -1');
+      expect(result[0].rows.map(r => r.result)).toEqual(['', 'value', '']);
+    });
+
+    it('should handle hash with empty string values', async () => {
+      const changes = {
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:emptyhash' }] }
+        ],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:emptyhash' }],
+            column: 'value',
+            value: JSON.stringify({ field1: '', field2: 'value', field3: '' })
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('HGETALL test:emptyhash');
+      expect(result[0].rows).toEqual([
+        { field: 'field1', value: '' },
+        { field: 'field2', value: 'value' },
+        { field: 'field3', value: '' }
+      ]);
+    });
+
+    it('should handle inserting key with no value (empty string)', async () => {
+      const changes = {
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:emptyinsert' }] }
+        ],
+        updates: [],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const existsResult = await connection.executeQuery('EXISTS test:emptyinsert');
+      expect(existsResult[0].rows[0].result).toBe(1);
+
+      const getResult = await connection.executeQuery('GET test:emptyinsert');
+      expect(getResult[0].rows[0].result).toBe('');
+    });
+
+    it('should handle zset with zero scores', async () => {
+      const zsetData = [
+        { value: 'member1', score: 0 },
+        { value: 'member2', score: 0 },
+        { value: 'member3', score: 1 }
+      ];
+
+      const changes = {
+        inserts: [
+          { table: 'keys', data: [{ key: 'test:zeroscores' }] }
+        ],
+        updates: [
+          {
+            table: 'keys',
+            primaryKeys: [{ column: 'key', value: 'test:zeroscores' }],
+            column: 'value',
+            value: JSON.stringify(zsetData)
+          }
+        ],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      const result = await connection.executeQuery('ZRANGE test:zeroscores 0 -1 WITHSCORES');
+      // node-redis transforms WITHSCORES into objects with value and score properties
+      expect(result[0].rows.length).toBe(3); // 3 members as objects
+      expect(result[0].rows[0]).toEqual({ value: 'member1', score: 0 });
+      expect(result[0].rows[1]).toEqual({ value: 'member2', score: 0 });
+      expect(result[0].rows[2]).toEqual({ value: 'member3', score: 1 });
+
+      // Check that zero scores are preserved
+      const scoreResults = await connection.executeQuery('ZSCORE test:zeroscores member1');
+      expect(Number(scoreResults[0].rows[0].result)).toBe(0);
+    });
+
+    it('should handle string values that look like JSON', async () => {
+      // To store the literal string "[1,2,3]", you need to double-stringify
+      const changes = {
+        inserts: [{ table: 'keys', data: [{ key: 'test:jsonstring' }] }],
+        updates: [{
+          table: 'keys',
+          primaryKeys: [{ column: 'key', value: 'test:jsonstring' }],
+          column: 'value',
+          value: JSON.stringify("[1,2,3]") // Double-stringified: "\"[1,2,3]\""
+        }],
+        deletes: []
+      };
+
+      await connection.applyChanges(changes);
+
+      // Verify it's a string, not a list
+      const typeResult = await connection.executeQuery('TYPE test:jsonstring');
+      expect(typeResult[0].rows[0].result).toBe('string');
+
+      const valueResult = await connection.executeQuery('GET test:jsonstring');
+      expect(valueResult[0].rows[0].result).toBe('[1,2,3]');
     });
   });
 });

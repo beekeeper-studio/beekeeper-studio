@@ -33,6 +33,7 @@
     "./entity-list": "./dist/entity-list.js",
     "./sql-text-editor": "./dist/sql-text-editor.js",
     "./text-editor": "./dist/text-editor.js",
+    "./lib/components/text-editor/extensions/redisCommands.json": "./lib/components/text-editor/extensions/redisCommands.json",
     "./mongo-shell": "./dist/mongo-shell.js",
     "./mongo-shell/state": "./dist/mongo-shell/state.js",
     "./super-formatter": "./dist/super-formatter.js",
