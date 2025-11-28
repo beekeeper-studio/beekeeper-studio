@@ -134,10 +134,12 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['tables', 'connection']),
+    ...mapState(['tables', 'connection', 'usedConfig']),
     ...mapGetters(['schemas', 'dialect', 'schemaTables', 'dialectData']),
     enabled() {
-      return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData?.disabledFeatures?.relations;
+      return !this.usedConfig.readOnlyMode &&
+        !this.dialectData.disabledFeatures?.alter?.everything &&
+        !this.dialectData?.disabledFeatures?.relations;
     },
     hotkeys() {
       if (!this.active) return {}
@@ -258,7 +260,7 @@ export default Vue.extend({
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
       ]
-      return this.canDrop ? [...results, trashButton(this.removeRow)] : results
+      return this.canDrop && !this.usedConfig.readOnlyMode ? [...results, trashButton(this.removeRow)] : results
     },
     tableData() {
       return this.properties.relations || []

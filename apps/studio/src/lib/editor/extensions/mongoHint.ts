@@ -37,7 +37,17 @@ async function completionSource(
 
   const cmd = context.state.doc.sliceString(start, end);
 
-  const completions = await getCompletionsFn(cmd);
+  let completions: string[];
+  try {
+    completions = await getCompletionsFn(cmd);
+
+    if (!completions || completions.length === 0) {
+      return null;
+    }
+  } catch (error) {
+    log.error("[completionSource] Error getting completions:", error);
+    return null;
+  }
 
   const options = completions.map((c) => ({
     label: c

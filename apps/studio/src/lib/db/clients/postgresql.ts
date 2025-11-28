@@ -122,7 +122,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       backDirFormat: true,
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard', 'ilike']
     };
   }
 

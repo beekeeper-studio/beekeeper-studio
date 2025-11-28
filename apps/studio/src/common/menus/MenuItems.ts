@@ -151,7 +151,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     },
     importSqlFiles: {
       id: 'import-sql-files',
-      label: "Import SQL Files",
+      label: "Import Saved Queries",
       accelerator: "CommandOrControl+I",
       click: actionHandler.importSqlFiles,
       showWhenConnected: true,
@@ -183,7 +183,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'menu-secondary-sidebar',
       label: 'Toggle Secondary Sidebar',
       // accelerator: "Alt+S",
-      click: actionHandler.toggleSecondarySidebar,  
+      click: actionHandler.toggleSecondarySidebar,
       enabled: false,
     },
     themeToggle: {

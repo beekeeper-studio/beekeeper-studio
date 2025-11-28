@@ -114,9 +114,10 @@ export interface IConnectionHandlers {
   'conn/azureCancelAuth': ({ sId }: { sId: string }) => Promise<void>
   'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
-  'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>,
 
   'conn/getQueryForFilter': ({ filter, sId }: { filter: TableFilter, sId: string }) => Promise<string>,
+  'conn/getFilteredDataCount': ({ table, schema, filter, sId }: { table: string, schema: string | null, filter: string, sId: string }) => Promise<string>
 
   'conn/reserveConnection': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
   'conn/releaseConnection': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
@@ -573,6 +574,10 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.getQueryForFilter(filter);
   },
 
+  'conn/getFilteredDataCount': async function({ table, schema = null, filter, sId }: { table: string, schema: string | null, filter: string, sId: string }): Promise<string> {
+    checkConnection(sId)
+    return await state(sId).connection.getFilteredDataCount(table, schema, filter)
+  },
   'conn/reserveConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.reserveConnection(tabId);

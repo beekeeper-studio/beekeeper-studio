@@ -181,7 +181,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(['dialect', 'dialectData']),
-    ...mapState(['database', 'connection']),
+    ...mapState(['database', 'connection', 'usedConfig']),
     hotkeys() {
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshColumns,
@@ -192,7 +192,8 @@ export default Vue.extend({
     },
     editable() {
       // (sept 23) we don't need a primary key to make schemas editable
-      return this.table.entityType === 'table' &&
+      return !this.usedConfig.readOnlyMode &&
+        this.table.entityType === 'table' &&
         !this.dialectData.disabledFeatures?.alter?.everything
     },
     notice() {
@@ -399,6 +400,7 @@ export default Vue.extend({
     // submission methods
     async submitApply(): Promise<void> {
       try {
+        if (this.usedConfig.readOnlyMode) return;
         this.error = null
         const changes = this.collectChanges()
         await this.connection.alterTable(changes);
@@ -415,6 +417,7 @@ export default Vue.extend({
       }
     },
     async submitSql(): Promise<void> {
+      if (this.usedConfig.readOnlyMode) return;
       try {
         this.error = null
         const changes = this.collectChanges()
@@ -444,6 +447,7 @@ export default Vue.extend({
     },
     // table edit callbacks
     async addRow(): Promise<void> {
+      if (this.usedConfig.readOnlyMode) return;
       if (this.disabledFeatures?.alter?.addColumn) {
         this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
       }
@@ -458,6 +462,7 @@ export default Vue.extend({
       // but right now if it fails it breaks the whole table.
     },
     removeRow(_e, cell: CellComponent): void {
+      if (this.usedConfig.readOnlyMode) return;
       const row = cell.getRow()
       const s = new Set(this.reorderedRows)
 
@@ -485,6 +490,7 @@ export default Vue.extend({
       }
     },
     movedRows (row) {
+      if (this.usedConfig.readOnlyMode) return;
       const s = new Set(this.reorderedRows)
       s.add(row)
 
