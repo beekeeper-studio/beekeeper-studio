@@ -1385,11 +1385,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
   async commitTransaction(tabId: number): Promise<void> {
     const conn = this.peekConnection(tabId);
     await conn.transaction.commit();
+    conn.transaction = null;
   }
 
   async rollbackTransaction(tabId: number): Promise<void> {
     const conn = this.peekConnection(tabId);
     await conn.transaction.rollback();
+    conn.transaction = null;
   }
 
   parseQueryResultColumns(qr: FirebirdResult): BksField[] {

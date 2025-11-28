@@ -1321,6 +1321,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         this.showKeepAlive = false;
         this.maybeCloseWarningNoty();
         await this.connection.commitTransaction(this.tab.id);
+        await this.connection.releaseConnection(this.tab.id);
         this.hasActiveTransaction = false;
         this.$noty.success("Successfully committed transaction")
 
@@ -1331,6 +1332,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
       async manualRollback() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
         await this.connection.rollbackTransaction(this.tab.id)
+        await this.connection.releaseConnection(this.tab.id);
         this.showKeepAlive = false;
         this.maybeCloseWarningNoty();
         this.hasActiveTransaction = false;
