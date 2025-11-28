@@ -192,13 +192,13 @@ export default Vue.extend({
     },
     async openPluginPage({ id }) {
       this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
+      this.selectedPluginReadme = "";
       this.loadingPluginReadme = true;
       try {
         const info = await this.$util.send("plugin/repository", { id });
         this.selectedPluginReadme = info.readme;
       } catch (e) {
-        this.$noty.error(`Failed to fetch plugin readme: ${e.message}`);
-        this.selectedPluginReadme = `Failed to fetch plugin readme: ${e.message}`;
+        log.warn(e);
       }
       this.loadingPluginReadme = false;
     },

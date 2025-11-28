@@ -11,7 +11,7 @@
         </template>
         <template v-else>{{ plugin.author }}</template>
       </div>
-      <a :href="`https://github.com/${plugin.repo}`">
+      <a v-if="plugin.repo" :href="`https://github.com/${plugin.repo}`">
         <span class="flex">
           <i class="material-icons">link</i>
           <span>&nbsp;</span>
@@ -78,7 +78,7 @@
       <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
         <i class="material-icons">error_outline</i>
         <div class="alert-body expand">
-          <span>This plugin requires version {{ plugin.minAppVersion }} or newer. Please upgrade your Beekeeper Studio or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install</a> a compatible plugin version.</span>
+          <span>This plugin was not loaded because it requires Beekeeper Studio {{ plugin.minAppVersion }}+. Please upgrade the app or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install a compatible plugin version</a>.</span>
         </div>
       </div>
       <div class="alert alert-danger" v-if="plugin.error">
@@ -92,6 +92,7 @@
         </div>
       </div>
     </div>
+    <div class="divider" v-if="rawHtmlContent" />
     <div class="markdown-content">
       <div v-if="loadingMarkdown" class="loading">Loading plugin readme</div>
       <div v-html="rawHtmlContent" />

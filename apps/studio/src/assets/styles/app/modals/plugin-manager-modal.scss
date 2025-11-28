@@ -31,6 +31,7 @@
   .plugin-list-container {
     padding: 0.5rem 0 0;
     flex-grow: 1;
+    flex-basis: 35%;
 
     >.description {
       padding-inline: $gutter-h;
@@ -110,6 +111,7 @@
     overflow-y: auto;
     border-left: 1px solid rgba($theme-base, 0.1);
     flex-grow: 1;
+    flex-basis: 65%;
 
     a:hover, a:hover * {
       &:not(:has(>*)):not(.material-icons) {
@@ -122,7 +124,6 @@
       flex-direction: column;
       gap: 0.5rem;
       padding-bottom: 1rem;
-      border-bottom: 1px solid rgba($theme-base, 0.1);
 
       .title {
         font-size: 1.5rem;
@@ -137,6 +138,7 @@
 
       .description {
         color: rgba($theme-base, 0.7);
+        line-height: 1.5;
       }
 
       .actions {
@@ -151,6 +153,11 @@
         color: $brand-info;
         opacity: 0.8;
       }
+    }
+
+    .divider {
+      width: 100%;
+      border-bottom: 1px solid rgba($theme-base, 0.1);
     }
 
     .markdown-content {
