@@ -15,7 +15,7 @@
         <div class="status-error" v-if="!plugin.loadable && plugin.installed">
           This plugin requires version {{ plugin.minAppVersion }} or newer.
         </div>
-        <div class="status-error" v-if="plugin.error">
+        <div class="status-error" v-if="plugin.error" style="white-space: pre-wrap;">
           <template v-if="plugin.error.toString?.().includes('not compatible')">
             {{ plugin.error.toString().split("Please upgrade")[0] }}
           </template>

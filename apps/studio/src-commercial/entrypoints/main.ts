@@ -28,6 +28,7 @@ import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
+import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -227,6 +228,7 @@ app.on('ready', async () => {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
       initializeSecurity(app);
+      initializeFileHelpers();
       await createUtilityProcess()
 
       await buildWindow(settings)

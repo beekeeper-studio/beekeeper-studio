@@ -185,7 +185,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return [];
   }
 
-  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return [];
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
     return [];
   }
 
