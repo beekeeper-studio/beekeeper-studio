@@ -106,7 +106,7 @@ import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { mapGetters, mapState } from 'vuex'
-import { CreateRelationSpec, Dialect, DialectTitles, FormatterDialect, RelationAlterations } from '@shared/lib/dialects/models'
+import { CreateRelationSpec, Dialect, DialectTitles, FormatterDialect, RelationAlterations, TableKey } from '@shared/lib/dialects/models'
 import { TableColumn, TableOrView } from '@/lib/db/models'
 import _ from 'lodash'
 import { format } from 'sql-formatter'
@@ -263,7 +263,8 @@ export default Vue.extend({
       return this.canDrop && !this.usedConfig.readOnlyMode ? [...results, trashButton(this.removeRow)] : results
     },
     tableData() {
-      return this.properties.relations || []
+      return (this.properties.relations || [])
+        .filter((r: TableKey) => r.direction === "outgoing")
     },
   },
   watch: {

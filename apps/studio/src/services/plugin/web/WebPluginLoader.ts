@@ -144,30 +144,42 @@ export default class WebPluginLoader {
 
       switch (request.name) {
         // ========= READ ACTIONS ===========
+        case "getSchemas":
+          response.result = await this.context.utility.send("conn/listSchemas");
+          break;
         case "getTables":
-          response.result = this.pluginStore.getTables(request.args.schema) as GetTablesResponse['result'];
+          response.result = this.context.store.getTables(
+            request.args.schema
+          ) as GetTablesResponse['result'];
           break;
         case "getColumns":
-          response.result = await this.pluginStore.getColumns(
+          response.result = await this.context.store.getColumns(
             request.args.table,
             request.args.schema
           );
           break;
         case "getTableKeys":
-          response.result = await this.utilityConnection.send(
-              'conn/getTableKeys',
+        case "getOutgoingKeys":
+          response.result = await this.context.utility.send(
+              'conn/getOutgoingKeys',
+            { table: request.args.table, schema: request.args.schema }
+          );
+          break;
+        case "getIncomingKeys":
+          response.result = await this.context.utility.send(
+              'conn/getIncomingKeys',
             { table: request.args.table, schema: request.args.schema }
           );
           break;
         case "getTableIndexes":
-          response.result = await this.utilityConnection
+          response.result = await this.context.utility
             .send("conn/listTableIndexes", {
               table: request.args.table,
               schema: request.args.schema,
             });
           break;
         case "getPrimaryKeys":
-          response.result = await this.utilityConnection
+          response.result = await this.context.utility
             .send("conn/getPrimaryKeys", {
               table: request.args.table,
               schema: request.args.schema,
