@@ -13,7 +13,7 @@
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
         @contextmenu="$bks.openMenu({id: headerContextMenuId, item: tab, options: contextOptions, event: $event})"
-        :class="{ active: selected }"
+        :class="{ active: selected, 'active-transaction': isTransaction }"
       >
         <tab-icon :tab="tab" />
         <span
@@ -218,6 +218,9 @@ import _ from 'lodash'
       title() {
         return this.queryTabTitle || this.tableTabTitle || "Unknown"
       },
+      isTransaction() {
+        return this.tab.isTransaction === true;
+      }
     }
   }
 

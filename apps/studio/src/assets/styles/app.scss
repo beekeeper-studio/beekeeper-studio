@@ -13,7 +13,7 @@
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
-
+@import './themes/themes.css';
 
 body.theme-system {
   @media (prefers-color-scheme: dark) {

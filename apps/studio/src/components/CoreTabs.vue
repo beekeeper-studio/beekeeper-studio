@@ -85,7 +85,8 @@
           :active="activeTab?.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
-        />
+          @update-tab="updateTab"
+         />
         <Shell
           v-if="tab.tabType === 'shell'"
           :active="activeTab?.id === tab.id"
@@ -397,9 +398,9 @@ export default Vue.extend({
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection', 'connectionType', 'usedConfig']),
-    ...mapGetters({ 
-       'dialect': 'dialect', 
-       'dialectData': 'dialectData', 
+    ...mapGetters({
+       'dialect': 'dialect',
+       'dialectData': 'dialectData',
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
     }),
@@ -493,6 +494,10 @@ export default Vue.extend({
     this.$root.$refs.CoreTabs = this;
   },
   methods: {
+    async updateTab(tab: TransportOpenTab) {
+      const newTab = Object.assign({}, tab);
+      await this.$store.commit('tabs/replaceTab', newTab);
+    },
     showUpgradeModal() {
       this.$root.$emit(AppEvent.upgradeModal)
     },
