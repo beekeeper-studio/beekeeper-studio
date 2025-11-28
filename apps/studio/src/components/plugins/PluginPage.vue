@@ -83,7 +83,7 @@
       </div>
       <div class="alert alert-danger" v-if="plugin.error">
         <i class="material-icons">error_outline</i>
-        <div class="alert-body expand">
+        <div class="alert-body expand" style="white-space: pre-wrap;">
           <span v-if="plugin.error.toString?.().includes('not compatible')">
             {{ plugin.error }}
             Or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install</a> a compatible plugin version.
@@ -99,16 +99,15 @@
 </template>
 
 <script lang="ts">
-import Vue, { PropType } from "vue";
+import Vue from "vue";
 import DOMPurify from "dompurify";
-import { CommonPluginInfo } from "@/services/plugin/types";
 import { marked } from "marked";
 
 export default Vue.extend({
   name: "PluginPage",
   props: {
     plugin: {
-      type: Object as PropType<CommonPluginInfo>,
+      type: Object, // FIXME (azmi): forgot what type this is!!!
       required: true,
     },
     markdown: {

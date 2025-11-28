@@ -13,7 +13,6 @@ import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
-import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 const log = rawLog.scope("PluginManager");
 
@@ -53,7 +52,7 @@ export default class PluginManager {
 
     const installedPlugins = this.fileManager.scanPlugins();
 
-    log.debug(this.installedPlugins);
+    log.debug("Installed plugins:", installedPlugins);
 
     await this.loadPluginSettings();
 
@@ -109,6 +108,8 @@ export default class PluginManager {
     return this.plugins;
   }
 
+  /** Plugin is not loadable if the **current app version** is lower than the
+   * **minimum app version** required by the plugin. */
   isPluginLoadable(manifest: Manifest): boolean {
     if (!manifest.minAppVersion) {
       return true;
@@ -135,8 +136,10 @@ export default class PluginManager {
 
       if (!this.isPluginLoadable(info.latestRelease.manifest)) {
         throw new NotSupportedPluginError(
-          `Plugin "${info.latestRelease.manifest.id}" is not compatible with app version "${this.options.appVersion}". ` +
-          `Please upgrade Beekeeper Studio to use this plugin.`
+          `${info.latestRelease.manifest.name} requires a newer version of Beekeeper Studio.\n`
+            + `Installed app version: ${this.options.appVersion}\n`
+            + `Required: ≥ ${info.latestRelease.manifest.minAppVersion}\n`
+            + `Please update Beekeeper Studio to install this plugin.`
         );
       }
 

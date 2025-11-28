@@ -161,10 +161,12 @@
         padding: 1rem;
         border-radius: 0.375rem;
         background-color: rgba($theme-base, 0.03);
+        overflow: auto;
       }
 
       img {
         max-width: 100%;
+        height: auto;
         -webkit-user-drag: none;
       }
     }
