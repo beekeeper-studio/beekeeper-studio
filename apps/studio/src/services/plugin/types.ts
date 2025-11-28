@@ -1,8 +1,9 @@
-import { JsonValue } from "@/types";
 import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import type { IWindowDialog } from "@/lib/NativeWrapper";
+import { FileHelpers } from "@/types";
 
 /**
  * The kind of the tab. There is only one kind currently:
@@ -174,6 +175,7 @@ export type WebPluginContext = {
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
+  fileHelpers: FileHelpers;
 }
 
 export type PluginContext = {
