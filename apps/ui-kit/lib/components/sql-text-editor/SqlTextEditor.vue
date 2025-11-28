@@ -8,11 +8,14 @@ import props from "./props";
 import { SqlTextEditor } from "./SqlTextEditor";
 import { Entity } from "../types";
 import {
+  ContextMenuExtension,
   InternalContextItem,
 } from "../context-menu";
 import { format } from "sql-formatter";
 import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";
+import { TextEditorMenuContext } from "../text-editor";
+import { SqlTextEditorMenuContext } from "./types";
 
 export default Vue.extend({
   data() {
@@ -64,8 +67,12 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    contextMenuItemsModifier(_event, _target, items: InternalContextItem<unknown>[]): InternalContextItem<unknown>[] {
-      return [
+    contextMenuItemsModifier(
+      _event,
+      items: InternalContextItem<unknown>[],
+      context: TextEditorMenuContext
+    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
+      const modifiedItems = [
         ...items,
         {
           label: `Format Query`,
@@ -74,6 +81,13 @@ export default Vue.extend({
           shortcut: "Control+Shift+F",
         }
       ];
+      return {
+        items: modifiedItems,
+        context: {
+          ...context,
+          selectedQuery: this.selectedQuery,
+        },
+      };
     },
 
     // Non-TextEditor overrides
@@ -86,13 +100,7 @@ export default Vue.extend({
   },
 
   mounted() {
-    this.internalContextMenuItems = this.contextMenuItemsModifier;
-    this.internalMenuContextModifiers.push((context) => {
-      return {
-        ...context,
-        selectedQuery: this.selectedQuery,
-      };
-    });
+    this.contextMenuExtensions.push(this.contextMenuItemsModifier);
   },
 });
 </script>

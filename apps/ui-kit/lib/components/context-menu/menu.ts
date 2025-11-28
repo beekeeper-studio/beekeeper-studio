@@ -55,6 +55,7 @@ export function openMenu<Item>(args: MenuProps<Item>) {
 export type InternalContextItem<Target> = MenuItem<Target> & Required<Pick<MenuItem<Target>, 'id'>>;
 export type MenuItemsExtension<Target = unknown> = (event: Event, target: Target, defaultItems: InternalContextItem<Target>[]) => MenuItem[]
 export type CustomMenuItems = MenuItem[] | MenuItemsExtension
+export type ContextMenuExtension<Context = unknown> = (event: Event, defaultItems: InternalContextItem<Context>[], context: Context) => { items: InternalContextItem<Context>[]; context: Context };
 
 export function useCustomMenuItems<Target>(
   event: Event,

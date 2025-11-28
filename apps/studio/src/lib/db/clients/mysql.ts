@@ -1234,7 +1234,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     };
   }
 
