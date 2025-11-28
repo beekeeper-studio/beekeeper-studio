@@ -93,6 +93,7 @@
       </div>
     </div>
     <div class="markdown-content">
+      <div v-if="loadingMarkdown" class="loading">Loading plugin readme</div>
       <div v-html="rawHtmlContent" />
     </div>
   </div>
@@ -110,9 +111,8 @@ export default Vue.extend({
       type: Object, // FIXME (azmi): forgot what type this is!!!
       required: true,
     },
-    markdown: {
-      type: String,
-    },
+    markdown: String,
+    loadingMarkdown: Boolean,
   },
   data() {
     return {
@@ -151,3 +151,21 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.loading {
+  margin-top: 0.5rem;
+  color: var(--text);
+}
+
+.loading::after {
+  content: "...";
+  animation: dots 1s steps(2) infinite;
+}
+
+@keyframes dots {
+  0%   { content: "..."; }
+  50%  { content: ".."; }
+  100% { content: "..."; }
+}
+</style>
