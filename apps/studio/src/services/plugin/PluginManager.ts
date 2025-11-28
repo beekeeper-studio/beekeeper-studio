@@ -136,10 +136,7 @@ export default class PluginManager {
 
       if (!this.isPluginLoadable(info.latestRelease.manifest)) {
         throw new NotSupportedPluginError(
-          `${info.latestRelease.manifest.name} requires a newer version of Beekeeper Studio.\n`
-            + `Installed app version: ${this.options.appVersion}\n`
-            + `Required: ≥ ${info.latestRelease.manifest.minAppVersion}\n`
-            + `Please update Beekeeper Studio to install this plugin.`
+          `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
         );
       }
 
