@@ -33,6 +33,10 @@ export function convertParamsForReplacement(placeholders: string[], values: stri
 }
 
 export function deparameterizeQuery(queryText: string, dialect: Dialect, params: ParamItems | string[], paramTypes: Options["paramTypes"]) {
+  if (dialect === 'redis') {
+    // formatting breaks redis multi-line command execution
+    return queryText;
+  }
   // for if we want custom params in the future
   // paramTypes.custom = paramTypes.custom.map((reg: string) => ({ regex: reg }));
   const result = format(queryText, {

@@ -56,6 +56,7 @@
         <table-length
           v-if="!minimalMode"
           :table="table"
+          :filters="filters"
         />
         <a
           @click="refreshTable"
@@ -207,7 +208,8 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`Add row (${$bksConfig.keybindings.general.addRow})`"
+          v-tooltip="addRowTooltip"
+          :disabled="usedConfig.readOnlyMode"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -237,7 +239,7 @@
             <x-menuitem @click="showColumnFilterModal">
               <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
-            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile">
+            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile || usedConfig.readOnlyMode">
               <x-label>
                 Import from file
                 <i
@@ -500,11 +502,20 @@ export default Vue.extend({
       return this.pendingChanges.deletes.length > 0
     },
     editable() {
-      return this.primaryKeys?.length &&
+      return !this.usedConfig.readOnlyMode &&
+        this.primaryKeys?.length &&
         this.table.entityType === 'table' &&
         !this.dialectData.disabledFeatures?.tableTable
     },
+    addRowTooltip() {
+      return this.usedConfig.readOnlyMode ?
+        "Read Only Mode is enabled for this connection. Cannot add rows." :
+        `Add row (${this.$bksConfig.keybindings.general.addRow})`;
+    },
     readOnlyNotice() {
+      if (this.usedConfig.readOnlyMode) {
+        return "Read Only Mode is enabled for this connection. Editing is disabled."
+      }
       return this.dialectData.notices?.tableTable ||
         "Tables without a primary key column only support inserts. Editing of existing records is disabled."
     },
@@ -1145,10 +1156,10 @@ export default Vue.extend({
             .filter(v => v !== null && v !== undefined);
           return selectedValues.length > 0 ? selectedValues : [clickedValue];
         }
-        
+
         case 'like':
           return `%${clickedValue}%`;
-        
+
         default:
           return clickedValue;
       }
@@ -1165,9 +1176,9 @@ export default Vue.extend({
             label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
-              const newFilter = [{ 
-                field: cell.getField(), 
-                type: s, 
+              const newFilter = [{
+                field: cell.getField(),
+                type: s,
                 value: this.getActionValue(cell, s)
               }]
               this.tableFilters = newFilter
@@ -2037,6 +2048,14 @@ export default Vue.extend({
       ])
     },
     handleJsonValueChange({key, value}) {
+      const column = this.table.columns.find((c) => c.columnName === key);
+      if (column) {
+        const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+        if (isJsonColumn && _.isObject(value)) {
+          value = JSON.stringify(value)
+        }
+      }
       this.selectedRow?.getCell(key).setValue(value)
     },
     debouncedSaveTab: _.debounce(function(tab) {

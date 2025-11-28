@@ -68,15 +68,15 @@ sudo dnf install beekeeper-studio
 sudo yum install beekeeper-studio
 ```
 
-## AUR
+## Arch Linux (and derivatives)
 
-AUR files are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
+Pacman (installed as local packages using `pacman -U`) packages are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
 
 Real AUR integration coming soon.
 
 ## Flatpak
 
-AUR files are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
+Flatpak (.flatpak) files are provided separately for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
 
 Flathub integration coming soon.
 

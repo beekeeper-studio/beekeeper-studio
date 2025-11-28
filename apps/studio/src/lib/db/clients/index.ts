@@ -257,7 +257,6 @@ export const CLIENTS: ClientConfig[] = [
     defaultPort: 6379,
     defaultDatabase: '0',
     disabledFeatures: [
-      'server:ssl',
       'server:socketPath',
       'server:socketPathWithCustomPort',
       'server:schema',

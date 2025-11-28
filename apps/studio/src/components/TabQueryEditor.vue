@@ -565,10 +565,18 @@
           return query;
         }
 
-        const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
-        const values = Object.values(this.queryParameterValues) as string[];
-        const convertedParams = convertParamsForReplacement(placeholders, values);
-        query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect]?.paramTypes);
+        try {
+          const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
+          if (_.isEmpty(placeholders)) {
+            return query;
+          }
+          const values = Object.values(this.queryParameterValues) as string[];
+          const convertedParams = convertParamsForReplacement(placeholders, values);
+          query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect]?.paramTypes);
+        } catch (ex) {
+          log.error("Unable to deparameterize query", ex)
+        }
+
         return query;
       },
       unsavedChanges() {
@@ -629,6 +637,10 @@
         return FormatterDialect(dialectFor(this.queryDialect))
       },
       paramTypes() {
+        // TODO: Parameter replacement for redis
+        if (this.dialect === 'redis') {
+          return {};
+        }
         return this.$bksConfig.db[this.dialect]?.paramTypes
       },
       identifierDialect() {
