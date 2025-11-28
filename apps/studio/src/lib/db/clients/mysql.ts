@@ -439,7 +439,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string,
     connection?: Connection
   ): Promise<ExtendedTableColumn[]> {
-    const hasGeneratedSupport = !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
+    const hasGeneratedSupport = this.connectionType == 'mariadb' ?
+     !isVersionLessThanOrEqual(this.versionInfo, { major: 10, minor: 2, patch: 4 }):
+     !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
     const clause = table ? `AND table_name = ?` : "";
     const sql = `
       SELECT
@@ -705,10 +707,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return Number(totalRecords);
   }
 
-  async getTableKeys(
+  async getOutgoingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
+    // Query for foreign keys FROM this table (referencing other tables)
     const sql = `
     SELECT
       cu.constraint_name as 'constraint_name',
@@ -775,6 +778,73 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         toSchema: "",
         fromSchema: "",
         isComposite: true
+      };
+    });
+  }
+
+  async getIncomingKeys(
+    table: string,
+    _schema?: string
+  ): Promise<TableKey[]> {
+    // Query for foreign keys TO this table (other tables referencing this table)
+    const incomingSQL = `
+    SELECT
+      cu.constraint_name as 'constraint_name',
+      cu.table_name as 'from_table',
+      cu.column_name as 'column_name',
+      cu.referenced_table_name as 'referenced_table',
+      cu.REFERENCED_COLUMN_NAME as 'referenced_column',
+      rc.UPDATE_RULE as on_update,
+      rc.DELETE_RULE as on_delete,
+      cu.ORDINAL_POSITION as ordinal_position
+    FROM information_schema.key_column_usage cu
+    JOIN information_schema.referential_constraints rc
+      on cu.constraint_name = rc.constraint_name
+      and cu.constraint_schema = rc.constraint_schema
+    WHERE table_schema = database()
+    AND cu.referenced_table_name = ?
+    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
+  `;
+
+    const params = [table];
+    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: `${row.constraint_name}`,
+          toTable: row.referenced_table,
+          toColumn: row.referenced_column,
+          fromTable: row.from_table,
+          fromColumn: row.column_name,
+          onDelete: row.on_delete,
+          onUpdate: row.on_update,
+          toSchema: "",
+          fromSchema: "",
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: `${firstPart.constraint_name}`,
+        toTable: firstPart.referenced_table,
+        toColumn: keyParts.map(p => p.referenced_column),
+        fromTable: firstPart.from_table,
+        fromColumn: keyParts.map(p => p.column_name),
+        onDelete: firstPart.on_delete,
+        onUpdate: firstPart.on_update,
+        toSchema: "",
+        fromSchema: "",
+        isComposite: true,
       };
     });
   }
@@ -1232,7 +1302,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     };
   }
 

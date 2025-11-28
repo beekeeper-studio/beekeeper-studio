@@ -14,7 +14,7 @@ import {
 } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { ExtendedTableColumn, NgQueryResult } from "@/lib/db/models";
+import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
@@ -27,6 +27,12 @@ import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
+import type { DialectData } from "@/shared/lib/dialects/models";
+
+type Table = {
+  name: string;
+  schema?: string;
+};
 
 /**
  * An interface that bridges plugin system and Vuex. It also stores some states
@@ -170,13 +176,27 @@ export default class PluginStoreService {
     this.store.commit("tabs/unsetMenuItem", ref);
   }
 
-  getTables(schema?: string) {
-    const tables = [];
-    for (const table of this.store.state.tables) {
-      if (schema && table.schema !== schema) {
-        continue;
+  getTables(schema?: string): Table[] {
+    const allTables = this.store.state.tables;
+
+    const dialect: DialectData = this.store.getters.dialectData;
+    if (dialect.disabledFeatures?.schema) {
+      return allTables;
+    }
+
+    const tables: Table[] = [];
+    // If no schema is provided, use the default schema
+    const effectiveSchema = typeof schema === "undefined"
+      ? this.store.state.defaultSchema
+      : schema;
+
+    for (const table of allTables) {
+      if (table.schema && table.schema === effectiveSchema) {
+        tables.push({
+          name: table.name,
+          schema: table.schema,
+        });
       }
-      tables.push({ name: table.name, schema: table.schema });
     }
     return tables;
   }

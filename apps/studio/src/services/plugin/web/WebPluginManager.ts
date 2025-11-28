@@ -16,6 +16,29 @@ export type WebPluginManagerParams = {
   fileHelpers: FileHelpers;
 }
 
+/**
+ * This is the root of all the plugin stuff in the frontend, and you probably
+ * want to use this most of the time, especially if you want to communicate with
+ * the plugins.
+ *
+ * (For backend stuff, please look at `PluginManager`)
+ *
+ * An instance of this class should be available as `$plugin` in Vue components, for example:
+ *
+ * ```ts
+ * await this.$plugin.install('bks-ai-shell');
+ * ```
+ *
+ * It needs to be initialized first, which should be done already.
+ *
+ * You can `install`, `uninstall` and `update` plugins.
+ *
+ * You can also communicate with the plugins by using the `notify`, `notifyAll`,
+ * and `onViewRequest`. (Don't forget to register the iframe first! Use
+ * `registerIframe` and `unregisterIframe`)
+ *
+ * For more info about a plugin, use `pluginOf`.
+ */
 export default class WebPluginManager {
   plugins: PluginContext[] = [];
   /** A map of plugin id -> loader */
@@ -70,14 +93,17 @@ export default class WebPluginManager {
     return [...this.loaders.values()].map((loader) => loader.manifest);
   }
 
+  /** Install a plugin by its id */
   async install(id: string) {
     const manifest = await this.utilityConnection.send("plugin/install", {
       id,
     });
     await this.loadPlugin(manifest);
+    this.plugins.push({ manifest, loadable: true });
     return manifest;
   }
 
+  /** Update a plugin by its id */
   async update(id: string) {
     const manifest = await this.utilityConnection.send("plugin/update", {
       id,
@@ -86,18 +112,14 @@ export default class WebPluginManager {
     return manifest;
   }
 
+  /** Uninstall a plugin by its id */
   async uninstall(id: string) {
     await this.utilityConnection.send("plugin/uninstall", { id });
-    const loader = this.loaders.get(id);
-    if (!loader) {
-      throw new Error("Plugin not found: " + id);
-    }
-    await loader.unload();
-    loader.dispose();
-    this.loaders.delete(id);
+    await this.unloadPlugin(id);
+    this.plugins = this.plugins.filter((p) => p.manifest.id !== id);
   }
 
-  async reloadPlugin(id: string, manifest?: Manifest) {
+  private async reloadPlugin(id: string, manifest?: Manifest) {
     const loader = this.loaders.get(id);
     if (!loader) {
       throw new Error("Plugin not found: " + id);
@@ -106,8 +128,9 @@ export default class WebPluginManager {
     await loader.load(manifest);
   }
 
-  /** For plugins that use iframes, they need to be registered so that we can
-   * communicate. Please call this BEFORE the iframe is loaded.
+  /** For plugins that use iframes, they need to be registered for communication.
+   * Please call this BEFORE the iframe is loaded. Don't forget to unregister
+   * it with `unregisterIframe` when not used.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event} */
   registerIframe(pluginId: string, iframe: HTMLIFrameElement, context: PluginViewContext) {
     const loader = this.loaders.get(pluginId);
@@ -141,6 +164,7 @@ export default class WebPluginManager {
     })
   }
 
+  /** Get more info about a specific plugin */
   pluginOf(pluginId: string) {
     const plugin = this.plugins.find((p) => p.manifest.id === pluginId);
     if (!plugin) {
@@ -157,7 +181,21 @@ export default class WebPluginManager {
     return loader.buildEntryUrl(entry);
   }
 
-  /** Subscribe to view requests from a specific plugin. Inspired by Pinia's `$onAction`. */
+  /**
+   * Subscribe to view requests from a specific plugin. Inspired by Pinia's `$onAction`.
+   *
+   * @example
+   * ```ts
+   * this.$plugin.onViewRequest("bks-ai-shell", async (params) => {
+   *   const { request, after } = params;
+   *
+   *   if (request.name === "setTabTitle") {
+   *     after(() => {
+   *       log.warn("The AI has set the tab title, wee woo, robot alert");
+   *     });
+   *   }
+   * });
+   * */
   onViewRequest(pluginId: string, listener: OnViewRequestListener) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
@@ -222,5 +260,15 @@ export default class WebPluginManager {
     await loader.load();
     this.loaders.set(manifest.id, loader);
     return loader;
+  }
+
+  private async unloadPlugin(id: string) {
+    const loader = this.loaders.get(id);
+    if (!loader) {
+      throw new Error("Plugin not found: " + id);
+    }
+    await loader.unload();
+    loader.dispose();
+    this.loaders.delete(id);
   }
 }

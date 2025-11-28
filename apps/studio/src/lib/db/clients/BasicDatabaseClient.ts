@@ -85,8 +85,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   }
 
   async checkAllowReadOnly() {
+    if (platformInfo.testMode) return true;
     const status = await LicenseKey.getLicenseStatus()
-    return status.isUltimate || platformInfo.testMode;
+    return status.isUltimate;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -168,7 +169,20 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
   abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
   abstract getTableReferences(table: string, schema?: string): Promise<string[]>;
-  abstract getTableKeys(table: string, schema?: string): Promise<TableKey[]>;
+  /** @alias `getOutgoingKeys` */
+  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+    return await this.getOutgoingKeys(table, schema);
+  }
+
+  /**
+   * Get all foreign keys **defined by** the given table (outgoing relations).
+   */
+  abstract getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
+
+  /**
+   * Get all foreign keys that **reference** the given table (incoming relations).
+   */
+  abstract getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
 
   listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])
@@ -308,7 +322,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   // ****************************************************************************
 
   // For TableTable *************************************************************
-  abstract getTableLength(table: string, schema?: string): Promise<number>;
+  abstract getTableLength(table?: string, schema?: string): Promise<number>;
   abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
   abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;
   abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
@@ -531,7 +545,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -565,7 +579,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -593,6 +607,28 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
       throw ex;
     } finally {
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
+    }
+  }
+
+  async getFilteredDataCount(table: string, schema: string | null, filter: string ): Promise<string> {
+    if (!this.knex) {
+      return ''
+    }
+
+    try {
+      const query = await this.knex(schema ? `${schema}.${table}` : table)
+        .count('*')
+        .whereRaw(filter)
+        .toString()
+
+      const { rows } = await this.driverExecuteSingle(query)
+      const [dataCount] = rows
+      const [countKey] = Object.keys(dataCount)
+
+      return dataCount[countKey]
+    } catch (err) {
+      log.error(err)
+      return ''
     }
   }
 

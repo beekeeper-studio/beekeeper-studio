@@ -47,6 +47,8 @@ export interface IConnectionHandlers {
   'conn/listSchemas': ({ filter, sId }: { filter?: SchemaFilterOptions, sId: string }) => Promise<string[]>,
   'conn/getTableReferences': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getTableKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
+  'conn/getOutgoingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
+  'conn/getIncomingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
   'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
   'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
@@ -114,9 +116,10 @@ export interface IConnectionHandlers {
   'conn/azureCancelAuth': ({ sId }: { sId: string }) => Promise<void>
   'conn/azureSignOut': ({ config, sId }: { config: IConnection, sId: string }) => Promise<void>,
   /** Get account name if it's signed in, otherwise return undefined */
-  'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>
+  'conn/azureGetAccountName': ({ authId, sId }: { authId: number, sId: string }) => Promise<string | null>,
 
   'conn/getQueryForFilter': ({ filter, sId }: { filter: TableFilter, sId: string }) => Promise<string>,
+  'conn/getFilteredDataCount': ({ table, schema, filter, sId }: { table: string, schema: string | null, filter: string, sId: string }) => Promise<string>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -308,6 +311,16 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/getTableKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.getTableKeys(table, schema);
+  },
+
+  'conn/getIncomingKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getIncomingKeys(table, schema);
+  },
+
+  'conn/getOutgoingKeys': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getOutgoingKeys(table, schema);
   },
 
   'conn/listTablePartitions': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
@@ -562,5 +575,10 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/getQueryForFilter': async function({ filter, sId }: { filter: TableFilter, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.getQueryForFilter(filter);
+  },
+
+  'conn/getFilteredDataCount': async function({ table, schema = null, filter, sId }: { table: string, schema: string | null, filter: string, sId: string }): Promise<string> {
+    checkConnection(sId)
+    return await state(sId).connection.getFilteredDataCount(table, schema, filter)
   },
 }
