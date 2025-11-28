@@ -529,6 +529,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         showKeepAlive: false,
         warningNoty: null,
         showTransactionActiveTooltip: false,
+        enteredTransactionFromIdent: false,
       }
     },
     computed: {
@@ -823,6 +824,10 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         }
         this.focusingElement = element
       },
+      hasActiveTransaction() {
+        this.tab.isTransaction = this.hasActiveTransaction;
+        this.updateTab();
+      }
     },
     methods: {
       updateTab() {
@@ -1066,6 +1071,15 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           this.error = 'No query to run'
         }
       },
+      async maybeReserveConnection() {
+        try {
+          await this.connection.reserveConnection(this.tab.id);
+        } catch (e) {
+          await this.toggleCommitMode();
+          this.$noty.error(e.message);
+          return;
+        }
+      },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
 
@@ -1075,6 +1089,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         }
 
         if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
+          await this.maybeReserveConnection();
           await this.connection.startTransaction(this.tab.id);
           this.hasActiveTransaction = true
           if (SmartLocalStorage.exists(hasUsedTransactionsKey)) {
@@ -1104,7 +1119,9 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
 
             if (!this.isManualCommit && !this.hasActiveTransaction && startTransaction > endTransaction) {
               await this.toggleCommitMode();
-              this.hasActiveTransaction = true
+              await this.maybeReserveConnection();
+              this.enteredTransactionFromIdent = true;
+              this.hasActiveTransaction = true;
             } else if (this.isManualCommit && this.hasActiveTransaction && endTransaction > startTransaction) {
               await this.toggleCommitMode();
             }
@@ -1202,10 +1219,6 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
           if(this.running) {
             this.error = ex
           }
-          if (this.hasActiveTransaction) {
-            this.error = ex
-            this.manualRollback()
-          }
         } finally {
           this.running = false
           this.tab.isRunning = false
@@ -1280,21 +1293,13 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         }
         if (mode === "auto") {
           if (this.hasActiveTransaction) {
-            this.connection.rollbackTransaction(this.tab.id);
+            await this.connection.rollbackTransaction(this.tab.id);
           }
           this.hasActiveTransaction = false;
-          this.tab.isTransaction = false;
           await this.connection.releaseConnection(this.tab.id);
-        } else if (mode === "manual") {
-          try {
-            await this.connection.reserveConnection(this.tab.id);
-            this.tab.isTransaction = true;
-          } catch (e) {
-            this.$noty.error(e.message);
-            return;
-          }
         }
-        this.updateTab();
+
+        this.enteredTransactionFromIdent = false;
         this.showKeepAlive = false;
         this.maybeCloseWarningNoty();
         this.isManualCommit = mode === "manual";
@@ -1306,6 +1311,10 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         await this.connection.commitTransaction(this.tab.id);
         this.hasActiveTransaction = false;
         this.$noty.success("Successfully committed transaction")
+
+        if (this.enteredTransactionFromIdent) {
+          await this.toggleCommitMode();
+        }
       },
       async manualRollback() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
@@ -1314,10 +1323,10 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         this.maybeCloseWarningNoty();
         this.hasActiveTransaction = false;
         this.$noty.success("Successfully rolled back transaction")
-      },
-      async rollbackFromModal() {
-        await this.manualRollback();
-        await this.toggleCommitMode();
+
+        if (this.enteredTransactionFromIdent) {
+          await this.toggleCommitMode();
+        }
       },
       async keepAliveTransaction() {
         this.showKeepAlive = false;
