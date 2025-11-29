@@ -447,7 +447,11 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async getTableKeys(): Promise<any[]> {
+  async getOutgoingKeys(): Promise<any[]> {
+    return [];
+  }
+
+  async getIncomingKeys(): Promise<any[]> {
     return [];
   }
 

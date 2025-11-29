@@ -29,6 +29,7 @@
             v-if="selectedPlugin"
             :plugin="selectedPlugin"
             :markdown="selectedPluginReadme"
+            :loading-markdown="loadingPluginReadme"
             @install="install(selectedPlugin)"
             @uninstall="uninstall(selectedPlugin)"
             @update="update(selectedPlugin)"
@@ -60,7 +61,8 @@ export default Vue.extend({
       modalName: "plugin-manager-modal",
       plugins: [],
       selectedPluginIdx: -1,
-      selectedPluginReadme: null,
+      selectedPluginReadme: "",
+      loadingPluginReadme: false,
       loadedPlugins: false,
       errors: null,
       loadingPlugins: false,
@@ -189,9 +191,16 @@ export default Vue.extend({
       }
     },
     async openPluginPage({ id }) {
-      const info = await this.$util.send("plugin/repository", { id });
-      this.selectedPluginReadme = info.readme;
       this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
+      this.selectedPluginReadme = "";
+      this.loadingPluginReadme = true;
+      try {
+        const info = await this.$util.send("plugin/repository", { id });
+        this.selectedPluginReadme = info.readme;
+      } catch (e) {
+        log.warn(e);
+      }
+      this.loadingPluginReadme = false;
     },
     async buildPluginListData() {
       const entries = await this.$util.send("plugin/entries");
