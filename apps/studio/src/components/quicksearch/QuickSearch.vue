@@ -54,6 +54,10 @@
             v-else-if="blob.tabType === 'database' || blob.tabDetails?.tabType === 'database'"
           >storage</i>
           <i
+            class="material-icons item-icon plugin"
+            v-else-if="blob.tabType.startsWith('plugin-')"
+          >{{ $bksPlugin.pluginOf(blob.generatedPluginId)?.manifest.icon }}</i>
+          <i
             class="material-icons item-icon database"
             v-else
           >code</i>
