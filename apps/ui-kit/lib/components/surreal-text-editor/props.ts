@@ -9,4 +9,16 @@ export default {
     }
   },
   columnsGetter: Function,
+  allowPresets: {
+    type: Boolean,
+    default: false
+  },
+  presets: {
+    type: Array,
+    default: () => []
+  },
+  formatterConfig: {
+    type: Object,
+    default: () => ({})
+  },
 }

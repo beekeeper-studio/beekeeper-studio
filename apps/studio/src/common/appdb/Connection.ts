@@ -17,6 +17,7 @@ import { InstallationId } from "./models/installation_id"
 import { UserPin } from "./models/UserPin"
 import { PluginData } from "./models/PluginData";
 import { EncryptedPluginData } from "./models/EncryptedPluginData"
+import { FormatterPreset } from "./models/FormatterPreset"
 
 const models = [
   SavedConnection,
@@ -36,6 +37,7 @@ const models = [
   UserPin,
   PluginData,
   EncryptedPluginData,
+  FormatterPreset,
 ]
 
 interface IConnectionState {

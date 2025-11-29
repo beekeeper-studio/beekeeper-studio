@@ -77,3 +77,27 @@ export interface TransportHiddenEntity extends Transport {
   connectionId: number,
   workspaceId: number
 }
+
+/**
+ * Types below from apps/studio/src/common/appdb/models/FormatterPreset.ts because
+ * "importing from appdb models in anything that is imported in the frontend (this can cause issues with production builds unfortunately)"
+ */
+type CaseOption = "preserve" | "upper" | "lower";
+type LogicalOperatorNewlineOption = "before" | "after";
+type FormatterPresetConfig = {
+  tabWidth: number;
+  useTabs: boolean;
+  keywordCase: CaseOption;
+  dataTypeCase: CaseOption;
+  functionCase: CaseOption;
+  logicalOperatorNewline: LogicalOperatorNewlineOption;
+  expressionWidth: number;
+  linesBetweenQueries: number;
+  denseOperators: boolean;
+  newlineBeforeSemicolon: boolean;
+}
+export interface TransportFormatterPreset extends Transport {
+  name: string,
+  config: FormatterPresetConfig,
+  systemDefault: boolean
+}
