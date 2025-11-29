@@ -6,6 +6,8 @@ import { TableOrView } from "@/lib/db/models";
 import { WebPlugin } from "./WebPlugin";
 import type { Manifest } from "@/services/plugin";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import { getDialectData } from "@shared/lib/dialects";
+import { dialectFor } from "@shared/lib/dialects/models";
 
 /**
  * Represents the host application in plugin tests.
@@ -42,6 +44,10 @@ export class WebHost {
     off: jest.fn(),
   };
 
+  private mockFileHelpers = {
+    save: jest.fn().mockResolvedValue(undefined),
+  };
+
   constructor(options?: {
     tables?: TableOrView[];
     defaultSchema?: string;
@@ -69,6 +75,8 @@ export class WebHost {
       getters: {
         "settings/themeType": "dark",
         "tabs/sortedTabs": [],
+        dialect: dialectFor(connectionType),
+        dialectData: getDialectData(dialectFor(connectionType)),
       },
       commit: jest.fn(),
       dispatch: jest.fn(),
@@ -82,11 +90,12 @@ export class WebHost {
     );
 
     // Create WebPluginManager
-    this.manager = new WebPluginManager(
-      this.mockUtilityConnection,
-      this.pluginStoreService,
-      "5.0.0"
-    );
+    this.manager = new WebPluginManager({
+      utilityConnection: this.mockUtilityConnection,
+      pluginStore: this.pluginStoreService,
+      appVersion: "5.0.0",
+      fileHelpers: this.mockFileHelpers,
+    });
   }
 
   /**
