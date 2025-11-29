@@ -18,7 +18,7 @@ Right click on the editor window and select **Open Query Formatter** or click th
 3. prettier-sql
 
 ### Update Default Preset
-You can set the default formatter for your queries using the Beekeeper Studio [configuration system](./configuration.md). The out of the box will be **bk-default**
+You can set the default formatter for your queries using the Beekeeper Studio [configuration system](./configuration.md). The out of the box will be **bk-default**.
 
 {% ini-include section="queryEditor.defaultFormatter" %}
 
