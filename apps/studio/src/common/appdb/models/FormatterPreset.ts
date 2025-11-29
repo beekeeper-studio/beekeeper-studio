@@ -6,6 +6,9 @@ import { TransportFormatterPreset } from "@/common/transport"
 
 const log = rawLog.scope("FormatterPresets")
 
+/**
+ * If changing the below cases and types, also update them in apps/studio/src/common/transport/index.ts
+ */
 type CaseOption = "preserve" | "upper" | "lower";
 type LogicalOperatorNewlineOption = "before" | "after";
 export type FormatterPresetConfig = {
