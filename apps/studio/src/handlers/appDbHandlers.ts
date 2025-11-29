@@ -20,12 +20,13 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 
 const log = rawLog.scope('Appdb handlers');
 
-function defaultTransform<T extends Transport>(obj: T, cls: any) {
+async function defaultTransform<T extends Transport>(obj: T, cls: any) {
   if (_.isNil(obj)) {
     return null
   }
@@ -41,12 +42,12 @@ async function niceValidateOrReject(ent: any): Promise<void> {
   }
 }
 
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => T = defaultTransform) {
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform) {
 
   return {
     // this is so we can get defaults on objects
     [`appdb/${name}/new`]: async function({ init }: { init?: any }) {
-      return transform(new cls().withProps(init), cls);
+      return await transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
       if (_.isArray(obj)) {
@@ -77,7 +78,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         log.info(`Saving ${name}: `, dbObj);
         await niceValidateOrReject(dbObj);
         await dbObj.save();
-        return transform(dbObj, cls);
+        return await transform(dbObj, cls);
       }
     },
     [`appdb/${name}/remove`]: async function({ obj }: { obj: T | T[] }) {
@@ -94,15 +95,15 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       }
     },
     [`appdb/${name}/find`]: async function({ options }: { options?: FindManyOptions<any> }) {
-      return (await cls.find(options)).map((value) => {
-        return transform(value, cls);
-      })
+      return await Promise.all((await cls.find(options)).map(async (value) => {
+        return await transform(value, cls);
+      }))
     },
     [`appdb/${name}/findOneBy`]: async function({ options }: { options: FindOptionsWhere<any> | string | number }) {
-      return transform(await cls.findOneBy(options), cls)
+      return await transform(await cls.findOneBy(options), cls)
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
-      return transform(await cls.findOne(options), cls)
+      return await transform(await cls.findOne(options), cls)
     },
     [`appdb/${name}/count`]: async function(args: FindManyOptions<any> | { options?: FindManyOptions<any> }) {
       // Support both direct options or wrapped in { options: ... }
@@ -112,7 +113,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
   }
 }
 
-function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+async function transformSetting(obj: UserSetting, _cls: any): Promise<TransportUserSetting> {
   if (_.isNil(obj)) {
     return null
   }
@@ -123,7 +124,7 @@ function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
   };
 }
 
-function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
+async function transformLicense(obj: LicenseKey, _cls: any): Promise<TransportLicenseKey> {
   if (_.isNil(obj)) return null
   return {
     ...obj,
@@ -131,9 +132,22 @@ function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
   };
 }
 
+async function transformConn(obj: SavedConnection, cls: any): Promise<IConnection> {
+  if (_.isNil(obj)) return null;
+  const status = await LicenseKey.getLicenseStatus();
+  const canBeReadOnly = status.isUltimate || platformInfo.testMode;
+
+  if (!canBeReadOnly) {
+    obj.readOnlyMode = false;
+  }
+
+  const newObj = {} as unknown as SavedConnection;
+  return cls.merge(newObj, obj);
+}
+
 export const AppDbHandlers = {
-  ...handlersFor<IConnection>('saved', SavedConnection),
-  ...handlersFor<IConnection>('used', UsedConnection),
+  ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
+  ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
