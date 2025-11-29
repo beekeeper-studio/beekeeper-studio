@@ -90,7 +90,7 @@
             @click.prevent="formatterPreset"
             class="btn btn-flat btn-small"
           >
-            Open Formatter
+            Open Query Formatter
           </x-button>
           <x-button
             @click.prevent="triggerSave"
@@ -1302,7 +1302,7 @@
         return [
           ...items,
           {
-            label: "Open Formatter Query",
+            label: "Open Query Formatter",
             id: "formatter",
             handler: this.formatterPreset
           },
