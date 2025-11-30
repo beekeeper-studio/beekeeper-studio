@@ -1,8 +1,10 @@
 import rawLog from '@bksLogger'
 import { monthAgo } from '@/common/date';
 import { SmartLocalStorage } from '@/common/LocalStorage';
+import helpers from '@shared/lib/tabulator'
 import { CellComponent } from 'tabulator-tables';
 import { AppEvent } from '@/common/AppEvent';
+import { TabulatorFormatterParams } from '@/common/tabulator';
 
 const log = rawLog.scope('fk_click');
 
@@ -120,13 +122,20 @@ export const FkLinkMixin = {
         // Get the appropriate cell for this column from the foreign key
         const sourceColumnName = FromColumnKeys[index] || fromColumn;
         const valueCell = cell.getRow().getCell(sourceColumnName);
+        const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams || {}
         
         if (!valueCell) {
           log.error(`fk-click: unable to find source column cell for '${sourceColumnName}'`);
           return;
         }
         
-        const value = valueCell.getValue();
+        let value = cell.getValue()
+
+        if (value instanceof Uint8Array) {
+          const encoding = (params.binaryEncoding || 'hex') as 'hex' | 'base64'
+          value = helpers.niceString(value, false, encoding)
+        }
+
         values.push(value);
         filters.push({
           value,
