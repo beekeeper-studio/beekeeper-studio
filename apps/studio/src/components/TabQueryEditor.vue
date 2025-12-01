@@ -355,6 +355,7 @@
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
+  import type { Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import rawlog from '@bksLogger'
@@ -628,7 +629,11 @@
         return this.rowCount > 0
       },
       entities() {
-        return this.tables.map((t: TableOrView) => ({ schema: t.schema, name: t.name }))
+        return this.tables.map((t: TableOrView) => ({
+          schema: t.schema,
+          name: t.name,
+          entityType: t.entityType,
+        }) as Entity)
       },
       queryDialect() {
         return this.dialectData.queryDialectOverride ?? this.connectionType;
