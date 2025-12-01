@@ -2,27 +2,9 @@ import { Column, Entity } from "typeorm"
 import { ApplicationEntity } from "./application_entity"
 import _ from "lodash"
 import rawLog from "@bksLogger"
-import { TransportFormatterPreset } from "@/common/transport"
+import { FormatterPresetConfig, TransportFormatterPreset } from "@/common/transport"
 
 const log = rawLog.scope("FormatterPresets")
-
-/**
- * If changing the below cases and types, also update them in apps/studio/src/common/transport/index.ts
- */
-type CaseOption = "preserve" | "upper" | "lower";
-type LogicalOperatorNewlineOption = "before" | "after";
-export type FormatterPresetConfig = {
-  tabWidth: number;
-  useTabs: boolean;
-  keywordCase: CaseOption;
-  dataTypeCase: CaseOption;
-  functionCase: CaseOption;
-  logicalOperatorNewline: LogicalOperatorNewlineOption;
-  expressionWidth: number;
-  linesBetweenQueries: number;
-  denseOperators: boolean;
-  newlineBeforeSemicolon: boolean;
-};
 
 export type FormatterPresetValues = {
   name: string,
