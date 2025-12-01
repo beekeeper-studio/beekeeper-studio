@@ -380,6 +380,7 @@ declare interface IBksConfig {
             secondarySidebarMinWidth: number;
         };
         queryEditor: {
+            defaultFormatter: string;
             maxResults: number;
         };
         tableList: {

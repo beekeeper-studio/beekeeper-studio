@@ -22,7 +22,6 @@
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-import { format } from 'sql-formatter'
 import { Tabulator, TabulatorFull } from 'tabulator-tables'
 import Mutators from '../../mixins/data_mutators'
 import { AppEvent } from '@/common/AppEvent'

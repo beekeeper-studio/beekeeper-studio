@@ -46,15 +46,34 @@ export default Vue.extend({
       context: TextEditorMenuContext
     ): ReturnType<ContextMenuExtension<SurrealTextEditorMenuContext>> {
       const pivot = items.findIndex((o) => o.id === "find");
+      const formatItem: InternalContextItem<unknown> = {
+        label: `Format Query`,
+        id: "text-format",
+        handler: this.formatSql,
+        shortcut: "Shift+F",
+        disabled: true
+      };
+
+      if (this.allowPresets && this.presets?.length > 0) {
+        const currentFormatterId = this.formatterConfig?.id;
+
+        formatItem.items = [
+          {
+            label: "Format with current config",
+            id: "format-default"
+          },
+          divider,
+          ...this.presets.map((preset) => ({
+            label: `${preset.name}${preset.id === currentFormatterId ? ' *' : ''}`,
+            id: `format-preset-${preset.id}`,
+            handler: () => this.applyAndFormatPreset(preset),
+          }))
+        ];
+      }
+
       const modifiedItems = [
         ...items.slice(0, pivot),
-        {
-          label: `Format Query`,
-          id: "text-format",
-          handler: this.formatSql,
-          shortcut: "Shift+F",
-          disabled: true
-        },
+        formatItem,
         divider,
         ...items.slice(pivot),
       ];
@@ -62,6 +81,10 @@ export default Vue.extend({
         items: modifiedItems,
         context,
       }
+    },
+
+    applyAndFormatPreset(preset) {
+      this.$emit("bks-apply-preset", { id: preset.id, ...preset.config });
     },
 
     // Non text-editor overrides

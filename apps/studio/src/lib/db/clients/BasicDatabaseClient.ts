@@ -170,7 +170,20 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
   abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
   abstract getTableReferences(table: string, schema?: string): Promise<string[]>;
-  abstract getTableKeys(table: string, schema?: string): Promise<TableKey[]>;
+  /** @alias `getOutgoingKeys` */
+  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+    return await this.getOutgoingKeys(table, schema);
+  }
+
+  /**
+   * Get all foreign keys **defined by** the given table (outgoing relations).
+   */
+  abstract getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
+
+  /**
+   * Get all foreign keys that **reference** the given table (incoming relations).
+   */
+  abstract getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
 
   listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])

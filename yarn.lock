@@ -2266,48 +2266,48 @@
     ajv "^6.12.0"
     ajv-keywords "^3.4.1"
 
-"@duckdb/node-api@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-api/-/node-api-1.3.1-alpha.22.tgz#953aaafbf2ee80a19f1248af4575e7aeb8f9d109"
-  integrity sha512-nfSepXefBJYk9r6wD/3OwOf3n/2lpeQBawPehfKWHFNq9ovYHw3EPNgKxaUCyyTfPipD/SnVhzzUQixnqcc4xg==
+"@duckdb/node-api@1.4.1-r.4":
+  version "1.4.1-r.4"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-api/-/node-api-1.4.1-r.4.tgz#0dc804bb55ce2824ba1ecc4771421de7a297cea8"
+  integrity sha512-dvlkGZBlQBKzt5CDP2lv8stppufCCxK3RWbRGBjg8KHuGxreLNIKN1uzB4p6qpJuMZsD5N8UJd0dqidoKOZ/cw==
   dependencies:
-    "@duckdb/node-bindings" "1.3.1-alpha.22"
+    "@duckdb/node-bindings" "1.4.1-r.4"
 
-"@duckdb/node-bindings-darwin-arm64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-arm64/-/node-bindings-darwin-arm64-1.3.1-alpha.22.tgz#6c63389d1f0055c40717d3ba531ed52e189a72da"
-  integrity sha512-JpMtLPbkAjp6Zwv4W/DcZIXqCA5pLy3vv5lUKrlbPeMas5QN8nxMPgAkVP/H4czCCvCbuoTbc7JTXXl/CuaUuQ==
+"@duckdb/node-bindings-darwin-arm64@1.4.1-r.4":
+  version "1.4.1-r.4"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-arm64/-/node-bindings-darwin-arm64-1.4.1-r.4.tgz#8d9dbf3fa1fc595a42f8e4e4ecb3a3fef8affb1f"
+  integrity sha512-4ZklLdqX5ZqqR0guwVj5DTTwIEL/o0aqJSWBU4loMbOSAZOLANVMG8+x9YJXI3aJjbQ+90VAzJN3ptJs3X1Ong==
 
-"@duckdb/node-bindings-darwin-x64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-x64/-/node-bindings-darwin-x64-1.3.1-alpha.22.tgz#6f7cc51fde856d6ff5264b5041bbb5ca43a17de6"
-  integrity sha512-vbrV9pB4o8zmrX8k9ryGFkysKuUid95xvfA9bKSxqphzOWunRnaBLwW9akZpNQtV1SHqQy1CUTFyT/O7gHlrIw==
+"@duckdb/node-bindings-darwin-x64@1.4.1-r.4":
+  version "1.4.1-r.4"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-x64/-/node-bindings-darwin-x64-1.4.1-r.4.tgz#c05883d91c91ed020bba44213f7430be211faf80"
+  integrity sha512-tSWkNzXRjndWNMWJLJzOymGc8gscG2rwYf7wDm6r+e80f0VwrjP1bcNKB/qdKdmubkz1yRU/TWoVEpaK42266A==
 
-"@duckdb/node-bindings-linux-arm64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-arm64/-/node-bindings-linux-arm64-1.3.1-alpha.22.tgz#c3aa792a1bde13580cbe7cb732080ca99c183df7"
-  integrity sha512-S7pUQXjPzhcTJMmier7Yin2uz1UImXMuy+2uNEnL+pmvXGJGDlYIMN+njXD093nDqO0rEPwqdEMi36rD19Gp6g==
+"@duckdb/node-bindings-linux-arm64@1.4.1-r.4":
+  version "1.4.1-r.4"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-arm64/-/node-bindings-linux-arm64-1.4.1-r.4.tgz#99baeb5d2b244f38ce2b5d49375b52b34482f05c"
+  integrity sha512-RO7M85r+bK0Cvn9lD+304gFl3V2eHK47qnmlGCu7kFPHCAowGCYosKim9ML5FslD3ZBdghGl4AdNnrtY3i3mgQ==
 
-"@duckdb/node-bindings-linux-x64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-x64/-/node-bindings-linux-x64-1.3.1-alpha.22.tgz#61655e2c82ac424854fb34a32f6f3807a617df66"
-  integrity sha512-nnyBd5LH7vI9IPUmHN1daqIi2WHSSWsm9Oub7lFB5KsPR4DSSAEKLKDuJ8OHCzUa590aZ9ushDsiFritWmTs/g==
+"@duckdb/node-bindings-linux-x64@1.4.1-r.4":
+  version "1.4.1-r.4"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-x64/-/node-bindings-linux-x64-1.4.1-r.4.tgz#14a63d78f2e9f5ac6bec8ca28d918a183ec26fed"
+  integrity sha512-jQKjaje/z35oUdYv7gvCyqZTpsgskgTyt1vyLCnGV/Kwi6UevzorvwEmpvglqxaMONvRQvoGZykfSzHc2ZlS5w==
 
-"@duckdb/node-bindings-win32-x64@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-x64/-/node-bindings-win32-x64-1.3.1-alpha.22.tgz#e12f3c01dc39a6b5ef6115276e84ef7bb68e9b5c"
-  integrity sha512-ZbRroVNKrJ2LoO3LUKzbwn57sL3zauAoPG+PuRJFWeK5FO2lquM19lwfRufmVVf5P+kshUp13d0OgvtEz5sy+g==
+"@duckdb/node-bindings-win32-x64@1.4.1-r.4":
+  version "1.4.1-r.4"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-x64/-/node-bindings-win32-x64-1.4.1-r.4.tgz#3e768de210013e156784202a357bf1f274c994bf"
+  integrity sha512-IgwffRzZxYmsys6VD3zE3Zd6M9Ld24pNuP/h2eNQL6aY+kRa47R5ULEQ2E8BDFuB+ZIu680XQK5lNG+sW4DTNg==
 
-"@duckdb/node-bindings@1.3.1-alpha.22":
-  version "1.3.1-alpha.22"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings/-/node-bindings-1.3.1-alpha.22.tgz#edc135195d30d072874c2c8ba80c60a732de1c4b"
-  integrity sha512-HKZxxjtGLlaYz1UWdcZbLjlTL/HHk60aBNOSCf3aq2ddp447fKOhWR+yqpBn3YcJCSbzBf1/6jVUOycmAbmAmw==
+"@duckdb/node-bindings@1.4.1-r.4":
+  version "1.4.1-r.4"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings/-/node-bindings-1.4.1-r.4.tgz#b7ef90adfde0406d9a36657216a12936194b82d6"
+  integrity sha512-dlVzEH1Hizi1LxxiLOs9hpBhvH7mEWQA6ayJ/6NZQbru//UdmjKg27//4+Rbbg2+dF0E9CebOefxlAkKFWi3uA==
   optionalDependencies:
-    "@duckdb/node-bindings-darwin-arm64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-darwin-x64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-linux-arm64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-linux-x64" "1.3.1-alpha.22"
-    "@duckdb/node-bindings-win32-x64" "1.3.1-alpha.22"
+    "@duckdb/node-bindings-darwin-arm64" "1.4.1-r.4"
+    "@duckdb/node-bindings-darwin-x64" "1.4.1-r.4"
+    "@duckdb/node-bindings-linux-arm64" "1.4.1-r.4"
+    "@duckdb/node-bindings-linux-x64" "1.4.1-r.4"
+    "@duckdb/node-bindings-win32-x64" "1.4.1-r.4"
 
 "@electron/asar@^3.2.7":
   version "3.3.1"
@@ -3201,15 +3201,15 @@
   dependencies:
     "@lezer/common" "^1.0.0"
 
-"@libsql/darwin-arm64@0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@libsql/darwin-arm64/-/darwin-arm64-0.4.7.tgz#070679b082ff88ad0a8c8fef94c6d0cc644e441f"
-  integrity sha512-yOL742IfWUlUevnI5PdnIT4fryY3LYTdLm56bnY0wXBw7dhFcnjuA7jrH3oSVz2mjZTHujxoITgAE7V6Z+eAbg==
+"@libsql/darwin-arm64@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/darwin-arm64/-/darwin-arm64-0.5.22.tgz#3e61a4419e7f765117b3e36818c3728e560887c1"
+  integrity sha512-4B8ZlX3nIDPndfct7GNe0nI3Yw6ibocEicWdC4fvQbSs/jdq/RC2oCsoJxJ4NzXkvktX70C1J4FcmmoBy069UA==
 
-"@libsql/darwin-x64@0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@libsql/darwin-x64/-/darwin-x64-0.4.7.tgz#ee5cff8527777eea72e2ad9a4f1c41d6a5b6736e"
-  integrity sha512-ezc7V75+eoyyH07BO9tIyJdqXXcRfZMbKcLCeF8+qWK5nP8wWuMcfOVywecsXGRbT99zc5eNra4NEx6z5PkSsA==
+"@libsql/darwin-x64@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/darwin-x64/-/darwin-x64-0.5.22.tgz#4967188bfa15a974d9a1c987c3129565f07a1781"
+  integrity sha512-ny2HYWt6lFSIdNFzUFIJ04uiW6finXfMNJ7wypkAD8Pqdm6nAByO+Fdqu8t7sD0sqJGeUCiOg480icjyQ2/8VA==
 
 "@libsql/hrana-client@^0.4.1":
   version "0.4.4"
@@ -3244,25 +3244,35 @@
     "@libsql/sqlite3" "^0.3.1"
     sqlite3 "^5.1.5"
 
-"@libsql/linux-arm64-gnu@0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@libsql/linux-arm64-gnu/-/linux-arm64-gnu-0.4.7.tgz#d1364f51b8c5a013822257de1a51525b602ac71d"
-  integrity sha512-WlX2VYB5diM4kFfNaYcyhw5y+UJAI3xcMkEUJZPtRDEIu85SsSFrQ+gvoKfcVh76B//ztSeEX2wl9yrjF7BBCA==
+"@libsql/linux-arm-gnueabihf@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/linux-arm-gnueabihf/-/linux-arm-gnueabihf-0.5.22.tgz#1bafad9bb58f550c1b35cc40e64da67610affefd"
+  integrity sha512-3Uo3SoDPJe/zBnyZKosziRGtszXaEtv57raWrZIahtQDsjxBVjuzYQinCm9LRCJCUT5t2r5Z5nLDPJi2CwZVoA==
 
-"@libsql/linux-arm64-musl@0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@libsql/linux-arm64-musl/-/linux-arm64-musl-0.4.7.tgz#14d9762853368e77e24774b306dea7c6ac2b4881"
-  integrity sha512-6kK9xAArVRlTCpWeqnNMCoXW1pe7WITI378n4NpvU5EJ0Ok3aNTIC2nRPRjhro90QcnmLL1jPcrVwO4WD1U0xw==
+"@libsql/linux-arm-musleabihf@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/linux-arm-musleabihf/-/linux-arm-musleabihf-0.5.22.tgz#014ffeba50c275872a97e7adefb604d46c49894e"
+  integrity sha512-LCsXh07jvSojTNJptT9CowOzwITznD+YFGGW+1XxUr7fS+7/ydUrpDfsMX7UqTqjm7xG17eq86VkWJgHJfvpNg==
 
-"@libsql/linux-x64-gnu@0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@libsql/linux-x64-gnu/-/linux-x64-gnu-0.4.7.tgz#ae98f4311b45ffe6c6e31241b7d321cc24cf2922"
-  integrity sha512-CMnNRCmlWQqqzlTw6NeaZXzLWI8bydaXDke63JTUCvu8R+fj/ENsLrVBtPDlxQ0wGsYdXGlrUCH8Qi9gJep0yQ==
+"@libsql/linux-arm64-gnu@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/linux-arm64-gnu/-/linux-arm64-gnu-0.5.22.tgz#53fc8ba65e5b3573f5b5b898393690d564c26513"
+  integrity sha512-KSdnOMy88c9mpOFKUEzPskSaF3VLflfSUCBwas/pn1/sV3pEhtMF6H8VUCd2rsedwoukeeCSEONqX7LLnQwRMA==
 
-"@libsql/linux-x64-musl@0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@libsql/linux-x64-musl/-/linux-x64-musl-0.4.7.tgz#9340d4c46e77ae072968e7dc70710dedfd6ee4f4"
-  integrity sha512-nI6tpS1t6WzGAt1Kx1n1HsvtBbZ+jHn0m7ogNNT6pQHZQj7AFFTIMeDQw/i/Nt5H38np1GVRNsFe99eSIMs9XA==
+"@libsql/linux-arm64-musl@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/linux-arm64-musl/-/linux-arm64-musl-0.5.22.tgz#2dd78be57ff410552cdd2446b2040aac88ad8e44"
+  integrity sha512-mCHSMAsDTLK5YH//lcV3eFEgiR23Ym0U9oEvgZA0667gqRZg/2px+7LshDvErEKv2XZ8ixzw3p1IrBzLQHGSsw==
+
+"@libsql/linux-x64-gnu@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/linux-x64-gnu/-/linux-x64-gnu-0.5.22.tgz#b9b534a52bb21fc1d8394f681800f0ab2304869b"
+  integrity sha512-kNBHaIkSg78Y4BqAdgjcR2mBilZXs4HYkAmi58J+4GRwDQZh5fIUWbnQvB9f95DkWUIGVeenqLRFY2pcTmlsew==
+
+"@libsql/linux-x64-musl@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/linux-x64-musl/-/linux-x64-musl-0.5.22.tgz#29b43d1617d22ec92e1444955a55334b04efb6fa"
+  integrity sha512-UZ4Xdxm4pu3pQXjvfJiyCzZop/9j/eA2JjmhMaAhe3EVLH2g11Fy4fwyUp9sT1QJYR1kpc2JLuybPM0kuXv/Tg==
 
 "@libsql/sqlite3@^0.3.1":
   version "0.3.1"
@@ -3271,10 +3281,10 @@
   dependencies:
     "@libsql/hrana-client" "^0.4.1"
 
-"@libsql/win32-x64-msvc@0.4.7":
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/@libsql/win32-x64-msvc/-/win32-x64-msvc-0.4.7.tgz#b39cc6de4af797af736e9f2179002e8ebf4d2d4a"
-  integrity sha512-7pJzOWzPm6oJUxml+PCDRzYQ4A1hTMHAciTAHfFK4fkbDZX33nWPVG7Y3vqdKtslcwAzwmrNDc6sXy2nwWnbiw==
+"@libsql/win32-x64-msvc@0.5.22":
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/@libsql/win32-x64-msvc/-/win32-x64-msvc-0.5.22.tgz#3d8eb9d092ebe18005dea97953575d981f669621"
+  integrity sha512-Fj0j8RnBpo43tVZUVoNK6BV/9AtDUM5S7DF3LB4qTYg1LMSZqi3yeCneUTLJD6XomQJlZzbI4mst89yspVSAnA==
 
 "@malept/cross-spawn-promise@^2.0.0":
   version "2.0.0"
@@ -8772,6 +8782,11 @@ highlight.js@^10.7.1:
   resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-10.7.3.tgz#697272e3991356e40c3cac566a74eef681756531"
   integrity sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==
 
+highlight.js@^11.11.1:
+  version "11.11.1"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-11.11.1.tgz#fca06fa0e5aeecf6c4d437239135fabc15213585"
+  integrity sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==
+
 homedir-polyfill@^1.0.0:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/homedir-polyfill/-/homedir-polyfill-1.0.3.tgz#743298cef4e5af3e194161fbadcc2151d3a058e8"
@@ -10102,21 +10117,23 @@ libphonenumber-js@^1.10.53:
   resolved "https://registry.yarnpkg.com/libphonenumber-js/-/libphonenumber-js-1.12.29.tgz#1de335eff8f7c8b9e7467bb510aab1e123c09ef5"
   integrity sha512-P2aLrbeqHbmh8+9P35LXQfXOKc7XJ0ymUKl7tyeyQjdRNfzunXWxQXGc4yl3fUf28fqLRfPY+vIVvFXK7KEBTw==
 
-libsql@^0.4.6:
-  version "0.4.7"
-  resolved "https://registry.yarnpkg.com/libsql/-/libsql-0.4.7.tgz#dc80f94c58ac8146adc351e82f76dd12366fe051"
-  integrity sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==
+libsql@^0.5.22:
+  version "0.5.22"
+  resolved "https://registry.yarnpkg.com/libsql/-/libsql-0.5.22.tgz#7a44ad55246b6abade60725ec1d0acabd5634c19"
+  integrity sha512-NscWthMQt7fpU8lqd7LXMvT9pi+KhhmTHAJWUB/Lj6MWa0MKFv0F2V4C6WKKpjCVZl0VwcDz4nOI3CyaT1DDiA==
   dependencies:
     "@neon-rs/load" "^0.0.4"
     detect-libc "2.0.2"
   optionalDependencies:
-    "@libsql/darwin-arm64" "0.4.7"
-    "@libsql/darwin-x64" "0.4.7"
-    "@libsql/linux-arm64-gnu" "0.4.7"
-    "@libsql/linux-arm64-musl" "0.4.7"
-    "@libsql/linux-x64-gnu" "0.4.7"
-    "@libsql/linux-x64-musl" "0.4.7"
-    "@libsql/win32-x64-msvc" "0.4.7"
+    "@libsql/darwin-arm64" "0.5.22"
+    "@libsql/darwin-x64" "0.5.22"
+    "@libsql/linux-arm-gnueabihf" "0.5.22"
+    "@libsql/linux-arm-musleabihf" "0.5.22"
+    "@libsql/linux-arm64-gnu" "0.5.22"
+    "@libsql/linux-arm64-musl" "0.5.22"
+    "@libsql/linux-x64-gnu" "0.5.22"
+    "@libsql/linux-x64-musl" "0.5.22"
+    "@libsql/win32-x64-msvc" "0.5.22"
 
 lie@~3.3.0:
   version "3.3.0"

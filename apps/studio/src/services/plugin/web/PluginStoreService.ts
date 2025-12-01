@@ -27,6 +27,7 @@ import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
+import type { DialectData } from "@/shared/lib/dialects/models";
 
 type Table = {
   name: string;
@@ -176,14 +177,20 @@ export default class PluginStoreService {
   }
 
   getTables(schema?: string): Table[] {
-    const tables: Table[] = [];
+    const allTables = this.store.state.tables;
 
+    const dialect: DialectData = this.store.getters.dialectData;
+    if (dialect.disabledFeatures?.schema) {
+      return allTables;
+    }
+
+    const tables: Table[] = [];
     // If no schema is provided, use the default schema
     const effectiveSchema = typeof schema === "undefined"
       ? this.store.state.defaultSchema
       : schema;
 
-    for (const table of this.store.state.tables) {
+    for (const table of allTables) {
       if (table.schema && table.schema === effectiveSchema) {
         tables.push({
           name: table.name,

@@ -189,6 +189,7 @@ export interface DialectData {
     binaryColumn?: boolean
     initialSort?: boolean
     sqlCreate?: boolean
+    foreignKeys?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
     readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
