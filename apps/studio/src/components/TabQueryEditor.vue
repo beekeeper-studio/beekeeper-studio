@@ -52,13 +52,16 @@
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
+        :formatter-config="selectedFormatter ?? undefined"
+        :allow-presets="true"
+        :presets="formatterPresets"
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
+        @bks-apply-preset="applyPreset"
       />
-      <span class="expand" />
       <div
         class="toolbar text-right"
         ref="toolbar"
@@ -82,6 +85,12 @@
               type="checkbox"
               v-model="dryRun"
             >
+          </x-button>
+          <x-button
+            @click.prevent="formatterPreset"
+            class="btn btn-flat btn-small"
+          >
+            Open Query Formatter
           </x-button>
           <x-button
             @click.prevent="triggerSave"
@@ -171,7 +180,7 @@
         :result="result"
         :query="query"
         :tab="tab"
-        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
+        :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
         class="message"
@@ -220,6 +229,49 @@
         :active="active"
       />
     </div>
+
+    <!-- Super-Formatter Modal -->
+    <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal super-formatter-modal"
+        @opened="getPresets"
+        :name="superFormatterId"
+        :scrollable="true"
+        min-height="80%"
+        min-width="90%"
+      >
+        <!-- will need the close it option and then the whole shebang -->
+        <div class="dialog-content">
+          <div class="dialog-c-title">
+            <p>
+              Super Formatter
+            </p>
+            <button
+              type="button"
+              class="btn btn-flat btn-fab"
+              aria-label="Close super formatter"
+              title="Close super formatter"
+              @click="handleFormatterPresetModal({ showFormatter: false })"
+            >
+              X
+            </button>
+          </div>
+          <bks-super-formatter
+            :value="unsavedText"
+            :formatter-dialect="formatterDialect"
+            :identifier-dialect="identifierDialect"
+            :can-add-presets="true"
+            :clipboard="$native.clipboard"
+            :starting-preset="selectedFormatter ?? undefined"
+            :presets="formatterPresets"
+            @bks-apply-preset="applyPreset"
+            @bks-save-preset="savePreset"
+            @bks-create-preset="savePreset"
+            @bks-delete-preset="deletePreset"
+          />
+        </div>
+      </modal>
+    </portal>
 
     <!-- Save Modal -->
     <portal to="modals">
@@ -345,6 +397,7 @@
 
   import _ from 'lodash'
   import Split from 'split.js'
+  import Noty from 'noty'
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
@@ -354,6 +407,7 @@
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
+  import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
@@ -377,7 +431,7 @@
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter},
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -421,7 +475,8 @@
         onTextEditorBlur: null,
         wrapText: false,
         vimKeymaps: [],
-
+        formatterPresets: [],
+        selectedFormatter: null,
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
          * if we want to switch focus. Why two states? We need a feedback from
@@ -456,6 +511,9 @@
       },
       disableRunToFile() {
         return this.dialectData?.disabledFeatures?.export?.stream
+      },
+      superFormatterId() {
+        return `super-formatter-${this.tab.id}`
       },
       shouldInitialize() {
         return this.storeInitialized && this.active && !this.initialized
@@ -732,6 +790,105 @@
       },
     },
     methods: {
+      formatterPreset() {
+        this.handleFormatterPresetModal({ showFormatter: true })
+      },
+      handleFormatterPresetModal({ showFormatter }){
+        if (showFormatter) {
+          this.$modal.show(this.superFormatterId)
+        } else {
+          this.$modal.hide(this.superFormatterId)
+        }
+      },
+      getPresets(presetId) {
+        this.$util.send('appdb/formatter/getAll')
+          .then((presets) => {
+            const presetToFind = typeof presetId === 'object' ? this.$bksConfig.ui.queryEditor.defaultFormatter : presetId
+            const selectedFormatter = presets.find(p => Number(p.id) === Number(presetToFind))
+
+            if (selectedFormatter != null) this.selectedFormatter = { id: selectedFormatter.id, ...selectedFormatter.config }
+
+            this.formatterPresets = presets
+          })
+          .catch(err => {
+            console.error(err)
+            throw new Error(err)
+          })
+      },
+      applyPreset(presetConfig) {
+        this.handleFormatterPresetModal({ showFormatter: false })
+        this.selectedFormatter = { ...presetConfig }
+      },
+      async deletePreset({ id }) {
+        if (!await this.$confirm('Are you sure you want to delete this configuation?')) {
+          return
+        }
+
+        this.$util.send('appdb/formatter/deletePreset', { id })
+          .then(() => {
+            this.$noty.success('Formatter Configuration successfully deleted')
+            this.selectedFormatter = null
+            this.handleFormatterPresetModal({ showFormatter: false })
+          })
+          .catch(err => {
+            const error_notice = this.$noty.error(`Formatter Configuration delete failed: ${err.message}`, {
+              buttons: [
+                Noty.button('Close', 'btn btn-primary', () => {
+                  error_notice.close()
+                })
+              ]
+            }).setTimeout(60 * 1000)
+
+            throw new Error(err)
+          })
+      },
+      savePreset({id, config, name}) {
+        let inputData = {}
+        let notyMessage = ''
+        let presetId = id
+        let endpoint
+
+        if (id == null){
+          notyMessage = 'Add new preset'
+          endpoint = 'appdb/formatter/newPreset'
+          inputData = {
+            insertValues: {
+              name,
+              config
+            }
+          }
+        } else {
+          notyMessage = 'Updating preset'
+          endpoint = 'appdb/formatter/updatePreset'
+          inputData = {
+            id,
+            updateValues: {
+              config
+            }
+          }
+        }
+
+        this.$util.send(endpoint, inputData)
+          .then((presetValues) => {
+            this.$noty.success(`${notyMessage} complete`)
+            this.selectedFormatter = { id: presetValues.id, ...presetValues.config }
+            presetId = presetValues.id
+          })
+          .catch(err => {
+            const error_notice = this.$noty.error(`${notyMessage} failed: ${err.message}`, {
+              buttons: [
+                Noty.button('Close', 'btn btn-primary', () => {
+                  error_notice.close()
+                })
+              ]
+            }).setTimeout(60 * 1000)
+
+            throw new Error(err)
+          })
+          .finally( () => {
+            return this.getPresets(presetId)
+          })
+      },
       isNumber(value: any) {
         return _.isNumber(value);
       },
@@ -1144,6 +1301,11 @@
       editorContextMenu(_event, _context, items) {
         return [
           ...items,
+          {
+            label: "Open Query Formatter",
+            id: "formatter",
+            handler: this.formatterPreset
+          },
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
       },
@@ -1172,6 +1334,9 @@
       }
 
       this.vimKeymaps = await getVimKeymapsFromVimrc()
+
+      // Load formatter presets for context menu
+      this.getPresets(this.$bksConfig.ui.queryEditor.defaultFormatter)
     },
     beforeDestroy() {
       if(this.split) {

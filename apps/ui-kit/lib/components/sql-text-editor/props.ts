@@ -21,6 +21,22 @@ export default {
     type: String as PropType<FormatOptions["language"]>,
     default: "sql",
   },
+  formatterConfig: {
+    type: Object as PropType<FormatOptions>,
+    default: () => ({
+      id: null,
+      tabWidth: 2,
+      useTabs: false,
+      keywordCase: 'preserve',
+      dataTypeCase: 'preserve',
+      functionCase: 'preserve',
+      logicalOperatorNewline: 'before',
+      expressionWidth: 50,
+      linesBetweenQueries: 1,
+      denseOperators: false,
+      newlineBeforeSemicolon: false
+    })
+  },
   identifierDialect: {
     type: String as PropType<Options["dialect"]>,
     default: "generic",
@@ -32,6 +48,18 @@ export default {
     type: props.languageId.type,
     default: "sql",
   },
+  allowPresets: {
+    type: Boolean,
+    default: false
+  },
+  presets: {
+    type: Array,
+    default: () => []
+  },
+  formatterModalId: {
+    type: String,
+    default: ''
+  }
 
   // --- replaced with languageId
   // mode: {

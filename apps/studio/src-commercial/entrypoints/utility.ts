@@ -20,6 +20,7 @@ import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
+import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
@@ -64,6 +65,7 @@ export const handlers: Handlers = {
   ...PluginHandlers(pluginManager),
   ...TabHistoryHandlers,
   ...LockHandlers,
+  ...FormatterPresetHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 
