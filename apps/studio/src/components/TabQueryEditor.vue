@@ -156,6 +156,15 @@
             Save
           </x-button>
 
+          <x-buttons v-show="canManageTransactions && isManualCommit && !hasActiveTransaction">
+            <x-button
+              @click.prevent="manualBegin"
+              class="btn btn-flat btn-small"
+            >
+              Begin
+            </x-button>
+          </x-buttons>
+
           <x-buttons v-show="canManageTransactions && isManualCommit && showKeepAlive" class="">
             <x-button
               @click.prevent="keepAliveTransaction"
@@ -321,10 +330,7 @@
         @opened="getPresets"
         :name="superFormatterId"
         :scrollable="true"
-        min-height="80%"
-        min-width="90%"
       >
-        <!-- will need the close it option and then the whole shebang -->
         <div class="dialog-content">
           <div class="dialog-c-title">
             <p>
@@ -509,7 +515,7 @@
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
-import { IdentifyResult } from 'sql-query-identifier/defines'
+  import { IdentifyResult } from 'sql-query-identifier/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -1257,15 +1263,7 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         }
 
         if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
-          await this.maybeReserveConnection();
-          await this.connection.startTransaction(this.tab.id);
-          this.hasActiveTransaction = true
-          if (SmartLocalStorage.exists(hasUsedTransactionsKey)) {
-            this.showTransactionActiveTooltip = false;
-          } else {
-            SmartLocalStorage.setBool(hasUsedTransactionsKey, true);
-            this.showTransactionActiveTooltip = true;
-          }
+          await this.manualBegin();
         }
 
         this.showKeepAlive = false
@@ -1471,6 +1469,17 @@ import { IdentifyResult } from 'sql-query-identifier/defines'
         this.showKeepAlive = false;
         this.maybeCloseWarningNoty();
         this.isManualCommit = mode === "manual";
+      },
+      async manualBegin() {
+        await this.maybeReserveConnection();
+        await this.connection.startTransaction(this.tab.id);
+        this.hasActiveTransaction = true
+        if (SmartLocalStorage.exists(hasUsedTransactionsKey)) {
+          this.showTransactionActiveTooltip = false;
+        } else {
+          SmartLocalStorage.setBool(hasUsedTransactionsKey, true);
+          this.showTransactionActiveTooltip = true;
+        }
       },
       async manualCommit() {
         if (!this.canManageTransactions || !this.hasActiveTransaction) return
