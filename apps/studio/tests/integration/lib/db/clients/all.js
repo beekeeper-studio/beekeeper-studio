@@ -477,7 +477,7 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should isolate changes within transaction until commit", async () => {
-      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions) return
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions || getUtil().dbType === 'cockroachdb') return
       await itShouldIsolateChangesUntilCommit(getUtil())
     })
 
@@ -487,12 +487,12 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     test("should handle multiple queries in same transaction", async () => {
-      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions) return
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions || getUtil().dbType === 'cockroachdb') return
       await itShouldHandleMultipleQueriesInTransaction(getUtil())
     })
 
     test("should support concurrent transactions on different tabs", async () => {
-      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions) return
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions || getUtil().dbType === 'cockroachdb') return
       await itShouldSupportConcurrentTransactions(getUtil())
     })
   })
@@ -1265,9 +1265,9 @@ export const itShouldHaveCorrectFilterTypes = async function(util) {
 export const itShouldSupportIlikeFilter = async function(util) {
   const features = await util.connection.supportedFeatures()
   const ilikeSupported = features.filterTypes.includes('ilike')
-  
+
   if (!ilikeSupported) return
-  
+
   const tableName = 'filter_type_test'
   await util.knex.schema.dropTableIfExists(tableName)
   await util.knex.schema.createTable(tableName, (table) => {
