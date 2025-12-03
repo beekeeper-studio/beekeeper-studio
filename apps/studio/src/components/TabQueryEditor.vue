@@ -123,6 +123,46 @@
             </div>
           </transition>
         </div>
+
+        <div v-if="canManageTransactions && isManualCommit" class="actions btn-group">
+          <x-buttons v-show="!hasActiveTransaction">
+            <x-button
+              @click.prevent="manualBegin"
+              class="btn btn-flat btn-small"
+            >
+              Begin
+            </x-button>
+          </x-buttons>
+
+          <x-buttons v-show="showKeepAlive">
+            <x-button
+              @click.prevent="keepAliveTransaction"
+              class="btn btn-flat btn-small"
+            >
+              <x-label>Keep Alive</x-label>
+            </x-button>
+          </x-buttons>
+          <x-buttons>
+            <x-button
+              @click.prevent="manualCommit"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Commit</x-label>
+            </x-button>
+          </x-buttons>
+          <x-buttons>
+            <x-button
+              @click.prevent="manualRollback"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Rollback</x-label>
+            </x-button>
+          </x-buttons>
+
+        </div>
+
         <div class="editor-help expand" />
         <div class="expand" />
         <div class="actions btn-group">
@@ -155,42 +195,6 @@
           >
             Save
           </x-button>
-
-          <x-buttons v-show="canManageTransactions && isManualCommit && !hasActiveTransaction">
-            <x-button
-              @click.prevent="manualBegin"
-              class="btn btn-flat btn-small"
-            >
-              Begin
-            </x-button>
-          </x-buttons>
-
-          <x-buttons v-show="canManageTransactions && isManualCommit && showKeepAlive" class="">
-            <x-button
-              @click.prevent="keepAliveTransaction"
-              class="btn btn-flat btn-small"
-            >
-              <x-label>Keep Alive</x-label>
-            </x-button>
-          </x-buttons>
-          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
-            <x-button
-              @click.prevent="manualCommit"
-              class="btn btn-flat btn-small"
-              :disabled="!hasActiveTransaction"
-            >
-              <x-label>Commit</x-label>
-            </x-button>
-          </x-buttons>
-          <x-buttons v-show="canManageTransactions && isManualCommit" class="">
-            <x-button
-              @click.prevent="manualRollback"
-              class="btn btn-flat btn-small"
-              :disabled="!hasActiveTransaction"
-            >
-              <x-label>Rollback</x-label>
-            </x-button>
-          </x-buttons>
 
           <x-buttons class="">
             <x-button
