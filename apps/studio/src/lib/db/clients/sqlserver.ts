@@ -1146,6 +1146,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
     if (this.reservedConnections.size >= BksConfig.db.sqlserver.maxReservedConnections) {
       throw new Error(errorMessages.maxReservedConnections)
     }

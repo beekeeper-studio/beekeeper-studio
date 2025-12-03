@@ -1521,6 +1521,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
     if (this.reservedConnections.size >= BksConfig.db[this.connectionType].maxReservedConnections) {
       throw new Error(errorMessages.maxReservedConnections)
     }

@@ -1427,6 +1427,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
   }
 
   async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
     if (this.reservedConnections.size >= BksConfig.db.firebird.maxReservedConnections) {
       throw new Error(errorMessages.maxReservedConnections);
     }

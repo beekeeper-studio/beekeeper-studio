@@ -669,7 +669,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   protected pushConnection(tabId: number, conn: Conn) {
-    this.throwIfHasConnection(tabId);
     this.reservedConnections.set(tabId, conn);
   }
 
