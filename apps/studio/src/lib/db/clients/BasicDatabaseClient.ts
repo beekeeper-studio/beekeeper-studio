@@ -661,10 +661,15 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   async commitTransaction(_tabId: number): Promise<void> {}
   async rollbackTransaction(_tabId: number): Promise<void> {}
 
-  protected pushConnection(tabId: number, conn: Conn) {
+  /** @throws Will throw if the `tabId` is already reserved */
+  protected throwIfHasConnection(tabId: number) {
     if (this.reservedConnections.has(tabId)) {
       throw new Error("Tab has already reserved a connection from the pool");
     }
+  }
+
+  protected pushConnection(tabId: number, conn: Conn) {
+    this.throwIfHasConnection(tabId);
     this.reservedConnections.set(tabId, conn);
   }
 
