@@ -57,7 +57,6 @@ import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
-import globals from "@/common/globals";
 import BksConfig from "@/common/bksConfig";
 
 type FirebirdResult = {
@@ -281,7 +280,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
 
     log.debug("create driver client for firebird with config %j", config);
 
-    this.pool =  new Pool(globals.firebird.poolSize, config);
+    this.pool =  new Pool(BksConfig.db.firebird.maxConnections, config);
 
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
