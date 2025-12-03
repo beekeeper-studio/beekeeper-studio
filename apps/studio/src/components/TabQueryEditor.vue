@@ -91,8 +91,8 @@
                 @click.prevent="toggleCommitMode('manual')"
                 v-tooltip="getCommitModeVTooltip({
                   title: 'Manual commit mode',
-                  description: 'This is new! It helps you running transactions.',
-                  learnMoreLink: 'https://beekeeperstudio.io/',
+                  description: 'Write actions will require you to manually commit your changes',
+                  learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
                 })"
               >
                 <span class="togglebutton-content">
@@ -109,7 +109,7 @@
                 ...getCommitModeVTooltip({
                   title: `<i class='material-icons'>commit</i><span>Transaction active</span>`,
                   description: 'Once committed or rolled back, it will be deactivated.',
-                  learnMoreLink: 'https://beekeeperstudio.io/',
+                  learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
                   className: 'transaction-active',
                   show: showTransactionActiveTooltip,
                   onClose() {
