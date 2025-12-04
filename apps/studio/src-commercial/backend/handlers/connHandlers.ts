@@ -51,7 +51,7 @@ export interface IConnectionHandlers {
   'conn/getIncomingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
   'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
-  'conn/query': ({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) => Promise<string>,
+  'conn/query': ({ queryText, options, tabId, hasActiveTransaction, sId }: { queryText: string, options?: any, tabId: number, hasActiveTransaction: boolean, sId: string }) => Promise<string>,
   'conn/getCompletions': ({ cmd, sId }: { cmd: string, sId: string }) => Promise<string[]>,
   'conn/getShellPrompt': ({ sId }: { sId: string }) => Promise<string>,
   'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
@@ -120,6 +120,14 @@ export interface IConnectionHandlers {
 
   'conn/getQueryForFilter': ({ filter, sId }: { filter: TableFilter, sId: string }) => Promise<string>,
   'conn/getFilteredDataCount': ({ table, schema, filter, sId }: { table: string, schema: string | null, filter: string, sId: string }) => Promise<string>
+
+  'conn/reserveConnection': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/releaseConnection': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/startTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/commitTransaction': ({ tabId, sId }: { tabId: number, sId: string }) => Promise<void>,
+  'conn/rollbackTransaction': ({ tabId, sId}: { tabId: number, sId: string }) => Promise<void>,
+
+  'conn/resetTransactionTimeout': ({ tabId, sId}: {tabId: number, sId: string}) => Promise<void>
 }
 
 export const ConnHandlers: IConnectionHandlers = {
@@ -333,11 +341,12 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.executeCommand(commandText);
   },
 
-  'conn/query': async function({ queryText, options, sId }: { queryText: string, options?: any, sId: string }) {
+  'conn/query': async function({ queryText, options, tabId, hasActiveTransaction, sId }: { queryText: string, options?: any, tabId: number, hasActiveTransaction: boolean, sId: string }) {
     checkConnection(sId);
-    const query = await state(sId).connection.query(queryText, options);
+    const query = await state(sId).connection.query(queryText, tabId, options);
     const id = uuidv4();
     state(sId).queries.set(id, query);
+    createOrResetTransactionTimeout(sId, tabId, !hasActiveTransaction);
     return id;
   },
 
@@ -581,4 +590,73 @@ export const ConnHandlers: IConnectionHandlers = {
     checkConnection(sId)
     return await state(sId).connection.getFilteredDataCount(table, schema, filter)
   },
+  'conn/reserveConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.reserveConnection(tabId);
+  },
+
+  'conn/releaseConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.releaseConnection(tabId);
+  },
+
+  'conn/startTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.startTransaction(tabId);
+    createOrResetTransactionTimeout(sId, tabId);
+  },
+
+  'conn/commitTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.commitTransaction(tabId);
+    clearTransactionTimeout(sId, tabId);
+  },
+
+  'conn/rollbackTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    checkConnection(sId);
+    await state(sId).connection.rollbackTransaction(tabId);
+    clearTransactionTimeout(sId, tabId);
+  },
+
+  'conn/resetTransactionTimeout': async function({ tabId, sId }: { tabId: number, sId: string }) {
+    createOrResetTransactionTimeout(sId, tabId, true);
+  }
+}
+
+function clearTransactionTimeout(sId: string, tabId: number) {
+  if (state(sId).transactionTimeouts.has(tabId)) {
+    const timeout = state(sId).transactionTimeouts.get(tabId);
+    clearTimeout(timeout);
+  }
+}
+
+function createOrResetTransactionTimeout(sId: string, tabId: number, mustExist: boolean = false) {
+  if (mustExist && !state(sId).transactionTimeouts.has(tabId)) {
+    return;
+  }
+
+  clearTransactionTimeout(sId, tabId);
+
+  let connectionType: string = state(sId).connection.connectionType;
+  connectionType = connectionType === 'postgresql' ? 'postgres' : connectionType;
+  const timeout = setTimeout(() => {
+    state(sId).port.postMessage({
+      type: `transactionTimeoutWarning/${tabId}`
+    });
+
+    const warningWindowTimeout = setTimeout(async () => {
+      checkConnection(sId);
+      await state(sId).connection.rollbackTransaction(tabId);
+      clearTransactionTimeout(sId, tabId);
+
+      state(sId).port.postMessage({
+        type: `transactionTimedOut/${tabId}`
+      });
+
+    }, bksConfig.db[connectionType].autoRollbackWarningWindow);
+
+    state(sId).transactionTimeouts.set(tabId, warningWindowTimeout);
+
+  }, bksConfig.db[connectionType].manualTransactionTimeout - bksConfig.db[connectionType].autoRollbackWarningWindow)
+  state(sId).transactionTimeouts.set(tabId, timeout);
 }

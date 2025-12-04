@@ -451,6 +451,51 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().resolveTableColumns()
     })
   })
+
+  describe("Manual Commit Mode (Transaction Management)", () => {
+    beforeEach(async () => {
+      await prepareManualCommitTestTable(getUtil())
+    })
+
+    afterEach(async () => {
+      // Clean up any reserved connections
+      try {
+        await getUtil().connection.releaseConnection(999)
+      } catch (e) {
+        // Ignore errors if connection wasn't reserved
+      }
+      try {
+        await getUtil().connection.releaseConnection(1000)
+      } catch (e) {
+        // Ignore errors if connection wasn't reserved
+      }
+    })
+
+    test("should reserve and release connection", async () => {
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions) return
+      await itShouldReserveAndReleaseConnection(getUtil())
+    })
+
+    test("should isolate changes within transaction until commit", async () => {
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions || getUtil().dbType === 'cockroachdb') return
+      await itShouldIsolateChangesUntilCommit(getUtil())
+    })
+
+    test("should rollback uncommitted changes", async () => {
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions) return
+      await itShouldRollbackUncommittedChanges(getUtil())
+    })
+
+    test("should handle multiple queries in same transaction", async () => {
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions || getUtil().dbType === 'cockroachdb') return
+      await itShouldHandleMultipleQueriesInTransaction(getUtil())
+    })
+
+    test("should support concurrent transactions on different tabs", async () => {
+      if (getUtil().data.disabledFeatures?.manualCommit || getUtil().options.skipTransactions || getUtil().dbType === 'cockroachdb') return
+      await itShouldSupportConcurrentTransactions(getUtil())
+    })
+  })
 }
 
 // test functions below
@@ -1220,9 +1265,9 @@ export const itShouldHaveCorrectFilterTypes = async function(util) {
 export const itShouldSupportIlikeFilter = async function(util) {
   const features = await util.connection.supportedFeatures()
   const ilikeSupported = features.filterTypes.includes('ilike')
-  
+
   if (!ilikeSupported) return
-  
+
   const tableName = 'filter_type_test'
   await util.knex.schema.dropTableIfExists(tableName)
   await util.knex.schema.createTable(tableName, (table) => {
@@ -1283,4 +1328,241 @@ export const itShouldSupportIlikeFilter = async function(util) {
   }
 
   await util.knex.schema.dropTableIfExists(tableName)
+}
+// Manual Commit Tests
+
+/**
+ * Helper function to get the properly formatted table name for manual commit tests
+ * @param {string} dbType - The database type
+ * @returns {string} - The formatted table name
+ */
+function getManualCommitTableName(dbType) {
+  switch (dbType) {
+    case 'sqlserver':
+      return '[dbo].[manual_commit_test]'
+    case 'oracle':
+      return 'BEEKEEPER."manual_commit_test"'
+    default:
+      return 'manual_commit_test'
+  }
+}
+
+/**
+ * Helper function to wrap column names for specific database types
+ * @param {string} dbType - The database type
+ * @param {string} columnName - The column name to wrap
+ * @returns {string} - The wrapped column name
+ */
+function wrapColumn(dbType, columnName) {
+  if (dbType === 'oracle') {
+    return `"${columnName}"`
+  }
+  return columnName
+}
+
+/**
+ * Helper function to build INSERT query for manual commit tests
+ * @param {string} dbType - The database type
+ * @param {number} id - The ID value
+ * @param {string} name - The name value
+ * @returns {string} - The INSERT query
+ */
+function buildInsertQuery(dbType, id, name) {
+  const tableName = getManualCommitTableName(dbType)
+  const idCol = wrapColumn(dbType, 'id')
+  const nameCol = wrapColumn(dbType, 'name')
+  return `INSERT INTO ${tableName} (${idCol}, ${nameCol}) VALUES (${id}, '${name}')`
+}
+
+/**
+ * Helper function to build SELECT query for manual commit tests
+ * @param {string} dbType - The database type
+ * @param {string} [orderBy] - Optional ORDER BY clause
+ * @returns {string} - The SELECT query
+ */
+function buildSelectQuery(dbType, orderBy = '') {
+  const tableName = getManualCommitTableName(dbType)
+  const orderColumn = orderBy ? wrapColumn(dbType, orderBy) : ''
+  const orderClause = orderBy ? ` ORDER BY ${orderColumn}` : ''
+  return `SELECT * FROM ${tableName}${orderClause}`
+}
+
+/**
+ * Helper function to build UPDATE query for manual commit tests
+ * @param {string} dbType - The database type
+ * @param {number} id - The ID value to match
+ * @param {string} name - The new name value
+ * @returns {string} - The UPDATE query
+ */
+function buildUpdateQuery(dbType, id, name) {
+  const tableName = getManualCommitTableName(dbType)
+  const idCol = wrapColumn(dbType, 'id')
+  const nameCol = wrapColumn(dbType, 'name')
+  return `UPDATE ${tableName} SET ${nameCol} = '${name}' WHERE ${idCol} = ${id}`
+}
+
+const prepareManualCommitTestTable = async function(util) {
+  await util.knex.schema.dropTableIfExists("manual_commit_test")
+  await util.knex.schema.createTable("manual_commit_test", (table) => {
+    table.integer("id").primary().notNullable()
+    table.specificType("name", "varchar(255)")
+  })
+}
+
+export const itShouldReserveAndReleaseConnection = async function(util) {
+  const tabId = 999
+
+  // Reserve a connection
+  await util.connection.reserveConnection(tabId)
+
+  // Verify connection is reserved by attempting to reserve again (should throw)
+  await expect(util.connection.reserveConnection(tabId)).rejects.toThrow()
+
+  // Release the connection
+  await util.connection.releaseConnection(tabId)
+
+  // Should be able to reserve again after release
+  await util.connection.reserveConnection(tabId)
+  await util.connection.releaseConnection(tabId)
+}
+
+export const itShouldIsolateChangesUntilCommit = async function(util) {
+  const tabId = 999
+
+  // Reserve connection and start transaction
+  await util.connection.reserveConnection(tabId)
+  await util.connection.startTransaction(tabId)
+
+  // Insert data within the transaction
+  const insertQuery = buildInsertQuery(util.dbType, 1, 'Test User')
+
+  const query = await util.connection.query(insertQuery, tabId)
+  await query.execute();
+
+  // Query from outside the transaction (simulate user checking from another tab) - should NOT see the data
+  const selectQuery = buildSelectQuery(util.dbType)
+
+  const queryBeforeCommit = await util.connection.query(selectQuery)
+  const resultsBeforeCommit = await queryBeforeCommit.execute()
+  expect(resultsBeforeCommit[0].rows.length).toBe(0)
+
+  // Commit the transaction
+  await util.connection.commitTransaction(tabId)
+
+  // Now query from outside - should see the data
+  const queryAfterCommit = await util.connection.query(selectQuery)
+  const resultsAfterCommit = await queryAfterCommit.execute()
+  expect(resultsAfterCommit[0].rows.length).toBe(1)
+
+  // Clean up
+  await util.connection.releaseConnection(tabId)
+}
+
+export const itShouldRollbackUncommittedChanges = async function(util) {
+  const tabId = 999
+
+  // Reserve connection and start transaction
+  await util.connection.reserveConnection(tabId)
+  await util.connection.startTransaction(tabId)
+
+  // Insert data within the transaction
+  const insertQuery = buildInsertQuery(util.dbType, 2, 'Rollback Test')
+
+  const query = await util.connection.query(insertQuery, tabId)
+  await query.execute();
+
+  // Rollback the transaction
+  await util.connection.rollbackTransaction(tabId)
+
+  // Query from outside - should NOT see the rolled back data
+  const selectQuery = buildSelectQuery(util.dbType)
+
+  const queryAfterRollback = await util.connection.query(selectQuery)
+  const results = await queryAfterRollback.execute()
+  expect(results[0].rows.length).toBe(0)
+
+  // Clean up
+  await util.connection.releaseConnection(tabId)
+}
+
+export const itShouldHandleMultipleQueriesInTransaction = async function(util) {
+  const tabId = 999
+
+  // Reserve connection and start transaction
+  await util.connection.reserveConnection(tabId)
+  await util.connection.startTransaction(tabId)
+
+  // Execute multiple queries in the same transaction
+  const insertQuery1 = buildInsertQuery(util.dbType, 3, 'User 1')
+  const insertQuery2 = buildInsertQuery(util.dbType, 4, 'User 2')
+  const updateQuery = buildUpdateQuery(util.dbType, 3, 'Updated User')
+
+  const query1 = await util.connection.query(insertQuery1, tabId)
+  await query1.execute()
+  const query2 = await util.connection.query(insertQuery2, tabId)
+  await query2.execute()
+  const query3 = await util.connection.query(updateQuery, tabId)
+  await query3.execute()
+
+  // Verify from outside transaction - should see nothing
+  const selectQuery = buildSelectQuery(util.dbType, 'id')
+
+  const queryBeforeCommit = await util.connection.query(selectQuery)
+  const resultsBeforeCommit = await queryBeforeCommit.execute()
+  expect(resultsBeforeCommit[0].rows.length).toBe(0)
+
+  // Commit the transaction
+  await util.connection.commitTransaction(tabId)
+
+  // Now verify all changes are committed
+  const queryAfterCommit = await util.connection.query(selectQuery)
+  const resultsAfterCommit = await queryAfterCommit.execute()
+  expect(resultsAfterCommit[0].rows.length).toBe(2)
+
+  // Clean up
+  await util.connection.releaseConnection(tabId)
+}
+
+export const itShouldSupportConcurrentTransactions = async function(util) {
+  const tabId1 = 999
+  const tabId2 = 1000
+
+  // Reserve two separate connections for two different tabs
+  await util.connection.reserveConnection(tabId1)
+  await util.connection.reserveConnection(tabId2)
+
+  // Start transactions on both
+  await util.connection.startTransaction(tabId1)
+  await util.connection.startTransaction(tabId2)
+
+  // Insert different data in each transaction
+  const insertQuery1 = buildInsertQuery(util.dbType, 5, 'Tab 1 User')
+  const insertQuery2 = buildInsertQuery(util.dbType, 6, 'Tab 2 User')
+
+  const query1 = await util.connection.query(insertQuery1, tabId1)
+  await query1.execute()
+  const query2 = await util.connection.query(insertQuery2, tabId2)
+  await query2.execute()
+
+  // Commit only the first transaction
+  await util.connection.commitTransaction(tabId1)
+
+  // Check that only tab1's data is visible outside transactions
+  const selectQuery = buildSelectQuery(util.dbType, 'id')
+
+  const queryAfterFirstCommit = await util.connection.query(selectQuery)
+  const resultsAfterFirstCommit = await queryAfterFirstCommit.execute()
+  expect(resultsAfterFirstCommit[0].rows.length).toBe(1)
+
+  // Rollback the second transaction
+  await util.connection.rollbackTransaction(tabId2)
+
+  // Verify only tab1's data remains
+  const queryFinal = await util.connection.query(selectQuery)
+  const finalResults = await queryFinal.execute()
+  expect(finalResults[0].rows.length).toBe(1)
+
+  // Clean up
+  await util.connection.releaseConnection(tabId1)
+  await util.connection.releaseConnection(tabId2)
 }

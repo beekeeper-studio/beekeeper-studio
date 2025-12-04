@@ -74,7 +74,7 @@
       overflow: hidden;
     }
     .nav-item-wrap-chosen {
-      background: color.adjust($theme-bg, $lightness: 3%);
+      /* background: color.adjust($theme-bg, $lightness: 3%); */
       opacity: 0.5;
     }
     .nav-item {
@@ -113,6 +113,27 @@
             display: inline-block;
           }
 
+        }
+      }
+      &.active-transaction {
+        .tab-title,
+        .item-icon {
+          color: var(--brand-warning);
+        }
+
+        &:not(.active) {
+          background-color: color-mix(
+            in srgb,
+            var(--brand-warning) 20%,
+            hsl(from var(--theme-bg) h s calc(l + 3)));
+
+          .tab-action {
+            background: transparent;
+
+            .tab-close .material-icons {
+              color: var(--brand-warning);
+            }
+          }
         }
       }
       &:hover {

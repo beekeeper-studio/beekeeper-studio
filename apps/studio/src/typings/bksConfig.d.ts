@@ -3,6 +3,10 @@ declare interface IBksConfig {
     db: {
         bigquery: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: string[];
                 numbered: any[];
@@ -12,6 +16,10 @@ declare interface IBksConfig {
         };
         cassandra: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -21,6 +29,10 @@ declare interface IBksConfig {
         };
         clickhouse: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -30,9 +42,12 @@ declare interface IBksConfig {
         };
         cockroachdb: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
             connectionTimeout: number;
             idleTimeout: number;
-            maxClient: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: string[];
@@ -42,6 +57,10 @@ declare interface IBksConfig {
         };
         default: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -52,6 +71,10 @@ declare interface IBksConfig {
         default_parsed: any;
         duckdb: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -61,6 +84,10 @@ declare interface IBksConfig {
         };
         firebird: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -70,6 +97,10 @@ declare interface IBksConfig {
         };
         libsql: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -79,7 +110,11 @@ declare interface IBksConfig {
         };
         mariadb: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
             connectTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -89,6 +124,10 @@ declare interface IBksConfig {
         };
         mongodb: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -98,7 +137,11 @@ declare interface IBksConfig {
         };
         mysql: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
             connectTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -108,6 +151,10 @@ declare interface IBksConfig {
         };
         oracle: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -117,9 +164,12 @@ declare interface IBksConfig {
         };
         postgres: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
             connectionTimeout: number;
             idleTimeout: number;
-            maxClient: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: string[];
@@ -129,6 +179,10 @@ declare interface IBksConfig {
         };
         redis: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -138,9 +192,12 @@ declare interface IBksConfig {
         };
         redshift: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
             connectionTimeout: number;
             idleTimeout: number;
-            maxClient: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: string[];
@@ -150,6 +207,10 @@ declare interface IBksConfig {
         };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -159,6 +220,10 @@ declare interface IBksConfig {
         };
         sqlite: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: string[];
                 numbered: string[];
@@ -168,6 +233,10 @@ declare interface IBksConfig {
         };
         sqlserver: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: string[];
                 numbered: any[];
@@ -177,7 +246,11 @@ declare interface IBksConfig {
         };
         surrealdb: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
             connectionTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -187,6 +260,10 @@ declare interface IBksConfig {
         };
         tidb: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -196,6 +273,10 @@ declare interface IBksConfig {
         };
         trino: {
             allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];
@@ -224,6 +305,8 @@ declare interface IBksConfig {
         queryEditor: {
             closeTableFilter: string;
             copyResultSelection: string;
+            manualCommit: string;
+            manualRollback: string;
             openTableFilter: string;
             selectEditor: string;
             selectNextResult: string;

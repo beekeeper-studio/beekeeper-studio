@@ -10,7 +10,7 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
@@ -84,7 +84,7 @@ const postgresContext = {
   }
 };
 
-export class PostgresClient extends BasicDatabaseClient<QueryResult> {
+export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
@@ -730,14 +730,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     });
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
       execute: async (): Promise<NgQueryResult[]> => {
-        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
+        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid', { tabId });
         const rows = dataPid.rows
 
         pid = rows[0].pid;
@@ -745,7 +745,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, { arrayMode: true }),
+            this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
 
           pid = null;
@@ -774,7 +774,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
         canceling = true;
         try {
-          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`);
+          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`, { tabId });
 
           const rows = data.rows
 
@@ -793,7 +793,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode });
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
 
@@ -1279,10 +1279,49 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
+  // Manual transaction management
+  async reserveConnection(tabId: number) {
+    this.throwIfHasConnection(tabId);
 
-    // This means connection.release will be called elsewhere
-    if (options.connection) {
+    const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+    if (this.reservedConnections.size >= BksConfig.db[connectionType].maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
+    const conn = await this.conn.pool.connect();
+    this.pushConnection(tabId, conn);
+  }
+
+  async releaseConnection(tabId: number) {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      conn.release();
+    }
+  }
+
+  async startTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'BEGIN', {});
+  }
+
+  async commitTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'COMMIT', {});
+  }
+
+  async rollbackTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'ROLLBACK', {});
+  }
+
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
+    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+    const hasReserved = this.reservedConnections.has(options?.tabId)
+    if (options?.tabId && hasReserved) {
+      const conn = this.peekConnection(options?.tabId);
+      return await this.runQuery(conn, q, options);
+    } else if (options.connection) {
+      // This means connection.release will be called elsewhere
       return await this.runQuery(options.connection, q, options)
     } else {
       log.info('Acquiring new connection for: ', q)
@@ -1295,7 +1334,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
-  private async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
+  async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
     const connection = await this.conn.pool.connect()
     try {
       return await child(connection)
@@ -1458,7 +1497,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       port: server.config.port || undefined,
       password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
-      max: 8, // max idle connections per time (30 secs)
+      max: BksConfig.db.postgres.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };

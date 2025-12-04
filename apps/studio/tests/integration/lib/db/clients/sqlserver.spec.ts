@@ -66,7 +66,30 @@ function testWith(dockerTag: string, readonly: boolean) {
         trustServerCertificate: true,
         readOnlyMode: readonly
       } as IDbConnectionServerConfig
-      util = new DBTestUtil(config, "tempdb", { defaultSchema: 'dbo', dialect: 'sqlserver'})
+
+      // Create a test database (tempdb doesn't support READ_COMMITTED_SNAPSHOT)
+      const testDbName = 'beekeeper_test_db'
+
+      // Connect to master to create the test database
+      const masterUtil = new DBTestUtil(config, "master", { defaultSchema: 'dbo', dialect: 'sqlserver'})
+      await masterUtil.connection.connect()
+
+      try {
+        await masterUtil.knex.schema.raw(`DROP DATABASE ${testDbName}`)
+      } catch (e) {
+        // Database might not exist, ignore
+      }
+
+      await masterUtil.knex.schema.raw(`CREATE DATABASE ${testDbName}`)
+
+      // Enable READ_COMMITTED_SNAPSHOT isolation to prevent readers from being blocked by writers
+      // This allows transaction isolation tests to work properly
+      await masterUtil.knex.schema.raw(`ALTER DATABASE ${testDbName} SET READ_COMMITTED_SNAPSHOT ON`)
+
+      await masterUtil.disconnect()
+
+      // Now connect to the test database
+      util = new DBTestUtil(config, testDbName, { defaultSchema: 'dbo', dialect: 'sqlserver'})
       await util.setupdb()
 
       await util.knex.schema.raw("CREATE SCHEMA hello")
@@ -78,7 +101,29 @@ function testWith(dockerTag: string, readonly: boolean) {
     })
 
     afterAll(async () => {
+      const testDbName = 'beekeeper_test_db'
+      const config = {
+        client: 'sqlserver',
+        host: container.getHost(),
+        port: container.getMappedPort(1433),
+        user: 'sa',
+        password: 'Example*1',
+        trustServerCertificate: true,
+        readOnlyMode: readonly
+      } as IDbConnectionServerConfig
+
       await util.disconnect()
+
+      // Drop the test database
+      try {
+        const masterUtil = new DBTestUtil(config, "master", { defaultSchema: 'dbo', dialect: 'sqlserver'})
+        await masterUtil.connection.connect()
+        await masterUtil.knex.schema.raw(`DROP DATABASE ${testDbName}`)
+        await masterUtil.disconnect()
+      } catch (e) {
+        // Ignore errors during cleanup
+      }
+
       if (container) {
         await container.stop()
       }

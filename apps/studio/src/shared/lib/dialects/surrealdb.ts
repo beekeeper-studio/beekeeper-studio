@@ -106,6 +106,7 @@ export const SurrealDBData: DialectData = {
   textEditorMode: "text/x-sql", // look into how we do this with the cm6 plugin
   defaultColumnType: 'any',
   disabledFeatures: {
+    manualCommit: true,
     shell: true,
     alter: {
       everything: true

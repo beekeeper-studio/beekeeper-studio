@@ -22,6 +22,29 @@
   box-shadow: 0 1px 4px rgba(black, 0.37) !important;
 }
 
+@mixin labelled-switch {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: $input-height;
+  height: $input-height;
+  font-weight: 700;
+  outline: 0;
+  border: 0;
+  padding: 0 1rem;
+  min-width: 88px;
+  box-shadow: inset 0 0 0 1px rgba(white, 0.025);
+  border-radius: $btn-border-radius;
+  transition: background 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  color: var(--bks-theme-base);
+  background: rgb(from var(--bks-theme-base) r g b / 6%);
+}
+
 
 @mixin btn {
   display: inline-flex;

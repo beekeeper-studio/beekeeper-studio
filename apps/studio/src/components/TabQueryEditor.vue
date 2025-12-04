@@ -62,10 +62,107 @@
         @bks-query-selection-change="handleQuerySelectionChange"
         @bks-apply-preset="applyPreset"
       />
+      <span class="expand" />
       <div
         class="toolbar text-right"
         ref="toolbar"
       >
+        <div class="actions" v-if="canManageTransactions">
+          <transition name="fade-swap">
+            <x-buttons
+              id="commit-mode"
+              class="selectbutton"
+              v-if="!hasActiveTransaction"
+            >
+              <x-button
+                :toggled="!isManualCommit"
+                @click.prevent="toggleCommitMode('auto')"
+                v-tooltip="getCommitModeVTooltip({
+                  title: 'Auto commit mode',
+                  description: 'This is the way it works by default. No need to worry about it.',
+                })"
+              >
+                <span class="togglebutton-content">
+                  {{ !isManualCommit ? 'Auto Commit' : 'Auto' }}
+                </span>
+              </x-button>
+              <x-button
+                :toggled="isManualCommit"
+                @click.prevent="toggleCommitMode('manual')"
+                v-tooltip="getCommitModeVTooltip({
+                  title: 'Manual commit mode',
+                  description: 'Write actions will require you to manually commit your changes',
+                  learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
+                })"
+              >
+                <span class="togglebutton-content">
+                  {{ isManualCommit ? 'Manual Commit' : 'Manual' }}
+                </span>
+              </x-button>
+            </x-buttons>
+          </transition>
+          <transition name="fade-swap">
+            <div
+              v-if="hasActiveTransaction"
+              class="transaction-indicator"
+              v-tooltip="{
+                ...getCommitModeVTooltip({
+                  title: `<i class='material-icons'>commit</i><span>Transaction active</span>`,
+                  description: 'Once committed or rolled back, it will be deactivated.',
+                  learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
+                  className: 'transaction-active',
+                  show: showTransactionActiveTooltip,
+                  onClose() {
+                    showTransactionActiveTooltip = false
+                  },
+                }),
+              }"
+            >
+              <i class="material-icons">commit</i>
+              <span>Transaction active</span>
+            </div>
+          </transition>
+        </div>
+
+        <div v-if="canManageTransactions && isManualCommit" class="actions btn-group">
+          <x-buttons v-show="!hasActiveTransaction">
+            <x-button
+              @click.prevent="manualBegin"
+              class="btn btn-flat btn-small"
+            >
+              Begin
+            </x-button>
+          </x-buttons>
+
+          <x-buttons v-show="showKeepAlive">
+            <x-button
+              @click.prevent="keepAliveTransaction"
+              class="btn btn-flat btn-small"
+            >
+              <x-label>Keep Alive</x-label>
+            </x-button>
+          </x-buttons>
+          <x-buttons>
+            <x-button
+              @click.prevent="manualCommit"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Commit</x-label>
+            </x-button>
+          </x-buttons>
+          <x-buttons>
+            <x-button
+              @click.prevent="manualRollback"
+              class="btn btn-flat btn-small"
+              :disabled="!hasActiveTransaction"
+            >
+              <x-label>Rollback</x-label>
+            </x-button>
+          </x-buttons>
+
+        </div>
+
         <div class="editor-help expand" />
         <div class="expand" />
         <div class="actions btn-group">
@@ -104,7 +201,7 @@
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
-              :disabled="running"
+              :disabled="this.tab.isRunning || running"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
@@ -237,10 +334,7 @@
         @opened="getPresets"
         :name="superFormatterId"
         :scrollable="true"
-        min-height="80%"
-        min-width="90%"
       >
-        <!-- will need the close it option and then the whole shebang -->
         <div class="dialog-content">
           <div class="dialog-c-title">
             <p>
@@ -424,10 +518,13 @@
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
+  import { SmartLocalStorage } from '@/common/LocalStorage';
+  import { IdentifyResult } from 'sql-query-identifier/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
   const editorDefault = "\n\n\n\n\n\n\n\n\n\n"
+  const hasUsedTransactionsKey = "hasUsedTransactions";
 
   export default {
     // this.queryText holds the current editor value, always
@@ -490,6 +587,14 @@
         individualQueries: [],
         currentlySelectedQuery: null,
         queryMagic: queryMagicExtension(),
+        isManualCommit: false,
+        hasActiveTransaction: false,
+        transactionTimeoutWarningListenerId: null,
+        transactionTimeoutListenerId: null,
+        showKeepAlive: false,
+        warningNoty: null,
+        showTransactionActiveTooltip: false,
+        enteredTransactionFromIdent: false,
       }
     },
     computed: {
@@ -503,6 +608,14 @@
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      queryTabTitle() {
+        if (this.tab.query && this.tab.query.title) {
+          return this.tab.query.title;
+        }
+      },
+      canManageTransactions() {
+        return !this.dialectData?.disabledFeatures?.manualCommit;
+      },
       editorComponent() {
         return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
       },
@@ -597,6 +710,8 @@
           'queryEditor.selectEditor': this.selectEditor,
           'queryEditor.submitQueryToFile': this.submitQueryToFile,
           'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.manualCommit': this.manualCommit,
+          'queryEditor.manualRollback': this.manualRollback,
         })
       },
       queryParameterPlaceholders() {
@@ -788,8 +903,15 @@
         }
         this.focusingElement = element
       },
+      hasActiveTransaction() {
+        this.tab.isTransaction = this.hasActiveTransaction;
+        this.updateTab();
+      }
     },
     methods: {
+      updateTab() {
+        this.$emit('update-tab', this.tab)
+      },
       formatterPreset() {
         this.handleFormatterPresetModal({ showFormatter: true })
       },
@@ -979,6 +1101,7 @@
       async cancelQuery() {
         if (this.running && this.runningQuery) {
           this.running = false
+          this.tab.isRunning = false
           this.info = 'Query Execution Cancelled'
           await this.runningQuery.cancel();
           this.runningQuery = null;
@@ -1053,6 +1176,35 @@
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
+      addTransactionTimeoutListener() {
+        const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        this.transactionTimeoutWarningListenerId = this.$util.addListener(`transactionTimeoutWarning/${this.tab.id}`, () => {
+          this.showKeepAlive = true;
+          this.warningNoty = this.$noty.warning(`The Transaction in ${this.tab?.query?.title ?? this.tab?.title } will be automatically rolled back soon!`, {
+            buttons: [
+              Noty.button('Show Tab', "btn btn-primary", () => {
+                this.$store.dispatch('tabs/setActive', this.tab);
+              })
+            ],
+            timeout: this.$bksConfig.db[connectionType].autoRollbackWarningWindow
+          })
+        })
+
+        this.transactionTimeoutListenerId = this.$util.addListener(`transactionTimedOut/${this.tab.id}`, () => {
+          this.toggleCommitMode();
+          this.$noty.info("Transaction timed out and was automatically rolled back.", {
+            buttons: [
+              Noty.button('Show Tab', "btn btn-primary", () => {
+                this.$store.dispatch('tabs/setActive', this.tab);
+              })
+            ]
+          })
+        })
+      },
+      removeTransactionTimeoutListener() {
+        this.$util.removeListener(this.transactionTimeoutWarningListenerId);
+        this.$util.removeListener(this.transactionTimeoutListenerId);
+      },
       async submitQueryToFile() {
         if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal)
@@ -1081,7 +1233,7 @@
         if(this.running) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
-          this.submitQuery(this.currentlySelectedQuery.text)
+          await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -1097,6 +1249,15 @@
           this.error = 'No query to run'
         }
       },
+      async maybeReserveConnection() {
+        try {
+          await this.connection.reserveConnection(this.tab.id);
+        } catch (e) {
+          await this.toggleCommitMode();
+          this.$noty.error(e.message);
+          return;
+        }
+      },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
 
@@ -1105,7 +1266,14 @@
           await this.cancelQuery();
         }
 
+        if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
+          await this.manualBegin();
+        }
+
+        this.showKeepAlive = false
+        this.maybeCloseWarningNoty();
         this.tab.isRunning = true
+        this.updateTab();
         this.running = true
         this.error = null
         this.queryForExecution = rawQuery
@@ -1114,6 +1282,20 @@
         let identification = []
         try {
           identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+
+          if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
+            const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
+            const endTransaction = identification.filter((value: IdentifyResult) => value.type === "COMMIT" || value.type === "ROLLBACK").length
+
+            if (!this.isManualCommit && !this.hasActiveTransaction && startTransaction > endTransaction) {
+              await this.toggleCommitMode();
+              await this.maybeReserveConnection();
+              this.enteredTransactionFromIdent = true;
+              this.hasActiveTransaction = true;
+            } else if (this.isManualCommit && this.hasActiveTransaction && endTransaction > startTransaction) {
+              await this.toggleCommitMode();
+            }
+          }
         } catch (ex) {
           log.error("Unable to identify query", ex)
         }
@@ -1134,7 +1316,7 @@
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, { dryRun: this.dryRun });
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun}, this.hasActiveTransaction);
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
@@ -1265,6 +1447,75 @@
           this.focusingElement = 'none'
         })
       },
+      maybeCloseWarningNoty() {
+        if (this.warningNoty) {
+          this.warningNoty.close();
+          this.warningNoty = null;
+        }
+      },
+      async toggleCommitMode(mode?: "manual" | "auto") {
+        if (!this.canManageTransactions) return
+        if (_.isNil(mode)) {
+          mode = this.isManualCommit ? "auto" : "manual";
+        } else if ((mode === "manual" && this.isManualCommit)
+          || (mode === "auto" && !this.isManualCommit)) {
+          return
+        }
+        if (mode === "auto") {
+          if (this.hasActiveTransaction) {
+            await this.connection.rollbackTransaction(this.tab.id);
+          }
+          this.hasActiveTransaction = false;
+          await this.connection.releaseConnection(this.tab.id);
+        }
+
+        this.enteredTransactionFromIdent = false;
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
+        this.isManualCommit = mode === "manual";
+      },
+      async manualBegin() {
+        await this.maybeReserveConnection();
+        await this.connection.startTransaction(this.tab.id);
+        this.hasActiveTransaction = true
+        if (SmartLocalStorage.exists(hasUsedTransactionsKey)) {
+          this.showTransactionActiveTooltip = false;
+        } else {
+          SmartLocalStorage.setBool(hasUsedTransactionsKey, true);
+          this.showTransactionActiveTooltip = true;
+        }
+      },
+      async manualCommit() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
+        await this.connection.commitTransaction(this.tab.id);
+        await this.connection.releaseConnection(this.tab.id);
+        this.hasActiveTransaction = false;
+        this.$noty.success("Successfully committed transaction")
+
+        if (this.enteredTransactionFromIdent) {
+          await this.toggleCommitMode();
+        }
+      },
+      async manualRollback() {
+        if (!this.canManageTransactions || !this.hasActiveTransaction) return
+        await this.connection.rollbackTransaction(this.tab.id)
+        await this.connection.releaseConnection(this.tab.id);
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
+        this.hasActiveTransaction = false;
+        this.$noty.success("Successfully rolled back transaction")
+
+        if (this.enteredTransactionFromIdent) {
+          await this.toggleCommitMode();
+        }
+      },
+      async keepAliveTransaction() {
+        this.showKeepAlive = false;
+        this.maybeCloseWarningNoty();
+        await this.$util.send('conn/resetTransactionTimeout', { tabId: this.tab.id });
+      },
       async columnsGetter(tableName: string) {
         let table = this.tables.find(
           (t: TableOrView) => t.name === tableName || `${t.schema}.${t.name}` === tableName
@@ -1309,6 +1560,51 @@
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
       },
+      getCommitModeVTooltip(options: {
+        title: string;
+        description: string;
+        learnMoreLink?: string;
+        className?: string;
+        show?: boolean;
+        onClose?: () => void;
+      }) {
+        const actions = `
+          <div class="actions">
+            ${options.learnMoreLink ? `<a href="${options.learnMoreLink}" class="btn btn-flat">Learn more</a>` : ''}
+            ${options.show ? `<button class="btn btn-flat" data-close="true">Close</button>` : ''}
+          </div>
+        `;
+        return {
+          template: `
+<div class="tooltip commit-mode-tooltip" role="tooltip">
+  <div class="tooltip-arrow"></div>
+  <div class="tooltip-inner"></div>
+  <div class="tooltip-boundary"></div>
+</div>`,
+          content: `
+<div class="commit-mode-tooltip-content ${options.className || ''}">
+  <h2>${options.title}</h2>
+  <p>${options.description}</p>
+  ${(options.learnMoreLink || options.show) ? actions : ''}
+  </div>
+</div>`,
+          delay: { show: 750 },
+          html: true,
+          autoHide: false,
+          show: options.show,
+          popperOptions: {
+            onCreate(popper) {
+              if (options.show && options.onClose) {
+                popper.instance.popper.addEventListener("click", (e) => {
+                  if (e.target.dataset?.close) {
+                    options.onClose()
+                  }
+                })
+              }
+            },
+          }
+        };
+      }
     },
     async mounted() {
       if (this.tab.queryId) {
@@ -1337,13 +1633,103 @@
 
       // Load formatter presets for context menu
       this.getPresets(this.$bksConfig.ui.queryEditor.defaultFormatter)
+      this.addTransactionTimeoutListener();
     },
     beforeDestroy() {
       if(this.split) {
         this.split.destroy()
       }
+      this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
+      this.removeTransactionTimeoutListener();
     },
   }
 </script>
+
+<style lang="scss" scoped>
+  @use "sass:color";
+  @import '../assets/styles/app/_variables';
+
+  label[for="commit-mode"] {
+    color: var(--text);
+  }
+
+  #commit-mode {
+    --togglebutton-color: color-mix(
+      in srgb,
+      var(--theme-base) 60%,
+      var(--query-editor-bg)
+      );
+    --togglebutton-background: color-mix(
+      in srgb,
+      var(--theme-base) 6%,
+      var(--query-editor-bg));
+    --togglebutton-content-checked-color: var(--theme-base);
+    --togglebutton-content-checked-background: color-mix(
+      in srgb,
+      var(--theme-base) 15%,
+      var(--query-editor-bg));
+  }
+
+  .manual-commit-notice {
+    display: flex;
+    gap: 0.5rem;
+    padding-block: 0.5rem;
+    padding-inline: 0.75rem;
+    margin-bottom: -0.75rem;
+    color: $brand-danger;
+    font-size: 0.85rem;
+
+    [class^="material-icons"] {
+      font-size: 1.2em;
+    }
+  }
+
+  .fade-swap-enter-active,
+  .fade-swap-leave-active {
+    transition: opacity 0.25s ease;
+  }
+
+  .fade-swap-enter,
+  .fade-swap-leave-to {
+    opacity: 0;
+  }
+
+  .fade-swap-leave-active {
+    position: absolute;
+  }
+
+  .transaction-indicator {
+    line-height: 1;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--brand-warning);
+    font-weight: bold;
+    background: color-mix(
+      in srgb,
+      var(--brand-warning) 4%,
+      var(--query-editor-bg));
+    border-radius: 9999px;
+    padding: 0.215rem 0.75rem;
+    box-shadow: 0 0 6px 0 rgb(from var(--brand-warning) r g b / 0.7);
+    animation: glowAndDrop 0.9s cubic-bezier(0.33, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes glowAndDrop {
+    0% {
+      box-shadow: 0 0 0px 0 rgb(from var(--brand-warning) r g b / 0);
+    }
+
+    60% {
+      box-shadow: 0 0 10px 0px rgb(from var(--brand-warning) r g b / 1);
+    }
+
+    100% {
+      box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
+    }
+  }
+</style>
 

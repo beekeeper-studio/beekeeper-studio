@@ -125,6 +125,7 @@ export interface DialectData {
   /** Is it called "sql" or "code" in this dialect? */
   sqlLabel: "SQL" | "code";
   disabledFeatures?: {
+    manualCommit?: boolean
     rawFilters?: boolean
     builderFilters?: boolean
     shell?: boolean

@@ -478,6 +478,44 @@ x-buttons {
   }
 }
 
+x-buttons.selectbutton {
+  > x-button {
+    padding: 0.25rem;
+    color: var(--togglebutton-color);
+    background: var(--togglebutton-background);
+    height: auto;
+    line-height: 1.15rem;
+    box-shadow: none;
+
+    &:hover {
+      color: var(--togglebutton-hover-color);
+    }
+
+    .togglebutton-content {
+      display: inline-flex;
+      padding: 0.0325rem 0.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    &[toggled] .togglebutton-content {
+      color: var(--togglebutton-content-checked-color);
+      background: var(--togglebutton-content-checked-background);
+    }
+
+    &:first-child {
+      border-start-start-radius: 8px;
+      border-end-start-radius: 8px;
+    }
+
+    &:last-child {
+      border-start-end-radius: 8px;
+      border-end-end-radius: 8px;
+    }
+  }
+}
+
 x-button {
   &[skin="flat"] {
     color: var(--primary-color);
