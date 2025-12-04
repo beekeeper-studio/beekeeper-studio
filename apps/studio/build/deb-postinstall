@@ -19,7 +19,7 @@ if [ -f $OLD_FILE ]; then
   rm -f $OLD_FILE.save
 fi
 
-if [ ! -f /usr/bin/beekeeper-studio ]; then
+if [ ! -e /usr/bin/beekeeper-studio ]; then
   ln -s /opt/Beekeeper\ Studio/beekeeper-studio /usr/bin/beekeeper-studio
 fi
 
