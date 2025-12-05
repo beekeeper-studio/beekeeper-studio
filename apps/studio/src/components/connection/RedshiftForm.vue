@@ -19,8 +19,6 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import {IamAuthTypes} from "@/lib/db/types";
-import {AppEvent} from "@/common/AppEvent";
-import _ from "lodash";
 import CommonIam from "@/components/connection/CommonIam.vue";
 
 export default {

@@ -12,6 +12,11 @@ import {
 } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
+import {
+  getAwsSsoAuthService,
+  listSsoProfiles,
+  AwsSsoToken,
+} from "@/lib/db/authentication/aws-sso";
 
 const log = logRaw.scope('db/util')
 
@@ -342,12 +347,21 @@ export const errorMessages = {
   maxReservedConnections: 'You have reserved the max connections available for manual transactions. Stop one of your active transactions to start a new one.'
 }
 
-export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): Promise<AWSCredentials> {
+export async function resolveAWSCredentials(
+  redshiftOptions: RedshiftOptions,
+  signal?: AbortSignal
+): Promise<AWSCredentials> {
+  // If explicit access keys are provided, use them directly
   if (redshiftOptions.accessKeyId && redshiftOptions.secretAccessKey) {
     return {
       accessKeyId: redshiftOptions.accessKeyId,
       secretAccessKey: redshiftOptions.secretAccessKey,
     };
+  }
+
+  // Handle AWS SSO / Identity Center authentication
+  if (redshiftOptions.authType === 'iam_sso') {
+    return resolveAwsSsoCredentials(redshiftOptions, signal);
   }
 
   // Fallback to AWS profile-based credentials
@@ -357,10 +371,96 @@ export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): P
   return provider();
 }
 
+/**
+ * Resolve AWS credentials using SSO / Identity Center authentication.
+ * This will trigger the browser-based SSO flow if not already authenticated.
+ */
+export async function resolveAwsSsoCredentials(
+  redshiftOptions: RedshiftOptions,
+  signal?: AbortSignal
+): Promise<AWSCredentials> {
+  const ssoService = getAwsSsoAuthService();
+
+  let ssoStartUrl = redshiftOptions.ssoStartUrl;
+  let ssoRegion = redshiftOptions.ssoRegion;
+  let ssoAccountId = redshiftOptions.ssoAccountId;
+  let ssoRoleName = redshiftOptions.ssoRoleName;
+
+  // If a profile is specified, load SSO config from it
+  if (redshiftOptions.ssoProfile) {
+    const profiles = await listSsoProfiles();
+    const profile = profiles.find(p => p.name === redshiftOptions.ssoProfile);
+
+    if (!profile) {
+      throw new Error(`SSO profile "${redshiftOptions.ssoProfile}" not found in ~/.aws/config`);
+    }
+
+    ssoStartUrl = profile.ssoStartUrl;
+    ssoRegion = profile.ssoRegion;
+    ssoAccountId = profile.ssoAccountId || ssoAccountId;
+    ssoRoleName = profile.ssoRoleName || ssoRoleName;
+  }
+
+  if (!ssoStartUrl) {
+    throw new Error('SSO Start URL is required for AWS SSO authentication');
+  }
+
+  if (!ssoRegion) {
+    throw new Error('SSO Region is required for AWS SSO authentication');
+  }
+
+  if (!ssoAccountId) {
+    throw new Error('AWS Account ID is required for AWS SSO authentication');
+  }
+
+  if (!ssoRoleName) {
+    throw new Error('IAM Role Name is required for AWS SSO authentication');
+  }
+
+  // Authenticate via SSO (will open browser if needed)
+  const token = await ssoService.authenticate(ssoStartUrl, ssoRegion, signal);
+
+  // Get credentials for the specified account and role
+  const credentials = await ssoService.getCredentials(token, ssoAccountId, ssoRoleName);
+
+  return credentials;
+}
+
+// Re-export for convenience
+export { listSsoProfiles, getAwsSsoAuthService } from "@/lib/db/authentication/aws-sso";
+export type { SsoProfile, AwsSsoToken } from "@/lib/db/authentication/aws-sso";
+
 export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
   const {awsProfile, accessKeyId, secretAccessKey} = redshiftOptions
   let {awsRegion: region} = redshiftOptions
 
+  // For SSO authentication, get credentials via SSO flow first
+  if (redshiftOptions.authType === 'iam_sso') {
+    const ssoCredentials = await resolveAwsSsoCredentials(redshiftOptions);
+
+    if (!region) {
+      // For SSO, try to use the SSO region as fallback
+      region = redshiftOptions.ssoRegion;
+      if (!region) {
+        throw new Error('AWS Region is required for IAM authentication');
+      }
+    }
+
+    const signer = new Signer({
+      credentials: {
+        accessKeyId: ssoCredentials.accessKeyId,
+        secretAccessKey: ssoCredentials.secretAccessKey,
+        sessionToken: ssoCredentials.sessionToken,
+      },
+      hostname,
+      region,
+      port,
+      username,
+    });
+    return await signer.getAuthToken();
+  }
+
+  // Standard IAM authentication (access keys or profile)
   let credentials: {
     profile?: string,
     accessKeyId?: string,
