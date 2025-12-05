@@ -759,6 +759,8 @@ x-switch {
   --bks-tab-link: #{$tab-link};
   --bks-badge-bg: #{$badge-bg};
 
+  --bks-table-icon-color: #{$theme-primary};
+
   --bks-text-editor-bg-color: #{$query-editor-bg};
   --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
   --bks-text-editor-error-fg-color: #{$brand-danger};
