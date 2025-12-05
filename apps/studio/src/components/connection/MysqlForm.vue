@@ -46,7 +46,7 @@ import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import CommonIam from './CommonIam.vue'
 import {AppEvent} from "@/common/AppEvent";
-import {AzureAuthType, IamAuthTypes} from "@/lib/db/types";
+import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import _ from "lodash";
 import { mapGetters } from 'vuex';
 
