@@ -21,291 +21,298 @@ Let's build a simple "Hello World" plugin! You'll create a new tab that shows "H
 
 ### Option 1: Vite Project ⭐
 
-**Why Vite?** Vite provides Hot Module Replacement (HMR) for a nice development experience. When you make changes to your plugin, you'll see updates reflected in Beekeeper Studio without needing to manually reload the plugin or restart the application. This helps streamline the development process.
+!!! note "Why Vite?"
+    Vite provides Hot Module Replacement (HMR) for a nice development experience. When you make changes to your plugin, you'll see updates reflected in Beekeeper Studio without needing to manually reload the plugin or restart the application. This helps streamline the development process.
 
-Vite is also quite straightforward to configure. With a simple `vite.config.ts` and our official plugin, you get TypeScript support, asset bundling, and production builds.
+It's quite straightforward to configure your project using vite. With a simple `vite.config.ts` and our vite plugin, you get asset bundling and production builds.
 
-1) Create a Vite project
+1. Create a Vite project
 
-=== "npm"
-    ```bash
-    npm create vite@latest hello-world-plugin
-    cd hello-world-plugin
-    ```
+    === "npm"
+        ```bash
+        npm create vite@latest hello-world-plugin
+        cd hello-world-plugin
+        ```
 
-=== "yarn"
-    ```bash
-    yarn create vite hello-world-plugin
-    cd hello-world-plugin
-    ```
+    === "yarn"
+        ```bash
+        yarn create vite hello-world-plugin
+        cd hello-world-plugin
+        ```
 
-2) Install the Beekeeper Studio Vite plugin
+2. Install the Beekeeper Studio Vite plugin
 
-=== "npm"
-    ```bash
-    npm install @beekeeperstudio/vite-plugin
-    ```
+    === "npm"
+        ```bash
+        npm install @beekeeperstudio/vite-plugin
+        ```
 
-=== "yarn"
-    ```bash
-    yarn add @beekeeperstudio/vite-plugin
-    ```
+    === "yarn"
+        ```bash
+        yarn add @beekeeperstudio/vite-plugin
+        ```
 
-3) Create the manifest file
+3. Create the manifest file
 
-Create `manifest.json` to define your plugin:
+    Create `manifest.json` to define your plugin:
 
-```json
-{
-    "id": "hello-world-plugin",
-    "name": "Hello World Plugin",
-    "author": {
-        "name": "Your Name",
-        "url": "https://yourwebsite.com"
-    },
-    "description": "My first awesome plugin!",
-    "version": "1.0.0",
-    "icon": "extension",
-    "manifestVersion": 1,
-    "capabilities": {
-        "views": [
-            {
-                "id": "hello-world-view",
-                "name": "Hello World",
-                "type": "shell-tab",
-                "entry": "dist/index.html"
-            }
-        ],
-        "menu": [
-            {
-                "command": "say-hello",
-                "name": "New Hello World",
-                "view": "hello-world-view",
-                "placement": "newTabDropdown"
-            }
-        ]
+    ```json
+    {
+        "id": "hello-world-plugin",
+        "name": "Hello World Plugin",
+        "author": {
+            "name": "Your Name",
+            "url": "https://yourwebsite.com"
+        },
+        "description": "My first awesome plugin!",
+        "version": "1.0.0",
+        "icon": "extension",
+        "manifestVersion": 1,
+        "capabilities": {
+            "views": [
+                {
+                    "id": "hello-world-view",
+                    "name": "Hello World",
+                    "type": "shell-tab",
+                    "entry": "dist/index.html"
+                }
+            ],
+            "menu": [
+                {
+                    "command": "say-hello",
+                    "name": "New Hello World",
+                    "view": "hello-world-view",
+                    "placement": "newTabDropdown"
+                }
+            ]
+        }
     }
-}
-```
-
-4) Create `vite.config.ts`
-
-```typescript
-import { defineConfig } from 'vite'
-import bks from '@beekeeperstudio/vite-plugin'
-
-export default defineConfig({
-  plugins: [bks()],
-})
-```
-
-5) Install the plugin
-
-To install the plugin, you can simply move the project to the plugins directory
-or create a symbolic link to it:
-
-=== "Linux"
-    ```bash
-    ln -s $(pwd) ~/.config/beekeeper-studio/plugins/hello-world-plugin
     ```
 
-=== "macOS"
-    ```bash
-    ln -s $(pwd) "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
+4. Create `vite.config.ts`
+
+    ```typescript
+    import { defineConfig } from 'vite'
+    import bks from '@beekeeperstudio/vite-plugin'
+
+    export default defineConfig({
+      plugins: [bks()],
+    })
     ```
 
-=== "Windows"
-    ```cmd
-    mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
-    ```
+5. Install the plugin
 
-=== "Windows (Portable)"
-    ```cmd
-    mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
-    ```
+    To install the plugin, you can simply move the project to the plugins directory
+    or create a symbolic link to it:
 
-!!! tip "Why link instead of moving directly?"
-    This gives you control over your project location and keeps you free from accidentally deleting your project by uninstalling the plugin!
+    === "Linux"
+        ```bash
+        ln -s $(pwd) ~/.config/beekeeper-studio/plugins/hello-world-plugin
+        ```
+
+    === "macOS"
+        ```bash
+        ln -s $(pwd) "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
+        ```
+
+    === "Windows"
+        ```cmd
+        mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
+        ```
+
+    === "Windows (Portable)"
+        ```cmd
+        mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
+        ```
+
+    !!! tip "Why use a symbolic link?"
+        This gives you control over your project location and keeps you free from accidentally uninstalling the plugin!
 
 
-6) Run development server
+6. Run development server
 
-=== "npm"
-    ```bash
-    npm run dev
-    ```
+    === "npm"
+        ```bash
+        npm run dev
+        ```
 
-=== "yarn"
-    ```bash
-    yarn dev
-    ```
+    === "yarn"
+        ```bash
+        yarn dev
+        ```
 
-Now you have hot reload! Changes to your code will automatically update in Beekeeper Studio.
+    Now you have hot reload! Changes to your code will automatically update in Beekeeper Studio.
 
 ---
 
 ### Option 2: Build from Scratch
 
-Want to understand every piece? Let's build it step by step:
+You don't actually need Vite or any build tools to create a plugin. The plugin
+system is very straightforward. It only requires a plugin to have two files:
 
-1) Create Your Plugin Folder
+* `manifest.json` - defines the plugin info (name, version, capabilities, etc.)
+* `index.html` - your plugin's main page
 
-First, create a folder anywhere you like for your plugin:
+To build from scratch:
 
-```bash
-mkdir hello-world-plugin
-cd hello-world-plugin
-```
+1. Create Your Plugin Folder
 
-Then link it to Beekeeper Studio's plugins directory:
+    First, create a folder anywhere you like for your plugin:
 
-=== "Linux"
     ```bash
-    ln -s $(pwd) ~/.config/beekeeper-studio/plugins/hello-world-plugin
+    mkdir hello-world-plugin
+    cd hello-world-plugin
     ```
 
-=== "macOS"
-    ```bash
-    ln -s $(pwd) "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
-    ```
+    Then link it to Beekeeper Studio's plugins directory:
 
-=== "Windows"
-    ```cmd
-    mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
-    ```
+    === "Linux"
+        ```bash
+        ln -s $(pwd) ~/.config/beekeeper-studio/plugins/hello-world-plugin
+        ```
 
-=== "Windows (Portable)"
-    ```cmd
-    mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
-    ```
+    === "macOS"
+        ```bash
+        ln -s $(pwd) "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
+        ```
 
-!!! tip "Why link instead of copying directly?"
-    This keeps your code safe! If you accidentally uninstall the plugin, your source code won't be deleted.
+    === "Windows"
+        ```cmd
+        mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
+        ```
 
-2) Create the Manifest
+    === "Windows (Portable)"
+        ```cmd
+        mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
+        ```
 
-Create `manifest.json` - this tells Beekeeper Studio about your plugin:
+    !!! tip "Why use a symbolic link?"
+        This gives you control over your project location and keeps you free from accidentally uninstalling the plugin!
 
-```json
-{
-    "id": "hello-world-plugin",
-    "name": "Hello World Plugin",
-    "author": {
-        "name": "Your Name",
-        "url": "https://yourwebsite.com"
-    },
-    "description": "My first awesome plugin!",
-    "version": "1.0.0",
-    "icon": "extension",
-    "manifestVersion": 1,
-    "capabilities": {
-        "views": [
-            {
-                "id": "hello-world-view",
-                "name": "Hello World",
-                "type": "shell-tab",
-                "entry": "index.html"
-            }
-        ],
-        "menu": [
-            {
-                "command": "say-hello",
-                "name": "New Hello World",
-                "view": "hello-world-view",
-                "placement": "newTabDropdown"
-            }
-        ]
+2. Create the Manifest
+
+    Create `manifest.json` - this tells Beekeeper Studio about your plugin:
+
+    ```json
+    {
+        "id": "hello-world-plugin",
+        "name": "Hello World Plugin",
+        "author": {
+            "name": "Your Name",
+            "url": "https://yourwebsite.com"
+        },
+        "description": "My first awesome plugin!",
+        "version": "1.0.0",
+        "icon": "extension",
+        "manifestVersion": 1,
+        "capabilities": {
+            "views": [
+                {
+                    "id": "hello-world-view",
+                    "name": "Hello World",
+                    "type": "shell-tab",
+                    "entry": "index.html"
+                }
+            ],
+            "menu": [
+                {
+                    "command": "say-hello",
+                    "name": "New Hello World",
+                    "view": "hello-world-view",
+                    "placement": "newTabDropdown"
+                }
+            ]
+        }
     }
-}
-```
+    ```
 
-!!! note "Difference from Vite"
-    The only difference from the Vite manifest is the `entry` field: `"index.html"` instead of `"dist/index.html"` since we're not using a build process.
+    !!! note "Difference from Vite"
+        Unlike the Vite version, we don't specify an `entry` field, so you need to create the `index.html` file in the project root.
 
-3) Create the Interface
+3. Create the Interface
 
-Create `index.html` - your plugin's main page:
+    Create `index.html` - your plugin's main page:
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World Plugin</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            margin: 0;
-            padding: 2rem;
-            background-color: #f8f9fa;
-            color: #333;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        h1 {
-            color: #2d3748;
-            margin-bottom: 1rem;
-        }
-        p {
-            color: #4a5568;
-            margin-bottom: 1.5rem;
-        }
-        button {
-            background-color: #3182ce;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        button:hover { background-color: #2c5aa0; }
-        .tables {
-            margin-top: 1rem;
-            padding: 1rem;
-            background-color: #e6fffa;
-            border-radius: 0.5rem;
-            display: none;
-        }
-        .tables.show { display: block; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🎉 Your plugin works!</h1>
-        <p>Edit this HTML and reload to see changes.</p>
-    </div>
-</body>
-</html>
-```
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Hello World Plugin</title>
+        <style>
+            * { box-sizing: border-box; }
+            body {
+                font-family: system-ui, -apple-system, sans-serif;
+                margin: 0;
+                padding: 2rem;
+                background-color: #f8f9fa;
+                color: #333;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                text-align: center;
+            }
+            h1 {
+                color: #2d3748;
+                margin-bottom: 1rem;
+            }
+            p {
+                color: #4a5568;
+                margin-bottom: 1.5rem;
+            }
+            button {
+                background-color: #3182ce;
+                color: white;
+                border: none;
+                padding: 0.75rem 1.5rem;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 500;
+            }
+            button:hover { background-color: #2c5aa0; }
+            .tables {
+                margin-top: 1rem;
+                padding: 1rem;
+                background-color: #e6fffa;
+                border-radius: 0.5rem;
+                display: none;
+            }
+            .tables.show { display: block; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🎉 Your plugin works!</h1>
+            <p>Edit this HTML and reload to see changes.</p>
+        </div>
+    </body>
+    </html>
+    ```
 
-You should now have:
-```
-hello-world-plugin/
-├── manifest.json
-└── index.html
-```
+    Now, your project structure should look like this:
+    ```
+    hello-world-plugin/
+    ├── manifest.json
+    └── index.html
+    ```
 
 ## Test Your Plugin
 
 !!! note "For Vite Users"
     If you're using Vite, make sure your dev server is running first!
 
-1. **Open Beekeeper Studio**
-2. **Go to Tools → Manage Plugins**
-3. **Look for "Hello World Plugin"** - if it's there, you're golden! ✨
+1. Open Beekeeper Studio
+2. Go to **Tools → Manage Plugins**
+3. Look for **Hello World Plugin** - if it's there, you're golden! ✨
 
     ![Plugin Manager showing installed plugin](../../assets/images/plugin-manager.png)
 
-4. **Connect to any database**
-5. **Click the dropdown arrow** next to the + button
-6. **Select "Hello World"** from the menu
+4. Connect to any database
+5. Click the dropdown arrow next to the + button
+6. Select **Hello World** from the menu
 7. **Boom!** Your plugin opens in a new tab 🎯
 
 ![New tab dropdown menu](../../assets/images/new-tab-dropdown.png)
@@ -313,7 +320,9 @@ hello-world-plugin/
 
 ## Reading Database
 
-Let's read the database! First, install the plugin dependency:
+This section will demonstrate how to get some data from the app. By doing that, we will call an API that returns a list of tables.
+
+First, let's install [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plugin) package:
 
 === "npm"
     ```bash
@@ -325,7 +334,7 @@ Let's read the database! First, install the plugin dependency:
     yarn add @beekeeperstudio/plugin
     ```
 
-Create a javascript file called `main.js`:
+Add this to your project (If you didn't use Vite, add this to a new file called `main.js`):
 
 ```javascript
 // Enables proper keyboard and mouse event handling
@@ -349,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 ```
 
-Update your HTML by adding this inside the container div:
+Add a button and the code reference to your html:
 
 ```diff
 ...
