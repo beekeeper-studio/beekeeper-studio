@@ -263,7 +263,7 @@ class CompletionLevel {
 
 }
 
-function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean): Completion {
+export function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean): Completion {
   if ((new RegExp("^[a-z_][a-z_\\d]*$", idCaseInsensitive ? "i" : "")).test(label)) return {label, type}
   return {label, type, apply: idQuote + label + idQuote}
 }
@@ -306,8 +306,16 @@ export const completionLevels = StateField.define<{use: boolean; top: Completion
   update(value, tr) {
     for (let e of tr.effects) {
       if (e.is(setSchema)) {
+        const config = tr.state.facet(completeConfig);
         return {
-          ...buildCompletionLevels(e.value),
+          ...buildCompletionLevels(
+            e.value,
+            undefined,
+            undefined,
+            config.defaultTableName,
+            config.defaultSchemaName,
+            config.dialect
+          ),
           // HACK: Use when setSchema is triggered
           use: true,
         }
@@ -315,6 +323,19 @@ export const completionLevels = StateField.define<{use: boolean; top: Completion
     }
     return value;
   },
+});
+
+type SupportedCompleteConfig = {
+  defaultTableName?: string;
+  defaultSchemaName?: string;
+  dialect?: SQLDialect;
+}
+
+export const completeConfig = Facet.define<
+  SupportedCompleteConfig,
+  SupportedCompleteConfig
+>({
+  combine: (values) => values.reduce((a, b) => ({ ...a, ...b }), {}),
 });
 
 // Some of this is more gnarly than it has to be because we're also

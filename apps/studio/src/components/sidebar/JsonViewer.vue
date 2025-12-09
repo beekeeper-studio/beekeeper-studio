@@ -1,6 +1,7 @@
 <template>
   <div
     class="json-viewer"
+    :class="{ 'empty': empty }"
     ref="sidebar"
     v-show="!hidden"
   >
@@ -59,7 +60,7 @@
         :fold-gutters="true"
       />
     </div>
-    <div class="empty-state" v-show="empty">
+    <div class="empty-text">
       Open a table to view its data
     </div>
     <json-viewer-upsell v-if="$store.getters.isCommunity" />
@@ -95,7 +96,7 @@ import globals from '@/common/globals'
 import JsonSourceMap from "json-source-map";
 import JsonPointer from "json-pointer";
 import { typedArrayToString } from '@/common/utils'
-import { monokai } from "@uiw/codemirror-theme-monokai";
+import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 
 const log = rawLog.scope("json-viewer");
 
@@ -188,14 +189,9 @@ export default Vue.extend({
       }, 500),
     },
     sourceMap() {
-      let replacedFilteredValue = this.filteredValue;
-      try {
-        // run the replacer on the filteredValue
-        replacedFilteredValue = JSON.parse(JSON.stringify(this.filteredValue, this.replacer));
-      } catch (error) {
-        log.warn("Failed to replace filtered value", error);
-      }
-      return JsonSourceMap.stringify(replacedFilteredValue, null, 2);
+      // Since JsonSourceMap.stringify doesn't support replacer functions,
+      // we've already applied the replacer in processedValue/filteredValue
+      return JsonSourceMap.stringify(this.filteredValue, null, 2);
     },
     filteredValue() {
       if (this.empty) {
@@ -213,7 +209,15 @@ export default Vue.extend({
           _.set(clonedValue, path, (value as string).slice(0, globals.maxDetailViewTextLength))
         }
       })
-      return clonedValue
+      
+      // Apply the replacer function to ensure consistency between filtered and unfiltered views
+      // This is necessary because JsonSourceMap.stringify doesn't support replacer functions
+      try {
+        return JSON.parse(JSON.stringify(clonedValue, this.replacer));
+      } catch (error) {
+        log.warn("Failed to apply replacer to processed value", error);
+        return clonedValue;
+      }
     },
     truncatablePaths() {
       return getPaths(this.value).filter((path) => {
@@ -384,7 +388,12 @@ export default Vue.extend({
     replaceExtensions(extensions) {
       return [
         extensions,
-        monokai,
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+          },
+        }),
         this.persistJsonFold.extensions,
         this.partialReadonly.extensions(this.editableRanges),
       ]

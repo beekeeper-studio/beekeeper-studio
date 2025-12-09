@@ -7,6 +7,7 @@ export default class PluginRepositoryService {
   constructor() {
     this.octokit = new Octokit({
       userAgent: "Beekeeper Studio",
+      auth: process.env.GITHUB_TOKEN,
     });
   }
 
@@ -70,7 +71,7 @@ export default class PluginRepositoryService {
     return { latestRelease, readme };
   }
 
-  private async fetchReadme(owner: string, repo: string) {
+  protected async fetchReadme(owner: string, repo: string) {
     const response = await this.octokit.request(
       "GET /repos/{owner}/{repo}/readme",
       {

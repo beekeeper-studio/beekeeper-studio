@@ -1,12 +1,14 @@
 import {  DialectData } from "./models";
 
 export const RedisData: DialectData = {
+  sqlLabel: "code",
   columnTypes: [],
   usesOffsetPagination: true,
   queryDialectOverride: 'generic',
   textEditorMode: 'text/x-redis',
   rawFilterPlaceholder: 'Search',
   disabledFeatures: {
+    manualCommit: true,
     readOnlyPrimaryKeys: true,
     builderFilters: true,
     shell: true,

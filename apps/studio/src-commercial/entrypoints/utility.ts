@@ -20,10 +20,12 @@ import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
+import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
+import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
@@ -33,7 +35,12 @@ if (platformInfo.env.development || platformInfo.env.test) {
 }
 
 let ormConnection: ORMConnection;
-const pluginManager = new PluginManager();
+const pluginManager = new PluginManager({
+  appVersion: platformInfo.appVersion,
+  fileManager: new PluginFileManager({
+    pluginsDirectory: platformInfo.pluginsDirectory,
+  }),
+});
 
 interface Reply {
   id: string,
@@ -58,6 +65,7 @@ export const handlers: Handlers = {
   ...PluginHandlers(pluginManager),
   ...TabHistoryHandlers,
   ...LockHandlers,
+  ...FormatterPresetHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 

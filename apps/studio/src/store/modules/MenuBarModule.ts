@@ -3,7 +3,6 @@ import { State as RootState } from "../index";
 import _ from "lodash";
 import MenuBuilder from "@/common/menus/MenuBuilder";
 import ClientMenuActionHandler from "@/lib/menu/ClientMenuActionHandler";
-import config from "@/config";
 import RawLog from "@bksLogger";
 import { ExternalMenuItem } from "@/types";
 
@@ -21,8 +20,8 @@ export const MenuBarModule: Module<State, RootState> = {
     externalMenu: {},
   }),
   getters: {
-    connectionMenuItems() {
-      return [
+    connectionMenuItems(state) {
+      const result = [
         "new-query-menu",
         "go-to",
         "disconnect",
@@ -34,12 +33,21 @@ export const MenuBarModule: Module<State, RootState> = {
         "restore-database",
         "export-tables",
       ];
+
+      for (const id of Object.keys(state.externalMenu)) {
+        const menuItem = state.externalMenu[id];
+        if (menuItem.disableWhenDisconnected) {
+          result.push(id);
+        }
+      }
+
+      return result;
     },
     menus(state, _getters, _rootState, rootGetters) {
       const builder = new MenuBuilder(
         rootGetters["settings/settings"],
         actionHandler,
-        config,
+        window.platformInfo,
         window.bksConfig
       );
 
@@ -54,6 +62,7 @@ export const MenuBarModule: Module<State, RootState> = {
         }
 
         (parent.submenu as Electron.MenuItemConstructorOptions[]).push({
+          id: externalItem.id,
           label: externalItem.label,
           click: () => {
             actionHandler.handleAction(externalItem.action);
@@ -78,7 +87,7 @@ export const MenuBarModule: Module<State, RootState> = {
       if (!state.externalMenu[id]) {
         throw new Error(`Menu item ${id} does not exist`);
       }
-      state.externalMenu = _.omit(state.state.externalMenu, id);
+      state.externalMenu = _.omit(state.externalMenu, id);
     },
   },
 };

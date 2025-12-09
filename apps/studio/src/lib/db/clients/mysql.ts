@@ -18,7 +18,8 @@ import {
   buildSelectTopQuery,
   escapeString,
   getIAMPassword,
-  ClientError, refreshTokenIfNeeded
+  ClientError, refreshTokenIfNeeded,
+  errorMessages
 } from "./utils";
 import {
   IDbConnectionDatabase,
@@ -147,6 +148,7 @@ async function configDatabase(
     dateStrings: true,
     supportBigNumbers: true,
     bigNumberStrings: true,
+    connectionLimit: BksConfig.db.mysql.maxConnections,
     connectTimeout: BksConfig.db.mysql.connectTimeout,
   };
 
@@ -283,7 +285,7 @@ function filterDatabase(
   return true;
 }
 
-export class MysqlClient extends BasicDatabaseClient<ResultType> {
+export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConnection> {
   versionInfo: Version & {
     versionString: string;
     version: number;
@@ -439,6 +441,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     _schema?: string,
     connection?: Connection
   ): Promise<ExtendedTableColumn[]> {
+    const hasGeneratedSupport = this.connectionType == 'mariadb' ?
+     !isVersionLessThanOrEqual(this.versionInfo, { major: 10, minor: 2, patch: 4 }):
+     !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
     const clause = table ? `AND table_name = ?` : "";
     const sql = `
       SELECT
@@ -450,6 +455,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         column_default as 'column_default',
         ordinal_position as 'ordinal_position',
         COLUMN_COMMENT as 'column_comment',
+        CHARACTER_SET_NAME as 'character_set',
+        COLLATION_NAME as 'collation',
+        ${hasGeneratedSupport ? "GENERATION_EXPRESSION as 'generation_expression'," : ''}
         extra as 'extra'
       FROM information_schema.columns
       WHERE table_schema = database()
@@ -475,6 +483,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
       comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
       generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
+      generationExpression: row.generation_expression,
+      characterSet: row.character_set,
+      collation: row.collation,
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -698,10 +709,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return Number(totalRecords);
   }
 
-  async getTableKeys(
+  async getOutgoingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
+    // Query for foreign keys FROM this table (referencing other tables)
     const sql = `
     SELECT
       cu.constraint_name as 'constraint_name',
@@ -727,13 +739,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     const params = [table];
 
     const { rows } = await this.driverExecuteSingle(sql, { params });
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'constraint_name');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -751,8 +763,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           fromSchema: "",
           isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
@@ -768,6 +780,73 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
         toSchema: "",
         fromSchema: "",
         isComposite: true
+      };
+    });
+  }
+
+  async getIncomingKeys(
+    table: string,
+    _schema?: string
+  ): Promise<TableKey[]> {
+    // Query for foreign keys TO this table (other tables referencing this table)
+    const incomingSQL = `
+    SELECT
+      cu.constraint_name as 'constraint_name',
+      cu.table_name as 'from_table',
+      cu.column_name as 'column_name',
+      cu.referenced_table_name as 'referenced_table',
+      cu.REFERENCED_COLUMN_NAME as 'referenced_column',
+      rc.UPDATE_RULE as on_update,
+      rc.DELETE_RULE as on_delete,
+      cu.ORDINAL_POSITION as ordinal_position
+    FROM information_schema.key_column_usage cu
+    JOIN information_schema.referential_constraints rc
+      on cu.constraint_name = rc.constraint_name
+      and cu.constraint_schema = rc.constraint_schema
+    WHERE table_schema = database()
+    AND cu.referenced_table_name = ?
+    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
+  `;
+
+    const params = [table];
+    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: `${row.constraint_name}`,
+          toTable: row.referenced_table,
+          toColumn: row.referenced_column,
+          fromTable: row.from_table,
+          fromColumn: row.column_name,
+          onDelete: row.on_delete,
+          onUpdate: row.on_update,
+          toSchema: "",
+          fromSchema: "",
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: `${firstPart.constraint_name}`,
+        toTable: firstPart.referenced_table,
+        toColumn: keyParts.map(p => p.referenced_column),
+        fromTable: firstPart.from_table,
+        fromColumn: keyParts.map(p => p.column_name),
+        onDelete: firstPart.on_delete,
+        onUpdate: firstPart.on_update,
+        toSchema: "",
+        fromSchema: "",
+        isComposite: true,
       };
     });
   }
@@ -1012,7 +1091,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
     return sql;
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async query(queryText: string, tabId: number): Promise<CancelableQuery> {
     let pid = null;
     let canceling = false;
     const cancelable = createCancelablePromise({
@@ -1060,7 +1139,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           } finally {
             cancelable.discard();
           }
-        });
+        }, tabId);
       },
 
       cancel: async () => {
@@ -1135,7 +1214,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
           },
           (err, data, fields) => {
             if (err && err.code === mysqlErrors.EMPTY_QUERY) {
-              return resolve({ rows: [], columns: [] });
+              return resolve({ rows: [], columns: [], arrayMode: undefined });
             }
 
             if (err) {
@@ -1153,33 +1232,34 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       : this.runWithConnection(runQuery);
   }
 
-  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+  async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>, tabId?: number): Promise<T> {
     const { pool } = this.conn;
-    let rejected = false;
-    return new Promise((resolve, reject) => {
-      const rejectErr = (err) => {
-        if (!rejected) {
-          rejected = true;
-          reject(err);
-        }
-      };
-
-      pool.getConnection((errPool, connection) => {
-        if (errPool) {
-          rejectErr(errPool);
-          return;
-        }
-
-        connection.on("error", (error) => {
-          // it will be handled later in the next query execution
-          logger().error("Connection fatal error %j", error);
-        });
-        run(connection)
-          .then((res) => resolve(res))
-          .catch((ex) => rejectErr(ex))
-          .finally(() => connection.release())
+    const hasReserved = this.reservedConnections.has(tabId);
+    let conn: mysql.PoolConnection;
+    if (hasReserved) {
+      conn = this.reservedConnections.get(tabId);
+    } else {
+      conn = await new Promise((resolve, reject) => {
+        pool.getConnection((err, connection) => {
+          if (err) {
+            reject(err);
+          }
+          resolve(connection);
+        })
       });
+    }
+
+    conn.on("error", (error) => {
+      logger().error("Connection fatal error %j", error);
     });
+
+    try {
+      return await run(conn);
+    } finally {
+      if (!hasReserved) {
+        conn.release();
+      }
+    }
   }
 
   async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
@@ -1225,7 +1305,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     };
   }
 
@@ -1437,6 +1518,60 @@ export class MysqlClient extends BasicDatabaseClient<ResultType> {
 
   async importRollbackCommand (_table: TableOrView, { executeOptions }: ImportFuncOptions): Promise<any> {
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
+    if (this.reservedConnections.size >= BksConfig.db[this.connectionType].maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
+    return new Promise((resolve, reject) => {
+      this.conn.pool.getConnection((err, conn) => {
+        if (!err) {
+          try {
+            this.pushConnection(tabId, conn);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        }
+        reject(err);
+      })
+    })
+  }
+
+  async releaseConnection(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      conn.release();
+    }
+  }
+
+  async startTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await this.driverExecuteSingle('START TRANSACTION', { connection: conn });
+  }
+
+  async commitTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await this.driverExecuteSingle('COMMIT', { connection: conn });
+  }
+
+  async rollbackTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await this.driverExecuteSingle('ROLLBACK', { connection: conn });
+  }
+
+  protected parseQueryResultColumns(qr: ResultType): BksField[] {
+    return qr.columns.map((column) => {
+      let bksType: BksFieldType = 'UNKNOWN';
+      if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
+        bksType = 'BINARY';
+      }
+      return { name: column.name, bksType }
+    })
   }
 
   parseTableColumn(column: { column_name: string; data_type: string }): BksField {

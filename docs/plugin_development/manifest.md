@@ -14,19 +14,50 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 ## Manifest
 
 | Property          | Type                   | Required | Description                                                                                                                |
-| ----------------- | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only.                                       |
-| `name`            | `string`               | Yes      | Display name shown to users in the Plugin Manager and UI.                                                                  |
+| ----------------  | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only.                                      |
+| `name`            | `string`               | Yes      | Display name shown to users in the Plugin Manager and UI.                                                                 |
 | `author`          | `string \| AuthorInfo` | Yes      | Plugin author or organization name.                                                                                        |
-| `description`     | `string`               | Yes      | Brief description of what your plugin does.                                                                                |
-| `version`         | `string`               | Yes      | Semantic version of your plugin (e.g., "1.0.0", "2.1.5").                                                                  |
+| `description`     | `string`               | Yes      | Brief description of what your plugin does.                                                                               |
+| `version`         | `string`               | Yes      | Semantic version of your plugin (e.g., "1.0.0", "2.1.5").                                                                |
 | `icon`            | `string`               | No       | Material UI icon name. See [Material Icons](https://fonts.google.com/icons?icon.set=Material+Icons) for available options. |
-| `capabilities`    | `Capabilities`         | Yes      | Defines what views your plugin provides.                                                                                   |
-| `pluginEntryDir`  | `string`               | No       | Path to your plugin's built files relative to the plugin root. Defaults to project root.                                   |
-| `manifestVersion` | `1`                    | No       | Version of the manifest format. Defaults to `0`.                                                                           |
+| `capabilities`    | `Capabilities`         | Yes      | Defines what views your plugin provides.                                                                                  |
+| `pluginEntryDir`  | `string`               | No       | Path to your plugin's built files relative to the plugin root. Defaults to project root.                                 |
+| `manifestVersion` | `1 \| 0`               | No       | Version of the manifest format. Defaults to `0`.                                                                           |
 | `minAppVersion`   | `string`               | No       | Minimum Beekeeper Studio version required. If not specified, all version of Beekeeper Studio are supported.                |
 | `settings`        | `unknown`              | No       | _(Planned for future releases)_ Configuration options that can be set via config files.                                    |
 | `permissions`     | `unknown`              | No       | _(Planned for future releases)_ List of permissions your plugin requires.                                                   |
+
+## AuthorInfo
+
+| Property | Type     | Required | Description                   |
+| -------- | -------- | -------- | ----------------------------- |
+| `name`   | `string` | Yes      | Author or organization name.  |
+| `url`    | `string` | Yes      | Author or organization URL.   |
+
+## Capabilities
+
+| Property | Type     | Required | Description                               |
+| -------- | -------- | -------- | ----------------------------------------- |
+| `views`  | `View[]` | Yes      | Array of view definitions for your plugin. |
+
+## View
+
+| Property | Type       | Required | Description                                       |
+| -------- | ---------- | -------- | ------------------------------------------------- |
+| `id`     | `string`   | Yes      | Unique identifier for this view.                  |
+| `name`   | `string`   | Yes      | Display name shown in tabs/sidebar.              |
+| `type`   | `ViewType` | Yes      | Type of view.                                     |
+| `entry`  | `string`   | Yes      | Path to the HTML file relative to plugin root.   |
+
+## ViewType
+
+| Value                 | Description                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| `"shell-tab"`         | Tab with your plugin's iframe at the top and a collapsible result table at the bottom. |
+| `"base-tab"`          | Full-tab interface.                                                                    |
+| `"primary-sidebar"`   | Primary sidebar panel. _(Planned for future releases)_                                 |
+| `"secondary-sidebar"` | Secondary sidebar panel. _(Planned for future releases)_                               |
 
 
 ### Basic Example

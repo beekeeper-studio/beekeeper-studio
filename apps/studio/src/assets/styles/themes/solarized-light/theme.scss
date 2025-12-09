@@ -255,10 +255,6 @@ x-buttons {
       &.inserted:hover {
         background: $row-add!important;
       }
-      &.deleted,
-      &.deleted:hover {
-        background: $row-delete!important;
-      }
       &.edit-error {
         background: $row-error!important;
       }
@@ -330,9 +326,6 @@ x-buttons {
 .table-builder .table-builder-wrap,
 .table-properties .table-properties-wrap {
   .tabulator-row {
-    &.tabulator-row-even {
-      background: rgba($theme-base, 0.06);
-    }
     &.inserted {
       background: $row-add!important;
     }
@@ -375,9 +368,6 @@ x-buttons {
 
   // Field Rows
   .tabulator-row {
-    &.tabulator-row-even {
-      background: rgba($theme-base, 0.05);
-    }
     .tabulator-cell {
       color: $text-dark;
       &.tabulator-editing {
@@ -768,6 +758,8 @@ x-switch {
 
   --bks-tab-link: #{$tab-link};
   --bks-badge-bg: #{$badge-bg};
+
+  --bks-table-icon-color: #{$theme-primary};
 
   --bks-text-editor-bg-color: #{$query-editor-bg};
   --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};

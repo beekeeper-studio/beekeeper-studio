@@ -196,6 +196,25 @@ async function getConnectionInfo(): Promise<{
 }>;
 ```
 
+**Supported Connection Types:**
+
+| Value | Database |
+|-------|----------|
+| `postgresql` | PostgreSQL |
+| `mysql` | MySQL |
+| `mariadb` | MariaDB |
+| `sqlite` | SQLite |
+| `sqlserver` | SQL Server |
+| `oracle` | Oracle Database |
+| `mongodb` | MongoDB |
+| `cassandra` | Apache Cassandra |
+| `clickhouse` | ClickHouse |
+| `firebird` | Firebird |
+| `bigquery` | Google BigQuery |
+| `redshift` | Amazon Redshift |
+| `duckdb` | DuckDB |
+| `libsql` | LibSQL |
+
 ### setTabTitle
 
 Set the title of the current plugin tab.

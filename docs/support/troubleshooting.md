@@ -175,4 +175,9 @@ See for reference:
 - [Filed bug with snapd](https://bugs.launchpad.net/snappy/+bug/1916816)
 - [Discussion on snapcraft forums](https://forum.snapcraft.io/t/snap-store-fonts-on-arch-linux-are-merely-empty-rectangles/15373/9)
 
+## Windows
 
+### The App is stuck running in the background
+If you've just recently installed the app on Windows and the app refuses to start (with your task manager reporting that it is running), you may need to install the [MSVC Redistributables](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) for your architecture.
+
+This is an issue with one of our native dependencies, and we are working on a more permanent fix for this issue in the installer.

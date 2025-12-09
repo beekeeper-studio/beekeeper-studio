@@ -4,6 +4,23 @@
   overflow: hidden;
   height: 100%;
 
+  .plugin-status {
+    padding: 1rem;
+    margin: 1rem;
+    border-radius: 0.5rem;
+    background-color: rgba($theme-base, 0.08);
+    color: $text-dark;
+    font-size: 0.9rem;
+
+    li {
+      line-height: 1.5;
+    }
+
+    a {
+      text-decoration-line: underline;
+    }
+  }
+
   .isolated-plugin-view {
     width: 100%;
     height: 100%;
@@ -40,5 +57,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .result-table {
+    height: 100%;
   }
 }

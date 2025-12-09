@@ -3,7 +3,7 @@ import knex from 'knex'
 import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
 import log from '@bksLogger'
 import platformInfo from '../../src/common/platform_info'
-import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange } from '@shared/lib/dialects/models'
+import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange, TableKey } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
 import _ from 'lodash'
 import { TableIndex, TableOrView } from '../../src/lib/db/models'
@@ -63,6 +63,17 @@ function normalizeTables(tables: TableOrView[], dbType: string): TableOrView[] {
   return tables;
 }
 
+function normalizeTableKeys(
+  keys: TableKey[]
+): Pick<TableKey, "toTable" | "fromTable" | "toColumn" | "fromColumn">[] {
+  return keys.map((key) => ({
+    toTable: key.toTable.toLowerCase(),
+    fromTable: key.fromTable.toLowerCase(),
+    toColumn: Array.isArray(key.toColumn) ? key.toColumn.map((c) => c.toLowerCase()) : key.toColumn.toLowerCase(),
+    fromColumn: Array.isArray(key.fromColumn) ? key.fromColumn.map((c) => c.toLowerCase()) : key.fromColumn.toLowerCase(),
+  }));
+}
+
 const KnexTypes: any = {
   postgresql: 'pg',
   'mysql': 'mysql2',
@@ -85,7 +96,6 @@ export interface Options {
   skipGeneratedColumns?: boolean
   skipCreateDatabase?: boolean
   skipTransactions?: boolean
-  supportsArrayMode?: boolean
   knexConnectionOptions?: Record<string, any>
   beforeCreatingTables?: () => void | Promise<void>
   /**
@@ -120,10 +130,6 @@ export class DBTestUtil {
 
   get expectedTables() {
     return this.extraTables + 8
-  }
-
-  get supportsArrayMode() {
-    return this.options.supportsArrayMode == undefined || this.options.supportsArrayMode
   }
 
   constructor(config: IDbConnectionServerConfig, database: string, options: Options) {
@@ -897,6 +903,49 @@ export class DBTestUtil {
     expect(pkres).toEqual(expect.arrayContaining(["id1", "id2"]))
   }
 
+  async uniqueKeyTests() {
+    // ClickHouse doesn't support traditional unique constraints
+    if (this.dbType === 'clickhouse') {
+      return expect.anything()
+    }
+
+    // Test single column unique constraint
+    const indexes = await this.connection.listTableIndexes('with_unique_constraint', this.defaultSchema)
+
+    // Find unique indexes (excluding primary key)
+    const uniqueIndexes = indexes.filter(idx => idx.unique && !idx.primary)
+
+    expect(uniqueIndexes.length).toBeGreaterThan(0)
+
+    // Find the unique constraint on email column
+    const emailUniqueIndex = uniqueIndexes.find(idx => {
+      const columns = idx.columns.map(c => c.name.toLowerCase())
+      return columns.includes('email')
+    })
+
+    expect(emailUniqueIndex).toBeDefined()
+    expect(emailUniqueIndex.unique).toBe(true)
+    expect(emailUniqueIndex.primary).toBe(false)
+
+    // Test composite unique constraint
+    if (!this.data.disabledFeatures?.compositeKeys) {
+      const compositeIndexes = await this.connection.listTableIndexes('with_composite_unique', this.defaultSchema)
+      const compositeUniqueIndexes = compositeIndexes.filter(idx => idx.unique && !idx.primary)
+
+      expect(compositeUniqueIndexes.length).toBeGreaterThan(0)
+
+      const compositeUniqueIndex = compositeUniqueIndexes.find(idx => {
+        const columns = idx.columns.map(c => c.name.toLowerCase())
+        return columns.includes('first_name') && columns.includes('last_name')
+      })
+
+      expect(compositeUniqueIndex).toBeDefined()
+      expect(compositeUniqueIndex.unique).toBe(true)
+      expect(compositeUniqueIndex.primary).toBe(false)
+      expect(compositeUniqueIndex.columns.length).toBe(2)
+    }
+  }
+
   async checkForPoolConnectionReleasing() {
     // libsql freaks out on this test for some reason
     // so we're just going to skip for now
@@ -936,22 +985,16 @@ export class DBTestUtil {
     try {
       const result = await q.execute()
 
-      // FIXME (azmi): we need this until array mode is fixed in libsql
-      if (this.supportsArrayMode) {
-        expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
-      } else {
-        expect(result[0].rows).toMatchObject([{ c0: "b" }])
-      }
+      expect(result[0].rows).toMatchObject([{ c0: "a", c1: "b" }])
       // oracle upcases everything
       const fields = result[0].fields.map((f: any) => ({id: f.id, name: f.name.toLowerCase()}))
       const expectedResults = {
         common: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
-        noArrayMode: [{ id: 'c0', name: 'total' }],
         clickhouse: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total2'}],
         oracle: [{ id: 'c0', name: 'total' }, { id: 'c1', name: 'total_1' }],
         duckdb: [{id: 'c0', name: 'total'}, {id: 'c1', name: 'total'}],
       }
-      expect(fields).toMatchObject(expectedResults[this.dialect] || (this.supportsArrayMode ? expectedResults.common : expectedResults.noArrayMode))
+      expect(fields).toMatchObject(expectedResults[this.dialect] || expectedResults.common)
     } catch (ex) {
       console.error("QUERY FAILED", ex)
       throw ex
@@ -959,14 +1002,25 @@ export class DBTestUtil {
 
     await this.checkForPoolConnectionReleasing()
 
+    // `query` and `executeQuery` should have the same result
+    const abQuery = this.dbType === "firebird" ?
+      "select trim('a') as a, trim('b') as b from rdb$database" :
+      "select 'a' as a, 'b' as b from one_record";
+    const executeQueryResult = await this.connection.executeQuery(abQuery, {
+      // FIXME might want to unify these
+      arrayMode: true, // sqlite, mysql, postgres, duckdb
+      rowsAsArray: true, // firebird
+      arrayRowMode: true, // sqlserver
+    });
+    const queryResult = await this.connection.query(abQuery).then((q) => q.execute());
+    expect(executeQueryResult[0]).toStrictEqual(queryResult[0]);
+
     if (this.data.disabledFeatures?.alter?.multiStatement) {
       return;
     }
 
     const q2 = await this.connection.query(
-      this.dbType === 'firebird' ?
-        "select trim('a') as a from rdb$database; select trim('b') as b from rdb$database" :
-        "select 'a' as a from one_record; select 'b' as b from one_record"
+      "select 'a' as a from one_record; select 'b' as b from one_record"
     );
     if (!q2) throw "No query result"
     const r2 = await q2.execute()
@@ -1839,7 +1893,108 @@ export class DBTestUtil {
           )
         `)
       }
+    }
 
+    // Create tables specifically for testing incoming keys
+    // Table structure: products <- orders <- order_items
+    // This creates a chain where we can test incoming keys at each level
+    // Note: These use simple (non-composite) foreign keys, so they work even on databases
+    // that don't support composite keys well
+
+    if (this.dbType === 'oracle') {
+      await this.knex.schema.raw(`
+        CREATE TABLE products (
+          product_id NUMBER(10) NOT NULL,
+          product_name VARCHAR2(255) NOT NULL,
+          price NUMBER(10, 2),
+          CONSTRAINT pk_products PRIMARY KEY (product_id)
+        )
+      `);
+
+      await this.knex.schema.raw(`
+        CREATE TABLE orders (
+          order_id NUMBER(10) NOT NULL,
+          product_id NUMBER(10) NOT NULL,
+          quantity NUMBER(10),
+          CONSTRAINT pk_orders PRIMARY KEY (order_id),
+          CONSTRAINT fk_orders_product FOREIGN KEY (product_id)
+            REFERENCES products(product_id)
+        )
+      `);
+
+      await this.knex.schema.raw(`
+        CREATE TABLE order_items (
+          item_id NUMBER(10) NOT NULL,
+          order_id NUMBER(10) NOT NULL,
+          item_note VARCHAR2(255),
+          CONSTRAINT pk_order_items PRIMARY KEY (item_id),
+          CONSTRAINT fk_order_items_order FOREIGN KEY (order_id)
+            REFERENCES orders(order_id)
+        )
+      `);
+    } else {
+      // Products table (will have incoming keys from orders)
+      await this.knex.schema.createTable("products", (table) => {
+        table.integer("product_id").notNullable().primary();
+        table.string("product_name").notNullable();
+        table.decimal("price", 10, 2);
+      });
+
+      // Orders table (will have outgoing key to products, incoming keys from order_items)
+      await this.knex.schema.createTable("orders", (table) => {
+        table.integer("order_id").notNullable().primary();
+        table.integer("product_id").notNullable();
+        table.integer("quantity");
+        table.foreign("product_id").references("products.product_id");
+      });
+
+      // Order items table (will have outgoing key to orders)
+      await this.knex.schema.createTable("order_items", (table) => {
+        table.integer("item_id").notNullable().primary();
+        table.integer("order_id").notNullable();
+        table.string("item_note");
+        table.foreign("order_id").references("orders.order_id");
+      });
+    }
+
+    // Create table with unique constraints
+    if (this.dbType === 'firebird') {
+      // Firebird doesn't support .unique() in Knex, create manually
+      await this.knex.schema.raw(`
+        CREATE TABLE WITH_UNIQUE_CONSTRAINT (
+          ID INTEGER PRIMARY KEY,
+          EMAIL VARCHAR(255),
+          USERNAME VARCHAR(255) NOT NULL,
+          CONSTRAINT WITH_UNIQUE_CONSTRAINT_EMAIL_UQ UNIQUE (EMAIL)
+        )
+      `)
+    } else {
+      await this.knex.schema.createTable('with_unique_constraint', (table) => {
+        table.integer('id').primary()
+        table.string('email').unique()
+        table.string('username').notNullable()
+      })
+    }
+
+    // Create table with composite unique constraint
+    if (!this.data.disabledFeatures?.compositeKeys) {
+      if (this.dbType === 'firebird') {
+        await this.knex.schema.raw(`
+          CREATE TABLE WITH_COMPOSITE_UNIQUE (
+            ID INTEGER PRIMARY KEY,
+            FIRST_NAME VARCHAR(255),
+            LAST_NAME VARCHAR(255),
+            CONSTRAINT WITH_COMPOSITE_UNIQUE_NAME_UQ UNIQUE (FIRST_NAME, LAST_NAME)
+          )
+        `)
+      } else {
+        await this.knex.schema.createTable('with_composite_unique', (table) => {
+          table.integer('id').primary()
+          table.string('first_name')
+          table.string('last_name')
+          table.unique(['first_name', 'last_name'])
+        })
+      }
     }
   }
 
@@ -1881,6 +2036,107 @@ export class DBTestUtil {
     expect(toColumns).toContain('parent_id1');
     expect(toColumns).toContain('parent_id2');
     expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
+  }
+
+  async incomingKeyTests() {
+    // Note: This test uses simple (non-composite) foreign keys, so it should work on all databases
+    // that support foreign keys, even if they don't support composite keys well
+
+    // Skip if database doesn't support foreign keys
+    if (this.data.disabledFeatures?.foreignKeys) {
+      return expect.anything();
+    }
+
+    // MySQL 5.1 and earlier doesn't support incoming foreign keys properly
+    // Check version and skip if needed
+    if (this.dbType === 'mysql' && this.connection.versionInfo) {
+      const version = this.connection.versionInfo;
+      if (version.major <= 5 && version.minor < 5) {
+        // Skip incoming keys test for MySQL < 5.5
+        return;
+      }
+    }
+
+    // Test 1: Products table should have incoming key from orders
+    const productsKeys = await this.connection
+      .getIncomingKeys("products", this.defaultSchema)
+      .then(normalizeTableKeys);
+
+    expect(productsKeys).toHaveLength(1);
+    expect(productsKeys).toStrictEqual(expect.arrayContaining([
+      {
+        toTable: 'products',
+        fromTable: 'orders',
+        toColumn: 'product_id',
+        fromColumn: 'product_id',
+      }
+    ]));
+
+    // Test 2: Orders table should have both incoming (from order_items) and outgoing (to products) keys
+    const ordersKeys = await this.connection
+      .getIncomingKeys("orders", this.defaultSchema)
+      .then(normalizeTableKeys);
+
+    expect(ordersKeys).toHaveLength(1);
+    expect(ordersKeys).toStrictEqual(expect.arrayContaining([
+      {
+        toTable: 'orders',
+        fromTable: 'order_items',
+        toColumn: 'order_id',
+        fromColumn: 'order_id',
+      },
+    ]));
+
+    // Test 3: Order_items table should only have outgoing key to orders (no incoming keys)
+    const orderItemsIncomingKeys = await this.connection
+      .getIncomingKeys('order_items', this.defaultSchema)
+      .then(normalizeTableKeys);
+    const orderItemsOutgoingKeys = await this.connection
+      .getOutgoingKeys('order_items', this.defaultSchema)
+      .then(normalizeTableKeys);
+
+    expect(orderItemsIncomingKeys).toHaveLength(0);
+    expect(orderItemsOutgoingKeys).toHaveLength(1);
+    expect(orderItemsOutgoingKeys).toStrictEqual(expect.arrayContaining([
+      {
+        toTable: 'orders',
+        fromTable: 'order_items',
+        toColumn: 'order_id',
+        fromColumn: 'order_id',
+      }
+    ]));
+  }
+
+  async incomingKeyTestsCompositePK() {
+    // 5.1 doesn't have great support for composite keys, so we'll skip the test
+    if (this.dbType === 'mysql') {
+      const version = await this.connection.versionString();
+      const { major, minor } = parseVersion(version.split("-")[0]);
+      if (major === 5 && minor === 1) return expect.anything();
+    }
+
+    if (this.data.disabledFeatures?.foreignKeys) {
+      return expect.anything();
+    }
+
+    if (this.data.disabledFeatures?.compositeKeys) {
+      return expect.anything();
+    }
+
+    // Test composite foreign keys functionality
+    const tableKeys = await this.connection
+      .getIncomingKeys('composite_parent', this.defaultSchema)
+      .then(normalizeTableKeys);
+
+    expect(tableKeys).toHaveLength(1);
+    expect(tableKeys).toStrictEqual(expect.arrayContaining([
+      {
+        toTable: 'composite_parent',
+        fromTable: 'composite_child',
+        toColumn: expect.arrayContaining(['parent_id1', 'parent_id2']),
+        fromColumn: expect.arrayContaining(['ref_id1', 'ref_id2']),
+      }
+    ]));
   }
 
   async paramTest(params: string[]) {

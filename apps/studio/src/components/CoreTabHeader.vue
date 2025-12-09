@@ -12,8 +12,8 @@
         class="nav-link"
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
-        @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
-        :class="{ active: selected }"
+        @contextmenu="$bks.openMenu({id: headerContextMenuId, item: tab, options: contextOptions, event: $event})"
+        :class="{ active: selected, 'active-transaction': isTransaction }"
       >
         <tab-icon :tab="tab" />
         <span
@@ -84,6 +84,7 @@
 <script>
 import TabIcon from './tab/TabIcon.vue'
 import { mapState } from 'vuex'
+import _ from 'lodash'
 
   export default {
   components: { TabIcon },
@@ -142,11 +143,15 @@ import { mapState } from 'vuex'
     },
     computed: {
       ...mapState('tabs', { 'activeTab': 'active' }),
+      headerContextMenuId() {
+        // "tab.query.header", "tab.table.header", "tab.tableProperties.header", etc..
+        return `tab.${_.camelCase(this.tab.tabType)}-header`
+      },
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
 
         const devOptions = []
-        if (this.tab.tabType === "plugin-shell") {
+        if (this.tab.tabType === "plugin-shell" || this.tab.tabType === "plugin-base") {
           devOptions.push({ name: "[DEV] Reload plugin view", slug: 'dev-reload-plugin-view', handler: ({item}) => this.$emit('reloadPluginView', item) })
         }
 
@@ -213,6 +218,9 @@ import { mapState } from 'vuex'
       title() {
         return this.queryTabTitle || this.tableTabTitle || "Unknown"
       },
+      isTransaction() {
+        return this.tab.isTransaction === true;
+      }
     }
   }
 

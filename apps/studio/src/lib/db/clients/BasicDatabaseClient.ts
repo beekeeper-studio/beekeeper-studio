@@ -56,13 +56,13 @@ export const NoOpContextProvider: AppContextProvider = {
 };
 
 export interface BaseQueryResult {
-  columns: { name: string, type?: string }[]
+  columns: { name: string, type?: string | number | any }[]
   rows: any[][] | Record<string, any>[];
   arrayMode: boolean;
 }
 
 // raw result type is specific to each database implementation
-export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult> implements IBasicDatabaseClient {
+export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn = null> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
   dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
@@ -73,6 +73,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   db: string;
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
+  reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -85,8 +86,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   }
 
   async checkAllowReadOnly() {
+    if (platformInfo.testMode) return true;
     const status = await LicenseKey.getLicenseStatus()
-    return status.isUltimate || platformInfo.testMode;
+    return status.isUltimate;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -168,7 +170,20 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
   abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
   abstract getTableReferences(table: string, schema?: string): Promise<string[]>;
-  abstract getTableKeys(table: string, schema?: string): Promise<TableKey[]>;
+  /** @alias `getOutgoingKeys` */
+  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+    return await this.getOutgoingKeys(table, schema);
+  }
+
+  /**
+   * Get all foreign keys **defined by** the given table (outgoing relations).
+   */
+  abstract getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
+
+  /**
+   * Get all foreign keys that **reference** the given table (incoming relations).
+   */
+  abstract getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
 
   listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])
@@ -178,7 +193,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     return Promise.resolve([]);
   }
 
-  abstract query(queryText: string, options?: any): Promise<CancelableQuery>;
+  abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
@@ -308,7 +323,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
   // ****************************************************************************
 
   // For TableTable *************************************************************
-  abstract getTableLength(table: string, schema?: string): Promise<number>;
+  abstract getTableLength(table?: string, schema?: string): Promise<number>;
   abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
   abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;
   abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
@@ -531,7 +546,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -565,7 +580,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
     const statements = identify(q, { strict: false, dialect: this.dialect });
-    if (this.violatesReadOnly(statements, options)) {
+    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -596,6 +611,28 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
     }
   }
 
+  async getFilteredDataCount(table: string, schema: string | null, filter: string ): Promise<string> {
+    if (!this.knex) {
+      return ''
+    }
+
+    try {
+      const query = await this.knex(schema ? `${schema}.${table}` : table)
+        .count('*')
+        .whereRaw(filter)
+        .toString()
+
+      const { rows } = await this.driverExecuteSingle(query)
+      const [dataCount] = rows
+      const [countKey] = Object.keys(dataCount)
+
+      return dataCount[countKey]
+    } catch (err) {
+      log.error(err)
+      return ''
+    }
+  }
+
   async getQueryForFilter(filter: TableFilter): Promise<string> {
     if (!this.knex) {
       log.warn("No knex instance found. Cannot get query for filter.");
@@ -617,4 +654,38 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult>
       .trim();
   }
 
+  // Manual transaction management
+  async reserveConnection(_tabId: number): Promise<void> {}
+  async releaseConnection(_tabId: number): Promise<void> {}
+  async startTransaction(_tabId: number): Promise<void> {}
+  async commitTransaction(_tabId: number): Promise<void> {}
+  async rollbackTransaction(_tabId: number): Promise<void> {}
+
+  /** @throws Will throw if the `tabId` is already reserved */
+  protected throwIfHasConnection(tabId: number) {
+    if (this.reservedConnections.has(tabId)) {
+      throw new Error("Tab has already reserved a connection from the pool");
+    }
+  }
+
+  protected pushConnection(tabId: number, conn: Conn) {
+    this.reservedConnections.set(tabId, conn);
+  }
+
+  protected popConnection(tabId: number): Conn {
+    if (!this.reservedConnections.has(tabId)) {
+      return null
+    }
+
+    const conn = this.reservedConnections.get(tabId);
+    this.reservedConnections.delete(tabId);
+    return conn;
+  }
+
+  protected peekConnection(tabId: number): Conn {
+    if (!this.reservedConnections.get(tabId)) {
+      throw new Error("Could not retrieve reserved connection, please report this issue on our GitHub.");
+    }
+    return this.reservedConnections.get(tabId);
+  }
 }

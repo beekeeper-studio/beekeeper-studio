@@ -11,7 +11,7 @@ const log = rawLog.scope('ProtocolBuilder')
 
 function mimeTypeOf(pathName: string) {
   const extension = path.extname(pathName).toLowerCase()
-  if (extension === '.js') {
+  if (extension === '.js' || extension === '.mjs') {
     return 'text/javascript'
   } else if (extension === '.html') {
     return 'text/html'

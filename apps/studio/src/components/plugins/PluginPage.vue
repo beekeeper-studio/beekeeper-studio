@@ -11,7 +11,7 @@
         </template>
         <template v-else>{{ plugin.author }}</template>
       </div>
-      <a :href="`https://github.com/${plugin.repo}`">
+      <a v-if="plugin.repo" :href="`https://github.com/${plugin.repo}`">
         <span class="flex">
           <i class="material-icons">link</i>
           <span>&nbsp;</span>
@@ -72,32 +72,48 @@
         {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
       <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
-        <i class="material-icons-outlined">info</i>
+        <i class="material-icons">info_outline</i>
         <div>This plugin has been disabled via configuration</div>
       </div>
+      <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body expand">
+          <span>This plugin was not loaded because it requires Beekeeper Studio {{ plugin.minAppVersion }}+. Please upgrade the app or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install a compatible plugin version</a>.</span>
+        </div>
+      </div>
+      <div class="alert alert-danger" v-if="plugin.error">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body expand" style="white-space: pre-wrap;">
+          <span v-if="plugin.error.toString?.().includes('not compatible')">
+            {{ plugin.error }}
+            Or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install</a> a compatible plugin version.
+          </span>
+          <span v-else>{{ plugin.error }}</span>
+        </div>
+      </div>
     </div>
+    <div class="divider" v-if="rawHtmlContent" />
     <div class="markdown-content">
+      <div v-if="loadingMarkdown" class="loading">Loading plugin readme</div>
       <div v-html="rawHtmlContent" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import Vue, { PropType } from "vue";
+import Vue from "vue";
 import DOMPurify from "dompurify";
-import { CommonPluginInfo } from "@/services/plugin/types";
 import { marked } from "marked";
 
 export default Vue.extend({
   name: "PluginPage",
   props: {
     plugin: {
-      type: Object as PropType<CommonPluginInfo>,
+      type: Object, // FIXME (azmi): forgot what type this is!!!
       required: true,
     },
-    markdown: {
-      type: String,
-    },
+    markdown: String,
+    loadingMarkdown: Boolean,
   },
   data() {
     return {
@@ -136,3 +152,21 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.loading {
+  margin-top: 0.5rem;
+  color: var(--text);
+}
+
+.loading::after {
+  content: "...";
+  animation: dots 1s steps(2) infinite;
+}
+
+@keyframes dots {
+  0%   { content: "..."; }
+  50%  { content: ".."; }
+  100% { content: "..."; }
+}
+</style>

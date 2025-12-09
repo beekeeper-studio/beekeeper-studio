@@ -1,4 +1,5 @@
 @use "../text-editor/text-editor.scss";
+@use "../../styles/variables" as *;
 
 .BksSqlTextEditor {
   .cm-query-highlight {

@@ -34,7 +34,7 @@
       >
         <a
           :href="helpLink"
-          title="Read about this error on the Beekeeper Studio docs"
+          title="More information about this error"
         >Learn more about this error</a>
       </div>
     </div>
@@ -44,7 +44,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['error', 'title', 'closable', 'helpText'],
+  props: ['error', 'title', 'closable', 'helpText', 'link'],
   computed: {
     dev() {
       return this.$config.isDevelopment
@@ -56,6 +56,7 @@ export default Vue.extend({
       })
     },
     helpLink() {
+      if (this.link) return this.link
       return this.errors.map((e) => e.helpLink).find((e) => e)
     }
   },
@@ -119,8 +120,6 @@ export default Vue.extend({
       margin-top: calc($gutter-h / 2);
       padding-left: $gutter-w;
     }
-    &:hover{
-      cursor: pointer;
-    }
+
   }
 </style>

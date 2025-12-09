@@ -1,13 +1,13 @@
 import { TextEditor } from "./TextEditor";
 import props from "./props";
 import {
+  ContextMenuExtension,
   divider,
   InternalContextItem,
   openMenu,
-  useCustomMenuItems,
 } from "../context-menu";
 import { readClipboard, writeClipboard } from "../../utils";
-import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorSelectionChangeEvent, TextEditorValueChangeEvent } from "./types";
+import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorMenuContext, TextEditorSelectionChangeEvent, TextEditorValueChangeEvent } from "./types";
 
 export default {
   props,
@@ -15,8 +15,8 @@ export default {
   data() {
     return {
       textEditor: null,
-      internalContextMenuItems: [],
-      internalActionsKeymap: []
+      internalActionsKeymap: [],
+      contextMenuExtensions: [] as ContextMenuExtension[],
     };
   },
 
@@ -295,19 +295,34 @@ export default {
         menu.options = menu.options.filter((option) => !option.write);
       }
 
-      let items = useCustomMenuItems(
-        event,
-        undefined,
-        menu.options,
-        this.internalContextMenuItems
-      );
-      items = useCustomMenuItems(
-        event,
-        undefined,
-        items as InternalContextItem<unknown>[],
-        this.contextMenuItems
-      );
-      openMenu({ event, options: items });
+      let context: TextEditorMenuContext = {
+        text: this.textEditor.getValue(),
+        selectedText: this.textEditor.getSelection(),
+      }
+
+      let items: InternalContextItem<typeof context>[] = menu.options;
+
+      for (const ext of this.contextMenuExtensions) {
+        const extend = ext as ContextMenuExtension<TextEditorMenuContext>;
+        const extended = extend(event, items, context);
+        items = extended.items;
+        context = extended.context;
+      }
+
+      if (this.contextMenuItems) {
+        if (typeof this.contextMenuItems === "function") {
+          items = this.contextMenuItems(event, undefined, items);
+        } else if (Array.isArray(this.contextMenuItems)) {
+          items = this.contextMenuItems;
+        } else {
+          console.warn(
+            "Unknown type for contextMenuItems",
+            this.contextMenuItems
+          );
+        }
+      }
+
+      openMenu({ event, options: items, item: context });
     },
   },
 

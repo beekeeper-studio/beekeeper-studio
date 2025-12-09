@@ -275,10 +275,12 @@ export default {
       const dt = new Set(dataTypes)
       dt.delete('null')
 
-      if (dt.size > 1) {
+      // if there are more than one type in the column, or there are no types, just default
+      if (dt.size != 1) {
         return this.importDataTypes.defaultType
       }
 
+      // we only return the analyzed type if there is only one of them (ie we can be sure the type is correct)
       return this.importDataTypes[dt.values().next().value]
     },
     async tableData(importedColumns) {
@@ -390,7 +392,7 @@ export default {
       if (this.createTable) {
         return true
       }
-      
+
       const nonNullableColumns = new Set(this.nonNullableColumns)
       const tableData = this.tabulator.getData()
         .filter(t => t.tableColumn.toLowerCase().trim() !== this.ignoreText.toLowerCase() && t.tableColumn !== '')
@@ -430,7 +432,7 @@ export default {
       if (importOptions.createNewTable) {
         importOptions.table = this.schemaBuilder()
       }
-      
+
       importOptions.importMap = await this.$util.send('import/mapper', { id: this.importerId, dataToMap: this.tabulator.getData() })
       importOptions.truncateTable = this.truncateTable
       importOptions.runAsUpsert = this.runAsUpsert
@@ -452,13 +454,13 @@ export default {
         this.table = this.getTable(importOptions.table)
         const { tableColumnNames, nonNullableColumns } = this.table.columns.reduce((acc, column) => {
           const columnText = [column.columnName, ...this.getColumnAttributes(column)]
-  
+
           acc.tableColumnNames[column.columnName] = `${columnText.join(' ')}`
-  
+
           if (!column.nullable && !column.hasDefault) {
             acc.nonNullableColumns.push(column.columnName)
           }
-  
+
           return acc
         }, { tableColumnNames: {}, nonNullableColumns: []})
         this.tableColumnNames = tableColumnNames

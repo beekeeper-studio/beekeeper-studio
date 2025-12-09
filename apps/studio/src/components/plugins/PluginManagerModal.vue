@@ -29,6 +29,7 @@
             v-if="selectedPlugin"
             :plugin="selectedPlugin"
             :markdown="selectedPluginReadme"
+            :loading-markdown="loadingPluginReadme"
             @install="install(selectedPlugin)"
             @uninstall="uninstall(selectedPlugin)"
             @update="update(selectedPlugin)"
@@ -48,6 +49,8 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import type { PluginContext, PluginRegistryEntry } from "@/services/plugin";
+import { mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
 
@@ -58,14 +61,11 @@ export default Vue.extend({
       modalName: "plugin-manager-modal",
       plugins: [],
       selectedPluginIdx: -1,
-      selectedPluginReadme: null,
+      selectedPluginReadme: "",
+      loadingPluginReadme: false,
       loadedPlugins: false,
+      errors: null,
       loadingPlugins: false,
-      errors: this.$plugin.failedToInitialize
-        ? [
-            "Plugin system was not initialized properly. Please restart Beekeeper Studio to continue using plugins or report this issue.",
-          ]
-        : null,
     };
   },
   async mounted() {
@@ -78,12 +78,41 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings);
   },
   computed: {
+    ...mapState(["pluginManagerStatus"]),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
     },
     selectedPlugin() {
       return this.plugins[this.selectedPluginIdx];
     },
+  },
+  watch: {
+    pluginManagerStatus: {
+      async handler() {
+        if (this.pluginManagerStatus === "failed-to-initialize") {
+          this.errors = ["Plugin system was not initialized properly. Please restart Beekeeper Studio to continue using plugins or report this issue."]
+        } else {
+          this.errors = null
+        }
+
+        if (this.pluginManagerStatus === "ready") {
+          this.loadingPlugins = true;
+
+          try {
+            this.plugins = await this.buildPluginListData();
+          } catch (e) {
+            log.error(e);
+          }
+
+          this.loadingPlugins = false;
+        } else if (this.pluginManagerStatus === "initializing") {
+          this.loadingPlugins = true;
+        } else {
+          this.loadingPlugins = false;
+        }
+      },
+      immediate: true,
+    }
   },
   methods: {
     async install({ id }) {
@@ -93,8 +122,11 @@ export default Vue.extend({
         state.installing = true;
         await this.$plugin.install(id);
         state.installed = true;
+        // HACK(azmi): refresh the plugin list or just this item instead
+        state.loadable = true;
       } catch (e) {
         log.error(e);
+        state.error = e;
         this.$noty.error(`Failed to install plugin: ${e.message}`);
       } finally {
         state.installing = false;
@@ -108,8 +140,11 @@ export default Vue.extend({
         const manifest = await this.$plugin.update(id);
         state.version = manifest.version;
         state.updateAvailable = false;
+        // HACK(azmi): refresh the plugin list or just this item instead
+        state.loadable = true;
       } catch (e) {
         log.error(e);
+        state.error = e;
         this.$noty.error(`Failed to update plugin: ${e.message}`);
       } finally {
         state.installing = false;
@@ -151,25 +186,34 @@ export default Vue.extend({
         state.installed = false;
       } catch (e) {
         log.error(e);
+        state.error = e;
         this.$noty.error(`Failed to uninstall plugin: ${e.message}`);
       }
     },
     async openPluginPage({ id }) {
-      const info = await this.$util.send("plugin/repository", { id });
-      this.selectedPluginReadme = info.readme;
       this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
+      this.selectedPluginReadme = "";
+      this.loadingPluginReadme = true;
+      try {
+        const info = await this.$util.send("plugin/repository", { id });
+        this.selectedPluginReadme = info.readme;
+      } catch (e) {
+        log.warn(e);
+      }
+      this.loadingPluginReadme = false;
     },
     async buildPluginListData() {
       const entries = await this.$util.send("plugin/entries");
-      const installedPlugins = await this.$plugin.getEnabledPlugins();
-      const list = [];
+      const installedPlugins: PluginContext[] = await this.$plugin.plugins;
+      const list: PluginRegistryEntry[] = [];
 
-      for (const manifest of installedPlugins) {
+      for (const { manifest, loadable } of installedPlugins) {
         const data = {
           ...manifest,
           installed: true,
           installing: false,
           checkingForUpdates: null,
+          loadable,
         };
 
         const entry = entries.find((entry) => entry.id === manifest.id);
@@ -206,17 +250,8 @@ export default Vue.extend({
 
       return list;
     },
-    async open() {
+    open() {
       this.$modal.show(this.modalName);
-      if (this.$plugin.failedToInitialize) {
-        return;
-      }
-      if (!this.loadedPlugins) {
-        this.loadingPlugins = true;
-        this.plugins = await this.buildPluginListData();
-        this.loadingPlugins = false;
-        this.loadedPlugins = true;
-      }
     },
     close() {
       this.$modal.hide(this.modalName);

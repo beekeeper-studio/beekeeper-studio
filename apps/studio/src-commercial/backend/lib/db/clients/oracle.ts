@@ -4,6 +4,7 @@ import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
+import BksConfig from '@/common/bksConfig';
 import {
   CancelableQuery,
   DatabaseEntity,
@@ -36,6 +37,7 @@ import {
   buildUpdateQueries,
   withClosable,
   buildDeleteQueries,
+  errorMessages,
 } from '@/lib/db/clients/utils';
 import rawLog from '@bksLogger'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
@@ -58,7 +60,7 @@ oracle.fetchAsBuffer = [oracle.BLOB]
 
 let oracleInitialized = false
 
-export class OracleClient extends BasicDatabaseClient<DriverResult> {
+export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
   pool: oracle.Pool;
   server: IDbConnectionServer
   database: IDbConnectionDatabase
@@ -133,23 +135,23 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   createUpsertSQL({ schema, name: tableName }: DatabaseEntity, data: {[key: string]: any}[], primaryKeys: string[]): string {
     const [PK] = primaryKeys;
     const columnsWithoutPK = _.without(Object.keys(data[0]), PK);
-    
+
     // Use D.wrapIdentifier for proper identifier wrapping
     const wrappedPK = D.wrapIdentifier(PK);
     const wrappedSchema = D.wrapIdentifier(schema);
     const wrappedTable = D.wrapIdentifier(tableName);
-    
+
     const wrappedColumns = columnsWithoutPK.map(col => D.wrapIdentifier(col));
-    
+
     const insertSQL = () => `
       INSERT (${wrappedPK}, ${wrappedColumns.join(', ')})
       VALUES (source.${wrappedPK}, ${columnsWithoutPK.map(cpk => `source.${D.wrapIdentifier(cpk)}`).join(', ')})
     `;
-    
-    const updateSet = () => `${columnsWithoutPK.map(cpk => 
+
+    const updateSet = () => `${columnsWithoutPK.map(cpk =>
       `target.${D.wrapIdentifier(cpk)} = source.${D.wrapIdentifier(cpk)}`
     ).join(', ')}`;
-    
+
     // Use D.escapeString for proper string value escaping
     const formatValue = (val: any): string => {
       if (val === null || val === undefined) {
@@ -166,14 +168,14 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       }
       return D.escapeString(String(val), true);
     };
-    
+
     const usingSQLStatement = data.map((val, idx) => {
       if (idx === 0) {
-        return `SELECT ${formatValue(val[PK])} AS ${wrappedPK}, ${columnsWithoutPK.map(col => 
+        return `SELECT ${formatValue(val[PK])} AS ${wrappedPK}, ${columnsWithoutPK.map(col =>
           `${formatValue(val[col])} AS ${D.wrapIdentifier(col)}`
         ).join(', ')} FROM dual`;
       }
-      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col => 
+      return `SELECT ${formatValue(val[PK])}, ${columnsWithoutPK.map(col =>
         formatValue(val[col])
       ).join(', ')} FROM dual`;
     }).join(' UNION ALL ');
@@ -373,7 +375,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     backDirFormat: false,
     restore: false,
     indexNullsNotDistinct: false,
-    transactions: true
+    transactions: true,
+    filterTypes: ['standard']
   });
 
   // List Oracle stored procedures, functions, and packages
@@ -381,7 +384,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     try {
       // Query to get procedures, functions, and packages
       const query = `
-        SELECT 
+        SELECT
           OBJECT_NAME,
           OBJECT_TYPE,
           OWNER AS SCHEMA_NAME,
@@ -394,17 +397,17 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         ${filter?.schema ? `AND OWNER = ${D.escapeString(filter.schema.toUpperCase(), true)}` : ''}
         ORDER BY OBJECT_TYPE, OBJECT_NAME
       `;
-      
+
       const results = await this.driverExecuteSimple(query);
-      
+
       // Map to the Routine interface expected by the application
       return results.map(row => {
         // Convert Oracle object type to our RoutineType
-        const routineType: RoutineType = 
-          row.OBJECT_TYPE === 'FUNCTION' ? 'function' : 
-          row.OBJECT_TYPE === 'PROCEDURE' ? 'procedure' : 
+        const routineType: RoutineType =
+          row.OBJECT_TYPE === 'FUNCTION' ? 'function' :
+          row.OBJECT_TYPE === 'PROCEDURE' ? 'procedure' :
           'procedure'; // Default for packages etc.
-        
+
         return {
           id: String(row.OBJECT_ID),
           name: row.OBJECT_NAME,
@@ -425,23 +428,23 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     try {
       // First, get the current database name
       const current = await this.getCurrentDatabase();
-      
+
       // Then, query v$database to get additional information
       const dbQuery = `
-        SELECT NAME, OPEN_MODE, DATABASE_ROLE 
+        SELECT NAME, OPEN_MODE, DATABASE_ROLE
         FROM v$database
       `;
-      
+
       // Also query available PDBs (Pluggable Databases) if this is a container database
       const pdbQuery = `
-        SELECT NAME, OPEN_MODE, RESTRICTED 
+        SELECT NAME, OPEN_MODE, RESTRICTED
         FROM v$pdbs
         WHERE OPEN_MODE = ${D.escapeString('READ WRITE', true)}
       `;
-      
+
       // Execute both queries
       let databases = [current];
-      
+
       try {
         // Try to get additional PDBs, but this may fail if we don't have permissions
         const pdbResults = await this.driverExecuteSimple(pdbQuery);
@@ -453,7 +456,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         // Ignore errors if we don't have permission to view PDBs
         log.debug('Unable to query PDBs, listing only current database', error);
       }
-      
+
       return [...new Set(databases)]; // Return unique list
     } catch (error) {
       log.error('Error listing databases:', error);
@@ -529,7 +532,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       }))
     }))
   }
-  async getTableKeys(table: string, schema?: string) {
+  async getOutgoingKeys(table: string, schema?: string) {
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
     // https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
     const sql = `
     SELECT
@@ -561,21 +565,21 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
   AND c_pk.constraint_type = 'P'
    AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
    ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
-  ORDER BY 
+  ORDER BY
     a.constraint_name,
     a.position
     `
-    const response = await this.driverExecuteSimple(sql)
-    
+    const response = await this.driverExecuteSimple(sql);
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // Sort key parts by position to ensure correct column order
       const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (sortedKeyParts.length === 1) {
         const row = sortedKeyParts[0];
@@ -590,8 +594,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
           onDelete: row.DELETE_RULE,
           isComposite: false
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = sortedKeyParts[0];
       return {
@@ -604,6 +608,86 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
         onDelete: firstPart.DELETE_RULE,
         isComposite: true
+      };
+    })
+  }
+
+  async getIncomingKeys(table: string, schema?: string) {
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const incomingSQL = `
+    SELECT
+      a.table_name,
+      a.column_name,
+      a.constraint_name,
+      a.position,
+      c.owner,
+      c.delete_rule,
+       -- referenced
+      c.r_owner,
+      c_pk.table_name as R_TABLE_NAME,
+      c_pk.constraint_name as R_PK,
+      c_pk.owner as R_OWNER,
+      r_a.COLUMN_NAME as R_COLUMN,
+      r_a.position as R_POSITION
+  -- constraint columns
+  FROM all_cons_columns a
+  -- constraint info for those columns
+  JOIN all_constraints c ON a.owner = c.owner
+                        AND a.constraint_name = c.constraint_name
+
+  -- information on the columns we're referencing
+  JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
+                           AND c.r_constraint_name = c_pk.constraint_name
+
+    JOIN all_cons_columns r_a on c_pk.owner = r_a.owner and c_pk.CONSTRAINT_NAME = r_a.CONSTRAINT_NAME
+ WHERE c.constraint_type = 'R'
+  AND c_pk.constraint_type = 'P'
+   AND c_pk.table_name = ${D.escapeString(table.toUpperCase(), true)}
+   ${schema ? `AND c_pk.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+  ORDER BY
+    a.constraint_name,
+    a.position
+    `;
+
+    const incoming = await this.driverExecuteSimple(incomingSQL);
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(incoming, 'CONSTRAINT_NAME');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // Sort key parts by position to ensure correct column order
+      const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (sortedKeyParts.length === 1) {
+        const row = sortedKeyParts[0];
+        return {
+          constraintName: row.CONSTRAINT_NAME,
+          toTable: row.R_TABLE_NAME,
+          toSchema: row.R_OWNER,
+          toColumn: row.R_COLUMN,
+          fromTable: row.TABLE_NAME,
+          fromSchema: row.OWNER,
+          fromColumn: row.COLUMN_NAME,
+          onDelete: row.DELETE_RULE,
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = sortedKeyParts[0];
+      return {
+        constraintName: firstPart.CONSTRAINT_NAME,
+        toTable: firstPart.R_TABLE_NAME,
+        toSchema: firstPart.R_OWNER,
+        toColumn: _.uniq(sortedKeyParts.map(p => p.R_COLUMN)),
+        fromTable: firstPart.TABLE_NAME,
+        fromSchema: firstPart.OWNER,
+        fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
+        onDelete: firstPart.DELETE_RULE,
+        isComposite: true,
       };
     })
   }
@@ -713,7 +797,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     let poolConfig: any = {
       poolIncrement: 1,
       poolMin: 1,
-      poolMax: 4,
+      poolMax: BksConfig.db.oracle.maxConnections,
     }
 
     if (connectionMethod === 'connectionString') {
@@ -869,17 +953,18 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
     return `${dataType}(${charLength})`
   }
 
-  async query(text: string): Promise<CancelableQuery> {
+  async query(text: string, tabId: number): Promise<CancelableQuery> {
     let canceling = false
-    let connection = null
+    let connection: oracle.Connection = null
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER)
+    const hasReserved = this.reservedConnections.has(tabId);
     return {
       execute: (async () => {
-        connection = await this.pool.getConnection()
+        connection = hasReserved ? this.peekConnection(tabId) : await this.pool.getConnection()
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            await this.driverExecuteMultiple(text, { connection })
+            await this.driverExecuteMultiple(text, { connection, tabId })
           ])
           if (!data) return []
           return this.parseResults(data)
@@ -903,7 +988,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
         if (connection) {
           try {
             await connection.break()
-            await connection.close()
+            if (!hasReserved) {
+              await connection.close()
+            }
           } catch(err) {
             // Log the error but continue with cancellation
             console.error("Error during query cancellation:", err);
@@ -986,8 +1073,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
       const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
       // TODO - use `executeMany` if no SELECT queries are present
       // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
+      const hasReserved = this.reservedConnections.has(options?.tabId);
 
-      const c = options.connection ?? await this.pool.getConnection();
       const runQuery = async (c: oracle.Connection) => {
         const results: DriverResult[] = []
         for (let qi = 0; qi < infos.length; qi++) {
@@ -999,10 +1086,50 @@ export class OracleClient extends BasicDatabaseClient<DriverResult> {
 
           results.push({ result: data, info: q, rows: data.rows, columns: data.metaData, arrayMode: true })
         }
-        await c.commit()
+        if (!hasReserved) {
+          await c.commit()
+        }
         return results
       };
-      return await withClosable(c, runQuery)
+      if (hasReserved) {
+        const c = this.peekConnection(options?.tabId);
+        return await runQuery(c);
+      } else {
+        const c = options.connection ?? await this.pool.getConnection();
+        return await withClosable(c, runQuery);
+      }
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
+    if (this.reservedConnections.size >= BksConfig.db.oracle.maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
+    const conn = await this.pool.getConnection();
+    this.pushConnection(tabId, conn);
+  }
+
+  async releaseConnection(tabId: number) {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      await conn.release()
+    }
+  }
+
+  async startTransaction(_tabId: number): Promise<void> {
+    // no-op because oracle auto starts transactions on write actions
+  }
+
+  async commitTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.commit();
+  }
+
+  async rollbackTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.rollback();
   }
 
   private identify(query: string): IdentifyResult[] {
