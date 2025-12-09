@@ -13133,10 +13133,10 @@ sql-formatter@*:
     get-stdin "=8.0.0"
     nearley "^2.20.1"
 
-sql-formatter@~10.7.2:
-  version "10.7.2"
-  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-10.7.2.tgz#e482d73c44fa1243a6730f27dfab2ad734b95f30"
-  integrity sha512-YspJXMr2rKMGZY50zYRBs2nCtEO/AKDrmQOxmV2CrGEOFSXUhY3YbsOUe6lX0T/7xbBs4pAYv4UObmwf78vtKg==
+sql-formatter@15.6.10:
+  version "15.6.10"
+  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.6.10.tgz#90dcdc2759735d987e2af3758939e7559adb7256"
+  integrity sha512-0bJOPQrRO/JkjQhiThVayq0hOKnI1tHI+2OTkmT7TGtc6kqS+V7kveeMzRW+RNQGxofmTmet9ILvztyuxv0cJQ==
   dependencies:
     argparse "^2.0.1"
     nearley "^2.20.1"
