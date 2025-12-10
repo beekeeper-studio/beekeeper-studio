@@ -145,6 +145,7 @@ import { AppEvent } from '@/common/AppEvent'
 import TableIcon from '@/components/common/TableIcon.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { isUltimateType } from '@/common/interfaces/IConnection'
+import { searchItems } from '@/store/modules/SearchModule'
 
 export default Vue.extend({
   components: { TableIcon },
@@ -176,10 +177,9 @@ export default Vue.extend({
       }
 
     },
-    async searchTerm() {
+    searchTerm() {
       if (this.searchTerm) {
-        const ids: any[] = await this.searchIndex.searchAsync(this.searchTerm, 20)
-        this.results = this.database.filter((blob) => ids.includes(blob.id))
+        this.results = searchItems(this.database, this.searchTerm, 20)
 
         if (this.selectedItem >= this.results.length) this.selectedItem = this.results.length - 1
       } else {
@@ -191,7 +191,6 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['usedConfig']),
-    ...mapState('search', ['searchIndex']),
     ...mapGetters({ database: 'search/database', isUltimate: 'isUltimate' }),
     ...mapState(['tables']),
     ...mapState('tabs', { 'tabs': 'tabs' }),

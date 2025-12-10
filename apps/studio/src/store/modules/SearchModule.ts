@@ -1,33 +1,27 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { TransportFavoriteQuery } from "@/common/transport";
 import { TableOrView } from "@/lib/db/models";
-import FlexSearch from "flexsearch";
+import { matchSorter } from "match-sorter";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 
-interface FlexWorker {
-  addAsync(id: any, item: string): Promise<void>
-  searchAsync(term: string): Promise<number[]>
-  removeAsync(id: any): Promise<void>
-}
-
-interface IndexItem {
+export interface IndexItem {
   title: string
   item: TransportFavoriteQuery | TableOrView | IConnection | string
   type: 'query' | 'table' | 'connection' | 'database'
+  id: string
 }
 
-interface State {
-  searchIndex: FlexWorker
+export function searchItems(items: IndexItem[], searchTerm: string, limit = 20): IndexItem[] {
+  return matchSorter(items, searchTerm, {
+    keys: ['title', 'type'],
+  }).slice(0, limit)
 }
 
-export const SearchModule: Module<State, RootState> = {
+export const SearchModule: Module<never, RootState> = {
   namespaced: true,
-  state: () => ({
-    searchIndex: new FlexSearch.Worker({ tokenize: 'forward' })
-  }),
   getters: {
-    database(_state: State, _getters, root: RootState): IndexItem[] {
+    database(_state, _getters, root: RootState): IndexItem[] {
       const tables: IndexItem[] = root.tables.map((t) => {
         const title = t.schema ? `${t.schema}.${t.name}` : t.name
         return { item: t, type: 'table', title, id: title }
@@ -50,7 +44,4 @@ export const SearchModule: Module<State, RootState> = {
       return [...tables, ...favorites, ...connections, ...databases]
     },
   },
-  mutations: {
-  },
-
 }
