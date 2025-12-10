@@ -60,7 +60,8 @@ export enum AzureAuthType {
 
 export const IamAuthTypes = [
   { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
-  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' },
+  { name: 'AWS SSO / Identity Center', value: 'iam_sso' }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -84,6 +85,12 @@ export interface RedshiftOptions {
   tokenDurationSeconds?: number;
   isServerless?: boolean;
   authType?: string;
+  // AWS SSO / Identity Center options
+  ssoStartUrl?: string;
+  ssoRegion?: string;
+  ssoAccountId?: string;
+  ssoRoleName?: string;
+  ssoProfile?: string;
 }
 
 export interface CassandraOptions {
