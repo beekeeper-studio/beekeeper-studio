@@ -1,4 +1,3 @@
-import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager, {
   PluginManagerOptions,
 } from "@/services/plugin/PluginManager";
@@ -6,6 +5,7 @@ import { createPluginServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/fileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
 import {
+  ForbiddenPluginError,
   NotFoundPluginError,
   NotSupportedPluginError,
 } from "@/services/plugin/errors";
@@ -14,18 +14,59 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";
 import { UserSetting } from "@/common/appdb/models/user_setting";
+import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+import bindLicenseInstallLimits from "@commercial/backend/plugin-system/licenseInstallLimits";
+import { createLicense } from "@tests/utils";
 
-describe("Basic Plugin Management", () => {
+function preparePluginSystemTestGroup() {
   const server = createPluginServer();
   const repositoryService = new MockPluginRepositoryService(server);
   const registry = new PluginRegistry(repositoryService);
+  const fileManager = createFileManager();
+
+  beforeAll(async () => {
+    await TestOrmConnection.connect();
+    const runner = TestOrmConnection.connection.connection.createQueryRunner();
+    await migration.testRun(runner);
+    await runner.release();
+  });
+
+  afterAll(async () => {
+    await TestOrmConnection.disconnect();
+  });
+
+  beforeEach(async () => {
+    PluginManager.PREINSTALLED_PLUGINS = [];
+    const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
+    setting.userValue = "{}";
+    await setting.save();
+    registry.clearCache();
+  });
+
+  afterEach(() => {
+    cleanFileManager(fileManager);
+  });
+
+  return {
+    fileManager,
+    server,
+    registry,
+    repositoryService,
+  };
+}
+
+describe("Basic Plugin Management", () => {
+  const {
+    fileManager,
+    server,
+    registry,
+    repositoryService,
+  } = preparePluginSystemTestGroup();
 
   enum AppVer {
     COMPAT = "5.4.0",
     INCOMPAT = "5.3.0",
   }
-
-  let fileManager: PluginFileManager;
 
   async function initPluginManager(
     appVersionOrOptions:
@@ -52,22 +93,7 @@ describe("Basic Plugin Management", () => {
     return manager;
   }
 
-  beforeAll(async () => {
-    await TestOrmConnection.connect();
-    const runner = TestOrmConnection.connection.connection.createQueryRunner();
-    await migration.testRun(runner);
-    await runner.release();
-  });
-
-  afterAll(async () => {
-    await TestOrmConnection.disconnect();
-  });
-
-  beforeEach(async () => {
-    PluginManager.PREINSTALLED_PLUGINS = [];
-    const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
-    setting.userValue = "{}";
-    await setting.save();
+  beforeEach(() => {
     repositoryService.plugins = [
       {
         id: "test-plugin",
@@ -88,12 +114,6 @@ describe("Basic Plugin Management", () => {
         readme: "# Watermelon Sticker\n\nThe sticker for watermelons.",
       },
     ];
-    registry.clearCache();
-    fileManager = createFileManager();
-  });
-
-  afterEach(() => {
-    cleanFileManager(fileManager);
   });
 
   describe("Discovery", () => {
@@ -115,8 +135,10 @@ describe("Basic Plugin Management", () => {
         minAppVersion: "5.4.0",
         author: "test-plugin-author",
         description: "Test Plugin description",
+        manifestVersion: 1,
         capabilities: {
           views: [],
+          menu: [],
         },
       };
       await expect(manager.getRepository("test-plugin")).resolves.toStrictEqual(
@@ -215,13 +237,9 @@ describe("Basic Plugin Management", () => {
         "frozen-banana": { autoUpdate: true },
       });
 
-      console.log(manager.getPlugins());
-
       // Simulate plugin updates on the server
-      console.log(repositoryService.plugins);
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
       repositoryService.plugins[1].latestRelease.version = "1.3.0";
-      console.log(repositoryService.plugins);
 
       // Simulate app restart
       const manager2 = await initPluginManager(AppVer.COMPAT);
@@ -282,3 +300,127 @@ describe("Basic Plugin Management", () => {
     });
   });
 });
+
+describe("Plugin System Constraint", () => {
+  const {
+    repositoryService,
+    fileManager,
+    registry,
+  } = preparePluginSystemTestGroup();
+
+  let manager: PluginManager;
+
+  beforeEach(async () => {
+    // This creates a list of plugin ids:
+    // [
+    //   { id: "bks-plugin-1" },
+    //   { id: "bks-plugin-2" },
+    //   ....
+    //   { id: "community-plugin-1" },
+    //   { id: "community-plugin-2" },
+    //   ...
+    // ]
+    //
+    // NOTE:
+    // - Plugins that start with "bks-" are core plugins
+    // - Plugins that does NOT start with "bks-" are community plugins
+    repositoryService.plugins = [
+      ...(new Array(6).fill(null).map((_0, i) => ({ id: `bks-plugin-${i + 1}` }))),
+      ...(new Array(6).fill(null).map((_0, i) => ({ id: `community-plugin-${i + 1}` }))),
+    ];
+    manager = new PluginManager({ appVersion: "9.9.9", fileManager, registry });
+    await manager.initialize();
+    await LicenseKey.clear();
+  });
+
+  it("free users get 2 community plugins", async () => {
+    bindLicenseInstallLimits(manager, await LicenseKey.getLicenseStatus());
+
+    // Can't install any core plugins
+    await expect(manager.installPlugin("bks-plugin-1")).rejects.toThrow(
+      ForbiddenPluginError
+    );
+
+    await manager.installPlugin("community-plugin-1");
+    await manager.installPlugin("community-plugin-2");
+
+    // As long as there are no errors, we're happy as can be
+    expect.anything();
+
+    await expect(manager.installPlugin("community-plugin-3")).rejects.toThrow(
+      ForbiddenPluginError
+    );
+
+    await manager.uninstallPlugin("community-plugin-2");
+
+    // Should be able to install the third plugin since we only have one now
+    await manager.installPlugin("community-plugin-3");
+
+    expect.anything();
+  });
+
+  it("indie users get 5 plugins (core + community <= 5)", async () => {
+    await createLicense({ licenseType: "PersonalLicense" }),
+    bindLicenseInstallLimits(manager, await LicenseKey.getLicenseStatus());
+
+    await manager.installPlugin("community-plugin-1");
+    await manager.installPlugin("community-plugin-2");
+    await manager.installPlugin("community-plugin-3");
+    await manager.installPlugin("community-plugin-4");
+    await manager.installPlugin("community-plugin-5");
+
+    // No problem installing 5 community plugins
+    expect.anything();
+
+    // But we can't install any more
+    await expect(manager.installPlugin("community-plugin-6")).rejects.toThrow(
+      ForbiddenPluginError
+    );
+    await expect(manager.installPlugin("bks-plugin-1")).rejects.toThrow(
+      ForbiddenPluginError
+    );
+
+    await manager.uninstallPlugin("community-plugin-5");
+
+    // We now have 4 plugins, installing the 6th one should work
+    await manager.installPlugin("community-plugin-6");
+
+    // Remove some plugins so we can try installing the core plugins
+    await manager.uninstallPlugin("community-plugin-3");
+    await manager.uninstallPlugin("community-plugin-4");
+    await manager.uninstallPlugin("community-plugin-6");
+
+    // We now have 2 plugins. We have 3 free slots.
+    await manager.installPlugin("bks-plugin-1");
+    await manager.installPlugin("bks-plugin-2");
+    await manager.installPlugin("bks-plugin-3");
+
+    // :-D
+    expect.anything();
+
+    // We can't install any more
+    await expect(manager.installPlugin("bks-plugin-4")).rejects.toThrow(
+      ForbiddenPluginError
+    );
+  });
+
+  it("pro+ users get unlimited plugins", async () => {
+    await createLicense({ licenseType: "BusinessLicense" }),
+    bindLicenseInstallLimits(manager, await LicenseKey.getLicenseStatus());
+
+    await manager.installPlugin("bks-plugin-1");
+    await manager.installPlugin("bks-plugin-2");
+    await manager.installPlugin("bks-plugin-3");
+    await manager.installPlugin("bks-plugin-4");
+    await manager.installPlugin("bks-plugin-5");
+    await manager.installPlugin("bks-plugin-6");
+    await manager.installPlugin("community-plugin-1");
+    await manager.installPlugin("community-plugin-2");
+    await manager.installPlugin("community-plugin-3");
+    await manager.installPlugin("community-plugin-4");
+    await manager.installPlugin("community-plugin-5");
+    await manager.installPlugin("community-plugin-6");
+
+    expect.anything();
+  });
+})

@@ -23,11 +23,12 @@ const manifestV0: ManifestV0 = {
 };
 
 describe("Plugin System", () => {
-  describe("Manifest V0 compatibility", () => {
+  describe("Manifest V0 compatibility (for AI Shell)", () => {
     it("checks manifest version", () => {
       expect(isManifestV0(manifestV0)).toBe(true);
       expect(isManifestV0({ ...manifestV0, manifestVersion: 0 })).toBe(true);
-      expect(isManifestV0({ ...manifestV0, manifestVersion: 1 })).toBe(false);
+      expect(isManifestV0({ ...manifestV0, manifestVersion: 1, capabilities: { menu: [], views: [] } }))
+        .toBe(false);
     });
 
     it("translates tabTypes to pluginViews", () => {

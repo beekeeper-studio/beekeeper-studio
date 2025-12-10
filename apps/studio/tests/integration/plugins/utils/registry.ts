@@ -1,12 +1,12 @@
-import { Manifest, PluginRegistryEntry, Release } from "@/services/plugin";
+import { Manifest, PluginRegistryEntry, PluginView, Release } from "@/services/plugin";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
 
 export type Plugin = {
   id: string;
-  name: string;
-  latestRelease: Pick<Manifest, "version" | "minAppVersion">;
-  readme: string;
+  name?: string;
+  latestRelease?: Pick<Manifest, "version" | "minAppVersion">;
+  readme?: string;
 };
 
 /**
@@ -41,7 +41,7 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
   async fetchRegistry(): Promise<PluginRegistryEntry[]> {
     return this.plugins.map((p) => ({
       id: p.id,
-      name: p.name,
+      name: p.name ?? p.id,
       repo: this.repoStr(p),
       author: this.authorStr(p),
       description: this.descriptionStr(p),
@@ -75,13 +75,15 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
   private createLatestRelease(plugin: Plugin) {
     const manifest = {
       id: plugin.id,
-      name: plugin.name,
-      version: plugin.latestRelease.version,
-      minAppVersion: plugin.latestRelease.minAppVersion,
+      name: plugin.name ?? plugin.id,
+      version: plugin.latestRelease?.version ?? "1.0.0",
+      minAppVersion: plugin.latestRelease?.minAppVersion ?? "5.0.0",
       author: this.authorStr(plugin),
       description: this.descriptionStr(plugin),
+      manifestVersion: 1 as const,
       capabilities: {
         views: [],
+        menu: [],
       },
     };
     return {
@@ -104,6 +106,6 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
   }
 
   private descriptionStr(plugin: Plugin) {
-    return `${plugin.name} description`;
+    return `${plugin.name ?? plugin.id} description`;
   }
 }

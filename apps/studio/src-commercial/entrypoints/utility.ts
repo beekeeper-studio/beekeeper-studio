@@ -29,6 +29,8 @@ import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
 
 import * as sms from 'source-map-support'
+import bindLicenseInstallLimits from '@commercial/backend/plugin-system/licenseInstallLimits';
+import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -168,6 +170,11 @@ async function init() {
   await ormConnection.connect();
 
   try {
+    // FIXME this blocks the thread
+    // first: webpluginmanaer should listen to the message from here
+    // second: if it receives the message, initialize
+    // third: if the message is error, notify the user its not working
+    bindLicenseInstallLimits(pluginManager, await LicenseKey.getLicenseStatus());
     await pluginManager.initialize();
   } catch (e) {
     log.error("Error initializing plugin manager", e);

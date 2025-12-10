@@ -25,3 +25,10 @@ export const PluginTimeoutError = class extends Error {
     this.name = "PluginTimeoutError";
   }
 };
+
+export const ForbiddenPluginError = class extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ForbiddenPluginError";
+  }
+};

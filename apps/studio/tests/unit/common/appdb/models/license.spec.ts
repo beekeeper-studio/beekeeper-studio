@@ -3,6 +3,7 @@ import { isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import _ from "lodash";
 import platformInfo from "@/common/platform_info";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
+import { createLicense } from "@tests/utils";
 
 const ANY_VERSION = "1.0.0";
 const ANY_VERSION_TAG = "v1.0.0";
@@ -21,22 +22,6 @@ function expectStatus() {
   return expect(
     LicenseKey.getLicenseStatus().then((s) => _.omit(s, ["license", "fromFile", "filePath"]))
   ).resolves;
-}
-
-async function createLicense(options: {
-  validUntil: string;
-  supportUntil?: string;
-  maxAllowedAppRelease: Nullable<{ tagName: string }>;
-}) {
-  await LicenseKey.clear();
-  const license = new LicenseKey();
-  license.validUntil = new Date(options.validUntil);
-  license.supportUntil = new Date(options.supportUntil ?? options.validUntil);
-  license.licenseType = "PersonalLicense";
-  license.email = "fake-email";
-  license.key = "fake-key";
-  license.maxAllowedAppRelease = options.maxAllowedAppRelease;
-  return await license.save();
 }
 
 function currentTime(date: string) {
