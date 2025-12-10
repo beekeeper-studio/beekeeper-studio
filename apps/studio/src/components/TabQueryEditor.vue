@@ -183,12 +183,12 @@
               v-model="dryRun"
             >
           </x-button>
-          <x-button
-            @click.prevent="formatterPreset"
-            class="btn btn-flat btn-small"
-          >
-            Open Query Formatter
-          </x-button>
+          <!-- <x-button -->
+          <!--   @click.prevent="formatterPreset" -->
+          <!--   class="btn btn-flat btn-small" -->
+          <!-- > -->
+          <!--   Open Query Formatter -->
+          <!-- </x-button> -->
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
