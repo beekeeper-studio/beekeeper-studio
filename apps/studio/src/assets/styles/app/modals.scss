@@ -135,8 +135,8 @@
 
   &.super-formatter-modal {
     .v--modal {
-      min-width: 90vw;
-      min-height: 80vh;
+      max-width: 42rem;
+      max-height: min(50rem, 90vh);
       display: flex;
     }
     .dialog-content {

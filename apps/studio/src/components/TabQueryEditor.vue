@@ -340,15 +340,6 @@
             <p>
               Super Formatter
             </p>
-            <button
-              type="button"
-              class="btn btn-flat btn-fab"
-              aria-label="Close super formatter"
-              title="Close super formatter"
-              @click="handleFormatterPresetModal({ showFormatter: false })"
-            >
-              X
-            </button>
           </div>
           <bks-super-formatter
             :value="unsavedText"
@@ -362,7 +353,19 @@
             @bks-save-preset="savePreset"
             @bks-create-preset="savePreset"
             @bks-delete-preset="deletePreset"
-          />
+          >
+            <template #start-footer>
+              <button
+                type="button"
+                class="btn btn-small btn-flat"
+                aria-label="Close super formatter"
+                title="Close super formatter"
+                @click="handleFormatterPresetModal({ showFormatter: false })"
+              >
+                Cancel
+              </button>
+            </template>
+          </bks-super-formatter>
         </div>
       </modal>
     </portal>
