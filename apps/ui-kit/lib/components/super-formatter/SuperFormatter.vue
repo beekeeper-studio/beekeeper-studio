@@ -389,7 +389,7 @@ export default Vue.extend({
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: 18rem auto;
+    grid-template-columns: 20rem auto;
     grid-template-rows: auto 1.75rem;
     grid-row-gap: 1rem;
     align-items: stretch;

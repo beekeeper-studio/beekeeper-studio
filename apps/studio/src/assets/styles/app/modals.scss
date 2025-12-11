@@ -140,7 +140,7 @@
       display: flex;
       container-type: inline-size;
 
-      @container (max-width: 550px) {
+      @container (max-width: 600px) {
         .BksSuperFormatter {
           grid-template-columns: auto;
           grid-template-rows: 1fr 1fr 1.75rem;
