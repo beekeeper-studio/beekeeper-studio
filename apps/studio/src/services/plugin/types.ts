@@ -171,7 +171,7 @@ export type PluginSettings = {
   }
 }
 
-
+/** Used in frontend */
 export type WebPluginContext = {
   manifest: Manifest;
   store: PluginStoreService;
@@ -179,11 +179,16 @@ export type WebPluginContext = {
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
   fileHelpers: FileHelpers;
+  disabled: boolean;
 }
 
+/** Used in backend */
 export type PluginContext = {
   manifest: Manifest;
+  /** @alias compatible */
   loadable: boolean;
+  compatible: boolean;
+  disabled: boolean;
 }
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";

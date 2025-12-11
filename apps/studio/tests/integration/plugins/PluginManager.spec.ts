@@ -2,7 +2,7 @@ import PluginManager, {
   PluginManagerOptions,
 } from "@/services/plugin/PluginManager";
 import { createPluginServer } from "./utils/server";
-import { createFileManager, cleanFileManager } from "./utils/fileManager";
+import { createFileManager, cleanFileManager, preloadPlugins } from "./utils/fileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
 import {
   ForbiddenPluginError,
@@ -15,7 +15,7 @@ import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import bindLicenseInstallLimits from "@commercial/backend/plugin-system/licenseInstallLimits";
+import bindLicenseConstraints from "@commercial/backend/plugin-system/licenseConstraints";
 import { createLicense } from "@tests/utils";
 
 function preparePluginSystemTestGroup() {
@@ -301,126 +301,241 @@ describe("Basic Plugin Management", () => {
   });
 });
 
-describe("Plugin System Constraint", () => {
+describe("Plugin License Constraints", () => {
+  describe("Installation", () => {
+    const {
+      repositoryService,
+      fileManager,
+      registry,
+    } = preparePluginSystemTestGroup();
+
+    let manager: PluginManager;
+
+    beforeEach(async () => {
+      // This creates a list of plugin ids:
+      // [ { id: "bks-plugin-1" }, { id: "bks-plugin-2" }, .... { id: "community-plugin-1" }, ... ]
+      //
+      // NOTE:
+      // - Plugins that start with "bks-" are core plugins
+      // - Plugins that does NOT start with "bks-" are community plugins
+      repositoryService.plugins = [
+        ...(new Array(6).fill(null).map((_0, i) => ({ id: `bks-plugin-${i + 1}` }))),
+        ...(new Array(6).fill(null).map((_0, i) => ({ id: `community-plugin-${i + 1}` }))),
+      ];
+      manager = new PluginManager({ appVersion: "9.9.9", fileManager, registry });
+      await manager.initialize();
+      await LicenseKey.clear();
+    });
+
+    it("free users - get 2 community plugins", async () => {
+      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+
+      // Can't install any core plugins
+      await expect(manager.installPlugin("bks-plugin-1")).rejects.toThrow(
+        ForbiddenPluginError
+      );
+
+      await manager.installPlugin("community-plugin-1");
+      await manager.installPlugin("community-plugin-2");
+
+      // As long as there are no errors, we're happy as can be
+      expect.anything();
+
+      await expect(manager.installPlugin("community-plugin-3")).rejects.toThrow(
+        ForbiddenPluginError
+      );
+
+      await manager.uninstallPlugin("community-plugin-2");
+
+      // Should be able to install the third plugin since we only have one now
+      await manager.installPlugin("community-plugin-3");
+
+      expect.anything();
+    });
+
+    it("indie users - get 5 plugins (core + community <= 5)", async () => {
+      await createLicense({ licenseType: "PersonalLicense" });
+      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+
+      await manager.installPlugin("community-plugin-1");
+      await manager.installPlugin("community-plugin-2");
+      await manager.installPlugin("community-plugin-3");
+      await manager.installPlugin("community-plugin-4");
+      await manager.installPlugin("community-plugin-5");
+
+      // No problem installing 5 community plugins
+      expect.anything();
+
+      // But we can't install any more
+      await expect(manager.installPlugin("community-plugin-6")).rejects.toThrow(
+        ForbiddenPluginError
+      );
+      await expect(manager.installPlugin("bks-plugin-1")).rejects.toThrow(
+        ForbiddenPluginError
+      );
+
+      await manager.uninstallPlugin("community-plugin-5");
+
+      // We now have 4 plugins, installing the 6th one should work
+      await manager.installPlugin("community-plugin-6");
+
+      // Remove some plugins so we can try installing the core plugins
+      await manager.uninstallPlugin("community-plugin-3");
+      await manager.uninstallPlugin("community-plugin-4");
+      await manager.uninstallPlugin("community-plugin-6");
+
+      // We now have 2 plugins. We have 3 free slots.
+      await manager.installPlugin("bks-plugin-1");
+      await manager.installPlugin("bks-plugin-2");
+      await manager.installPlugin("bks-plugin-3");
+
+      // :-D
+      expect.anything();
+
+      // We can't install any more
+      await expect(manager.installPlugin("bks-plugin-4")).rejects.toThrow(
+        ForbiddenPluginError
+      );
+    });
+
+    it("pro+ users - get unlimited plugins", async () => {
+      await createLicense({ licenseType: "BusinessLicense" });
+      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+
+      await manager.installPlugin("bks-plugin-1");
+      await manager.installPlugin("bks-plugin-2");
+      await manager.installPlugin("bks-plugin-3");
+      await manager.installPlugin("bks-plugin-4");
+      await manager.installPlugin("bks-plugin-5");
+      await manager.installPlugin("bks-plugin-6");
+      await manager.installPlugin("community-plugin-1");
+      await manager.installPlugin("community-plugin-2");
+      await manager.installPlugin("community-plugin-3");
+      await manager.installPlugin("community-plugin-4");
+      await manager.installPlugin("community-plugin-5");
+      await manager.installPlugin("community-plugin-6");
+
+      expect.anything();
+    });
+  });
+
+  describe("Activation", () => {
+    const { fileManager, registry } = preparePluginSystemTestGroup();
+
+    let manager: PluginManager;
+
+    beforeEach(async () => {
+      manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
+      preloadPlugins(fileManager, [
+        { id: "bks-plugin-0" },
+        { id: "bks-plugin-1" },
+        { id: "community-plugin-0" },
+        { id: "community-plugin-1" },
+        { id: "community-plugin-2" },
+        { id: "community-plugin-3" },
+      ]);
+    });
+
+    it("free users - pick the first 2 community plugins and disable the rest", async () => {
+      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await manager.initialize();
+      const map = manager.getPlugins().reduce((obj, plugin) => ({ ...obj, [plugin.manifest.id]: plugin.disabled }), {});
+      expect(map).toStrictEqual({
+        "bks-plugin-0": true,
+        "bks-plugin-1": true,
+        "community-plugin-0": false,
+        "community-plugin-1": false,
+        "community-plugin-2": true,
+        "community-plugin-3": true,
+      });
+    });
+
+    it("indie users - pick the first 5 plugins and disable the rest", async () => {
+      await createLicense({ licenseType: "PersonalLicense" });
+      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await manager.initialize();
+
+      const map = manager.getPlugins().reduce((obj, plugin) => ({ ...obj, [plugin.manifest.id]: plugin.disabled }), {});
+      expect(map).toStrictEqual({
+        "bks-plugin-0": false,
+        "bks-plugin-1": false,
+        "community-plugin-0": false,
+        "community-plugin-1": false,
+        "community-plugin-2": false,
+        "community-plugin-3": true,
+      });
+    });
+
+    it("pro+ users - get unlimited plugins", async () => {
+      await createLicense({ licenseType: "BusinessLicense" });
+      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await manager.initialize();
+
+      const map = manager.getPlugins().reduce((obj, plugin) => ({ ...obj, [plugin.manifest.id]: plugin.disabled }), {});
+      expect(map).toStrictEqual({
+        "bks-plugin-0": false,
+        "bks-plugin-1": false,
+        "community-plugin-0": false,
+        "community-plugin-1": false,
+        "community-plugin-2": false,
+        "community-plugin-3": false,
+      });
+    });
+  });
+});
+
+describe("Disabling plugins via config.ini", () => {
   const {
-    repositoryService,
     fileManager,
     registry,
+    repositoryService,
   } = preparePluginSystemTestGroup();
 
-  let manager: PluginManager;
+  const configIni = {
+    plugins: {
+      "community-plugin-0": { disabled: true },
+    },
+  };
 
-  beforeEach(async () => {
-    // This creates a list of plugin ids:
-    // [
-    //   { id: "bks-plugin-1" },
-    //   { id: "bks-plugin-2" },
-    //   ....
-    //   { id: "community-plugin-1" },
-    //   { id: "community-plugin-2" },
-    //   ...
-    // ]
-    //
-    // NOTE:
-    // - Plugins that start with "bks-" are core plugins
-    // - Plugins that does NOT start with "bks-" are community plugins
+  beforeEach(() => {
     repositoryService.plugins = [
-      ...(new Array(6).fill(null).map((_0, i) => ({ id: `bks-plugin-${i + 1}` }))),
-      ...(new Array(6).fill(null).map((_0, i) => ({ id: `community-plugin-${i + 1}` }))),
+      { id: "community-plugin-0" },
+      { id: "community-plugin-1" },
     ];
-    manager = new PluginManager({ appVersion: "9.9.9", fileManager, registry });
+  });
+
+  it("can force-disable installed plugins", async () => {
+    const manager = new PluginManager({
+      config: configIni,
+      appVersion: "9.9.9",
+      registry,
+      fileManager,
+    });
     await manager.initialize();
-    await LicenseKey.clear();
-  });
+    await manager.installPlugin("community-plugin-0");
+    expect(manager.getPlugins()[0].disabled).toBe(true);
 
-  it("free users get 2 community plugins", async () => {
-    bindLicenseInstallLimits(manager, await LicenseKey.getLicenseStatus());
-
-    // Can't install any core plugins
-    await expect(manager.installPlugin("bks-plugin-1")).rejects.toThrow(
-      ForbiddenPluginError
-    );
-
+    // Only disable disabled plugins
     await manager.installPlugin("community-plugin-1");
-    await manager.installPlugin("community-plugin-2");
-
-    // As long as there are no errors, we're happy as can be
-    expect.anything();
-
-    await expect(manager.installPlugin("community-plugin-3")).rejects.toThrow(
-      ForbiddenPluginError
-    );
-
-    await manager.uninstallPlugin("community-plugin-2");
-
-    // Should be able to install the third plugin since we only have one now
-    await manager.installPlugin("community-plugin-3");
-
-    expect.anything();
+    expect(manager.getPlugins()[1].disabled).toBe(false);
   });
 
-  it("indie users get 5 plugins (core + community <= 5)", async () => {
-    await createLicense({ licenseType: "PersonalLicense" }),
-    bindLicenseInstallLimits(manager, await LicenseKey.getLicenseStatus());
+  it("can force-disable preloaded plugins", async () => {
+    preloadPlugins(fileManager, [
+      { id: "community-plugin-0" },
+      { id: "community-plugin-1" },
+    ]);
 
-    await manager.installPlugin("community-plugin-1");
-    await manager.installPlugin("community-plugin-2");
-    await manager.installPlugin("community-plugin-3");
-    await manager.installPlugin("community-plugin-4");
-    await manager.installPlugin("community-plugin-5");
+    const manager = new PluginManager({
+      config: configIni,
+      appVersion: "9.9.9",
+      registry,
+      fileManager,
+    });
+    await manager.initialize();
 
-    // No problem installing 5 community plugins
-    expect.anything();
-
-    // But we can't install any more
-    await expect(manager.installPlugin("community-plugin-6")).rejects.toThrow(
-      ForbiddenPluginError
-    );
-    await expect(manager.installPlugin("bks-plugin-1")).rejects.toThrow(
-      ForbiddenPluginError
-    );
-
-    await manager.uninstallPlugin("community-plugin-5");
-
-    // We now have 4 plugins, installing the 6th one should work
-    await manager.installPlugin("community-plugin-6");
-
-    // Remove some plugins so we can try installing the core plugins
-    await manager.uninstallPlugin("community-plugin-3");
-    await manager.uninstallPlugin("community-plugin-4");
-    await manager.uninstallPlugin("community-plugin-6");
-
-    // We now have 2 plugins. We have 3 free slots.
-    await manager.installPlugin("bks-plugin-1");
-    await manager.installPlugin("bks-plugin-2");
-    await manager.installPlugin("bks-plugin-3");
-
-    // :-D
-    expect.anything();
-
-    // We can't install any more
-    await expect(manager.installPlugin("bks-plugin-4")).rejects.toThrow(
-      ForbiddenPluginError
-    );
+    expect(manager.getPlugins()[0].disabled).toBe(true);
+    expect(manager.getPlugins()[1].disabled).toBe(false);
   });
+});
 
-  it("pro+ users get unlimited plugins", async () => {
-    await createLicense({ licenseType: "BusinessLicense" }),
-    bindLicenseInstallLimits(manager, await LicenseKey.getLicenseStatus());
-
-    await manager.installPlugin("bks-plugin-1");
-    await manager.installPlugin("bks-plugin-2");
-    await manager.installPlugin("bks-plugin-3");
-    await manager.installPlugin("bks-plugin-4");
-    await manager.installPlugin("bks-plugin-5");
-    await manager.installPlugin("bks-plugin-6");
-    await manager.installPlugin("community-plugin-1");
-    await manager.installPlugin("community-plugin-2");
-    await manager.installPlugin("community-plugin-3");
-    await manager.installPlugin("community-plugin-4");
-    await manager.installPlugin("community-plugin-5");
-    await manager.installPlugin("community-plugin-6");
-
-    expect.anything();
-  });
-})

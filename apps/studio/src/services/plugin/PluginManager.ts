@@ -18,11 +18,21 @@ import EventEmitter from "events";
 const log = rawLog.scope("PluginManager");
 
 export type PluginManagerOptions = {
+  config?: {
+    plugins?: {
+      [pluginId: string]: {
+        disabled?: boolean;
+      };
+    };
+  };
   fileManager: PluginFileManager;
   /** You probably don't need to pass this. It's available for testing. */
   registry?: PluginRegistry;
   appVersion: string;
 }
+
+type InstallGuard = (pluginId: string) => void;
+type PluginContextTransformer = (pluginContext: PluginContext, plugins: PluginContext[]) => PluginContext;
 
 export default class PluginManager {
   private initialized = false;
@@ -33,6 +43,8 @@ export default class PluginManager {
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
   private emitter = new EventEmitter();
+  private installGuards: InstallGuard[] = [];
+  private pluginContextTransformers: PluginContextTransformer[] = [];
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
@@ -60,10 +72,9 @@ export default class PluginManager {
 
     await this.loadPluginSettings();
 
-    this.plugins = installedPlugins.map((manifest) => ({
-      manifest,
-      loadable: this.isPluginLoadable(manifest),
-    }));
+    for (const manifest of installedPlugins) {
+      this.createOrUpdatePluginContext(manifest);
+    }
 
     this.initialized = true;
 
@@ -117,9 +128,9 @@ export default class PluginManager {
     return this.plugins;
   }
 
-  /** Plugin is not loadable if the **current app version** is lower than the
+  /** Plugin is not compatible if the **current app version** is lower than the
    * **minimum app version** required by the plugin. */
-  isPluginLoadable(manifest: Manifest): boolean {
+  private checkCompatibility(manifest: Manifest): boolean {
     if (!manifest.minAppVersion) {
       return true;
     }
@@ -129,6 +140,7 @@ export default class PluginManager {
   /** Install the latest version of a plugin. */
   async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
+    this.installGuard(id);
 
     this.emitter.emit("beforeInstallPlugin", id);
 
@@ -145,7 +157,7 @@ export default class PluginManager {
         throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
       }
 
-      if (!this.isPluginLoadable(info.latestRelease.manifest)) {
+      if (!this.checkCompatibility(info.latestRelease.manifest)) {
         throw new NotSupportedPluginError(
           `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
         );
@@ -160,18 +172,8 @@ export default class PluginManager {
       }
 
       const manifest = this.fileManager.getManifest(id);
-      const installedPluginIdx = this.plugins.findIndex(
-        ({ manifest }) => manifest.id === id
-      );
-      const plugin: PluginContext = {
-        manifest,
-        loadable: this.isPluginLoadable(manifest),
-      };
-      if (installedPluginIdx === -1) {
-        this.plugins.push(plugin);
-      } else {
-        this.plugins[installedPluginIdx] = plugin;
-      }
+
+      this.createOrUpdatePluginContext(manifest);
 
       if (!this.pluginSettings[id]) {
         this.pluginSettings[id] = {
@@ -223,7 +225,7 @@ export default class PluginManager {
       return false;
     }
 
-    return this.isPluginLoadable(head.latestRelease.manifest);
+    return this.checkCompatibility(head.latestRelease.manifest);
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
@@ -307,10 +309,52 @@ export default class PluginManager {
     return this.initialized;
   }
 
-  on(
-    _name: "beforeInstallPlugin",
-    callback: (...args: Parameters<PluginManager['installPlugin']>) => void
-  ) {
-    this.emitter.on("beforeInstallPlugin", callback);
+  /** If no manifest found, push it to the list
+   *  If manifest found, update it */
+  private createOrUpdatePluginContext(manifest: Manifest): PluginContext {
+    const pluginIdx = this.plugins
+      .findIndex((plugin) => plugin.manifest.id === manifest.id);
+
+    const compatible = this.checkCompatibility(manifest);
+
+    let disabled = typeof this.options.config?.plugins[manifest.id]?.disabled === "boolean"
+      ? this.options.config?.plugins[manifest.id]?.disabled
+      : false;
+
+    const context = this.applyPluginContextTransformers({
+      manifest,
+      compatible,
+      disabled,
+      loadable: compatible,
+    });
+
+    if (pluginIdx === -1) {
+      this.plugins.push(context);
+    } else {
+      this.plugins[pluginIdx] = context;
+    }
+
+    return context;
+  }
+
+  addInstallGuard(guard: InstallGuard) {
+    this.installGuards.push(guard);
+  }
+
+  private installGuard(id: string) {
+    for (const guard of this.installGuards) {
+      guard(id);
+    }
+  }
+
+  addPluginContextTransformer(transformer: PluginContextTransformer) {
+    this.pluginContextTransformers.push(transformer);
+  }
+
+  private applyPluginContextTransformers(pluginContext: PluginContext) {
+    for (const transformer of this.pluginContextTransformers) {
+      pluginContext = transformer(pluginContext, this.plugins);
+    }
+    return pluginContext;
   }
 }
