@@ -1,8 +1,7 @@
-import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
+import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/dist/internal";
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
-import type { IWindowDialog } from "@/lib/NativeWrapper";
 import { FileHelpers } from "@/types";
 
 /**
@@ -156,10 +155,14 @@ export type OnViewRequestListener = (params: OnViewRequestListenerParams) => voi
 
 export type OnViewRequestListenerParams = {
   source: HTMLIFrameElement;
-  request: PluginRequestData;
-  after: (callback: (response: PluginResponseData) => void) => void;
-  modifyResult: (callback: (result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>) => void;
+  request: RequestPayload;
+  after: (callback: AfterViewRequestCallback) => void;
+  modifyResult: (callback: ViewResultModifier) => void;
 }
+
+export type AfterViewRequestCallback = (response: ResponsePayload) => void;
+
+export type ViewResultModifier = (result: ResponsePayload['result']) => ResponsePayload['result'] | Promise<ResponsePayload['result']>;
 
 export type PluginSettings = {
   [pluginId: string]: {
@@ -184,3 +187,8 @@ export type PluginContext = {
 }
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
+
+export type WebPluginViewInstance = {
+  iframe: HTMLIFrameElement;
+  context: any;
+}
