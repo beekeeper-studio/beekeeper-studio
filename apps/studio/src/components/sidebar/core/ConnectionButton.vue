@@ -269,6 +269,7 @@ export default {
     },
     async selectConnection(config) {
       if (!this.isUltimate && isUltimateType(config?.connectionType)) {
+        this.$noty.error('Cannot switch to Ultimate only connection.')
         return;
       }
 

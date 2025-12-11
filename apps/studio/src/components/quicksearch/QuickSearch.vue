@@ -265,6 +265,7 @@ export default Vue.extend({
           break;
         case 'connection':
           if (!this.isUltimate && isUltimateType(result.item.connectionType)) {
+            this.$noty.error('Cannot switch to Ultimate only connection.')
             return
           }
 
