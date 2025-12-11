@@ -385,10 +385,13 @@ export default Vue.extend({
   }
 
   .BksSuperFormatter {
+    --background-color: hsl(from var(--theme-bg) h s calc(l + 1));
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: 15rem auto;
+    grid-template-columns: 18rem auto;
+    grid-template-rows: auto 1.75rem;
+    grid-row-gap: 1rem;
     align-items: stretch;
   }
 
@@ -397,10 +400,9 @@ export default Vue.extend({
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    // outline: 1px solid red;
   }
 
-  .formatter-settings {
+  .core-columns:first-child {
     overflow-y: auto;
     padding-right: 1rem;
   }
@@ -413,12 +415,10 @@ export default Vue.extend({
   }
 
   .formatter-buttons {
-    margin-top: 1rem;
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
     grid-column-start: span 2;
-    height: 1.75rem;
 
     &__btn-group {
       display: flex;
@@ -446,11 +446,11 @@ export default Vue.extend({
     }
 
     select {
-      background-color: hsl(from var(--theme-bg) h s calc(l + 1)) !important;
+      background-color: var(--background-color);
     }
 
     input:not([type="checkbox"]) {
-      background-color: hsl(from var(--theme-bg) h s calc(l + 1)) !important;
+      background-color: var(--background-color);
     }
 
     select, input  {
@@ -460,8 +460,10 @@ export default Vue.extend({
   }
 
   .presets {
-    border-radius: 8px;
-    padding-right: 0.25rem;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--background-color);
 
     &:hover {
       background-color: color-mix(in srgb,

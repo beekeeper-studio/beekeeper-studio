@@ -135,9 +135,21 @@
 
   &.super-formatter-modal {
     .v--modal {
-      max-width: 42rem;
+      max-width: min(64rem, 70vw);
       max-height: min(50rem, 90vh);
       display: flex;
+      container-type: inline-size;
+
+      @container (max-width: 550px) {
+        .BksSuperFormatter {
+          grid-template-columns: auto;
+          grid-template-rows: 1fr 1fr 1.75rem;
+
+          .formatter-buttons {
+            grid-column-start: initial;
+          }
+        }
+      }
     }
     .dialog-content {
       display: flex;
