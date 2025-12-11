@@ -144,6 +144,8 @@ import { mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
 import TableIcon from '@/components/common/TableIcon.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
+import { isUltimateType } from '@/common/interfaces/IConnection'
+
 export default Vue.extend({
   components: { TableIcon },
   mounted() {
@@ -190,7 +192,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['usedConfig']),
     ...mapState('search', ['searchIndex']),
-    ...mapGetters({ database: 'search/database'}),
+    ...mapGetters({ database: 'search/database', isUltimate: 'isUltimate' }),
     ...mapState(['tables']),
     ...mapState('tabs', { 'tabs': 'tabs' }),
     elements() {
@@ -216,7 +218,7 @@ export default Vue.extend({
   methods: {
     async getTabHistory() {
       const results = await Vue.prototype.$util.send('appdb/tabhistory/get', { workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
-      this.historyResults = results 
+      this.historyResults = results
     },
     highlight(blob) {
       const dangerous = blob.title
@@ -262,6 +264,10 @@ export default Vue.extend({
           this.$root.$emit('favoriteClick', result.item)
           break;
         case 'connection':
+          if (!this.isUltimate && isUltimateType(result.item.connectionType)) {
+            return
+          }
+
           await this.$store.dispatch('disconnect')
           try {
             const { auth, cancelled } = await this.$bks.unlock();
@@ -310,7 +316,7 @@ export default Vue.extend({
       let result = this.results[this.selectedItem]
       if (!this.results.length && !this.searchTerm && this.historyResults.length) {
         result = this.historyResults[this.selectedItem]
-        this.handleHistoryClick(_, result) 
+        this.handleHistoryClick(_, result)
       } else {
         this.submit(result)
       }
@@ -319,7 +325,7 @@ export default Vue.extend({
       let result = this.results[this.selectedItem]
       if (!this.results.length && !this.searchTerm && this.historyResults.length) {
         result = this.historyResults[this.selectedItem]
-        this.handleHistoryClick(_, result) 
+        this.handleHistoryClick(_, result)
       } else {
         this.submitAlt(result)
       }
