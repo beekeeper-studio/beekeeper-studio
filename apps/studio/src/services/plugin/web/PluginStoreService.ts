@@ -6,12 +6,7 @@ import type {
   TransportOpenTab,
   TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
-import {
-  GetColumnsResponse,
-  RunQueryResponse,
-  TabResponse,
-  ThemeChangedNotification,
-} from "@beekeeperstudio/plugin";
+import { DatabaseType } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
@@ -65,7 +60,7 @@ export default class PluginStoreService {
     this.tablesChangedListeners.delete(listener);
   }
 
-  getTheme(): ThemeChangedNotification["args"] {
+  getTheme()  {
     const styles = getComputedStyle(document.body);
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
@@ -250,14 +245,14 @@ export default class PluginStoreService {
       workspaceId: this.store.state.workspaceId,
       connectionName: this.store.state.usedConfig.name || "",
       connectionType: this.store.state.connectionType,
-      databaseType: this.store.state.connectionType,
+      databaseType: this.store.state.connectionType as DatabaseType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
   }
 
-  serializeTab(tab: TransportOpenTab): TabResponse {
+  serializeTab(tab: TransportOpenTab) {
     if (tab.tabType === "query") {
       return {
         type: "query",
@@ -302,7 +297,7 @@ export default class PluginStoreService {
   }
 
   /* Run query in the background */
-  async runQuery(query: string): Promise<RunQueryResponse> {
+  async runQuery(query: string) {
     const results = await this.store.state.connection.executeQuery(query);
 
     return {

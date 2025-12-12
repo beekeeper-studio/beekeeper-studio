@@ -1,3 +1,5 @@
+import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+
 /**
  * Create a buffer from hex string
  *
@@ -37,5 +39,22 @@ function combineTemplateStrings(strings: TemplateStringsArray, ...values: string
 function hexStringToNumbers(hex: string) {
   if (hex === '') return []
   return hex.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16));
+}
+
+export async function createLicense(options: {
+  validUntil?: string;
+  supportUntil?: string;
+  licenseType?: LicenseKey['licenseType'];
+  maxAllowedAppRelease?: { tagName: string };
+}) {
+  await LicenseKey.clear();
+  const license = new LicenseKey();
+  license.validUntil = new Date(options.validUntil ?? "9999-12-31");
+  license.supportUntil = new Date(options.supportUntil ?? options.validUntil ?? "9999-12-31");
+  license.licenseType = options.licenseType ?? "PersonalLicense";
+  license.email = "fake-email";
+  license.key = "fake-key";
+  license.maxAllowedAppRelease = options.maxAllowedAppRelease ?? null;
+  return await license.save();
 }
 

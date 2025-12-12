@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { uuidv4 } from "@/lib/uuid";
 import { tmpdir } from "os";
+import { Manifest } from "@/services/plugin";
 
 /**
  * Create a file manager for plugin manager.
@@ -29,6 +30,13 @@ export function createFileManager(): PluginFileManager {
     downloadDirectory: tmpDir(),
     pluginsDirectory: tmpDir(),
   });
+}
+
+export function preloadPlugins(
+  fileManager: PluginFileManager,
+  plugins: Partial<Manifest>[]
+) {
+  fileManager.scanPlugins = () => plugins;
 }
 
 /** Erase plugins data. */

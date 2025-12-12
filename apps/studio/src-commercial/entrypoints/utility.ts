@@ -27,8 +27,11 @@ import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
+import bksConfig from '@/common/bksConfig'
 
 import * as sms from 'source-map-support'
+import bindLicenseConstraints from '@commercial/backend/plugin-system/licenseConstraints';
+import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -40,6 +43,9 @@ const pluginManager = new PluginManager({
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
+  config: {
+    plugins: bksConfig.plugins,
+  },
 });
 
 interface Reply {
@@ -168,6 +174,11 @@ async function init() {
   await ormConnection.connect();
 
   try {
+    // FIXME this blocks the thread
+    // first: webpluginmanaer should listen to the message from here
+    // second: if it receives the message, initialize
+    // third: if the message is error, notify the user its not working
+    bindLicenseConstraints(pluginManager, await LicenseKey.getLicenseStatus());
     await pluginManager.initialize();
   } catch (e) {
     log.error("Error initializing plugin manager", e);

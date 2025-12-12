@@ -74,10 +74,6 @@ export default class WebPluginManager {
         log.warn(`Plugin "${manifest.id}" is not loadable. Skipping...`);
         continue;
       }
-      if (window.bksConfig.plugins[manifest.id]?.disabled) {
-        log.info(`Plugin "${manifest.id}" is disabled. Skipping...`);
-        continue;
-      }
       try {
         await this.loadPlugin(manifest);
       } catch (e) {
@@ -99,7 +95,7 @@ export default class WebPluginManager {
       id,
     });
     await this.loadPlugin(manifest);
-    this.plugins.push({ manifest, loadable: true });
+    this.plugins.push({ manifest, loadable: true, disabled: false });
     return manifest;
   }
 
@@ -256,6 +252,7 @@ export default class WebPluginManager {
       log: rawLog.scope(`Plugin:${manifest.id}`),
       appVersion: this.appVersion,
       fileHelpers: this.fileHelpers,
+      disabled: window.bksConfig.plugins[manifest.id]?.disabled,
     });
     await loader.load();
     this.loaders.set(manifest.id, loader);

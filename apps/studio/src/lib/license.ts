@@ -22,6 +22,18 @@ export class LicenseStatus {
   fromFile = false
   filePath?: string = undefined
 
+  get tier() {
+    if (this.edition === "ultimate") {
+      if (this.license!.licenseType === "BusinessLicense") {
+        return "pro+";
+      }
+
+      return "indie";
+    }
+
+    return "free";
+  }
+
   get isUltimate() {
     return this.edition === "ultimate";
   }
