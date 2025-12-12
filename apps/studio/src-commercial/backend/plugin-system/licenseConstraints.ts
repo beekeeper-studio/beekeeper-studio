@@ -8,7 +8,7 @@ const boundSymbol = Symbol("licenseConstraints");
 
 export default function bindLicenseConstraints(
   manager: PluginManager,
-  licenseStatus: LicenseStatus
+  license: LicenseStatus
 ) {
   if (manager[boundSymbol]) {
     log.warn("licenseConstraints is already bound!");
@@ -18,12 +18,12 @@ export default function bindLicenseConstraints(
   manager[boundSymbol] = true;
 
   manager.addInstallGuard((id) => {
-    if (licenseStatus.tier === "pro+") {
+    if (license.tier === "pro+") {
       // No limit
       return;
     }
 
-    if (licenseStatus.tier === "indie") {
+    if (license.tier === "indie") {
       if (manager.getPlugins().length < 5) {
         return;
       }
@@ -37,7 +37,7 @@ export default function bindLicenseConstraints(
 
     if (id.startsWith("bks-")) {
       throw new ForbiddenPluginError(
-        `Plugin "${id}" is not available for the ${licenseStatus.tier} tier.`
+        `Plugin "${id}" is not available for the ${license.tier} tier.`
       );
     }
 
@@ -51,14 +51,14 @@ export default function bindLicenseConstraints(
   });
 
   manager.addPluginContextTransformer((context, plugins) => {
-    if (licenseStatus.tier === "pro+") {
+    if (license.tier === "pro+") {
       // No limit
       return context;
     }
 
     const enabledPlugins = plugins.filter((p) => !p.disabled);
 
-    if (licenseStatus.tier === "indie") {
+    if (license.tier === "indie") {
       if (enabledPlugins.length < 5) {
         return context;
       }
