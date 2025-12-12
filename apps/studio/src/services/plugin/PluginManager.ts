@@ -13,7 +13,6 @@ import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
-import EventEmitter from "events";
 
 const log = rawLog.scope("PluginManager");
 
@@ -42,7 +41,6 @@ export default class PluginManager {
   private plugins: PluginContext[] = [];
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
-  private emitter = new EventEmitter();
   private installGuards: InstallGuard[] = [];
   private pluginContextTransformers: PluginContextTransformer[] = [];
 
@@ -141,8 +139,6 @@ export default class PluginManager {
   async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
     this.installGuard(id);
-
-    this.emitter.emit("beforeInstallPlugin", id);
 
     let update = false;
 
