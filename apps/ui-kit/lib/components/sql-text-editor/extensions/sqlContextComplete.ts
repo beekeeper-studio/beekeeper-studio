@@ -21,7 +21,7 @@
  *   ]
  */
 
-import { Completion, startCompletion } from "@codemirror/autocomplete";
+import { Completion, startCompletion, closeCompletion } from "@codemirror/autocomplete";
 import { EditorState, Extension, Text } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { schemaCompletionFilter } from "./vendor/@codemirror/lang-sql/src/complete";
@@ -60,6 +60,9 @@ function sqlContextComplete(): Extension {
           if (/\b(FROM|JOIN)\s$/i.test(textBefore)) {
             // Trigger autocomplete
             startCompletion(update.view);
+          } else {
+            // Close autocomplete if open (e.g., after typing table name)
+            closeCompletion(update.view);
           }
         }
       }
