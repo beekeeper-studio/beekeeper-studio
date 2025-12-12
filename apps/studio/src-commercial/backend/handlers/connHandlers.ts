@@ -626,6 +626,7 @@ export const ConnHandlers: IConnectionHandlers = {
 function clearTransactionTimeout(sId: string, tabId: number) {
   if (state(sId).transactionTimeouts.has(tabId)) {
     const timeout = state(sId).transactionTimeouts.get(tabId);
+    state(sId).transactionTimeouts.delete(tabId);
     clearTimeout(timeout);
   }
 }
