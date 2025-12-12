@@ -1,7 +1,7 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { TransportFavoriteQuery } from "@/common/transport";
 import { TableOrView } from "@/lib/db/models";
-import { matchSorter } from "match-sorter";
+import createFuzzySearch from "@nozbe/microfuzz";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 
@@ -12,10 +12,18 @@ export interface IndexItem {
   id: string
 }
 
-export function searchItems(items: IndexItem[], searchTerm: string, limit = 20): IndexItem[] {
-  return matchSorter(items, searchTerm, {
-    keys: ['title', 'type'],
-  }).slice(0, limit)
+export interface SearchResult extends IndexItem {
+  highlightRanges: [number, number][]
+}
+
+export function searchItems(items: IndexItem[], searchTerm: string, limit = 20): SearchResult[] {
+  const fuzzySearch = createFuzzySearch(items, {
+    getText: (item) => [item.title],
+  })
+  return fuzzySearch(searchTerm).slice(0, limit).map(({ item, matches }) => ({
+    ...item,
+    highlightRanges: matches[0] ?? [],
+  }))
 }
 
 export const SearchModule: Module<never, RootState> = {
