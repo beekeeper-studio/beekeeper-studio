@@ -4,17 +4,18 @@ import { ForbiddenPluginError } from "@/services/plugin/errors";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("licenseConstraints");
-
-let bound = false;
+const boundSymbol = Symbol("licenseConstraints");
 
 export default function bindLicenseConstraints(
   manager: PluginManager,
   licenseStatus: LicenseStatus
 ) {
-  if (bound) {
+  if (manager[boundSymbol]) {
     log.warn("licenseConstraints is already bound!");
     return;
   }
+
+  manager[boundSymbol] = true;
 
   manager.addInstallGuard((id) => {
     if (licenseStatus.tier === "pro+") {
