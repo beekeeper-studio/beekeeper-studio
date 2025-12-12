@@ -7,7 +7,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "private": false,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
@@ -36,6 +36,7 @@
     "./lib/components/text-editor/extensions/redisCommands.json": "./lib/components/text-editor/extensions/redisCommands.json",
     "./mongo-shell": "./dist/mongo-shell.js",
     "./mongo-shell/state": "./dist/mongo-shell/state.js",
+    "./super-formatter": "./dist/super-formatter.js",
     "./surreal-text-editor": "./dist/surreal-text-editor.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
@@ -43,6 +44,7 @@
     "./vue/data-editor": "./dist/vue/data-editor.js",
     "./vue/text-editor": "./dist/vue/text-editor.js",
     "./vue/mongo-shell": "./dist/vue/mongo-shell.js",
+    "./vue/super-formatter": "./dist/vue/super-formatter.js",
     "./vue/surreal-text-editor": "./dist/vue/surreal-text-editor.js",
     "./config/context-menu": "./dist/config/context-menu.js"
   },
@@ -67,10 +69,10 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "@surrealdb/codemirror": "^1.0.0-beta.21",
     "@marimo-team/codemirror-languageserver": "azmy60/codemirror-languageserver#b815a92e5f9120a845385ddfb89e85b0fa60fbde",
     "@replit/codemirror-emacs": "^6.1.0",
-    "@replit/codemirror-vim": "^6.3.0"
+    "@replit/codemirror-vim": "^6.3.0",
+    "@surrealdb/codemirror": "^1.0.0-beta.21"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.4",
@@ -89,7 +91,8 @@
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21",
-    "ansi-to-html": "^0.7.2"
+    "ansi-to-html": "^0.7.2",
+    "highlight.js": "^11.11.1"
   },
   "devDependencies": {
     "@open-rpc/client-js": "^1.8.1",

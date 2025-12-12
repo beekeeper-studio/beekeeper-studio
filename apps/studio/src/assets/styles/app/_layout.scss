@@ -80,6 +80,9 @@ hr {
   background: transparent;
 }
 
+.labelled-switch {
+  @include labelled-switch;
+}
 
 // Buttons
 // ---------------------------------------
@@ -164,6 +167,9 @@ x-buttons {
   > x-button.btn-small {
     border-radius: 0;
   }
+}
+x-buttons > x-button.btn-rounded {
+  border-radius: 6px !important;
 }
 .btn-block {
   display: flex;

@@ -31,6 +31,7 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   lastActive?: Date|null,
   deletedAt?: Date|null
   isRunning: boolean, // not on the actual model, but used in frontend
+  isTransaction: boolean, // not on the actual model, but used in frontend
   context: Context
 }
 

@@ -160,6 +160,88 @@ export function extensions(config: ExtensionConfiguration = {}) {
         overflow: "auto",
         height: "100%",
       },
+      // Selection
+      ".cm-selectionBackground": {
+        backgroundColor: "var(--bks-text-editor-selected-bg-color)",
+      },
+      "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+        backgroundColor: "var(--bks-text-editor-selected-bg-color)",
+      },
+      ".cm-selectionMatch": {
+        backgroundColor: "var(--bks-text-editor-matchingselection-bg-color)",
+      },
+      // Search
+      ".cm-searchMatch": {
+        backgroundColor: "var(--bks-text-editor-searchmatch-bg-color)",
+      },
+      ".cm-searchMatch-selected": {
+        backgroundColor: "var(--bks-text-editor-searchmatch-selected-bg-color)",
+      },
+      // Gutters and line numbers
+      ".cm-gutters": {
+        backgroundColor: "var(--bks-text-editor-gutter-bg-color)",
+        borderColor: "var(--bks-text-editor-gutter-border-color)",
+      },
+      ".cm-foldgutter": {
+        fontSize: "1.2rem",
+        color: "var(--bks-text-editor-foldgutter-fg-color)",
+      },
+      ".cm-foldgutter:hover": {
+        color: "var(--bks-text-editor-foldgutter-fg-color-hover)",
+      },
+      ".cm-lineNumbers .cm-gutterElement": {
+        color: "var(--bks-text-editor-linenumber-fg-color)",
+      },
+      // Focused state
+      "&.cm-focused": {
+        outlineColor: "var(--bks-text-editor-focused-outline-color)",
+      },
+      // Cursor
+      ".cm-cursor": {
+        borderLeftColor: "var(--bks-text-editor-cursor-bg-color)",
+      },
+      ".cm-fat-cursor:not(.CodeMirror)": {
+        backgroundColor: "var(--bks-text-editor-fatcursor-bg-color)",
+      },
+      // Active line
+      ".cm-activeLine": {
+        backgroundColor: "var(--bks-text-editor-activeline-bg-color)",
+      },
+      ".cm-activeLineGutter": {
+        backgroundColor: "var(--bks-text-editor-activeline-gutter-bg-color)",
+      },
+      // Matching brackets
+      "&.cm-focused .cm-matchingBracket": {
+        color: "var(--bks-text-editor-matchingbracket-fg-color)",
+        backgroundColor: "var(--bks-text-editor-matchingbracket-bg-color)",
+        textDecoration: "underline",
+      },
+      // Marker styles
+      ".cm-error": {
+        backgroundColor: "var(--bks-text-editor-error-bg-color)",
+        borderBottom: "1px solid var(--bks-text-editor-error-fg-color)",
+        borderRadius: "2px",
+      },
+      ".cm-highlight": {
+        backgroundColor: "var(--bks-text-editor-highlight-bg-color)",
+        borderRadius: "2px",
+      },
+      // Panel
+      ".cm-panel": {
+        backgroundColor: "var(--bks-query-editor-bg)",
+        color: "var(--bks-text-dark)",
+      },
+      // Autocomplete hints
+      ".cm-tooltip": {
+        backgroundColor: "var(--bks-text-editor-context-menu-bg-color)",
+        color: "var(--bks-text-editor-context-menu-fg-color)",
+        borderColor: "var(--bks-text-editor-context-menu-border-color)",
+      },
+      ".cm-tooltip-autocomplete ul li[aria-selected]": {
+        backgroundColor: "var(--bks-text-editor-context-menu-item-bg-color-active)",
+        color: "var(--bks-text-editor-context-menu-item-fg-color-active)",
+        padding: "0.2rem 0.4rem",
+      },
     }),
   ];
 }

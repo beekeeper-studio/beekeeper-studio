@@ -38,6 +38,14 @@ Beekeeper allows you to:
 
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-12.gif)
 
+## Transaction Management
+
+Transactions run within the query editor will be automatically detected by Beekeeper, which will then reserve a connection for your current query tab until that transaction is committed or rolled back.
+
+There is also a [Manual Transaction Mode](./manual-transaction-management.md) that allows you to manually handle every step of this process.
+
+This functionality is currently only available for Postgres, CockroachDB, Redshift, MySQL, MariaDB, SQLServer, Firebird, and Oracle.
+
 ## Query Parameters
 
 You can parameterize your queries and Beekeeper will prompt you for values when you run it.

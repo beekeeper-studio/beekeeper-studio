@@ -200,6 +200,7 @@ $row-handle-selected: color.adjust($query-editor-bg, $lightness: 10%);
   --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
   --bks-text-editor-variableName-fg-color: #{$text-dark};
+  --bks-text-editor-variable-fg-color: #{$brand-secondary};
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};

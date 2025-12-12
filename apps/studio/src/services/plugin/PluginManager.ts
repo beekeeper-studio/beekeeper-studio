@@ -35,7 +35,7 @@ export default class PluginManager {
   /** This is a list of plugins that are preinstalled by default. When the
    * application starts, these plugins will be installed automatically. The user
    * should be able to uninstall them later. */
-  static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell"];
+  static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell", "bks-er-diagram"];
 
   constructor(readonly options: PluginManagerOptions) {
     this.fileManager = options.fileManager;

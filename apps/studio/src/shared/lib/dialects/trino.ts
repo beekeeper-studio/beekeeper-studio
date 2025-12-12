@@ -5,7 +5,7 @@ import { ColumnType, defaultEscapeString, DialectData, friendlyNormalizedIdentif
 const types = [
   'BOOLEAN', 'TINYINT', 'SMALLINT', 'INTEGER or INT', 'BIGINT', 'REAL', 'DOUBLE', 'DECIMAL', 'VARCHAR', 'CHAR', 'VARBINARY', 'JSON', 'DATE', 'TIME', 'TIME(P)', 'TIME WITH TIME ZONE',
   'TIMESTAMP', 'TIMESTAMP(P)', 'TIMESTAMP WITH TIME ZONE', 'TIMESTAMP(P) WITH TIME ZONE', 'INTERVAL YEAR TO MONTH', 'INTERVAL DAY TO SECOND',
-  'ARRAY', 'MAP', 'ROW', 'IPADDRESS', 'UUID', 'HyperLogLog', 'P4HyperLogLog', 'SetDigest', 'QDigest', 'TDigest', 
+  'ARRAY', 'MAP', 'ROW', 'IPADDRESS', 'UUID', 'HyperLogLog', 'P4HyperLogLog', 'SetDigest', 'QDigest', 'TDigest',
 ];
 
 const supportsLength = [];
@@ -27,6 +27,7 @@ export const TrinoData: DialectData = {
   unwrapIdentifier: (s) => s,
   textEditorMode: "text/x-sql",
   disabledFeatures: {
+    manualCommit: true,
     rawFilters: true,
     shell: true,
     informationSchema: {

@@ -1,0 +1,205 @@
+/**
+ * Beekeeper Studio theme for highlight.js
+ * Matches CodeMirror Monokai theme colors used in Beekeeper
+ * Uses transparent backgrounds and CSS variables for theme compatibility
+ */
+
+/* Dark theme (default) */
+.hljs {
+  background: transparent;
+  color: var(--bks-text-editor-fg-color, rgba(255, 255, 255, 0.87));
+  padding: 0;
+}
+
+/* Keywords - SQL keywords like SELECT, FROM, WHERE */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link {
+  color: var(--bks-text-editor-keyword-fg-color, #ff78f7);
+  font-weight: normal;
+}
+
+/* Strings - Text in quotes */
+.hljs-string {
+  color: var(--bks-text-editor-string-fg-color, #fad83b);
+}
+
+/* Numbers - Numeric values */
+.hljs-number {
+  color: var(--bks-text-editor-number-fg-color, #fad83b);
+}
+
+/* Built-in functions and types */
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-type {
+  color: var(--bks-text-editor-variable-2-fg-color, #4ad0ff);
+}
+
+/* Variables, attributes, fields */
+.hljs-variable,
+.hljs-attr,
+.hljs-attribute {
+  color: var(--bks-text-editor-variableName-fg-color, rgba(255, 255, 255, 0.87));
+}
+
+/* SQL-specific: table names, identifiers */
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: var(--bks-text-editor-variable-2-fg-color, #4ad0ff);
+}
+
+/* Operators */
+.hljs-operator,
+.hljs-punctuation {
+  color: var(--bks-text-editor-operator-fg-color, rgba(255, 255, 255, 0.87));
+}
+
+/* Comments */
+.hljs-comment,
+.hljs-quote {
+  color: var(--bks-text-light, rgba(255, 255, 255, 0.57));
+  font-style: italic;
+}
+
+/* Meta, preprocessor */
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: var(--bks-text-editor-variable-2-fg-color, #4ad0ff);
+}
+
+/* Params */
+.hljs-params {
+  color: var(--bks-text-editor-variableName-fg-color, rgba(255, 255, 255, 0.87));
+}
+
+/* Symbols, bullets */
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--bks-text-editor-string-fg-color, #fad83b);
+}
+
+/* Emphasis */
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* Additions/Deletions (for diff highlighting) */
+.hljs-addition {
+  background: transparent;
+  color: var(--bks-brand-success, #15db95);
+}
+
+.hljs-deletion {
+  background: transparent;
+  color: var(--bks-brand-danger, #ff5d59);
+}
+
+/* Light theme overrides - use Beekeeper's theme classes */
+body.theme-light .hljs,
+body.theme-solarized .hljs {
+  color: var(--bks-text-editor-fg-color, rgba(0, 0, 0, 0.87));
+}
+
+body.theme-light .hljs-keyword,
+body.theme-solarized .hljs-keyword,
+body.theme-light .hljs-selector-tag,
+body.theme-solarized .hljs-selector-tag,
+body.theme-light .hljs-literal,
+body.theme-solarized .hljs-literal,
+body.theme-light .hljs-section,
+body.theme-solarized .hljs-section,
+body.theme-light .hljs-link,
+body.theme-solarized .hljs-link {
+  color: var(--bks-text-editor-keyword-fg-color, #ff00f0);
+}
+
+body.theme-light .hljs-built_in,
+body.theme-solarized .hljs-built_in,
+body.theme-light .hljs-builtin-name,
+body.theme-solarized .hljs-builtin-name,
+body.theme-light .hljs-type,
+body.theme-solarized .hljs-type,
+body.theme-light .hljs-name,
+body.theme-solarized .hljs-name,
+body.theme-light .hljs-selector-id,
+body.theme-solarized .hljs-selector-id,
+body.theme-light .hljs-selector-class,
+body.theme-solarized .hljs-selector-class,
+body.theme-light .hljs-title.class_,
+body.theme-solarized .hljs-title.class_,
+body.theme-light .hljs-title.function_,
+body.theme-solarized .hljs-title.function_ {
+  color: var(--bks-text-editor-variable-2-fg-color, #0099ff);
+}
+
+body.theme-light .hljs-comment,
+body.theme-solarized .hljs-comment,
+body.theme-light .hljs-quote,
+body.theme-solarized .hljs-quote {
+  color: var(--bks-text-light, rgba(0, 0, 0, 0.57));
+}
+
+body.theme-light .hljs-variable,
+body.theme-solarized .hljs-variable,
+body.theme-light .hljs-attr,
+body.theme-solarized .hljs-attr,
+body.theme-light .hljs-attribute,
+body.theme-solarized .hljs-attribute,
+body.theme-light .hljs-operator,
+body.theme-solarized .hljs-operator,
+body.theme-light .hljs-punctuation,
+body.theme-solarized .hljs-punctuation,
+body.theme-light .hljs-params,
+body.theme-solarized .hljs-params {
+  color: var(--bks-text-editor-variableName-fg-color, rgba(0, 0, 0, 0.87));
+}
+
+/* System theme - follows OS preference */
+@media (prefers-color-scheme: light) {
+  body.theme-system .hljs {
+    color: var(--bks-text-editor-fg-color, rgba(0, 0, 0, 0.87));
+  }
+
+  body.theme-system .hljs-keyword,
+  body.theme-system .hljs-selector-tag,
+  body.theme-system .hljs-literal,
+  body.theme-system .hljs-section,
+  body.theme-system .hljs-link {
+    color: var(--bks-text-editor-keyword-fg-color, #ff00f0);
+  }
+
+  body.theme-system .hljs-built_in,
+  body.theme-system .hljs-builtin-name,
+  body.theme-system .hljs-type,
+  body.theme-system .hljs-name,
+  body.theme-system .hljs-selector-id,
+  body.theme-system .hljs-selector-class,
+  body.theme-system .hljs-title.class_,
+  body.theme-system .hljs-title.function_ {
+    color: var(--bks-text-editor-variable-2-fg-color, #0099ff);
+  }
+
+  body.theme-system .hljs-comment,
+  body.theme-system .hljs-quote {
+    color: var(--bks-text-light, rgba(0, 0, 0, 0.57));
+  }
+
+  body.theme-system .hljs-variable,
+  body.theme-system .hljs-attr,
+  body.theme-system .hljs-attribute,
+  body.theme-system .hljs-operator,
+  body.theme-system .hljs-punctuation,
+  body.theme-system .hljs-params {
+    color: var(--bks-text-editor-variableName-fg-color, rgba(0, 0, 0, 0.87));
+  }
+}

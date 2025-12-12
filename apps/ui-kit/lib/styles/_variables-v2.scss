@@ -78,4 +78,9 @@ based on the following:
 
   --bks-tab-link: #{hsl(from var(--bks-theme-bg) h s calc(l - 4))};
   --bks-badge-bg: #{rgb(from var(--bks-theme-base) r g b / 10%)};
+
+  // Icons
+  --bks-icon-table-color: hsl(from var(--bks-theme-primary) h s calc(l - 6));
+  --bks-icon-view-color: var(--bks-brand-secondary);
+  --bks-icon-materialized-view-color: var(--bks-brand-success);
 }
