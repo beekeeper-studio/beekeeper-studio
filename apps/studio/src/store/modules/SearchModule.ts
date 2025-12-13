@@ -1,7 +1,8 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { TransportFavoriteQuery } from "@/common/transport";
 import { TableOrView } from "@/lib/db/models";
-import createFuzzySearch from "@nozbe/microfuzz";
+import { escapeHtml } from "@/shared/lib/tabulator";
+import uFuzzy from "@leeoniya/ufuzzy";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 
@@ -13,17 +14,49 @@ export interface IndexItem {
 }
 
 export interface SearchResult extends IndexItem {
-  highlightRanges: [number, number][]
+  highlight: string
 }
 
-export function searchItems(items: IndexItem[], searchTerm: string, limit = 20): SearchResult[] {
-  const fuzzySearch = createFuzzySearch(items, {
-    getText: (item) => [item.title],
-  })
-  return fuzzySearch(searchTerm).slice(0, limit).map(({ item, matches }) => ({
-    ...item,
-    highlightRanges: matches[0] ?? [],
-  }))
+export const uf = new uFuzzy({
+  intraMode: 0,
+  intraIns: Infinity,
+  intraChars: ".",
+});
+
+export function searchItems(
+  items: IndexItem[],
+  searchTerm: string,
+  limit = 20
+): SearchResult[] {
+  const titles = items.map((item) => item.title);
+  const [idxs, info, order] = uf.search(titles, searchTerm);
+  console.log(idxs, info, order);
+
+  if (!idxs || !order) {
+    return [];
+  }
+
+  const results: SearchResult[] = [];
+
+  for (let i = 0; i < order.length && results.length < limit; i++) {
+    const infoIdx = order[i];
+    const itemIdx = idxs[infoIdx];
+    const item = items[itemIdx];
+
+    const highlight = uFuzzy.highlight(
+      titles[info.idx[infoIdx]],
+      info.ranges[infoIdx],
+      (part, matched) =>
+        matched ? `<strong>${escapeHtml(part) ?? ""}</strong>` : escapeHtml(part) ?? ""
+    );
+
+    results.push({
+      ...item,
+      highlight,
+    });
+  }
+
+  return results;
 }
 
 export const SearchModule: Module<never, RootState> = {

@@ -130,7 +130,7 @@
             class="material-icons item-icon database"
             v-if="blob.type === 'database'"
           >storage</i>
-          <span v-html="highlight(blob)" />
+          <span v-html="blob.highlight" />
         </li>
       </ul>
     </div>
@@ -218,23 +218,6 @@ export default Vue.extend({
     async getTabHistory() {
       const results = await Vue.prototype.$util.send('appdb/tabhistory/get', { workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
       this.historyResults = results
-    },
-    highlight(blob: SearchResult) {
-      const title = blob.title || "unknown item"
-      const ranges = blob.highlightRanges || []
-
-      let result = ''
-      let cursor = 0
-
-      for (const [start, end] of ranges) {
-        result += escapeHtml(title.slice(cursor, start)) ?? title.slice(cursor, start)
-        result += `<strong>${escapeHtml(title.slice(start, end + 1)) ?? title.slice(start, end + 1)}</strong>`
-        cursor = end + 1
-      }
-
-      result += escapeHtml(title.slice(cursor)) ?? title.slice(cursor)
-
-      return result
     },
     highlightHistory(blob) {
       const dangerous = blob.title
