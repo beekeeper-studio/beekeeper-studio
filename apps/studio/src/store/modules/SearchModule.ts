@@ -17,7 +17,7 @@ export interface SearchResult extends IndexItem {
   highlight: string
 }
 
-export const uf = new uFuzzy({
+const uf = new uFuzzy({
   intraMode: 0,
   intraIns: Infinity,
   intraChars: ".",
@@ -30,7 +30,6 @@ export function searchItems(
 ): SearchResult[] {
   const titles = items.map((item) => item.title);
   const [idxs, info, order] = uf.search(titles, searchTerm);
-  console.log(idxs, info, order);
 
   if (!idxs || !order) {
     return [];
