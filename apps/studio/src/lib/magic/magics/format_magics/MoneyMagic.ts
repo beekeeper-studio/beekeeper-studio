@@ -14,7 +14,11 @@ const MoneyMagic: Magic = {
     const result = {
       title: args[0],
       formatter: (cell: CellComponent) => {
-        const format = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
+        const format = new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency,
+          currencyDisplay: 'narrowSymbol'
+        })
         if (!isNaN(_.toNumber(cell.getValue()))) {
           return format.format(cell.getValue())
         } else {
