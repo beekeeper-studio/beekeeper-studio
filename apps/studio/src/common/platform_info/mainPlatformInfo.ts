@@ -33,8 +33,6 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const e = require('electron')
-  // defaulting applocale to US (sorry friends, but that's where I am). Maybe add it to the ini file at some point?
-  const appLocale = e.app.getLocale() || 'en-US' 
   const platform = p.env.OS_OVERRIDE ? p.env.OS_OVERRIDE : p.platform
   const testMode = p.env.TEST_MODE ? true : false
   const isDevEnv = testMode ? false : !e.app.isPackaged;
@@ -42,7 +40,7 @@ export function mainPlatformInfo(): IPlatformInfo {
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')
   const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
-  const locale = testMode ? 'test' : appLocale;
+  const locale = testMode ? 'test' : e.app.getLocale();
 
   const windowPrefersDarkMode = false
 
