@@ -49,7 +49,7 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
-import type { PluginContext, PluginRegistryEntry } from "@/services/plugin";
+import type { TransportPlugin, PluginRegistryEntry } from "@/services/plugin";
 import { mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
@@ -204,7 +204,7 @@ export default Vue.extend({
     },
     async buildPluginListData() {
       const entries = await this.$util.send("plugin/entries");
-      const installedPlugins: PluginContext[] = await this.$plugin.plugins;
+      const installedPlugins: TransportPlugin[] = await this.$plugin.plugins;
       const list: PluginRegistryEntry[] = [];
 
       for (const { manifest, loadable } of installedPlugins) {

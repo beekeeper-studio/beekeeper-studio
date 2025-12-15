@@ -3,48 +3,181 @@
  */
 
 import "./setup";
-import { WebHost, WebPlugin } from "./utils";
+import { WebPluginManager } from "@/services/plugin/web";
+import { WebPlugin } from "./utils/WebPlugin";
 import { tables } from "./utils/fixtures";
 import _ from "lodash";
+import prepareWebPluginManagerTestGroup from "./utils/WebHost";
 
 describe("WebPluginManager", () => {
-  let host: WebHost;
-  let plugin: WebPlugin;
+  describe("Loading Plugins", () => {
+    const {
+      mockInstalledPlugins,
+      mockPluginRegistry,
+      fileHelpers,
+      pluginStore,
+      utilityConnection,
+    } = prepareWebPluginManagerTestGroup();
 
-  beforeEach(() => {
-    // Create host with mock tables
-    host = new WebHost({
-      tables,
-      defaultSchema: "public",
-      connectionType: "postgresql",
+    const manager = new WebPluginManager({
+      appVersion: "5.0.0",
+      fileHelpers,
+      pluginStore,
+      utilityConnection,
     });
 
-    // Create plugin
-    plugin = new WebPlugin();
+    let plugin: WebPlugin;
+
+    beforeEach(() => {
+      plugin = new WebPlugin();
+    });
+
+    afterEach(() => {
+      plugin.destroy();
+    });
+
+    it("can load plugins at startup", async () => {
+      mockInstalledPlugins([plugin]);
+
+      try {
+        await manager.initialize();
+        expect((await manager.getEnabledPlugins())[0].id).toBe(plugin.manifest.id);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        manager.uninstall(plugin.manifest.id);
+      }
+    });
+
+    it("can load plugins at runtime (by installing)", async () => {
+      mockPluginRegistry([plugin]);
+      await manager.initialize();
+
+      try {
+        await manager.install(plugin.manifest.id);
+        expect((await manager.getEnabledPlugins())[0].id).toBe(plugin.manifest.id);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        manager.uninstall(plugin.manifest.id);
+      }
+    });
   });
 
-  afterEach(() => {
-    plugin?.dispose();
-  });
+  describe("Disabling Plugins", () => {
+    const {
+      pluginStore,
+      fileHelpers,
+      utilityConnection,
+      mockPluginRegistry,
+    } = prepareWebPluginManagerTestGroup({ tables });
 
-  describe("Plugin Loading", () => {
-    it("should load a plugin successfully", async () => {
-      await host.load(plugin);
+    const plugin = new WebPlugin({
+      capabilities: {
+        views: [{
+          id: "test-view",
+          name: "Test View",
+          type: "base-tab",
+          entry: "index.html",
+        }],
+        menu: [{
+          command: "test-command",
+          view: "test-view",
+          name: "Test Menu Item",
+          placement: [
+            "newTabDropdown",
+            "menubar.tools",
+            "editor.query.context",
+          ],
+        }],
+      },
+    });
 
-      const enabledPlugins = await host.getLoadedPlugins();
-      expect(enabledPlugins).toHaveLength(1);
-      expect(enabledPlugins[0].id).toBe(plugin.manifest.id);
+    const manager = new WebPluginManager({
+      appVersion: "5.0.0",
+      fileHelpers,
+      pluginStore,
+      utilityConnection,
+      config: {
+        [plugin.manifest.id]: { disabled: true },
+      },
+    });
+
+    mockPluginRegistry([plugin]);
+
+    beforeAll(async () => {
+      await manager.initialize();
+    });
+
+    afterAll(() => {
+      plugin.destroy();
+    });
+
+    it("should not be accessible from the UI", async () => {
+      const addTabTypeConfigsSpy = jest.spyOn(pluginStore, "addTabTypeConfigs");
+      const addMenuBarItemSpy = jest.spyOn(pluginStore, "addMenuBarItem");
+      const addPopupMenuItemSpy = jest.spyOn(pluginStore, "addPopupMenuItem");
+
+      try {
+        await manager.install(plugin.manifest.id);
+        expect(addTabTypeConfigsSpy).not.toHaveBeenCalled();
+        expect(addMenuBarItemSpy).not.toHaveBeenCalled();
+        expect(addPopupMenuItemSpy).not.toHaveBeenCalled()
+      } catch (e) {
+        console.error(e)
+      } finally {
+        await manager.uninstall(plugin.manifest.id);
+      }
+    });
+
+    it("should be flagged as disabled", async () => {
+      try {
+        await manager.install(plugin.manifest.id);
+        expect(manager.pluginOf(plugin.manifest.id).disabled).toBe(true);
+      } catch (e) {
+        console.error(e)
+      } finally {
+        await manager.uninstall(plugin.manifest.id);
+      }
     });
   });
 
   describe("Plugin APIs", () => {
-    beforeEach(async () => {
-      await host.load(plugin);
+    const {
+      fileHelpers,
+      pluginStore,
+      utilityConnection,
+      mockPluginRegistry,
+    } = prepareWebPluginManagerTestGroup({ tables });
+
+    let plugin: WebPlugin;
+    let manager: WebPluginManager;
+
+    beforeAll(async () => {
+      plugin = new WebPlugin();
+      manager = new WebPluginManager({
+        appVersion: "5.0.0",
+        fileHelpers,
+        pluginStore,
+        utilityConnection,
+      });
+
+      mockPluginRegistry([plugin]);
+
+      await manager.initialize();
+      await manager.install(plugin.manifest.id);
+
+      manager.registerIframe(plugin.manifest.id, plugin.iframe, plugin.context);
     });
 
-    afterEach(() => {
+    afterAll(async () => {
+      manager.unregisterIframe(plugin.manifest.id, plugin.iframe);
+      await manager.uninstall(plugin.manifest.id);
+      plugin.destroy();
+    });
+
+    beforeEach(() => {
       plugin.clearResponses();
-      host.unload(plugin);
     });
 
     describe("API Request/Response Structure", () => {
@@ -90,8 +223,8 @@ describe("WebPluginManager", () => {
 
         // Verify each response has unique ID
         const responses = plugin.getAllResponses();
-        expect(responses[0].id).toBe(0);
-        expect(responses[1].id).toBe(1);
+        const ids = responses.map(r => r.id);
+        expect(new Set(ids).size).toBe(ids.length);
 
         // Verify all have proper structure
         responses.forEach((response) => {

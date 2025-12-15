@@ -1,4 +1,5 @@
 import { Manifest } from "@/services/plugin/types";
+import _ from "lodash";
 
 /**
  * Represents a plugin in tests.
@@ -16,9 +17,9 @@ export class WebPlugin {
     params?: any;
   };
 
-  constructor() {
+  constructor(manifest: Partial<Manifest> = {}) {
     // Create default manifest
-    this.manifest = {
+    this.manifest = _.merge({
       manifestVersion: 1,
       id: "test-plugin",
       name: "Test Plugin",
@@ -36,7 +37,7 @@ export class WebPlugin {
         ],
         menu: [],
       },
-    } as Manifest;
+    }, manifest) as Manifest;
 
     // Create mock iframe with contentWindow
     this.iframe = document.createElement("iframe");
@@ -154,7 +155,7 @@ export class WebPlugin {
   /**
    * Clean up the plugin
    */
-  dispose(): void {
+  destroy(): void {
     if (this.iframe && this.iframe.parentNode) {
       document.body.removeChild(this.iframe);
     }

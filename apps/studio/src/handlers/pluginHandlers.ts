@@ -1,14 +1,14 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
-import { Manifest, PluginContext, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { Manifest, TransportPlugin, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
 import { PluginTimeoutError } from "@/services/plugin/errors";
 
 interface IPluginHandlers {
-  "plugin/plugins": () => Promise<PluginContext[]>
+  "plugin/plugins": () => Promise<TransportPlugin[]>
   "plugin/entries": () => Promise<PluginRegistryEntry[]>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
-  "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
-  "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
+  "plugin/install": ({ id }: { id: string }) => Promise<TransportPlugin>
+  "plugin/update": ({ id }: { id: string }) => Promise<TransportPlugin>
   "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
   "plugin/checkForUpdates": ({ id }: { id: string }) => Promise<boolean>
   "plugin/setAutoUpdateEnabled": ({ id, enabled }: { id: string, enabled: boolean }) => Promise<void>

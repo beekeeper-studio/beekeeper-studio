@@ -3,7 +3,7 @@ import {
   PluginMenuItem,
   PluginMenuItemPlacement,
   PluginView,
-  WebPluginContext,
+  WebPluginLoaderContext,
 } from "@/services/plugin/types";
 import _ from "lodash";
 import pluginMenuFactories from "./PluginMenuFactories";
@@ -14,7 +14,7 @@ type MenuHandler = {
 };
 
 export type MenuFactory = {
-  create: (context: WebPluginContext, menuItem: PluginMenuItem) => MenuHandler;
+  create: (context: WebPluginLoaderContext, menuItem: PluginMenuItem) => MenuHandler;
 };
 
 export type MenuFactories = {
@@ -22,7 +22,7 @@ export type MenuFactories = {
 };
 
 export class PluginMenuManager {
-  constructor(private readonly context: WebPluginContext) { }
+  constructor(private readonly context: WebPluginLoaderContext) { }
 
   private contextMenus = {
     tabHeader: [] as ContextOption[],

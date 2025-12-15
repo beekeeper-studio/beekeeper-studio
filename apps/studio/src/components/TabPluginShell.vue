@@ -116,7 +116,7 @@ import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapState, mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
-import type { OnViewRequestListenerParams, PluginContext } from "@/services/plugin/types";
+import type { OnViewRequestListenerParams, TransportPlugin } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 
 export default Vue.extend({
@@ -159,7 +159,7 @@ export default Vue.extend({
   computed: {
     ...mapState(["pluginManagerStatus"]),
     ...mapGetters(["isCommunity"]),
-    plugin(): PluginContext {
+    plugin(): TransportPlugin {
       return this.$plugin.pluginOf(this.tab.context.pluginId);
     },
     url() {

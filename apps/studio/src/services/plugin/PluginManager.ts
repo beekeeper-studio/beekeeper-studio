@@ -3,7 +3,7 @@ import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
   Manifest,
-  PluginContext,
+  TransportPlugin,
   PluginRegistryEntry,
   PluginRepository,
   PluginSettings,
@@ -17,13 +17,7 @@ import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
 const log = rawLog.scope("PluginManager");
 
 export type PluginManagerOptions = {
-  config?: {
-    plugins?: {
-      [pluginId: string]: {
-        disabled?: boolean;
-      };
-    };
-  };
+  config?: PluginSettings;
   fileManager: PluginFileManager;
   /** You probably don't need to pass this. It's available for testing. */
   registry?: PluginRegistry;
@@ -31,14 +25,14 @@ export type PluginManagerOptions = {
 }
 
 type InstallGuard = (pluginId: string) => void;
-type PluginContextTransformer = (pluginContext: PluginContext, plugins: PluginContext[]) => PluginContext;
+type PluginContextTransformer = (pluginContext: TransportPlugin, plugins: TransportPlugin[]) => TransportPlugin;
 
 export default class PluginManager {
   private initialized = false;
   private registry: PluginRegistry;
   private fileManager: PluginFileManager;
   /** A list of installed plugins */
-  private plugins: PluginContext[] = [];
+  private plugins: TransportPlugin[] = [];
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
   private installGuards: InstallGuard[] = [];
@@ -71,7 +65,7 @@ export default class PluginManager {
     await this.loadPluginSettings();
 
     for (const manifest of installedPlugins) {
-      this.createOrUpdatePluginContext(manifest);
+      this.createOrUpdateTransportPlugin(manifest);
     }
 
     this.initialized = true;
@@ -121,7 +115,7 @@ export default class PluginManager {
   }
 
   /** Get the list of installed plugins */
-  getPlugins(): PluginContext[] {
+  getPlugins(): TransportPlugin[] {
     this.initializeGuard();
     return this.plugins;
   }
@@ -136,7 +130,7 @@ export default class PluginManager {
   }
 
   /** Install the latest version of a plugin. */
-  async installPlugin(id: string): Promise<Manifest> {
+  async installPlugin(id: string): Promise<TransportPlugin> {
     this.initializeGuard();
     this.installGuard(id);
 
@@ -169,7 +163,7 @@ export default class PluginManager {
 
       const manifest = this.fileManager.getManifest(id);
 
-      this.createOrUpdatePluginContext(manifest);
+      const transport = this.createOrUpdateTransportPlugin(manifest);
 
       if (!this.pluginSettings[id]) {
         this.pluginSettings[id] = {
@@ -180,11 +174,11 @@ export default class PluginManager {
 
       log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
-      return manifest;
+      return transport;
     });
   }
 
-  async updatePlugin(id: string): Promise<Manifest> {
+  async updatePlugin(id: string): Promise<TransportPlugin> {
     this.initializeGuard();
     await this.registry.reloadRepository(id);
     return await this.installPlugin(id);
@@ -307,7 +301,7 @@ export default class PluginManager {
 
   /** If no manifest found, push it to the list
    *  If manifest found, update it */
-  private createOrUpdatePluginContext(manifest: Manifest): PluginContext {
+  private createOrUpdateTransportPlugin(manifest: Manifest): TransportPlugin {
     const pluginIdx = this.plugins
       .findIndex((plugin) => plugin.manifest.id === manifest.id);
 
@@ -347,7 +341,7 @@ export default class PluginManager {
     this.pluginContextTransformers.push(transformer);
   }
 
-  private applyPluginContextTransformers(pluginContext: PluginContext) {
+  private applyPluginContextTransformers(pluginContext: TransportPlugin) {
     for (const transformer of this.pluginContextTransformers) {
       pluginContext = transformer(pluginContext, this.plugins);
     }
