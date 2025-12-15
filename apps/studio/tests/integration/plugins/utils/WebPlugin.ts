@@ -1,5 +1,4 @@
 import { Manifest } from "@/services/plugin/types";
-import _ from "lodash";
 
 /**
  * Represents a plugin in tests.
