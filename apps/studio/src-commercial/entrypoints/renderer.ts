@@ -197,7 +197,6 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
     const webPluginManager = new WebPluginManager({
-      config: window.bksConfig.plugins,
       utilityConnection: Vue.prototype.$util,
       pluginStore: new PluginStoreService(store, {
         emit: (...args) => app.$root.$emit(...args),

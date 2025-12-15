@@ -10,11 +10,13 @@ import { FileHelpers } from "@/types";
 const log = rawLog.scope("WebPluginManager");
 
 export type WebPluginManagerParams = {
-  config?: PluginSettings;
+  /** For communicating with the PluginManager through handlers that are prefixed with `plugin/` */
   utilityConnection: UtilityConnection;
-  pluginStore: PluginStoreService;
+  /** For UI related functionality, e.g. adding menu items */
+  pluginStore?: PluginStoreService;
   appVersion: string;
-  fileHelpers: FileHelpers;
+  /** For file saving APIs, e.g. requestFileSave */
+  fileHelpers?: FileHelpers;
 }
 
 /**

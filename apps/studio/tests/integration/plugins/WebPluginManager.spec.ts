@@ -8,71 +8,68 @@ import { WebPlugin } from "./utils/WebPlugin";
 import { tables } from "./utils/fixtures";
 import _ from "lodash";
 import prepareWebPluginManagerTestGroup from "./utils/prepareWebPluginManager";
+import { preloadPlugins } from "./utils/fileManager";
+import preparePluginSystemTestGroup from "./utils/preparePluginSystem";
+import { PluginManager } from "@/services/plugin";
+import PluginRegistry from "@/services/plugin/PluginRegistry";
 
 describe("WebPluginManager", () => {
   describe("Loading Plugins", () => {
+    const { fileManager, repositoryService } = preparePluginSystemTestGroup();
+    const pluginManager = new PluginManager({
+      appVersion: "5.0.0",
+      fileManager,
+      registry: new PluginRegistry(repositoryService),
+    });
     const {
-      mockInstalledPlugins,
-      mockPluginRegistry,
-      fileHelpers,
       pluginStore,
       utilityConnection,
-    } = prepareWebPluginManagerTestGroup();
+    } = prepareWebPluginManagerTestGroup({ pluginManager });
 
     const manager = new WebPluginManager({
       appVersion: "5.0.0",
-      fileHelpers,
       pluginStore,
       utilityConnection,
     });
 
-    let plugin: WebPlugin;
-
-    beforeEach(() => {
-      plugin = new WebPlugin();
-    });
-
-    afterEach(() => {
-      plugin.destroy();
-    });
-
     it("can load plugins at startup", async () => {
-      mockInstalledPlugins([plugin]);
+      preloadPlugins(fileManager, [{ id: "test-plugin" }]);
 
-      try {
-        await manager.initialize();
-        expect((await manager.getEnabledPlugins())[0].id).toBe(plugin.manifest.id);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        manager.uninstall(plugin.manifest.id);
-      }
+      await manager.initialize();
+
+      const plugins = await manager.getEnabledPlugins();
+      expect(plugins[0].id).toBe("test-plugin");
     });
 
     it("can load plugins at runtime (by installing)", async () => {
-      mockPluginRegistry([plugin]);
-      await manager.initialize();
+      repositoryService.plugins = [{ id: "test-plugin" }]
 
-      try {
-        await manager.install(plugin.manifest.id);
-        expect((await manager.getEnabledPlugins())[0].id).toBe(plugin.manifest.id);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        manager.uninstall(plugin.manifest.id);
-      }
+      await manager.initialize();
+      await manager.install("test-plugin");
+
+      const plugins = await manager.getEnabledPlugins();
+      expect(plugins[0].id).toBe("test-plugin");
     });
   });
 
   describe("Disabling Plugins", () => {
+    const { fileManager, repositoryService } = preparePluginSystemTestGroup();
+    const pluginManager = new PluginManager({
+      appVersion: "5.0.0",
+      fileManager,
+      registry: new PluginRegistry(repositoryService),
+      pluginSettings: {
+        // IMPORTANT: PluginManager is the backend. We want to disable from here!
+        "test-plugin": { disabled: true },
+      },
+    });
     const {
       pluginStore,
-      fileHelpers,
       utilityConnection,
-      mockPluginRegistry,
-    } = prepareWebPluginManagerTestGroup({ tables });
+    } = prepareWebPluginManagerTestGroup({ pluginManager });
 
-    const plugin = new WebPlugin({
+    preloadPlugins(fileManager, [{
+      id: "test-plugin",
       capabilities: {
         views: [{
           id: "test-view",
@@ -91,26 +88,16 @@ describe("WebPluginManager", () => {
           ],
         }],
       },
-    });
+    }]);
 
-    const manager = new WebPluginManager({
-      appVersion: "5.0.0",
-      fileHelpers,
-      pluginStore,
-      utilityConnection,
-      config: {
-        [plugin.manifest.id]: { disabled: true },
-      },
-    });
+    let manager: WebPluginManager;
 
-    mockPluginRegistry([plugin]);
-
-    beforeAll(async () => {
-      await manager.initialize();
-    });
-
-    afterAll(() => {
-      plugin.destroy();
+    beforeEach(() => {
+      manager = new WebPluginManager({
+        appVersion: "5.0.0",
+        pluginStore,
+        utilityConnection,
+      });
     });
 
     it("should not be accessible from the UI", async () => {
@@ -118,55 +105,55 @@ describe("WebPluginManager", () => {
       const addMenuBarItemSpy = jest.spyOn(pluginStore, "addMenuBarItem");
       const addPopupMenuItemSpy = jest.spyOn(pluginStore, "addPopupMenuItem");
 
-      try {
-        await manager.install(plugin.manifest.id);
-        expect(addTabTypeConfigsSpy).not.toHaveBeenCalled();
-        expect(addMenuBarItemSpy).not.toHaveBeenCalled();
-        expect(addPopupMenuItemSpy).not.toHaveBeenCalled()
-      } catch (e) {
-        console.error(e)
-      } finally {
-        await manager.uninstall(plugin.manifest.id);
-      }
+      await manager.initialize();
+
+      expect(addTabTypeConfigsSpy).not.toHaveBeenCalled();
+      expect(addMenuBarItemSpy).not.toHaveBeenCalled();
+      expect(addPopupMenuItemSpy).not.toHaveBeenCalled()
     });
 
     it("should be flagged as disabled", async () => {
-      try {
-        await manager.install(plugin.manifest.id);
-        expect(manager.pluginOf(plugin.manifest.id).disabled).toBe(true);
-      } catch (e) {
-        console.error(e)
-      } finally {
-        await manager.uninstall(plugin.manifest.id);
-      }
+      await manager.initialize();
+      expect(manager.pluginOf("test-plugin").disabled).toBe(true);
     });
   });
 
   describe("Plugin APIs", () => {
-    const {
-      fileHelpers,
-      pluginStore,
-      utilityConnection,
-      mockPluginRegistry,
-    } = prepareWebPluginManagerTestGroup({ tables });
+    const { fileManager, registry } = preparePluginSystemTestGroup();
+    const pluginManager = new PluginManager({
+      appVersion: "5.0.0",
+      fileManager,
+      registry,
+    });
+    const { pluginStore, utilityConnection } = prepareWebPluginManagerTestGroup({
+      tables,
+      pluginManager,
+    });
+
+    preloadPlugins(fileManager, [{
+      id: "test-plugin",
+      capabilities: {
+        views: [{
+          id: "test-view",
+          name: "Test View",
+          type: "base-tab",
+          entry: "index.html",
+        }],
+        menu: [],
+      },
+    }]);
 
     let plugin: WebPlugin;
     let manager: WebPluginManager;
 
     beforeAll(async () => {
-      plugin = new WebPlugin();
       manager = new WebPluginManager({
         appVersion: "5.0.0",
-        fileHelpers,
         pluginStore,
         utilityConnection,
       });
-
-      mockPluginRegistry([plugin]);
-
       await manager.initialize();
-      await manager.install(plugin.manifest.id);
-
+      plugin = new WebPlugin(await manager.getEnabledPlugins()[0]);
       manager.registerIframe(plugin.manifest.id, plugin.iframe, plugin.context);
     });
 

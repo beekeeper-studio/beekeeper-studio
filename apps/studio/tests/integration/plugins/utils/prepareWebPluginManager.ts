@@ -2,39 +2,33 @@ import PluginStoreService from "@/services/plugin/web/PluginStoreService";
 import { Store } from "vuex";
 import { State as RootState } from "@/store";
 import { TableOrView } from "@/lib/db/models";
-import type { WebPlugin } from "./WebPlugin";
-import type { TransportPlugin } from "@/services/plugin";
+import { PluginManager } from "@/services/plugin";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { getDialectData } from "@shared/lib/dialects";
 import { dialectFor } from "@shared/lib/dialects/models";
 import type { FileHelpers } from "@/types";
+import { PluginHandlers } from "@commercial/backend/handlers/pluginHandlers";
 
 export default function prepareWebPluginManagerTestGroup(options?: {
   tables?: TableOrView[];
   defaultSchema?: string;
   connectionType?: string;
+  pluginManager: PluginManager;
 }) {
-  const registry = new Map<string, TransportPlugin>();
-  const installedPlugins = new Map<string, TransportPlugin>();
+  options.pluginManager.PREINSTALLED_PLUGINS = [];
+
+  const handlers = PluginHandlers(options.pluginManager);
+  handlers['plugin/waitForInit'] = async () => {
+    if (!options.pluginManager.isInitialized) {
+      await options.pluginManager.initialize();
+    }
+  };
 
   const utilityConnection = {
-    send: jest.fn().mockImplementation((event: string, data?: any) => {
-      if (event === "plugin/waitForInit") {
-        return Promise.resolve();
-      }
-      if (event === "plugin/install") {
-        return Promise.resolve(registry.get(data.id));
-      }
-      if (event === "plugin/plugins") {
-        return Promise.resolve(Array.from(installedPlugins.values()));
-      }
-      return Promise.resolve();
-    }),
+    send: jest.fn().mockImplementation((event: string, data?: any) =>
+      handlers[event](data)
+    ),
   } as any as UtilityConnection;
-
-  const fileHelpers = {
-    save: jest.fn().mockResolvedValue(undefined),
-  } as any as FileHelpers;
 
   const appEventBus = {
     emit: jest.fn(),
@@ -74,30 +68,6 @@ export default function prepareWebPluginManagerTestGroup(options?: {
 
   return {
     utilityConnection,
-    fileHelpers,
     pluginStore: new PluginStoreService(store, appEventBus),
-    /** Make it act so that these plugins are loaded from the backend */
-    mockInstalledPlugins(plugins: WebPlugin[]) {
-      for (const plugin of plugins) {
-        installedPlugins.set(plugin.manifest.id, {
-          manifest: plugin.manifest,
-          loadable: true,
-          compatible: true,
-          disabled: false,
-        });
-      }
-    },
-    /** Make it act so that these plugin are available in the registry.
-     * You need this if you want to install a plugin. */
-    mockPluginRegistry(plugins: WebPlugin[]) {
-      for (const plugin of plugins) {
-        registry.set(plugin.manifest.id, {
-          manifest: plugin.manifest,
-          loadable: true,
-          compatible: true,
-          disabled: false,
-        });
-      }
-    },
   }
 }

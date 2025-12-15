@@ -4,6 +4,7 @@ import path from "path";
 import { uuidv4 } from "@/lib/uuid";
 import { tmpdir } from "os";
 import { Manifest } from "@/services/plugin";
+import _ from "lodash";
 
 /**
  * Create a file manager for plugin manager.
@@ -36,8 +37,28 @@ export function preloadPlugins(
   fileManager: PluginFileManager,
   plugins: Partial<Manifest>[]
 ) {
-  fileManager.scanPlugins = () => plugins;
+  fileManager.scanPlugins = () =>
+    plugins.map((plugin, idx) =>  createTestManifest(plugin));
 }
+
+let counter = 0;
+
+function createTestManifest(manifest?: Partial<Manifest>): Manifest {
+  const defaultManifest: Manifest = {
+    id: uuidv4(),
+    name: `Test Plugin ${counter++}`,
+    version: "1.0.0",
+    manifestVersion: 1,
+    capabilities: {
+      views: [],
+      menu: [],
+    },
+    author: "Beekeeper Studio",
+    description: "Test plugin for testing purposes",
+  }
+  return _.merge(defaultManifest, manifest);
+}
+
 
 /** Erase plugins data. */
 export function cleanFileManager(manager: PluginFileManager) {

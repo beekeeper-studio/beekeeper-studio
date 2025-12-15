@@ -43,9 +43,7 @@ const pluginManager = new PluginManager({
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
-  config: {
-    plugins: bksConfig.plugins,
-  },
+  pluginSettings: bksConfig.plugins,
 });
 
 interface Reply {
