@@ -9,7 +9,6 @@ export class WebPlugin {
   private requestIdCounter = 0;
 
   public readonly iframe: HTMLIFrameElement;
-  public readonly manifest: Manifest;
   public readonly context: {
     command: string;
     pluginId?: string;
@@ -17,28 +16,7 @@ export class WebPlugin {
     params?: any;
   };
 
-  constructor(manifest: Partial<Manifest> = {}) {
-    // Create default manifest
-    this.manifest = _.merge({
-      manifestVersion: 1,
-      id: "test-plugin",
-      name: "Test Plugin",
-      author: "Test Author",
-      description: "Test Description",
-      version: "1.0.0",
-      capabilities: {
-        views: [
-          {
-            id: "test-view",
-            name: "Test View",
-            type: "base-tab",
-            entry: "index.html",
-          },
-        ],
-        menu: [],
-      },
-    }, manifest) as Manifest;
-
+  constructor(public readonly manifest: Manifest) {
     // Create mock iframe with contentWindow
     this.iframe = document.createElement("iframe");
 
