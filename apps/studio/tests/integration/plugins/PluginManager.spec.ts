@@ -1,59 +1,17 @@
 import PluginManager, {
   PluginManagerOptions,
 } from "@/services/plugin/PluginManager";
-import { createPluginServer } from "./utils/server";
-import { createFileManager, cleanFileManager, preloadPlugins } from "./utils/fileManager";
-import { MockPluginRepositoryService } from "./utils/registry";
+import { preloadPlugins } from "./utils/fileManager";
 import {
   ForbiddenPluginError,
   NotFoundPluginError,
   NotSupportedPluginError,
 } from "@/services/plugin/errors";
-import PluginRegistry from "@/services/plugin/PluginRegistry";
-import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
-import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";
-import { UserSetting } from "@/common/appdb/models/user_setting";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import bindLicenseConstraints from "@commercial/backend/plugin-system/licenseConstraints";
 import { createLicense } from "@tests/utils";
-
-function preparePluginSystemTestGroup() {
-  const server = createPluginServer();
-  const repositoryService = new MockPluginRepositoryService(server);
-  const registry = new PluginRegistry(repositoryService);
-  const fileManager = createFileManager();
-
-  beforeAll(async () => {
-    await TestOrmConnection.connect();
-    const runner = TestOrmConnection.connection.connection.createQueryRunner();
-    await migration.testRun(runner);
-    await runner.release();
-  });
-
-  afterAll(async () => {
-    await TestOrmConnection.disconnect();
-  });
-
-  beforeEach(async () => {
-    PluginManager.PREINSTALLED_PLUGINS = [];
-    const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
-    setting.userValue = "{}";
-    await setting.save();
-    registry.clearCache();
-  });
-
-  afterEach(() => {
-    cleanFileManager(fileManager);
-  });
-
-  return {
-    fileManager,
-    server,
-    registry,
-    repositoryService,
-  };
-}
+import preparePluginSystemTestGroup from "./utils/preparePluginSystem";
 
 describe("Basic Plugin Management", () => {
   const {
@@ -491,11 +449,9 @@ describe("Disabling plugins via config.ini", () => {
     repositoryService,
   } = preparePluginSystemTestGroup();
 
-  const configIni = {
-    plugins: {
-      "community-plugin-0": { disabled: true },
-    },
-  };
+  const pluginSettings = {
+    "community-plugin-0": { disabled: true },
+  } as const;
 
   beforeEach(() => {
     repositoryService.plugins = [
@@ -506,7 +462,7 @@ describe("Disabling plugins via config.ini", () => {
 
   it("can force-disable installed plugins", async () => {
     const manager = new PluginManager({
-      config: configIni,
+      pluginSettings,
       appVersion: "9.9.9",
       registry,
       fileManager,
@@ -527,7 +483,7 @@ describe("Disabling plugins via config.ini", () => {
     ]);
 
     const manager = new PluginManager({
-      config: configIni,
+      pluginSettings,
       appVersion: "9.9.9",
       registry,
       fileManager,
