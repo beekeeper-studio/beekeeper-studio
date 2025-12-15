@@ -2,14 +2,15 @@ import { PinnedConnection } from "@/common/appdb/models/PinnedConnection";
 import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
-import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, In, SaveOptions } from "typeorm";
+import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery, TransportFormatterPreset } from "@/common/transport";
+import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
 import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
+import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
@@ -19,11 +20,13 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
+import { validate } from "class-validator";
 
 const log = rawLog.scope('Appdb handlers');
 
-function defaultTransform<T extends Transport>(obj: T, cls: any) {
+async function defaultTransform<T extends Transport>(obj: T, cls: any) {
   if (_.isNil(obj)) {
     return null
   }
@@ -31,12 +34,20 @@ function defaultTransform<T extends Transport>(obj: T, cls: any) {
   return cls.merge(newObj, obj);
 }
 
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => T = defaultTransform) {
+async function niceValidateOrReject(ent: any): Promise<void> {
+  const errors = await validate(ent);
+  if (errors && errors.length > 0) {
+    const err = errors.map((err) => err.toString(false, false, "", true)).join("\n");
+    throw new Error(err);
+  }
+}
+
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform) {
 
   return {
     // this is so we can get defaults on objects
     [`appdb/${name}/new`]: async function({ init }: { init?: any }) {
-      return transform(new cls().withProps(init), cls);
+      return await transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
       if (_.isArray(obj)) {
@@ -44,15 +55,18 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           const dbEntities = await cls.findBy({
             id: In(ids)
           });
-          const newEnts = obj.map((e) => {
+          const newEnts = await Promise.all(obj.map(async (e) => {
             const dbEnt = dbEntities.find((v) => v.id === e.id);
 
             if (dbEnt) {
+              await niceValidateOrReject(dbEnt)
               return cls.merge(dbEnt, e);
             }
 
-            return new cls().withProps(e);
-          });
+            const newEnt = new cls().withProps(e);
+            await niceValidateOrReject(newEnt);
+            return newEnt;
+          }));
           return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
       } else {
         let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
@@ -62,8 +76,9 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           dbObj = new cls().withProps(obj);
         }
         log.info(`Saving ${name}: `, dbObj);
+        await niceValidateOrReject(dbObj);
         await dbObj.save();
-        return transform(dbObj, cls);
+        return await transform(dbObj, cls);
       }
     },
     [`appdb/${name}/remove`]: async function({ obj }: { obj: T | T[] }) {
@@ -80,17 +95,25 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       }
     },
     [`appdb/${name}/find`]: async function({ options }: { options?: FindManyOptions<any> }) {
-      return (await cls.find(options)).map((value) => {
-        return transform(value, cls);
-      })
+      return await Promise.all((await cls.find(options)).map(async (value) => {
+        return await transform(value, cls);
+      }))
+    },
+    [`appdb/${name}/findOneBy`]: async function({ options }: { options: FindOptionsWhere<any> | string | number }) {
+      return await transform(await cls.findOneBy(options), cls)
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {
-      return transform(await cls.findOneBy(options), cls)
+      return await transform(await cls.findOne(options), cls)
+    },
+    [`appdb/${name}/count`]: async function(args: FindManyOptions<any> | { options?: FindManyOptions<any> }) {
+      // Support both direct options or wrapped in { options: ... }
+      const options = 'options' in args ? args.options : args;
+      return await cls.count(options);
     }
   }
 }
 
-function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
+async function transformSetting(obj: UserSetting, _cls: any): Promise<TransportUserSetting> {
   if (_.isNil(obj)) {
     return null
   }
@@ -101,7 +124,7 @@ function transformSetting(obj: UserSetting, _cls: any): TransportUserSetting {
   };
 }
 
-function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
+async function transformLicense(obj: LicenseKey, _cls: any): Promise<TransportLicenseKey> {
   if (_.isNil(obj)) return null
   return {
     ...obj,
@@ -109,15 +132,29 @@ function transformLicense(obj: LicenseKey, _cls: any): TransportLicenseKey {
   };
 }
 
+async function transformConn(obj: SavedConnection, cls: any): Promise<IConnection> {
+  if (_.isNil(obj)) return null;
+  const status = await LicenseKey.getLicenseStatus();
+  const canBeReadOnly = status.isUltimate || platformInfo.testMode;
+
+  if (!canBeReadOnly) {
+    obj.readOnlyMode = false;
+  }
+
+  const newObj = {} as unknown as SavedConnection;
+  return cls.merge(newObj, obj);
+}
+
 export const AppDbHandlers = {
-  ...handlersFor<IConnection>('saved', SavedConnection),
-  ...handlersFor<IConnection>('used', UsedConnection),
+  ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
+  ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
+  ...handlersFor<TransportFormatterPreset>('formatterPreset', FormatterPreset),
   ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),

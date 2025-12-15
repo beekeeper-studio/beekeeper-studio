@@ -30,29 +30,28 @@
         />
       </Draggable>
       <!-- </div> -->
-      <span class="actions expand">
+      <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
-        ><i class=" material-icons">add_circle</i></a>
+        ><i class=" material-icons">add</i></a>
         <x-button
-          class="add-tab-dropdown"
+          class="btn-fab add-tab-dropdown"
           menu
-          v-if="tabTypeConfigs.length > 1"
+          v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
-            <template v-for="(config, index) in tabTypeConfigs">
+            <template v-for="(menuItem, index) in newTabDropdownItems">
               <x-menuitem
-                v-if="config.menuItem"
                 :key="index"
-                @click.prevent="createTab(config)"
+                @click.prevent="createTab(menuItem.config)"
               >
                 <x-label>
-                  <i class="material-icons">{{ config.icon }}</i>
-                  {{ config.menuItem.label }}
+                  <i class="material-icons">{{ menuItem.config.icon }}</i>
+                  {{ menuItem.label }}
                 </x-label>
-                <x-shortcut v-if="config.menuItem.shortcut" :value="config.menuItem.shortcut" />
+                <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
               </x-menuitem>
             </template>
           </x-menu>
@@ -86,7 +85,8 @@
           :active="activeTab?.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
-        />
+          @update-tab="updateTab"
+         />
         <Shell
           v-if="tab.tabType === 'shell'"
           :active="activeTab?.id === tab.id"
@@ -330,6 +330,7 @@ import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
   props: [],
@@ -381,8 +382,9 @@ export default Vue.extend({
     async usedConfig() {
       await this.$store.dispatch('tabs/load')
       if (!this.tabItems?.length) {
-        this.createQuery()
+        await this.createQuery()
       }
+      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
@@ -396,11 +398,11 @@ export default Vue.extend({
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection', 'connectionType', 'usedConfig']),
-    ...mapGetters({ 
-       'dialect': 'dialect', 
-       'dialectData': 'dialectData', 
+    ...mapGetters({
+       'dialect': 'dialect',
+       'dialectData': 'dialectData',
        'dialectTitle': 'dialectTitle',
-       'tabTypeConfigs': 'tabs/tabTypeConfigs',
+       'newTabDropdownItems': 'tabs/newTabDropdownItems',
     }),
     tabIcon() {
       return {
@@ -492,6 +494,10 @@ export default Vue.extend({
     this.$root.$refs.CoreTabs = this;
   },
   methods: {
+    async updateTab(tab: TransportOpenTab) {
+      const newTab = Object.assign({}, tab);
+      await this.$store.commit('tabs/replaceTab', newTab);
+    },
     showUpgradeModal() {
       this.$root.$emit(AppEvent.upgradeModal)
     },
@@ -706,19 +712,24 @@ export default Vue.extend({
       result.unsavedChanges = false;
       await this.addTab(result);
     },
-    async createQuery(optionalText, queryTitle?) {
-      // const text = optionalText ? optionalText : ""
-      console.log("Creating tab")
-      let qNum = 0
-      let tabName = "New Query"
+    getNextQueryTitle(queryTitle?) {
+      let qNum = 0;
+      let tabName = "New Query";
       if (queryTitle) {
         tabName = queryTitle
       } else {
         do {
-          qNum = qNum + 1
-          tabName = `Query #${qNum}`
+          qNum = qNum + 1;
+          tabName = `Query #${qNum}`;
         } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       }
+
+      return tabName;
+    },
+    async createQuery(optionalText, queryTitle?) {
+      // const text = optionalText ? optionalText : ""
+      console.log("Creating tab")
+      const tabName = this.getNextQueryTitle(queryTitle);
 
       const result = {} as TransportOpenTab;
       result.tabType = 'query'
@@ -1160,8 +1171,19 @@ export default Vue.extend({
       this.addTab(tab)
 
     },
-    createQueryFromItem(item) {
-      this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
+    async createQueryFromItem(item) {
+      const tab = {} as TransportOpenTab;
+      tab.tabType = 'query';
+      tab.title = this.getNextQueryTitle();
+      if (item.id) {
+        tab.usedQueryId = item.id;
+      }
+      tab.unsavedChanges = false;
+
+      const existing = this.tabItems.find((t) => matches(t, tab))
+      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+
+      this.addTab(tab);
     },
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;

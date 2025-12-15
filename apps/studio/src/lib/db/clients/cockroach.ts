@@ -19,7 +19,8 @@ export class CockroachClient extends PostgresClient {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard', 'ilike']
     };
   }
 
@@ -187,7 +188,7 @@ export class CockroachClient extends PostgresClient {
       port: server.config.port || undefined,
       password: server.config.password || undefined,
       database: database.database,
-      max: BksConfig.db.cockroachdb.maxClient, // max idle connections per time (30 secs)
+      max: BksConfig.db.cockroachdb.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.cockroachdb.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.cockroachdb.idleTimeout,
       // not in the typings, but works.

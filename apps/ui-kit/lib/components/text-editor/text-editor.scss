@@ -106,6 +106,7 @@
   // Context Menu
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
+  --bks-text-editor-context-menu-border-color: transparent;
   --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
   --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
@@ -204,84 +205,6 @@
   .cm-emphasis { color: var(--bks-text-editor-emphasis-fg-color); }
   .cm-strikethrough { color: var(--bks-text-editor-strikethrough-fg-color); }
 
-  // Selection
-  .cm-selectionBackground,
-  .cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
-    background-color: var(--bks-text-editor-selected-bg-color);
-  }
-  .cm-selectionMatch {
-    background-color: var(--bks-text-editor-matchingselection-bg-color);
-  }
-
-  // Search
-  .cm-searchMatch { background-color: var(--bks-text-editor-searchmatch-bg-color); }
-  .cm-searchMatch-selected { background-color: var(--bks-text-editor-searchmatch-selected-bg-color); }
-
-  // Gutters and line numbers
-  .cm-gutters {
-    background-color: var(--bks-text-editor-gutter-bg-color);
-    border-color: var(--bks-text-editor-gutter-border-color);
-  }
-
-  .cm-foldgutter {
-    font-size: 1.2rem;
-    color: var(--bks-text-editor-foldgutter-fg-color);
-
-    &:hover {
-      color: var(--bks-text-editor-foldgutter-fg-color-hover);
-    }
-  }
-
-  .cm-lineNumbers .cm-gutterElement {
-    color: var(--bks-text-editor-linenumber-fg-color);
-  }
-
-  // Focused state
-  .cm-focused {
-    outline-color: var(--bks-text-editor-focused-outline-color);
-  }
-
-  // Cursor
-  .cm-cursor {
-    border-left-color: var(--bks-text-editor-cursor-bg-color);
-  }
-  .cm-fat-cursor:not(.CodeMirror) {
-    background-color: var(--bks-text-editor-fatcursor-bg-color);
-  }
-
-  // Active line
-  .cm-activeLine {
-    background-color: var(--bks-text-editor-activeline-bg-color);
-  }
-
-  .cm-activeLineGutter {
-    background-color: var(--bks-text-editor-activeline-gutter-bg-color);
-  }
-
-  // Matching brackets
-  .cm-focused .cm-matchingBracket {
-    color: var(--bks-text-editor-matchingbracket-fg-color);
-    background-color: var(--bks-text-editor-matchingbracket-bg-color);
-    text-decoration: underline;
-  }
-
-  // Marker styles
-  .cm-error {
-    background-color: var(--bks-text-editor-error-bg-color);
-    border-bottom: 1px solid var(--bks-text-editor-error-fg-color);
-    border-radius: 2px;
-  }
-
-  .cm-highlight {
-    background-color: var(--bks-text-editor-highlight-bg-color);
-    border-radius: 2px;
-  }
-
-  .cm-panel {
-    background-color: var(--bks-query-editor-bg);
-    color: var(--bks-text-dark);
-  }
-
   .cm-textfield {
     @include bk-form-input;
     width: 15em;
@@ -345,34 +268,28 @@
   padding: $gutter-h 0;
   border: 0;
   border-radius: 6px;
-  &, &.cm-tooltip {
-    background-color: var(--bks-text-editor-context-menu-bg-color);
-    color: var(--bks-text-editor-context-menu-fg-color);
-    @include card-shadow;
+  @include card-shadow;
+
+  .cm-completionIcon-table::before,
+  .cm-completionIcon-view::before,
+  .cm-completionIcon-materialized-view::before {
+    font-family: "Material Icons";
+    content: "grid_on"; // Table icon
+    font-weight: 600;
   }
 
   .cm-completionIcon-table::before {
-    font-family: "Material Icons";
-    content: "grid_on"; // Table icon
+    color: var(--bks-icon-table-color);
   }
 
-  .cm-completionIcon-view::before, .cm-completionIcon-materialized-view::before {
-    font-family: "Material Icons";
-    content: "grid_on"; // View icon
+  .cm-completionIcon-view::before {
+    color: var(--bks-icon-view-color);
   }
 
-  .cm-completionIcon {
-    display: inline-block;
-    font-size: 90%;
-    font-family: 'Material Design Icons';
-    margin-right: 0.5em;
-    width: 0.8em;
-    text-align: center;
+  .cm-completionIcon-materialized-view::before {
+    color: var(--bks-icon-materialized-view-color);
   }
-  &.cm-tooltip-autocomplete ul li[aria-selected] {
-    background-color: var(--bks-text-editor-context-menu-item-bg-color-active);
-    color: var(--bks-text-editor-context-menu-item-fg-color-active);
-  }
+
   ul li {
     padding: ($gutter-h * 0.5) $gutter-h;
     border-radius: 0;
@@ -406,73 +323,10 @@
     &.bks-autocomplete-option-property {
       color: var(--bks-text-editor-property-fg-color);
     }
+  }
 
-    // SQL specific completion items - table icons
-    &[data-completion="table"]::before,
-    &.cm-completionIcon-table::before,
-    &.cm-completionLabel-table::before {
-      content: "󰓫"; // Table icon
-      margin-right: 6px;
-      font-family: 'Material Design Icons';
-      font-size: 16px;
-      color: #{$brand-primary};
-      vertical-align: middle;
-    }
-
-    &[data-completion="view"]::before,
-    &.cm-completionIcon-view::before,
-    &.cm-completionLabel-view::before {
-      content: "󰯃"; // View icon
-      margin-right: 6px;
-      font-family: 'Material Design Icons';
-      font-size: 16px;
-      color: #{$brand-secondary};
-      vertical-align: middle;
-    }
-
-    &[data-completion="materialized-view"]::before,
-    &.cm-completionIcon-materialized-view::before,
-    &.cm-completionLabel-materialized-view::before {
-      content: "󰅒"; // Materialized view icon
-      margin-right: 6px;
-      font-family: 'Material Design Icons';
-      font-size: 16px;
-      color: #{$brand-info};
-      vertical-align: middle;
-    }
-
-    // Column icon
-    &[data-completion="column"]::before,
-    &.cm-completionIcon-column::before,
-    &.cm-completionLabel-column::before {
-      content: "󰓼"; // Column icon
-      margin-right: 6px;
-      font-family: 'Material Design Icons';
-      font-size: 16px;
-      color: #{$brand-success};
-      vertical-align: middle;
-    }
-
-    // Type-based icons
-    &.cm-completionIcon-keyword::before,
-    &.cm-completionLabel-keyword::before {
-      content: "󰌆"; // Keyword icon
-      margin-right: 6px;
-      font-family: 'Material Design Icons';
-      font-size: 16px;
-      color: var(--bks-text-editor-keyword-fg-color);
-      vertical-align: middle;
-    }
-
-    &.cm-completionIcon-text::before,
-    &.cm-completionLabel-text::before,
-    &.cm-completionIcon-type::before,
-    &.cm-completionLabel-type::before {
-      content: "󰦪"; // Text icon
-      margin-right: 6px;
-      font-family: 'Material Design Icons';
-      font-size: 16px;
-      vertical-align: middle;
-    }
+  .cm-completionMatchedText {
+    text-decoration: none;
+    font-weight: 600;
   }
 }

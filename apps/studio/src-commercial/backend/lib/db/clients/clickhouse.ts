@@ -366,7 +366,12 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     };
   }
 
-  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    // Clickhouse does not support foreign keys.
+    return [];
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
     // Clickhouse does not support foreign keys.
     return [];
   }
@@ -850,6 +855,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: this.supportsTransaction,
+      filterTypes: ['standard']
     };
   }
 

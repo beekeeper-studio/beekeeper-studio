@@ -221,8 +221,12 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     return null
   }
 
-  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
-    return await []
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return []
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return []
   }
 
   async listTableTriggers(
@@ -448,7 +452,8 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: this.supportsTransaction
+      transactions: this.supportsTransaction,
+      filterTypes: ['standard']
     }
   }
 

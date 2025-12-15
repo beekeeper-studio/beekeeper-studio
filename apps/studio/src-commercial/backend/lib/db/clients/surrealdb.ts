@@ -43,7 +43,6 @@ export interface SurrealDBFunctionInfo {
   permissions: boolean
 }
 
-// TODO (@day): are both of these necessary?
 export interface SurrealDBResult {
   result: any[];
   status: string;
@@ -89,7 +88,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       namespace: this.database.namespace,
       database: this.db,
       auth: config,
-      reconnect: true
+      reconnect: true,
+      versionCheck: false
     });
 
     // Test the pool
@@ -117,8 +117,9 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       port = this.server.config.localPort;
     }
 
+    const portString = port ? `:${port}` : '';
     const protocol = surrealDbOptions?.protocol || 'wss';
-    this.connectionString = `${protocol}://${host || 'localhost'}:${port || 8000}/rpc`;
+    this.connectionString = `${protocol}://${host || 'localhost'}${portString}/rpc`;
 
     switch (surrealDbOptions.authType) {
       case SurrealAuthType.Root:
@@ -171,7 +172,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: false
+      transactions: false,
+      filterTypes: ['standard']
     };
   }
 
@@ -357,7 +359,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     return [];
   }
 
-  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const columns = await this.listTableColumns(table);
     const keys: TableKey[] = [];
 
@@ -381,6 +383,72 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
             onUpdate: null,
             isComposite: targetTables.length > 1
           })
+        }
+      }
+    }
+
+    return keys;
+  }
+
+  async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    const keys: TableKey[] = [];
+
+    // Get list of all tables
+    const tables = await this.listTables();
+
+    // Create a map of table name to columns for quick lookup
+    const tableColumnsMap = new Map<string, { columnName: string; dataType: string }[]>();
+
+    for (const { name } of tables) {
+      const columns = await this.listTableColumns(name);
+      const columnData = columns.map(col => ({
+        columnName: col.columnName,
+        dataType: col.dataType
+      }));
+      tableColumnsMap.set(name, columnData);
+    }
+
+    const buildKey = (params: {
+      toTable: string;
+      fromTable: string;
+      column: { columnName: string; dataType: string };
+      isComposite: boolean;
+    }) => {
+      return {
+        constraintName: `${params.fromTable}_${params.column.columnName}_fkey`,
+        fromTable: params.fromTable,
+        fromColumn: params.column.columnName,
+        fromSchema: '',
+        toTable: params.toTable,
+        toColumn: 'id',
+        toSchema: '',
+        onDelete: null, // TODO (@day): pull this from table info definitions
+        onUpdate: null,
+        isComposite: params.isComposite,
+      }
+    }
+
+    // Incoming keys: columns in OTHER tables that reference THIS table
+    for (const [otherTableName, otherColumns] of tableColumnsMap.entries()) {
+      // Skip the current table
+      if (otherTableName === table) continue;
+
+      for (const column of otherColumns) {
+        const match = column.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+        if (match) {
+          const targetTables = match[1]
+            .split(',')
+            .map(t => t.trim());
+
+          // Check if any of the target tables is the current table
+          if (targetTables.includes(table)) {
+            keys.push(buildKey({
+              fromTable: otherTableName,
+              toTable: table,
+              column,
+              isComposite: targetTables.length > 1,
+            }));
+          }
         }
       }
     }

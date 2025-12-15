@@ -56,6 +56,7 @@ import deleteDuplicateConnections from './20241115_delete_duplicate_connections'
 import addNewUrlField from './20250128_add_new_url_field'
 import tabHistoryIndex from './20250211_add_tab_history_index'
 import fixOracleData from './20250225_oracle_default_connection_method'
+import queryExcerpts from './20250228_query_excerpts'
 import addInstallationId from './20250404_add_installation_id'
 import sqlAnywhereOptions from './20250414_add_anywhere_options'
 import disabledPluginAutoUpdates from './20250522_add_disabled_plugin_auto_updates'
@@ -66,8 +67,14 @@ import addPrivacyModeSetting from "./20250618_add_privacy_mode_setting"
 import createUserPins from './20250604_create_user_pins'
 import createPluginData from './20250630_create_plugin_data'
 import createEncryptedPluginData from './20250630_create_encrypted_plugin_data'
+import createFormatterPresets from './20250831_create_formatter_presets'
+import populateFormatterPresets from './20250831_populate_formatter_presets'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
+import uniqueNameFormatterPresets from './20251013_unique_name_formatter_presets'
+import addUsedQueryId from './20250620_add_used_query_id'
+import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_column'
+import addTabDropdownAIShellHintShownSetting from './20251003_add_tab_dropdown_ai_shell_hint_shown_setting'
 import addIamAuthOptions from './20250819_add_iamAuthOptions'
 
 import ultimate from './ultimate/index'
@@ -104,9 +111,12 @@ const realMigrations = [
   fixOracleData,
   addInstallationId,
   sqlAnywhereOptions,
+  queryExcerpts,
   disabledPluginAutoUpdates, preinstalledPlugins, addContextToTabs, addPluginSettings, createUserPins, addPrivacyModeSetting,
   createPluginData, createEncryptedPluginData,
-  surrealDbOptions, upgradeSqliteExtensions, addIamAuthOptions
+  surrealDbOptions, upgradeSqliteExtensions,
+  addUsedQueryId, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting,
+  createFormatterPresets, populateFormatterPresets, uniqueNameFormatterPresets, addIamAuthOptions
 ]
 
 // fixtures require the models

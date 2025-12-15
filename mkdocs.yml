@@ -106,6 +106,8 @@ nav:
 
   - Features:
     - user_guide/sql_editor/editor.md
+    - user_guide/sql-query-formatter.md
+    - user_guide/sql_editor/manual-transaction-management.md
     - user_guide/sql-ai-shell.md
     - user_guide/editing-data.md
     - user_guide/modify-tables.md

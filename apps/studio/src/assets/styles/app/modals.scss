@@ -132,4 +132,39 @@
     }
 
   }
+
+  &.super-formatter-modal {
+    .v--modal {
+      max-width: min(64rem, 70vw);
+      max-height: min(50rem, 90vh);
+      display: flex;
+      container-type: inline-size;
+
+      @container (max-width: 600px) {
+        .BksSuperFormatter {
+          grid-template-columns: auto;
+          grid-template-rows: 1fr 1fr 1.75rem;
+
+          .formatter-buttons {
+            grid-column-start: initial;
+          }
+        }
+      }
+    }
+    .dialog-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    & .dialog-c-title {
+      display: flex;
+      padding-right: 0 !important;
+      justify-content: space-between;
+      align-items: start;
+      & p {
+        margin: 0;
+        padding: .5rem 0 0 0;
+      }
+    }
+  }
 }

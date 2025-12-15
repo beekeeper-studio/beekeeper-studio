@@ -94,6 +94,7 @@ export function surrealEscapeValue(value: any): string {
 }
 
 export const SurrealDBData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],
   usesOffsetPagination: false, // not sure about this
@@ -105,6 +106,7 @@ export const SurrealDBData: DialectData = {
   textEditorMode: "text/x-sql", // look into how we do this with the cm6 plugin
   defaultColumnType: 'any',
   disabledFeatures: {
+    manualCommit: true,
     shell: true,
     alter: {
       everything: true

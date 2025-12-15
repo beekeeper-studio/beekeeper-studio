@@ -19,6 +19,7 @@ import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { PrimaryKeyColumn } from "@/lib/db/models";
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -57,6 +58,7 @@ export default class WebPluginLoader {
     this.menu = new PluginMenuManager(context);
 
     this.handleMessage = this.handleMessage.bind(this);
+    this.onTableChanged = this.onTableChanged.bind(this);
   }
 
   /** Starts the plugin */
@@ -94,7 +96,7 @@ export default class WebPluginLoader {
 
     // Check if the message is from our iframe
     if (source) {
-      if (event.data.id) {
+      if (event.data.id !== undefined) {
         this.handleViewRequest(
           {
             id: event.data.id,
@@ -142,19 +144,49 @@ export default class WebPluginLoader {
 
       switch (request.name) {
         // ========= READ ACTIONS ===========
+        case "getSchemas":
+          response.result = await this.context.utility.send("conn/listSchemas");
+          break;
         case "getTables":
-          response.result = this.pluginStore.getTables() as GetTablesResponse['result'];
+          response.result = this.context.store.getTables(
+            request.args.schema
+          ) as GetTablesResponse['result'];
           break;
         case "getColumns":
-          response.result = await this.pluginStore.getColumns(
-            request.args.table
+          response.result = await this.context.store.getColumns(
+            request.args.table,
+            request.args.schema
           );
           break;
         case "getTableKeys":
-          response.result = await this.utilityConnection.send(
-              'conn/getTableKeys',
+        case "getOutgoingKeys":
+          response.result = await this.context.utility.send(
+              'conn/getOutgoingKeys',
             { table: request.args.table, schema: request.args.schema }
           );
+          break;
+        case "getIncomingKeys":
+          response.result = await this.context.utility.send(
+              'conn/getIncomingKeys',
+            { table: request.args.table, schema: request.args.schema }
+          );
+          break;
+        case "getTableIndexes":
+          response.result = await this.context.utility
+            .send("conn/listTableIndexes", {
+              table: request.args.table,
+              schema: request.args.schema,
+            });
+          break;
+        case "getPrimaryKeys":
+          response.result = await this.context.utility
+            .send("conn/getPrimaryKeys", {
+              table: request.args.table,
+              schema: request.args.schema,
+            })
+            .then((keys: PrimaryKeyColumn[]) =>
+              keys.map((key) => ({ ...key, name: key.columnName }))
+            );
           break;
         case "getAppInfo":
           response.result = {
@@ -209,6 +241,9 @@ export default class WebPluginLoader {
         case "clipboard.writeText":
           window.main.writeTextToClipboard(request.args.text);
           break;
+        case "clipboard.writeImage":
+          response.result = window.main.writeImageToClipboard(request.args.data);
+          break;
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
@@ -234,6 +269,17 @@ export default class WebPluginLoader {
         case "openTab":
           this.pluginStore.openTab(request.args);
           break;
+
+        // ========= SYSTEM ACTIONS ===========
+        case "requestFileSave":
+          const isSaved = await this.context.fileHelpers.save({
+            content: request.args.data,
+            fileName: request.args.fileName,
+            encoding: request.args.encoding,
+            filters: request.args.filters,
+          });
+          response.result = { isSaved };
+        break;
 
         default:
           throw new Error(`Unknown request: ${request.name}`);
@@ -362,13 +408,17 @@ export default class WebPluginLoader {
     this.onDisposeListeners.forEach((fn) => fn());
   }
 
+  /** Register all events here. */
   private registerEvents() {
     // Add event listener for messages from iframe
+    this.context.store.on("tablesChanged", this.onTableChanged);
     window.addEventListener("message", this.handleMessage);
     this.listening = true;
   }
 
+  /** Unregister all events here. */
   private unregisterEvents() {
+    this.context.store.off("tablesChanged", this.onTableChanged);
     window.removeEventListener("message", this.handleMessage);
     this.listening = false;
   }
@@ -391,5 +441,9 @@ export default class WebPluginLoader {
     return () => {
       this.onDisposeListeners = _.without(this.onDisposeListeners, fn);
     }
+  }
+
+  private onTableChanged() {
+    this.broadcast({ name: "tablesChanged" });
   }
 }

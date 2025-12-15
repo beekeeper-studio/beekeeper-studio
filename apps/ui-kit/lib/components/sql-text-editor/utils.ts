@@ -1,6 +1,8 @@
 import { Entity, TableEntity } from "../types";
 import { Completion } from "@codemirror/autocomplete";
 import getAliases from "./getAliases";
+import type { SQLDialect, SQLNamespace } from "@codemirror/lang-sql";
+import { nameCompletion } from "./extensions/vendor/@codemirror/lang-sql/src/complete";
 
 export { getAliases };
 
@@ -22,9 +24,12 @@ export function columnsToCompletions(columns: string[]): Completion[] {
  */
 export function buildSchema(
   entities: Entity[],
-  defaultSchema?: string
-): Record<string, string[]> {
-  const tables: Record<string, string[]> = {};
+  defaultSchema?: string,
+  dialect?: SQLDialect
+): SQLNamespace {
+  const tables: SQLNamespace = {};
+  const idQuote = dialect?.spec.identifierQuotes?.[0] || '"'
+  const caseInsensitiveIdentifiers = !!dialect?.spec.caseInsensitiveIdentifiers;
 
   entities.forEach((entity) => {
     // Only include table-like entities
@@ -34,15 +39,23 @@ export function buildSchema(
     if (/\./.test(entity.name)) return;
 
     const columns = entity.columns?.map((c) => c.field) || [];
+    // Is it a table? a view? or none?
+    const type = entity.entityType || "type";
 
     // Add unqualified name for default schema or no schema
     if (!entity.schema || (defaultSchema && entity.schema === defaultSchema)) {
-      tables[entity.name] = columns;
+      tables[entity.name] = {
+        self: nameCompletion(entity.name, type, idQuote, caseInsensitiveIdentifiers),
+        children: columns,
+      };
     }
 
     // Add fully qualified name if it has a schema
     if (entity.schema) {
-      tables[`${entity.schema}.${entity.name}`] = columns;
+      tables[`${entity.schema}.${entity.name}`] = {
+        self: nameCompletion(entity.name, type, idQuote, caseInsensitiveIdentifiers),
+        children: columns,
+      };
     }
   });
 

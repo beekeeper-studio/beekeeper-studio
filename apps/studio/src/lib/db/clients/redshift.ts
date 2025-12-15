@@ -22,7 +22,8 @@ export class RedshiftClient extends PostgresClient {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard', 'ilike']
     };
   }
 
@@ -119,7 +120,8 @@ export class RedshiftClient extends PostgresClient {
     }
   }
 
-  async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getOutgoingKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
     const sql = `
       SELECT
 
@@ -157,6 +159,65 @@ export class RedshiftClient extends PostgresClient {
         kcu.table_schema NOT LIKE 'pg_%' AND
         kcu.table_schema = $2 AND
         kcu.table_name = $1;
+    `;
+
+    const params = [
+      table,
+      schema,
+    ];
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    // For now, treat all keys as non-composite until we can properly test with Redshift
+    // TODO: Implement proper composite key detection for Redshift
+    return data.rows.map((row) => ({
+      toTable: row.to_table,
+      toSchema: row.to_schema,
+      toColumn: row.to_column,
+      fromTable: row.from_table,
+      fromSchema: row.from_schema,
+      fromColumn: row.from_column,
+      constraintName: row.constraint_name,
+      onUpdate: row.update_rule,
+      onDelete: row.delete_rule,
+      isComposite: false
+    }));
+  }
+
+  async getIncomingKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const sql = `
+      SELECT
+        kcu.constraint_schema AS from_schema,
+        kcu.table_name AS from_table,
+        kcu.column_name AS from_column,
+        rc.unique_constraint_schema AS to_schema,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule,
+        (SELECT kcu2.table_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
+        (SELECT kcu2.column_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+      FROM
+        information_schema.key_column_usage AS kcu
+          JOIN
+        information_schema.table_constraints AS tc
+        ON
+          tc.constraint_name = kcu.constraint_name
+          JOIN
+        information_schema.referential_constraints AS rc
+        ON
+          rc.constraint_name = kcu.constraint_name
+      WHERE
+        tc.constraint_type = 'FOREIGN KEY' AND
+        kcu.table_schema NOT LIKE 'pg_%' AND
+        rc.unique_constraint_schema = $2 AND
+        (SELECT kcu2.table_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) = $1;
     `;
 
     const params = [
@@ -256,7 +317,7 @@ export class RedshiftClient extends PostgresClient {
       port: server.config.port || undefined,
       password: passwordResolver || server.config.password || undefined,
       database: database.database,
-      max: 5, // max idle connections per time (30 secs)
+      max: BksConfig.db.redshift.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
     };

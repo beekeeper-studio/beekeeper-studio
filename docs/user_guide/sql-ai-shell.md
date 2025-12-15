@@ -52,6 +52,19 @@ You can configure the AI Shell using the Beekeeper Studio [configuration system]
 
 {% ini-include section="plugins.bks-ai-shell" %}
 
+## Custom Instructions
+
+You can provide custom instructions to personalize how the AI Shell responds to your messages. To add custom instructions:
+
+1. Open the settings menu (⚙️).
+2. Go to the General tab.
+3. Add your custom instructions in the provided text field
+
+Your instructions are appended to the AI Shell’s base instructions and are included with **every message you send** as a system prompt, ensuring consistent behavior across sessions.
+For details, see [the instructions repository](https://github.com/beekeeper-studio/bks-ai-shell/tree/main/instructions).
+
+![AI Custom Instructions](../assets/images/ai/ai-custom-instructions.png)
+
 ## AI Shell Data Privacy
 
 The AI shell is 100% optional. Even when in-use, no data is ever sent from the AI Shell to the Beekeeper Studio servers. The AI Shell communicates directly with your AI Agent of choice -- no middlemen.
@@ -79,6 +92,13 @@ There are some limited actions the AI shell can take without your permission, bu
 
 ![AI Asks permission](../assets/images/ai/ai-asks-permission.png)
 
+#### Allow execution of read-only queries without asking permission
+
+If you prefer not to be asked every time, you can enable `Always allow execution of read-only queries`:
+
+1. Open the Settings menu (⚙️ in the AI Shell).
+2. Go to the General tab.
+3. Toggle **Always allow execution of read-only queries**.
 
 ### Disabling the AI Shell
 
@@ -87,3 +107,56 @@ You can disable the AI shell entirely by adding a flag to either your personal o
 {% ini-include section="plugins.bks-ai-shell" %}
 
 Even if the application user has previously entered an API key, this setting will disable the feature and lock out any further usage.
+
+## Troubleshooting
+
+### Problem fetching Ollama
+
+If AI Shell cannot connect to Ollama, it may be due to **CORS restrictions**. You’ll need to allow requests from Beekeeper Studio.
+
+#### macOS
+
+Run one of the following commands:
+
+```bash
+# Allow all origins
+launchctl setenv OLLAMA_ORIGINS "*"
+
+# Allow only Beekeeper Studio
+launchctl setenv OLLAMA_ORIGINS "plugin://*"
+```
+
+#### Windows
+
+Set an environment variable:
+
+1. Press **Windows + R**, type `sysdm.cpl`, and press **OK**.
+2. Go to **Advanced > Environment Variables**.
+3. Add or edit the variable `OLLAMA_ORIGINS`.
+4. Set the value to:
+
+   * `*` (allow all origins), or
+   * `plugin://*` (only Beekeeper Studio).
+
+#### Linux
+
+Edit the Ollama service config:
+
+```bash
+sudo systemctl edit ollama.service
+```
+
+Add the environment variable:
+
+```
+[Service]
+Environment="OLLAMA_ORIGINS=*"
+# or
+Environment="OLLAMA_ORIGINS=plugin://*"
+```
+
+Then restart the service:
+
+```bash
+sudo systemctl restart ollama
+```

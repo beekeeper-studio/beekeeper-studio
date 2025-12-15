@@ -86,11 +86,11 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/executeCommand', { commandText });
   }
 
-  async query(queryText: string, options?: any): Promise<CancelableQuery> {
-    const id = await Vue.prototype.$util.send('conn/query', { queryText, options });
+  async query(queryText: string, tabId: number, options?: any, hasActiveTransaction: boolean = false): Promise<CancelableQuery> {
+    const id = await Vue.prototype.$util.send('conn/query', { queryText, options, tabId, hasActiveTransaction });
     return {
       execute: async () => {
-        return await Vue.prototype.$util.send('query/execute', { queryId: id })
+        return await Vue.prototype.$util.send('query/execute', { queryId: id, isManualCommit: options?.isManualCommit })
       },
       cancel: async () => {
         return await Vue.prototype.$util.send('query/cancel', { queryId: id })
@@ -309,5 +309,29 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   /** Returns a query for the given filter */
   async getQueryForFilter(filter: TableFilter): Promise<string> {
     return await Vue.prototype.$util.send('conn/getQueryForFilter', { filter });
+  }
+
+  async getFilteredDataCount(table: string, schema: string | null, filter: string): Promise<string> {
+    return await Vue.prototype.$util.send('conn/getFilteredDataCount', { table, schema, filter });
+  }
+
+  async reserveConnection(tabId: number) {
+    return await Vue.prototype.$util.send('conn/reserveConnection', { tabId });
+  }
+
+  async releaseConnection(tabId: number) {
+    return await Vue.prototype.$util.send('conn/releaseConnection', { tabId });
+  }
+
+  async startTransaction(tabId: number) {
+    return await Vue.prototype.$util.send('conn/startTransaction', { tabId });
+  }
+
+  async commitTransaction(tabId: number) {
+    return await Vue.prototype.$util.send('conn/commitTransaction', { tabId });
+  }
+
+  async rollbackTransaction(tabId: number) {
+    return await Vue.prototype.$util.send('conn/rollbackTransaction', { tabId });
   }
 }

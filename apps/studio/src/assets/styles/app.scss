@@ -7,12 +7,13 @@
 @import "codemirror/addon/merge/merge";
 @import "codemirror/addon/search/matchesonscrollbar";
 @import "vue-select/dist/vue-select";
+@import "driver.js/dist/driver.css";
 
 @import './app/normalize';
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
-
+@import './themes/themes.css';
 
 body.theme-system {
   @media (prefers-color-scheme: dark) {

@@ -136,11 +136,17 @@ export type TextEditorLSPReadyEvent = CustomEvent<{
 }>;
 
 export interface TextEditorEventMap extends HTMLElementEventMap {
+  "bks-show-formatter-presets": boolean,
   "bks-value-change": TextEditorValueChangeEvent;
   "bks-selection-change": TextEditorSelectionChangeEvent;
   "bks-focus": TextEditorFocusEvent;
   "bks-blur": TextEditorFocusEvent;
   "bks-lsp-ready": TextEditorLSPReadyEvent;
   "bks-initialized": TextEditorInitializedEvent;
+}
+
+export type TextEditorMenuContext = {
+  text: string;
+  selectedText: string;
 }
 

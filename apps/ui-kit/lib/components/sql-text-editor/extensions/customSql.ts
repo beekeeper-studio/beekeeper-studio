@@ -10,7 +10,7 @@ import { EditorView } from "@codemirror/view";
 import { buildSchema } from "../utils";
 import { sql } from "./vendor/@codemirror/lang-sql/src/sql";
 import { ColumnsGetter } from "./sqlContextComplete";
-import { setSchema } from "./vendor/@codemirror/lang-sql/src/complete";
+import { completeConfig, setSchema } from "./vendor/@codemirror/lang-sql/src/complete";
 
 type SQLConfig = CMSQLConfig & {
   disableSchemaCompletion?: boolean;
@@ -51,7 +51,11 @@ function applyEntities(
   entities: Entity[] = [],
   defaultSchema?: string
 ) {
-  const schema = buildSchema(entities, defaultSchema);
+  const schema = buildSchema(
+    entities,
+    defaultSchema,
+    view.state.facet(completeConfig).dialect
+  );
   view.dispatch({
     effects: [
       setEntities.of(entities),

@@ -45,7 +45,7 @@ import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
-import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, withClosable, withReleasable } from "@/lib/db/clients/utils";
+import { buildDeleteQueries, buildInsertQueries, buildInsertQuery, errorMessages, withClosable, withReleasable } from "@/lib/db/clients/utils";
 import {
   Pool,
   Connection,
@@ -57,7 +57,7 @@ import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
-import globals from "@/common/globals";
+import BksConfig from "@/common/bksConfig";
 
 type FirebirdResult = {
   rows: any[];
@@ -226,7 +226,12 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[], { runAsUpsert = 
   return inserts.map((insert) => buildInsertQuery(knex, insert, { runAsUpsert, primaryKeys, createUpsertFunc }));
 }
 
-export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
+interface FirebirdReservedConnection {
+  connection: Connection,
+  transaction: Transaction
+}
+
+export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, FirebirdReservedConnection> {
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
@@ -275,7 +280,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     log.debug("create driver client for firebird with config %j", config);
 
-    this.pool =  new Pool(globals.firebird.poolSize, config);
+    this.pool =  new Pool(BksConfig.db.firebird.maxConnections, config);
 
     const versionResult = await this.driverExecuteSingle(
       "SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') from rdb$database;"
@@ -653,40 +658,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
-    let connection: Connection | undefined;
+  async query(queryText: string, tabId: number): Promise<CancelableQuery> {
+    let connection: Connection | Transaction | undefined;
+    const hasReserved = this.reservedConnections.has(tabId);
 
     return {
       execute: async () => {
-        connection = await this.pool.getConnection()
+        connection = hasReserved ? this.peekConnection(tabId).transaction : await this.pool.getConnection()
 
         try {
-          const results = await this.driverExecuteMultiple(queryText, {
-            rowAsArray: true,
-            connection,
-          });
-          return results.map(({ rows, columns: meta }) => {
-            const fields = meta.map((field, idx) => ({
-              id: `c${idx}`,
-              name: field.alias || field.field,
-              // TODO add dataType prop
-            }));
-
-            rows = rows.map((row: Record<string, any>) => {
-              const transformedRow = {};
-              Object.keys(row).forEach((key, idx) => {
-                let val = row[key];
-                if (TRIM_END_CHAR && meta[idx].type === 452) {
-                  // SQLVarText or CHAR
-                  val = val.trimEnd();
-                }
-                transformedRow[`c${idx}`] = val;
-              });
-              return transformedRow;
-            });
-
-            return { fields, rows };
-          });
+          return this.executeQuery(queryText, { rowAsArray: true, connection, tabId })
         } finally {
           // release happens in rawExecuteQuery, not needed here
           // await connection.release();
@@ -695,7 +676,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       },
       cancel: async () => {
         try {
-          await connection?.release();
+          if (!hasReserved && connection instanceof Connection) {
+            await connection?.release();
+          }
         } catch (ex) {
           log.warn("Unable to release connection", ex.message)
         }
@@ -808,7 +791,9 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     return Object.keys(grouped).map((name) => {
       const blob = grouped[name];
       const order = blob[0]["RDB$INDEX_TYPE"] === 1 ? "DESC" : "ASC";
-      const unique = blob[0]["RDB$UNIQUE_FLAG"] === 1;
+      const uniqueFlag = blob[0]["RDB$UNIQUE_FLAG"];
+      // Handle different types that might be returned by the driver
+      const unique = uniqueFlag === 1 || uniqueFlag === true || uniqueFlag === '1';
       const primary =
         blob.findIndex((b) => b["RDB$CONSTRAINT_TYPE"] === "PRIMARY KEY") !==
         -1;
@@ -972,10 +957,11 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     };
   }
 
-  async getTableKeys(
+  async getOutgoingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
     const result = await this.driverExecuteSingle(
       `
         SELECT
@@ -1006,10 +992,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
-    
+
     return Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (keyParts.length === 1) {
         const row = keyParts[0];
@@ -1023,10 +1009,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           constraintName: row["CONSTRAINT_NAME"],
           onUpdate: row["ON_UPDATE"],
           onDelete: row["ON_DELETE"],
-          isComposite: false
+          isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
@@ -1044,22 +1030,111 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
     });
   }
 
+  async getIncomingKeys(
+    table: string,
+    _schema?: string
+  ): Promise<TableKey[]> {
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const incomingSQL = `
+        SELECT
+          TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
+          TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
+          TRIM(FK.RDB$RELATION_NAME) AS FROM_TABLE,
+          TRIM(ISF.RDB$FIELD_NAME) AS FROM_COLUMN,
+          TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
+          TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
+          TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
+          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
+        FROM
+          RDB$RELATION_CONSTRAINTS PK
+          JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
+          JOIN RDB$RELATION_CONSTRAINTS FK ON FK.RDB$CONSTRAINT_NAME = RC.RDB$CONSTRAINT_NAME
+          JOIN RDB$INDEX_SEGMENTS ISF ON ISF.RDB$INDEX_NAME = FK.RDB$INDEX_NAME
+          JOIN RDB$INDEX_SEGMENTS ISP ON ISP.RDB$INDEX_NAME = PK.RDB$INDEX_NAME AND ISP.RDB$FIELD_POSITION = ISF.RDB$FIELD_POSITION
+        WHERE
+          PK.RDB$RELATION_NAME = ?
+          AND FK.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
+          AND PK.RDB$CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE')
+        ORDER BY
+          CONSTRAINT_NAME,
+          ISF.RDB$FIELD_POSITION
+    `;
+
+    const result = await this.driverExecuteSingle(incomingSQL, { params: [table.toUpperCase()] });
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          fromTable: row["FROM_TABLE"],
+          fromColumn: row["FROM_COLUMN"],
+          fromSchema: "",
+          toTable: row["TO_TABLE"],
+          toColumn: row["TO_COLUMN"],
+          toSchema: "",
+          constraintName: row["CONSTRAINT_NAME"],
+          onUpdate: row["ON_UPDATE"],
+          onDelete: row["ON_DELETE"],
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        fromTable: firstPart["FROM_TABLE"],
+        fromColumn: keyParts.map(p => p["FROM_COLUMN"]),
+        fromSchema: "",
+        toTable: firstPart["TO_TABLE"],
+        toColumn: keyParts.map(p => p["TO_COLUMN"]),
+        toSchema: "",
+        constraintName: firstPart["CONSTRAINT_NAME"],
+        onUpdate: firstPart["ON_UPDATE"],
+        onDelete: firstPart["ON_DELETE"],
+        isComposite: true,
+      };
+    });
+  }
+
   async executeQuery(
     queryText: string,
     options?: any
   ): Promise<NgQueryResult[]> {
     const result = await this.driverExecuteMultiple(queryText, options);
-    return result.map(({ rows, statement, columns: meta }) => ({
-      fields: meta.map((field, idx) => ({
+    return result.map(({ rows, statement, columns: meta }) => {
+      const fields = meta.map((field, idx) => ({
         id: `c${idx}`,
         name: field.alias || field.field,
         // TODO add dataType prop
-      })),
-      affectedRows: undefined, // TODO implement affectedRows
-      command: statement.type,
-      rows: rows,
-      rowCount: rows.length,
-    }));
+      }));
+
+      rows = rows.map((row: Record<string, any>) => {
+        const transformedRow = {};
+        Object.keys(row).forEach((key, idx) => {
+          let val = row[key];
+          if (TRIM_END_CHAR && meta[idx].type === 452) {
+            // SQLVarText or CHAR
+            val = val.trimEnd();
+          }
+          transformedRow[`c${idx}`] = val;
+        });
+        return transformedRow;
+      });
+
+      return {
+        fields,
+        rows,
+        affectedRows: undefined, // TODO implement affectedRows
+        command: statement.type,
+        rowCount: rows.length,
+      };
+    });
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
@@ -1073,7 +1148,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     };
   }
 
@@ -1086,23 +1162,25 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
   protected async rawExecuteQuery(
     queryText: string,
     options: {
-      connection?: Connection;
+      connection?: Connection | Transaction;
       multiple?: boolean;
       params?: any[];
       rowAsArray?: boolean;
+      tabId?: number;
     } = {}
   ): Promise<FirebirdResult | FirebirdResult[]> {
     const queries = identifyCommands(queryText);
     const params = options.params ?? [];
 
     const results: FirebirdResult[] = [];
+    const hasReserved = this.reservedConnections.has(options.tabId);
+    const conn = options.connection ?? await this.pool.getConnection()
 
     // we do it this way to ensure the queries are run IN ORDER
     for (let index = 0; index < queries.length; index++) {
       const query = queries[index];
-      const conn = options.connection ?? await this.pool.getConnection()
 
-      await withReleasable(conn, async () => {
+      const runQuery = async () => {
         const data = await conn.query(query.text, params, options.rowAsArray);
         results.push({
           columns: data.meta,
@@ -1110,7 +1188,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
           statement: query,
           arrayMode: options.rowAsArray,
         });
-      })
+      };
+
+      await runQuery();
+    }
+
+    if (!hasReserved && conn instanceof Connection) {
+      conn.release();
     }
 
     return options.multiple ? results : results[0];
@@ -1340,6 +1424,48 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult> {
 
   async importRollbackCommand (_table: TableOrView, { clientExtras }: ImportFuncOptions): Promise<any> {
     return await clientExtras.transaction.rollback()
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
+    if (this.reservedConnections.size >= BksConfig.db.firebird.maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections);
+    }
+
+    const conn = await this.pool.getConnection();
+    this.pushConnection(tabId, { connection: conn, transaction: null });
+  }
+
+  async releaseConnection(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      try {
+        if (conn.transaction) {
+          await conn.transaction.rollback();
+        }
+        await conn.connection.release();
+      } catch (e) {
+        log.error("Error releasing reserved firebird connection: ", e)
+      }
+    }
+  }
+
+  async startTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    conn.transaction = await conn.connection.transaction();
+  }
+
+  async commitTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.transaction.commit();
+    conn.transaction = null;
+  }
+
+  async rollbackTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.transaction.rollback();
+    conn.transaction = null;
   }
 
   parseQueryResultColumns(qr: FirebirdResult): BksField[] {
