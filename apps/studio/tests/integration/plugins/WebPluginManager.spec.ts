@@ -7,7 +7,7 @@ import { WebPluginManager } from "@/services/plugin/web";
 import { WebPlugin } from "./utils/WebPlugin";
 import { tables } from "./utils/fixtures";
 import _ from "lodash";
-import prepareWebPluginManagerTestGroup from "./utils/WebHost";
+import prepareWebPluginManagerTestGroup from "./utils/prepareWebPluginManager";
 
 describe("WebPluginManager", () => {
   describe("Loading Plugins", () => {
