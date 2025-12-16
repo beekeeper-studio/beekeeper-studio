@@ -113,7 +113,6 @@ import { mapGetters, mapState } from 'vuex'
 import ProgressBar from './editor/ProgressBar.vue'
 import ResultTable from './editor/ResultTable.vue'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
 import MongoShell from '@beekeeperstudio/ui-kit/vue/mongo-shell'
 import { mongoHintExtension } from '@/lib/editor/extensions/mongoHint'
 
@@ -129,7 +128,7 @@ import { getVimKeymapsFromVimrc } from '@/lib/editor/vim';
 const log = rawlog.scope('query-editor')
 
 export default Vue.extend({
-  components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor, MongoShell },
+  components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, MongoShell },
   props: {
     tab: Object as PropType<TransportOpenTab>,
     active: Boolean
