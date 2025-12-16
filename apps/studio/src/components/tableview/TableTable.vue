@@ -1375,6 +1375,7 @@ export default Vue.extend({
       } else if (currentEdit?.oldValue == cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
+        this.updateJsonViewer()
         return
       }
 
