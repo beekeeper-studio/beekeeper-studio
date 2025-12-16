@@ -139,7 +139,7 @@
         @click.stop
       >
         <div class="quick-switcher-header">
-          {{ showingMore ? 'saved connections:' : 'recent connections:' }}
+          {{ showingMore ? 'Saved Connections:' : 'Recent Connections:' }}
         </div>
         <div class="quick-switcher-list-wrapper">
           <div class="quick-switcher-list">
@@ -169,6 +169,7 @@
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex'
+import { isUltimateType } from '@/common/interfaces/IConnection'
 import SaveConnectionForm from '../../connection/SaveConnectionForm.vue'
 import rawLog from '@bksLogger'
 
@@ -199,6 +200,7 @@ export default {
       workspace: 'workspace',
       connectionColor: 'connectionColor',
       savedConnections: 'data/connections/filteredConnections',
+      isUltimate: 'isUltimate'
     }),
     connectionName() {
       return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
@@ -266,9 +268,16 @@ export default {
       }
     },
     async selectConnection(config) {
+      if (!this.isUltimate && isUltimateType(config?.connectionType)) {
+        this.$noty.error('Cannot switch to Ultimate only connection.')
+        return;
+      }
+
       await this.$store.dispatch('disconnect')
       try {
-        await this.$store.dispatch('connect', config)
+        const { auth, cancelled } = await this.$bks.unlock();
+        if (cancelled) return;
+        await this.$store.dispatch('connect', { config, auth });
       } catch (ex) {
         log.error(ex)
         this.$noty.error("Error establishing a connection")
