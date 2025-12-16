@@ -1642,6 +1642,7 @@ export default Vue.extend({
 
           return
         } finally {
+          this.updateJsonViewerSidebar()
           if (!this.active) {
             this.forceRedraw = true
           }
