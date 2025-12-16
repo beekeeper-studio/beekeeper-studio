@@ -276,6 +276,9 @@ export default Vue.extend({
         pinned = !item.pinned;
       }
       item.pinned = !item.pinned;
+
+      if (pinned) this.$store.dispatch('pins/add', entity)
+      else this.$store.dispatch('pins/remove', entity)
     },
     handleScrollEnd() {
       this.updateTableColumnsInRange(true);
