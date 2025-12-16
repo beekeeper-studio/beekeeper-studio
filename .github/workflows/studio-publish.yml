@@ -90,7 +90,7 @@ jobs:
             type: linux
             setup_python: true
             clean_zfs: true
-          - name: macos-13
+          - name: macos-14-large
             arch: x64
             type: macos
           - name: macos-14
