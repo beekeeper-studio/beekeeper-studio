@@ -5,7 +5,10 @@
       :class="['vue-dialog', 'beekeeper-modal', 'plugin-manager-modal', { 'plugin-page-open': selectedPlugin }]"
     >
       <div class="dialog-content">
-        <div class="dialog-c-title">Plugins</div>
+        <div class="dialog-c-title">
+          <i class="material-icons">extension</i>
+          Plugins
+        </div>
         <div class="top-right-buttons">
           <button class="btn btn-fab" @click.prevent="loadPlugins(true)">
             <i class="material-icons">refresh</i>
@@ -31,16 +34,18 @@
               @checkForUpdates="checkForUpdates"
             />
           </div>
-          <plugin-page
-            v-if="selectedPlugin"
-            :plugin="selectedPlugin"
-            :markdown="selectedPluginReadme"
-            :loading-markdown="loadingPluginReadme"
-            @install="install(selectedPlugin)"
-            @uninstall="uninstall(selectedPlugin)"
-            @update="update(selectedPlugin)"
-            @checkForUpdates="checkForUpdates(selectedPlugin)"
-          />
+          <transition name="slide-fade">
+            <plugin-page
+              v-if="selectedPlugin"
+              :plugin="selectedPlugin"
+              :markdown="selectedPluginReadme"
+              :loading-markdown="loadingPluginReadme"
+              @install="install(selectedPlugin)"
+              @uninstall="uninstall(selectedPlugin)"
+              @update="update(selectedPlugin)"
+              @checkForUpdates="checkForUpdates(selectedPlugin)"
+            />
+          </transition>
         </div>
       </div>
     </modal>
@@ -55,33 +60,17 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
-import type { TransportPlugin, PluginRegistryEntry, Manifest } from "@/services/plugin";
+import type { TransportPlugin, PluginRegistryEntry, Manifest, UIPlugin } from "@/services/plugin/types";
 import { mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
-
-type UIPlugin = {
-  id: Manifest['id'];
-  name: Manifest['name'];
-  author: Manifest['author'];
-  description: Manifest['description'];
-  installed: boolean;
-  installing: boolean;
-  checkingForUpdates: boolean;
-  disabled: boolean;
-  compatible?: boolean;
-  /** @alias compatible */
-  loadable?: boolean;
-  repo?: string;
-  updateAvailable?: boolean;
-}
 
 export default Vue.extend({
   components: { PluginList, PluginPage, ErrorAlert },
   data() {
     return {
       modalName: "plugin-manager-modal",
-      plugins: [],
+      plugins: [] as UIPlugin[],
       selectedPluginIdx: -1,
       selectedPluginReadme: "",
       loadingPluginReadme: false,
@@ -150,6 +139,7 @@ export default Vue.extend({
         state.installed = true;
         // HACK(azmi): refresh the plugin list or just this item instead
         state.loadable = true;
+        state.error = undefined;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -168,6 +158,7 @@ export default Vue.extend({
         state.updateAvailable = false;
         // HACK(azmi): refresh the plugin list or just this item instead
         state.loadable = true;
+        state.error = undefined;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -205,11 +196,12 @@ export default Vue.extend({
         return;
       }
 
-      const state = this.plugins.find((p) => p.id === id);
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
         await this.$plugin.uninstall(id);
         state.installed = false;
+        state.error = undefined;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -228,6 +220,24 @@ export default Vue.extend({
       }
       this.loadingPluginReadme = false;
     },
+    checkOfficialPlugin(
+      author?: Manifest['author'],
+      repo?: PluginRegistryEntry['repo']
+    ) {
+      if (author) {
+        if (typeof author === "string") {
+          if(author === "Beekeeper Studio") {
+            return true;
+          }
+          return false;
+        }
+        return author.name === "Beekeeper Studio";
+      }
+      if (repo) {
+        return repo.startsWith("beekeeper-studio/");
+      }
+      return false;
+    },
     async buildPluginListData(refresh?: boolean): Promise<UIPlugin[]> {
       const entries: PluginRegistryEntry[] = await this.$util.send("plugin/entries", refresh)
       const installedPlugins: TransportPlugin[] = await this.$plugin.plugins;
@@ -239,12 +249,18 @@ export default Vue.extend({
           name: manifest.name,
           author: manifest.author,
           description: manifest.description,
-          installed: true,
-          installing: false,
-          checkingForUpdates: false,
+
           compatible: true,
           loadable,
+          installed: true,
+          installing: false,
+
+          updateAvailable: false,
+          checkingForUpdates: null,
+
           disabled,
+          minAppVersion: manifest.minAppVersion,
+          officialPlugin: this.checkOfficialPlugin(manifest.author),
         };
 
         const entry = entries.find((entry) => entry.id === manifest.id);
@@ -273,12 +289,17 @@ export default Vue.extend({
             name: entry.name,
             author: entry.author,
             description: entry.description,
-            repo: entry.repo,
+
+            compatible: true,
             installed: false,
             installing: false,
-            checkingForUpdates: false,
+
+            updateAvailable: false,
+            checkingForUpdates: null,
+
             disabled: false,
-            compatible: true,
+            repo: entry.repo,
+            officialPlugin: this.checkOfficialPlugin(entry.author, entry.repo),
           };
 
           list.push(data);
@@ -304,6 +325,12 @@ export default Vue.extend({
 </script>
 
 <style scoped>
+.dialog-c-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .top-right-buttons {
   position: absolute;
   top: 1.5rem;
@@ -333,5 +360,16 @@ export default Vue.extend({
     color: var(--theme-primary);
     text-decoration: underline;
   }
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
 }
 </style>

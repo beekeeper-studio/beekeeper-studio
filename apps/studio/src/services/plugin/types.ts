@@ -196,3 +196,28 @@ export type WebPluginViewInstance = {
   /** For `getViewContext` API */
   context: any;
 }
+
+export type UIPlugin = {
+  /** Plugin is made by Beekeeper Studio */
+  readonly officialPlugin: boolean;
+
+  // Infos that are available from plugins.json
+  id: Manifest['id'];
+  name: Manifest['name'];
+  author: Manifest['author'];
+  description: Manifest['description'];
+
+  compatible?: boolean;
+  /** @alias compatible */
+  loadable?: boolean;
+  installed: boolean;
+  installing: boolean;
+
+  updateAvailable: boolean;
+  checkingForUpdates: null | boolean;
+
+  disabled: boolean;
+  minAppVersion?: Manifest['minAppVersion'];
+  repo?: string;
+  error?: Error;
+}

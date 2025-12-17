@@ -6,12 +6,20 @@
         <i class="material-icons" v-if="isCommunity && plugin.id.startsWith('bks-')">stars</i>
         <span class="version">{{ plugin.version }}</span>
       </div>
-      <div>
-        By
-        <template v-if="plugin.author.name && plugin.author.url">
-          <a :href="plugin.author.url">{{ plugin.author.name }}</a>
-        </template>
-        <template v-else>{{ plugin.author }}</template>
+      <div
+        class="author"
+        :title="plugin.officialPlugin
+          ? 'Offical Beekeeper Studio Author'
+          : 'Community Author'
+        "
+      >
+        <span>By</span>
+        <a
+          v-if="typeof plugin.author !== 'string'"
+          :href="plugin.author.url"
+        >{{ plugin.author.name }}</a>
+        <span v-else>{{ plugin.author }}</span>
+        <i v-if="plugin.officialPlugin" class="verified material-icons">verified_user</i>
       </div>
       <a v-if="plugin.repo" :href="`https://github.com/${plugin.repo}`">
         <span class="flex">
@@ -39,7 +47,7 @@
             v-else
             @click.prevent="$emit('checkForUpdates')"
             class="btn btn-flat"
-            :disabled="plugin.checkingForUpdates"
+            :disabled="plugin.disabled || plugin.checkingForUpdates"
           >
             <x-label>Check for Updates</x-label>
           </x-button>
@@ -50,6 +58,7 @@
             <input
               type="checkbox"
               :checked="autoUpdateEnabled"
+              :disabled="plugin.disabled"
               @change="toggleAutoUpdate"
             />
             <span>Auto-update</span>
@@ -113,16 +122,17 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType } from "vue";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { mapGetters } from "vuex";
+import { UIPlugin } from "@/services/plugin";
 
 export default Vue.extend({
   name: "PluginPage",
   props: {
     plugin: {
-      type: Object, // FIXME (azmi): forgot what type this is!!!
+      type: Object as PropType<UIPlugin>,
       required: true,
     },
     markdown: String,
@@ -185,6 +195,24 @@ export default Vue.extend({
 
   .version {
     align-self: flex-end;
+  }
+}
+
+.author {
+  display: flex;
+  gap: 0.5ch;
+
+  .verified {
+    color: var(--theme-secondary);
+    font-size: 1em;
+  }
+}
+
+.checkbox-group:has(input:disabled) {
+  color: var(--text-light);
+
+  input {
+    background-color: var(--text-lighter);
   }
 }
 
