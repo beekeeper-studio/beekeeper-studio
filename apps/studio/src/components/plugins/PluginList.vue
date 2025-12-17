@@ -9,8 +9,9 @@
     >
       <div class="info">
         <div class="title">
-          {{ plugin.name }}
-          <span class="badge" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">disabled</span>
+          <span>{{ plugin.name }}</span>
+          <i class="material-icons" v-if="isCommunity && plugin.id.startsWith('bks-')">stars</i>
+          <span class="badge" v-if="plugin.disabled">disabled</span>
         </div>
         <div class="status-error" v-if="!plugin.loadable && plugin.installed">
           This plugin requires version {{ plugin.minAppVersion }} or newer.
@@ -29,8 +30,8 @@
       <div class="actions">
         <x-button
           v-if="plugin.installed && plugin.updateAvailable"
-          class="btn btn-flat"
-          :disabled="plugin.installing"
+          class="btn btn-small btn-flat"
+          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
           @click.prevent.stop="$emit('update', plugin)"
         >
           <x-label>
@@ -39,8 +40,8 @@
         </x-button>
         <x-button
           v-if="!plugin.installed"
-          class="btn btn-flat"
-          :disabled="plugin.installing"
+          class="btn btn-small btn-flat"
+          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
           @click.prevent.stop="$emit('install', plugin)"
         >
           <x-label>
@@ -73,6 +74,7 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import type { PluginRegistryEntry, Manifest } from "@/services/plugin/types";
+import { mapGetters } from "vuex";
 
 interface Plugin extends PluginRegistryEntry, Manifest {
   installing: boolean;
@@ -91,6 +93,9 @@ export default Vue.extend({
       required: true,
     },
   },
+  computed: {
+    ...mapGetters(['isCommunity']),
+  },
   methods: {
     handleItemClick(_event: MouseEvent, plugin: Plugin) {
       this.$emit("item-click", plugin);
@@ -98,3 +103,42 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.status-error {
+  line-height: 1.5;
+}
+
+.description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.plugin-list .item {
+  position: relative;
+}
+
+.actions {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.65rem;
+}
+
+.upgrade-required-icon {
+  color: var(--theme-primary);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 1ch;
+
+  .badge {
+    margin: 0;
+  }
+}
+</style>

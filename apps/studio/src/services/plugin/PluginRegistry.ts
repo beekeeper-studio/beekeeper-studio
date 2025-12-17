@@ -7,16 +7,18 @@ const log = rawLog.scope("PluginRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
+  private fetched = false;
   private entries: PluginRegistryEntry[] = [];
   private repositories: Record<string, PluginRepository> = {};
 
   constructor(private readonly repositoryService: PluginRepositoryService) {}
 
-  async getEntries() {
-    if (this.entries.length === 0) {
+  async getEntries(refresh = false) {
+    if (refresh || !this.fetched) {
       log.debug("Fetching registry...");
 
       try {
+        this.fetched = true;
         this.entries = await this.repositoryService.fetchRegistry();
       } catch (e) {
         log.error("Failed to fetch registry", e);

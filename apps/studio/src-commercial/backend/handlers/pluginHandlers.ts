@@ -44,8 +44,8 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
   "plugin/plugins": async () => {
     return pluginManager.getPlugins();
   },
-  "plugin/entries": async () => {
-    return await pluginManager.getEntries();
+  "plugin/entries": async (refresh?: boolean) => {
+    return await pluginManager.getEntries(refresh);
   },
   "plugin/repository": async ({ id }) => {
     return await pluginManager.getRepository(id);

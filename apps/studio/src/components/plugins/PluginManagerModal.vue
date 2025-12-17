@@ -6,14 +6,20 @@
     >
       <div class="dialog-content">
         <div class="dialog-c-title">Plugins</div>
-        <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
-          <i class="material-icons">clear</i>
-        </a>
+        <div class="top-right-buttons">
+          <button class="btn btn-fab" @click.prevent="loadPlugins(true)">
+            <i class="material-icons">refresh</i>
+          </button>
+          <button class="btn btn-fab" @click.prevent="close">
+            <i class="material-icons">clear</i>
+          </button>
+        </div>
         <x-progressbar v-if="loadingPlugins" style="margin-top: -5px" />
         <div class="plugin-manager-content">
           <div class="plugin-list-container">
             <div class="description">
               Manage and install plugins in Beekeeper Studio.
+              <a href="https://docs.beekeeperstudio.io/user_guide/plugins/" class="link">Learn more</a>.
             </div>
             <error-alert :error="errors" />
             <plugin-list
@@ -49,10 +55,26 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
-import type { TransportPlugin, PluginRegistryEntry } from "@/services/plugin";
+import type { TransportPlugin, PluginRegistryEntry, Manifest } from "@/services/plugin";
 import { mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
+
+type UIPlugin = {
+  id: Manifest['id'];
+  name: Manifest['name'];
+  author: Manifest['author'];
+  description: Manifest['description'];
+  installed: boolean;
+  installing: boolean;
+  checkingForUpdates: boolean;
+  disabled: boolean;
+  compatible?: boolean;
+  /** @alias compatible */
+  loadable?: boolean;
+  repo?: string;
+  updateAvailable?: boolean;
+}
 
 export default Vue.extend({
   components: { PluginList, PluginPage, ErrorAlert },
@@ -96,15 +118,7 @@ export default Vue.extend({
         }
 
         if (this.pluginManagerStatus === "ready") {
-          this.loadingPlugins = true;
-
-          try {
-            this.plugins = await this.buildPluginListData();
-          } catch (e) {
-            log.error(e);
-          }
-
-          this.loadingPlugins = false;
+          await this.loadPlugins();
         } else if (this.pluginManagerStatus === "initializing") {
           this.loadingPlugins = true;
         } else {
@@ -115,6 +129,18 @@ export default Vue.extend({
     }
   },
   methods: {
+    async loadPlugins(refresh?: boolean) {
+      this.loadingPlugins = true;
+
+      try {
+        this.plugins = await this.buildPluginListData(refresh);
+      } catch (e) {
+        this.$noty.error("Failed to load plugins");
+        log.error(e);
+      }
+
+      this.loadingPlugins = false;
+    },
     async install({ id }) {
       const state = this.plugins.find((p) => p.id === id);
 
@@ -202,18 +228,23 @@ export default Vue.extend({
       }
       this.loadingPluginReadme = false;
     },
-    async buildPluginListData() {
-      const entries = await this.$util.send("plugin/entries");
+    async buildPluginListData(refresh?: boolean): Promise<UIPlugin[]> {
+      const entries: PluginRegistryEntry[] = await this.$util.send("plugin/entries", refresh)
       const installedPlugins: TransportPlugin[] = await this.$plugin.plugins;
-      const list: PluginRegistryEntry[] = [];
+      const list: UIPlugin[] = [];
 
-      for (const { manifest, loadable } of installedPlugins) {
-        const data = {
-          ...manifest,
+      for (const { manifest, loadable, disabled } of installedPlugins) {
+        const data: UIPlugin = {
+          id: manifest.id,
+          name: manifest.name,
+          author: manifest.author,
+          description: manifest.description,
           installed: true,
           installing: false,
-          checkingForUpdates: null,
+          checkingForUpdates: false,
+          compatible: true,
           loadable,
+          disabled,
         };
 
         const entry = entries.find((entry) => entry.id === manifest.id);
@@ -237,18 +268,30 @@ export default Vue.extend({
 
       for (const entry of entries) {
         if (!_.find(list, { id: entry.id })) {
-          const data = {
-            ...entry,
+          const data: UIPlugin = {
+            id: entry.id,
+            name: entry.name,
+            author: entry.author,
+            description: entry.description,
+            repo: entry.repo,
             installed: false,
             installing: false,
-            checkingForUpdates: null,
+            checkingForUpdates: false,
+            disabled: false,
+            compatible: true,
           };
 
           list.push(data);
         }
       }
 
-      return list;
+      const rank = (p: UIPlugin) => {
+        if (p.installed && !p.disabled) return 0; // installed & enabled
+        if (p.installed && p.disabled) return 1;  // installed & disabled
+        return 2;                                 // not installed
+      };
+
+      return list.sort((a, b) => rank(a) - rank(b));
     },
     open() {
       this.$modal.show(this.modalName);
@@ -259,3 +302,36 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.top-right-buttons {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+
+  .btn {
+    &:not(:hover) {
+      background-color: transparent;
+    }
+
+    .material-icons {
+      color: var(--text-dark);
+    }
+  }
+}
+
+.plugin-list-container {
+  flex-basis: 28%;
+}
+
+.link {
+  color: var(--theme-primary);
+
+  &:hover {
+    color: var(--theme-primary);
+    text-decoration: underline;
+  }
+}
+</style>

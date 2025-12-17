@@ -2,7 +2,9 @@
   <div class="plugin-page-container">
     <div class="header">
       <div class="title">
-        {{ plugin.name }} <span class="version">{{ plugin.version }}</span>
+        <span>{{ plugin.name }}</span>
+        <i class="material-icons" v-if="isCommunity && plugin.id.startsWith('bks-')">stars</i>
+        <span class="version">{{ plugin.version }}</span>
       </div>
       <div>
         By
@@ -26,6 +28,7 @@
           <x-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
+            :disabled="isCommunity && plugin.id.startsWith('bks-')"
             class="btn btn-primary"
           >
             <x-label>{{
@@ -56,7 +59,7 @@
           v-else
           @click.prevent="$emit('install')"
           class="btn btn-primary"
-          :disabled="plugin.installing"
+          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
         >
           <x-label>{{
             plugin.installing ? "Installing..." : "Install"
@@ -71,9 +74,15 @@
       >
         {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
-      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
+      <div class="alert" v-if="plugin.disabled">
         <i class="material-icons">info_outline</i>
-        <div>This plugin has been disabled via configuration</div>
+        <div>
+          {{
+          $bksConfig.plugins?.[plugin.id]?.disabled
+            ? "This plugin has been disabled via configuration"
+            : "[TODO]This plugin has been disabled due to license restriction"
+          }}
+        </div>
       </div>
       <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
         <i class="material-icons">error_outline</i>
@@ -92,10 +101,13 @@
         </div>
       </div>
     </div>
-    <div class="divider" v-if="rawHtmlContent" />
+    <div class="divider" />
     <div class="markdown-content">
       <div v-if="loadingMarkdown" class="loading">Loading plugin readme</div>
-      <div v-html="rawHtmlContent" />
+      <div v-if="rawHtmlContent" v-html="rawHtmlContent" />
+      <div class="not-available" v-else="rawHtmlContent">
+        Readme is not available
+      </div>
     </div>
   </div>
 </template>
@@ -104,6 +116,7 @@
 import Vue from "vue";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
+import { mapGetters } from "vuex";
 
 export default Vue.extend({
   name: "PluginPage",
@@ -145,6 +158,7 @@ export default Vue.extend({
     },
   },
   computed: {
+    ...mapGetters(['isCommunity']),
     rawHtmlContent() {
       if (!this.markdown) return "";
       return DOMPurify.sanitize(marked.parse(this.markdown, { async: false }));
@@ -154,6 +168,26 @@ export default Vue.extend({
 </script>
 
 <style scoped>
+.upgrade-required-icon {
+  color: var(--theme-primary);
+}
+
+.not-available {
+  margin-top: 0.5rem;
+  color: var(--text);
+  font-style: italic;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+
+  .version {
+    align-self: flex-end;
+  }
+}
+
 .loading {
   margin-top: 0.5rem;
   color: var(--text);

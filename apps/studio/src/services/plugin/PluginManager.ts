@@ -97,9 +97,9 @@ export default class PluginManager {
     }
   }
 
-  async getEntries() {
+  async getEntries(refresh?: boolean) {
     this.initializeGuard();
-    return await this.registry.getEntries();
+    return await this.registry.getEntries(refresh);
   }
 
   async findPluginEntry(id: string): Promise<PluginRegistryEntry> {

@@ -41,7 +41,8 @@ export default function bindLicenseConstraints(
       );
     }
 
-    if (manager.getPlugins().length >= 2) {
+    const communityPlugins = manager.getPlugins().filter((p) => !p.manifest.id.startsWith("bks-"));
+    if (communityPlugins.length >= 2) {
       throw new ForbiddenPluginError(
         "You have reached the maximum of 2 community plugins allowed."
         + " To install this plugin, please uninstall an existing one"

@@ -277,6 +277,8 @@ describe("Plugin License Constraints", () => {
       // - Plugins that start with "bks-" are core plugins
       // - Plugins that does NOT start with "bks-" are community plugins
       repositoryService.plugins = [
+        { id: "bks-ai-shell" },
+        { id: "bks-er-diagram" },
         ...(new Array(6).fill(null).map((_0, i) => ({ id: `bks-plugin-${i + 1}` }))),
         ...(new Array(6).fill(null).map((_0, i) => ({ id: `community-plugin-${i + 1}` }))),
       ];
@@ -286,6 +288,10 @@ describe("Plugin License Constraints", () => {
     });
 
     it("free users - get 2 community plugins", async () => {
+      // install some core plugins before binding license constraints
+      await manager.installPlugin("bks-ai-shell");
+      await manager.installPlugin("bks-er-diagram");
+
       bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
 
       // Can't install any core plugins
