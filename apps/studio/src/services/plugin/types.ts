@@ -186,6 +186,7 @@ export type WebPluginContext = {
     warning(text: string): Noty;
     info(text: string): Noty;
   };
+  confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
 
 export type PluginContext = {

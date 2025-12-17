@@ -21,6 +21,7 @@ export type WebPluginManagerParams = {
     warning(text: string): Noty;
     info(text: string): Noty;
   };
+  confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
 
 /**
@@ -57,6 +58,7 @@ export default class WebPluginManager {
   public readonly appVersion: string;
   public readonly fileHelpers: FileHelpers;
   private readonly noty: WebPluginManagerParams['noty'];
+  private readonly confirm: WebPluginManagerParams['confirm'];
 
   constructor(params: WebPluginManagerParams) {
     this.utilityConnection = params.utilityConnection;
@@ -64,6 +66,7 @@ export default class WebPluginManager {
     this.appVersion = params.appVersion;
     this.fileHelpers = params.fileHelpers;
     this.noty = params.noty;
+    this.confirm = params.confirm;
   }
 
   async initialize() {
@@ -266,6 +269,7 @@ export default class WebPluginManager {
       appVersion: this.appVersion,
       fileHelpers: this.fileHelpers,
       noty: this.noty,
+      confirm: this.confirm,
     });
     await loader.load();
     this.loaders.set(manifest.id, loader);

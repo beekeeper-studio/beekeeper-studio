@@ -277,6 +277,13 @@ export default class WebPluginLoader {
         case "noty.warning":
           this.context.noty.warning(response.args.message);
           break;
+        case "confirm":
+          response.result = await this.context.confirm(
+            response.args.title,
+            response.args.message,
+            response.args.options
+          );
+          break;
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":

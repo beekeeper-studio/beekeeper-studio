@@ -380,6 +380,53 @@ await noty.warning('This operation may take a while');
 { message: string }
 ```
 
+### confirm
+
+Display a confirmation dialog to the user and wait for their response.
+
+**Usage:**
+```javascript
+import { confirm } from '@beekeeperstudio/plugin';
+
+// Basic confirmation
+const result = await confirm();
+if (result) {
+  // User clicked confirm
+} else {
+  // User clicked cancel
+}
+
+// With title and message
+const result = await confirm('Delete Table', 'Are you sure you want to delete this table?');
+
+// With custom button labels
+const result = await confirm(
+  'Export Data',
+  'This will export all data to a CSV file. Continue?',
+  {
+    confirmLabel: 'Export',
+    cancelLabel: 'Cancel'
+  }
+);
+```
+
+**Arguments Schema:**
+```typescript
+{
+  title?: string;
+  message?: string;
+  options?: {
+    confirmLabel?: string;
+    cancelLabel?: string;
+  };
+}
+```
+
+**Response Schema:**
+```typescript
+boolean // true if confirmed, false if cancelled
+```
+
 ## Notifications
 
 ### themeChanged
