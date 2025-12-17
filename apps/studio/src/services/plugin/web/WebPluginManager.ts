@@ -6,6 +6,7 @@ import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
 import { FileHelpers } from "@/types";
+import type Noty from "noty";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -14,6 +15,12 @@ export type WebPluginManagerParams = {
   pluginStore: PluginStoreService;
   appVersion: string;
   fileHelpers: FileHelpers;
+  noty: {
+    success(text: string): Noty;
+    error(text: string): Noty;
+    warning(text: string): Noty;
+    info(text: string): Noty;
+  };
 }
 
 /**
@@ -49,12 +56,14 @@ export default class WebPluginManager {
   public readonly pluginStore: PluginStoreService;
   public readonly appVersion: string;
   public readonly fileHelpers: FileHelpers;
+  private readonly noty: WebPluginManagerParams['noty'];
 
   constructor(params: WebPluginManagerParams) {
     this.utilityConnection = params.utilityConnection;
     this.pluginStore = params.pluginStore;
     this.appVersion = params.appVersion;
-    this.fileHelpers = params.fileHelpers
+    this.fileHelpers = params.fileHelpers;
+    this.noty = params.noty;
   }
 
   async initialize() {
@@ -256,6 +265,7 @@ export default class WebPluginManager {
       log: rawLog.scope(`Plugin:${manifest.id}`),
       appVersion: this.appVersion,
       fileHelpers: this.fileHelpers,
+      noty: this.noty,
     });
     await loader.load();
     this.loaders.set(manifest.id, loader);

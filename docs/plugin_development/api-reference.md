@@ -316,6 +316,70 @@ await setViewState({
 any
 ```
 
+### noty.info
+
+Display an informational notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.info('Query executed in 2.3 seconds');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
+### noty.success
+
+Display a success notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.success('Data imported successfully!');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
+### noty.error
+
+Display an error notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.error('Failed to connect to the database');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
+### noty.warning
+
+Display a warning notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.warning('This operation may take a while');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
 ## Notifications
 
 ### themeChanged

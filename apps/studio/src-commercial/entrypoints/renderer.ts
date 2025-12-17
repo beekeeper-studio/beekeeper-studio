@@ -205,6 +205,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
       }),
       appVersion: window.platformInfo.appVersion,
       fileHelpers: window.main.fileHelpers,
+      noty: Vue.prototype.$noty,
     });
     webPluginManager.initialize().then(() => {
       store.commit("webPluginManagerStatus", "ready")
