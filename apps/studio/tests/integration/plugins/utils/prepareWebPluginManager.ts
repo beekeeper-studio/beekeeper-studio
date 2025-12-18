@@ -6,7 +6,6 @@ import { PluginManager } from "@/services/plugin";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { getDialectData } from "@shared/lib/dialects";
 import { dialectFor } from "@shared/lib/dialects/models";
-import type { FileHelpers } from "@/types";
 import { PluginHandlers } from "@commercial/backend/handlers/pluginHandlers";
 
 export default function prepareWebPluginManagerTestGroup(options?: {

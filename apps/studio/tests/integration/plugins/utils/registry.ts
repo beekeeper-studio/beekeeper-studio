@@ -1,13 +1,7 @@
-import { Manifest, PluginRegistryEntry, PluginView, Release } from "@/services/plugin";
+import type { Manifest, PluginRegistryEntry, Release } from "@/services/plugin/types";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
-
-export type Plugin = {
-  id: string;
-  name?: string;
-  latestRelease?: Pick<Manifest, "version" | "minAppVersion">;
-  readme?: string;
-};
+import _ from "lodash";
 
 /**
  * A mock plugin repo.
@@ -20,92 +14,96 @@ export type Plugin = {
  *
  * const server = createPluginServer();
  * const registry = new PluginRegistry(new MockPluginRepositoryService(server));
- * registry.plugins = [
- *   {
- *     id: "test-plugin",
- *     name: "Test Plugin",
- *     latestRelease: { version: "2.0.0", minAppVersion: "5.4.0" },
- *     readme: "# Test Plugin\n\nThis is a test plugin.",
- *   },
- * ];
+ *
+ * // To mock the plugins.json file, call setPlugins()
+ * registry.setPlugins([{ id: "test-plugin" }]);
+ *
+ * // To mock the plugin release, call setPluginLatestRelease()
+ * // IMPORTANT: Make sure to register the plugin with setPlugins() first!
+ * registry.setPluginLatestRelease([{ id: "test-plugin", version: "1.0.0", minAppVersion: "1.0.0" }]);
+ *
  * const manager = new PluginManager({ registry });
  * ```
  */
 export class MockPluginRepositoryService extends PluginRepositoryService {
-  plugins: Plugin[] = [];
+  private entries: PluginRegistryEntry[] = [];
+  private releases: { [pluginId: string]: Release } = {};
 
   constructor(private server: MockPluginServer) {
     super();
   }
 
   async fetchRegistry(): Promise<PluginRegistryEntry[]> {
-    return this.plugins.map((p) => ({
-      id: p.id,
-      name: p.name ?? p.id,
-      repo: this.repoStr(p),
-      author: this.authorStr(p),
-      description: this.descriptionStr(p),
-    }));
+    return this.entries;
   }
 
   async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
-    const plugin = this.plugins.find(
-      (p) => this.repoStr(p) === this.repoStr(owner, repo)
-    );
+    const plugin = this.entries.find((p) => `${p.id}/${p.id}` === `${owner}/${repo}`);
     if (!plugin) {
       throw new Error(
-        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin?`
+        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin with setPlugins?`
       );
     }
-    return this.createLatestRelease(plugin);
+    return this.getPluginLatestRelease(plugin.id);
   }
 
   protected async fetchReadme(owner: string, repo: string): Promise<string> {
-    const plugin = this.plugins.find(
-      (p) => this.repoStr(p) === this.repoStr(owner, repo)
-    );
+    const plugin = this.entries.find((p) => `${p.id}/${p.id}` === `${owner}/${repo}`);
     if (!plugin) {
       throw new Error(
-        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin?`
+        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin with setPlugins?`
       );
     }
-    return plugin.readme;
+    return `# ${plugin.name}\n\nThis is a test plugin.`;
   }
 
-  private createLatestRelease(plugin: Plugin) {
-    const manifest = {
+  setPluginsJson(plugins: (Partial<PluginRegistryEntry> & { id: string; })[]) {
+    this.entries = plugins.map((plugin) => ({
       id: plugin.id,
-      name: plugin.name ?? plugin.id,
-      version: plugin.latestRelease?.version ?? "1.0.0",
-      minAppVersion: plugin.latestRelease?.minAppVersion ?? "5.0.0",
-      author: this.authorStr(plugin),
-      description: this.descriptionStr(plugin),
+      name: plugin.name ?? _.startCase(plugin.id),
+      repo: plugin.repo ?? `${plugin.id}/${plugin.id}`,
+      author: plugin.author ?? `${plugin.id} Author`,
+      description: plugin.description ?? `${plugin.id} description`,
+      community: plugin.community ?? false,
+    }));
+  }
+
+  setLatestRelease(options: Pick<Manifest, "id" | "version" | "minAppVersion">): Release {
+    const plugin = this.entries.find((p) => p.id === options.id);
+    if (!plugin) {
+      throw new Error(`Plugin "${options.id}" not found in registry. Have you registered the plugin with setPlugins?`)
+    }
+
+    const manifest: Manifest = {
+      id: options.id,
+      name: plugin.name,
+      version: options.version,
+      minAppVersion: options.minAppVersion,
+      author: `${plugin.name} Author`,
+      description: `${plugin.name} description`,
       manifestVersion: 1 as const,
       capabilities: {
         views: [],
         menu: [],
       },
     };
-    return {
+
+    const release: Release = {
       manifest,
       sourceArchiveUrl: this.server.formatUrl(manifest),
     };
+
+    this.releases[options.id] = release;
+
+    return release;
   }
 
-  private repoStr(plugin: Plugin): string;
-  private repoStr(owner: string, repo: string): string;
-  private repoStr(owner: string | Plugin, repo?: string): string {
-    if (typeof owner === "object") {
-      return this.repoStr(owner.id, owner.id);
-    }
-    return `${owner}/${repo}`;
-  }
-
-  private authorStr(plugin: Plugin) {
-    return `${plugin.id}-author`;
-  }
-
-  private descriptionStr(plugin: Plugin) {
-    return `${plugin.name ?? plugin.id} description`;
+  private getPluginLatestRelease(id: string): Release {
+    return this.releases[id] || this.setLatestRelease({
+      id,
+      version: "1.0.0",
+      minAppVersion: "5.0.0",
+    });
   }
 }
+

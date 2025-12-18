@@ -1,8 +1,6 @@
 import http from "http";
 import { Manifest } from "@/services/plugin";
-import { TestManifestOptions } from "./helpers";
 import JSZip from "jszip";
-import { Plugin } from "./registry";
 
 export function createPluginServer() {
   const server = new MockPluginServer();

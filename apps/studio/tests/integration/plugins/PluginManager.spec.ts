@@ -52,26 +52,14 @@ describe("Basic Plugin Management", () => {
   }
 
   beforeEach(() => {
-    repositoryService.plugins = [
-      {
-        id: "test-plugin",
-        name: "Test Plugin",
-        latestRelease: { version: "1.0.0", minAppVersion: AppVer.COMPAT },
-        readme: "# Test Plugin\n\nThis is a test plugin.",
-      },
-      {
-        id: "frozen-banana",
-        name: "Frozen Banana",
-        latestRelease: { version: "1.0.0", minAppVersion: AppVer.COMPAT },
-        readme: "# Frozen Banana\n\nThis is a frozen banana.",
-      },
-      {
-        id: "watermelon-sticker",
-        name: "Watermelon Sticker",
-        latestRelease: { version: "1.0.0" },
-        readme: "# Watermelon Sticker\n\nThe sticker for watermelons.",
-      },
-    ];
+    repositoryService.setPluginsJson([
+      { id: "test-plugin" },
+      { id: "frozen-banana" },
+      { id: "watermelon-sticker" },
+    ]);
+    repositoryService.setLatestRelease({ id: "test-plugin", version: "1.0.0", minAppVersion: AppVer.COMPAT });
+    repositoryService.setLatestRelease({ id: "frozen-banana", version: "1.0.0", minAppVersion: AppVer.COMPAT });
+    repositoryService.setLatestRelease({ id: "watermelon-sticker", version: "1.0.0", minAppVersion: "5.0.0" });
   });
 
   describe("Discovery", () => {
@@ -91,7 +79,7 @@ describe("Basic Plugin Management", () => {
         name: "Test Plugin",
         version: "1.0.0",
         minAppVersion: "5.4.0",
-        author: "test-plugin-author",
+        author: "Test Plugin Author",
         description: "Test Plugin description",
         manifestVersion: 1,
         capabilities: {
@@ -179,7 +167,7 @@ describe("Basic Plugin Management", () => {
       expect(await manager.checkForUpdates("test-plugin")).toBe(false);
 
       // Simulate plugin update on the server
-      repositoryService.plugins[0].latestRelease.version = "1.2.0";
+      repositoryService.setLatestRelease({ id: "test-plugin", version: "1.2.0", minAppVersion: AppVer.COMPAT });
 
       // The plugin is now outdated
       expect(manager.checkForUpdates("test-plugin")).resolves.toBe(true);
@@ -196,8 +184,8 @@ describe("Basic Plugin Management", () => {
       });
 
       // Simulate plugin updates on the server
-      repositoryService.plugins[0].latestRelease.version = "1.2.0";
-      repositoryService.plugins[1].latestRelease.version = "1.3.0";
+      repositoryService.setLatestRelease({ id: "test-plugin", version: "1.2.0", minAppVersion: AppVer.COMPAT });
+      repositoryService.setLatestRelease({ id: "frozen-banana", version: "1.3.0", minAppVersion: AppVer.COMPAT });
 
       // Simulate app restart
       const manager2 = await initPluginManager(AppVer.COMPAT);
@@ -220,7 +208,7 @@ describe("Basic Plugin Management", () => {
       await manager.installPlugin("test-plugin");
 
       // Simulate plugin update on the server
-      repositoryService.plugins[0].latestRelease.version = "1.2.0";
+      repositoryService.setLatestRelease({ id: "test-plugin", version: "1.2.0", minAppVersion: AppVer.COMPAT });
 
       await manager.updatePlugin("test-plugin");
       expect(manager.getPlugins()[0].manifest.version).toBe("1.2.0");
@@ -231,10 +219,7 @@ describe("Basic Plugin Management", () => {
       await manager.installPlugin("test-plugin");
 
       // Simulate plugin update on the server
-      repositoryService.plugins[0].latestRelease = {
-        version: "1.2.0",
-        minAppVersion: "9.9.0",
-      };
+      repositoryService.setLatestRelease({ id: "test-plugin", version: "1.2.0", minAppVersion: "9.9.0" });
 
       await expect(manager.updatePlugin("test-plugin")).rejects.toThrow(
         NotSupportedPluginError
@@ -270,18 +255,13 @@ describe("Plugin License Constraints", () => {
     let manager: PluginManager;
 
     beforeEach(async () => {
-      // This creates a list of plugin ids:
-      // [ { id: "bks-plugin-1" }, { id: "bks-plugin-2" }, .... { id: "community-plugin-1" }, ... ]
-      //
-      // NOTE:
-      // - Plugins that start with "bks-" are core plugins
-      // - Plugins that does NOT start with "bks-" are community plugins
-      repositoryService.plugins = [
-        { id: "bks-ai-shell" },
-        { id: "bks-er-diagram" },
-        ...(new Array(6).fill(null).map((_0, i) => ({ id: `bks-plugin-${i + 1}` }))),
-        ...(new Array(6).fill(null).map((_0, i) => ({ id: `community-plugin-${i + 1}` }))),
-      ];
+      // This creates a list of core and community plugins
+      repositoryService.setPluginsJson([
+        { id: "bks-ai-shell", community: false },
+        { id: "bks-er-diagram", community: false },
+        ...(new Array(6).fill(null).map((_0, i) => ({ id: `bks-plugin-${i + 1}`, community: false }))),
+        ...(new Array(6).fill(null).map((_0, i) => ({ id: `community-plugin-${i + 1}`, community: true }))),
+      ]);
       manager = new PluginManager({ appVersion: "9.9.9", fileManager, registry });
       await manager.initialize();
       await LicenseKey.clear();
@@ -460,10 +440,10 @@ describe("Disabling plugins via config.ini", () => {
   } as const;
 
   beforeEach(() => {
-    repositoryService.plugins = [
+    repositoryService.setPluginsJson([
       { id: "community-plugin-0" },
       { id: "community-plugin-1" },
-    ];
+    ]);
   });
 
   it("can force-disable installed plugins", async () => {
