@@ -202,13 +202,13 @@ export default Vue.extend({
           },
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
+        // @ts-expect-error Incorrectly typed
         ...( showSchema ? [{
           field: 'toSchema',
           title: "FK Schema",
           editable,
           editor: 'list' as any,
           editorParams: {
-            // @ts-expect-error Incorrectly typed
             valuesLookup: () => this.schemas.map((s) => escapeHtml(s))
           },
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
@@ -218,8 +218,8 @@ export default Vue.extend({
           title: "FK Table",
           editable,
           editor: 'list',
+          // @ts-expect-error Incorrectly typed
           editorParams: {
-            // @ts-expect-error Incorrectly typed
             valuesLookup: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null),
@@ -230,8 +230,8 @@ export default Vue.extend({
           title: "FK Column",
           editable,
           editor: 'list',
+          // @ts-expect-error Incorrectly typed
           editorParams: {
-            // @ts-expect-error Incorrectly typed
             valuesLookup: this.getColumns
           },
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
@@ -241,6 +241,7 @@ export default Vue.extend({
           title: "On Update",
           editor: 'list',
           editable,
+          // @ts-expect-error Incorrectly typed
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION'
@@ -264,7 +265,7 @@ export default Vue.extend({
     },
     tableData() {
       return (this.properties.relations || [])
-        .filter((r: TableKey) => r.direction === "outgoing")
+        .filter((r: TableKey) => r.fromTable === this.table.name)
     },
   },
   watch: {
