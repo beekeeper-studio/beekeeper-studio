@@ -65,6 +65,7 @@ export default class PluginRegistry {
   }
 
   clearCache() {
+    this.fetched = false;
     this.entries = [];
     this.repositories = {};
   }
