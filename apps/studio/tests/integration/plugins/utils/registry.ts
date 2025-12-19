@@ -18,58 +18,42 @@ import _ from "lodash";
  * // To mock the plugins.json file, call setPlugins()
  * registry.setPlugins([{ id: "test-plugin" }]);
  *
- * // To mock the plugin release, call setPluginLatestRelease()
+ * // To mock the plugin release, call setLatestRelease()
  * // IMPORTANT: Make sure to register the plugin with setPlugins() first!
- * registry.setPluginLatestRelease([{ id: "test-plugin", version: "1.0.0", minAppVersion: "1.0.0" }]);
+ * registry.setLatestRelease([{ id: "test-plugin", version: "1.0.0", minAppVersion: "1.0.0" }]);
  *
  * const manager = new PluginManager({ registry });
  * ```
  */
 export class MockPluginRepositoryService extends PluginRepositoryService {
-  private entries: PluginRegistryEntry[] = [];
-  private releases: { [pluginId: string]: Release } = {};
+  private communityEntries: PluginRegistryEntry[] = [];
+  private coreEntries: PluginRegistryEntry[] = [];
+  private releases = new Map<string, Release>();
 
   constructor(private server: MockPluginServer) {
     super();
   }
 
-  async fetchRegistry(): Promise<PluginRegistryEntry[]> {
-    return this.entries;
-  }
-
-  async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
-    const plugin = this.entries.find((p) => `${p.id}/${p.id}` === `${owner}/${repo}`);
-    if (!plugin) {
-      throw new Error(
-        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin with setPlugins?`
-      );
-    }
-    return this.getPluginLatestRelease(plugin.id);
-  }
-
-  protected async fetchReadme(owner: string, repo: string): Promise<string> {
-    const plugin = this.entries.find((p) => `${p.id}/${p.id}` === `${owner}/${repo}`);
-    if (!plugin) {
-      throw new Error(
-        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin with setPlugins?`
-      );
-    }
-    return `# ${plugin.name}\n\nThis is a test plugin.`;
-  }
-
-  setPluginsJson(plugins: (Partial<PluginRegistryEntry> & { id: string; })[]) {
-    this.entries = plugins.map((plugin) => ({
+  setPluginsJson(type: "core" | "community", plugins: (Partial<PluginRegistryEntry> & { id: string; })[]) {
+    const finalPlugins = plugins.map((plugin) => ({
       id: plugin.id,
       name: plugin.name ?? _.startCase(plugin.id),
       repo: plugin.repo ?? `${plugin.id}/${plugin.id}`,
       author: plugin.author ?? `${plugin.id} Author`,
       description: plugin.description ?? `${plugin.id} description`,
-      community: plugin.community ?? false,
     }));
+
+    if (type === "core") {
+      this.coreEntries = finalPlugins;
+    } else {
+      this.communityEntries = finalPlugins;
+    }
+
   }
 
   setLatestRelease(options: Pick<Manifest, "id" | "version" | "minAppVersion">): Release {
-    const plugin = this.entries.find((p) => p.id === options.id);
+    const allPlugins = [...this.coreEntries, ...this.communityEntries];
+    const plugin = allPlugins.find((p) => p.id === options.id);
     if (!plugin) {
       throw new Error(`Plugin "${options.id}" not found in registry. Have you registered the plugin with setPlugins?`)
     }
@@ -93,17 +77,43 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
       sourceArchiveUrl: this.server.formatUrl(manifest),
     };
 
-    this.releases[options.id] = release;
+    this.releases.set(options.id, release);
 
     return release;
   }
 
-  private getPluginLatestRelease(id: string): Release {
-    return this.releases[id] || this.setLatestRelease({
-      id,
-      version: "1.0.0",
-      minAppVersion: "5.0.0",
-    });
+  // ===== OVERIDE METHODS =====
+
+  async fetchRegistry() {
+    return  {
+      core: this.coreEntries,
+      community: this.communityEntries,
+    };
+  }
+
+  async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
+    const allPlugins = [...this.coreEntries, ...this.communityEntries];
+    const plugin = allPlugins.find((p) => `${p.id}/${p.id}` === `${owner}/${repo}`);
+    if (!plugin) {
+      throw new Error(
+        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin with setPlugins?`
+      );
+    }
+    if (!this.releases.has(plugin.id)) {
+      throw new Error(`No release found for plugin "${plugin.id}". Have you create a release with setLatestRelease?`)
+    }
+    return this.releases.get(plugin.id);
+  }
+
+  protected async fetchReadme(owner: string, repo: string): Promise<string> {
+    const allPlugins = [...this.coreEntries, ...this.communityEntries];
+    const plugin = allPlugins.find((p) => `${p.id}/${p.id}` === `${owner}/${repo}`);
+    if (!plugin) {
+      throw new Error(
+        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin with setPlugins?`
+      );
+    }
+    return `# ${plugin.name}\n\nThis is a test plugin.`;
   }
 }
 

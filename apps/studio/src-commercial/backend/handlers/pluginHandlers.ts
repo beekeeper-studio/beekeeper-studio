@@ -1,14 +1,14 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
-import { Manifest, TransportPlugin, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { Manifest, PluginSnapshot, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
 import { PluginTimeoutError } from "@/services/plugin/errors";
 
 interface IPluginHandlers {
-  "plugin/plugins": () => Promise<TransportPlugin[]>
-  "plugin/entries": () => Promise<PluginRegistryEntry[]>
+  "plugin/plugins": () => Promise<PluginSnapshot[]>
+  "plugin/entries": () => Promise<{ core: PluginRegistryEntry[], community: PluginRegistryEntry[] }>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
-  "plugin/install": ({ id }: { id: string }) => Promise<TransportPlugin>
-  "plugin/update": ({ id }: { id: string }) => Promise<TransportPlugin>
+  "plugin/install": ({ id }: { id: string }) => Promise<PluginSnapshot>
+  "plugin/update": ({ id }: { id: string }) => Promise<PluginSnapshot>
   "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
   "plugin/checkForUpdates": ({ id }: { id: string }) => Promise<boolean>
   "plugin/setAutoUpdateEnabled": ({ id, enabled }: { id: string, enabled: boolean }) => Promise<void>
@@ -42,7 +42,7 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     });
   },
   "plugin/plugins": async () => {
-    return pluginManager.getPlugins();
+    return pluginManager.getInstalledPlugins();
   },
   "plugin/entries": async (refresh?: boolean) => {
     return await pluginManager.getEntries(refresh);

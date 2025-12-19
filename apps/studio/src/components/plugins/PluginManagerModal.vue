@@ -60,7 +60,7 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
-import type { TransportPlugin, PluginRegistryEntry, Manifest, UIPlugin } from "@/services/plugin/types";
+import type { PluginSnapshot, PluginRegistryEntry, Manifest, UIPlugin } from "@/services/plugin/types";
 import { mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
@@ -70,7 +70,12 @@ export default Vue.extend({
   data() {
     return {
       modalName: "plugin-manager-modal",
+
       plugins: [] as UIPlugin[],
+      installedPlugins: [] as PluginSnapshot[],
+      coreEntries: [] as PluginRegistryEntry[],
+      communityEntries: [] as PluginRegistryEntry[],
+
       selectedPluginIdx: -1,
       selectedPluginReadme: "",
       loadingPluginReadme: false,
@@ -239,11 +244,14 @@ export default Vue.extend({
       return false;
     },
     async buildPluginListData(refresh?: boolean): Promise<UIPlugin[]> {
-      const entries: PluginRegistryEntry[] = await this.$util.send("plugin/entries", refresh)
-      const installedPlugins: TransportPlugin[] = await this.$plugin.plugins;
+      const entries: {
+        core: PluginRegistryEntry[];
+        community: PluginRegistryEntry[];
+      }[] = await this.$util.send("plugin/entries", refresh);
+      const installedPlugins: PluginSnapshot[] = await this.$plugin.plugins;
       const list: UIPlugin[] = [];
 
-      for (const { manifest, loadable, disabled } of installedPlugins) {
+      for (const { manifest, loadable, disabled, origin } of installedPlugins) {
         const data: UIPlugin = {
           id: manifest.id,
           name: manifest.name,
@@ -260,12 +268,17 @@ export default Vue.extend({
 
           disabled,
           minAppVersion: manifest.minAppVersion,
-          officialPlugin: this.checkOfficialPlugin(manifest.author),
+          core: this.checkOfficialPlugin(manifest.author),
+          origin,
         };
 
-        const entry = entries.find((entry) => entry.id === manifest.id);
+        let entry: PluginRegistryEntry | undefined;
+        if (origin === "core") {
+          entry = entries.core.find((entry) => entry.id === manifest.id);
+        } else if (origin === "community") {
+          entry = entries.community.find((entry) => entry.id === manifest.id);
+        }
 
-        // if the plugin is found in the beekeeper-studio-plugins
         if (entry) {
           data.repo = entry.repo;
           data.updateAvailable = await this.$util
@@ -274,7 +287,7 @@ export default Vue.extend({
               this.errors = [
                 `Failed to check for updates for ${manifest.id}: ${e.message}`,
               ];
-              console.error(e);
+              log.error(e);
               return false;
             });
         }
@@ -282,27 +295,39 @@ export default Vue.extend({
         list.push(data);
       }
 
-      for (const entry of entries) {
+      const entryToUIPlugin = (entry: PluginRegistryEntry): Omit<UIPlugin, "origin"> => ({
+        id: entry.id,
+        name: entry.name,
+        author: entry.author,
+        description: entry.description,
+
+        compatible: true,
+        installed: false,
+        installing: false,
+
+        updateAvailable: false,
+        checkingForUpdates: null,
+
+        disabled: false,
+        repo: entry.repo,
+        core: this.checkOfficialPlugin(entry.author, entry.repo),
+      });
+
+      for (const entry of entries.core) {
         if (!_.find(list, { id: entry.id })) {
-          const data: UIPlugin = {
-            id: entry.id,
-            name: entry.name,
-            author: entry.author,
-            description: entry.description,
+          list.push({
+            ...entryToUIPlugin(entry),
+            origin: "core",
+          });
+        }
+      }
 
-            compatible: true,
-            installed: false,
-            installing: false,
-
-            updateAvailable: false,
-            checkingForUpdates: null,
-
-            disabled: false,
-            repo: entry.repo,
-            officialPlugin: this.checkOfficialPlugin(entry.author, entry.repo),
-          };
-
-          list.push(data);
+      for (const entry of entries.community) {
+        if (!_.find(list, { id: entry.id })) {
+          list.push({
+            ...entryToUIPlugin(entry),
+            origin: "community",
+          });
         }
       }
 

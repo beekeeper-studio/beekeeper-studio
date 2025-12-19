@@ -8,7 +8,7 @@
       </div>
       <div
         class="author"
-        :title="plugin.officialPlugin
+        :title="plugin.origin === 'core'
           ? 'Offical Beekeeper Studio Author'
           : 'Community Author'
         "
@@ -19,7 +19,7 @@
           :href="plugin.author.url"
         >{{ plugin.author.name }}</a>
         <span v-else>{{ plugin.author }}</span>
-        <i v-if="plugin.officialPlugin" class="verified material-icons">verified_user</i>
+        <i v-if="plugin.origin === 'core'" class="verified material-icons">verified_user</i>
       </div>
       <a v-if="plugin.repo" :href="`https://github.com/${plugin.repo}`">
         <span class="flex">

@@ -14,8 +14,6 @@ export default function prepareWebPluginManagerTestGroup(options?: {
   connectionType?: string;
   pluginManager: PluginManager;
 }) {
-  options.pluginManager.PREINSTALLED_PLUGINS = [];
-
   const handlers = PluginHandlers(options.pluginManager);
   handlers['plugin/waitForInit'] = async () => {
     if (!options.pluginManager.isInitialized) {

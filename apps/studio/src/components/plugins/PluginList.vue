@@ -29,7 +29,7 @@
           By
           {{ typeof plugin.author === 'string' ? plugin.author : plugin.author.name }}
           <i
-            v-if="plugin.officialPlugin"
+            v-if="plugin.origin === 'core'"
             class="verified material-icons"
           >verified_user</i>
         </div>

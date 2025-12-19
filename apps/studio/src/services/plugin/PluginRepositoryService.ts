@@ -1,13 +1,15 @@
+import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
-import { Manifest, PluginRepository, Release } from "./types";
+import { Manifest, PluginRegistryEntry, PluginRepository, Release } from "./types";
 
 export default class PluginRepositoryService {
   private octokit: Octokit;
 
-  constructor() {
+  constructor(options?: { octokitOptions?: OctokitOptions }) {
     this.octokit = new Octokit({
       userAgent: "Beekeeper Studio",
       auth: process.env.GITHUB_TOKEN,
+      ...options?.octokitOptions,
     });
   }
 
@@ -58,11 +60,17 @@ export default class PluginRepositoryService {
   }
 
   async fetchRegistry() {
-    return await this.fetchJson(
+    const core = await this.fetchJson(
       "beekeeper-studio",
       "beekeeper-studio-plugins",
       "plugins.json"
     );
+    const community = await this.fetchJson(
+      "beekeeper-studio",
+      "beekeeper-studio-plugins",
+      "community-plugins.json"
+    );
+    return { core, community };
   }
 
   async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
@@ -85,7 +93,7 @@ export default class PluginRepositoryService {
     return Buffer.from(response.data.content, "base64").toString("utf-8");
   }
 
-  private async fetchJson(owner: string, repo: string, path: string) {
+  private async fetchJson(owner: string, repo: string, path: string): Promise<PluginRegistryEntry[]> {
     const response = await this.octokit.request(
       "GET /repos/{owner}/{repo}/contents/{path}",
       {

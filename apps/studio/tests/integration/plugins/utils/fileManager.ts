@@ -38,7 +38,7 @@ export function preloadPlugins(
   plugins: Partial<Manifest>[]
 ) {
   fileManager.scanPlugins = () =>
-    plugins.map((plugin, idx) =>  createTestManifest(plugin));
+    plugins.map((plugin) =>  createTestManifest(plugin));
 }
 
 let counter = 0;
@@ -62,6 +62,7 @@ function createTestManifest(manifest?: Partial<Manifest>): Manifest {
 
 /** Erase plugins data. */
 export function cleanFileManager(manager: PluginFileManager) {
+  manager.scanPlugins = PluginFileManager.prototype.scanPlugins.bind(manager);
   cleanTmpDir(manager.options.downloadDirectory);
   cleanTmpDir(manager.options.pluginsDirectory);
 }

@@ -12,89 +12,93 @@ import { preloadPlugins } from "./utils/fileManager";
 import preparePluginSystemTestGroup from "./utils/preparePluginSystem";
 import { PluginManager } from "@/services/plugin";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
+import { MockPluginRepositoryService } from "./utils/registry";
+import PluginStoreService from "@/services/plugin/web/PluginStoreService";
+import { UtilityConnection } from "@/lib/utility/UtilityConnection";
 
 describe("WebPluginManager", () => {
-  describe("Loading Plugins", () => {
-    const { fileManager, repositoryService } = preparePluginSystemTestGroup();
-    const pluginManager = new PluginManager({
-      appVersion: "5.0.0",
-      fileManager,
-      registry: new PluginRegistry(repositoryService),
-    });
-    const {
-      pluginStore,
-      utilityConnection,
-    } = prepareWebPluginManagerTestGroup({ pluginManager });
+  const { server, fileManager, emptyRegistry } = preparePluginSystemTestGroup();
 
-    const manager = new WebPluginManager({
-      appVersion: "5.0.0",
-      pluginStore,
-      utilityConnection,
+  describe("Loading Plugins", () => {
+    let webManager: WebPluginManager;
+
+    beforeAll(() => {
+      const repository = new MockPluginRepositoryService(server);
+      const registry = new PluginRegistry(repository);
+
+      // Publish one plugin called "test-plugin"
+      repository.setPluginsJson('core', [{ id: "test-plugin" }]);
+      repository.setLatestRelease({ id: "test-plugin", version: "1.0.0" });
+
+      const pluginManager = new PluginManager({ appVersion: "9.9.9", fileManager, registry });
+      const { pluginStore, utilityConnection } = prepareWebPluginManagerTestGroup({ pluginManager });
+
+      webManager = new WebPluginManager({
+        // Shouldn't care about the app version. It's already tested in PluginManager.spec.ts.
+        appVersion: "9.9.9",
+        pluginStore,
+        utilityConnection,
+      });
     });
 
     it("can load plugins at startup", async () => {
       preloadPlugins(fileManager, [{ id: "test-plugin" }]);
+      await webManager.initialize();
+      const plugins = await webManager.getEnabledPlugins();
 
-      await manager.initialize();
-
-      const plugins = await manager.getEnabledPlugins();
       expect(plugins[0].id).toBe("test-plugin");
     });
 
     it("can load plugins at runtime (by installing)", async () => {
-      repositoryService.plugins = [{ id: "test-plugin" }]
+      await webManager.initialize();
+      await webManager.install("test-plugin");
+      const plugins = await webManager.getEnabledPlugins();
 
-      await manager.initialize();
-      await manager.install("test-plugin");
-
-      const plugins = await manager.getEnabledPlugins();
       expect(plugins[0].id).toBe("test-plugin");
     });
   });
 
   describe("Disabling Plugins", () => {
-    const { fileManager, repositoryService } = preparePluginSystemTestGroup();
-    const pluginManager = new PluginManager({
-      appVersion: "5.0.0",
-      fileManager,
-      registry: new PluginRegistry(repositoryService),
-      pluginSettings: {
-        // IMPORTANT: PluginManager is the backend. We want to disable from here!
-        "test-plugin": { disabled: true },
-      },
-    });
-    const {
-      pluginStore,
-      utilityConnection,
-    } = prepareWebPluginManagerTestGroup({ pluginManager });
+    let webManager: WebPluginManager;
+    let pluginStore: PluginStoreService;
+    let utilityConnection: UtilityConnection;
 
-    preloadPlugins(fileManager, [{
-      id: "test-plugin",
-      capabilities: {
-        views: [{
-          id: "test-view",
-          name: "Test View",
-          type: "base-tab",
-          entry: "index.html",
-        }],
-        menu: [{
-          command: "test-command",
-          view: "test-view",
-          name: "Test Menu Item",
-          placement: [
-            "newTabDropdown",
-            "menubar.tools",
-            "editor.query.context",
-          ],
-        }],
-      },
-    }]);
-
-    let manager: WebPluginManager;
-
-    beforeEach(() => {
-      manager = new WebPluginManager({
-        appVersion: "5.0.0",
+    beforeAll(() => {
+      preloadPlugins(fileManager, [{
+        id: "test-plugin",
+        capabilities: {
+          views: [{
+            id: "test-view",
+            name: "Test View",
+            type: "base-tab",
+            entry: "index.html",
+          }],
+          menu: [{
+            command: "test-command",
+            view: "test-view",
+            name: "Test Menu Item",
+            placement: [
+              "newTabDropdown",
+              "menubar.tools",
+              "editor.query.context",
+            ],
+          }],
+        },
+      }]);
+      const pluginManager = new PluginManager({
+        appVersion: "9.9.9",
+        fileManager,
+        pluginSettings: {
+          // IMPORTANT: PluginManager is the backend. We want to disable from here!
+          "test-plugin": { disabled: true },
+        },
+        registry: emptyRegistry,
+      });
+      const util = prepareWebPluginManagerTestGroup({ pluginManager });
+      pluginStore = util.pluginStore;
+      utilityConnection = util.utilityConnection;
+      webManager = new WebPluginManager({
+        appVersion: "9.9.9",
         pluginStore,
         utilityConnection,
       });
@@ -105,7 +109,7 @@ describe("WebPluginManager", () => {
       const addMenuBarItemSpy = jest.spyOn(pluginStore, "addMenuBarItem");
       const addPopupMenuItemSpy = jest.spyOn(pluginStore, "addPopupMenuItem");
 
-      await manager.initialize();
+      await webManager.initialize();
 
       expect(addTabTypeConfigsSpy).not.toHaveBeenCalled();
       expect(addMenuBarItemSpy).not.toHaveBeenCalled();
@@ -113,54 +117,41 @@ describe("WebPluginManager", () => {
     });
 
     it("should be flagged as disabled", async () => {
-      await manager.initialize();
-      expect(manager.pluginOf("test-plugin").disabled).toBe(true);
+      await webManager.initialize();
+      expect(webManager.pluginOf("test-plugin").disabled).toBe(true);
     });
   });
 
   describe("Plugin APIs", () => {
-    const { fileManager, registry } = preparePluginSystemTestGroup();
-    const pluginManager = new PluginManager({
-      appVersion: "5.0.0",
-      fileManager,
-      registry,
-    });
-    const { pluginStore, utilityConnection } = prepareWebPluginManagerTestGroup({
-      tables,
-      pluginManager,
-    });
-
-    preloadPlugins(fileManager, [{
-      id: "test-plugin",
-      capabilities: {
-        views: [{
-          id: "test-view",
-          name: "Test View",
-          type: "base-tab",
-          entry: "index.html",
-        }],
-        menu: [],
-      },
-    }]);
-
     let plugin: WebPlugin;
     let manager: WebPluginManager;
 
     beforeAll(async () => {
-      manager = new WebPluginManager({
-        appVersion: "5.0.0",
-        pluginStore,
-        utilityConnection,
-      });
+      preloadPlugins(fileManager, [{
+        id: "test-plugin",
+        capabilities: {
+          views: [{
+            id: "test-view",
+            name: "Test View",
+            type: "base-tab",
+            entry: "index.html",
+          }],
+          menu: [],
+        },
+      }]);
+      const pluginManager = new PluginManager({ appVersion: "9.9.9", fileManager, registry: emptyRegistry });
+      const { pluginStore, utilityConnection } = prepareWebPluginManagerTestGroup({ pluginManager, tables });
+      manager = new WebPluginManager({ appVersion: "9.9.9", pluginStore, utilityConnection });
       await manager.initialize();
-      plugin = new WebPlugin(await manager.getEnabledPlugins()[0]);
+      const plugins = await manager.getEnabledPlugins();
+      plugin = new WebPlugin(plugins[0]);
       manager.registerIframe(plugin.manifest.id, plugin.iframe, plugin.context);
     });
 
     afterAll(async () => {
+      plugin.destroy();
       manager.unregisterIframe(plugin.manifest.id, plugin.iframe);
       await manager.uninstall(plugin.manifest.id);
-      plugin.destroy();
     });
 
     beforeEach(() => {

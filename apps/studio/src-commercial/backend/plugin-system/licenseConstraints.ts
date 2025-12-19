@@ -17,14 +17,14 @@ export default function bindLicenseConstraints(
 
   manager[boundSymbol] = true;
 
-  manager.addInstallGuard((id) => {
+  manager.addInstallGuard(async (id) => {
     if (license.tier === "pro+") {
       // No limit
       return;
     }
 
     if (license.tier === "indie") {
-      if (manager.getPlugins().length < 5) {
+      if (manager.getInstalledPlugins().length < 5) {
         return;
       }
 
@@ -35,13 +35,16 @@ export default function bindLicenseConstraints(
       );
     }
 
-    if (id.startsWith("bks-")) {
+    const entry = manager.registry.findEntryById(id);
+
+    if (entry.origin === "core") {
       throw new ForbiddenPluginError(
-        `Plugin "${id}" is not available for the ${license.tier} tier.`
+        `Plugin "${entry}" is not available for the ${license.tier} tier.`
       );
     }
 
-    const communityPlugins = manager.getPlugins().filter((p) => !p.manifest.id.startsWith("bks-"));
+    const communityPlugins = manager.getInstalledPlugins()
+      .filter((p) => p.origin === "community");
     if (communityPlugins.length >= 2) {
       throw new ForbiddenPluginError(
         "You have reached the maximum of 2 community plugins allowed."
@@ -51,30 +54,30 @@ export default function bindLicenseConstraints(
     }
   });
 
-  manager.addPluginContextTransformer((context, plugins) => {
+  manager.addPluginSnaphostTransformer(async (snapshot, plugins) => {
     if (license.tier === "pro+") {
       // No limit
-      return context;
+      return snapshot;
     }
 
     const enabledPlugins = plugins.filter((p) => !p.disabled);
 
     if (license.tier === "indie") {
       if (enabledPlugins.length < 5) {
-        return context;
+        return snapshot;
       }
 
-      return { ...context, disabled: true };
+      return { ...snapshot, disabled: true };
     }
 
-    if (context.manifest.id.startsWith("bks-")) {
-      return { ...context, disabled: true };
+    if (snapshot.origin === "core") {
+      return { ...snapshot, disabled: true };
     }
 
     if (enabledPlugins.length >= 2) {
-      return { ...context, disabled: true };
+      return { ...snapshot, disabled: true };
     }
 
-    return context;
+    return snapshot;
   });
 }

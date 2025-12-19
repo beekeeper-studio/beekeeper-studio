@@ -1,6 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginSettings, TransportPlugin } from "../types";
+import { Manifest, OnViewRequestListener, PluginSettings, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -43,7 +43,7 @@ export type WebPluginManagerParams = {
  * For more info about a plugin, use `pluginOf`.
  */
 export default class WebPluginManager {
-  plugins: TransportPlugin[] = [];
+  plugins: PluginSnapshot[] = [];
   /** A map of plugin id -> loader */
   loaders: Map<string, WebPluginLoader> = new Map();
 
@@ -94,7 +94,7 @@ export default class WebPluginManager {
 
   /** Install a plugin by its id */
   async install(id: string) {
-    const transport: TransportPlugin = await this.utilityConnection.send("plugin/install", {
+    const transport: PluginSnapshot = await this.utilityConnection.send("plugin/install", {
       id,
     });
     await this.loadPlugin(transport);
@@ -104,7 +104,7 @@ export default class WebPluginManager {
 
   /** Update a plugin by its id */
   async update(id: string) {
-    const transport: TransportPlugin = await this.utilityConnection.send("plugin/update", {
+    const transport: PluginSnapshot = await this.utilityConnection.send("plugin/update", {
       id,
     });
     await this.reloadPlugin(id);
@@ -242,7 +242,7 @@ export default class WebPluginManager {
     return loader.onDispose(fn);
   }
 
-  private async loadPlugin(transport: TransportPlugin) {
+  private async loadPlugin(transport: PluginSnapshot) {
     if (this.loaders.has(transport.manifest.id)) {
       log.warn(`Plugin "${transport.manifest.id}" already loaded. Skipping...`);
       return this.loaders.get(transport.manifest.id);

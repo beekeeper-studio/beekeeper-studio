@@ -136,10 +136,10 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
 
 export type PluginRegistryEntry = Pick<
   Manifest,
-  "id" | "name" | "author" | "description"
+  "id" | "name" | "description"
 > & {
+  author: string;
   repo: string;
-  community: boolean;
 };
 
 export interface Release {
@@ -182,13 +182,24 @@ export type WebPluginLoaderContext = {
   disabled: boolean;
 }
 
-export type TransportPlugin = {
+export interface PluginSnapshot {
+  /** From the plugin's manifest.json */
   manifest: Manifest;
   /** @alias compatible */
   loadable: boolean;
+  /** Is this compatible with the current app version? */
   compatible: boolean;
   disabled: boolean;
+  origin: PluginOrigin;
 }
+
+/**
+ * Plugins can be obtained from three sources:
+ * - `core` => https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json
+ * - `community` => https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json
+ * - `unpublished` => None of the above
+ */
+export type PluginOrigin = "core" | "community" | "unpublished";
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
@@ -199,8 +210,9 @@ export type WebPluginViewInstance = {
 }
 
 export type UIPlugin = {
-  /** Plugin is made by Beekeeper Studio */
-  readonly officialPlugin: boolean;
+  /** @deprecated The plugin is made by Beekeeper Studio */
+  readonly core: boolean;
+  readonly origin: PluginOrigin;
 
   // Infos that are available from plugins.json
   id: Manifest['id'];
