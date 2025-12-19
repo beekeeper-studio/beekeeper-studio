@@ -12,7 +12,7 @@
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
-          <div class="card-flat padding" v-if="!isConfigReady">
+          <div class="card-flat padding" v-if="isConfigReady">
             <content-placeholder-heading />
           </div>
           <div class="card-flat padding" :class="determineLabelColor" v-else>
@@ -63,24 +63,28 @@
                 />
                 <postgres-form
                   v-else-if="config.connectionType === 'postgresql'"
-                  :config="config" :testing="testing"
+                  :config="config"
+                  :testing="testing"
                 />
                 <redshift-form
                   v-else-if="config.connectionType === 'redshift'"
-                  :config="config" :testing="testing"
+                  :config="config"
+                  :testing="testing"
                 />
                 <sqlite-form
                   v-else-if="config.connectionType === 'sqlite'"
-                  :config="config" :testing="testing"
+                  :config="config"
+                  :testing="testing"
                 />
                 <sql-server-form
                   v-else-if="config.connectionType === 'sqlserver'"
-                  :config="config" :testing="testing"
-                  @error="connectionError = $event"
-                />
+                  :config="config"
+                  :testing="testing"
+                  @error="connectionError = $event" />
                 <big-query-form
                   v-else-if="config.connectionType === 'bigquery'"
-                  :config="config" :testing="testing"
+                  :config="config"
+                  :testing="testing"
                 />
                 <firebird-form
                   v-else-if="config.connectionType === 'firebird' && isUltimate"
@@ -119,7 +123,8 @@
                 />
                 <duck-db-form
                   v-else-if="config.connectionType === 'duckdb'"
-                  :config="config" :testing="testing"
+                  :config="config"
+                  :testing="testing"
                 />
                 <sql-anywhere-form
                   v-else-if="config.connectionType === 'sqlanywhere' && isUltimate"
@@ -133,7 +138,8 @@
                 />
                 <redis-form
                   v-else-if="config.connectionType === 'redis'"
-                  :config="config" :testing="testing"
+                  :config="config"
+                  :testing="testing"
                 />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
@@ -144,7 +150,8 @@
                       class="form-control"
                       id="readOnlyMode"
                       type="checkbox"
-                      name="readOnlyMode" v-model="config.readOnlyMode"
+                      name="readOnlyMode"
+                      v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
                     <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
@@ -382,11 +389,11 @@ export default Vue.extend({
       }
     } as Split.Options)
 
-    if (!this.$store.getters.workspace) {
-      await this.$store.commit('workspace', this.$store.state.localWorkspace)
-    }
-
+    
     try {
+      if (!this.$store.getters.workspace) {
+        await this.$store.commit('workspace', this.$store.state.localWorkspace)
+      }
       const conn = await this.$util.send('appdb/saved/new')
       this.config = conn;
       this.config.sshUsername = await window.main.fetchUsername()
