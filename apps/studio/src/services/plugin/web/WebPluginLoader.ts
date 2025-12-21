@@ -1,18 +1,17 @@
 import {
+  AfterViewRequestCallback,
   Manifest,
   OnViewRequestListener,
+  ViewResultModifier,
   WebPluginContext,
   WebPluginViewInstance,
 } from "../types";
-import {
-  PluginNotificationData,
-  PluginResponseData,
-  PluginRequestData,
-  GetAppInfoResponse,
-  GetViewContextResponse,
-  GetConnectionInfoResponse,
-  GetTablesResponse,
-} from "@beekeeperstudio/plugin";
+import type {
+  RequestMap,
+  RequestPayload,
+  ResponsePayload,
+  NotificationMap,
+} from "@beekeeperstudio/plugin/dist/internal";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
@@ -20,6 +19,24 @@ import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { PrimaryKeyColumn } from "@/lib/db/models";
+
+// Discriminated union for request+result that TypeScript can narrow by name
+type PluginResponseData = {
+  [K in keyof RequestMap]: {
+    id: string;
+    name: K;
+    args: RequestMap[K]["args"];
+    result: RequestMap[K]["return"];
+    error?: unknown;
+  };
+}[keyof RequestMap];
+
+type PluginNotificationData = {
+  [K in keyof NotificationMap]: {
+    name: K;
+    args: NotificationMap[K]["args"];
+  };
+}[keyof NotificationMap];
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -115,11 +132,11 @@ export default class WebPluginLoader {
   }
 
   private async handleViewRequest(
-    request: PluginRequestData,
+    request: RequestPayload,
     source: HTMLIFrameElement
   ) {
-    const afterCallbacks: ((response: PluginResponseData) => void)[] = [];
-    const modifyResultCallbacks: ((result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>)[] = [];
+    const afterCallbacks: AfterViewRequestCallback[] = [];
+    const modifyResultCallbacks: ViewResultModifier[] = [];
 
     for (const listener of this.listeners) {
       await listener({
@@ -134,55 +151,59 @@ export default class WebPluginLoader {
       });
     }
 
+    // Create `response` that TypeScript can narrow by name in switch
     const response: PluginResponseData = {
       id: request.id,
-      result: undefined,
+      name: request.name,
+      args: request.args,
+      result: undefined as any,
+      error: undefined as any,
     };
 
     try {
       this.checkPermission(request);
 
-      switch (request.name) {
+      switch (response.name) {
         // ========= READ ACTIONS ===========
         case "getSchemas":
           response.result = await this.context.utility.send("conn/listSchemas");
           break;
         case "getTables":
           response.result = this.context.store.getTables(
-            request.args.schema
-          ) as GetTablesResponse['result'];
+            response.args.schema
+          );
           break;
         case "getColumns":
           response.result = await this.context.store.getColumns(
-            request.args.table,
-            request.args.schema
+            response.args.table,
+            response.args.schema
           );
           break;
         case "getTableKeys":
         case "getOutgoingKeys":
           response.result = await this.context.utility.send(
-              'conn/getOutgoingKeys',
-            { table: request.args.table, schema: request.args.schema }
+            'conn/getOutgoingKeys',
+            { table: response.args.table, schema: response.args.schema }
           );
           break;
         case "getIncomingKeys":
           response.result = await this.context.utility.send(
-              'conn/getIncomingKeys',
-            { table: request.args.table, schema: request.args.schema }
+            'conn/getIncomingKeys',
+            { table: response.args.table, schema: response.args.schema }
           );
           break;
         case "getTableIndexes":
           response.result = await this.context.utility
             .send("conn/listTableIndexes", {
-              table: request.args.table,
-              schema: request.args.schema,
+              table: response.args.table,
+              schema: response.args.schema,
             });
           break;
         case "getPrimaryKeys":
           response.result = await this.context.utility
             .send("conn/getPrimaryKeys", {
-              table: request.args.table,
-              schema: request.args.schema,
+              table: response.args.table,
+              schema: response.args.schema,
             })
             .then((keys: PrimaryKeyColumn[]) =>
               keys.map((key) => ({ ...key, name: key.columnName }))
@@ -192,25 +213,25 @@ export default class WebPluginLoader {
           response.result = {
             theme: this.pluginStore.getTheme(),
             version: this.context.appVersion,
-          } as GetAppInfoResponse['result'];
+          };
           break;
         case "getViewContext":
           const view = this.viewInstances.find((ins) => ins.iframe === source);
           if (!view) {
             throw new Error("View context not found.");
           }
-          response.result = view.context as GetViewContextResponse['result'];
+          response.result = view.context;
           break;
         case "getConnectionInfo":
-          response.result = this.pluginStore.getConnectionInfo() as GetConnectionInfoResponse['result'];
+          response.result = this.pluginStore.getConnectionInfo();
           break;
         case "getData":
         case "getEncryptedData": {
           const value = await this.utilityConnection.send(
-            request.name === "getEncryptedData"
+            response.name === "getEncryptedData"
               ? "plugin/getEncryptedData"
               : "plugin/getData",
-            { manifest: this.manifest, key: request.args.key }
+            { manifest: this.manifest, key: response.args.key }
           );
           response.result = value;
           break;
@@ -226,23 +247,23 @@ export default class WebPluginLoader {
 
         // ======== WRITE ACTIONS ===========
         case "runQuery":
-          response.result = await this.pluginStore.runQuery(request.args.query);
+          response.result = await this.pluginStore.runQuery(response.args.query);
           break;
         case "setData":
         case "setEncryptedData": {
           await this.utilityConnection.send(
-            request.name === "setEncryptedData"
+            response.name === "setEncryptedData"
               ? "plugin/setEncryptedData"
               : "plugin/setData",
-            { manifest: this.manifest, key: request.args.key, value: request.args.value }
+            { manifest: this.manifest, key: response.args.key, value: response.args.value }
           )
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(request.args.text);
+          window.main.writeTextToClipboard(response.args.text);
           break;
         case "clipboard.writeImage":
-          response.result = window.main.writeImageToClipboard(request.args.data);
+          response.result = window.main.writeImageToClipboard(response.args.data);
           break;
 
         // ======== UI ACTIONS ===========
@@ -262,27 +283,29 @@ export default class WebPluginLoader {
         case "setViewState":
           // Directly handled by the view components
           break;
+        case "toggleStatusBarUI":
+          // Directly handled by the view components - especially the tab views
+          break;
         case "openExternal":
           // FIXME maybe we should ask user permission first before opening?
-          window.main.openExternally(request.args.link);
+          window.main.openExternally(response.args.link);
           break;
         case "openTab":
-          this.pluginStore.openTab(request.args);
+          this.pluginStore.openTab(response.args);
           break;
 
         // ========= SYSTEM ACTIONS ===========
         case "requestFileSave":
-          const isSaved = await this.context.fileHelpers.save({
-            content: request.args.data,
-            fileName: request.args.fileName,
-            encoding: request.args.encoding,
-            filters: request.args.filters,
+          await this.context.fileHelpers.save({
+            content: response.args.data,
+            fileName: response.args.fileName,
+            encoding: response.args.encoding,
+            filters: response.args.filters,
           });
-          response.result = { isSaved };
-        break;
+          break;
 
         default:
-          throw new Error(`Unknown request: ${request.name}`);
+          throw new Error(`Unknown request: ${response.name}`);
       }
 
       for (const callback of modifyResultCallbacks) {
@@ -357,7 +380,7 @@ export default class WebPluginLoader {
     this.viewInstances = this.viewInstances.filter((ins) => ins.iframe !== iframe);
   }
 
-  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | PluginResponseData) {
+  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | ResponsePayload) {
     iframe.contentWindow.postMessage(data, "*");
   }
 
@@ -444,6 +467,6 @@ export default class WebPluginLoader {
   }
 
   private onTableChanged() {
-    this.broadcast({ name: "tablesChanged" });
+    this.broadcast({ name: "tablesChanged", args: void 0 });
   }
 }

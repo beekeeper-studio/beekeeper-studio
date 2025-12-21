@@ -79,6 +79,7 @@
       </div>
     </div>
     <query-editor-status-bar
+      v-if="showStatusBarUI"
       v-model="selectedResult"
       :results="results"
       :running="isRunningQuery"
@@ -152,6 +153,7 @@ export default Vue.extend({
       focusingElement: "table",
       query: "",
       isTablePanelVisible: false,
+      showStatusBarUI: true,
     };
   },
   computed: {
@@ -303,6 +305,14 @@ export default Vue.extend({
         case "setViewState": {
           this.tab.context.state = request.args.state;
           await this.$store.dispatch('tabs/save', this.tab)
+          break;
+        }
+        case "toggleStatusBarUI": {
+          if (typeof request.args?.force === "boolean") {
+            this.showStatusBarUI = request.args.force;
+          } else {
+            this.showStatusBarUI = !this.showStatusBarUI;
+          }
           break;
         }
       }

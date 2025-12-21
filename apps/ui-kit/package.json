@@ -7,7 +7,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "private": false,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
@@ -114,7 +114,7 @@
     "sass": "~1.77.1",
     "scrollyfills": "^1.0.0",
     "split.js": "^1.5.11",
-    "sql-formatter": "~10.7.2",
+    "sql-formatter": "15.6.10",
     "sql-query-identifier": "^2.8.0",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
     "tinyduration": "^3.2.4",

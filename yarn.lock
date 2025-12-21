@@ -2071,10 +2071,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@beekeeperstudio/plugin@^1.4.0-beta.6":
-  version "1.4.0-beta.6"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.4.0-beta.6.tgz#d80a2061c4486fd00f1a0ba322400e04b1b88845"
-  integrity sha512-u1dH/vVqsR5UD24xaOThwBATHIvrs+2nY9fF9QsPFu9pivrIS1Lz6zYzV4eDOsGl77nEBJZpplp+F3MMpVyVuQ==
+"@beekeeperstudio/plugin@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.5.0.tgz#ad27c08377ace31563d0fde250d7386edd138695"
+  integrity sha512-7RFasgB40tAdSHxtgIU/Sujal75p5ctDLpacVT1ZDbr3fb7zwtRTTfkwUdSrYThMZ1wBdIqzdg2Tnv6lDE5VlA==
 
 "@bufbuild/protobuf@^2.0.0":
   version "2.2.3"
@@ -13133,10 +13133,10 @@ sql-formatter@*:
     get-stdin "=8.0.0"
     nearley "^2.20.1"
 
-sql-formatter@~10.7.2:
-  version "10.7.2"
-  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-10.7.2.tgz#e482d73c44fa1243a6730f27dfab2ad734b95f30"
-  integrity sha512-YspJXMr2rKMGZY50zYRBs2nCtEO/AKDrmQOxmV2CrGEOFSXUhY3YbsOUe6lX0T/7xbBs4pAYv4UObmwf78vtKg==
+sql-formatter@15.6.10:
+  version "15.6.10"
+  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.6.10.tgz#90dcdc2759735d987e2af3758939e7559adb7256"
+  integrity sha512-0bJOPQrRO/JkjQhiThVayq0hOKnI1tHI+2OTkmT7TGtc6kqS+V7kveeMzRW+RNQGxofmTmet9ILvztyuxv0cJQ==
   dependencies:
     argparse "^2.0.1"
     nearley "^2.20.1"
