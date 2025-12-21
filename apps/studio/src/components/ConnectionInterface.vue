@@ -7,12 +7,13 @@
           @remove="remove"
           @duplicate="duplicate"
           @edit="edit"
-          @connect="handleConnect" @create="create"
+          @connect="handleConnect"
+          @create="create"
         />
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
-          <div class="card-flat padding" v-if="isConfigReady">
+          <div class="card-flat padding" v-if="!isConfigReady">
             <content-placeholder-heading />
           </div>
           <div class="card-flat padding" :class="determineLabelColor" v-else>
@@ -290,6 +291,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['workspaceId', 'connection']),
+    ...mapState(['username']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapGetters(['isUltimate']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
@@ -344,6 +346,7 @@ export default Vue.extend({
       }
     },
     'config.connectionType'(newConnectionType) {
+      if (newConnectionType == null) return
       this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
         // only replace it if it's a blank, unused connection
         if (!this.config.id && !this.config.password && !this.config.username) {
@@ -395,8 +398,8 @@ export default Vue.extend({
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
       const conn = await this.$util.send('appdb/saved/new')
+      conn.sshUsername = this.username
       this.config = conn;
-      this.config.sshUsername = await window.main.fetchUsername()
     } catch (e) {
       log.error(e)
       this.$noty.error(e.message)
