@@ -10,7 +10,7 @@ import globals from "@/common/globals";
 import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
-import {RedshiftOptions} from "@/lib/db/types";
+import {IamAuthOptions, RedshiftOptions} from "@/lib/db/types";
 import {AuthOptions} from "@/lib/db/authentication/azure";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
@@ -354,24 +354,24 @@ export const errorMessages = {
   maxReservedConnections: 'You have reserved the max connections available for manual transactions. Stop one of your active transactions to start a new one.'
 }
 
-export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): Promise<AWSCredentials> {
-  if (redshiftOptions.accessKeyId && redshiftOptions.secretAccessKey) {
+export async function resolveAWSCredentials(iamOptions: IamAuthOptions): Promise<AWSCredentials> {
+  if (iamOptions.accessKeyId && iamOptions.secretAccessKey) {
     return {
-      accessKeyId: redshiftOptions.accessKeyId,
-      secretAccessKey: redshiftOptions.secretAccessKey,
+      accessKeyId: iamOptions.accessKeyId,
+      secretAccessKey: iamOptions.secretAccessKey,
     };
   }
 
   // Fallback to AWS profile-based credentials
   const provider = fromIni({
-    profile: redshiftOptions.awsProfile || "default",
+    profile: iamOptions.awsProfile || "default",
   });
   return provider();
 }
 
-export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
-  const {awsProfile, accessKeyId, secretAccessKey} = redshiftOptions
-  let {awsRegion: region} = redshiftOptions
+export async function getIAMPassword(iamOptions: IamAuthOptions, hostname: string, port: number, username: string): Promise<string> {
+  const {awsProfile, accessKeyId, secretAccessKey} = iamOptions
+  let {awsRegion: region} = iamOptions
 
   let credentials: {
     profile?: string,
@@ -390,13 +390,14 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
   }
 
   if(accessKeyId && secretAccessKey) {
+    log.info("Setting credentials")
     credentials = {
-      profile: awsProfile || "default",
       accessKeyId,
       secretAccessKey
     }
   }
 
+  // TODO (@day): we can't do this for access key
   const nodeProviderChainCredentials = fromIni(credentials);
   const signer = new Signer({
     credentials: nodeProviderChainCredentials,
@@ -405,25 +406,26 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
     port,
     username,
   });
+  log.info("Signer get auth token")
   return  await signer.getAuthToken();
 }
 
 let resolvedPw: string | undefined;
 let tokenExpiryTime: number | null = null;
-let redshiftOptionsCheck: RedshiftOptions | null = null
+let iamOptionsCheck: IamAuthOptions | null = null
 
-export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, server: any, port: number): Promise<string> {
-  if(!redshiftOptions?.iamAuthenticationEnabled){
+export async function refreshTokenIfNeeded(iamOptions: IamAuthOptions, server: any, port: number): Promise<string> {
+  if(!iamOptions?.iamAuthenticationEnabled){
     return null
   }
 
   const now = Date.now();
 
-  if (redshiftOptionsCheck != redshiftOptions || (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime)) { // Refresh 2 minutes before expiry
-    redshiftOptionsCheck = redshiftOptions
+  if (iamOptionsCheck != iamOptions || (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime)) { // Refresh 2 minutes before expiry
+    iamOptionsCheck = iamOptions
     log.info("Refreshing IAM token...");
     resolvedPw = await getIAMPassword(
-      redshiftOptions,
+      iamOptions,
       server.config.host,
       server.config.port || port,
       server.config.user

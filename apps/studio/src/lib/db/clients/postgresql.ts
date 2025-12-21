@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
-import { DatabaseElement, IDbConnectionDatabase } from '../types'
+import { DatabaseElement, IamAuthType, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
@@ -137,6 +137,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     await super.connect();
 
     const dbConfig = await this.configDatabase(this.server, this.database);
+
+    log.info("CONFIG: ", dbConfig)
 
     this.conn = {
       pool: new pg.Pool(dbConfig)
@@ -1495,13 +1497,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
     let awsCLIToken = undefined;
-    if( server.config.iamAuthOptions?.authType === 'iam_cli') {
+    if( server.config.iamAuthOptions?.authType === IamAuthType.CLI) {
       awsCLIToken = await getAWSCLIToken(server.config, server.config.iamAuthOptions);
     }
 
     if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
       awsCLIToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
     }
+
+    log.info("CLI TOKEN: ", awsCLIToken)
 
     const config: PoolConfig = {
       host: server.config.host,

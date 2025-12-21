@@ -23,6 +23,7 @@ import {
 import {
   IDbConnectionDatabase,
   DatabaseElement,
+  IamAuthType,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
 import {createCancelablePromise} from "@/common/utils";
@@ -137,7 +138,7 @@ async function configDatabase(
 ): Promise<mysql.PoolOptions> {
 
   let awsCLIToken = undefined;
-  if( server.config.iamAuthOptions?.authType === 'iam_cli') {
+  if( server.config.iamAuthOptions?.authType === IamAuthType.CLI) {
     awsCLIToken = await getAWSCLIToken(server.config, server.config.iamAuthOptions);
   }
 
