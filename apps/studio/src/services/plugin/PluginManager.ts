@@ -36,6 +36,34 @@ export type PluginManagerOptions = {
 type InstallGuard = (pluginId: string) => void | Promise<void>;
 type PluginSnapshotTransformer = (snapshot: PluginSnapshot, currentSnapshots: PluginSnapshot[]) => PluginSnapshot | Promise<PluginSnapshot>;
 
+/**
+ * PluginManager is the central coordinator of the plugin system.
+ * It exposes high-level operations such as installing, updating,
+ * and listing plugins, while delegating most responsibilities to
+ * specialized classes:
+ *
+ * 1. PluginFileManager
+ *    Handles filesystem-related operations, including reading and
+ *    writing plugin manifests, downloading plugin assets, and
+ *    removing installed plugins.
+ *
+ * 2. PluginRegistry
+ *    Reads `plugins.json` and `community-plugins.json` from the
+ *    registry repository. It resolves plugin metadata, repositories,
+ *    and available versions. Results are cached internally.
+ *    Network access is delegated to PluginRepositoryService.
+ *
+ * 3. PluginRepositoryService
+ *    Responsible solely for fetching data from plugin repositories
+ *    via Octokit. This layer performs no caching and defines all
+ *    external API calls used by the plugin system.
+ *
+ * PluginManager behavior can be extended via hooks such as
+ * `addInstallGuard` and `addPluginSnapshotTransformer`.
+ *
+ * For details about the plugin lifecycle (e.g. iframe execution),
+ * see the WebPluginManager class.
+ */
 export default class PluginManager {
   private initialized = false;
   private registry: PluginRegistry;
