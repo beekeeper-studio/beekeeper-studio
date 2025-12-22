@@ -23,12 +23,16 @@ import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers } from '@/handlers/pluginHandlers';
+import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
+import bksConfig from '@/common/bksConfig'
 
 import * as sms from 'source-map-support'
+import bindLicenseConstraints from '@commercial/backend/plugin-system/licenseConstraints';
+import { LicenseKey } from '@/common/appdb/models/LicenseKey';
+import { CorePluginEntry, CommunityPluginEntry } from '@/common/appdb/models/PluginEntry';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -40,6 +44,20 @@ const pluginManager = new PluginManager({
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
+  pluginSettings: bksConfig.plugins,
+  initialRegistryFallback: async () => ({
+    core: await CorePluginEntry.getAllAsRegistryEntries(),
+    community: await CommunityPluginEntry.getAllAsRegistryEntries(),
+  }),
+  onRegistryFetched: async (registry) => {
+    try {
+      await CorePluginEntry.upsertFromRegistry(registry.core);
+      await CommunityPluginEntry.upsertFromRegistry(registry.community);
+      log.info("Successfully cached plugin registry to database");
+    } catch (e) {
+      log.error("Failed to cache plugin registry to database", e);
+    }
+  },
 });
 
 interface Reply {
@@ -167,11 +185,14 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
-  try {
+  async function initPluginManager() {
+    bindLicenseConstraints(pluginManager, await LicenseKey.getLicenseStatus());
     await pluginManager.initialize();
-  } catch (e) {
-    log.error("Error initializing plugin manager", e);
   }
+
+  initPluginManager().then((e) => {
+    log.error("Error initializing plugin manager", e);
+  });
 
   process.parentPort.postMessage({ type: 'ready' });
 }

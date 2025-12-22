@@ -3,10 +3,11 @@ import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
   Manifest,
-  PluginContext,
+  PluginSnapshot,
   PluginRegistryEntry,
   PluginRepository,
   PluginSettings,
+  PluginOrigin,
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
@@ -17,18 +18,34 @@ import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
 const log = rawLog.scope("PluginManager");
 
 export type PluginManagerOptions = {
-  fileManager?: PluginFileManager;
+  /** Per-plugin configuration, keyed by plugin ID. */
+  pluginSettings?: PluginSettings;
+  /** @todo Settings that apply to the plugin system as a whole. */
+  systemSettings?: unknown;
+  fileManager: PluginFileManager;
   registry?: PluginRegistry;
   appVersion: string;
+
+  /** This is triggered when registry module fails to fetch during initialization, e.g. if the app runs in offline. */
+  initialRegistryFallback?: () => Promise<{ core: PluginRegistryEntry[]; community: PluginRegistryEntry[] }>
+  ;
+  /** This is triggered when registry is successfully fetched, e.g. to cache entries to local database. */
+  onRegistryFetched?: (registry: { core: PluginRegistryEntry[]; community: PluginRegistryEntry[] }) => void | Promise<void>;
 }
+
+type InstallGuard = (pluginId: string) => void | Promise<void>;
+type PluginSnapshotTransformer = (snapshot: PluginSnapshot, currentSnapshots: PluginSnapshot[]) => PluginSnapshot | Promise<PluginSnapshot>;
 
 export default class PluginManager {
   private initialized = false;
   private registry: PluginRegistry;
   private fileManager: PluginFileManager;
-  private plugins: PluginContext[] = [];
+  /** A list of installed plugins */
+  private plugins: PluginSnapshot[] = [];
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
+  private installGuards: InstallGuard[] = [];
+  private pluginSnapshotTransformers: PluginSnapshotTransformer[] = [];
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
@@ -41,7 +58,9 @@ export default class PluginManager {
     this.fileManager = options.fileManager;
     this.registry =
       options.registry ||
-      new PluginRegistry(new PluginRepositoryService());
+      new PluginRegistry(new PluginRepositoryService(), {
+        onFetched: options.onRegistryFetched,
+      });
   }
 
   async initialize() {
@@ -56,10 +75,19 @@ export default class PluginManager {
 
     await this.loadPluginSettings();
 
-    this.plugins = installedPlugins.map((manifest) => ({
-      manifest,
-      loadable: this.isPluginLoadable(manifest),
-    }));
+    try {
+      await this.registry.fetch();
+    } catch (e) {
+      log.error("Failed to fetch registry during initialization", e);
+      if (this.options.initialRegistryFallback) {
+        const { core, community } = await this.options.initialRegistryFallback();
+        this.registry.setEntries(core, community);
+      }
+    }
+
+    for (const manifest of installedPlugins) {
+      await this.upsertPluginSnapshot(manifest);
+    }
 
     this.initialized = true;
 
@@ -69,7 +97,9 @@ export default class PluginManager {
         continue;
       }
 
-      await this.installPlugin(id);
+      await this.installPlugin(id).catch((e) => {
+        log.error(`Failed to install preinstalled plugin "${id}"`, e);
+      });
     }
 
 
@@ -78,24 +108,19 @@ export default class PluginManager {
         this.pluginSettings[plugin.id]?.autoUpdate &&
         (await this.checkForUpdates(plugin.id))
       ) {
-        await this.updatePlugin(plugin.id);
+        await this.updatePlugin(plugin.id).catch((e) => {
+          log.error(`Failed to update plugin "${plugin.id}"`, plugin, e);
+        });
       }
     }
   }
 
-  async getEntries() {
+  async getEntries(refresh?: boolean) {
     this.initializeGuard();
-    return await this.registry.getEntries();
-  }
-
-  async findPluginEntry(id: string): Promise<PluginRegistryEntry> {
-    this.initializeGuard();
-    const entries = await this.getEntries();
-    const entry = entries.find((entry) => entry.id === id);
-    if (!entry) {
-      throw new Error(`Plugin "${id}" not found in registry.`);
+    if (refresh) {
+      await this.registry.fetch();
     }
-    return entry;
+    return await this.registry.getEntries();
   }
 
   async getRepository(pluginId: string): Promise<PluginRepository> {
@@ -103,14 +128,19 @@ export default class PluginManager {
     return await this.registry.getRepository(pluginId);
   }
 
-  getPlugins(): PluginContext[] {
+  /** Get the list of installed plugins */
+  getInstalledPlugins(): PluginSnapshot[] {
     this.initializeGuard();
     return this.plugins;
   }
 
-  /** Plugin is not loadable if the **current app version** is lower than the
+  findInstalledPlugin(id: string) {
+    return this.getInstalledPlugins().find(({ manifest }) => manifest.id === id);
+  }
+
+  /** Plugin is not compatible if the **current app version** is lower than the
    * **minimum app version** required by the plugin. */
-  isPluginLoadable(manifest: Manifest): boolean {
+  private checkCompatibility(manifest: Manifest): boolean {
     if (!manifest.minAppVersion) {
       return true;
     }
@@ -118,8 +148,9 @@ export default class PluginManager {
   }
 
   /** Install the latest version of a plugin. */
-  async installPlugin(id: string): Promise<Manifest> {
+  async installPlugin(id: string): Promise<PluginSnapshot> {
     this.initializeGuard();
+    await this.installGuard(id);
 
     let update = false;
 
@@ -134,7 +165,7 @@ export default class PluginManager {
         throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
       }
 
-      if (!this.isPluginLoadable(info.latestRelease.manifest)) {
+      if (!this.checkCompatibility(info.latestRelease.manifest)) {
         throw new NotSupportedPluginError(
           `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
         );
@@ -149,18 +180,8 @@ export default class PluginManager {
       }
 
       const manifest = this.fileManager.getManifest(id);
-      const installedPluginIdx = this.plugins.findIndex(
-        ({ manifest }) => manifest.id === id
-      );
-      const plugin: PluginContext = {
-        manifest,
-        loadable: this.isPluginLoadable(manifest),
-      };
-      if (installedPluginIdx === -1) {
-        this.plugins.push(plugin);
-      } else {
-        this.plugins[installedPluginIdx] = plugin;
-      }
+
+      const transport = await this.upsertPluginSnapshot(manifest);
 
       if (!this.pluginSettings[id]) {
         this.pluginSettings[id] = {
@@ -171,11 +192,11 @@ export default class PluginManager {
 
       log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
-      return manifest;
+      return transport;
     });
   }
 
-  async updatePlugin(id: string): Promise<Manifest> {
+  async updatePlugin(id: string): Promise<PluginSnapshot> {
     this.initializeGuard();
     await this.registry.reloadRepository(id);
     return await this.installPlugin(id);
@@ -212,7 +233,7 @@ export default class PluginManager {
       return false;
     }
 
-    return this.isPluginLoadable(head.latestRelease.manifest);
+    return this.checkCompatibility(head.latestRelease.manifest);
   }
 
   async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
@@ -294,5 +315,55 @@ export default class PluginManager {
 
   get isInitialized() {
     return this.initialized;
+  }
+
+  private async upsertPluginSnapshot(manifest: Manifest): Promise<PluginSnapshot> {
+    const pluginIdx = this.plugins
+      .findIndex((plugin) => plugin.manifest.id === manifest.id);
+
+    const compatible = this.checkCompatibility(manifest);
+
+    const origin: PluginOrigin = this.registry.findEntryById(manifest.id)?.origin || "unpublished";
+
+    const disabled = typeof this.options.pluginSettings?.[manifest.id]?.disabled === "boolean"
+      ? this.options.pluginSettings?.[manifest.id]?.disabled
+      : false;
+
+    const snapshot = await this.applyPluginSnapshotTransformers({
+      manifest,
+      compatible,
+      disabled,
+      loadable: compatible,
+      origin,
+    });
+
+    if (pluginIdx === -1) {
+      this.plugins.push(snapshot);
+    } else {
+      this.plugins[pluginIdx] = snapshot;
+    }
+
+    return snapshot;
+  }
+
+  addInstallGuard(guard: InstallGuard) {
+    this.installGuards.push(guard);
+  }
+
+  private async installGuard(id: string) {
+    for (const guard of this.installGuards) {
+      await guard(id);
+    }
+  }
+
+  addPluginSnaphostTransformer(transformer: PluginSnapshotTransformer) {
+    this.pluginSnapshotTransformers.push(transformer);
+  }
+
+  private async applyPluginSnapshotTransformers(pluginContext: PluginSnapshot) {
+    for (const transformer of this.pluginSnapshotTransformers) {
+      pluginContext = await transformer(pluginContext, this.plugins);
+    }
+    return pluginContext;
   }
 }

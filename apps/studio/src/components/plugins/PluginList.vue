@@ -9,10 +9,11 @@
     >
       <div class="info">
         <div class="title">
-          {{ plugin.name }}
-          <span class="badge" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">disabled</span>
+          <span>{{ plugin.name }}</span>
+          <span class="badge" v-if="plugin.installed && plugin.disabled">disabled</span>
+          <i class="material-icons" v-else-if="isCommunity && plugin.id.startsWith('bks-')">stars</i>
         </div>
-        <div class="status-error" v-if="!plugin.loadable && plugin.installed">
+        <div class="status-error" v-if="!plugin.compatible && plugin.installed">
           This plugin requires version {{ plugin.minAppVersion }} or newer.
         </div>
         <div class="status-error" v-if="plugin.error" style="white-space: pre-wrap;">
@@ -24,13 +25,20 @@
         <div class="description">
           {{ plugin.description }}
         </div>
-        <div class="author">{{ plugin.author.name || plugin.author }}</div>
+        <div class="author">
+          By
+          {{ typeof plugin.author === 'string' ? plugin.author : plugin.author.name }}
+          <i
+            v-if="plugin.origin === 'core'"
+            class="verified material-icons"
+          >verified_user</i>
+        </div>
       </div>
       <div class="actions">
         <x-button
           v-if="plugin.installed && plugin.updateAvailable"
-          class="btn btn-flat"
-          :disabled="plugin.installing"
+          class="btn btn-small btn-flat"
+          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
           @click.prevent.stop="$emit('update', plugin)"
         >
           <x-label>
@@ -39,8 +47,8 @@
         </x-button>
         <x-button
           v-if="!plugin.installed"
-          class="btn btn-flat"
-          :disabled="plugin.installing"
+          class="btn btn-small btn-flat"
+          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
           @click.prevent.stop="$emit('install', plugin)"
         >
           <x-label>
@@ -72,29 +80,74 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import type { PluginRegistryEntry, Manifest } from "@/services/plugin/types";
-
-interface Plugin extends PluginRegistryEntry, Manifest {
-  installing: boolean;
-  installed: boolean;
-  enabled: boolean;
-  loadable: boolean;
-  error: unknown;
-  updateAvailable: boolean;
-}
+import type { UIPlugin } from "@/services/plugin/types";
+import { mapGetters } from "vuex";
 
 export default Vue.extend({
   name: "PluginList",
   props: {
     plugins: {
-      type: Array as PropType<Plugin[]>,
+      type: Array as PropType<UIPlugin[]>,
       required: true,
     },
   },
+  computed: {
+    ...mapGetters(['isCommunity']),
+  },
   methods: {
-    handleItemClick(_event: MouseEvent, plugin: Plugin) {
+    handleItemClick(_event: MouseEvent, plugin: UIPlugin) {
       this.$emit("item-click", plugin);
     },
   },
 });
 </script>
+
+<style scoped>
+.status-error {
+  line-height: 1.5;
+}
+
+.description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.plugin-list .item {
+  position: relative;
+}
+
+.actions {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.65rem;
+}
+
+.upgrade-required-icon {
+  color: var(--theme-primary);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+
+  .badge {
+    margin: 0;
+  }
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+
+  .verified {
+    color: var(--theme-secondary);
+    font-size: 1em;
+  }
+}
+</style>

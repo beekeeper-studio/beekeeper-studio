@@ -31,7 +31,8 @@
   .plugin-list-container {
     padding: 0.5rem 0 0;
     flex-grow: 1;
-    flex-basis: 35%;
+    display: flex;
+    flex-direction: column;
 
     >.description {
       padding-inline: $gutter-h;
@@ -52,6 +53,7 @@
     margin-top: 1rem;
     overflow-y: auto;
     min-width: 400px;
+    padding-bottom: 2rem;
 
     .item {
       padding: 1rem $gutter-h;
@@ -130,7 +132,6 @@
         font-weight: 700;
 
         .version {
-          padding-left: 0.5rem;
           font-size: 0.6em;
           color: rgba($theme-base, 0.7);
         }
@@ -167,8 +168,17 @@
       pre {
         padding: 1rem;
         border-radius: 0.375rem;
-        background-color: rgba($theme-base, 0.03);
+        background-color: var(--bks-text-editor-bg-color);
+        color: var(--bks-text-editor-fg-color);
         overflow: auto;
+
+        &:has(code) {
+          user-select: text;
+
+          ::selection {
+            background: var(--bks-text-editor-selected-bg-color);
+          }
+        }
       }
 
       img {

@@ -136,8 +136,9 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
 
 export type PluginRegistryEntry = Pick<
   Manifest,
-  "id" | "name" | "author" | "description"
+  "id" | "name" | "description"
 > & {
+  author: string;
   repo: string;
 };
 
@@ -171,24 +172,65 @@ export type PluginSettings = {
   }
 }
 
-
-export type WebPluginContext = {
+export type WebPluginLoaderContext = {
   manifest: Manifest;
   store: PluginStoreService;
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
   fileHelpers: FileHelpers;
+  disabled: boolean;
 }
 
-export type PluginContext = {
+export interface PluginSnapshot {
+  /** From the plugin's manifest.json */
   manifest: Manifest;
+  /** @alias compatible */
   loadable: boolean;
+  /** Is this compatible with the current app version? */
+  compatible: boolean;
+  disabled: boolean;
+  origin: PluginOrigin;
 }
+
+/**
+ * Plugins can be obtained from three sources:
+ * - `core` => https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json
+ * - `community` => https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json
+ * - `unpublished` => None of the above
+ */
+export type PluginOrigin = "core" | "community" | "unpublished";
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
 export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
+  /** For `getViewContext` API */
   context: any;
+}
+
+export type UIPlugin = {
+  /** @deprecated The plugin is made by Beekeeper Studio */
+  readonly core: boolean;
+  readonly origin: PluginOrigin;
+
+  // Infos that are available from plugins.json
+  id: Manifest['id'];
+  name: Manifest['name'];
+  author: Manifest['author'];
+  description: Manifest['description'];
+
+  compatible?: boolean;
+  /** @alias compatible */
+  loadable?: boolean;
+  installed: boolean;
+  installing: boolean;
+
+  updateAvailable: boolean;
+  checkingForUpdates: null | boolean;
+
+  disabled: boolean;
+  minAppVersion?: Manifest['minAppVersion'];
+  repo?: string;
+  error?: Error;
 }

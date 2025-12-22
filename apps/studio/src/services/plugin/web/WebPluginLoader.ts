@@ -3,7 +3,7 @@ import {
   Manifest,
   OnViewRequestListener,
   ViewResultModifier,
-  WebPluginContext,
+  WebPluginLoaderContext,
   WebPluginViewInstance,
 } from "../types";
 import type {
@@ -66,7 +66,7 @@ export default class WebPluginLoader {
 
   menu: PluginMenuManager;
 
-  constructor(public readonly context: WebPluginContext) {
+  constructor(public readonly context: WebPluginLoaderContext) {
     this.manifest = context.manifest;
     this.pluginStore = context.store;
     this.utilityConnection = context.utility;
@@ -88,8 +88,11 @@ export default class WebPluginLoader {
 
     this.log.info("Loading plugin", this.manifest);
 
-    // Add event listener for messages from iframe
-    window.addEventListener("message", this.handleMessage);
+    if (this.context.disabled) {
+      this.log.info("Plugin is disabled. Skipping...");
+      // No further processing if it's disabled.
+      return;
+    }
 
     // Backward compatibility: Early version of AI Shell.
     const { views, menu } = isManifestV0(this.context.manifest)
@@ -98,6 +101,9 @@ export default class WebPluginLoader {
 
     this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
     this.menu.register(views, menu);
+
+    // Add event listener for messages from iframe
+    window.addEventListener("message", this.handleMessage);
 
     if (!this.listening) {
       this.registerEvents();
