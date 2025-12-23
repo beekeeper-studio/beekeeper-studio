@@ -125,7 +125,7 @@
     "split.js": "^1.6.5",
     "sql-formatter": "15.6.10",
     "sql-query-identifier": "^2.9.0",
-    "sqlanywhere": "beekeeper-studio/node-sqlanywhere#79af05a4f7f94cf6dd45ad56448ccc54356dee9a",
+    "sqlanywhere": "beekeeper-studio/node-sqlanywhere#7842ca03f1fe8d0995b19ed80f1ab57af2fe492c",
     "ssh2": "^1.14.0",
     "surrealdb": "^1.3.2",
     "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
