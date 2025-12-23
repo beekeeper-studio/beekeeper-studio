@@ -154,7 +154,9 @@ module.exports = {
       'pacman'
     ],
     desktop: {
-      'StartupWMClass': 'beekeeper-studio'
+      entry: {
+        'StartupWMClass': 'beekeeper-studio',
+      }
     },
     publish: ['github']
   },
