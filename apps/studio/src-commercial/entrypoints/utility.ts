@@ -167,11 +167,9 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
-  try {
-    await pluginManager.initialize();
-  } catch (e) {
+  pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
-  }
+  });
 
   process.parentPort.postMessage({ type: 'ready' });
 }
