@@ -1,14 +1,14 @@
 #! /bin/bash
 
 OLD_FILE=/etc/apt/sources.list.d/beekeeper-studio.list
-NEW_FILE=/etc/apt/sources.list.d/beekeeper-studio-app.list
+NEW_LIST=/etc/apt/sources.list.d/beekeeper-studio-app.list
+NEW_SOURCES=/etc/apt/sources.list.d/beekeeper-studio.sources
 
-available()
-{
-        command -v "$1" >/dev/null 2>&1
-}
+# packages should place keys in /usr/share/keyrings/ https://manpages.debian.org/trixie/apt/apt-secure.8.en.html#USER_CONFIGURATION
+# .asc file extension for keys using the ascii armored format (apot doesn't look at the file content to determine the format only at the extension)
+KEY_FILE=/usr/share/keyrings/beekeeper-studio.asc
 
-if [ -f $NEW_FILE ]; then
+if [ -f $NEW_SOURCES ]; then
   exit 0
 fi
 
@@ -19,14 +19,12 @@ if [ -f $OLD_FILE ]; then
   rm -f $OLD_FILE.save
 fi
 
-if [ ! -f /usr/bin/beekeeper-studio ]; then
+if [ ! -e /usr/bin/beekeeper-studio ]; then
   ln -s /opt/Beekeeper\ Studio/beekeeper-studio /usr/bin/beekeeper-studio
 fi
 
-if available apt-key
-then
-      apt-key add - >/dev/null <<EOF
------BEGIN PGP PUBLIC KEY BLOCK-----
+cat >"${KEY_FILE}" <<EOF
+-----BEGIN PGP PUBLIC KEY BLOCK----- 
 
 mQGNBGAknFwBDADDeG2uKjgAzuLPNV8Oy5QQgJ2GgbFhUMA2bBgSNYRwTP8NVbEH
 Vzcm53vsRzcXa57gjS9TdnC9LHCWjeNm8iFFNmDKx0/0jrU3Tit0ChiArMqvuTv9
@@ -69,5 +67,31 @@ vEIGKwKpFx6ySE6DsU5fSJBT9dgw2Z6/KUJjWQSvjmOJmoOlCahos0L4Hmqyo39d
 -----END PGP PUBLIC KEY BLOCK-----
 
 EOF
-    echo "deb https://deb.beekeeperstudio.io stable main" > $NEW_FILE
+
+APT_VERSION="$(dpkg-query --show --showformat '${Version}' apt)"
+
+if dpkg --compare-versions "${APT_VERSION}" ge 1.1.0 ; then
+
+if [ -f $NEW_LIST ]; then
+  echo "--> Switching from .list to .sources for Beekeeper Studio apt repo"
+  rm -f $NEW_LIST
 fi
+
+cat >"${NEW_SOURCES}" <<EOF
+Types: deb
+URIs: https://deb.beekeeperstudio.io
+Suites: stable
+Components: main
+Signed-By: ${KEY_FILE}
+
+EOF
+
+else 
+
+
+
+echo "deb [signed-by=${KEY_FILE}] https://deb.beekeeperstudio.io stable main" > "${NEW_LIST}"
+
+fi
+
+
