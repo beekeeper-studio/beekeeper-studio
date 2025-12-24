@@ -17,7 +17,6 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  getIAMPassword,
   ClientError, refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
@@ -67,6 +66,8 @@ import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
+import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { getAWSCLIToken } from "../authentication/amazon-redshift";
 
 type ResultType = {
   tableName?: string
@@ -135,6 +136,15 @@ async function configDatabase(
   database: IDbConnectionDatabase
 ): Promise<mysql.PoolOptions> {
 
+  let awsCLIToken = undefined;
+  if( server.config.iamAuthOptions?.authType === 'iam_cli') {
+    awsCLIToken = await getAWSCLIToken(server.config, server.config.iamAuthOptions);
+  }
+
+  if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+      awsCLIToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+  }
+
   const config: mysql.PoolOptions = {
     authPlugins: {
       'client_ed25519': ed25519AuthPlugin(),
@@ -142,7 +152,7 @@ async function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
+    password: awsCLIToken || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -151,6 +161,11 @@ async function configDatabase(
     connectionLimit: BksConfig.db.mysql.maxConnections,
     connectTimeout: BksConfig.db.mysql.connectTimeout,
   };
+
+  if (server.config.azureAuthOptions?.azureAuthEnabled) {
+    const authService = new AzureAuthService();
+    return authService.configDB(server, config)
+  }
 
   if (server.config.socketPathEnabled) {
     config.socketPath = server.config.socketPath;
@@ -165,7 +180,7 @@ async function configDatabase(
   }
 
   if (
-    server.config.redshiftOptions?.iamAuthenticationEnabled
+    server.config.iamAuthOptions?.iamAuthenticationEnabled
   ){
     server.config.ssl = true
   }
@@ -316,12 +331,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       pool: mysql.createPool(dbConfig),
     };
 
-    if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
+    if(this.server.config.iamAuthOptions?.iamAuthenticationEnabled){
       this.interval = setInterval(async () => {
         try {
           this.conn.pool.getConnection(async (err, connection) => {
             if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 3306)
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 3306)
             connection.release();
             log.info('Token refreshed successfully.')
           });

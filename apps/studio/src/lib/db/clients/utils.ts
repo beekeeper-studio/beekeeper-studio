@@ -11,6 +11,7 @@ import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
 import {RedshiftOptions} from "@/lib/db/types";
+import {AuthOptions} from "@/lib/db/authentication/azure";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
 const log = logRaw.scope('db/util')
@@ -39,7 +40,6 @@ export function joinQueries(queries) {
   })
   return results.join("")
 }
-
 
 export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   if (!filter) return null
@@ -89,6 +89,18 @@ function wrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
+export function getEntraOptions(server, extra): AuthOptions {
+  return {
+    password: server.config?.password,
+    userName: server.config?.user,
+    tenantId: server.config?.azureAuthOptions.tenantId,
+    clientId: server.config?.azureAuthOptions.clientId,
+    clientSecret: server.config?.azureAuthOptions.clientSecret,
+    msiEndpoint: server.config?.azureAuthOptions.msiEndpoint,
+    cliPath: server.config?.azureAuthOptions.cliPath,
+    ...extra
+  };
+}
 
 export function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = ""
