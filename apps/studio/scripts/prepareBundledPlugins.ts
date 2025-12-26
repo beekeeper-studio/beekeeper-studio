@@ -1,3 +1,7 @@
+/**
+ * Download all core plugins to the bundled plugins directory.
+ */
+
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
