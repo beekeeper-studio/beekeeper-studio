@@ -27,6 +27,7 @@ import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
+import ensureBundledPluginsInstalled from '@commercial/backend/plugin-system/hooks/ensureBundledPluginsInstalled';
 
 import * as sms from 'source-map-support'
 
@@ -41,6 +42,7 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
+ensureBundledPluginsInstalled(pluginManager);
 
 interface Reply {
   id: string,
