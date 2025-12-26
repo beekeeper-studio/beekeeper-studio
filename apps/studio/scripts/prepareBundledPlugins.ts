@@ -1,20 +1,20 @@
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
-import plugins from "../plugins.json";
 
 const pluginsDirectory = 'extra_resources/bundled_plugins';
 const fileManager = new PluginFileManager({ pluginsDirectory });
 const registry = new PluginRegistry(new PluginRepositoryService());
-const pluginIds = Object.keys(plugins.bundled);
 
 async function run() {
-  console.log(`▶ Downloading ${pluginIds.length} plugins to ${pluginsDirectory}`);
+  const entries = await registry.getEntries();
 
-  for (let i = 0; i < pluginIds.length; i++) {
-    const id = pluginIds[i];
+  console.log(`▶ Downloading ${entries.length} plugins to ${pluginsDirectory}`);
 
-    process.stdout.write(`[${i + 1}/${pluginIds.length}] ${id} `);
+  for (let i = 0; i < entries.length; i++) {
+    const { id } = entries[i];
+
+    process.stdout.write(`[${i + 1}/${entries.length}] ${id} `);
 
     try {
       const repository = await registry.getRepository(id);
