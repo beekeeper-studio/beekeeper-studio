@@ -1,10 +1,4 @@
-;Inspired by:
-; https://gist.github.com/bogdibota/062919938e1ed388b3db5ea31f52955c
-; https://stackoverflow.com/questions/34177547/detect-if-visual-c-redistributable-for-visual-studio-2013-is-installed
-; https://stackoverflow.com/a/54391388
-
-;Find latests downloads here:
-; https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+; https://github.com/GitCommons/cpp-redist-nsis
 
 !include LogicLib.nsh
 
@@ -23,7 +17,7 @@
 
 
   ${If} $isInstalled != "1"
-    MessageBox MB_YESNO "NOTE: This application requires$\r$\n\
+    MessageBox MB_YESNO "Beekeeper Studio requires$\r$\n\
       'Microsoft Visual C++ Redistributable'$\r$\n\
       to function properly.$\r$\n$\r$\n\
       Download and install now?" /SD IDYES IDNO VSRedistInstalled
