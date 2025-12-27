@@ -61,7 +61,7 @@
         @click.prevent="showUpgradeModal"
         class="btn btn-brand btn-icon btn-upgrade"
         v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
-        v-if="$store.getters.isCommunity"
+        v-if="false"
       >
         <i class="material-icons">stars</i> Upgrade
       </a>

@@ -16,44 +16,11 @@ export function keysToStatus(licenses: LicenseKey[]): LicenseStatus {
     const currentDate = new Date();
     const currentVersion = platformInfo.parsedAppVersion;
 
-    // Do they have a license at all?
-    if (licenses.length === 0) {
-      status.edition = "community";
-      status.condition.push("No license found");
-      return status;
-    }
-
     const currentLicense = _.orderBy(licenses, ["validUntil"], ["desc"])[0];
     status.license = currentLicense;
 
-    if (currentDate > currentLicense.supportUntil) {
-      status.condition.push("Expired support date");
-    }
-
-    // Is the license not valid?
-    if (currentDate > currentLicense.validUntil) {
-      status.edition = "community";
-      status.condition.push("Expired valid date");
-      return status;
-    }
-
-    // From here, we know that the license is still valid.
-    // Is maxAllowedAppRelease nullish?
-    if (_.isNil(currentLicense.maxAllowedAppRelease)) {
-      status.edition = "ultimate";
-      status.condition.push("No app version restriction");
-      return status;
-    }
-
-    // Does the license allow the current app version?
-    if (isVersionLessThanOrEqual(currentVersion, status.maxAllowedVersion)) {
-      status.edition = "ultimate";
-      status.condition.push("App version allowed");
-      return status;
-    }
-
-    status.edition = "community";
-    status.condition.push("App version not allowed");
+    status.edition = "ultimate";
+    status.condition.push("No app version restriction");
     return status;
 }
 

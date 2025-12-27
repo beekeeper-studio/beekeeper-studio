@@ -243,7 +243,6 @@
               <x-label>
                 Import from file
                 <i
-                  v-if="$store.getters.isCommunity"
                   class="material-icons menu-icon"
                 >stars</i>
               </x-label>
@@ -1169,12 +1168,12 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
-        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
+        label: createMenuItem("Quick Filter", "", this.false),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {
             label: createMenuItem(`${cell.getField()} ${s} value`),
-            disabled: this.$store.getters.isCommunity,
+            disabled: false,
             action: async (_e, cell: CellComponent) => {
               const newFilter = [{
                 field: cell.getField(),

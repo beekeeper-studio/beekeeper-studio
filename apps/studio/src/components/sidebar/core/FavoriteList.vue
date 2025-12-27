@@ -21,10 +21,6 @@
                     @click.prevent="importFromLocal"
                   >
                     <x-label>Import from local workspace</x-label>
-                    <i
-                      v-if="$store.getters.isCommunity"
-                      class="material-icons menu-icon"
-                    >stars</i>
                   </x-menuitem>
                 </x-menu>
               </x-button>

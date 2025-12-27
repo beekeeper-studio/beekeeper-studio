@@ -73,8 +73,8 @@ export const FkLinkMixin = {
       let tableName = rawKeyData.toTable
       let schemaName = rawKeyData.toSchema
       // Handle both regular and composite foreign keys
-      let columnName = rawKeyData.isComposite ? 
-        rawKeyData.toColumn.join(',') : 
+      let columnName = rawKeyData.isComposite ?
+        rawKeyData.toColumn.join(',') :
         rawKeyData.toColumn
 
 
@@ -110,10 +110,10 @@ export const FkLinkMixin = {
       const filters = [];
 
       // Handle source column(s) - might be composite keys
-      const FromColumnKeys = rawKeyData.isComposite ? 
-        rawKeyData.fromColumn : 
+      const FromColumnKeys = rawKeyData.isComposite ?
+        rawKeyData.fromColumn :
         fromColumn.split(',');
-        
+
       // Handle target column(s)
       const ToColumnKeys = columnName.split(',');
       const values = [];
@@ -123,12 +123,12 @@ export const FkLinkMixin = {
         const sourceColumnName = FromColumnKeys[index] || fromColumn;
         const valueCell = cell.getRow().getCell(sourceColumnName);
         const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams || {}
-        
+
         if (!valueCell) {
           log.error(`fk-click: unable to find source column cell for '${sourceColumnName}'`);
           return;
         }
-        
+
         let value = cell.getValue()
 
         if (value instanceof Uint8Array) {
@@ -144,15 +144,7 @@ export const FkLinkMixin = {
         });
       });
 
-      let openJsonViewer = true
-      if (this.$store.getters.isCommunity) {
-        const lastOpen = SmartLocalStorage.getDate('openJSONViewerViaFK__community')
-        if (!lastOpen || lastOpen < monthAgo()) {
-          SmartLocalStorage.setDate('openJSONViewerViaFK__community', new Date())
-        } else {
-          openJsonViewer = false
-        }
-      }
+      let openDetailView = true
 
       const payload = {
         table, filters, titleScope: values.join(','),

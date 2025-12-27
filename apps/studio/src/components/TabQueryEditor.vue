@@ -169,14 +169,10 @@
           <x-button
             v-if="showDryRun"
             class="btn btn-flat btn-small dry-run-btn"
-            :disabled="isCommunity"
+            :disabled="false"
             @click="dryRun = !dryRun"
           >
             <x-label>Dry Run</x-label>
-            <i
-              v-if="isCommunity"
-              class="material-icons menu-icon"
-            >stars</i>
             <input
               v-else
               type="checkbox"

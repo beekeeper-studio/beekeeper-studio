@@ -43,7 +43,7 @@
       </label>
       <input type="text" class="form-control" v-model="config.options.cluster">
     </div>
-    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
+    <common-iam v-show="iamAuthenticationEnabled" :config="config" />
     <common-advanced :config="config" />
   </div>
 </template>
@@ -58,56 +58,49 @@ import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import { mapGetters } from 'vuex';
 import _ from "lodash";
 
-export default {
-  components: { CommonServerInputs, CommonAdvanced, CommonIam },
-  props: ['config'],
-  data() {
-    return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
-      authType: this.config.redshiftOptions?.authType || 'default',
-      authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
-      accountName: null,
-      signingOut: false,
-      errorSigningOut: null,
-    }
-  },
-  watch: {
-    isCockroach() {
-      if(this.isCockroach) {
-        this.iamAuthenticationEnabled = false
-        this.authType = 'default'
+  export default {
+    components: { CommonServerInputs, CommonAdvanced, CommonIam },
+    props: ['config'],
+    data() {
+      return {
+        iamAuthenticationEnabled: false,
+        authType: 'default',
+        authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
+        accountName: null,
+        signingOut: false,
+        errorSigningOut: null,
       }
     },
-    async authType() {
-      if (this.authType === 'default') {
-        this.iamAuthenticationEnabled = false
-      } else {
-        if (this.isCommunity) {
-          // we want to display a modal
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+    watch: {
+      isCockroach() {
+        if(this.isCockroach) {
+          this.iamAuthenticationEnabled = false
           this.authType = 'default'
-        } else {
-          this.config.redshiftOptions.authType = this.authType
-          this.iamAuthenticationEnabled = this.authType.includes('iam')
         }
-      }
+      },
+      async authType() {
+        if (this.authType === 'default') {
+          this.iamAuthenticationEnabled = false
+        } else {
+            this.iamAuthenticationEnabled = true
+        }
 
-      const authId = this.config.azureAuthOptions?.authId || this.config?.authId
-      if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
-        this.accountName = await this.connection.azureGetAccountName(authId);
-      } else {
-        this.accountName = null
+        const authId = this.config.azureAuthOptions?.authId || this.config?.authId
+        if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
+          this.accountName = await this.connection.azureGetAccountName(authId);
+        } else {
+          this.accountName = null
+        }
+      },
+      iamAuthenticationEnabled() {
+        this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
       }
     },
-    iamAuthenticationEnabled() {
-      this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
+    computed: {
+      ...mapGetters(['isCommunity']),
+      isCockroach() {
+        return this.config.connectionType === 'cockroachdb'
+      },
     }
-  },
-  computed: {
-    ...mapGetters(['isCommunity']),
-    isCockroach() {
-      return this.config.connectionType === 'cockroachdb'
-    },
-  }
-};
+  };
 </script>

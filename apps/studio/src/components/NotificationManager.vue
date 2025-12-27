@@ -46,7 +46,7 @@ export default Vue.extend({
         clearTimeout(this.timeoutID)
         this.timeoutID = null
       }
-      if (!this.isCommunity) { 
+      if (!this.isCommunity) {
         return
       }
 
@@ -60,7 +60,6 @@ export default Vue.extend({
     }
   },
   mounted() {
-    this.initNotifyInterval()
   }
 })
 </script>

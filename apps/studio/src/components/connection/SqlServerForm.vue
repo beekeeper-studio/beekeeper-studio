@@ -185,15 +185,9 @@
           this.azureAuthEnabled = false
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
-          if (this.$store.getters.isCommunity) {
-            // we want to display a modal
-            this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
-            this.authType = 'default'
-          } else {
             this.azureAuthEnabled = true
             this.config.azureAuthOptions.azureAuthType = this.authType
           }
-        }
 
         const authId = this.config.azureAuthOptions?.authId || this.config?.authId
         if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {

@@ -35,7 +35,7 @@
         </div>
       </div>
     </div>
-    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
+    <common-iam v-show="iamAuthenticationEnabled" :config="config" />
     <common-advanced :config="config" />
   </div>
 </template>
@@ -55,8 +55,8 @@ export default {
   props: ['config'],
   data() {
     return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.iamAuthenticationEnabled,
-      authType: this.config.redshiftOptions?.authType || 'default',
+      iamAuthenticationEnabled: false,
+      authType: 'default',
       authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes],
       accountName: null,
       signingOut: false,
@@ -72,14 +72,7 @@ export default {
       if (this.authType === 'default') {
         this.iamAuthenticationEnabled = false
       } else {
-        if (this.isCommunity) {
-          // we want to display a modal
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
-          this.authType = 'default'
-        } else {
-          this.config.redshiftOptions.authType = this.authType
-          this.iamAuthenticationEnabled = this.authType.includes('iam')
-        }
+        this.iamAuthenticationEnabled = true
       }
 
       const authId = this.config.azureAuthOptions?.authId || this.config?.authId
