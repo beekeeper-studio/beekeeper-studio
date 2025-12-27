@@ -209,7 +209,7 @@ module.exports = {
   },
   nsis: {
     oneClick: false,
-    include: ['./build/win/msvc-redist.nsh']
+    include: './build/win/msvc-redist.nsh'
   },
   appx: {
     applicationId: "beekeeperstudio",
