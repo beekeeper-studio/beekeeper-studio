@@ -5,12 +5,22 @@
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
+import { existsSync, readdirSync } from "fs";
 
 const pluginsDirectory = 'extra_resources/bundled_plugins';
 const fileManager = new PluginFileManager({ pluginsDirectory });
 const registry = new PluginRegistry(new PluginRepositoryService());
 
 async function run() {
+  // Check if plugins directory exists and has plugins
+  if (existsSync(pluginsDirectory)) {
+    const files = readdirSync(pluginsDirectory);
+    if (files.length > 0) {
+      console.log(`✔ Bundled plugins already exist in ${pluginsDirectory}, skipping download`);
+      return;
+    }
+  }
+
   const entries = await registry.getEntries();
 
   console.log(`▶ Downloading ${entries.length} plugins to ${pluginsDirectory}`);
