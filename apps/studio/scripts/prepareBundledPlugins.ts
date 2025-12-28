@@ -59,10 +59,10 @@ function printRateLimitWarning() {
   const lines = [
     " GitHub API rate limit hit ",
     "",
-    " This happened during postinstall while downloading a Beekeeper Studio plugin.",
+    " This happened during build process while downloading a Beekeeper Studio plugin.",
     "",
-    " Fix:",
-    "   GITHUB_TOKEN=your_token_here yarn install",
+    " Fix, provide a GitHub token to your environment:",
+    "   export GITHUB_TOKEN=your_token_here",
     "",
     " Any GitHub personal access token works."
   ];
