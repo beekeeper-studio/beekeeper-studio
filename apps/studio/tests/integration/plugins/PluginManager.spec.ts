@@ -206,10 +206,9 @@ describe("Basic Plugin Management", () => {
       const manager = await initPluginManager(AppVer.COMPAT);
 
       // 4. Check if the plugins are installed
-      const plugins = manager.getPlugins();
-      expect(plugins).toHaveLength(2);
-      expect(plugins.find((p) => p.manifest.id === "bks-ai-shell")).toBeDefined();
-      expect(plugins.find((p) => p.manifest.id === "bks-er-diagram")).toBeDefined();
+      expect(manager.getPlugins()).toHaveLength(2);
+      expect(manager.getPlugins()[0].manifest.id).toBe("bks-ai-shell");
+      expect(manager.getPlugins()[1].manifest.id).toBe("bks-er-diagram");
     });
   });
 
