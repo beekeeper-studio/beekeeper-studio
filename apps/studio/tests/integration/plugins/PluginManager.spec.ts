@@ -156,56 +156,38 @@ describe("Basic Plugin Management", () => {
     });
 
     it("can preinstall plugins", async () => {
-      // 1. Create 2 folders named `bks-ai-shell` and `bks-er-diagram`
-      const pluginsDir = fileManager.options.pluginsDirectory;
-      const aiShellDir = path.join(pluginsDir, "bks-ai-shell");
-      const erDiagramDir = path.join(pluginsDir, "bks-er-diagram");
+      // 1. Create 2 folders for the plugins
+      const bksAiShell = path.join(fileManager.options.pluginsDirectory, "bks-ai-shell");
+      const bksErDiagram = path.join(fileManager.options.pluginsDirectory, "bks-er-diagram");
 
-      mkdirSync(aiShellDir, { recursive: true });
-      mkdirSync(erDiagramDir, { recursive: true });
+      mkdirSync(bksAiShell, { recursive: true });
+      mkdirSync(bksErDiagram, { recursive: true });
 
       // 2. In each folder, create `manifest.json` file
-      const aiShellManifest: Manifest = {
+      writeFileSync(path.join(bksAiShell, "manifest.json"), JSON.stringify({
         id: "bks-ai-shell",
-        name: "AI Shell",
+        name: "BKS AI Shell",
         version: "1.0.0",
         minAppVersion: AppVer.COMPAT,
         author: "Beekeeper Studio",
         description: "AI Shell Plugin",
         manifestVersion: 1,
-        capabilities: {
-          views: [],
-          menu: [],
-        },
-      };
+        capabilities: { views: [], menu: [] },
+      } as Manifest));
 
-      const erDiagramManifest: Manifest = {
+      writeFileSync(path.join(bksErDiagram, "manifest.json"), JSON.stringify({
         id: "bks-er-diagram",
-        name: "ER Diagram",
+        name: "BKS ER Diagram",
         version: "1.0.0",
         minAppVersion: AppVer.COMPAT,
         author: "Beekeeper Studio",
         description: "ER Diagram Plugin",
         manifestVersion: 1,
-        capabilities: {
-          views: [],
-          menu: [],
-        },
-      };
+        capabilities: { views: [], menu: [] },
+      } as Manifest));
 
-      writeFileSync(
-        path.join(aiShellDir, "manifest.json"),
-        JSON.stringify(aiShellManifest, null, 2)
-      );
-      writeFileSync(
-        path.join(erDiagramDir, "manifest.json"),
-        JSON.stringify(erDiagramManifest, null, 2)
-      );
-
-      // 3. Initialize the plugin manager
+      // 3. Check if the plugins are installed
       const manager = await initPluginManager(AppVer.COMPAT);
-
-      // 4. Check if the plugins are installed
       expect(manager.getPlugins()).toHaveLength(2);
       expect(manager.getPlugins()[0].manifest.id).toBe("bks-ai-shell");
       expect(manager.getPlugins()[1].manifest.id).toBe("bks-er-diagram");
