@@ -73,6 +73,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       accelerator: 'CommandOrControl+=',
       click: actionHandler.zoomin
     },
+    zoominNumpad: {
+      id: 'zoom-in-numpad',
+      label: "Zoom In",
+      accelerator: 'CommandOrControl+numadd',
+      click: actionHandler.zoomin,
+      visible: false,
+    },
     zoomout: {
       id: 'zoom-out',
       label: "Zoom Out",
