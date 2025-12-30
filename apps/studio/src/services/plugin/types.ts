@@ -134,12 +134,19 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
   }
 };
 
-export type PluginRegistryEntry = Pick<
-  Manifest,
-  "id" | "name" | "description"
-> & {
+export type RawPluginRegistryEntry = {
+  id: string;
+  name: string;
+  description: string;
   author: string;
   repo: string;
+};
+
+export type PluginRegistryEntry = RawPluginRegistryEntry & {
+  /** Data not defined in plugins.json, but derived or enriched at runtime */
+  metadata: {
+    origin: PluginOrigin;
+  },
 };
 
 export interface Release {
@@ -182,16 +189,32 @@ export type WebPluginLoaderContext = {
   disabled: boolean;
 }
 
-export interface PluginSnapshot {
+export type PluginSnapshot = DisableState & {
   /** From the plugin's manifest.json */
-  manifest: Manifest;
-  /** @alias compatible */
-  loadable: boolean;
+  manifest: ManifestV1;
   /** Is this compatible with the current app version? */
   compatible: boolean;
-  disabled: boolean;
   origin: PluginOrigin;
-}
+};
+
+/* Disable state is controlled by hooks, e.g., bindLicenseConstraints and bindIniConfig. */
+type DisableState = ({
+  disabled: false;
+} | {
+  disabled: true;
+  disableReasons: DisableReason[];
+});
+
+/** IMPORTANT: If you add a new type here, be sure to update the messages in DisableReason.vue */
+export type DisableReason =
+  | {
+    source: "license";
+    cause: "max-plugins-reached" | "max-community-plugins-reached" | "valid-license-required";
+    /** The limit of plugins that can be used. Defined if the cause is
+     * `"max-plugins-reached"` or `"max-community-plugins-reached"`. */
+    limit?: number;
+  }
+  | { source: "config" };
 
 /**
  * Plugins can be obtained from three sources:
@@ -210,27 +233,34 @@ export type WebPluginViewInstance = {
 }
 
 export type UIPlugin = {
-  /** @deprecated The plugin is made by Beekeeper Studio */
-  readonly core: boolean;
   readonly origin: PluginOrigin;
 
   // Infos that are available from plugins.json
-  id: Manifest['id'];
-  name: Manifest['name'];
-  author: Manifest['author'];
-  description: Manifest['description'];
+  readonly id: Manifest['id'];
+  readonly name: Manifest['name'];
+  readonly author: Manifest['author'];
+  readonly description: Manifest['description'];
 
+  /** To find out if it's compatible, we must try to install it and see if it fails or not.
+   * After that, this property will be set. */
   compatible?: boolean;
-  /** @alias compatible */
-  loadable?: boolean;
-  installed: boolean;
   installing: boolean;
+  installed: boolean;
+  installedVersion?: string;
 
   updateAvailable: boolean;
   checkingForUpdates: null | boolean;
 
-  disabled: boolean;
   minAppVersion?: Manifest['minAppVersion'];
   repo?: string;
   error?: Error;
+} & DisableState;
+
+export type RawFetchRegistryResult = {
+  core: RawPluginRegistryEntry[];
+  community: RawPluginRegistryEntry[];
+  errors: {
+    core: Error | null;
+    community: Error | null;
+  }
 }

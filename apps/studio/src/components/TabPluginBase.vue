@@ -1,18 +1,21 @@
 <template>
-  <div v-if="isCommunity && tab.context.pluginId.startsWith('bks-')" class="tab-upsell-wrapper">
-    <upsell-content />
-  </div>
-  <div v-else class="plugin-base" ref="container">
-    <isolated-plugin-view
-      :visible="active"
-      :plugin-id="tab.context.pluginId"
-      :url="url"
-      :reload="reload"
-      :on-request="handleRequest"
-      :command="tab.context.command"
-      :params="tab.context.params"
-    />
-  </div>
+  <plugin-view-gate
+    :plugin-id="tab.context.pluginId"
+    :view-id="tab.context.pluginTabTypeId"
+    v-slot="{ data }"
+  >
+    <div class="plugin-base" ref="container">
+      <isolated-plugin-view
+        :visible="active"
+        :plugin="data.snapshot"
+        :url="data.url"
+        :reload="reload"
+        :on-request="handleRequest"
+        :command="tab.context.command"
+        :params="tab.context.params"
+      />
+    </div>
+  </plugin-view-gate>
 </template>
 
 <script lang="ts">
@@ -20,14 +23,13 @@ import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { mapGetters } from "vuex";
-import UpsellContent from "@/components/upsell/UpsellContent.vue";
 import { OnViewRequestListenerParams } from "@/services/plugin/types";
+import PluginViewGate from "./plugins/PluginViewGate.vue";
 
 export default Vue.extend({
   components: {
     IsolatedPluginView,
-    UpsellContent,
+    PluginViewGate,
   },
 
   props: {
@@ -37,17 +39,6 @@ export default Vue.extend({
     },
     active: Boolean,
     reload: null,
-  },
-
-  computed: {
-    ...mapGetters(["isCommunity"]),
-    url() {
-      const plugin = this.$plugin.pluginOf(this.tab.context.pluginId);
-      const tabType = plugin.manifest.capabilities.views.find(
-        (v) => v.id === this.tab.context.pluginTabTypeId
-      );
-      return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
-    },
   },
 
   methods: {

@@ -15,6 +15,7 @@ import PluginRegistry from "@/services/plugin/PluginRegistry";
 import { MockPluginRepositoryService } from "./utils/registry";
 import PluginStoreService from "@/services/plugin/web/PluginStoreService";
 import { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import bindIniConfig from "@commercial/backend/plugin-system/hooks/iniConfig";
 
 describe("WebPluginManager", () => {
   const { server, fileManager, emptyRegistry } = preparePluginSystemTestGroup();
@@ -88,12 +89,11 @@ describe("WebPluginManager", () => {
       const pluginManager = new PluginManager({
         appVersion: "9.9.9",
         fileManager,
-        pluginSettings: {
-          // IMPORTANT: PluginManager is the backend. We want to disable from here!
-          "test-plugin": { disabled: true },
-        },
         registry: emptyRegistry,
       });
+      bindIniConfig(pluginManager, {
+        plugins: { "test-plugin": { disabled: true } },
+      })
       const util = prepareWebPluginManagerTestGroup({ pluginManager });
       pluginStore = util.pluginStore;
       utilityConnection = util.utilityConnection;

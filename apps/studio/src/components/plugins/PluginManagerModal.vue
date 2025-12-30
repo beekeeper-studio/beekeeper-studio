@@ -10,29 +10,48 @@
           Plugins
         </div>
         <div class="top-right-buttons">
-          <button class="btn btn-fab" @click.prevent="loadPlugins(true)">
+          <button
+            class="btn btn-fab"
+            @click.prevent="loadPlugins(true)"
+            title="Refresh list"
+          >
             <i class="material-icons">refresh</i>
           </button>
-          <button class="btn btn-fab" @click.prevent="close">
+          <button
+            class="btn btn-fab"
+            @click.prevent="close"
+            title="Close"
+          >
             <i class="material-icons">clear</i>
           </button>
         </div>
         <x-progressbar v-if="loadingPlugins" style="margin-top: -5px" />
         <div class="plugin-manager-content">
-          <div class="plugin-list-container">
+          <div class="plugin-list-container" :class="{ shrink: selectedPlugin }">
             <div class="description">
               Manage and install plugins in Beekeeper Studio.
               <a href="https://docs.beekeeperstudio.io/user_guide/plugins/" class="link">Learn more</a>.
             </div>
             <error-alert :error="errors" />
-            <plugin-list
-              :plugins="plugins"
-              @install="install"
-              @uninstall="uninstall"
-              @update="update"
-              @item-click="openPluginPage"
-              @checkForUpdates="checkForUpdates"
-            />
+            <div class="plugin-list-filter">
+              <label for="plugin-list-filter">Filter</label>
+              <select id="plugin-list-filter" v-model="filter">
+                <option value="all">All</option>
+                <option value="installed">Installed</option>
+                <option value="core">Core</option>
+                <option value="community">Community</option>
+              </select>
+            </div>
+            <div class="scroll-container">
+              <plugin-list
+                :plugins="filteredPlugins"
+                @install="install"
+                @uninstall="uninstall"
+                @update="update"
+                @item-click="openPluginPage"
+                @checkForUpdates="checkForUpdates"
+              />
+            </div>
           </div>
           <transition name="slide-fade">
             <plugin-page
@@ -70,18 +89,18 @@ export default Vue.extend({
   data() {
     return {
       modalName: "plugin-manager-modal",
-
       plugins: [] as UIPlugin[],
-      installedPlugins: [] as PluginSnapshot[],
-      coreEntries: [] as PluginRegistryEntry[],
-      communityEntries: [] as PluginRegistryEntry[],
-
       selectedPluginIdx: -1,
       selectedPluginReadme: "",
       loadingPluginReadme: false,
       loadedPlugins: false,
       errors: null,
       loadingPlugins: false,
+      corePluginsExpanded: true,
+      communityPluginsExpanded: true,
+      installedPluginsExpanded: true,
+      unknownPluginsExpanded: true,
+      filter: "all" as "all" | "installed" | "core" | "community",
     };
   },
   async mounted() {
@@ -94,12 +113,38 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings);
   },
   computed: {
-    ...mapState(["pluginManagerStatus"]),
+    ...mapState([ "pluginManagerStatus" ]),
+    ...mapState({
+      pluginSnapshots: "installedPlugins",
+    }),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
     },
     selectedPlugin() {
       return this.plugins[this.selectedPluginIdx];
+    },
+    filteredPlugins() {
+      switch (this.filter) {
+        case "all":
+          return this.plugins;
+        case "installed":
+          return this.installedPlugins;
+        case "core":
+          return this.corePlugins;
+        case "community":
+          return this.communityPlugins;
+        default:
+          return [];
+      }
+    },
+    corePlugins() {
+      return this.plugins.filter((plugin: UIPlugin) => plugin.origin === "core");
+    },
+    communityPlugins() {
+      return this.plugins.filter((plugin: UIPlugin) => plugin.origin === "community");
+    },
+    installedPlugins() {
+      return this.plugins.filter((plugin: UIPlugin) => plugin.installed);
     },
   },
   watch: {
@@ -136,14 +181,17 @@ export default Vue.extend({
       this.loadingPlugins = false;
     },
     async install({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
+        state.error = undefined;
         state.installing = true;
-        await this.$plugin.install(id);
+
+        const manifest = await this.$plugin.install(id);
+
         state.installed = true;
-        // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
+        state.installedVersion = manifest.version;
+        state.compatible = true;
         state.error = undefined;
       } catch (e) {
         log.error(e);
@@ -154,16 +202,18 @@ export default Vue.extend({
       }
     },
     async update({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
+        state.error = undefined;
         state.installing = true;
+
         const manifest = await this.$plugin.update(id);
-        state.version = manifest.version;
+
+        state.installedVersion = manifest.version;
         state.updateAvailable = false;
         // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
-        state.error = undefined;
+        state.compatible = true;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -173,27 +223,21 @@ export default Vue.extend({
       }
     },
     async checkForUpdates({ id }) {
-      const idx = this.plugins.findIndex((p) => p.id === id);
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: true,
-        });
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          updateAvailable: await this.$util.send("plugin/checkForUpdates", {
-            id,
-          }),
-        });
+        state.error = undefined;
+        state.checkingForUpdates = true;
+
+        state.updateAvailable = await this.$util.send(
+          "plugin/checkForUpdates",
+          { id }
+        );
       } catch (e) {
         log.error(e);
         this.$noty.error(`Failed to check for update: ${e.message}`);
       } finally {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: false,
-        });
+        state.checkingForUpdates = false;
       }
     },
     async uninstall({ id }) {
@@ -204,9 +248,11 @@ export default Vue.extend({
       const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
-        await this.$plugin.uninstall(id);
-        state.installed = false;
         state.error = undefined;
+
+        await this.$plugin.uninstall(id);
+
+        state.installed = false;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -225,119 +271,68 @@ export default Vue.extend({
       }
       this.loadingPluginReadme = false;
     },
-    checkOfficialPlugin(
-      author?: Manifest['author'],
-      repo?: PluginRegistryEntry['repo']
-    ) {
-      if (author) {
-        if (typeof author === "string") {
-          if(author === "Beekeeper Studio") {
-            return true;
-          }
-          return false;
-        }
-        return author.name === "Beekeeper Studio";
-      }
-      if (repo) {
-        return repo.startsWith("beekeeper-studio/");
-      }
-      return false;
-    },
     async buildPluginListData(refresh?: boolean): Promise<UIPlugin[]> {
-      const entries: {
-        core: PluginRegistryEntry[];
-        community: PluginRegistryEntry[];
-      }[] = await this.$util.send("plugin/entries", refresh);
-      const installedPlugins: PluginSnapshot[] = await this.$plugin.plugins;
       const list: UIPlugin[] = [];
 
-      for (const { manifest, loadable, disabled, origin } of installedPlugins) {
-        const data: UIPlugin = {
-          id: manifest.id,
-          name: manifest.name,
-          author: manifest.author,
-          description: manifest.description,
+      const entries: PluginRegistryEntry[] = await this.$plugin.getPluginEntries();
 
-          compatible: true,
-          loadable,
-          installed: true,
+      for (const entry of entries) {
+        list.push({
+          id: entry.id,
+          name: entry.name,
+          author: entry.author,
+          description: entry.description,
+
+          installed: false,
           installing: false,
 
           updateAvailable: false,
           checkingForUpdates: null,
 
-          disabled,
-          minAppVersion: manifest.minAppVersion,
-          core: this.checkOfficialPlugin(manifest.author),
-          origin,
-        };
-
-        let entry: PluginRegistryEntry | undefined;
-        if (origin === "core") {
-          entry = entries.core.find((entry) => entry.id === manifest.id);
-        } else if (origin === "community") {
-          entry = entries.community.find((entry) => entry.id === manifest.id);
-        }
-
-        if (entry) {
-          data.repo = entry.repo;
-          data.updateAvailable = await this.$util
-            .send("plugin/checkForUpdates", { id: manifest.id })
-            .catch((e) => {
-              this.errors = [
-                `Failed to check for updates for ${manifest.id}: ${e.message}`,
-              ];
-              log.error(e);
-              return false;
-            });
-        }
-
-        list.push(data);
+          disabled: false,
+          repo: entry.repo,
+          origin: entry.metadata.origin,
+        });
       }
 
-      const entryToUIPlugin = (entry: PluginRegistryEntry): Omit<UIPlugin, "origin"> => ({
-        id: entry.id,
-        name: entry.name,
-        author: entry.author,
-        description: entry.description,
+      const pluginSnapshots: PluginSnapshot[] = this.pluginSnapshots;
 
-        compatible: true,
-        installed: false,
-        installing: false,
+      for (const snapshot of pluginSnapshots) {
+        const { manifest, compatible, origin } = snapshot;
+        let data = list.find((p) => p.id === manifest.id);
+        if (data) {
+          data.installed = true;
+          data.installedVersion = manifest.version;
+          data.compatible = compatible;
+          data.checkingForUpdates = true;
+        } else {
+          data = {
+            id: manifest.id,
+            name: manifest.name,
+            author: manifest.author,
+            description: manifest.description,
 
-        updateAvailable: false,
-        checkingForUpdates: null,
+            compatible,
+            installed: true,
+            installedVersion: manifest.version,
+            installing: false,
 
-        disabled: false,
-        repo: entry.repo,
-        core: this.checkOfficialPlugin(entry.author, entry.repo),
-      });
+            updateAvailable: false,
+            checkingForUpdates: null,
 
-      for (const entry of entries.core) {
-        if (!_.find(list, { id: entry.id })) {
-          list.push({
-            ...entryToUIPlugin(entry),
-            origin: "core",
-          });
+            disabled: false,
+            minAppVersion: manifest.minAppVersion,
+            origin,
+          };
+          list.push(data);
+        }
+        if (snapshot.disabled) {
+          data.disabled = snapshot.disabled;
+          data.disableReasons = snapshot.disableReasons;
         }
       }
 
-      for (const entry of entries.community) {
-        if (!_.find(list, { id: entry.id })) {
-          list.push({
-            ...entryToUIPlugin(entry),
-            origin: "community",
-          });
-        }
-      }
-
-      const rank = (p: UIPlugin) => {
-        if (p.installed && !p.disabled) return 0; // installed & enabled
-        if (p.installed && p.disabled) return 1;  // installed & disabled
-        return 2;                                 // not installed
-      };
-
-      return list.sort((a, b) => rank(a) - rank(b));
+      return list;
     },
     open() {
       this.$modal.show(this.modalName);
@@ -374,8 +369,27 @@ export default Vue.extend({
   }
 }
 
-.plugin-list-container {
-  flex-basis: 28%;
+.plugin-manager-content {
+  height: calc(100% - 47.6px);
+}
+
+.plugin-list-container.shrink {
+  width: 23rem;
+}
+
+.plugin-list-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  margin-right: auto;
+  margin-left: 1.5rem;
+}
+
+.scroll-container {
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .link {
@@ -395,6 +409,41 @@ export default Vue.extend({
 .slide-fade-enter,
 .slide-fade-leave-to {
   transform: translateX(20px);
+  opacity: 0;
+}
+
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--theme-primary);
+  }
+
+  .expand-icon {
+    font-size: 1.25rem;
+    transition: transform 0.3s ease;
+
+    &.expanded {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
+  max-height: 1000px;
+  overflow: hidden;
+}
+
+.expand-enter,
+.expand-leave-to {
+  max-height: 0;
   opacity: 0;
 }
 </style>

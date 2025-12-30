@@ -1,5 +1,5 @@
 <template>
-  <ul class="plugin-list">
+  <ul class="plugin-list" v-bind="$attrs">
     <li
       v-for="plugin in plugins"
       :key="plugin.id"
@@ -11,7 +11,6 @@
         <div class="title">
           <span>{{ plugin.name }}</span>
           <span class="badge" v-if="plugin.installed && plugin.disabled">disabled</span>
-          <i class="material-icons" v-else-if="isCommunity && plugin.id.startsWith('bks-')">stars</i>
         </div>
         <div class="status-error" v-if="!plugin.compatible && plugin.installed">
           This plugin requires version {{ plugin.minAppVersion }} or newer.
@@ -38,7 +37,8 @@
         <x-button
           v-if="plugin.installed && plugin.updateAvailable"
           class="btn btn-small btn-flat"
-          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
+          :disabled="plugin.disabled || plugin.installing"
+          :title="upsell(plugin) ? 'Upgrade required' : ''"
           @click.prevent.stop="$emit('update', plugin)"
         >
           <x-label>
@@ -48,7 +48,8 @@
         <x-button
           v-if="!plugin.installed"
           class="btn btn-small btn-flat"
-          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
+          :disabled="plugin.disabled || plugin.installing"
+          :title="upsell(plugin) ? 'Upgrade required' : ''"
           @click.prevent.stop="$emit('install', plugin)"
         >
           <x-label>
@@ -81,7 +82,6 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import type { UIPlugin } from "@/services/plugin/types";
-import { mapGetters } from "vuex";
 
 export default Vue.extend({
   name: "PluginList",
@@ -91,12 +91,13 @@ export default Vue.extend({
       required: true,
     },
   },
-  computed: {
-    ...mapGetters(['isCommunity']),
-  },
   methods: {
     handleItemClick(_event: MouseEvent, plugin: UIPlugin) {
       this.$emit("item-click", plugin);
+    },
+    upsell(plugin: UIPlugin) {
+      return plugin.disabled
+        && plugin.disableReasons.find((r) => r.source === "license");
     },
   },
 });
@@ -118,12 +119,6 @@ export default Vue.extend({
 
 .plugin-list .item {
   position: relative;
-}
-
-.actions {
-  position: absolute;
-  right: 0.5rem;
-  top: 0.65rem;
 }
 
 .upgrade-required-icon {

@@ -23,7 +23,6 @@ import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
-import { CommunityPluginEntry, CorePluginEntry } from "@/common/appdb/models/PluginEntry";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -156,8 +155,6 @@ export const AppDbHandlers = {
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
   ...handlersFor<TransportFormatterPreset>('formatterPreset', FormatterPreset),
-  ...handlersFor<TransportPluginEntry>('corePluginEntry', CorePluginEntry),
-  ...handlersFor<TransportPluginEntry>('communityPluginEntry', CommunityPluginEntry),
   ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),

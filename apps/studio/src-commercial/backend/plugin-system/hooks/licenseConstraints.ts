@@ -1,23 +1,22 @@
-import { LicenseStatus } from "@/lib/license";
+import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { PluginManager } from "@/services/plugin";
 import { ForbiddenPluginError } from "@/services/plugin/errors";
 import rawLog from "@bksLogger";
 
-const log = rawLog.scope("licenseConstraints");
+const log = rawLog.scope("plugin-system-hook:licenseConstraints");
 const boundSymbol = Symbol("licenseConstraints");
 
-export default function bindLicenseConstraints(
-  manager: PluginManager,
-  license: LicenseStatus
-) {
+export default async function bindLicenseConstraints(manager: PluginManager) {
+  const license = await LicenseKey.getLicenseStatus();
+
   if (manager[boundSymbol]) {
-    log.warn("licenseConstraints is already bound!");
+    log.warn("already bound!");
     return;
   }
 
   manager[boundSymbol] = true;
 
-  manager.addInstallGuard(async (id) => {
+  manager.addInstallGuard(async ({ id, origin }) => {
     if (license.tier === "pro+") {
       // No limit
       return;
@@ -35,16 +34,15 @@ export default function bindLicenseConstraints(
       );
     }
 
-    const entry = manager.registry.findEntryById(id);
-
-    if (entry.origin === "core") {
+    if (origin === "core") {
       throw new ForbiddenPluginError(
-        `Plugin "${entry}" is not available for the ${license.tier} tier.`
+        `Plugin "${id}" is not available for the ${license.tier} tier.`
       );
     }
 
+    // This includes community and unpublished plugins
     const communityPlugins = manager.getInstalledPlugins()
-      .filter((p) => p.origin === "community");
+      .filter((p) => p.origin !== "core");
     if (communityPlugins.length >= 2) {
       throw new ForbiddenPluginError(
         "You have reached the maximum of 2 community plugins allowed."
@@ -67,15 +65,36 @@ export default function bindLicenseConstraints(
         return snapshot;
       }
 
-      return { ...snapshot, disabled: true };
+      return {
+        ...snapshot,
+        disabled: true,
+        disableReasons: [
+          ...(snapshot.disabled ? [...snapshot.disableReasons] : []),
+          { source: "license", cause: "max-plugins-reached", limit: 5 },
+        ],
+      };
     }
 
     if (snapshot.origin === "core") {
-      return { ...snapshot, disabled: true };
+      return {
+        ...snapshot,
+        disabled: true,
+        disableReasons: [
+          ...(snapshot.disabled ? [...snapshot.disableReasons] : []),
+          { source: "license", cause: "valid-license-required" },
+        ]
+      };
     }
 
     if (enabledPlugins.length >= 2) {
-      return { ...snapshot, disabled: true };
+      return {
+        ...snapshot,
+        disabled: true,
+        disableReasons: [
+          ...(snapshot.disabled ? [...snapshot.disableReasons] : []),
+          { source: "license", cause: "max-community-plugins-reached", limit: 2 },
+        ],
+      };
     }
 
     return snapshot;

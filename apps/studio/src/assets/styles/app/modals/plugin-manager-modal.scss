@@ -24,12 +24,10 @@
 
   .plugin-manager-content {
     overflow: hidden;
-    height: calc(100% - 34px);
     display: flex;
   }
 
   .plugin-list-container {
-    padding: 0.5rem 0 0;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -50,10 +48,6 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    margin-top: 1rem;
-    overflow-y: auto;
-    min-width: 400px;
-    padding-bottom: 2rem;
 
     .item {
       padding: 1rem $gutter-h;

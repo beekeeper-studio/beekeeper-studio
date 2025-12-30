@@ -3,16 +3,9 @@
     <div class="header">
       <div class="title">
         <span>{{ plugin.name }}</span>
-        <i class="material-icons" v-if="isCommunity && plugin.id.startsWith('bks-')">stars</i>
-        <span class="version">{{ plugin.version }}</span>
+        <span v-if="plugin.installed" class="version">{{ plugin.installedVersion }}</span>
       </div>
-      <div
-        class="author"
-        :title="plugin.origin === 'core'
-          ? 'Offical Beekeeper Studio Author'
-          : 'Community Author'
-        "
-      >
+      <div class="author">
         <span>By</span>
         <a
           v-if="typeof plugin.author !== 'string'"
@@ -36,7 +29,7 @@
           <x-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
-            :disabled="isCommunity && plugin.id.startsWith('bks-')"
+            :disabled="plugin.disabled || plugin.checkingForUpdates"
             class="btn btn-primary"
           >
             <x-label>{{
@@ -68,7 +61,7 @@
           v-else
           @click.prevent="$emit('install')"
           class="btn btn-primary"
-          :disabled="(isCommunity && plugin.id.startsWith('bks-')) || plugin.installing"
+          :disabled="plugin.disabled || plugin.installing"
         >
           <x-label>{{
             plugin.installing ? "Installing..." : "Install"
@@ -83,17 +76,14 @@
       >
         {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
-      <div class="alert" v-if="plugin.disabled">
-        <i class="material-icons">info_outline</i>
-        <div>
-          {{
-          $bksConfig.plugins?.[plugin.id]?.disabled
-            ? "This plugin has been disabled via configuration"
-            : "[TODO]This plugin has been disabled due to license restriction"
-          }}
-        </div>
-      </div>
-      <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
+      <template v-if="plugin.disabled">
+        <DisabledPluginAlert
+          v-for="reason of plugin.disableReasons"
+          :plugin-name="plugin.name"
+          :reason="reason"
+        />
+      </template>
+      <div class="alert alert-danger" v-if="!plugin.compatible && plugin.installed">
         <i class="material-icons">error_outline</i>
         <div class="alert-body expand">
           <span>This plugin was not loaded because it requires Beekeeper Studio {{ plugin.minAppVersion }}+. Please upgrade the app or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install a compatible plugin version</a>.</span>
@@ -125,11 +115,14 @@
 import Vue, { PropType } from "vue";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
-import { mapGetters } from "vuex";
 import { UIPlugin } from "@/services/plugin";
+import DisabledPluginAlert from "./DisabledPluginAlert.vue";
 
 export default Vue.extend({
   name: "PluginPage",
+  components: {
+    DisabledPluginAlert,
+  },
   props: {
     plugin: {
       type: Object as PropType<UIPlugin>,
@@ -168,7 +161,6 @@ export default Vue.extend({
     },
   },
   computed: {
-    ...mapGetters(['isCommunity']),
     rawHtmlContent() {
       if (!this.markdown) return "";
       return DOMPurify.sanitize(marked.parse(this.markdown, { async: false }));

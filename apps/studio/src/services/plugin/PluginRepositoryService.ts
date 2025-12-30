@@ -1,12 +1,16 @@
 import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
-import { Manifest, PluginRegistryEntry, PluginRepository, Release } from "./types";
+import { Manifest, PluginRepository, RawPluginRegistryEntry, RawFetchRegistryResult, Release } from "./types";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("PluginRepositoryService");
 
 export default class PluginRepositoryService {
   private octokit: Octokit;
 
   constructor(options?: { octokitOptions?: OctokitOptions }) {
     this.octokit = new Octokit({
+      baseUrl: process.env.GITHUB_API_BASE_URL,
       userAgent: "Beekeeper Studio",
       auth: process.env.GITHUB_TOKEN,
       ...options?.octokitOptions,
@@ -59,18 +63,41 @@ export default class PluginRepositoryService {
     };
   }
 
-  async fetchRegistry() {
-    const core = await this.fetchJson(
-      "beekeeper-studio",
-      "beekeeper-studio-plugins",
-      "plugins.json"
-    );
-    const community = await this.fetchJson(
-      "beekeeper-studio",
-      "beekeeper-studio-plugins",
-      "community-plugins.json"
-    );
-    return { core, community };
+  async fetchRegistry(): Promise<RawFetchRegistryResult> {
+    const registry: RawFetchRegistryResult = {
+      core: [] as RawPluginRegistryEntry[],
+      community: [] as RawPluginRegistryEntry[],
+      errors: {
+        core: null as Error | null,
+        community: null as Error | null,
+      },
+    };
+
+    try {
+      const core = await this.fetchJson(
+        "beekeeper-studio",
+        "beekeeper-studio-plugins",
+        "plugins.json"
+      );
+      registry.core = core;
+    } catch (e) {
+      log.error("Failed to fetch core plugins.json", e);
+      registry.errors.core = e as Error;
+    }
+
+    try {
+      const community = await this.fetchJson(
+        "beekeeper-studio",
+        "beekeeper-studio-plugins",
+        "community-plugins.json"
+      );
+      registry.community = community;
+    } catch (e) {
+      log.error("Failed to fetch community plugins.json", e);
+      registry.errors.community = e as Error;
+    }
+
+    return registry;
   }
 
   async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
@@ -93,7 +120,7 @@ export default class PluginRepositoryService {
     return Buffer.from(response.data.content, "base64").toString("utf-8");
   }
 
-  private async fetchJson(owner: string, repo: string, path: string): Promise<PluginRegistryEntry[]> {
+  private async fetchJson(owner: string, repo: string, path: string): Promise<RawPluginRegistryEntry[]> {
     const response = await this.octokit.request(
       "GET /repos/{owner}/{repo}/contents/{path}",
       {

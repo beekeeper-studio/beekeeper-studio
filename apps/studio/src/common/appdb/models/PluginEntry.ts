@@ -1,8 +1,9 @@
 import { Column, Entity } from "typeorm"
 import { ApplicationEntity } from "./application_entity"
-import { PluginRegistryEntry } from "@/services/plugin/types"
+import { PluginRegistryEntry, PluginOrigin } from "@/services/plugin/types"
 
-class PluginEntry extends ApplicationEntity {
+@Entity({ name: "plugin_entry" })
+export class PluginEntry extends ApplicationEntity {
   withProps(props?: any): PluginEntry {
     if (props) PluginEntry.merge(this, props);
     return this;
@@ -23,6 +24,9 @@ class PluginEntry extends ApplicationEntity {
   @Column({ type: "text", nullable: false })
   description: string
 
+  @Column({ type: "varchar", nullable: false })
+  origin: PluginOrigin
+
   /** Convert this entry to PluginRegistryEntry format */
   toRegistryEntry(): PluginRegistryEntry {
     return {
@@ -31,6 +35,9 @@ class PluginEntry extends ApplicationEntity {
       author: this.author,
       repo: this.repo,
       description: this.description,
+      metadata: {
+        origin: this.origin,
+      },
     };
   }
 
@@ -40,26 +47,26 @@ class PluginEntry extends ApplicationEntity {
     return entries.map((entry) => entry.toRegistryEntry());
   }
 
-  /** Upsert entries from PluginRegistryEntry format */
+  /** Replace table contents with entries from PluginRegistryEntry format */
   static async upsertFromRegistry(entries: PluginRegistryEntry[]): Promise<void> {
-    for (const entry of entries) {
-      let dbEntry = await this.findOneBy({ pluginId: entry.id });
-      if (!dbEntry) {
-        dbEntry = new this();
-        dbEntry.pluginId = entry.id;
-      }
+    // Clear the entire table
+    await this.clear();
+
+    // Insert all new entries
+    const newEntries = entries.map(entry => {
+      const dbEntry = new this();
+      dbEntry.pluginId = entry.id;
       dbEntry.name = entry.name;
       dbEntry.author = entry.author;
       dbEntry.repo = entry.repo;
       dbEntry.description = entry.description;
-      await dbEntry.save();
+      dbEntry.origin = entry.metadata.origin;
+      return dbEntry;
+    });
+
+    if (newEntries.length > 0) {
+      await this.save(newEntries);
     }
   }
 }
-
-@Entity({ name: "core_plugin_entry" })
-export class CorePluginEntry extends PluginEntry { }
-
-@Entity({ name: "community_plugin_entry" })
-export class CommunityPluginEntry extends PluginEntry { }
 

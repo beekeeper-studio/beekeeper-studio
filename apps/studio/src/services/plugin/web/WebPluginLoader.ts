@@ -2,6 +2,7 @@ import {
   AfterViewRequestCallback,
   Manifest,
   OnViewRequestListener,
+  PluginSnapshot,
   ViewResultModifier,
   WebPluginLoaderContext,
   WebPluginViewInstance,
@@ -88,10 +89,11 @@ export default class WebPluginLoader {
 
     this.log.info("Loading plugin", this.manifest);
 
-    if (this.context.disabled) {
-      this.log.info("Plugin is disabled. Skipping...");
-      // No further processing if it's disabled.
-      return;
+    // Get the most up to date snapshot
+    const plugins = await this.context.utility.send("plugin/plugins");
+    const snapshot: PluginSnapshot = plugins.find((snapshot: PluginSnapshot) => snapshot.manifest.id === this.manifest.id);
+    if (!snapshot) {
+      throw new Error(`The plugin ${this.manifest.id} is not found. It might not be loaded or uninstalled properly. Please restart the app or report this issue.`)
     }
 
     // Backward compatibility: Early version of AI Shell.
@@ -102,8 +104,11 @@ export default class WebPluginLoader {
     this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
     this.menu.register(views, menu);
 
-    // Add event listener for messages from iframe
-    window.addEventListener("message", this.handleMessage);
+    if (snapshot.disabled) {
+      this.log.info("Plugin is disabled. Skipping...");
+      // No further processing if it's disabled.
+      return;
+    }
 
     if (!this.listening) {
       this.registerEvents();
@@ -119,6 +124,8 @@ export default class WebPluginLoader {
 
     // Check if the message is from our iframe
     if (source) {
+      // If the `data.id` is defined, it's a request
+      // Otherwise, it's a notification
       if (event.data.id !== undefined) {
         this.handleViewRequest(
           {

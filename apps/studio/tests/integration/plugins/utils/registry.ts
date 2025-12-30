@@ -1,4 +1,4 @@
-import type { Manifest, PluginRegistryEntry, Release } from "@/services/plugin/types";
+import type { Manifest, RawPluginRegistryEntry, Release } from "@/services/plugin/types";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
 import _ from "lodash";
@@ -26,15 +26,15 @@ import _ from "lodash";
  * ```
  */
 export class MockPluginRepositoryService extends PluginRepositoryService {
-  private communityEntries: PluginRegistryEntry[] = [];
-  private coreEntries: PluginRegistryEntry[] = [];
+  private communityEntries: RawPluginRegistryEntry[] = [];
+  private coreEntries: RawPluginRegistryEntry[] = [];
   private releases = new Map<string, Release>();
 
   constructor(private server: MockPluginServer) {
     super();
   }
 
-  setPluginsJson(type: "core" | "community", plugins: (Partial<PluginRegistryEntry> & { id: string; })[]) {
+  setPluginsJson(type: "core" | "community", plugins: (Partial<RawPluginRegistryEntry> & { id: string; })[]) {
     const finalPlugins = plugins.map((plugin) => ({
       id: plugin.id,
       name: plugin.name ?? _.startCase(plugin.id),
@@ -48,7 +48,6 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
     } else {
       this.communityEntries = finalPlugins;
     }
-
   }
 
   setLatestRelease(options: Pick<Manifest, "id" | "version" | "minAppVersion">): Release {
@@ -88,6 +87,10 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
     return  {
       core: this.coreEntries,
       community: this.communityEntries,
+      errors: {
+        core: null,
+        community: null,
+      },
     };
   }
 

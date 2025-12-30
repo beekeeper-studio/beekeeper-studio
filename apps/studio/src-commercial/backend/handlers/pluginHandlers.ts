@@ -5,10 +5,10 @@ import { PluginTimeoutError } from "@/services/plugin/errors";
 
 interface IPluginHandlers {
   "plugin/plugins": () => Promise<PluginSnapshot[]>
-  "plugin/entries": () => Promise<{ core: PluginRegistryEntry[], community: PluginRegistryEntry[] }>
+  "plugin/entries": () => Promise<PluginRegistryEntry[]>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
-  "plugin/install": ({ id }: { id: string }) => Promise<PluginSnapshot>
-  "plugin/update": ({ id }: { id: string }) => Promise<PluginSnapshot>
+  "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
+  "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
   "plugin/checkForUpdates": ({ id }: { id: string }) => Promise<boolean>
   "plugin/setAutoUpdateEnabled": ({ id, enabled }: { id: string, enabled: boolean }) => Promise<void>

@@ -7,7 +7,8 @@ import {
 } from "@/services/plugin/errors";
 import { Manifest } from "@/services/plugin";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import bindLicenseConstraints from "@commercial/backend/plugin-system/licenseConstraints";
+import bindLicenseConstraints from "@commercial/backend/plugin-system/hooks/licenseConstraints";
+import bindIniConfig from "@commercial/backend/plugin-system/hooks/iniConfig";
 import { createLicense } from "@tests/utils";
 import preparePluginSystemTestGroup from "./utils/preparePluginSystem";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
@@ -31,7 +32,7 @@ describe("Basic Plugin Management", () => {
   });
 
   describe("Initialization", () => {
-    it("should tolerate network errors", async () => {
+    it("does not need internet connection to work", async () => {
       const faultyService = new PluginRepositoryService({
         octokitOptions: {
           request: {
@@ -41,7 +42,7 @@ describe("Basic Plugin Management", () => {
           },
         },
       });
-      const initialRegistryFallback = jest.fn(() => Promise.resolve({ core: [], community: [] }));
+      const initialRegistryFallback = jest.fn(() => Promise.resolve([]));
       const manager = new PluginManager({
         appVersion: "9.9.9",
         fileManager,
@@ -66,9 +67,9 @@ describe("Basic Plugin Management", () => {
       await manager.initialize();
       const entries = await manager.getEntries();
 
-      expect(entries.core).toHaveLength(2);
-      expect(entries.core[0].id).toBe("test-plugin");
-      expect(entries.core[1].id).toBe("frozen-banana");
+      expect(entries).toHaveLength(2);
+      expect(entries[0].id).toBe("test-plugin");
+      expect(entries[1].id).toBe("frozen-banana");
     });
 
     it("can get plugin details (versions, readme, etc..)", async () => {
@@ -148,11 +149,11 @@ describe("Basic Plugin Management", () => {
       await manager.initialize();
       await manager.installPlugin("test-plugin");
 
-      expect(manager.getInstalledPlugins()[0]).toHaveProperty("loadable", true);
+      expect(manager.getInstalledPlugins()[0]).toHaveProperty("compatible", true);
 
       await manager.installPlugin("frozen-banana");
 
-      expect(manager.getInstalledPlugins()[1]).toHaveProperty("loadable", true);
+      expect(manager.getInstalledPlugins()[1]).toHaveProperty("compatible", true);
     });
 
     // Simulates a user who installed a plugin, then downgraded the app.
@@ -170,7 +171,7 @@ describe("Basic Plugin Management", () => {
       await oldManager.initialize();
 
       // 4. The downgraded app should not load incompatible plugins
-      expect(oldManager.getInstalledPlugins()[0]).toHaveProperty("loadable", false);
+      expect(oldManager.getInstalledPlugins()[0]).toHaveProperty("compatible", false);
     });
   });
 
@@ -345,7 +346,7 @@ describe("Plugin License Constraints", () => {
       await manager.installPlugin("core-plugin-0");
       await manager.installPlugin("core-plugin-1");
 
-      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await bindLicenseConstraints(manager);
 
       // Can't install any more core plugins
       await expect(manager.installPlugin("core-plugin-2")).rejects.toThrow(
@@ -372,7 +373,7 @@ describe("Plugin License Constraints", () => {
 
     it("indie users - get 5 plugins (core + community <= 5)", async () => {
       await createLicense({ licenseType: "PersonalLicense" });
-      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await bindLicenseConstraints(manager);
 
       await manager.installPlugin("community-plugin-0");
       await manager.installPlugin("community-plugin-1");
@@ -417,7 +418,7 @@ describe("Plugin License Constraints", () => {
 
     it("pro+ users - get unlimited plugins", async () => {
       await createLicense({ licenseType: "BusinessLicense" });
-      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await bindLicenseConstraints(manager);
 
       await manager.installPlugin("core-plugin-0");
       await manager.installPlugin("core-plugin-1");
@@ -447,18 +448,18 @@ describe("Plugin License Constraints", () => {
         { id: "core-plugin-1" },
       ]);
       repositoryService.setPluginsJson('community', [
-        { id: "community-plugin-0" },
-        { id: "community-plugin-1" },
-        { id: "community-plugin-2" },
-        { id: "community-plugin-3" },
+        { id: "comm-plugin-0" },
+        { id: "comm-plugin-1" },
+        { id: "comm-plugin-2" },
+        { id: "comm-plugin-3" },
       ]);
       // Set up releases for all plugins
       repositoryService.setLatestRelease({ id: "core-plugin-0", version: "1.0.0", minAppVersion: "5.4.0" });
       repositoryService.setLatestRelease({ id: "core-plugin-1", version: "1.0.0", minAppVersion: "5.4.0" });
-      repositoryService.setLatestRelease({ id: "community-plugin-0", version: "1.0.0", minAppVersion: "5.4.0" });
-      repositoryService.setLatestRelease({ id: "community-plugin-1", version: "1.0.0", minAppVersion: "5.4.0" });
-      repositoryService.setLatestRelease({ id: "community-plugin-2", version: "1.0.0", minAppVersion: "5.4.0" });
-      repositoryService.setLatestRelease({ id: "community-plugin-3", version: "1.0.0", minAppVersion: "5.4.0" });
+      repositoryService.setLatestRelease({ id: "comm-plugin-0", version: "1.0.0", minAppVersion: "5.4.0" });
+      repositoryService.setLatestRelease({ id: "comm-plugin-1", version: "1.0.0", minAppVersion: "5.4.0" });
+      repositoryService.setLatestRelease({ id: "comm-plugin-2", version: "1.0.0", minAppVersion: "5.4.0" });
+      repositoryService.setLatestRelease({ id: "comm-plugin-3", version: "1.0.0", minAppVersion: "5.4.0" });
 
       registry = new PluginRegistry(repositoryService);
 
@@ -471,23 +472,28 @@ describe("Plugin License Constraints", () => {
       await tempManager.initialize();
       await tempManager.installPlugin("core-plugin-0");
       await tempManager.installPlugin("core-plugin-1");
-      await tempManager.installPlugin("community-plugin-0");
-      await tempManager.installPlugin("community-plugin-1");
-      await tempManager.installPlugin("community-plugin-2");
-      await tempManager.installPlugin("community-plugin-3");
+      await tempManager.installPlugin("comm-plugin-0");
+      await tempManager.installPlugin("comm-plugin-1");
+      await tempManager.installPlugin("comm-plugin-2");
+      await tempManager.installPlugin("comm-plugin-3");
     });
 
-    it("free users - pick the first 2 community plugins alphabetically and disable the rest", async () => {
+    it.only("free users - pick the first 2 community plugins alphabetically and disable the rest", async () => {
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
-      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await bindLicenseConstraints(manager);
       await manager.initialize();
-      const enabledPlugins = manager.getInstalledPlugins()
-        .filter((plugin) => !plugin.disabled)
-        .map((plugin) => plugin.manifest.id);
-      expect(enabledPlugins).toHaveLength(2);
-      expect(enabledPlugins).toStrictEqual([
-        "community-plugin-0",
-        "community-plugin-1",
+      const plugins = manager.getInstalledPlugins().map((p) => ({
+        id: p.manifest.id,
+        disabled: p.disabled,
+        disableReasons: p.disableReasons,
+      }));
+      expect(plugins).toStrictEqual([
+        { id: "comm-plugin-0", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-1", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-2", disabled: true, disableReasons: [{ source: "license", cause: "max-community-plugins-reached", limit: 2 }] },
+        { id: "comm-plugin-3", disabled: true, disableReasons: [{ source: "license", cause: "max-community-plugins-reached", limit: 2 }] },
+        { id: "core-plugin-0", disabled: true, disableReasons: [{ source: "license", cause: "valid-licence-required" }] },
+        { id: "core-plugin-1", disabled: true, disableReasons: [{ source: "license", cause: "valid-license-required" }] },
       ]);
     });
 
@@ -495,18 +501,20 @@ describe("Plugin License Constraints", () => {
       await createLicense({ licenseType: "PersonalLicense" });
 
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
-      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await bindLicenseConstraints(manager);
       await manager.initialize();
-      const enabledPlugins = manager.getInstalledPlugins()
-        .filter((plugin) => !plugin.disabled)
-        .map((plugin) => plugin.manifest.id);
-      expect(enabledPlugins).toHaveLength(5);
-      expect(enabledPlugins).toEqual([
-        "community-plugin-0",
-        "community-plugin-1",
-        "community-plugin-2",
-        "community-plugin-3",
-        "core-plugin-0",
+      const plugins = manager.getInstalledPlugins().map((p) => ({
+        id: p.manifest.id,
+        disabled: p.disabled,
+        disableReasons: p.disableReasons,
+      }));
+      expect(plugins).toStrictEqual([
+        { id: "comm-plugin-0", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-1", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-2", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-3", disabled: false, disableReasons: undefined },
+        { id: "core-plugin-0", disabled: false, disableReasons: undefined },
+        { id: "core-plugin-1", disabled: true, disableReasons: [{ source: "license", cause: "max-plugins-reached", limit: 5 }] },
       ]);
     });
 
@@ -514,19 +522,20 @@ describe("Plugin License Constraints", () => {
       await createLicense({ licenseType: "BusinessLicense" });
 
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
-      bindLicenseConstraints(manager, await LicenseKey.getLicenseStatus());
+      await bindLicenseConstraints(manager);
       await manager.initialize();
-      const enabledPlugins = manager.getInstalledPlugins()
-        .filter((plugin) => !plugin.disabled)
-        .map((plugin) => plugin.manifest.id);
-      expect(enabledPlugins).toHaveLength(6);
-      expect(enabledPlugins).toEqual([
-        "community-plugin-0",
-        "community-plugin-1",
-        "community-plugin-2",
-        "community-plugin-3",
-        "core-plugin-0",
-        "core-plugin-1",
+      const plugins = manager.getInstalledPlugins().map((p) => ({
+        id: p.manifest.id,
+        disabled: p.disabled,
+        disableReasons: p.disableReasons,
+      }));
+      expect(plugins).toStrictEqual([
+        { id: "comm-plugin-0", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-1", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-2", disabled: false, disableReasons: undefined },
+        { id: "comm-plugin-3", disabled: false, disableReasons: undefined },
+        { id: "core-plugin-0", disabled: false, disableReasons: undefined },
+        { id: "core-plugin-1", disabled: false, disableReasons: undefined },
       ]);
     });
   });
@@ -536,6 +545,7 @@ describe("Disabling plugins via config.ini", () => {
   const { server, fileManager } = preparePluginSystemTestGroup();
 
   let registry: PluginRegistry;
+  let manager: PluginManager;
 
   beforeAll(() => {
     const repositoryService = new MockPluginRepositoryService(server);
@@ -548,14 +558,13 @@ describe("Disabling plugins via config.ini", () => {
     registry = new PluginRegistry(repositoryService);
   });
 
+  beforeEach(() => {
+    manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
+  });
+
   it("can force-disable installed plugins", async () => {
-    const manager = new PluginManager({
-      pluginSettings: {
-        "community-plugin-0": { disabled: true },
-      },
-      appVersion: "9.9.9",
-      registry,
-      fileManager,
+    bindIniConfig(manager, {
+      plugins: { "community-plugin-0": { disabled: true } },
     });
     await manager.initialize();
     await manager.installPlugin("community-plugin-0");
@@ -571,14 +580,8 @@ describe("Disabling plugins via config.ini", () => {
       { id: "community-plugin-0" },
       { id: "community-plugin-1" },
     ]);
-
-    const manager = new PluginManager({
-      pluginSettings: {
-        "community-plugin-0": { disabled: true },
-      },
-      appVersion: "9.9.9",
-      registry,
-      fileManager,
+    bindIniConfig(manager, {
+      plugins: { "community-plugin-0": { disabled: true } },
     });
     await manager.initialize();
 

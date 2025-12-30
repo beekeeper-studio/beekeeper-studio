@@ -104,4 +104,5 @@ export interface TransportPluginEntry extends Transport {
   author: string;
   repo: string;
   description: string;
+  origin: string;
 }
