@@ -101,14 +101,9 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
-        # Build deb on master and test-deb-hardlinks branch for hardlinks testing, AppImage on PRs for speed
+        # Build deb for hardlinks testing
       - name: Build Electron app
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/master" ] || [ "${{ github.ref }}" == "refs/heads/test-deb-hardlinks" ]; then
-            yarn run electron:build --publish never --linux deb
-          else
-            yarn run electron:build --publish never --linux AppImage
-          fi
+        run: yarn run electron:build --publish never --linux deb
         if: startsWith(matrix.os, 'ubuntu')
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
@@ -133,8 +128,6 @@ jobs:
     name: Test DEB on separate filesystems
     runs-on: ubuntu-22.04
     needs: masterbuild
-    # Only run on master and test-deb-hardlinks branches where we build .deb
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/test-deb-hardlinks'
 
     steps:
       - name: Check out Git repository
