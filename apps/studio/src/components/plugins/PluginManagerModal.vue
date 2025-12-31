@@ -96,10 +96,6 @@ export default Vue.extend({
       loadedPlugins: false,
       errors: null,
       loadingPlugins: false,
-      corePluginsExpanded: true,
-      communityPluginsExpanded: true,
-      installedPluginsExpanded: true,
-      unknownPluginsExpanded: true,
       filter: "all" as "all" | "installed" | "core" | "community",
     };
   },
@@ -305,6 +301,7 @@ export default Vue.extend({
           data.installedVersion = manifest.version;
           data.compatible = compatible;
           data.checkingForUpdates = true;
+          data.minAppVersion = manifest.minAppVersion;
         } else {
           data = {
             id: manifest.id,

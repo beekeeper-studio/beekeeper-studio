@@ -15,8 +15,8 @@ export default Vue.extend({
       type: Boolean,
       default: true,
     },
-    plugin: {
-      type: Object as PropType<PluginSnapshot>,
+    pluginId: {
+      type: String,
       required: true,
     },
     command: String,
@@ -83,20 +83,20 @@ export default Vue.extend({
       // HACK(azmi): Trigger an initial `themeChanged` notification because
       // older versions of AI Shell don't automatically handle theme state on load.
       iframe.onload = () => {
-        this.$plugin.notify(this.plugin.manifest.id, {
+        this.$plugin.notify(this.pluginId, {
           name: "themeChanged",
           args: this.$plugin.loaders
-            .get(this.plugin.manifest.id)
+            .get(this.pluginId)
             .context.store.getTheme(),
         } as ThemeChangedNotification);
       };
 
       this.$plugin.registerIframe(
-        this.plugin.manifest.id,
+        this.pluginId,
         iframe,
         { command: this.command, params: this.params }
       );
-      this.unsubscribe = this.$plugin.onViewRequest(this.plugin.manifest.id, (args) => {
+      this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
         if (args.source === iframe) {
           this.onRequest?.(args);
         }
@@ -110,21 +110,21 @@ export default Vue.extend({
         return;
       }
 
-      this.$plugin.unregisterIframe(this.plugin.manifest.id, this.iframe);
+      this.$plugin.unregisterIframe(this.pluginId, this.iframe);
       this.unsubscribe?.();
       this.iframe.remove();
       this.iframe = null;
       this.mounted = false;
     },
     handleError(e) {
-      console.error(`${this.plugin.manifest.id} iframe error`, e);
+      console.error(`${this.pluginId} iframe error`, e);
     }
   },
   mounted() {
-    this.unsubscribeOnReady = this.$plugin.onReady(this.plugin.manifest.id, () => {
+    this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
       this.loaded = true;
     });
-    this.unsubscribeOnDispose = this.$plugin.onDispose(this.plugin.manifest.id, () => {
+    this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
       this.loaded = false;
     })
   },

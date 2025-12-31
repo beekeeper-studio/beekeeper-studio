@@ -93,7 +93,7 @@ export default class WebPluginLoader {
     const plugins = await this.context.utility.send("plugin/plugins");
     const snapshot: PluginSnapshot = plugins.find((snapshot: PluginSnapshot) => snapshot.manifest.id === this.manifest.id);
     if (!snapshot) {
-      throw new Error(`The plugin ${this.manifest.id} is not found. It might not be loaded or uninstalled properly. Please restart the app or report this issue.`)
+      throw new Error(`The plugin ${this.manifest.id} is not found. It might not be loaded or uninstalled properly. Please restart the app or report this to our issue tracker if it persists: https://github.com/beekeeper-studio/beekeeper-studio/issues`)
     }
 
     // Backward compatibility: Early version of AI Shell.

@@ -7,7 +7,7 @@
     <div class="plugin-base" ref="container">
       <isolated-plugin-view
         :visible="active"
-        :plugin="data.snapshot"
+        :plugin-id="tab.context.pluginId"
         :url="data.url"
         :reload="reload"
         :on-request="handleRequest"

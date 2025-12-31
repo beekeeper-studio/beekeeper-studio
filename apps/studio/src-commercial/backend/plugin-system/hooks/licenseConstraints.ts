@@ -1,3 +1,17 @@
+/**
+ * licenseConstraints Hook
+ *
+ * Enforces license-based limitations on plugin installation and activation.
+ *
+ * License tiers and limits:
+ * - Pro+: Unlimited plugins
+ * - Indie: Max 5 plugins (any type)
+ * - Free: Max 2 community plugins, no core plugins
+ *
+ * This hook provides:
+ * 1. Install guard - Prevents installing plugins beyond license limits
+ * 2. Snapshot transformer - Disables plugins that exceed license limits
+ */
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { PluginManager } from "@/services/plugin";
 import { ForbiddenPluginError } from "@/services/plugin/errors";

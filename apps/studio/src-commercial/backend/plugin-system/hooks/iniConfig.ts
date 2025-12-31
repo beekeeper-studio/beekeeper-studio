@@ -1,3 +1,13 @@
+/**
+ * iniConfig Hook
+ *
+ * Binds a plugin snapshot transformer that disables plugins based on the
+ * user's configuration file (beekeeper.ini).
+ *
+ * Example config:
+ * [plugins.my-plugin-id]
+ * disabled = true
+ */
 import { PluginManager } from "@/services/plugin";
 import rawLog from "@bksLogger";
 import _ from "lodash";

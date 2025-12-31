@@ -60,10 +60,11 @@ const pluginManager = new PluginManager({
       }
     },
   }),
-  initialRegistryFallback: async () => {
-    return await PluginEntry.getAllAsRegistryEntries();
-  },
+  initialRegistryFallback: async () => await PluginEntry.getAllAsRegistryEntries(),
 });
+
+bindIniConfig(pluginManager, bksConfig);
+bindLicenseConstraints(pluginManager);
 
 interface Reply {
   id: string,
@@ -190,13 +191,7 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
-  async function initPluginManager() {
-    bindIniConfig(pluginManager, bksConfig);
-    bindLicenseConstraints(pluginManager);
-    await pluginManager.initialize();
-  }
-
-  initPluginManager().then((e) => {
+  pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
   });
 
