@@ -116,16 +116,29 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
-      - name: Cleanup artifacts
+      - name: Cleanup artifacts (non-Windows)
         if: "!startsWith(matrix.os, 'windows')"
         run: |
-          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
+          cd apps/studio/dist_electron
+          # Keep only final installer packages and metadata
+          find . -type f ! \( -name "*.exe" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.snap" -o -name "*.yml" \) -delete
+          # Remove empty directories
+          find . -type d -empty -delete
+          # Show what's left
+          ls -lh
 
-      - name: Cleanup artifacts Win
+      - name: Cleanup artifacts (Windows)
         if: "startsWith(matrix.os, 'windows')"
         continue-on-error: true
         run: |
-          npx rimraf "apps\studio\dist_electron\!(*.exe)"
+          cd apps/studio/dist_electron
+          # Keep only exe files and metadata
+          Get-ChildItem -Recurse -File | Where-Object { $_.Extension -notin @('.exe', '.yml') } | Remove-Item -Force
+          # Remove empty directories
+          Get-ChildItem -Recurse -Directory | Where-Object { $_.GetFileSystemInfos().Count -eq 0 } | Remove-Item -Force
+          # Show what's left
+          Get-ChildItem
+        shell: pwsh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
