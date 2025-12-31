@@ -14,6 +14,7 @@ export enum DevLicenseState {
   expiredLifetimeCoversEarlierVersion,
 }
 
+export type LicenseTier = "free" | "indie" | "pro+";
 
 export class LicenseStatus {
   edition: "community" | "ultimate"

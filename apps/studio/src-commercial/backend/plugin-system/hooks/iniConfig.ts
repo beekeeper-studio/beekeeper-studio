@@ -5,7 +5,7 @@ import _ from "lodash";
 const log = rawLog.scope("plugin-system-hook:iniConfig");
 const boundSymbol = Symbol("iniConfig");
 
-export default async function bindIniConfig(manager: PluginManager, config: IBksConfig) {
+export default function bindIniConfig(manager: PluginManager, config: IBksConfig) {
   if (manager[boundSymbol]) {
     log.warn("already bound!");
     return;

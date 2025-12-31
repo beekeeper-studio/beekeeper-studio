@@ -56,7 +56,7 @@ describe("Basic Plugin Management", () => {
     it("should work with unpublished plugins (the installed plugins are not in the plugins.json)", async () => {
       // wip-plugin is not published yet cause it's wip!
       preloadPlugins(fileManager, [{ id: "wip-plugin" }]);
-      const manager = new PluginManager({ appVersion: "9.9.9", fileManager });
+      const manager = new PluginManager({ appVersion: "9.9.9", fileManager, registry });
       await expect(manager.initialize()).resolves.not.toThrow();
     });
   });
@@ -346,7 +346,7 @@ describe("Plugin License Constraints", () => {
       await manager.installPlugin("core-plugin-0");
       await manager.installPlugin("core-plugin-1");
 
-      await bindLicenseConstraints(manager);
+      bindLicenseConstraints(manager);
 
       // Can't install any more core plugins
       await expect(manager.installPlugin("core-plugin-2")).rejects.toThrow(
@@ -373,7 +373,7 @@ describe("Plugin License Constraints", () => {
 
     it("indie users - get 5 plugins (core + community <= 5)", async () => {
       await createLicense({ licenseType: "PersonalLicense" });
-      await bindLicenseConstraints(manager);
+      bindLicenseConstraints(manager);
 
       await manager.installPlugin("community-plugin-0");
       await manager.installPlugin("community-plugin-1");
@@ -418,7 +418,7 @@ describe("Plugin License Constraints", () => {
 
     it("pro+ users - get unlimited plugins", async () => {
       await createLicense({ licenseType: "BusinessLicense" });
-      await bindLicenseConstraints(manager);
+      bindLicenseConstraints(manager);
 
       await manager.installPlugin("core-plugin-0");
       await manager.installPlugin("core-plugin-1");
@@ -478,9 +478,9 @@ describe("Plugin License Constraints", () => {
       await tempManager.installPlugin("comm-plugin-3");
     });
 
-    it.only("free users - pick the first 2 community plugins alphabetically and disable the rest", async () => {
+    it("free users - pick the first 2 community plugins alphabetically and disable the rest", async () => {
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
-      await bindLicenseConstraints(manager);
+      bindLicenseConstraints(manager);
       await manager.initialize();
       const plugins = manager.getInstalledPlugins().map((p) => ({
         id: p.manifest.id,
@@ -492,7 +492,7 @@ describe("Plugin License Constraints", () => {
         { id: "comm-plugin-1", disabled: false, disableReasons: undefined },
         { id: "comm-plugin-2", disabled: true, disableReasons: [{ source: "license", cause: "max-community-plugins-reached", limit: 2 }] },
         { id: "comm-plugin-3", disabled: true, disableReasons: [{ source: "license", cause: "max-community-plugins-reached", limit: 2 }] },
-        { id: "core-plugin-0", disabled: true, disableReasons: [{ source: "license", cause: "valid-licence-required" }] },
+        { id: "core-plugin-0", disabled: true, disableReasons: [{ source: "license", cause: "valid-license-required" }] },
         { id: "core-plugin-1", disabled: true, disableReasons: [{ source: "license", cause: "valid-license-required" }] },
       ]);
     });
@@ -501,7 +501,7 @@ describe("Plugin License Constraints", () => {
       await createLicense({ licenseType: "PersonalLicense" });
 
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
-      await bindLicenseConstraints(manager);
+      bindLicenseConstraints(manager);
       await manager.initialize();
       const plugins = manager.getInstalledPlugins().map((p) => ({
         id: p.manifest.id,
@@ -520,9 +520,8 @@ describe("Plugin License Constraints", () => {
 
     it("pro+ users - get unlimited plugins", async () => {
       await createLicense({ licenseType: "BusinessLicense" });
-
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
-      await bindLicenseConstraints(manager);
+      bindLicenseConstraints(manager);
       await manager.initialize();
       const plugins = manager.getInstalledPlugins().map((p) => ({
         id: p.manifest.id,

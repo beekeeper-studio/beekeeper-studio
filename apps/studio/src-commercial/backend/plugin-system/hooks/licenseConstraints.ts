@@ -2,13 +2,12 @@ import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { PluginManager } from "@/services/plugin";
 import { ForbiddenPluginError } from "@/services/plugin/errors";
 import rawLog from "@bksLogger";
+import globals from '@/common/globals'
 
 const log = rawLog.scope("plugin-system-hook:licenseConstraints");
 const boundSymbol = Symbol("licenseConstraints");
 
-export default async function bindLicenseConstraints(manager: PluginManager) {
-  const license = await LicenseKey.getLicenseStatus();
-
+export default function bindLicenseConstraints(manager: PluginManager) {
   if (manager[boundSymbol]) {
     log.warn("already bound!");
     return;
@@ -17,18 +16,20 @@ export default async function bindLicenseConstraints(manager: PluginManager) {
   manager[boundSymbol] = true;
 
   manager.addInstallGuard(async ({ id, origin }) => {
+    const license = await LicenseKey.getLicenseStatus();
+
     if (license.tier === "pro+") {
       // No limit
       return;
     }
 
     if (license.tier === "indie") {
-      if (manager.getInstalledPlugins().length < 5) {
+      if (manager.getInstalledPlugins().length < globals.maxPluginsForIndie) {
         return;
       }
 
       throw new ForbiddenPluginError(
-        "You have reached the maximum of 5 plugins allowed in your license."
+        `You have reached the maximum of ${globals.maxPluginsForIndie} plugins allowed in your license.`
         + " To install this plugin, please uninstall an existing one"
         + " or upgrade the app https://beekeeperstudio.io/pricing"
       );
@@ -43,9 +44,9 @@ export default async function bindLicenseConstraints(manager: PluginManager) {
     // This includes community and unpublished plugins
     const communityPlugins = manager.getInstalledPlugins()
       .filter((p) => p.origin !== "core");
-    if (communityPlugins.length >= 2) {
+    if (communityPlugins.length >= globals.maxCommunityPluginsForFree) {
       throw new ForbiddenPluginError(
-        "You have reached the maximum of 2 community plugins allowed."
+        `You have reached the maximum of ${globals.maxCommunityPluginsForFree} community plugins.`
         + " To install this plugin, please uninstall an existing one"
         + " or upgrade the app https://beekeeperstudio.io/pricing"
       );
@@ -53,6 +54,8 @@ export default async function bindLicenseConstraints(manager: PluginManager) {
   });
 
   manager.addPluginSnaphostTransformer(async (snapshot, plugins) => {
+    const license = await LicenseKey.getLicenseStatus();
+
     if (license.tier === "pro+") {
       // No limit
       return snapshot;
@@ -61,7 +64,7 @@ export default async function bindLicenseConstraints(manager: PluginManager) {
     const enabledPlugins = plugins.filter((p) => !p.disabled);
 
     if (license.tier === "indie") {
-      if (enabledPlugins.length < 5) {
+      if (enabledPlugins.length < globals.maxPluginsForIndie) {
         return snapshot;
       }
 
@@ -70,7 +73,7 @@ export default async function bindLicenseConstraints(manager: PluginManager) {
         disabled: true,
         disableReasons: [
           ...(snapshot.disabled ? [...snapshot.disableReasons] : []),
-          { source: "license", cause: "max-plugins-reached", limit: 5 },
+          { source: "license", cause: "max-plugins-reached", limit: globals.maxPluginsForIndie },
         ],
       };
     }
@@ -86,13 +89,13 @@ export default async function bindLicenseConstraints(manager: PluginManager) {
       };
     }
 
-    if (enabledPlugins.length >= 2) {
+    if (enabledPlugins.length >= globals.maxCommunityPluginsForFree) {
       return {
         ...snapshot,
         disabled: true,
         disableReasons: [
           ...(snapshot.disabled ? [...snapshot.disableReasons] : []),
-          { source: "license", cause: "max-community-plugins-reached", limit: 2 },
+          { source: "license", cause: "max-community-plugins-reached", limit: globals.maxCommunityPluginsForFree },
         ],
       };
     }

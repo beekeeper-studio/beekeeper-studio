@@ -38,7 +38,7 @@ export function preloadPlugins(
   plugins: Partial<Manifest>[]
 ) {
   fileManager.scanPlugins = () =>
-    plugins.map((plugin) =>  createTestManifest(plugin));
+    plugins.map((plugin) => createTestManifest(plugin));
 }
 
 let counter = 0;

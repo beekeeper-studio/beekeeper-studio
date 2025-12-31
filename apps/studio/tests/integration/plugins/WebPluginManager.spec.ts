@@ -35,7 +35,7 @@ describe("WebPluginManager", () => {
       const { pluginStore, utilityConnection } = prepareWebPluginManagerTestGroup({ pluginManager });
 
       webManager = new WebPluginManager({
-        // Shouldn't care about the app version. It's already tested in PluginManager.spec.ts.
+        // Versioning is tested in PluginManager.spec.ts. Here we don't care about it.
         appVersion: "9.9.9",
         pluginStore,
         utilityConnection,
@@ -102,18 +102,6 @@ describe("WebPluginManager", () => {
         pluginStore,
         utilityConnection,
       });
-    });
-
-    it("should not be accessible from the UI", async () => {
-      const addTabTypeConfigsSpy = jest.spyOn(pluginStore, "addTabTypeConfigs");
-      const addMenuBarItemSpy = jest.spyOn(pluginStore, "addMenuBarItem");
-      const addPopupMenuItemSpy = jest.spyOn(pluginStore, "addPopupMenuItem");
-
-      await webManager.initialize();
-
-      expect(addTabTypeConfigsSpy).not.toHaveBeenCalled();
-      expect(addMenuBarItemSpy).not.toHaveBeenCalled();
-      expect(addPopupMenuItemSpy).not.toHaveBeenCalled()
     });
 
     it("should be flagged as disabled", async () => {

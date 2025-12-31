@@ -60,7 +60,7 @@ export default function prepareWebPluginManagerTestGroup(options?: {
       dialectData: getDialectData(dialectFor(connectionType)),
     },
     commit: jest.fn((...args) => {
-      if (args[0] === "installedPlugins") {
+      if (args[0] === "setInstalledPlugins") {
         store.state.installedPlugins = args[1];
       }
     }),

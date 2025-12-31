@@ -76,8 +76,8 @@ export const DevHandlers: IDevHandlers = {
 
     const pluginManager = PluginManager.devGetInstance();
     pluginManager.reset();
-    await bindLicenseConstraints(pluginManager);
-    await bindIniConfig(pluginManager, bksConfig);
+    bindLicenseConstraints(pluginManager);
+    bindIniConfig(pluginManager, bksConfig);
     await pluginManager.initialize();
   },
 };

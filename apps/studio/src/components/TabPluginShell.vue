@@ -315,7 +315,7 @@ export default Vue.extend({
     if (this.split) {
       this.split.destroy();
     }
-    this.containerResizeObserver.disconnect();
+    this.containerResizeObserver?.disconnect();
   },
 });
 </script>

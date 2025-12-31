@@ -3,6 +3,8 @@
 export default {
   updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
   freeTrialDays: 14,
+  maxPluginsForIndie: 5,
+  maxCommunityPluginsForFree: 2,
   psqlTimeout: 15000, // 15 seconds
   psqlIdleTimeout: 20000,
   defaultChunkSize: 100,
