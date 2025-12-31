@@ -9,7 +9,6 @@
         <isolated-plugin-view
           :visible="active"
           :plugin-id="tab.context.pluginId"
-          :plugin="data.snapshot"
           :url="data.url"
           :reload="reload"
           :on-request="handleRequest"

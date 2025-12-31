@@ -182,10 +182,6 @@ export default class PluginManager {
     return this.plugins;
   }
 
-  findInstalledPlugin(id: string) {
-    return this.getInstalledPlugins().find(({ manifest }) => manifest.id === id);
-  }
-
   /** Plugin is not compatible if the **current app version** is lower than the
    * **minimum app version** required by the plugin. */
   private checkCompatibility(manifest: Manifest): boolean {

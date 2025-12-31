@@ -213,7 +213,9 @@ describe("Basic Plugin Management", () => {
       // STEP 2: Install a plugin
       await manager.installPlugin("test-plugin");
 
-      expect(manager.findInstalledPlugin('test-plugin').manifest.version).toBe("1.0.0");
+      expect(
+        manager.getInstalledPlugins().find(({ manifest }) => manifest.id === "test-plugin").manifest.version
+      ).toBe("1.0.0");
       expect(manager.pluginSettings).toStrictEqual({
         "test-plugin": { autoUpdate: true },
       });
@@ -226,7 +228,9 @@ describe("Basic Plugin Management", () => {
 
       // NOTE: Plugin manager should recognize the new version and update it automatically
       await manager2.initialize();
-      expect(manager2.findInstalledPlugin('test-plugin').manifest.version).toBe("1.1.0");
+      expect(
+        manager2.getInstalledPlugins().find(({ manifest }) => manifest.id === "test-plugin").manifest.version
+      ).toBe("1.1.0");
     });
 
     it("can update plugins manually", async () => {

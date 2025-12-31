@@ -104,7 +104,7 @@
     <div class="markdown-content">
       <div v-if="loadingMarkdown" class="loading">Loading plugin readme</div>
       <div v-if="rawHtmlContent" v-html="rawHtmlContent" />
-      <div class="not-available" v-else="rawHtmlContent">
+      <div class="not-available" v-else>
         Readme is not available
       </div>
     </div>
