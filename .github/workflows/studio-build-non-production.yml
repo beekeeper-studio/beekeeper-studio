@@ -45,7 +45,7 @@ jobs:
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Install fpm
-        run: sudo gem install fpm
+        run: sudo gem install fpm -v 1.17.0
         if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
 
       - name: Install python 3.11 (mac)
@@ -101,9 +101,14 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
-        # just build appimage in master to keep things quick.
+        # Build deb on master and test-deb-hardlinks branch for hardlinks testing, AppImage on PRs for speed
       - name: Build Electron app
-        run: "yarn run electron:build --publish never --linux AppImage"
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/master" ] || [ "${{ github.ref }}" == "refs/heads/test-deb-hardlinks" ]; then
+            yarn run electron:build --publish never --linux deb
+          else
+            yarn run electron:build --publish never --linux AppImage
+          fi
         if: startsWith(matrix.os, 'ubuntu')
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
