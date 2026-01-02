@@ -22,6 +22,19 @@ Plugins are available to **all Beekeeper Studio users**, including those using t
 
 However, some individual plugins may have their own access requirements. For example, premium plugins developed by the Beekeeper Studio team may require a paid subscription.
 
+## Plugin Limits by License
+
+The number of plugins you can install depends on your Beekeeper Studio license tier:
+
+| License Tier | Plugin Limit |
+|--------------|--------------|
+| **Pro+** | Unlimited plugins |
+| **Indie** | Up to 5 plugins (any type) |
+| **Free** | Up to 2 community plugins |
+
+!!! note "About Core Plugins"
+    **Core plugins** are official plugins developed and maintained by the Beekeeper Studio team. These plugins require a paid subscription to use.
+
 ## Available Plugins
 
 ### AI Shell
