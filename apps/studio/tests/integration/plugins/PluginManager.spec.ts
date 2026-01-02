@@ -189,8 +189,8 @@ describe("Basic Plugin Management", () => {
       // 3. Check if the plugins are installed
       const manager = await initPluginManager(AppVer.COMPAT);
       expect(manager.getPlugins()).toHaveLength(2);
-      expect(manager.getPlugins()[0].manifest.id).toBe("test-plugin");
-      expect(manager.getPlugins()[1].manifest.id).toBe("frozen-banana");
+      expect(manager.getPlugins()[0].manifest.id).toBe("frozen-banana");
+      expect(manager.getPlugins()[1].manifest.id).toBe("test-plugin");
     });
   });
 
