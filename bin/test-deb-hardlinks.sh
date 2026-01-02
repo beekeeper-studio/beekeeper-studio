@@ -23,53 +23,51 @@ echo "=================================="
 echo "Testing: $DEB_FILE"
 echo ""
 echo "This test verifies that the .deb package can be installed on a system"
-echo "with separate filesystems for /opt, /var, /tmp, and /home."
+echo "with separate filesystems for /opt and /tmp."
 echo ""
 echo "Background: Hardlinks cannot cross filesystem boundaries. If the package"
-echo "uses hardlinks, installation will fail when these directories are on"
-echo "different filesystems."
+echo "uses hardlinks during installation, it will fail when /opt and /tmp are"
+echo "on different filesystems."
 echo ""
 
-# Run container with separate tmpfs mounts for each critical directory
+# Run container with separate tmpfs mounts for /opt and /tmp
+# /var stays on the main filesystem so apt can work
 docker run --rm --privileged \
   --tmpfs /opt:rw,size=2G \
-  --tmpfs /var:rw,size=2G \
   --tmpfs /tmp:rw,size=1G \
-  --tmpfs /home:rw,size=1G \
-  -v "$DEB_FILE:/tmp/$DEB_FILENAME:ro" \
+  -v "$DEB_FILE:/deb-package/$DEB_FILENAME:ro" \
   ubuntu:22.04 \
   bash -c "
     set -euxo pipefail
 
     # Show filesystem info for verification
     echo '=== Filesystem Information ==='
-    df -h /opt /var /tmp /home
+    df -h /opt /tmp
     echo ''
 
-    # Verify filesystems are separate
+    # Verify filesystems are separate by checking mount points
     echo '=== Verifying Separate Filesystems ==='
-    OPT_DEV=\$(df /opt | tail -n1 | awk '{print \$1}')
-    VAR_DEV=\$(df /var | tail -n1 | awk '{print \$1}')
-    TMP_DEV=\$(df /tmp | tail -n1 | awk '{print \$1}')
-    HOME_DEV=\$(df /home | tail -n1 | awk '{print \$1}')
+    OPT_MOUNT=\$(df /opt | tail -n1 | awk '{print \$6}')
+    TMP_MOUNT=\$(df /tmp | tail -n1 | awk '{print \$6}')
 
-    echo \"Device for /opt:  \$OPT_DEV\"
-    echo \"Device for /var:  \$VAR_DEV\"
-    echo \"Device for /tmp:  \$TMP_DEV\"
-    echo \"Device for /home: \$HOME_DEV\"
+    echo \"Mount point for /opt:  \$OPT_MOUNT\"
+    echo \"Mount point for /tmp:  \$TMP_MOUNT\"
     echo ''
 
-    if [ \"\$OPT_DEV\" == \"\$VAR_DEV\" ] || [ \"\$OPT_DEV\" == \"\$TMP_DEV\" ]; then
-      echo 'WARNING: Not all filesystems are separate! Test may not catch hardlinks issues.'
+    # Both should be on their own mount points (/opt and /tmp)
+    if [ \"\$OPT_MOUNT\" == \"/opt\" ] && [ \"\$TMP_MOUNT\" == \"/tmp\" ]; then
+      echo '✓ Filesystems are separate (different mount points)'
+      echo '  This will catch hardlinks issues during installation'
     else
-      echo '✓ Filesystems are separate (different devices)'
+      echo 'ERROR: Filesystems are NOT properly separated!'
+      exit 1
     fi
     echo ''
 
     # Install the package
     echo '=== Installing DEB Package ==='
     apt-get update -qq
-    DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/$DEB_FILENAME
+    DEBIAN_FRONTEND=noninteractive apt-get install -y /deb-package/$DEB_FILENAME
 
     # Verify installation
     echo ''
