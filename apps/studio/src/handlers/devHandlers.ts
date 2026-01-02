@@ -1,10 +1,6 @@
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from "@/common/platform_info";
 import { DevLicenseState } from "@/lib/license";
-import { PluginManager } from "@/services/plugin";
-import bindLicenseConstraints from "@commercial/backend/plugin-system/hooks/licenseConstraints";
-import bindIniConfig from "@commercial/backend/plugin-system/hooks/iniConfig";
-import bksConfig from "@/common/bksConfig";
 
 export interface IDevHandlers {
   "dev/switchLicenseState": ({ state, sId }: { state: DevLicenseState; sId: string; }) => Promise<void>;
@@ -73,11 +69,5 @@ export const DevHandlers: IDevHandlers = {
       default:
         console.warn("Unknown license state");
     }
-
-    const pluginManager = PluginManager.devGetInstance();
-    pluginManager.reset();
-    bindLicenseConstraints(pluginManager);
-    bindIniConfig(pluginManager, bksConfig);
-    await pluginManager.initialize();
   },
 };

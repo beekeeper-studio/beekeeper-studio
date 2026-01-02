@@ -1,6 +1,6 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
-import { Manifest, PluginSnapshot, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { ManifestV1 as Manifest, PluginSnapshot, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
 import { PluginTimeoutError } from "@/services/plugin/errors";
 
 interface IPluginHandlers {

@@ -39,6 +39,7 @@ Object.assign(defaultStatus, {
   condition: "initial",
 })
 
+/** Use this to compare licenses if it's upgraded/downgraded */
 const tierPoints: Record<LicenseTier, number> = {
   "pro+": 9,
   "indie": 1,
@@ -201,23 +202,21 @@ export const LicenseModule: Module<State, RootState>  = {
       await context.dispatch('sync')
     },
     async sync(context) {
-      const prevTier: LicenseTier | "unset" = SmartLocalStorage.getJSON("previousLicenseTier", "unset")
-      const status: LicenseStatus = await Vue.prototype.$util.send('license/getStatus')
+      const prevTier: LicenseTier | "unset" = SmartLocalStorage.getItem("previousLicenseTier", "unset")
+      const curr: LicenseStatus = await Vue.prototype.$util.send('license/getStatus')
       const licenses = await Vue.prototype.$util.send('license/get')
 
       // Compare and detect changes (only if previous is set)
       if (prevTier !== "unset") {
-        const currTier = status.tier;
-
-        if (prevTier === currTier) {
+        if (prevTier === curr.tier) {
           const change: TierChange = { hasChanged: false };
           context.commit("setTierChange", change);
         } else {
-          const direction = tierPoints[prevTier] > tierPoints[currTier] ? "downgrade" : "upgrade";
+          const direction = tierPoints[prevTier] > tierPoints[curr.tier] ? "downgrade" : "upgrade";
           const change: TierChange = {
             hasChanged: true,
             from: prevTier,
-            to: currTier,
+            to: curr.tier,
             direction,
           };
           log.info(`License tier changed: ${JSON.stringify(change)}`);
@@ -226,10 +225,10 @@ export const LicenseModule: Module<State, RootState>  = {
       }
 
       // Save current status as previous for next comparison
-      SmartLocalStorage.addItem('previousLicenseTier', status.tier);
+      SmartLocalStorage.addItem('previousLicenseTier', curr.tier);
 
       context.commit('set', licenses)
-      context.commit('setStatus', status)
+      context.commit('setStatus', curr)
       context.commit('setNow', new Date())
     },
   }

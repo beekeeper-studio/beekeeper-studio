@@ -3,6 +3,7 @@ import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
   Manifest,
+  ManifestV1,
   PluginSnapshot,
   PluginRegistryEntry,
   PluginRepository,
@@ -192,7 +193,7 @@ export default class PluginManager {
   }
 
   /** Install the latest version of a plugin. */
-  async installPlugin(id: string): Promise<Manifest> {
+  async installPlugin(id: string): Promise<ManifestV1> {
     this.initializeGuard();
 
     let update = false;
@@ -230,9 +231,7 @@ export default class PluginManager {
         await this.fileManager.download(id, info.latestRelease);
       }
 
-      const manifest = this.fileManager.getManifest(id);
-
-      await this.upsertPluginSnapshot(manifest);
+      const snapshot = await this.upsertPluginSnapshot(this.fileManager.getManifest(id));
 
       if (!this.pluginSettings[id]) {
         this.pluginSettings[id] = {
@@ -243,11 +242,11 @@ export default class PluginManager {
 
       log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
-      return manifest;
+      return snapshot.manifest;
     });
   }
 
-  async updatePlugin(id: string): Promise<Manifest> {
+  async updatePlugin(id: string): Promise<ManifestV1> {
     this.initializeGuard();
     await this.registry.reloadRepository(id);
     return await this.installPlugin(id);
@@ -287,7 +286,7 @@ export default class PluginManager {
     return this.checkCompatibility(head.latestRelease.manifest);
   }
 
-  async getPluginAsset(manifest: Manifest, filename: string): Promise<string> {
+  async getPluginAsset(manifest: ManifestV1, filename: string): Promise<string> {
     this.initializeGuard();
     return this.fileManager.readAsset(manifest, filename);
   }
@@ -374,11 +373,8 @@ export default class PluginManager {
     const entry = this.registry.findEntryById(manifest.id);
     const origin: PluginOrigin = entry?.metadata.origin || "unpublished";
 
-    // Convert v0 manifests to v1 format before creating snapshot
-    const manifestV1 = convertToManifestV1(manifest);
-
     const snapshot = await this.applyPluginSnapshotTransformers({
-      manifest: manifestV1,
+      manifest: convertToManifestV1(manifest),
       compatible,
       disabled: false,
       origin,

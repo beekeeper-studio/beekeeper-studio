@@ -96,11 +96,7 @@ export default class WebPluginLoader {
       throw new Error(`The plugin ${this.manifest.id} is not found. It might not be loaded or uninstalled properly. Please restart the app or report this to our issue tracker if it persists: https://github.com/beekeeper-studio/beekeeper-studio/issues`)
     }
 
-    // Backward compatibility: Early version of AI Shell.
-    const { views, menu } = isManifestV0(this.context.manifest)
-      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
-      : this.context.manifest.capabilities;
-
+    const { views, menu } = this.context.manifest.capabilities;
     this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
     this.menu.register(views, menu);
 
@@ -417,10 +413,7 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    const { views, menu } = isManifestV0(this.context.manifest)
-      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
-      : this.context.manifest.capabilities;
-
+    const { views, menu } = this.context.manifest.capabilities;
     this.menu.unregister(views, menu);
     this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);
   }
