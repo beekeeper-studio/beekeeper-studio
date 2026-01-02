@@ -212,7 +212,8 @@ module.exports = {
     "artifactName": "${productName}-${version}-portable.exe",
   },
   nsis: {
-    oneClick: false
+    oneClick: false,
+    include: './build/win/msvc-redist.nsh'
   },
   appx: {
     applicationId: "beekeeperstudio",
