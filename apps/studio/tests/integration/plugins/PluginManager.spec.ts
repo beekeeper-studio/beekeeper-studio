@@ -155,33 +155,33 @@ describe("Basic Plugin Management", () => {
       );
     });
 
-    it("can preinstall plugins", async () => {
+    it("can install plugins manually", async () => {
       // 1. Create 2 folders for the plugins
-      const bksAiShell = path.join(fileManager.options.pluginsDirectory, "bks-ai-shell");
-      const bksErDiagram = path.join(fileManager.options.pluginsDirectory, "bks-er-diagram");
+      const testPlugin = path.join(fileManager.options.pluginsDirectory, "test-plugin");
+      const frozenBanana = path.join(fileManager.options.pluginsDirectory, "frozen-banana");
 
-      mkdirSync(bksAiShell, { recursive: true });
-      mkdirSync(bksErDiagram, { recursive: true });
+      mkdirSync(testPlugin, { recursive: true });
+      mkdirSync(frozenBanana, { recursive: true });
 
       // 2. In each folder, create `manifest.json` file
-      writeFileSync(path.join(bksAiShell, "manifest.json"), JSON.stringify({
-        id: "bks-ai-shell",
-        name: "BKS AI Shell",
+      writeFileSync(path.join(testPlugin, "manifest.json"), JSON.stringify({
+        id: "test-plugin",
+        name: "Test Plugin",
         version: "1.0.0",
         minAppVersion: AppVer.COMPAT,
-        author: "Beekeeper Studio",
-        description: "AI Shell Plugin",
+        author: "test-plugin-author",
+        description: "Test Plugin description",
         manifestVersion: 1,
         capabilities: { views: [], menu: [] },
       } as Manifest));
 
-      writeFileSync(path.join(bksErDiagram, "manifest.json"), JSON.stringify({
-        id: "bks-er-diagram",
-        name: "BKS ER Diagram",
+      writeFileSync(path.join(frozenBanana, "manifest.json"), JSON.stringify({
+        id: "frozen-banana",
+        name: "Frozen Banana",
         version: "1.0.0",
         minAppVersion: AppVer.COMPAT,
-        author: "Beekeeper Studio",
-        description: "ER Diagram Plugin",
+        author: "frozen-banana-author",
+        description: "Frozen Banana description",
         manifestVersion: 1,
         capabilities: { views: [], menu: [] },
       } as Manifest));
@@ -189,8 +189,8 @@ describe("Basic Plugin Management", () => {
       // 3. Check if the plugins are installed
       const manager = await initPluginManager(AppVer.COMPAT);
       expect(manager.getPlugins()).toHaveLength(2);
-      expect(manager.getPlugins()[0].manifest.id).toBe("bks-ai-shell");
-      expect(manager.getPlugins()[1].manifest.id).toBe("bks-er-diagram");
+      expect(manager.getPlugins()[0].manifest.id).toBe("test-plugin");
+      expect(manager.getPlugins()[1].manifest.id).toBe("frozen-banana");
     });
   });
 
