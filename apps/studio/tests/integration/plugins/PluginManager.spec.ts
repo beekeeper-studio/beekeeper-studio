@@ -14,6 +14,8 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";
 import { UserSetting } from "@/common/appdb/models/user_setting";
+import { mkdirSync, writeFileSync } from "fs";
+import path from "path";
 
 describe("Basic Plugin Management", () => {
   const server = createPluginServer();
@@ -64,7 +66,6 @@ describe("Basic Plugin Management", () => {
   });
 
   beforeEach(async () => {
-    PluginManager.PREINSTALLED_PLUGINS = [];
     const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
     setting.userValue = "{}";
     await setting.save();
@@ -154,13 +155,43 @@ describe("Basic Plugin Management", () => {
       );
     });
 
-    it("can preinstall plugins", async () => {
-      PluginManager.PREINSTALLED_PLUGINS = ["test-plugin", "frozen-banana"];
+    it("can install plugins manually", async () => {
+      // 1. Create 2 folders for the plugins
+      const testPlugin = path.join(fileManager.options.pluginsDirectory, "test-plugin");
+      const frozenBanana = path.join(fileManager.options.pluginsDirectory, "frozen-banana");
+
+      mkdirSync(testPlugin, { recursive: true });
+      mkdirSync(frozenBanana, { recursive: true });
+
+      // 2. In each folder, create `manifest.json` file
+      writeFileSync(path.join(testPlugin, "manifest.json"), JSON.stringify({
+        id: "test-plugin",
+        name: "Test Plugin",
+        version: "1.0.0",
+        minAppVersion: AppVer.COMPAT,
+        author: "test-plugin-author",
+        description: "Test Plugin description",
+        manifestVersion: 1,
+        capabilities: { views: [], menu: [] },
+      } as Manifest));
+
+      writeFileSync(path.join(frozenBanana, "manifest.json"), JSON.stringify({
+        id: "frozen-banana",
+        name: "Frozen Banana",
+        version: "1.0.0",
+        minAppVersion: AppVer.COMPAT,
+        author: "frozen-banana-author",
+        description: "Frozen Banana description",
+        manifestVersion: 1,
+        capabilities: { views: [], menu: [] },
+      } as Manifest));
+
+      // 3. Check if the plugins are installed
       const manager = await initPluginManager(AppVer.COMPAT);
       expect(manager.getPlugins()).toHaveLength(2);
-      expect(manager.getPlugins()[0].manifest.id).toBe("test-plugin");
-      expect(manager.getPlugins()[1].manifest.id).toBe("frozen-banana");
-    })
+      expect(manager.getPlugins()[0].manifest.id).toBe("frozen-banana");
+      expect(manager.getPlugins()[1].manifest.id).toBe("test-plugin");
+    });
   });
 
   describe("Loading", () => {
