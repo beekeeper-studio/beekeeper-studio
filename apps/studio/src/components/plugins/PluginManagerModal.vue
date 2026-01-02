@@ -5,36 +5,66 @@
       :class="['vue-dialog', 'beekeeper-modal', 'plugin-manager-modal', { 'plugin-page-open': selectedPlugin }]"
     >
       <div class="dialog-content">
-        <div class="dialog-c-title">Plugins</div>
-        <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
-          <i class="material-icons">clear</i>
-        </a>
+        <div class="dialog-c-title">
+          <i class="material-icons">extension</i>
+          Plugins
+        </div>
+        <div class="top-right-buttons">
+          <button
+            class="btn btn-fab"
+            @click.prevent="loadPlugins(true)"
+            title="Refresh list"
+          >
+            <i class="material-icons">refresh</i>
+          </button>
+          <button
+            class="btn btn-fab"
+            @click.prevent="close"
+            title="Close"
+          >
+            <i class="material-icons">clear</i>
+          </button>
+        </div>
         <x-progressbar v-if="loadingPlugins" style="margin-top: -5px" />
         <div class="plugin-manager-content">
-          <div class="plugin-list-container">
+          <div class="plugin-list-container" :class="{ shrink: selectedPlugin }">
             <div class="description">
               Manage and install plugins in Beekeeper Studio.
+              <a href="https://docs.beekeeperstudio.io/user_guide/plugins/" class="link">Learn more</a>.
             </div>
             <error-alert :error="errors" />
-            <plugin-list
-              :plugins="plugins"
-              @install="install"
-              @uninstall="uninstall"
-              @update="update"
-              @item-click="openPluginPage"
-              @checkForUpdates="checkForUpdates"
-            />
+            <div class="plugin-list-filter">
+              <label for="plugin-list-filter">Filter</label>
+              <select id="plugin-list-filter" v-model="filter">
+                <option value="all">All</option>
+                <option value="installed">Installed</option>
+                <option value="core">Core</option>
+                <option value="community">Community</option>
+              </select>
+            </div>
+            <div class="scroll-container">
+              <plugin-list
+                :plugins="filteredPlugins"
+                @install="install"
+                @uninstall="uninstall"
+                @update="update"
+                @item-click="openPluginPage"
+                @checkForUpdates="checkForUpdates"
+              />
+            </div>
           </div>
-          <plugin-page
-            v-if="selectedPlugin"
-            :plugin="selectedPlugin"
-            :markdown="selectedPluginReadme"
-            :loading-markdown="loadingPluginReadme"
-            @install="install(selectedPlugin)"
-            @uninstall="uninstall(selectedPlugin)"
-            @update="update(selectedPlugin)"
-            @checkForUpdates="checkForUpdates(selectedPlugin)"
-          />
+          <transition name="slide-fade">
+            <plugin-page
+              v-if="selectedPlugin"
+              :plugin="selectedPlugin"
+              :markdown="selectedPluginReadme"
+              :loading-markdown="loadingPluginReadme"
+              @install="install(selectedPlugin)"
+              @uninstall="uninstall(selectedPlugin)"
+              @update="update(selectedPlugin)"
+              @checkForUpdates="checkForUpdates(selectedPlugin)"
+            />
+          </transition>
         </div>
       </div>
     </modal>
@@ -49,7 +79,7 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
-import type { PluginContext, PluginRegistryEntry } from "@/services/plugin";
+import type { PluginSnapshot, PluginRegistryEntry, Manifest, UIPlugin } from "@/services/plugin/types";
 import { mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
@@ -59,13 +89,14 @@ export default Vue.extend({
   data() {
     return {
       modalName: "plugin-manager-modal",
-      plugins: [],
+      plugins: [] as UIPlugin[],
       selectedPluginIdx: -1,
       selectedPluginReadme: "",
       loadingPluginReadme: false,
       loadedPlugins: false,
       errors: null,
       loadingPlugins: false,
+      filter: "all" as "all" | "installed" | "core" | "community",
     };
   },
   async mounted() {
@@ -78,12 +109,38 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings);
   },
   computed: {
-    ...mapState(["pluginManagerStatus"]),
+    ...mapState([ "pluginManagerStatus" ]),
+    ...mapState({
+      pluginSnapshots: "installedPlugins",
+    }),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
     },
     selectedPlugin() {
       return this.plugins[this.selectedPluginIdx];
+    },
+    filteredPlugins() {
+      switch (this.filter) {
+        case "all":
+          return this.plugins;
+        case "installed":
+          return this.installedPlugins;
+        case "core":
+          return this.corePlugins;
+        case "community":
+          return this.communityPlugins;
+        default:
+          return [];
+      }
+    },
+    corePlugins() {
+      return this.plugins.filter((plugin: UIPlugin) => plugin.origin === "core");
+    },
+    communityPlugins() {
+      return this.plugins.filter((plugin: UIPlugin) => plugin.origin === "community");
+    },
+    installedPlugins() {
+      return this.plugins.filter((plugin: UIPlugin) => plugin.installed);
     },
   },
   watch: {
@@ -96,15 +153,7 @@ export default Vue.extend({
         }
 
         if (this.pluginManagerStatus === "ready") {
-          this.loadingPlugins = true;
-
-          try {
-            this.plugins = await this.buildPluginListData();
-          } catch (e) {
-            log.error(e);
-          }
-
-          this.loadingPlugins = false;
+          await this.loadPlugins();
         } else if (this.pluginManagerStatus === "initializing") {
           this.loadingPlugins = true;
         } else {
@@ -115,15 +164,31 @@ export default Vue.extend({
     }
   },
   methods: {
-    async install({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
+    async loadPlugins(refresh?: boolean) {
+      this.loadingPlugins = true;
 
       try {
+        this.plugins = await this.buildPluginListData(refresh);
+      } catch (e) {
+        this.$noty.error("Failed to load plugins");
+        log.error(e);
+      }
+
+      this.loadingPlugins = false;
+    },
+    async install({ id }) {
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
+
+      try {
+        state.error = undefined;
         state.installing = true;
-        await this.$plugin.install(id);
+
+        const manifest = await this.$plugin.install(id);
+
         state.installed = true;
-        // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
+        state.installedVersion = manifest.version;
+        state.compatible = true;
+        state.error = undefined;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -133,15 +198,18 @@ export default Vue.extend({
       }
     },
     async update({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
+        state.error = undefined;
         state.installing = true;
+
         const manifest = await this.$plugin.update(id);
-        state.version = manifest.version;
+
+        state.installedVersion = manifest.version;
         state.updateAvailable = false;
         // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
+        state.compatible = true;
       } catch (e) {
         log.error(e);
         state.error = e;
@@ -151,27 +219,21 @@ export default Vue.extend({
       }
     },
     async checkForUpdates({ id }) {
-      const idx = this.plugins.findIndex((p) => p.id === id);
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: true,
-        });
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          updateAvailable: await this.$util.send("plugin/checkForUpdates", {
-            id,
-          }),
-        });
+        state.error = undefined;
+        state.checkingForUpdates = true;
+
+        state.updateAvailable = await this.$util.send(
+          "plugin/checkForUpdates",
+          { id }
+        );
       } catch (e) {
         log.error(e);
         this.$noty.error(`Failed to check for update: ${e.message}`);
       } finally {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: false,
-        });
+        state.checkingForUpdates = false;
       }
     },
     async uninstall({ id }) {
@@ -179,10 +241,13 @@ export default Vue.extend({
         return;
       }
 
-      const state = this.plugins.find((p) => p.id === id);
+      const state: UIPlugin = this.plugins.find((p) => p.id === id);
 
       try {
+        state.error = undefined;
+
         await this.$plugin.uninstall(id);
+
         state.installed = false;
       } catch (e) {
         log.error(e);
@@ -202,49 +267,65 @@ export default Vue.extend({
       }
       this.loadingPluginReadme = false;
     },
-    async buildPluginListData() {
-      const entries = await this.$util.send("plugin/entries");
-      const installedPlugins: PluginContext[] = await this.$plugin.plugins;
-      const list: PluginRegistryEntry[] = [];
+    async buildPluginListData(refresh?: boolean): Promise<UIPlugin[]> {
+      const list: UIPlugin[] = [];
 
-      for (const { manifest, loadable } of installedPlugins) {
-        const data = {
-          ...manifest,
-          installed: true,
-          installing: false,
-          checkingForUpdates: null,
-          loadable,
-        };
-
-        const entry = entries.find((entry) => entry.id === manifest.id);
-
-        // if the plugin is found in the beekeeper-studio-plugins
-        if (entry) {
-          data.repo = entry.repo;
-          data.updateAvailable = await this.$util
-            .send("plugin/checkForUpdates", { id: manifest.id })
-            .catch((e) => {
-              this.errors = [
-                `Failed to check for updates for ${manifest.id}: ${e.message}`,
-              ];
-              console.error(e);
-              return false;
-            });
-        }
-
-        list.push(data);
-      }
+      const entries: PluginRegistryEntry[] = await this.$plugin.getPluginEntries();
 
       for (const entry of entries) {
-        if (!_.find(list, { id: entry.id })) {
-          const data = {
-            ...entry,
-            installed: false,
-            installing: false,
-            checkingForUpdates: null,
-          };
+        list.push({
+          id: entry.id,
+          name: entry.name,
+          author: entry.author,
+          description: entry.description,
 
+          installed: false,
+          installing: false,
+
+          updateAvailable: false,
+          checkingForUpdates: null,
+
+          disabled: false,
+          repo: entry.repo,
+          origin: entry.metadata.origin,
+        });
+      }
+
+      const pluginSnapshots: PluginSnapshot[] = this.pluginSnapshots;
+
+      for (const snapshot of pluginSnapshots) {
+        const { manifest, compatible, origin } = snapshot;
+        let data = list.find((p) => p.id === manifest.id);
+        if (data) {
+          data.installed = true;
+          data.installedVersion = manifest.version;
+          data.compatible = compatible;
+          data.checkingForUpdates = true;
+          data.minAppVersion = manifest.minAppVersion;
+        } else {
+          data = {
+            id: manifest.id,
+            name: manifest.name,
+            author: manifest.author,
+            description: manifest.description,
+
+            compatible,
+            installed: true,
+            installedVersion: manifest.version,
+            installing: false,
+
+            updateAvailable: false,
+            checkingForUpdates: null,
+
+            disabled: false,
+            minAppVersion: manifest.minAppVersion,
+            origin,
+          };
           list.push(data);
+        }
+        if (snapshot.disabled) {
+          data.disabled = snapshot.disabled;
+          data.disableReasons = snapshot.disableReasons;
         }
       }
 
@@ -259,3 +340,107 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.dialog-c-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.top-right-buttons {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+
+  .btn {
+    &:not(:hover) {
+      background-color: transparent;
+    }
+
+    .material-icons {
+      color: var(--text-dark);
+    }
+  }
+}
+
+.plugin-manager-content {
+  height: calc(100% - 47.6px);
+}
+
+.plugin-list-container.shrink {
+  width: 23rem;
+}
+
+.plugin-list-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  margin-right: auto;
+  margin-left: 1.5rem;
+}
+
+.scroll-container {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.link {
+  color: var(--theme-primary);
+
+  &:hover {
+    color: var(--theme-primary);
+    text-decoration: underline;
+  }
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--theme-primary);
+  }
+
+  .expand-icon {
+    font-size: 1.25rem;
+    transition: transform 0.3s ease;
+
+    &.expanded {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
+  max-height: 1000px;
+  overflow: hidden;
+}
+
+.expand-enter,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+</style>

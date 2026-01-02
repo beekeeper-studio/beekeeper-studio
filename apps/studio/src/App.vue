@@ -181,6 +181,10 @@ export default Vue.extend({
       }
     }
 
+    if (SmartLocalStorage.getBool("devLicenseStateHasChanged")) {
+      this.$noty.warning("License state has changed. However, if you are testing the plugin system, please restart the app to re-apply the license constraints.");
+      SmartLocalStorage.setBool("devLicenseStateHasChanged", false);
+    }
   },
   methods: {
     notifyFreeTrial() {

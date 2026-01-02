@@ -1,10 +1,10 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
-import { Manifest, PluginContext, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { ManifestV1 as Manifest, PluginSnapshot, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
 import { PluginTimeoutError } from "@/services/plugin/errors";
 
 interface IPluginHandlers {
-  "plugin/plugins": () => Promise<PluginContext[]>
+  "plugin/plugins": () => Promise<PluginSnapshot[]>
   "plugin/entries": () => Promise<PluginRegistryEntry[]>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
@@ -42,10 +42,10 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     });
   },
   "plugin/plugins": async () => {
-    return pluginManager.getPlugins();
+    return pluginManager.getInstalledPlugins();
   },
-  "plugin/entries": async () => {
-    return await pluginManager.getEntries();
+  "plugin/entries": async (refresh?: boolean) => {
+    return await pluginManager.getEntries(refresh);
   },
   "plugin/repository": async ({ id }) => {
     return await pluginManager.getRepository(id);

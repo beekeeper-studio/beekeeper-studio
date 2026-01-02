@@ -134,11 +134,19 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
   }
 };
 
-export type PluginRegistryEntry = Pick<
-  Manifest,
-  "id" | "name" | "author" | "description"
-> & {
+export type RawPluginRegistryEntry = {
+  id: string;
+  name: string;
+  description: string;
+  author: string;
   repo: string;
+};
+
+export type PluginRegistryEntry = RawPluginRegistryEntry & {
+  /** Data not defined in plugins.json, but derived or enriched at runtime */
+  metadata: {
+    origin: PluginOrigin;
+  },
 };
 
 export interface Release {
@@ -171,24 +179,88 @@ export type PluginSettings = {
   }
 }
 
-
-export type WebPluginContext = {
-  manifest: Manifest;
+export type WebPluginLoaderContext = {
+  manifest: ManifestV1;
   store: PluginStoreService;
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
   fileHelpers: FileHelpers;
+  disabled: boolean;
 }
 
-export type PluginContext = {
-  manifest: Manifest;
-  loadable: boolean;
-}
+export type PluginSnapshot = DisableState & {
+  /** From the plugin's manifest.json */
+  manifest: ManifestV1;
+  /** Is this compatible with the current app version? */
+  compatible: boolean;
+  origin: PluginOrigin;
+};
+
+/* Disable state is controlled by hooks, e.g., bindLicenseConstraints and bindIniConfig. */
+type DisableState = ({
+  disabled: false;
+} | {
+  disabled: true;
+  disableReasons: DisableReason[];
+});
+
+/** IMPORTANT: If you add a new type here, be sure to update the messages in DisableReason.vue */
+export type DisableReason =
+  | {
+    source: "license";
+    cause: "max-plugins-reached" | "max-community-plugins-reached" | "valid-license-required";
+    /** The limit of plugins that can be used. Defined if the cause is
+     * `"max-plugins-reached"` or `"max-community-plugins-reached"`. */
+    limit?: number;
+  }
+  | { source: "config" };
+
+/**
+ * Plugins can be obtained from three sources:
+ * - `core` => https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json
+ * - `community` => https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json
+ * - `unpublished` => None of the above
+ */
+export type PluginOrigin = "core" | "community" | "unpublished";
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
 export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
+  /** For `getViewContext` API */
   context: any;
+}
+
+export type UIPlugin = {
+  readonly origin: PluginOrigin;
+
+  // Infos that are available from plugins.json
+  readonly id: Manifest['id'];
+  readonly name: Manifest['name'];
+  readonly author: Manifest['author'];
+  readonly description: Manifest['description'];
+
+  /** To find out if it's compatible, we must try to install it and see if it fails or not.
+   * After that, this property will be set. */
+  compatible?: boolean;
+  installing: boolean;
+  installed: boolean;
+  installedVersion?: string;
+
+  updateAvailable: boolean;
+  checkingForUpdates: null | boolean;
+
+  minAppVersion?: Manifest['minAppVersion'];
+  repo?: string;
+  error?: Error;
+} & DisableState;
+
+export type RawFetchRegistryResult = {
+  core: RawPluginRegistryEntry[];
+  community: RawPluginRegistryEntry[];
+  errors: {
+    core: Error | null;
+    community: Error | null;
+  }
 }

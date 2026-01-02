@@ -37,7 +37,7 @@ import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
-import { WebPluginManagerStatus } from '@/services/plugin'
+import { PluginSnapshot, WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 
 
@@ -82,6 +82,7 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+  installedPlugins: PluginSnapshot[];
 }
 
 Vue.use(Vuex)
@@ -141,6 +142,7 @@ const store = new Vuex.Store<State>({
     namespace: null,
     namespaceList: [],
     pluginManagerStatus: "initializing",
+    installedPlugins: [],
   },
 
   getters: {
@@ -413,6 +415,9 @@ const store = new Vuex.Store<State>({
     },
     webPluginManagerStatus(state, status: WebPluginManagerStatus) {
       state.pluginManagerStatus = status
+    },
+    setInstalledPlugins(state, snapshots: PluginSnapshot[]) {
+      state.installedPlugins = snapshots;
     },
   },
   actions: {

@@ -36,6 +36,7 @@ export const LicenseHandlers: ILicenseHandlers = {
     }
     return {
       ...status,
+      tier: status.tier,
       isUltimate: status.isUltimate,
       isCommunity: status.isCommunity,
       isTrial: status.isTrial,
