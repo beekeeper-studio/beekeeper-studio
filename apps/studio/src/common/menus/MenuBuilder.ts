@@ -14,6 +14,7 @@ export default class extends DefaultMenu {
       submenu: [
         this.menuItems.zoomreset,
         this.menuItems.zoomin,
+        ...(!this.platformInfo.isLinux ? [this.menuItems.zoominNumpad] : []),
         this.menuItems.zoomout,
         this.menuItems.fullscreen,
         this.menuItems.themeToggle,
