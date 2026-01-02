@@ -265,6 +265,25 @@ export default class WebPluginLoader {
         case "clipboard.writeImage":
           response.result = window.main.writeImageToClipboard(response.args.data);
           break;
+        case "noty.info":
+          this.context.noty.info(response.args.message);
+          break;
+        case "noty.success":
+          this.context.noty.success(response.args.message);
+          break;
+        case "noty.error":
+          this.context.noty.error(response.args.message);
+          break;
+        case "noty.warning":
+          this.context.noty.warning(response.args.message);
+          break;
+        case "confirm":
+          response.result = await this.context.confirm(
+            response.args.title,
+            response.args.message,
+            response.args.options
+          );
+          break;
 
         // ======== UI ACTIONS ===========
         case "expandTableResult":
