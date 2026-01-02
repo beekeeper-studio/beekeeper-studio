@@ -100,6 +100,23 @@ class BeekeeperWindow {
       }
     })
 
+    // Handle numpad plus for zoom in on Linux
+    if (platformInfo.isLinux) {
+      this.win.webContents.on('before-input-event', (event, input) => {
+        if (input.type === 'keyDown' && input.code === 'NumpadAdd' && input.control) {
+          event.preventDefault()
+          const newZoomLevel = this.win.webContents.zoomLevel + 0.5
+          getActiveWindows().forEach(window => {
+            if (window.webContents) {
+              window.webContents.zoomLevel = newZoomLevel
+            }
+          })
+          this.settings.zoomLevel.value = newZoomLevel
+          this.settings.zoomLevel.save()
+        }
+      })
+    }
+
     this.win.on('maximize', () => {
       this.win.webContents.send(`maximize-${this.sId}`)
     })
