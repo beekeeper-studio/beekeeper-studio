@@ -22,7 +22,7 @@ const MoneyMagic: Magic = {
           currencyDisplay: 'narrowSymbol'
         })
         try {
-          return format.format(Number(cell.getValue()))
+          return format.format(cell.getValue())
         } catch {
           return 'NaN'
         }
