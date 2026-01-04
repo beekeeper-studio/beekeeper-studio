@@ -56,7 +56,7 @@
                   :testing="testing" />
                 <oracle-form v-if="config.connectionType === 'oracle' && isUltimate" :config="config"
                   :testing="testing" />
-                <cassandra-form v-if="config.connectionType === 'cassandra' && isUltimate" :config="config"
+                <cassandra-form v-if="['cassandra', 'scylladb'].includes(config.connectionType) && isUltimate" :config="config"
                   :testing="testing" />
                 <click-house-form v-else-if="config.connectionType === 'clickhouse' && isUltimate" :config="config"
                   :testing="testing" />

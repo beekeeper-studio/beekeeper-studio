@@ -35,6 +35,8 @@ export function dialectFor(s: string): Dialect | null {
       return 'sqlite'
     case 'mssql':
       return 'sqlserver'
+    case 'scylladb':
+      return 'cassandra'
     default:
       return Dialects.find((d) => d === s) || null
   }

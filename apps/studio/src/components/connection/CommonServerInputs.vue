@@ -190,7 +190,7 @@
     <slot />
     <div class="form-group expand">
       <label
-        v-if="config.connectionType !== 'cassandra'"
+        v-if="!['cassandra', 'scylladb'].includes(config.connectionType)"
         for="defaultDatabase"
       >Default {{ topLevelEntityName }}</label>
       <label

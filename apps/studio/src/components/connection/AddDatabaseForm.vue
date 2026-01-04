@@ -5,7 +5,7 @@
   >
     <h3
       class="dialog-c-title"
-      v-if="this.connectionType === 'cassandra'"
+      v-if="['cassandra', 'scylladb'].includes(this.connectionType)"
     >
       Add Keyspace
     </h3>
@@ -39,7 +39,7 @@
     >
       <label
         for="addDatabaseCharset"
-        v-if="this.connectionType === 'cassandra'"
+        v-if="['cassandra', 'scylladb'].includes(this.connectionType)"
       >
         Select Replication Strategy
       </label>
