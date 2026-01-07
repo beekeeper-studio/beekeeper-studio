@@ -45,7 +45,7 @@ jobs:
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Install fpm
-        run: sudo gem install fpm
+        run: sudo gem install fpm -v 1.17.0
         if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
 
       - name: Install python 3.11 (mac)
@@ -101,9 +101,9 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
-        # just build appimage in master to keep things quick.
+        # Build deb for hardlinks testing
       - name: Build Electron app
-        run: "yarn run electron:build --publish never --linux AppImage"
+        run: yarn run electron:build --publish never --linux deb
         if: startsWith(matrix.os, 'ubuntu')
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
@@ -111,19 +111,60 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
-      - name: Cleanup artifacts
-        if: "!startsWith(matrix.os, 'windows')"
-        run: |
-          npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap)"
-
-      - name: Cleanup artifacts Win
-        if: "startsWith(matrix.os, 'windows')"
-        continue-on-error: true
-        run: |
-          npx rimraf "apps\studio\dist_electron\!(*.exe)"
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
-          path: apps/studio/dist_electron
+          path: |
+            apps/studio/dist_electron/*.exe
+            apps/studio/dist_electron/*.deb
+            apps/studio/dist_electron/*.rpm
+            apps/studio/dist_electron/*.AppImage
+            apps/studio/dist_electron/*.dmg
+            apps/studio/dist_electron/*.snap
+            apps/studio/dist_electron/*.yml
+
+  test-deb-hardlinks:
+    name: Test DEB on separate filesystems
+    runs-on: ubuntu-22.04
+    needs: masterbuild
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Download DEB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ubuntu-22.04
+          path: ./deb-package
+
+      - name: List downloaded files
+        run: |
+          echo "Contents of deb-package directory:"
+          ls -lh ./deb-package/
+
+      - name: Find DEB file
+        id: find_deb
+        run: |
+          DEB_FILE=$(find ./deb-package -name "*.deb" | head -n 1)
+          if [ -z "$DEB_FILE" ]; then
+            echo "ERROR: No .deb file found in artifact"
+            exit 1
+          fi
+          echo "deb_file=$DEB_FILE" >> $GITHUB_OUTPUT
+          echo "Found DEB file: $DEB_FILE"
+
+      - name: Make test script executable
+        run: chmod +x ./bin/test-deb-hardlinks.sh
+
+      - name: Run hardlinks test
+        run: |
+          echo "Testing: ${{ steps.find_deb.outputs.deb_file }}"
+          ./bin/test-deb-hardlinks.sh "${{ steps.find_deb.outputs.deb_file }}"
+
+      - name: Test result
+        if: success()
+        run: |
+          echo "✓ DEB package successfully installs on separate filesystems"
+          echo "✓ No hardlinks regression detected"
