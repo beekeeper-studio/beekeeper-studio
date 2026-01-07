@@ -71,10 +71,13 @@ export default {
           this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
           this.authType = 'default'
         } else {
-          this.config.iamAuthOptions.authType = this.authType
-          this.iamAuthenticationEnabled = typeof this.authType === 'string' && this.authType.includes('iam')
-          this.config.azureAuthOptions.azureAuthType = this.authType
-          this.azureAuthEnabled = this.authType === AzureAuthType.CLI
+          if (typeof this.authType === 'string' && this.authType.includes('iam')) {
+            this.iamAuthenticationEnabled = true;
+            this.config.iamAuthOptions.authType = this.authType;
+          } else if (this.authType === AzureAuthType.CLI) {
+            this.azureAuthEnabled = true;
+            this.config.azureAuthOptions.azureAuthType = this.authType;
+          }
         }
       }
 

@@ -67,7 +67,6 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
-import { getAWSCLIToken } from "../authentication/amazon-redshift";
 
 type ResultType = {
   tableName?: string
@@ -136,13 +135,9 @@ async function configDatabase(
   database: IDbConnectionDatabase
 ): Promise<mysql.PoolOptions> {
 
-  let awsCLIToken = undefined;
-  if( server.config.iamAuthOptions?.authType === 'iam_cli') {
-    awsCLIToken = await getAWSCLIToken(server.config, server.config.iamAuthOptions);
-  }
-
+  let iamToken = undefined;
   if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      awsCLIToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
   }
 
   const config: mysql.PoolOptions = {
@@ -152,7 +147,7 @@ async function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: awsCLIToken || server.config.password || undefined,
+    password: iamToken || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,

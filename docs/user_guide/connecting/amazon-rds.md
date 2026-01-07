@@ -13,7 +13,7 @@ You will then need to create an IAM user and attach the `AmazonRDSFullAccess` po
 
 You can also use a similar policy to the below:
 
-``
+```json
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -28,7 +28,7 @@ You can also use a similar policy to the below:
         }
     ]
 }
-``
+```
 
 ## Connecting to Amazon RDS
 

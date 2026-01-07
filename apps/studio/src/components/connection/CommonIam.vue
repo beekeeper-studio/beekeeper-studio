@@ -102,7 +102,7 @@
 
       <div class="form-group">
         <label for="AWS Region">AWS Region</label>
-        <masked-input :value="config.iamAuthOptions.awsRegion" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.awsRegion = val" :type="'password'" />
+        <masked-input :value="config.iamAuthOptions.awsRegion" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.awsRegion = val" />
       </div>
 
       <div v-show="isRedshift">

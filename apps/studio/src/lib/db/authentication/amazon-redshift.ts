@@ -1,6 +1,5 @@
 import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-redshift';
 import { RedshiftServerlessClient, GetCredentialsCommand } from "@aws-sdk/client-redshift-serverless";
-import {spawn} from "child_process";
 import rawLog from '@bksLogger';
 import { IamAuthOptions, IDbConnectionServerConfig } from '../types';
 
@@ -31,62 +30,6 @@ export interface TemporaryClusterCredentials {
     dbPassword: string;
     expiration: Date;
 }
-
-  export async function getAWSCLIToken(server: IDbConnectionServerConfig, options: IamAuthOptions): Promise<string> {
-    if (!options?.cliPath) {
-      throw new Error('AZ command not specified');
-    }
-
-    const extraArgs = []
-
-    if(options.awsProfile){
-      extraArgs.push('--profile', options.awsProfile)
-    }
-
-    return new Promise<string>((resolve, reject) => {
-      const proc = spawn(options.cliPath, [
-        'rds',
-        'generate-db-auth-token',
-        '--hostname',
-        server.host,
-        '--port',
-        server.port.toString(),
-        '--region',
-        options.awsRegion,
-        '--username',
-        server.user,
-        ...extraArgs
-      ]);
-
-      let stdout = '';
-      let stderr = '';
-
-      proc.stdout.on('data', (chunk) => {
-        stdout += chunk.toString();
-      });
-
-      proc.stderr.on('data', (chunk) => {
-        stderr += chunk.toString();
-      });
-
-      proc.on('error', (err) => {
-        reject(err);
-      });
-
-      proc.on('close', (code) => {
-        if (code === 0) {
-          try {
-            resolve(stdout.trim());
-          } catch (err) {
-            reject(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
-          }
-        } else {
-          reject(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
-        }
-      });
-    });
-  }
-
 /**
  * RedshiftCredentialResolver provides the ability to use temporary cluster credentials to access
  * an Amazon Redshift cluster.

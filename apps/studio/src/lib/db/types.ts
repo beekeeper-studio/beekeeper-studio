@@ -59,10 +59,16 @@ export enum AzureAuthType {
   CLI
 }
 
+export enum IamAuthType {
+  Key = 'iam_key',
+  File = 'iam_file',
+  CLI = 'iam_cli'
+}
+
 export const IamAuthTypes = [
-  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
-  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' },
-  { name: 'AWS CLI Authentication', value: 'iam_cli' }
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: IamAuthType.Key },
+  { name: 'IAM Authentication Using Credentials File', value: IamAuthType.File },
+  { name: 'AWS CLI Authentication', value: IamAuthType.CLI }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -90,7 +96,7 @@ export interface IamAuthOptions {
   secretAccessKey?: string;
   awsRegion?: string;
   isServerless?: boolean;
-  authType?: string;
+  authType?: IamAuthType;
   cliPath?: string;
 }
 
