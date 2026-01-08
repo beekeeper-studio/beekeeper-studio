@@ -54,8 +54,7 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     return await pluginManager.installPlugin(id);
   },
   "plugin/update": async ({ id }) => {
-    await pluginManager.checkForUpdates(id);
-    return await pluginManager.installPlugin(id);
+    return await pluginManager.updatePlugin(id);
   },
   "plugin/uninstall": async ({ id }) => {
     return await pluginManager.uninstallPlugin(id);
