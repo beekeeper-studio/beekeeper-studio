@@ -12,6 +12,7 @@ const logger = () => log;
 export interface AWSCredentials {
     accessKeyId: string;
     secretAccessKey: string;
+    sessionToken?: string;
 }
 
 export interface ClusterCredentialConfiguration {
