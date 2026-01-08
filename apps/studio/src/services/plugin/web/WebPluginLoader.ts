@@ -2,7 +2,6 @@ import {
   AfterViewRequestCallback,
   Manifest,
   OnViewRequestListener,
-  PluginSnapshot,
   ViewResultModifier,
   WebPluginContext,
   WebPluginViewInstance,

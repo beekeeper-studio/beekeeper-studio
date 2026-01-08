@@ -258,12 +258,12 @@ export default class PluginManager {
 
       if (update) {
         await this.fileManager.update(id, info.latestRelease);
-        manifest = this.fileManager.getManifestV1(id);
+        manifest = convertToManifestV1(this.fileManager.getManifest(id));
         const updateIdx = this.manifests.findIndex((m) => m.id === id);
         this.manifests[updateIdx] = manifest;
       } else {
         await this.fileManager.download(id, info.latestRelease);
-        manifest = this.fileManager.getManifestV1(id);
+        manifest = convertToManifestV1(this.fileManager.getManifest(id));
         this.manifests.push(manifest);
       }
 
