@@ -88,6 +88,7 @@
         } else {
           if (this.$store.getters.isCommunity) {
             // we want to display a modal
+            console.log('MODAL')
             this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
             this.authType = 'default'
           } else {
@@ -98,7 +99,14 @@
       },
       azureAuthEnabled() {
         this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
-      }
+      },
+      config() {
+        if (this.config.azureAuthOptions.azureAuthEnabled) {
+          this.authType = this.config.azureAuthOptions.azureAuthType;
+        } else {
+          this.authType = 'default';
+        }
+      },
     },
     computed: {
       ...mapState(['connection']),

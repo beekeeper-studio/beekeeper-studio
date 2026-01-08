@@ -158,6 +158,7 @@ export default {
   },
   computed: {
     ...mapState('settings', ['privacyMode']),
+    ...mapState(['connection']),
     username: {
       get() {
         return this.config.username;
@@ -190,8 +191,7 @@ export default {
   },
   watch: {
     async authType() {
-      const authId =
-        this.config.azureAuthOptions?.authId || this.config?.authId;
+      const authId = this.config.azureAuthOptions?.authId || this.config?.authId;
       if (this.authType === AzureAuthType.AccessToken && !_.isNil(authId)) {
         this.accountName = await this.connection.azureGetAccountName(authId);
       } else {
