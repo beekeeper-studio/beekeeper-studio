@@ -179,7 +179,7 @@ export type PluginSettings = {
   }
 }
 
-export type WebPluginLoaderContext = {
+export type WebPluginContext = {
   manifest: ManifestV1;
   store: PluginStoreService;
   utility: UtilityConnection;

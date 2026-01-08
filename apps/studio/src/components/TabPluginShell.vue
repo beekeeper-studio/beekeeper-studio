@@ -87,8 +87,8 @@ import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
+import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import type { OnViewRequestListenerParams } from "@/services/plugin/types";
-import { RunQueryResult } from "@beekeeperstudio/plugin"
 import PluginViewGate from "./plugins/PluginViewGate.vue";
 
 export default Vue.extend({
@@ -228,7 +228,7 @@ export default Vue.extend({
 
           after((response) => {
             const queryEndTime = new Date()
-            const result = response.result as RunQueryResult
+            const result = response.result as RunQueryResponse
             if (request.name === "runQuery") {
               this.isRunningQuery = false;
               this.executeTime = queryEndTime - queryStartTime;

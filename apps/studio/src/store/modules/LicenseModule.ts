@@ -202,21 +202,21 @@ export const LicenseModule: Module<State, RootState>  = {
       await context.dispatch('sync')
     },
     async sync(context) {
+      const status: LicenseStatus = await Vue.prototype.$util.send('license/getStatus')
       const prevTier: LicenseTier | "unset" = SmartLocalStorage.getItem("previousLicenseTier", "unset")
-      const curr: LicenseStatus = await Vue.prototype.$util.send('license/getStatus')
       const licenses = await Vue.prototype.$util.send('license/get')
 
       // Compare and detect changes (only if previous is set)
       if (prevTier !== "unset") {
-        if (prevTier === curr.tier) {
+        if (prevTier === status.tier) {
           const change: TierChange = { hasChanged: false };
           context.commit("setTierChange", change);
         } else {
-          const direction = tierPoints[prevTier] > tierPoints[curr.tier] ? "downgrade" : "upgrade";
+          const direction = tierPoints[prevTier] > tierPoints[status.tier] ? "downgrade" : "upgrade";
           const change: TierChange = {
             hasChanged: true,
             from: prevTier,
-            to: curr.tier,
+            to: status.tier,
             direction,
           };
           log.info(`License tier changed: ${JSON.stringify(change)}`);
@@ -225,10 +225,10 @@ export const LicenseModule: Module<State, RootState>  = {
       }
 
       // Save current status as previous for next comparison
-      SmartLocalStorage.addItem('previousLicenseTier', curr.tier);
+      SmartLocalStorage.addItem('previousLicenseTier', status.tier);
 
       context.commit('set', licenses)
-      context.commit('setStatus', curr)
+      context.commit('setStatus', status)
       context.commit('setNow', new Date())
     },
   }

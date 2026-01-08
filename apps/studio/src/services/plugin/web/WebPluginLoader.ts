@@ -4,7 +4,7 @@ import {
   OnViewRequestListener,
   PluginSnapshot,
   ViewResultModifier,
-  WebPluginLoaderContext,
+  WebPluginContext,
   WebPluginViewInstance,
 } from "../types";
 import type {
@@ -67,7 +67,7 @@ export default class WebPluginLoader {
 
   menu: PluginMenuManager;
 
-  constructor(public readonly context: WebPluginLoaderContext) {
+  constructor(public readonly context: WebPluginContext) {
     this.manifest = context.manifest;
     this.pluginStore = context.store;
     this.utilityConnection = context.utility;
@@ -89,13 +89,6 @@ export default class WebPluginLoader {
 
     this.log.info("Loading plugin", this.manifest);
 
-    // Get the most up to date snapshot
-    const plugins = await this.context.utility.send("plugin/plugins");
-    const snapshot: PluginSnapshot = plugins.find((snapshot: PluginSnapshot) => snapshot.manifest.id === this.manifest.id);
-    if (!snapshot) {
-      throw new Error(`The plugin ${this.manifest.id} is not found. It might not be loaded or uninstalled properly. Please restart the app or report this to our issue tracker if it persists: https://github.com/beekeeper-studio/beekeeper-studio/issues`)
-    }
-
     const { views, menu } = this.context.manifest.capabilities;
     this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
     this.menu.register(views, menu);
@@ -114,8 +107,6 @@ export default class WebPluginLoader {
 
     // Check if the message is from our iframe
     if (source) {
-      // If the `data.id` is defined, it's a request
-      // Otherwise, it's a notification
       if (event.data.id !== undefined) {
         this.handleViewRequest(
           {
