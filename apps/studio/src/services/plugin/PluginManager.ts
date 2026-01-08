@@ -89,12 +89,7 @@ export default class PluginManager {
    * should be able to uninstall them later. */
   static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell", "bks-er-diagram"];
 
-  /** WARNING: For development purposes only. I still don't know if we truly
-   * want to use singleton in the future. */
-  private static devInstance: PluginManager;
-
   constructor(readonly options: PluginManagerOptions) {
-    PluginManager.devInstance = this;
     this.fileManager = options.fileManager;
     this.registry = options.registry || new PluginRegistry(new PluginRepositoryService());
     this.reset();
@@ -107,15 +102,6 @@ export default class PluginManager {
     this.installGuards = [];
     this.pluginSnapshotTransformers = [];
     this.initialized = false;
-  }
-
-  /** WARNING: For development purposes only. */
-  static devGetInstance() {
-    if (!PluginManager.devInstance) {
-      log.error("PluginManager.devGetInstance() called before PluginManager was initialized");
-      return;
-    }
-    return PluginManager.devInstance;
   }
 
   async initialize() {
