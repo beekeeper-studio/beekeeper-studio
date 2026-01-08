@@ -71,7 +71,6 @@ export default class {
     await this.vueApp.$util.send('dev/switchLicenseState', { state })
     this.vueApp.$store.dispatch("toggleShowBeginTrialModal", true)
     SmartLocalStorage.setBool('expiredLicenseEventsEmitted', false)
-    SmartLocalStorage.setBool('devLicenseStateHasChanged', true)
     window.location.reload(true)
   }
 }

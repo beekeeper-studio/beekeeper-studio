@@ -106,7 +106,7 @@ describe("Basic Plugin Management", () => {
       const manager = new PluginManager({ appVersion: "5.4.0", fileManager, registry });
       await manager.initialize();
       await manager.installPlugin("test-plugin");
-      const plugins = manager.getInstalledPlugins();
+      const plugins = await manager.getPluginSnapshots();
 
       expect(plugins).toHaveLength(1);
       expect(plugins[0].manifest.version).toBe("1.0.0");
@@ -137,9 +137,10 @@ describe("Basic Plugin Management", () => {
       const manager = new PluginManager({ appVersion: "5.4.0", fileManager, registry });
       await manager.initialize();
 
-      expect(manager.getInstalledPlugins()).toHaveLength(2);
-      expect(manager.getInstalledPlugins()[0].manifest.id).toBe("test-plugin");
-      expect(manager.getInstalledPlugins()[1].manifest.id).toBe("frozen-banana");
+      const snapshots = await manager.getPluginSnapshots();
+      expect(snapshots).toHaveLength(2);
+      expect(snapshots[0].manifest.id).toBe("test-plugin");
+      expect(snapshots[1].manifest.id).toBe("frozen-banana");
     })
   });
 
@@ -149,11 +150,13 @@ describe("Basic Plugin Management", () => {
       await manager.initialize();
       await manager.installPlugin("test-plugin");
 
-      expect(manager.getInstalledPlugins()[0]).toHaveProperty("compatible", true);
+      const firstSnapshots = await manager.getPluginSnapshots();
+      expect(firstSnapshots[0]).toHaveProperty("compatible", true);
 
       await manager.installPlugin("frozen-banana");
 
-      expect(manager.getInstalledPlugins()[1]).toHaveProperty("compatible", true);
+      const secondSnapshots = await manager.getPluginSnapshots();
+      expect(secondSnapshots[1]).toHaveProperty("compatible", true);
     });
 
     // Simulates a user who installed a plugin, then downgraded the app.
@@ -166,12 +169,13 @@ describe("Basic Plugin Management", () => {
       // 2. Install a plugin
       await manager.installPlugin("test-plugin");
 
-      // 3. Simulate a downgraded app
+      // 3. Simulate a downgraded app (v5.4 -> v5.3)
       const oldManager = new PluginManager({ appVersion: "5.3.0", fileManager, registry });
       await oldManager.initialize();
 
       // 4. The downgraded app should not load incompatible plugins
-      expect(oldManager.getInstalledPlugins()[0]).toHaveProperty("compatible", false);
+      const snapshots = await oldManager.getPluginSnapshots();
+      expect(snapshots[0]).toHaveProperty("compatible", false);
     });
   });
 
@@ -213,9 +217,9 @@ describe("Basic Plugin Management", () => {
       // STEP 2: Install a plugin
       await manager.installPlugin("test-plugin");
 
-      expect(
-        manager.getInstalledPlugins().find(({ manifest }) => manifest.id === "test-plugin").manifest.version
-      ).toBe("1.0.0");
+      const firstSnapshots = await manager.getPluginSnapshots();
+      const initialVersion = firstSnapshots.find(({ manifest }) => manifest.id === "test-plugin").manifest.version;
+      expect(initialVersion).toBe("1.0.0");
       expect(manager.pluginSettings).toStrictEqual({
         "test-plugin": { autoUpdate: true },
       });
@@ -228,9 +232,9 @@ describe("Basic Plugin Management", () => {
 
       // NOTE: Plugin manager should recognize the new version and update it automatically
       await manager2.initialize();
-      expect(
-        manager2.getInstalledPlugins().find(({ manifest }) => manifest.id === "test-plugin").manifest.version
-      ).toBe("1.1.0");
+      const secondSnapshots = await manager2.getPluginSnapshots();
+      const updatedVersion = secondSnapshots.find(({ manifest }) => manifest.id === "test-plugin").manifest.version;
+      expect(updatedVersion).toBe("1.1.0");
     });
 
     it("can update plugins manually", async () => {
@@ -251,7 +255,8 @@ describe("Basic Plugin Management", () => {
       testPluginRepo.setLatestRelease({ id: "test-plugin", version: "1.2.0", minAppVersion: "5.4.0" });
 
       await manager.updatePlugin("test-plugin");
-      expect(manager.getInstalledPlugins()[0].manifest.version).toBe("1.2.0");
+      const snapshots = await manager.getPluginSnapshots();
+      expect(snapshots[0].manifest.version).toBe("1.2.0");
     });
 
     it("can not update plugins if not compatible", async () => {
@@ -291,7 +296,8 @@ describe("Basic Plugin Management", () => {
       await manager.installPlugin("test-plugin");
       await manager.uninstallPlugin("test-plugin");
 
-      expect(manager.getInstalledPlugins()).toHaveLength(0);
+      const snapshots = await manager.getPluginSnapshots();
+      expect(snapshots).toHaveLength(0);
     });
   });
 });
@@ -486,7 +492,8 @@ describe("Plugin License Constraints", () => {
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
       bindLicenseConstraints(manager);
       await manager.initialize();
-      const plugins = manager.getInstalledPlugins().map((p) => ({
+      const snapshots = await manager.getPluginSnapshots();
+      const plugins = snapshots.map((p) => ({
         id: p.manifest.id,
         disabled: p.disabled,
         disableReasons: p.disableReasons,
@@ -507,7 +514,8 @@ describe("Plugin License Constraints", () => {
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
       bindLicenseConstraints(manager);
       await manager.initialize();
-      const plugins = manager.getInstalledPlugins().map((p) => ({
+      const snapshots = await manager.getPluginSnapshots();
+      const plugins = snapshots.map((p) => ({
         id: p.manifest.id,
         disabled: p.disabled,
         disableReasons: p.disableReasons,
@@ -527,7 +535,8 @@ describe("Plugin License Constraints", () => {
       const manager = new PluginManager({ appVersion: "9.9.9", registry, fileManager });
       bindLicenseConstraints(manager);
       await manager.initialize();
-      const plugins = manager.getInstalledPlugins().map((p) => ({
+      const snapshots = await manager.getPluginSnapshots();
+      const plugins = snapshots.map((p) => ({
         id: p.manifest.id,
         disabled: p.disabled,
         disableReasons: p.disableReasons,
@@ -571,11 +580,13 @@ describe("Disabling plugins via config.ini", () => {
     });
     await manager.initialize();
     await manager.installPlugin("community-plugin-0");
-    expect(manager.getInstalledPlugins()[0].disabled).toBe(true);
+    const firstSnapshots = await manager.getPluginSnapshots();
+    expect(firstSnapshots[0].disabled).toBe(true);
 
     // Only disable disabled plugins
     await manager.installPlugin("community-plugin-1");
-    expect(manager.getInstalledPlugins()[1].disabled).toBe(false);
+    const secondSnapshots = await manager.getPluginSnapshots();
+    expect(secondSnapshots[1].disabled).toBe(false);
   });
 
   it("can force-disable preloaded plugins", async () => {
@@ -588,8 +599,9 @@ describe("Disabling plugins via config.ini", () => {
     });
     await manager.initialize();
 
-    expect(manager.getInstalledPlugins()[0].disabled).toBe(true);
-    expect(manager.getInstalledPlugins()[1].disabled).toBe(false);
+    const snapshots = await manager.getPluginSnapshots();
+    expect(snapshots[0].disabled).toBe(true);
+    expect(snapshots[1].disabled).toBe(false);
   });
 });
 

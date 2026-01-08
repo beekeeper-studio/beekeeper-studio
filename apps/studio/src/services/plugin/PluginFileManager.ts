@@ -6,9 +6,10 @@ import {
   DownloaderConfig,
   DownloaderReport,
 } from "nodejs-file-downloader";
-import { Manifest, Release } from "./types";
+import { Manifest, ManifestV1, Release } from "./types";
 import extract from "extract-zip";
 import { tmpdir } from "os";
+import { convertToManifestV1 } from "./utils";
 
 export type PluginFileManagerOptions = {
   downloadDirectory?: string;
@@ -273,6 +274,10 @@ export default class PluginFileManager {
       { encoding: "utf-8" }
     );
     return JSON.parse(manifestContent);
+  }
+
+  getManifestV1(id: string): ManifestV1 {
+    return convertToManifestV1(this.getManifest(id));
   }
 
   getDirectoryOf(id: string) {

@@ -23,7 +23,7 @@ export default function bindIniConfig(manager: PluginManager, config: IBksConfig
 
   manager[boundSymbol] = true;
 
-  manager.addPluginSnaphostTransformer((snapshot) => {
+  manager.addPluginSnapshotTransformer((snapshot) => {
     const disabled = config.plugins?.[snapshot.manifest.id]?.disabled;
 
     if (_.isUndefined(disabled)) {

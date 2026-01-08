@@ -6,7 +6,6 @@
 import Vue, { PropType } from "vue";
 import { LoadViewParams } from "@beekeeperstudio/plugin";
 import { ThemeChangedNotification } from "@beekeeperstudio/plugin";
-import { PluginSnapshot } from "@/services/plugin";
 
 export default Vue.extend({
   name: "IsolatedPluginView",

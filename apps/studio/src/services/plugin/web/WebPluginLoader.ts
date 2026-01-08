@@ -100,15 +100,9 @@ export default class WebPluginLoader {
     this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
     this.menu.register(views, menu);
 
-    if (snapshot.disabled) {
-      this.log.info("Plugin is disabled. Skipping...");
-      // No further processing if it's disabled.
-      return;
-    }
-
     if (!this.listening) {
-      this.registerEvents();
       this.onReadyListeners.forEach((fn) => fn());
+      this.registerEvents();
     }
   }
 

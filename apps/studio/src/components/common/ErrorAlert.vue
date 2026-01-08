@@ -35,7 +35,7 @@
         <a
           :href="helpLink"
           title="More information about this error"
-        >Learn more about this error</a>
+        >{{ linkText || 'Learn more about this error' }}</a>
       </div>
     </div>
   </div>
@@ -44,7 +44,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['error', 'title', 'closable', 'helpText', 'link'],
+  props: ['error', 'title', 'closable', 'helpText', 'link', 'linkText'],
   computed: {
     dev() {
       return this.$config.isDevelopment

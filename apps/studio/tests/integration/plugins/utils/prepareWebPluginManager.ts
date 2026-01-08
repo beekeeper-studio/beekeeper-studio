@@ -51,7 +51,7 @@ export default function prepareWebPluginManagerTestGroup(options?: {
       database: "test_db",
       defaultSchema,
       workspaceId: null,
-      installedPlugins: [],
+      pluginSnapshots: [],
     } as any,
     getters: {
       "settings/themeType": "dark",
@@ -60,8 +60,8 @@ export default function prepareWebPluginManagerTestGroup(options?: {
       dialectData: getDialectData(dialectFor(connectionType)),
     },
     commit: jest.fn((...args) => {
-      if (args[0] === "setInstalledPlugins") {
-        store.state.installedPlugins = args[1];
+      if (args[0] === "setPluginSnapshots") {
+        store.state.pluginSnapshots = args[1];
       }
     }),
     dispatch: jest.fn(),

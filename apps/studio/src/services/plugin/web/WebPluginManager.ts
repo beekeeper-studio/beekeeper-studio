@@ -1,6 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginRegistryEntry } from "../types";
+import { ManifestV1 as Manifest, OnViewRequestListener, PluginRegistryEntry } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -67,9 +67,9 @@ export default class WebPluginManager {
 
     await this.utilityConnection.send("plugin/waitForInit");
 
-    await this.hydrateInstalledPlugins();
+    await this.updatePluginSnapshots();
 
-    for (const plugin of this.pluginStore.getInstalledPlugins()) {
+    for (const plugin of this.pluginStore.getPluginSnapshots()) {
       try {
         await this.loadPlugin(plugin.manifest);
       } catch (e) {
@@ -78,15 +78,25 @@ export default class WebPluginManager {
     }
 
     this.initialized = true;
+
+    // run in the background
+    this.updatePluginEntries();
   }
 
-  async hydrateInstalledPlugins() {
-    const installedPlugins = await this.utilityConnection.send("plugin/plugins");
-    this.pluginStore.setInstalledPlugins(installedPlugins);
+  async updatePluginSnapshots() {
+    const pluginSnapshots = await this.utilityConnection.send("plugin/plugins");
+    this.pluginStore.setPluginSnapshots(pluginSnapshots);
   }
 
-  async getPluginEntries(): Promise<PluginRegistryEntry[]> {
-    return await this.utilityConnection.send("plugin/entries");
+  async updatePluginEntries() {
+    this.pluginStore.setLoadingPluginEntries(true);
+    try {
+      const entries = await this.utilityConnection.send("plugin/entries", { refresh: true });
+      this.pluginStore.setPluginEntries(entries);
+    } catch (e) {
+      log.error(e);
+    }
+    this.pluginStore.setLoadingPluginEntries(false);
   }
 
   // TODO implement enable/disable plugins
@@ -99,7 +109,7 @@ export default class WebPluginManager {
     const manifest: Manifest = await this.utilityConnection.send("plugin/install", {
       id,
     });
-    await this.hydrateInstalledPlugins();
+    await this.updatePluginSnapshots();
     await this.loadPlugin(manifest);
     return manifest;
   }
@@ -117,7 +127,7 @@ export default class WebPluginManager {
   async uninstall(id: string) {
     await this.utilityConnection.send("plugin/uninstall", { id });
     await this.unloadPlugin(id);
-    await this.hydrateInstalledPlugins();
+    await this.updatePluginSnapshots();
   }
 
   private async reloadPlugin(id: string, manifest?: Manifest) {
@@ -167,7 +177,7 @@ export default class WebPluginManager {
 
   /** Get the snapshot of a plugin */
   pluginOf(pluginId: string) {
-    const plugin = this.pluginStore.getInstalledPlugins().find((p) => p.manifest.id === pluginId);
+    const plugin = this.pluginStore.getPluginSnapshots().find((p) => p.manifest.id === pluginId);
     if (!plugin) {
       throw new Error("Plugin not found: " + pluginId);
     }
@@ -250,7 +260,7 @@ export default class WebPluginManager {
       return this.loaders.get(manifest.id);
     }
 
-    const snapshot = this.pluginStore.getInstalledPlugins().find((p) => p.manifest.id === manifest.id);
+    const snapshot = this.pluginStore.getPluginSnapshots().find((p) => p.manifest.id === manifest.id);
     if (!snapshot) {
       throw new Error(`Plugin "${manifest.id}" snapshot not found.`);
     }

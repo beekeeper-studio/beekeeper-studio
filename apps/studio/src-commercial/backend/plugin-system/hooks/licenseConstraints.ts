@@ -29,8 +29,9 @@ export default function bindLicenseConstraints(manager: PluginManager) {
 
   manager[boundSymbol] = true;
 
-  manager.addInstallGuard(async ({ id, origin }) => {
+  manager.addInstallGuard(async ({ entry }) => {
     const license = await LicenseKey.getLicenseStatus();
+    const pluginSnapshots = await manager.getPluginSnapshots();
 
     if (license.tier === "pro+") {
       // No limit
@@ -38,7 +39,7 @@ export default function bindLicenseConstraints(manager: PluginManager) {
     }
 
     if (license.tier === "indie") {
-      if (manager.getInstalledPlugins().length < globals.maxPluginsForIndie) {
+      if (pluginSnapshots.length < globals.maxPluginsForIndie) {
         return;
       }
 
@@ -49,15 +50,14 @@ export default function bindLicenseConstraints(manager: PluginManager) {
       );
     }
 
-    if (origin === "core") {
+    if (entry.metadata.origin === "core") {
       throw new ForbiddenPluginError(
-        `Plugin "${id}" is not available for the ${license.tier} tier.`
+        `Plugin ${entry.name} (${entry.id}) is not available for the ${license.tier} tier.`
       );
     }
 
     // This includes community and unpublished plugins
-    const communityPlugins = manager.getInstalledPlugins()
-      .filter((p) => p.origin !== "core");
+    const communityPlugins = pluginSnapshots.filter((p) => p.origin !== "core");
     if (communityPlugins.length >= globals.maxCommunityPluginsForFree) {
       throw new ForbiddenPluginError(
         `You have reached the maximum of ${globals.maxCommunityPluginsForFree} community plugins.`
@@ -67,7 +67,7 @@ export default function bindLicenseConstraints(manager: PluginManager) {
     }
   });
 
-  manager.addPluginSnaphostTransformer(async (snapshot, plugins) => {
+  manager.addPluginSnapshotTransformer(async (snapshot, allSnapshots) => {
     const license = await LicenseKey.getLicenseStatus();
 
     if (license.tier === "pro+") {
@@ -75,7 +75,7 @@ export default function bindLicenseConstraints(manager: PluginManager) {
       return snapshot;
     }
 
-    const enabledPlugins = plugins.filter((p) => !p.disabled);
+    const enabledPlugins = allSnapshots.filter((p) => !p.disabled);
 
     if (license.tier === "indie") {
       if (enabledPlugins.length < globals.maxPluginsForIndie) {

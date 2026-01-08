@@ -5,7 +5,7 @@ import { PluginTimeoutError } from "@/services/plugin/errors";
 
 interface IPluginHandlers {
   "plugin/plugins": () => Promise<PluginSnapshot[]>
-  "plugin/entries": () => Promise<PluginRegistryEntry[]>
+  "plugin/entries": ({ refresh }: { refresh?: boolean }) => Promise<PluginRegistryEntry[]>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
@@ -42,9 +42,9 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     });
   },
   "plugin/plugins": async () => {
-    return pluginManager.getInstalledPlugins();
+    return await pluginManager.getPluginSnapshots();
   },
-  "plugin/entries": async (refresh?: boolean) => {
+  "plugin/entries": async ({ refresh }) => {
     return await pluginManager.getEntries(refresh);
   },
   "plugin/repository": async ({ id }) => {
@@ -54,7 +54,8 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     return await pluginManager.installPlugin(id);
   },
   "plugin/update": async ({ id }) => {
-    return await pluginManager.updatePlugin(id);
+    await pluginManager.checkForUpdates(id);
+    return await pluginManager.installPlugin(id);
   },
   "plugin/uninstall": async ({ id }) => {
     return await pluginManager.uninstallPlugin(id);
