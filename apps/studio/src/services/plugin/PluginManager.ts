@@ -141,13 +141,10 @@ export default class PluginManager {
 
 
     for (const plugin of installedPlugins) {
-      const autoUpdate = this.pluginSettings[plugin.id]?.autoUpdate;
-      if (autoUpdate) {
-        try {
-          await this.updatePlugin(plugin.id);
-        } catch (e) {
-          log.error(`Failed to update plugin "${plugin.id}"`, plugin, e);
-        }
+      if (this.pluginSettings[plugin.id]?.autoUpdate) {
+        await this.updatePlugin(plugin.id).catch((e) => {
+          log.error(`Failed to install preinstalled plugin "${plugin.id}"`, e);
+        });
       }
     }
   }

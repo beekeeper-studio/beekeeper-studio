@@ -202,21 +202,28 @@ export const LicenseModule: Module<State, RootState>  = {
       await context.dispatch('sync')
     },
     async sync(context) {
-      const status: LicenseStatus = await Vue.prototype.$util.send('license/getStatus')
-      const prevTier: LicenseTier | "unset" = SmartLocalStorage.getItem("previousLicenseTier", "unset")
+      const status = await Vue.prototype.$util.send('license/getStatus')
       const licenses = await Vue.prototype.$util.send('license/get')
+      context.dispatch('checkTierChange', status.tier);
+      context.commit('set', licenses)
+      context.commit('setStatus', status)
+      context.commit('setNow', new Date())
+    },
+    checkTierChange(context, currTier: LicenseTier) {
+      const prevTier: LicenseTier | "unset" =
+        SmartLocalStorage.getJSON("previousLicenseTier", "unset");
 
       // Compare and detect changes (only if previous is set)
       if (prevTier !== "unset") {
-        if (prevTier === status.tier) {
+        if (prevTier === currTier) {
           const change: TierChange = { hasChanged: false };
           context.commit("setTierChange", change);
         } else {
-          const direction = tierPoints[prevTier] > tierPoints[status.tier] ? "downgrade" : "upgrade";
+          const direction = tierPoints[prevTier] > tierPoints[currTier] ? "downgrade" : "upgrade";
           const change: TierChange = {
             hasChanged: true,
             from: prevTier,
-            to: status.tier,
+            to: currTier,
             direction,
           };
           log.info(`License tier changed: ${JSON.stringify(change)}`);
@@ -225,11 +232,7 @@ export const LicenseModule: Module<State, RootState>  = {
       }
 
       // Save current status as previous for next comparison
-      SmartLocalStorage.addItem('previousLicenseTier', status.tier);
-
-      context.commit('set', licenses)
-      context.commit('setStatus', status)
-      context.commit('setNow', new Date())
+      SmartLocalStorage.addItem('previousLicenseTier', currTier);
     },
   }
 }

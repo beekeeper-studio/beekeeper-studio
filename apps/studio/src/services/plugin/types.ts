@@ -186,7 +186,6 @@ export type WebPluginContext = {
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
   fileHelpers: FileHelpers;
-  disabled: boolean;
 }
 
 export type PluginSnapshot = DisableState & {

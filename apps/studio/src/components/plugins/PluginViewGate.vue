@@ -42,6 +42,7 @@ Example:
           <div class="alert-body">
             {{ data.message }}
           </div>
+          <button class="btn btn-flat" @click="openPluginManager">Manage plugins</button>
         </div>
       </div>
     </div>
@@ -81,6 +82,7 @@ import Vue from "vue";
 import { mapState } from "vuex";
 import { PluginSnapshot, WebPluginManagerStatus } from "@/services/plugin/types";
 import DisabledPluginAlert from "./DisabledPluginAlert.vue";
+import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
   props: {
@@ -117,7 +119,7 @@ export default Vue.extend({
       if (!snapshot) {
         return {
           status: "error" as const,
-          message: `Plugin "${this.pluginId}" was not found. It may have been uninstalled or failed to load.`,
+          message: `Plugin "${this.pluginId}" is not installed.`,
         };
       }
 
@@ -125,7 +127,7 @@ export default Vue.extend({
       if (!view) {
         return {
           status: "error" as const,
-          message: `Plugin view "${this.viewId}" was not found in the ${snapshot.manifest.name} plugin.`
+          message: `Plugin view "${this.viewId}" is not found in the ${snapshot.manifest.name} plugin.`
         };
       }
 
@@ -135,6 +137,11 @@ export default Vue.extend({
         url,
         snapshot,
       };
+    },
+  },
+  methods: {
+    openPluginManager() {
+      this.trigger(AppEvent.openPluginManager);
     },
   },
 });
