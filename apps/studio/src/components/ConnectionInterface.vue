@@ -192,7 +192,11 @@
                     />
                   </div>
                 </div>
-                <SaveConnectionForm v-if="!shouldUpsell" :config="config" @save="save" />
+                <SaveConnectionForm
+                  v-if="!shouldUpsell"
+                  :config="config"
+                  @save="save"
+                />
               </div>
             </form>
           </div>
@@ -289,6 +293,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['workspaceId', 'connection']),
+    ...mapState(['username']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapGetters(['isUltimate']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
@@ -343,6 +348,7 @@ export default Vue.extend({
       }
     },
     'config.connectionType'(newConnectionType) {
+      if (newConnectionType == null) return
       this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
         // only replace it if it's a blank, unused connection
         if (!this.config.id && !this.config.password && !this.config.username) {
@@ -388,14 +394,13 @@ export default Vue.extend({
       }
     } as Split.Options)
 
-    if (!this.$store.getters.workspace) {
-      await this.$store.commit('workspace', this.$store.state.localWorkspace)
-    }
-
     try {
+      if (!this.$store.getters.workspace) {
+        await this.$store.commit('workspace', this.$store.state.localWorkspace)
+      }
       const conn = await this.$util.send('appdb/saved/new')
+      conn.sshUsername = this.username
       this.config = conn;
-      this.config.sshUsername = await window.main.fetchUsername()
     } catch (e) {
       log.error(e)
       this.$noty.error(e.message)
