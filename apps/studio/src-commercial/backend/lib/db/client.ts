@@ -13,6 +13,7 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { FirebirdClient } from "./clients/firebird";
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
+import { ScyllaDBClient } from "./clients/scylladb";
 import { LibSQLClient } from "./clients/libsql";
 import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
@@ -35,6 +36,7 @@ const clients = new Map<ConnectionType, any>([
   ['firebird', FirebirdClient],
   ['oracle', OracleClient],
   ['cassandra', CassandraClient],
+  ['scylladb', ScyllaDBClient],
   ['libsql', LibSQLClient],
   ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
