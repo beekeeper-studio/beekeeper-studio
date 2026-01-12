@@ -30,9 +30,6 @@ import _ from 'lodash';
 import bksConfig from '@/common/bksConfig'
 
 import * as sms from 'source-map-support'
-import { PluginEntry } from '@/common/appdb/models/PluginEntry';
-import PluginRegistry from '@/services/plugin/PluginRegistry';
-import PluginRepositoryService from '@/services/plugin/PluginRepositoryService';
 import bindLicenseConstraints from '@commercial/backend/plugin-system/hooks/licenseConstraints';
 import bindIniConfig from '@commercial/backend/plugin-system/hooks/iniConfig';
 
@@ -46,21 +43,6 @@ const pluginManager = new PluginManager({
   fileManager: new PluginFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
-  registry: new PluginRegistry(new PluginRepositoryService(), {
-    onFetched: async (entries, fetchResult) => {
-      if (fetchResult.errors.core || fetchResult.errors.community) {
-        log.warn("Skipping upserting plugin registry to database");
-        return;
-      }
-      try {
-        await PluginEntry.upsertFromRegistry(entries);
-        log.info("Successfully cached plugin registry to database");
-      } catch (e) {
-        log.error("Failed to cache plugin registry to database", e);
-      }
-    },
-  }),
-  initialRegistryFallback: async () => await PluginEntry.getAllAsRegistryEntries(),
 });
 
 bindIniConfig(pluginManager, bksConfig);

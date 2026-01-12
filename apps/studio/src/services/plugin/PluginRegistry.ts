@@ -5,22 +5,12 @@ import { NotFoundPluginError } from "./errors";
 
 const log = rawLog.scope("PluginRegistry");
 
-export type PluginRegistryOptions = {
-  onFetched?: (
-    entries: PluginRegistryEntry[],
-    fetchResult: RawFetchRegistryResult
-  ) => void | Promise<void>;
-};
-
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
   entries: PluginRegistryEntry[] = [];
   private repositories: Record<string, PluginRepository> = {};
 
-  constructor(
-    private readonly repositoryService: PluginRepositoryService,
-    private readonly options?: PluginRegistryOptions
-  ) {}
+  constructor(private readonly repositoryService: PluginRepositoryService) {}
 
   findEntryById(id: string) {
     return this.entries.find((entry) => entry.id === id);
@@ -46,11 +36,6 @@ export default class PluginRegistry {
     }));
 
     this.entries = core.concat(community);
-
-    // Call onFetched callback if provided
-    if (this.options?.onFetched) {
-      await this.options.onFetched(this.entries, registry);
-    }
 
     return { errors: registry.errors }
   }

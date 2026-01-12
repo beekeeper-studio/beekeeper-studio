@@ -97,12 +97,3 @@ export interface TransportFormatterPreset extends Transport {
   config: FormatterPresetConfig,
   systemDefault: boolean
 }
-
-export interface TransportPluginEntry extends Transport {
-  pluginId: string;
-  name: string;
-  author: string;
-  repo: string;
-  description: string;
-  origin: string;
-}
