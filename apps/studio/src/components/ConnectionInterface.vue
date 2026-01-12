@@ -3,8 +3,7 @@
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar :selected-config="config" @remove="remove" @duplicate="duplicate" @edit="edit"
-                            @connect="handleConnect" @create="create"
-        />
+          @connect="handleConnect" @create="create" />
       </sidebar>
       <div ref="content" class="connection-main page-content flex-col" id="page-content">
         <div class="small-wrap expand">
@@ -28,8 +27,7 @@
               <div class="form-group">
                 <label for="connection-select">{{ $t("Connection Type") }}</label>
                 <select name="connectionType" class="form-control custom-select" v-model="config.connectionType"
-                        id="connection-select"
-                >
+                  id="connection-select">
                   <option disabled hidden value="null">
                     {{ $t("Select a connection type...") }}
                   </option>
@@ -45,39 +43,35 @@
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <upsell-content v-if="shouldUpsell" />
                 <postgres-form v-else-if="config.connectionType === 'cockroachdb'" :config="config"
-                               :testing="testing"
-                />
+                  :testing="testing" />
                 <mysql-form v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)" :config="config"
-                            :testing="testing"
-                />
+                  :testing="testing" />
                 <postgres-form v-else-if="config.connectionType === 'postgresql'" :config="config" :testing="testing" />
                 <redshift-form v-else-if="config.connectionType === 'redshift'" :config="config" :testing="testing" />
                 <sqlite-form v-else-if="config.connectionType === 'sqlite'" :config="config" :testing="testing" />
                 <sql-server-form v-else-if="config.connectionType === 'sqlserver'" :config="config" :testing="testing"
-                                 @error="connectionError = $event"
-                />
+                  @error="connectionError = $event" />
                 <big-query-form v-else-if="config.connectionType === 'bigquery'" :config="config" :testing="testing" />
                 <firebird-form v-else-if="config.connectionType === 'firebird' && isUltimate" :config="config"
-                               :testing="testing"
-                />
+                  :testing="testing" />
                 <oracle-form v-if="config.connectionType === 'oracle' && isUltimate" :config="config"
-                             :testing="testing"
-                />
+                  :testing="testing" />
                 <cassandra-form v-if="config.connectionType === 'cassandra' && isUltimate" :config="config"
-                                :testing="testing"
-                />
+                  :testing="testing" />
                 <click-house-form v-else-if="config.connectionType === 'clickhouse' && isUltimate" :config="config"
-                                  :testing="testing"
-                />
+                  :testing="testing" />
+                <trino-form v-else-if="config.connectionType === 'trino' && isUltimate" :config="config"
+                  :testing="testing" />
                 <lib-sql-form v-else-if="config.connectionType === 'libsql' && isUltimate" :config="config"
-                              :testing="testing"
-                />
-                <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config" :testing="testing" />
-                <duck-db-form
-                  v-else-if="config.connectionType === 'duckdb'"
-                  :config="config"
-                  :testing="testing"
-                />
+                  :testing="testing" />
+                <mongo-db-form v-else-if="config.connectionType === 'mongodb' && isUltimate" :config="config"
+                  :testing="testing" />
+                <duck-db-form v-else-if="config.connectionType === 'duckdb'" :config="config" :testing="testing" />
+                <sql-anywhere-form v-else-if="config.connectionType === 'sqlanywhere' && isUltimate" :config="config"
+                  :testing="testing" />
+                <surreal-db-form v-else-if="config.connectionType === 'surrealdb' && isUltimate" :config="config"
+                  :testing="testing" />
+                <redis-form v-else-if="config.connectionType === 'redis'" :config="config" :testing="testing" />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
@@ -108,7 +102,7 @@
                 </div>
                 <div class="row" v-if="connectionError">
                   <div class="col">
-                    <error-alert :error="connectionError" :help-text="errorHelp" @close="connectionError = null"
+                    <error-alert :error="connectionError" :help-text="errorHelp" :link="errorLink" @close="connectionError = null"
                                  :closable="true"
                     />
                   </div>
@@ -119,12 +113,16 @@
           </div>
           <template v-if="!config.connectionType">
             <div class="pitch" v-if="!isUltimate">
-              🌟 <strong>{{ $t("Upgrade") }}</strong> {{ $t("for more features like ClickHouse & Oracle support, JSON view for table rows, and more!") }}
+              🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
               <a href="https://beekeeperstudio.io/pricing" class="">{{ $t("Upgrade") }}</a>.
             </div>
             <div class="pitch" v-else-if="isTrial">
               🌟 <strong>{{ $t("Trial expires") }} {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> {{ $t("Upgrade now to make sure you don't lose access.") }}
               <a href="https://beekeeperstudio.io/pricing" class="">{{ $t("Upgrade") }}</a>.
+            </div>
+            <div class="pitch" v-else>
+              🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
+              <a href="https://www.beekeeperstudio.io/features/sql-ai">Learn more</a>
             </div>
           </template>
         </div>
@@ -154,6 +152,10 @@ import CassandraForm from './connection/CassandraForm.vue'
 import OracleForm from './connection/OracleForm.vue'
 import MongoDbForm from './connection/MongoDBForm.vue'
 import DuckDbForm from './connection/DuckDBForm.vue'
+import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
+import TrinoForm from './connection/TrinoForm.vue'
+import SurrealDbForm from './connection/SurrealDBForm.vue'
+import RedisForm from './connection/RedisForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -170,13 +172,14 @@ import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
+import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, MongoDbForm, DuckDbForm,
-    ContentPlaceholderHeading,
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
+    ContentPlaceholderHeading, SurrealDbForm
   },
 
   data() {
@@ -185,6 +188,7 @@ export default Vue.extend({
       errors: null,
       connectionError: null,
       errorHelp: null,
+      errorLink: null,
       testing: false,
       connecting: false,
       split: null,
@@ -263,15 +267,14 @@ export default Vue.extend({
       })
     },
     connectionError() {
-      console.log("error watch", this.connectionError, this.dialect)
-      if (this.connectionError &&
-        this.dialect == 'sqlserver' &&
-        this.connectionError.message &&
-        this.connectionError.message.includes('self signed certificate')
-      ) {
-        this.errorHelp = this.$t(`You might need to check 'Trust Server Certificate'`)
+
+      if (this.connectionError) {
+        const friendlyHelp = FriendlyErrorHelper.getHelpText(this.config.connectionType, this.connectionError)
+        this.errorHelp = friendlyHelp?.help
+        this.errorLink = friendlyHelp?.link
       } else {
         this.errorHelp = null
+        this.errorLink = null
       }
     }
   },
@@ -394,7 +397,9 @@ export default Vue.extend({
           }
         }
 
-        await this.$store.dispatch('connect', this.config)
+        const { auth, cancelled } = await this.$bks.unlock();
+        if (cancelled) return;
+        await this.$store.dispatch('connect', { config: this.config, auth })
       } catch (ex) {
         this.connectionError = ex
         this.$noty.error(this.$t("Error establishing a connection"))

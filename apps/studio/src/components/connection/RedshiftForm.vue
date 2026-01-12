@@ -10,7 +10,7 @@
       </select>
     </div>
     <common-server-inputs :config="config" />
-    <common-iam v-show="iamAuthenticationEnabled" :config="config" />
+    <common-iam v-show="iamAuthenticationEnabled" :config="config" :auth-type="authType" />
     <common-advanced :config="config" />
   </div>
 </template>
@@ -27,14 +27,9 @@ export default {
   components: {CommonIam, CommonServerInputs, CommonAdvanced },
   data() {
     return {
+      iamAuthenticationEnabled: this.config.redshiftOptions?.authType?.includes?.('iam'),
       authType: this.config.redshiftOptions?.authType || 'default',
       authTypes: [{ name: this.$t('Username / Password'), value: 'default' }, ...getIamAuthTypes()]
-    }
-  },
-  computed: {
-    iamAuthenticationEnabled() {
-      const { redshiftOptions } = this.config;
-      return redshiftOptions?.authType?.includes('iam') || false;
     }
   },
   watch: {
@@ -46,7 +41,6 @@ export default {
       }
     },
     async authType() {
-      console.log("Auth type changed", this.authType, 'community?', this.$config.isCommunity)
       this.iamAuthenticationEnabled = this.authType.includes('iam');
       this.config.redshiftOptions.authType = this.authType;
     },

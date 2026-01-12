@@ -18,6 +18,7 @@ export default class {
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
+    this.forward(AppEvent.newCustomTab)
     this.forward(AppEvent.togglePrimarySidebar)
     this.forward(AppEvent.toggleSecondarySidebar)
     this.forward(AppEvent.quickSearch)
@@ -27,12 +28,15 @@ export default class {
     this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
+    this.forward(AppEvent.updatePin)
+    this.forward(AppEvent.settingsChanged)
+    this.forward(AppEvent.openPluginManager)
   }
 
   forward(event) {
-    const emit = () => {
+    const emit = (_e, ...args) => {
       log.debug("Received from electron, forwarding to app", event)
-      this.vueApp.$emit(event)
+      this.vueApp.$emit(event, ...args)
     }
     window.main.on(event, emit.bind(this))
   }
@@ -42,7 +46,7 @@ export default class {
   }
 
   async addBeekeeper() {
-    const existing = await this.vueApp.$util.send('appdb/saved/findOne', { options: { defaultDatabase: platformInfo.appDbPath }});
+    const existing = await this.vueApp.$util.send('appdb/saved/findOneBy', { options: { defaultDatabase: platformInfo.appDbPath }});
     if (!existing) {
       const nu = {};
       nu.connectionType = 'sqlite'

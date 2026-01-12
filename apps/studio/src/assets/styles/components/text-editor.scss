@@ -1,36 +1,18 @@
 @import "./text-editor-plugins/partial-read-only.scss";
 
-.text-editor {
+.BksTextEditor {
+  padding: 0.75rem 0;
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;
     }
   }
 
-  .CodeMirror-foldgutter {
-    width: 1.2rem;
+  .cm-foldgutter {
+    font-weight: normal;
   }
 
-  .CodeMirror-foldgutter-open,
-  .CodeMirror-foldgutter-folded {
-    font-family: "Material Icons";
-    font-size: 1.2rem;
-    color: rgba($theme-base, 0.37);
-
-    &:hover {
-      color: $text-dark;
-    }
-  }
-
-  .CodeMirror-foldgutter-open::after {
-    content: "keyboard_arrow_down";
-  }
-
-  .CodeMirror-foldgutter-folded::after {
-    content: "keyboard_arrow_right";
-  }
-
-  .CodeMirror-gutter-background.changed {
+  .cm-lineGutter-changed {
     border-left: 2px solid $brand-warning;
   }
 

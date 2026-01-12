@@ -9,7 +9,7 @@ import {
 // prettier-ignore
 const types = [
   "BIGINT", "BINARY", "BLOB", "BOOLEAN", "CHAR", "CHARACTER", "DATE", "DECFLOAT",
-  "DECIMAL", "DOUBLE PRECISION", "FLOAT", "FLOAT", "INTEGER", "INT", "INT128",
+  "DECIMAL", "DOUBLE PRECISION", "FLOAT", "INTEGER", "INT", "INT128",
   "NUMERIC", "REAL", "SMALLINT", "TIME", "TIMESTAMP", "VARBINARY", "BINARY VARYING",
   "VARCHAR", "CHAR VARYING", "CHARACTER VARYING",
 ];
@@ -37,11 +37,21 @@ function escape(value) {
       return "'" + value.getFullYear() + '-' + (value.getMonth()+1).toString().padStart(2, '0') + '-' + value.getDate().toString().padStart(2, '0') + ' ' + value.getHours().toString().padStart(2, '0') + ':' + value.getMinutes().toString().padStart(2, '0') + ':' + value.getSeconds().toString().padStart(2, '0') + '.' + value.getMilliseconds().toString().padStart(3, '0') + "'";
 
   throw new Error('Escape supports only primitive values.');
-};
+}
 export const FirebirdData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
   wrapIdentifier,
+  importDataType: {
+    stringType: 'VARCHAR(255)',
+    longStringType: 'BLOB SUB_TYPE TEXT',
+    dateType: 'DATE',
+    booleanType: 'BOOLEAN',
+    integerType: 'INT',
+    numberType: 'FLOAT',
+    defaultType: 'VARCHAR(255)'
+  },
   // NOTE I HAVE NO IDEA IF THIS IS RIGHT
   usesOffsetPagination: false,
   editorFriendlyIdentifier: friendlyNormalizedIdentifier,
@@ -49,6 +59,7 @@ export const FirebirdData: DialectData = {
   wrapLiteral: escape,
   unwrapIdentifier: defaultWrapLiteral,
   requireDataset: false,
+  disallowedSortColumns: ['blob'],
   textEditorMode: "text/x-sql",
   disabledFeatures: {
     shell: true,
@@ -65,8 +76,7 @@ export const FirebirdData: DialectData = {
     },
     multipleDatabases: true,
     schema: true,
-    generatedColumns: true,
-    multipleDatabase: true,
+    generatedColumns: true
   },
   notices: {},
 };

@@ -21,7 +21,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500)
-  }),
+  }, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
   getters: {
     filteredQueries(state) {
       if (!state.filter) {

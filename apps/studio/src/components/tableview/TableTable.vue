@@ -43,7 +43,7 @@
       />
     </template>
 
-    <statusbar :mode="statusbarMode">
+    <statusbar :mode="statusbarMode" :active="active">
       <div class="truncate statusbar-info">
         <x-button
           @click.prevent="openProperties"
@@ -56,6 +56,7 @@
         <table-length
           v-if="!minimalMode"
           :table="table"
+          :filters="filters"
         />
         <a
           @click="refreshTable"
@@ -86,6 +87,13 @@
         <div class="flex-center flex-middle flex">
           <a
             v-if="(this.page > 1)"
+            @click="page = 1"
+            v-tooltip="$bksConfig.keybindings.tableTable.firstPage"
+          ><i
+            class="material-icons"
+          >first_page</i></a>
+          <a
+            v-if="(this.page > 1)"
             @click="page = page - 1"
             v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
           ><i
@@ -96,9 +104,17 @@
             v-model="page"
           >
           <a
+            v-if="hasNextPage"
             @click="page = page + 1"
             v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
           ><i class="material-icons">navigate_next</i></a>
+          <a
+            v-if="hasNextPage && canJumpToLastPage"
+            @click="jumpToLastPage"
+            v-tooltip="$bksConfig.keybindings.tableTable.lastPage"
+          >
+            <i class="material-icons">last_page</i>
+          </a>
         </div>
       </div>
 
@@ -184,7 +200,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`${$t('Refresh Table')} (${$bksConfig.keybindings.tableTable.refresh})`"
+          v-tooltip="`Refresh Table (${$bksConfig.keybindings.general.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -192,7 +208,8 @@
         </x-button>
         <x-button
           class="btn btn-flat"
-          v-tooltip="`${$t('Add row')} (${$bksConfig.keybindings.tableTable.addRow})`"
+          v-tooltip="addRowTooltip"
+          :disabled="usedConfig.readOnlyMode"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
@@ -222,7 +239,7 @@
             <x-menuitem @click="showColumnFilterModal">
               <x-label>{{ $t('Hide columns') }} ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
-            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile">
+            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile || usedConfig.readOnlyMode">
               <x-label>
                 {{ $t('Import from file') }}
                 <i
@@ -231,7 +248,7 @@
                 >stars</i>
               </x-label>
             </x-menuitem>
-            <x-menuitem @click="openQueryTab" :disabled="dialect === 'mongodb'">
+            <x-menuitem @click="openQueryTab">
               <x-label>{{ $t('Copy view to SQL') }}</x-label>
             </x-menuitem>
           </x-menu>
@@ -250,7 +267,8 @@
               {{ $t('Confirmation') }}
             </div>
             <div class="modal-form">
-              {{ $t('Sorting or Filtering will discard {0} pending change(s) to {1}. Are you sure?', [pendingChangesCount, table.name]) }}
+              Sorting or Filtering will discard {{ pendingChangesCount }} pending change(s) to <b>{{ table.name }}</b>.
+              Are you sure?
             </div>
           </div>
           <div class="vue-dialog-buttons">
@@ -273,7 +291,7 @@
         </div>
       </modal>
     </portal>
-    <add-field-modal @done="cellAddCol(undefined, $event)"/>
+    <!-- <add-field-modal @done="cellAddCol(undefined, $event)"/> -->
   </div>
 </template>
 
@@ -298,7 +316,6 @@ import { FkLinkMixin } from '@/mixins/fk_click'
 import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
-import AddFieldModal from '../common/modals/AddFieldModal.vue'
 import EditorModal from './EditorModal.vue'
 import rawLog from '@bksLogger'
 import _ from 'lodash'
@@ -308,26 +325,27 @@ import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import TableLength from '@/components/common/TableLength.vue'
-import { mapGetters, mapState, mapActions } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
 import { format } from 'sql-formatter';
-import { normalizeFilters, safeSqlFormat, createTableFilter } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
-import { escapeHtml } from '@shared/lib/tabulator';
+import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import { ExpandablePath } from '@/lib/data/jsonViewer'
-import { stringToTypedArray } from "@/common/utils";
+import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
+import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
+import { UpdateOptions } from "@/lib/data/jsonViewer";
 
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, AddFieldModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -339,6 +357,7 @@ export default Vue.extend({
       columnsSet: false,
       tabulator: null,
       loading: false,
+      hasNextPage: false,
 
       // table data
       data: null, // array of data
@@ -353,11 +372,10 @@ export default Vue.extend({
         updates: [],
         deletes: []
       },
-      // @ts-expect-error Fix typings
       paginationStates: [null], // used for pagination that is not based on offsets. Null is always the starter one because that means "just bring back em back from the beginning"
       queryError: null,
       saveError: null,
-      timeAgo: null,
+      timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
       // @ts-expect-error Fix typings
@@ -374,14 +392,19 @@ export default Vue.extend({
       enabledMinimalModeWhileInactive: false,
 
       selectedRow: null,
-      selectedRowPosition: null,
+      selectedRowPosition: -1,
       selectedRowData: {},
-      expandablePaths: {},
+      expandablePaths: [],
     };
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
+    ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+    canJumpToLastPage() {
+      const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+      return this.$bksConfig.db[dbType].allowSkipToLastPage;
+    },
     limit() {
       return this.$bksConfig.ui.tableTable.pageSize
     },
@@ -390,6 +413,9 @@ export default Vue.extend({
     },
     isCassandra() {
       return this.connectionType === 'cassandra'
+    },
+    queryDialect() {
+      return this.dialectData?.queryDialectOverride ?? this.dialect;
     },
     columnsWithFilterAndOrder() {
       if (!this.tabulator || !this.table) return []
@@ -439,7 +465,9 @@ export default Vue.extend({
         'general.cloneSelection': this.cloneSelection.bind(this),
         'general.deleteSelection': this.deleteTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
+        'tableTable.lastPage': this.navigatePage.bind(this, 'last'),
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
+        'tableTable.firstPage': this.navigatePage.bind(this, 'first'),
         'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
       })
     },
@@ -474,11 +502,20 @@ export default Vue.extend({
       return this.pendingChanges.deletes.length > 0
     },
     editable() {
-      return this.primaryKeys?.length &&
+      return !this.usedConfig.readOnlyMode &&
+        this.primaryKeys?.length &&
         this.table.entityType === 'table' &&
         !this.dialectData.disabledFeatures?.tableTable
     },
+    addRowTooltip() {
+      return this.usedConfig.readOnlyMode ?
+        "Read Only Mode is enabled for this connection. Cannot add rows." :
+        `Add row (${this.$bksConfig.keybindings.general.addRow})`;
+    },
     readOnlyNotice() {
+      if (this.usedConfig.readOnlyMode) {
+        return "Read Only Mode is enabled for this connection. Editing is disabled."
+      }
       return this.dialectData.notices?.tableTable ||
         "Tables without a primary key column only support inserts. Editing of existing records is disabled."
     },
@@ -494,8 +531,15 @@ export default Vue.extend({
     tableKeys() {
       const result = {}
       this.rawTableKeys.forEach((item) => {
-        if (!result[item.fromColumn]) result[item.fromColumn] = [];
-        result[item.fromColumn].push(item);
+        if (item.isComposite) {
+          item.fromColumn.forEach((col) => {
+            if (!result[col]) result[col] = [];
+            result[col].push(item)
+          })
+        } else {
+          if (!result[item.fromColumn]) result[item.fromColumn] = [];
+          result[item.fromColumn].push(item);
+        }
       })
       return result
     },
@@ -556,7 +600,7 @@ export default Vue.extend({
     },
     openColumnFilterMenuItem() {
       return {
-        label: createMenuItem(this.$t("Open Column Filter").toString()),
+        label: createMenuItem("Open Column Filter"),
         action: this.showColumnFilterModal,
       }
     },
@@ -580,7 +624,11 @@ export default Vue.extend({
 
       const paths = []
       for (const column of this.table.columns) {
-        if(this.isPrimaryKey(column.columnName) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
+        const isPrimaryKey = this.isPrimaryKey(column.columnName);
+        // Allow primary key editing for dialects that don't have read-only primary keys (e.g., Redis key renaming)
+        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+
+        if((isPrimaryKey && !canEditPrimaryKeys) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
         }
         paths.push(column.columnName)
@@ -684,8 +732,6 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
-    // No need to initialize TimeAgo here, watch will execute immediately
-    
     if (this.shouldInitialize) {
       await this.$nextTick(async() => {
         await this.initialize()
@@ -719,12 +765,18 @@ export default Vue.extend({
             ...pasteActionsMenu(range),
             { separator: true },
             ...this.rowActionsMenu(range),
+            ...this.getExtraPopupMenu('tableTable.cell', { transform: "tabulator" }),
           ]
 
           if (keyDatas?.length > 0) {
             keyDatas.forEach(keyData => {
+              // For composite foreign keys, show all related columns
+              const displayTarget = keyData.isComposite ?
+                `${keyData.toTable} (${keyData.toColumn.join(', ')})` :
+                `${keyData.toTable} (${keyData.toColumn})`;
+
               menu.push({
-                label: createMenuItem(this.$i18n.t("Go to {table} ({column})", {table: keyData.toTable, column: keyData.toColumn}).toString()),
+                label: createMenuItem(`Go to ${displayTarget}`),
                 action: (_e, cell) => this.fkClick(keyData, cell)
               })
             })
@@ -737,7 +789,7 @@ export default Vue.extend({
       const columnMenu = (_e, column: ColumnComponent) => {
         const ranges = (column as any).getRanges();
         const range = _.last(ranges) as RangeComponent;
-        let hideColumnLabel = this.$i18n.t("Hide {title}", {title: column.getDefinition().title}).toString()
+        let hideColumnLabel = `Hide ${column.getDefinition().title}`
 
         if (hideColumnLabel.length > 33) {
           hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
@@ -759,13 +811,15 @@ export default Vue.extend({
             action: () => this.hideColumnByField(column.getField()),
           },
           {
-            label: createMenuItem(this.$i18n.t("Reset layout").toString()),
+            label: createMenuItem(`Reset layout`),
             action: () => column.getTable().setColumnLayout(this.tableColumns),
           },
           this.openColumnFilterMenuItem,
+          ...this.getExtraPopupMenu('tableTable.columnHeader', { transform: "tabulator" }),
         ]
       }
 
+      const { disallowedSortColumns = [] } = this.dialectData
       const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column.columnName);
       // this needs fixing
       // currently it doesn't fetch the right result if you update the PK
@@ -782,10 +836,29 @@ export default Vue.extend({
       let headerTooltip = escapeHtml(`${column.generated ? '[Generated] ' : ''}${column.columnName} ${column.dataType}`)
       if (hasKeyDatas) {
         const keyData = keyDatas[0][1];
-        if (keyData.length === 1)
-          headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
-        else
-          headerTooltip += escapeHtml(` -> ${keyData.map(item => `${item.toTable}(${item.toColumn})`).join(', ').replace(/, (?![\s\S]*, )/, ', or ')}`)
+        if (keyData.length === 1) {
+          // Handle composite keys
+          if (keyData[0].isComposite) {
+            // Format as: toTable (column1, column2)
+            const compositeColumns = keyData[0].toColumn.join(', ');
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${compositeColumns})`)
+          } else {
+            // Regular single-column foreign key
+            headerTooltip += escapeHtml(` -> ${keyData[0].toTable}(${keyData[0].toColumn})`)
+          }
+        } else {
+          // Multiple foreign keys for the same column
+          headerTooltip += escapeHtml(` -> ${keyData.map(item => {
+            if (item.isComposite) {
+              // Format composite key
+              const compositeColumns = item.toColumn.join(', ');
+              return `${item.toTable}(${compositeColumns})`;
+            } else {
+              // Format regular key
+              return `${item.toTable}(${item.toColumn})`;
+            }
+          }).join(', ').replace(/\), (?![\s\S]*\), )/, '), or ')}`)
+        }
       } else if (isPK) {
         headerTooltip += ' [Primary Key]'
       }
@@ -795,7 +868,10 @@ export default Vue.extend({
         cssClass += ' primary-key';
       } else if (hasKeyDatas) {
         cssClass += ' foreign-key';
+      } else if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
+        cssClass += ' text-right'
       }
+
       if (column.generated) {
         cssClass += ' generated-column';
       }
@@ -803,6 +879,13 @@ export default Vue.extend({
       // if column has a comment, add it to the tooltip
       if (column.comment) {
         headerTooltip += `<br/> ${escapeHtml(column.comment)}`
+      }
+
+      const formatterParams: FormatterParams = {
+        fk: hasKeyDatas && keyDatas[0][1],
+        fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
+        isPK: isPK,
+        binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
       }
 
       const result = {
@@ -823,7 +906,7 @@ export default Vue.extend({
         resizable: 'header',
         cssClass,
         editable: this.cellEditCheck,
-        headerSort: !this.dialectData.disabledFeatures.headerSort,
+        headerSort: !this.dialectData.disabledFeatures.headerSort && !disallowedSortColumns.includes(column.dataType?.toLowerCase()),
         editor: editorType,
         tooltip: this.cellTooltip,
         contextMenu: cellMenu(hasKeyDatas ? keyDatas[0][1] : undefined),
@@ -832,12 +915,7 @@ export default Vue.extend({
         headerTooltip: headerTooltip,
         cellEditCancelled: (cell) => cell.getRow().normalizeHeight(),
         formatter: this.cellFormatter,
-        formatterParams: {
-          fk: hasKeyDatas && keyDatas[0][1],
-          fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1][0], cell)),
-          isPK: isPK,
-          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
-        },
+        formatterParams,
         editorParams: {
           verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
           dataType: column.dataType,
@@ -869,11 +947,18 @@ export default Vue.extend({
       log.debug('tab pressed')
 
     },
-    navigatePage (dir: 'next' | 'prev') {
+    async navigatePage (dir: 'next' | 'prev' | 'first' | 'last') {
       const focusingTable = this.tabulator.element.contains(document.activeElement)
       if (!focusingTable) {
-        if (dir === 'next') this.page++
-        else this.page--
+        if (dir === 'next') {
+          this.page++
+        } else if (dir === 'prev') {
+          this.page--
+        } else if (dir === 'first') {
+          this.page = 1
+        } else if (dir === 'last') {
+          await this.jumpToLastPage()
+        }
       }
     },
     copySelection() {
@@ -894,7 +979,7 @@ export default Vue.extend({
       return `
         <span class="title">
           ${escapeHtml(columnName)}
-          <span class="badge column-data-type">${dataType}</span>
+          <span class="badge column-data-type">${escapeHtml(dataType)}</span>
         </span>`
     },
     maybeScrollAndSetWidths() {
@@ -955,6 +1040,7 @@ export default Vue.extend({
               }),
               { separator: true },
               ...this.rowActionsMenu(range),
+              ...this.getExtraPopupMenu('tableTable.rowHeader', { transform: "tabulator" }),
             ]
           },
           headerContextMenu: () => {
@@ -972,6 +1058,7 @@ export default Vue.extend({
               resizeAllColumnsToFitContent,
               resizeAllColumnsToFixedWidth,
               this.openColumnFilterMenuItem,
+              ...this.getExtraPopupMenu('tableTable.corner', { transform: "tabulator" }),
             ]
           },
         },
@@ -1057,19 +1144,43 @@ export default Vue.extend({
       if (this.isPrimaryKey(cell.getField())) return true
       return !this.editable && !this.insertionCellCheck(cell)
     },
+    getActionValue(cell: CellComponent, s: string) {
+      const clickedValue = cell.getValue();
+      switch(s) {
+        case 'in': {
+          const ranges = cell.getRanges();
+          const selectedCells = ranges.flatMap(range => range.getCells()).flat();
+          const selectedValues = selectedCells
+            .filter(c => c.getField() === cell.getField())
+            .map(c => c.getValue())
+            .filter(v => v !== null && v !== undefined);
+          return selectedValues.length > 0 ? selectedValues : [clickedValue];
+        }
+
+        case 'like':
+          return `%${clickedValue}%`;
+
+        default:
+          return clickedValue;
+      }
+    },
     quickFilterMenuItem(cell: CellComponent) {
       const symbols = [
-        '=', '!=', '<', '<=', '>', '>='
+        '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
         label: createMenuItem(this.$t("Quick Filter"), "", this.$store.getters.isCommunity),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {
-            label: createMenuItem(`${cell.getField()} ${s} ${this.$t('value')}`),
+            label: createMenuItem(`${cell.getField()} ${s} value`),
             disabled: this.$store.getters.isCommunity,
             action: async (_e, cell: CellComponent) => {
-              const newFilter = [{ field: cell.getField(), type: s, value: cell.getValue()}]
+              const newFilter = [{
+                field: cell.getField(),
+                type: s,
+                value: this.getActionValue(cell, s)
+              }]
               this.tableFilters = newFilter
               this.triggerFilter(this.tableFilters)
             }
@@ -1126,15 +1237,19 @@ export default Vue.extend({
     buildPendingInserts() {
       if (!this.table) return
       const inserts = this.pendingChanges.inserts.map((item) => {
-        const columnNames = this.table.columns.filter((c) => !c.generated).map((c) => c.columnName)
+        const columnNames = this.table.columns.filter((c) => !c.generated)
         const rowData = item.row.getData()
         const result = {}
-        columnNames.forEach((c) => {
-          const d = rowData[c]
-          if (this.isPrimaryKey(c) && (!d && d != 0)) {
+        columnNames.forEach(({ columnName, dataType }) => {
+          const d = rowData[columnName]
+          if (this.isPrimaryKey(columnName) && (!d && d != 0)) {
             // do nothing
           } else {
-            result[c] = d
+            result[columnName] = d
+            // HACK (azmi): we should handle this from backend with tests instead
+            if (this.dialect === 'postgresql' && dataType === 'jsonb') {
+              result[columnName] = JSON.stringify(d)
+            }
           }
         })
         return {
@@ -1159,14 +1274,6 @@ export default Vue.extend({
       const chunkyTypes = ['json', 'jsonb', 'blob', 'text', '_text', 'tsvector', 'clob']
       if (chunkyTypes.includes(slimType)) return this.$bksConfig.ui.tableTable.largeFieldWidth
       return defaultValue
-    },
-    // TODO: this is not attached to anything. but it might be needed?
-    allowHeaderSort(column) {
-      const badStarts = [
-        'json', 'clob'
-      ]
-      if(!column.dataType) return true
-      return !badStarts.find((bad) => column.dataType.toLowerCase().startsWith(bad))
     },
     slimDataType(dt) {
       if (!dt) return null
@@ -1216,7 +1323,10 @@ export default Vue.extend({
         }))
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
-      return this.editable && !this.isPrimaryKey(cell.getField()) && !pendingDelete
+      const isPrimaryKey = this.isPrimaryKey(cell.getField());
+      // i know, the logic is a bit awkward (disable the disabling of editing the primary keys)
+      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+      return this.editable && (!isPrimaryKey || canEditPrimaryKeys) && !pendingDelete;
     },
     insertionCellCheck(cell: CellComponent) {
       const pendingInsert = _.find(this.pendingChanges.inserts, { row: cell.getRow() });
@@ -1265,13 +1375,16 @@ export default Vue.extend({
       } else if (currentEdit?.oldValue == cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
+        this.updateJsonViewer()
         return
       }
 
-      const primaryKeys = pkCells.map((cell) => {
+      const primaryKeys = pkCells.map((pkCell) => {
         return {
-          column: cell.getField(),
-          value: cell.getValue()
+          column: pkCell.getField(),
+          // Use old value if this primary key cell is the one being edited, otherwise current value
+          // This is for redis key renaming to work
+          value: pkCell === cell ? pkCell.getOldValue() : pkCell.getValue()
         }
       })
       if (currentEdit) {
@@ -1295,11 +1408,11 @@ export default Vue.extend({
         let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key })
         pendingUpdates.push(payload)
         this.$set(this.pendingChanges, 'updates', pendingUpdates)
-        this.updateDetailView()
+        this.updateJsonViewer()
       }
     },
     cloneSelection(range?: RangeComponent) {
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
         const dataParsed = Object.keys(data).reduce((acc, d) => {
@@ -1384,9 +1497,17 @@ export default Vue.extend({
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
           const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
+          let value = cell.getValue();
+          if (isBinary) {
+            try {
+              value = stringToTypedArray(value, "hex")
+            } catch (e) {
+              log.error(`Error converting ${value} to typed array. Skipping...`, e)
+            }
+          }
           primaryKeys.push({
             column: cell.getField(),
-            value: isBinary ? Buffer.from(cell.getValue(), 'hex') : cell.getValue()
+            value,
           })
         })
 
@@ -1436,7 +1557,7 @@ export default Vue.extend({
           deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
-        const formatted = format(sql, { language: FormatterDialect(this.dialect) })
+        const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
         console.error(ex);
@@ -1450,7 +1571,8 @@ export default Vue.extend({
 
         this.saveError = {
           title: ex.message,
-          message: ex.message
+          message: ex.message,
+          ex
         }
         this.$noty.error(ex.message)
 
@@ -1520,6 +1642,7 @@ export default Vue.extend({
 
           return
         } finally {
+          this.updateJsonViewerSidebar()
           if (!this.active) {
             this.forceRedraw = true
           }
@@ -1570,7 +1693,7 @@ export default Vue.extend({
         this.table.schema,
         selects
       ).then((query: string) => {
-        const language = FormatterDialect(this.dialect);
+        const language = FormatterDialect(this.queryDialect);
         const formatted = safeSqlFormat(query, { language });
         this.$root.$emit(AppEvent.newTab, formatted);
       }).catch((e: unknown) => {
@@ -1593,7 +1716,7 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
-      const { usesOffsetPagination } = this.dialectData
+      const { usesOffsetPagination, disallowedSortColumns = [] } = this.dialectData
       log.info("fetch params", params)
       let offset = 0;
       let limit = this.limit;
@@ -1601,7 +1724,7 @@ export default Vue.extend({
       let filters = this.filters
 
       if (params.sort) {
-        orderBy = params.sort
+        orderBy = removeUnsortableColumnsFromSortBy(params.sort,  this.table.columns, disallowedSortColumns)
       }
 
       if (params.size) {
@@ -1624,13 +1747,12 @@ export default Vue.extend({
       const result = new Promise((resolve, reject) => {
         (async () => {
           try {
-
             // lets just make column selection a front-end only thing
             const selects = ['*']
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
-              this.limit,
+              this.limit + 1, // +1 to check if there is a next page
               orderBy,
               filters,
               this.table.schema,
@@ -1650,6 +1772,13 @@ export default Vue.extend({
             //  // FIXME: This should be added to all clients, not just cassandra (cassandra needs ALLOW FILTERING to do filtering because of performance)
             //  { allowFilter: this.isCassandra }
             //);
+
+            this.hasNextPage = response.result.length > this.limit
+
+            if (this.hasNextPage) {
+              response.result.pop()
+            }
+            this.data = response.result
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1705,7 +1834,7 @@ export default Vue.extend({
     },
     setlastUpdatedText() {
       if (!this.lastUpdated) return null
-      this.lastUpdatedText = this.$bks.getTimeAgo().format(this.lastUpdated)
+      this.lastUpdatedText = this.timeAgo.format(this.lastUpdated)
     },
     setQueryError(title, message) {
       this.queryError = {
@@ -1715,6 +1844,18 @@ export default Vue.extend({
     },
     clearQueryError() {
       this.queryError = null
+    },
+    async jumpToLastPage() {
+      try {
+        const totalRows = await this.connection.getTableLength(this.table.name, this.table.schema); // -> SELECT (*) FROM table
+
+        const lastPage = Math.ceil(totalRows / this.limit);
+
+        this.page = lastPage;
+
+      } catch (error) {
+        console.error("Error jumping to the last page:", error);
+      }
     },
     async getTableKeys() {
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
@@ -1747,9 +1888,13 @@ export default Vue.extend({
       const data = row.getData("withForeignData")
       const cachedExpandablePaths = row.getExpandablePaths()
       this.selectedRow = row
+
+      // Clean the data first
+      let cleanedData = this.$bks.cleanData(data, this.tableColumns)
+
       this.selectedRowPosition = position
       this.selectedRowIndex = this.primaryKeys?.map((key: string) => data[key]).join(',');
-      this.selectedRowData = this.$bks.cleanData(data, this.tableColumns)
+      this.selectedRowData = parseRowDataForJsonViewer(cleanedData, this.tableColumns)
       this.expandablePaths = this.rawTableKeys
         .filter((key) => !row.hasForeignData([key.fromColumn]))
         .map((key) => ({
@@ -1757,8 +1902,11 @@ export default Vue.extend({
           tableKey: key,
         }))
       this.expandablePaths.push(...cachedExpandablePaths)
-
-      const updatedData = {
+      this.updateJsonViewerSidebar()
+    },
+    updateJsonViewerSidebar() {
+      const updatedData: UpdateOptions = {
+        dataId: this.selectedRowIndex,
         value: this.selectedRowData,
         expandablePaths: this.expandablePaths,
         signs: this.selectedRowDataSigns,
@@ -1838,7 +1986,8 @@ export default Vue.extend({
             type: '=',
             value: _.get(this.selectedRowData, path),
           }],
-          tableKey.toSchema
+          tableKey.toSchema,
+          ['*']
         )
 
         if (table.result.length > 0) {
@@ -1863,14 +2012,7 @@ export default Vue.extend({
       this.expandablePaths = filteredExpandablePaths
       this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
 
-      const data = {
-        value: this.selectedRowData,
-        expandablePaths: this.expandablePaths,
-        signs: this.selectedRowDataSigns,
-        editablePaths: this.editablePaths,
-      }
-
-      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.updateJsonViewerSidebar()
     },
     handleRangeChange(ranges: RangeComponent[]) {
       this.updateJsonViewer({ range: ranges[0] })
@@ -1883,13 +2025,7 @@ export default Vue.extend({
       }
     },
     handleTabActive() {
-      const data = {
-        value: this.selectedRowData,
-        expandablePaths: this.expandablePaths,
-        signs: this.selectedRowDataSigns,
-        editablePaths: this.editablePaths,
-      }
-      this.trigger(AppEvent.updateJsonViewerSidebar, data)
+      this.updateJsonViewerSidebar()
       this.registerHandlers([
         {
           event: AppEvent.jsonViewerSidebarExpandPath,
@@ -1914,6 +2050,14 @@ export default Vue.extend({
       ])
     },
     handleJsonValueChange({key, value}) {
+      const column = this.table.columns.find((c) => c.columnName === key);
+      if (column) {
+        const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+        if (isJsonColumn && _.isObject(value)) {
+          value = JSON.stringify(value)
+        }
+      }
       this.selectedRow?.getCell(key).setValue(value)
     },
     debouncedSaveTab: _.debounce(function(tab) {

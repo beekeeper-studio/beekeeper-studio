@@ -10,7 +10,7 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
@@ -84,7 +84,7 @@ const postgresContext = {
   }
 };
 
-export class PostgresClient extends BasicDatabaseClient<QueryResult> {
+export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
@@ -122,7 +122,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       backDirFormat: true,
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard', 'ilike']
     };
   }
 
@@ -464,14 +465,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
              i.indisunique,
              i.indisprimary,
              ${supportedFeatures.indexNullsNotDistinct ? 'i.indnullsnotdistinct,' : ''}
-        coalesce(a.attname,
-                  (('{' || pg_get_expr(
-                              i.indexprs,
-                              i.indrelid
-                          )
-                        || '}')::text[]
-                  )[k.i]
-                ) AS index_column,
+        coalesce(a.attname, pg_get_indexdef(i.indexrelid, k.i, false)) AS index_column,
         i.indoption[k.i - 1] = 0 AS ascending
       FROM pg_index i
         CROSS JOIN LATERAL (SELECT unnest(i.indkey), generate_subscripts(i.indkey, 1) + 1) AS k(attnum, i)
@@ -554,79 +548,196 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.referenced_table_name);
   }
 
-  async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys FROM this table (referencing other tables)
     const sql = `
       SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
-        rc.unique_constraint_schema AS to_schema,
-        tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule,
-        (
-          SELECT STRING_AGG(kcu2.column_name, ',' ORDER BY kcu2.ordinal_position)
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name
-        ) AS to_column,
-        (
-          SELECT kcu2.table_name
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name LIMIT 1
-        ) AS to_table
+        c.conname AS constraint_name,
+        a.attname AS column_name,
+        n.nspname AS from_schema,
+        t.relname AS from_table,
+        af.attname AS to_column,
+        tf.relname AS to_table,
+        nf.nspname AS to_schema,
+        CASE c.confupdtype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confupdtype::text
+        END AS update_rule,
+        CASE c.confdeltype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confdeltype::text
+        END AS delete_rule,
+        pos AS ordinal_position
       FROM
-        information_schema.key_column_usage AS kcu
-        JOIN
-        information_schema.table_constraints AS tc
-      ON
-        tc.constraint_name = kcu.constraint_name
-        JOIN
-        information_schema.referential_constraints AS rc
-        ON
-        rc.constraint_name = kcu.constraint_name
+        pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        JOIN pg_namespace n ON t.relnamespace = n.oid
+        JOIN generate_subscripts(c.conkey, 1) pos ON true
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
+        JOIN pg_class tf ON c.confrelid = tf.oid
+        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
+        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
       WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema NOT LIKE 'pg_%' AND
-        kcu.table_schema = $2 AND
-        kcu.table_name = $1
-      GROUP BY
-        kcu.constraint_schema,
-        kcu.table_name,
-        rc.unique_constraint_schema,
-        rc.unique_constraint_name,
-        tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule;
+        c.contype = 'f'
+        AND n.nspname = $1
+        AND t.relname = $2
+      ORDER BY
+        c.conname,
+        pos;
     `;
 
     const params = [
-      table,
       schema,
+      table,
     ];
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const { rows } = await this.driverExecuteSingle(sql, { params });
 
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule
-    }));
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.constraint_name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.column_name,
+          onUpdate: row.update_rule,
+          onDelete: row.delete_rule,
+          isComposite: false
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.constraint_name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.column_name),
+        onUpdate: firstPart.update_rule,
+        onDelete: firstPart.delete_rule,
+        isComposite: true
+      };
+    });
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys TO this table (other tables referencing this table)
+    const incomingSQL = `
+      SELECT
+        c.conname AS constraint_name,
+        a.attname AS from_column,
+        n.nspname AS from_schema,
+        t.relname AS from_table,
+        af.attname AS to_column,
+        tf.relname AS to_table,
+        nf.nspname AS to_schema,
+        CASE c.confupdtype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confupdtype::text
+        END AS update_rule,
+        CASE c.confdeltype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confdeltype::text
+        END AS delete_rule,
+        pos AS ordinal_position
+      FROM
+        pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        JOIN pg_namespace n ON t.relnamespace = n.oid
+        JOIN generate_subscripts(c.conkey, 1) pos ON true
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
+        JOIN pg_class tf ON c.confrelid = tf.oid
+        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
+        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
+      WHERE
+        c.contype = 'f'
+        AND nf.nspname = $1
+        AND tf.relname = $2
+      ORDER BY
+        c.conname,
+        pos;
+    `;
+
+    const params = [schema, table];
+    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.constraint_name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.update_rule,
+          onDelete: row.delete_rule,
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.constraint_name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.from_column),
+        onUpdate: firstPart.update_rule,
+        onDelete: firstPart.delete_rule,
+        isComposite: true,
+      };
+    });
+  }
+
+  async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
       execute: async (): Promise<NgQueryResult[]> => {
-        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
+        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid', { tabId });
         const rows = dataPid.rows
 
         pid = rows[0].pid;
@@ -634,7 +745,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, { arrayMode: true }),
+            this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
 
           pid = null;
@@ -663,7 +774,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
         canceling = true;
         try {
-          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`);
+          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`, { tabId });
 
           const rows = data.rows
 
@@ -682,7 +793,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode });
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
 
@@ -732,6 +843,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async getTableProperties(table: string, schema: string = this._defaultSchema): Promise<TableProperties> {
     const identifier = this.wrapTable(table, schema)
+    const permissionWarnings: string[] = []
 
     const statements = [
       `pg_indexes_size('${identifier}') as index_size`,
@@ -745,10 +857,42 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const sql = `SELECT ${statements.join(",")}`
 
-    const detailsPromise = this.driverExecuteSingle(sql);
+    // Execute each query independently with error handling for read-only connections
+    const detailsPromise = this.driverExecuteSingle(sql).catch(err => {
+      log.warn('Unable to fetch table size/description (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table size and description due to insufficient permissions')
+      return { rows: [{ index_size: 0, table_size: 0, description: null }] }
+    });
 
-    const triggersPromise = this.listTableTriggers(table, schema);
-    const partitionsPromise = this.listTablePartitions(table, schema);
+    const indexesPromise = this.listTableIndexes(table, schema).catch(err => {
+      log.warn('Unable to fetch table indexes (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table indexes due to insufficient permissions')
+      return []
+    });
+
+    const relationsPromise = this.getTableKeys(table, schema).catch(err => {
+      log.warn('Unable to fetch table relations (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table relations due to insufficient permissions')
+      return []
+    });
+
+    const triggersPromise = this.listTableTriggers(table, schema).catch(err => {
+      log.warn('Unable to fetch table triggers (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table triggers due to insufficient permissions')
+      return []
+    });
+
+    const partitionsPromise = this.listTablePartitions(table, schema).catch(err => {
+      log.warn('Unable to fetch table partitions (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table partitions due to insufficient permissions')
+      return []
+    });
+
+    const ownerPromise = this.getTableOwner(table, schema).catch(err => {
+      log.warn('Unable to fetch table owner (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table owner due to insufficient permissions')
+      return null
+    });
 
     const [
       result,
@@ -759,23 +903,24 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       owner
     ] = await Promise.all([
       detailsPromise,
-      this.listTableIndexes(table, schema),
-      this.getTableKeys(table, schema),
+      indexesPromise,
+      relationsPromise,
       triggersPromise,
       partitionsPromise,
-      this.getTableOwner(table, schema)
+      ownerPromise
     ])
 
     const props = result.rows.length > 0 ? result.rows[0] : {}
     return {
       description: props.description,
-      indexSize: Number(props.index_size),
-      size: Number(props.table_size),
+      indexSize: Number(props.index_size || 0),
+      size: Number(props.table_size || 0),
       indexes,
       relations,
       triggers,
       partitions,
-      owner
+      owner,
+      permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
     }
   }
 
@@ -981,7 +1126,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   wrapIdentifier(value: string): string {
-    if (value === '*') return value;
+    if (!value || value === '*') return value;
     const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
     if (matched) return this.wrapIdentifier(matched[1]) + matched[2];
     return `"${value.replaceAll(/"/g, '""')}"`;
@@ -1015,7 +1160,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
-    const sql = `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+    // Schemas are top-level objects and don't need schema prefixing
+    const sql = typeOfElement === DatabaseElement.SCHEMA
+      ? `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(elementName)}`
+      : `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql)
   }
@@ -1131,10 +1279,49 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
+  // Manual transaction management
+  async reserveConnection(tabId: number) {
+    this.throwIfHasConnection(tabId);
 
-    // This means connection.release will be called elsewhere
-    if (options.connection) {
+    const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+    if (this.reservedConnections.size >= BksConfig.db[connectionType].maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
+    const conn = await this.conn.pool.connect();
+    this.pushConnection(tabId, conn);
+  }
+
+  async releaseConnection(tabId: number) {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      conn.release();
+    }
+  }
+
+  async startTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'BEGIN', {});
+  }
+
+  async commitTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'COMMIT', {});
+  }
+
+  async rollbackTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'ROLLBACK', {});
+  }
+
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
+    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+    const hasReserved = this.reservedConnections.has(options?.tabId)
+    if (options?.tabId && hasReserved) {
+      const conn = this.peekConnection(options?.tabId);
+      return await this.runQuery(conn, q, options);
+    } else if (options.connection) {
+      // This means connection.release will be called elsewhere
       return await this.runQuery(options.connection, q, options)
     } else {
       log.info('Acquiring new connection for: ', q)
@@ -1147,7 +1334,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
-  private async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
+  async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
     const connection = await this.conn.pool.connect()
     try {
       return await child(connection)
@@ -1310,7 +1497,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       port: server.config.port || undefined,
       password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
       database: database.database,
-      max: 8, // max idle connections per time (30 secs)
+      max: BksConfig.db.postgres.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };
@@ -1624,7 +1811,7 @@ pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // 
 pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
 
 export function wrapIdentifier(value: string): string {
-  if (value === '*') return value;
+  if (!value || value === '*') return value;
   const matched = value.match(/(.*?)(\[[0-9]\])/); // eslint-disable-line no-useless-escape
   if (matched) return wrapIdentifier(matched[1]) + matched[2];
   return `"${value.replaceAll(/"/g, '""')}"`;

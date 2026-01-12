@@ -9,6 +9,7 @@ import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { autoUpdater } from "electron-updater"
 import { DevLicenseState } from '@/lib/license';
 import { setAllowBeta } from './update_manager'
+import { CustomMenuAction } from '@/types'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -100,6 +101,11 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.toggleDevTools()
   }
 
+  restart(): void {
+    app.relaunch();
+    app.quit();
+  }
+
   // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively
   // Having said that, it can accept openoptions too and do it's thing
   newWindow = (options: Electron.MenuItem|OpenOptions = {}): void => {
@@ -133,7 +139,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
     await this.settings.theme.save()
     getActiveWindows().forEach( window => {
-      window.send(AppEvent.settingsChanged)
+      window.send(AppEvent.settingsChanged, 'theme')
     })
   }
 
@@ -195,5 +201,17 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
     setAllowBeta(this.settings.useBeta.value as boolean);
     autoUpdater.checkForUpdates();
+  }
+
+  managePlugins = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openPluginManager);
+  }
+
+  updatePin = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.updatePin)
+  }
+
+  handleAction = (action: Electron.MenuItem | CustomMenuAction, win: ElectronWindow) => {
+    if (win && action && 'event' in action) win.webContents.send(action.event, action.args)
   }
 }

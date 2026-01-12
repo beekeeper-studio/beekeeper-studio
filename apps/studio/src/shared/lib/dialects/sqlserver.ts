@@ -29,6 +29,7 @@ export interface DefaultConstraint {
 const UNWRAPPER = /^"(.*)"$/
 
 export const SqlServerData: DialectData = {
+  sqlLabel: "SQL",
   defaultSchema: 'dbo',
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],
@@ -37,6 +38,16 @@ export const SqlServerData: DialectData = {
   editorFriendlyIdentifier: (s) => s,
   wrapLiteral: defaultWrapLiteral,
   requireDataset: false,
+  importDataType: {
+    stringType: 'varchar(255)',
+    longStringType: 'nvarchar(max)',
+    dateType: 'date',
+    booleanType: 'bit',
+    integerType: 'int',
+    numberType: 'float',
+    defaultType: 'varchar(255)'
+  },
+  disallowedSortColumns: ['geometry', 'xml'],
   unwrapIdentifier(value: string) {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;

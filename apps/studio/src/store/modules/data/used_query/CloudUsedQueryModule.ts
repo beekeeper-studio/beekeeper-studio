@@ -11,7 +11,7 @@ export const CloudUsedQueryModule: DataStore<IUsedQuery, State> = {
     error: null,
     pollError: null
   },
-  mutations: mutationsFor<IUsedQuery>({}, { field: 'createdAt', direction: 'desc'}),
+  mutations: mutationsFor<IUsedQuery>({}, { field: 'updatedAt', direction: 'desc'}),
   actions: actionsFor<IUsedQuery>('usedQueries', {
     poll() {
       // don't poll for used queries

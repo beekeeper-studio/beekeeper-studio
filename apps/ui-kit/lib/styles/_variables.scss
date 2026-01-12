@@ -1,8 +1,9 @@
 // Theme
 // -----------------------------
+@use 'sass:color';
 $theme-bg:                  #f8f8f8!default;
 $theme-base:                black!default;
-$theme-primary:             darken(#fad83b, 10%)!default;
+$theme-primary:             color.adjust(#fad83b, $lightness: -10%)!default;
 $theme-secondary:           #0099ff!default;
 
 // Colors
@@ -32,18 +33,19 @@ $selection:                 rgba($theme-primary, 0.2)!default;
 $input-highlight:           rgba($theme-base, 0.27)!default;
 
 // Editor
-$codemirror-hint-bg:        darken($theme-bg, 2%) !default;
+$codemirror-hint-bg:        color.adjust($theme-bg, $lightness: -2%) !default;
 $db-select-text:            white!default;
 $query-editor-bg:           white!default;
 
 // Table Editing
-$row-handle-selected:       darken($query-editor-bg, 10%) !default;
-$row-handle-hover:          darken($query-editor-bg, 5%) !default;
-$row-highlight:             darken($query-editor-bg, 3%) !default;
-$row-handle-selected:       darken($query-editor-bg, 10%) !default;
+$row-handle-selected:       color.adjust($query-editor-bg, $lightness: -10%) !default;
+$row-handle-hover:          color.adjust($query-editor-bg, $lightness: -5%) !default;
+$row-highlight:             color.adjust($query-editor-bg, $lightness: -3%) !default;
+$row-handle-selected:       color.adjust($query-editor-bg, $lightness: -10%) !default;
 $row-add:                   #5ff3c0 !default;
 $row-delete:                #FC8A87 !default;
-$row-error:                 #F9B8B7 !default;
+$row-error:                 color.mix($query-editor-bg, $brand-danger, 70%) !default;
+
 $cell-edited:               #EDDFA1 !default;
 $cell-error:                $row-error !default;
 $cell-success:              $row-add !default;
@@ -51,13 +53,13 @@ $cell-success:              $row-add !default;
 // Layout
 $titlebar-bg:               transparent!default;
 $global-sidebar-bg:         transparent!default;
-$sidebar-bg:                darken($theme-bg, 3%)!default;
+$sidebar-bg:                color.adjust($theme-bg, $lightness: -3%)!default;
 $sidebar-heading-bg:        $theme-bg!default;
 $sidebar-list-icons:        $theme-primary !default;
 $tabs-bg:                   transparent!default;
 $tabs-heading:              rgba($theme-base, 0.08) !default;
-$grouped-tables-base:       lighten($theme-bg, 2%) !default;
-$grouped-tables-light:      lighten($grouped-tables-base, 2%) !default;
+$grouped-tables-base:       color.adjust($theme-bg, $lightness: 2%) !default;
+$grouped-tables-light:      color.adjust($grouped-tables-base, $lightness: 2%) !default;
 
 // Statusbar
 $editor-statusbar:          rgba($theme-base, 0.035) !default;
@@ -66,7 +68,7 @@ $statusbar-bg:              rgba($theme-base, 0.1)!default;
 $statusbar-text:            $theme-base!default;
 $statusbar-text-default:    white!default;
 
-$tab-link:                  darken($theme-bg, 4%) !default;
+$tab-link:                  color.adjust($theme-bg, $lightness: -4%) !default;
 $badge-bg:                  rgba($theme-base, 0.1) !default;
 
 // Layout
@@ -103,5 +105,24 @@ $statusbar-height:          2.6rem;
 
 
 // text
-$font-family: Roboto, Helvetica, Arial, sans-serif;
-$font-family-mono:   'Source Code Pro', monospace;
+$font-family: system-ui,
+             -apple-system, BlinkMacSystemFont,
+             "Segoe UI",
+             "Roboto",
+             "Oxygen",
+             "Ubuntu",
+             "Cantarell",
+             "Fira Sans",
+             "Droid Sans",
+             "Helvetica Neue",
+             Arial, sans-serif;
+$font-family-mono: ui-monospace,
+             Menlo, Monaco,
+             "Cascadia Mono", "Segoe UI Mono",
+             "Roboto Mono",
+             "Oxygen Mono",
+             "Ubuntu Mono",
+             "Source Code Pro",
+             "Fira Mono",
+             "Droid Sans Mono",
+             "Consolas", "Courier New", monospace;

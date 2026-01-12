@@ -1,12 +1,5 @@
 <template>
   <div class="sidebar-wrap row">
-    <global-sidebar
-      v-if="!minimalMode"
-      @selected="click"
-      v-on="$listeners"
-      :active-item="activeItem"
-    />
-
     <div class="tab-content">
       <!-- Tables -->
       <div
@@ -15,6 +8,10 @@
         :class="tabClasses('tables')"
         v-show="activeItem === 'tables'"
       >
+        <surreal-namespace-dropdown
+          v-if="connectionType === 'surrealdb'"
+          @namespaceSelected="namespaceSelected"
+        />
         <database-dropdown
           @databaseSelected="databaseSelected"
         />
@@ -46,20 +43,19 @@
 
 <script>
   import _ from 'lodash'
-  import GlobalSidebar from './GlobalSidebar.vue'
   import TableList from './core/TableList.vue'
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
+  import SurrealNamespaceDropdown from './core/SurrealNamespaceDropdown.vue'
 
-  import { mapState, mapGetters } from 'vuex'
+  import { mapState, mapGetters, mapActions } from 'vuex'
   import rawLog from '@bksLogger'
 
   const log = rawLog.scope('core-sidebar')
 
   export default {
-    props: ['sidebarShown'],
-    components: { TableList, DatabaseDropdown, HistoryList, GlobalSidebar, FavoriteList},
+    components: { TableList, DatabaseDropdown, HistoryList, FavoriteList, SurrealNamespaceDropdown},
     data() {
       return {
         tableLoadError: null,
@@ -67,7 +63,6 @@
         filterQuery: null,
         allExpanded: null,
         allCollapsed: null,
-        activeItem: 'tables',
       }
     },
     computed: {
@@ -84,13 +79,17 @@
           .value()
         return _.concat(startsWithFilter, containsFilter)
       },
-      ...mapState(['tables', 'database']),
+      ...mapState("sidebar", {
+        "activeItem": "globalSidebarActiveItem",
+        "sidebarShown": "primarySidebarOpen",
+      }),
+      ...mapState(['tables', 'database', 'connectionType']),
       ...mapGetters(['minimalMode']),
     },
     watch: {
       minimalMode() {
         if (this.minimalMode) {
-          this.activeItem = 'tables'
+          this.setActiveItem('tables')
         }
       },
     },
@@ -101,12 +100,6 @@
           active: (this.activeItem === item)
         }
       },
-      click(item) {
-        this.activeItem = item;
-        if(!this.sidebarShown) {
-          this.$emit('toggleSidebar')
-        }
-      },
       async databaseSelected(db) {
         log.info("Pool database selected", db)
         this.$store.dispatch('changeDatabase', db).catch((e) => {
@@ -114,10 +107,20 @@
         })
         this.allExpanded = false
       },
+      async namespaceSelected(ns) {
+        log.info("Pool namespace selected", ns);
+        this.$store.dispatch('changeNamespace', ns).catch((e) => {
+          this.$noty.error(e.message);
+        })
+      },
       async disconnect() {
         await this.$store.dispatch('disconnect')
         this.$noty.success(this.$t("Successfully Disconnected"))
       },
+      ...mapActions({
+        setActiveItem: "sidebar/setGlobalSidebarActiveItem",
+        setPrimarySidebarOpen: "sidebar/setPrimarySidebarOpen",
+      }),
     }
   }
 </script>

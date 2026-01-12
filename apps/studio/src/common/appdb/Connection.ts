@@ -14,6 +14,10 @@ import { HiddenSchema } from "./models/HiddenSchema"
 import { PinnedConnection } from "./models/PinnedConnection"
 import { TokenCache } from "./models/token_cache"
 import { InstallationId } from "./models/installation_id"
+import { UserPin } from "./models/UserPin"
+import { PluginData } from "./models/PluginData";
+import { EncryptedPluginData } from "./models/EncryptedPluginData"
+import { FormatterPreset } from "./models/FormatterPreset"
 
 const models = [
   SavedConnection,
@@ -29,7 +33,11 @@ const models = [
   HiddenSchema,
   PinnedConnection,
   TokenCache,
-  InstallationId
+  InstallationId,
+  UserPin,
+  PluginData,
+  EncryptedPluginData,
+  FormatterPreset,
 ]
 
 interface IConnectionState {

@@ -4,11 +4,13 @@ import { checkConnection, errorMessages, state } from "./handlerState";
 
 export interface IQueryHandlers {
   'query/execute': ({ queryId, sId }: { queryId: string, sId: string }) => Promise<QueryResult>,
-  'query/cancel': ({ queryId, sId }: { queryId: string, sId: string }) => Promise<void>
+  'query/cancel': ({ queryId, sId }: { queryId: string, sId: string }) => Promise<void>,
+  'query/commit': ({ queryId, sId }: { queryId: string, sId: string }) => Promise<void>,
+  'query/rollback': ({ queryId, sId }: { queryId: string, sId: string }) => Promise<void>
 }
 
 export const QueryHandlers: IQueryHandlers = {
-  'query/execute': async function({ queryId, sId }: { queryId: string, sId: string }) { 
+  'query/execute': async function({ queryId, sId, isManualCommit }: { queryId: string, sId: string, isManualCommit: boolean }) {
     checkConnection(sId);
     const query = state(sId).queries.get(queryId);
     if (!query) {
@@ -16,8 +18,10 @@ export const QueryHandlers: IQueryHandlers = {
     }
 
     const result = await query.execute();
-    // not totally sure on this
-    state(sId).queries.delete(queryId);
+    if (!isManualCommit) {
+      // not totally sure on this
+      state(sId).queries.delete(queryId);
+    }
     return result;
   },
   'query/cancel': async function({ queryId, sId }: { queryId: string, sId: string }) {

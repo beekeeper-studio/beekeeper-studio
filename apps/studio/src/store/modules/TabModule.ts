@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Module } from "vuex";
 import { State as RootState } from '../index'
 import rawLog from '@bksLogger'
-import { TransportOpenTab, duplicate, matches } from '@/common/transport/TransportOpenTab';
+import { TransportOpenTab, duplicate, matches, TabTypeConfig } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
@@ -11,6 +11,8 @@ interface State {
   tabs: TransportOpenTab[],
   active?: TransportOpenTab,
   lastClosedTabs: TransportOpenTab[]
+  /** All tab type configurations available. */
+  allTabTypeConfigs: TabTypeConfig.Config[];
 }
 
 
@@ -20,8 +22,39 @@ export const TabModule: Module<State, RootState> = {
     tabs: [],
     active: undefined,
     lastClosedTabs: [],
+    allTabTypeConfigs: [
+      {
+        type: 'query',
+        name: "Query",
+        menuItem: { label: 'Add Query', shortcut: 'Control+T' },
+      },
+      {
+        type: 'shell',
+        name: "Shell",
+        menuItem: { label: 'Add Shell' },
+      },
+    ],
   }),
   getters: {
+    tabTypeConfigs(state, _getters, _rootState, rootGetters) {
+      return state.allTabTypeConfigs.filter((tab) => {
+        if (tab.type === "shell" && rootGetters.dialectData?.disabledFeatures?.shell) {
+          return false;
+        }
+        if (tab.type === "plugin-shell" || tab.type === "plugin-base") {
+          return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
+        }
+        return true;
+      })
+    },
+    newTabDropdownItems(_state, getters) {
+      const items = [];
+      for (const config of getters.tabTypeConfigs) {
+        if (!config.menuItem) continue;
+        items.push({ ...config.menuItem, config });
+      }
+      return items;
+    },
     sortedTabs(state) {
       return _.sortBy(state.tabs, 'position')
     },
@@ -70,6 +103,54 @@ export const TabModule: Module<State, RootState> = {
       state.active = tab
       state.tabs = tabs
     },
+
+    addTabTypeConfig(state, newConfig: TabTypeConfig.PluginConfig) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        state.allTabTypeConfigs.push(newConfig)
+      } else if (newConfig.menuItem) {
+        // If tabTypeConfig already exists, update the menuItem
+        Vue.set(found, 'menuItem', newConfig.menuItem)
+      }
+    },
+
+    removeTabTypeConfig(state, config: TabTypeConfig.PluginConfig) {
+      state.allTabTypeConfigs = state.allTabTypeConfigs.filter((t: TabTypeConfig.PluginConfig) => {
+        if (t.type !== "plugin-shell" && t.type !== "plugin-base") {
+          return true;
+        }
+        const matches = t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
+        return !matches;
+      })
+    },
+
+    setMenuItem(state, newConfig: TabTypeConfig.PluginRef & { menuItem: TabTypeConfig.PluginConfig['menuItem'] }) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === newConfig.pluginId && t.pluginTabTypeId === newConfig.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${newConfig.pluginId} does not exist`)
+      }
+      found.menuItem = newConfig.menuItem
+    },
+
+    unsetMenuItem(state, config: TabTypeConfig.PluginRef) {
+      const found = state.allTabTypeConfigs.find((t: TabTypeConfig.PluginConfig) =>
+        t.pluginId === config.pluginId && t.pluginTabTypeId === config.pluginTabTypeId
+      )
+      if (!found) {
+        throw new Error(`Plugin ${config.pluginId} does not exist`)
+      }
+      found.menuItem = undefined
+    },
+    replaceTab(state, tab: TransportOpenTab) {
+      const index = state.tabs.findIndex((t) => t.id === tab.id);
+      if (index !== -1) {
+        Vue.set(state.tabs, index, tab);
+      }
+    }
   },
   actions: {
     async load(context) {
@@ -92,7 +173,7 @@ export const TabModule: Module<State, RootState> = {
       }
     },
     async unload(context) {
-      context.commit('remove', context.state.tabs)
+      await context.dispatch('remove', context.state.tabs)
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
@@ -139,7 +220,7 @@ export const TabModule: Module<State, RootState> = {
       items.forEach((tab) => {
         tab.deletedAt = new Date()
         tab.position = 99
-        return context.commit('remove', tab)
+        context.commit('remove', tab)
       })
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {

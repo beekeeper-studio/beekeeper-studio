@@ -66,8 +66,10 @@ export default Vue.extend({
         const status = await this.$util.send('export/status', { id: exp.id });
 
         if (status == ExportStatus.Error) {
-          const error = this.$util.send('export/error', { id: exp.id });
-          const error_notice = this.$noty.error(this.$t('Export of {exportName} failed: {error}', {exportName, error}), {
+          const error = await this.$util.send('export/error', { id: exp.id });
+        // Error handling for export failure
+        let errorMessage = "An unexpected error occurred during export.";
+        const error_notice = this.$noty.error(`Export of ${exportName} failed: ${errorMessage}`, {
             buttons: [
               Noty.button(this.$t('Close'), "btn btn-primary", () => {
                 error_notice.close()
@@ -86,7 +88,7 @@ export default Vue.extend({
           ]
         })
       } catch (e) {
-        this.$noty.error(this.$t('Failed to export: {message}', {message: e?.message ?? e}), {
+        this.$noty.error(`Failed to export: ${e?.message || "Unexpected error"}`, {
         })
       }
     },

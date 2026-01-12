@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .json-viewer {
   --header-title-height: 2rem;
   --hoz-gutter: 1rem;
@@ -27,15 +29,8 @@
       }
     }
 
-    .menu-btn {
-      i.material-icons {
-        font-size: 18px;
-        color: $text-light;
-      }
-
-      &:not(:hover) {
-        background-color: transparent;
-      }
+    .title {
+      color: $text-dark;
     }
 
     .menu-btn x-menuitem {
@@ -73,7 +68,15 @@
     }
   }
 
-  .text-editor {
+  .BksTextEditor {
+    --bks-text-editor-bg-color: #{$theme-bg};
+    --bks-text-editor-gutter-bg-color: #{$theme-bg};
+    --bks-text-editor-propertyName-fg-color: #{color.adjust($theme-primary, $lightness: -20%)};
+    --bks-text-editor-string-fg-color: #{$text-dark};
+    --bks-text-editor-number-fg-color: #{$text-dark};
+    --bks-text-editor-bool-fg-color: #{$text-dark};
+    --bks-text-editor-null-fg-color: #{$text-dark};
+
     width: 100%;
     height: auto;
     padding-left: 1rem;
@@ -85,10 +88,6 @@
     .CodeMirror-dialog.CodeMirror-dialog-top {
       margin-left: 1rem;
       padding: 0.5rem 1rem;
-    }
-
-    .CodeMirror-line [role=presentation] > span:not(.cm-property) {
-      color: $text-dark;
     }
   }
 
@@ -144,12 +143,21 @@
     }
   }
 
-  .empty-state {
+  .empty-text {
     position: absolute;
     inset: 0;
     z-index: 10;
     padding-inline: var(--hoz-gutter);
     color: $text-light;
+  }
+
+  &:not(.empty) .empty-text {
+    display: none;
+  }
+
+  &.empty {
+    --bks-text-editor-activeline-bg-color: transparent;
+    --bks-text-editor-activeline-gutter-bg-color: transparent;
   }
 }
 
@@ -164,7 +172,7 @@
     height: 100%;
     position:relative;
 
-    .text-editor {
+    .BksTextEditor {
       position: absolute;
       top: 0;
       bottom: 0;
@@ -173,4 +181,20 @@
       height: 100%
     }
   }
+}
+
+.truncatable-value .more {
+  @include btn;
+  @include btn-flat;
+  margin-left: 0.5rem;
+  min-width: fit-content;
+  font-size: 0.85rem;
+  font-weight: normal;
+  cursor: pointer;
+  height: 1.3rem;
+  padding: 0 0.5rem;
+  margin-left: 0.25rem;
+  text-decoration: none;
+  user-select: none;
+  border-radius: 0.25rem;
 }

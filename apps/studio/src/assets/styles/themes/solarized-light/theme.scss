@@ -1,3 +1,4 @@
+@use "sass:color";
 @import "codemirror/theme/solarized.css";
 
 
@@ -10,13 +11,13 @@ $sidebar-list-icons:       $theme-primary;
 // Editor
 $tabs-heading:             rgba($theme-base, 0.08);
 $tab-link:                 $sbase4;
-$codemirror-hint-bg:       darken($theme-bg, 2%);
+$codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
-$row-highlight:            darken($query-editor-bg, 3%);
-$row-add:                  $insertedGreen;
+$row-highlight:            color.adjust($query-editor-bg, $lightness: -3%);
+$row-add:                  color.mix($query-editor-bg, $brand-success, 70%);
 $row-delete:               $removedRed;
-$row-error:                #F9B8B7;
+$row-error:                color.mix($query-editor-bg, $brand-danger, 70%);
 
 $cell-edited:              #EDDFA1;
 $cell-error:               $row-error;
@@ -139,9 +140,9 @@ x-buttons {
 // -----------------------------------------
 .connection-label {
   &.connection-label-color-yellow {
-    background-color: darken($theme-primary, 4%);
+    background-color: color.adjust($theme-primary, $lightness: -4%);
     &:checked {
-      background-color: darken($theme-primary, 4%);
+      background-color: color.adjust($theme-primary, $lightness: -4%);
     }
   }
 }
@@ -254,10 +255,6 @@ x-buttons {
       &.inserted:hover {
         background: $row-add!important;
       }
-      &.deleted,
-      &.deleted:hover {
-        background: $row-delete!important;
-      }
       &.edit-error {
         background: $row-error!important;
       }
@@ -271,19 +268,19 @@ x-buttons {
       &.edited {
         background: $cell-edited;
         &:hover {
-          background: darken($cell-edited, 5%);
+          background: color.adjust($cell-edited, $lightness: -5%);
         }
       }
       &.edit-error {
         background: $cell-error;
         &:hover {
-          background: darken($cell-error, 5%);
+          background: color.adjust($cell-error, $lightness: -5%);
         }
       }
       &.edit-success {
         background: $cell-success;
         &:hover {
-          background: darken($cell-success, 5%);
+          background: color.adjust($cell-success, $lightness: -5%);
         }
       }
       &.foreign-key-button {
@@ -314,7 +311,7 @@ x-buttons {
     .tabulator-col {
       &.foreign-key {
         &:before {
-          color: darken($brand-primary, 6%);
+          color: color.adjust($brand-primary, $lightness: -6%);
         }
       }
       .badge {
@@ -329,9 +326,6 @@ x-buttons {
 .table-builder .table-builder-wrap,
 .table-properties .table-properties-wrap {
   .tabulator-row {
-    &.tabulator-row-even {
-      background: rgba($theme-base, 0.06);
-    }
     &.inserted {
       background: $row-add!important;
     }
@@ -374,9 +368,6 @@ x-buttons {
 
   // Field Rows
   .tabulator-row {
-    &.tabulator-row-even {
-      background: rgba($theme-base, 0.05);
-    }
     .tabulator-cell {
       color: $text-dark;
       &.tabulator-editing {
@@ -477,12 +468,12 @@ x-buttons {
   }
   .tabulator-row {
     &.tabulator-moving {
-      background: lighten($theme-bg, 15%)!important;
+      background: color.adjust($theme-bg, $lightness: 15%)!important;
     }
   }
 }
 
-.BksTextEditor {
+& {
   --bks-text-editor-string-fg-color: #{$brand-success};
   --bks-text-editor-number-fg-color: #{$brand-warning};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
@@ -492,18 +483,18 @@ x-buttons {
   --bks-text-editor-cursor-bg-color: #{$text-dark};
   --bks-text-editor-bracket-fg-color: #{$text};
 
-  font-weight: 500;
-}
-
-.BksTextEditor-hints {
-  --bks-text-editor-context-menu-bg-color: #{darken($theme-bg, 5%)};
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
   --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
 }
 
+.BksTextEditor {
+  font-weight: 500;
+}
+
 // Noty
 .noty_theme__mint.noty_type__success {
-  color: darken($brand-success, 5%);
+  color: color.adjust($brand-success, $lightness: -5%);
 }
 
 // Switch
@@ -527,7 +518,7 @@ x-switch {
 // Quicksearch
 .quicksearch {
   .quicksearch-bg {
-    background: rgba(darken($theme-bg, 8%), 0.5);
+    background: rgba(color.adjust($theme-bg, $lightness: -8%), 0.5);
   }
 }
 
@@ -689,3 +680,124 @@ x-switch {
   }
 }
 
+.global-status-bar {
+  .connection-button:not(.default) {
+    color: $sbase4;
+  }
+}
+
+.json-viewer .BksTextEditor {
+  --bks-text-editor-propertyName-fg-color: #{color.adjust($theme-primary, $lightness: 0%)};
+}
+
+& {
+  // Core theme colors
+  --bks-theme-bg: #{$theme-bg};
+  --bks-theme-base: #{$theme-base};
+  --bks-theme-primary: #{$theme-primary};
+  --bks-theme-secondary: #{$theme-secondary};
+
+  // Text colors
+  --bks-text-dark: #{$text-dark};
+  --bks-text: #{$text};
+  --bks-text-light: #{$text-light};
+  --bks-text-lighter: #{$text-lighter};
+  --bks-text-hint: #{$text-hint};
+  --bks-text-disabled: #{$text-disabled};
+
+  // Brand colors
+  --bks-brand-info: #{$brand-info};
+  --bks-brand-success: #{$brand-success};
+  --bks-brand-warning: #{$brand-warning};
+  --bks-brand-danger: #{$brand-danger};
+  --bks-brand-default: #{$brand-default};
+  --bks-brand-purple: #{$brand-purple};
+  --bks-brand-pink: #{$brand-pink};
+  --bks-brand-primary: #{$brand-primary};
+  --bks-brand-secondary: #{$brand-secondary};
+
+  // App colors
+  --bks-border-color: #{$border-color};
+  --bks-link-color: #{$link-color};
+  --bks-placeholder: #{$placeholder};
+  --bks-selection: #{$selection};
+  --bks-input-highlight: #{$input-highlight};
+
+  // Editor colors
+  --bks-codemirror-hint-bg: #{$codemirror-hint-bg};
+  --bks-query-editor-bg: #{$query-editor-bg};
+  --bks-db-select-text: #{$db-select-text};
+
+  // Table editing colors
+  --bks-row-handle-selected: #{$row-handle-selected};
+  --bks-row-handle-hover: #{$row-handle-hover};
+  --bks-row-highlight: #{$row-highlight};
+  --bks-row-add: #{$row-add};
+  --bks-row-delete: #{$row-delete};
+  --bks-row-error: #{$row-error};
+
+  --bks-cell-edited: #{$cell-edited};
+  --bks-cell-error: #{$cell-error};
+  --bks-cell-success: #{$cell-success};
+
+  // Layout colors
+  --bks-titlebar-bg: #{$titlebar-bg};
+  --bks-global-sidebar-bg: #{$global-sidebar-bg};
+  --bks-sidebar-bg: #{$sidebar-bg};
+  --bks-sidebar-heading-bg: #{$sidebar-heading-bg};
+  --bks-sidebar-list-icons: #{$sidebar-list-icons};
+  --bks-tabs-bg: #{$tabs-bg};
+  --bks-tabs-heading: #{$tabs-heading};
+  --bks-grouped-tables-base: #{$grouped-tables-base};
+  --bks-grouped-tables-light: #{$grouped-tables-light};
+
+  --bks-editor-statusbar: #{$editor-statusbar};
+  --bks-statusbar-bg: #{$statusbar-bg};
+  --bks-statusbar-text: #{$statusbar-text};
+  --bks-statusbar-text-default: #{$statusbar-text-default};
+
+  --bks-tab-link: #{$tab-link};
+  --bks-badge-bg: #{$badge-bg};
+
+  --bks-table-icon-color: #{$theme-primary};
+
+  --bks-text-editor-bg-color: #{$query-editor-bg};
+  --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
+  --bks-text-editor-error-fg-color: #{$brand-danger};
+  --bks-text-editor-fg-color: #{$text-dark};
+  --bks-text-editor-focused-outline-color: transparent;
+  --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.6)};
+  --bks-text-editor-foldgutter-fg-color-hover: #{$text-dark};
+  --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
+  --bks-text-editor-gutter-border-color: transparent;
+  --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
+  --bks-text-editor-keyword-fg-color: #{$brand-pink};
+  --bks-text-editor-attributeName-fg-color: #{$brand-info};
+  --bks-text-editor-variableName-fg-color: #{$text-dark};
+  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
+  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
+  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};
+  --bks-text-editor-number-fg-color: #{$brand-primary};
+  --bks-text-editor-string-fg-color: #{$brand-primary};
+  --bks-text-editor-cursor-bg-color: #{$text-dark};
+  --bks-text-editor-bracket-fg-color: #{$text};
+  --bks-text-editor-name-fg-color: #{$text-dark};
+  --bks-text-editor-typeName-fg-color: #{$text-dark};
+  --bks-text-editor-sql-alias-fg-color: #{$text-dark};
+  --bks-text-editor-sql-field-fg-color: #{$brand-secondary};
+  --bks-text-editor-operator-fg-color: #{$text-dark};
+  --bks-text-editor-punctuation-fg-color: #{$text-dark};
+  --bks-text-editor-separator-fg-color: #{$text-dark};
+  --bks-text-editor-type-fg-color: #{$text-dark};
+  --bks-text-editor-searchmatch-bg-color: rgb(from var(--bks-brand-info) r g b / 25%);
+  --bks-text-editor-searchmatch-selected-bg-color: rgb(from var(--bks-brand-primary) r g b / 70%);
+
+  --bks-text-editor-panel-bg-color: #{$query-editor-bg};
+  --bks-text-editor-panel-fg-color: #{$text-dark};
+
+  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
+  --bks-text-editor-context-menu-fg-color: #{$text-dark};
+  --bks-text-editor-context-menu-item-bg-color-active: #{color.adjust($theme-secondary, $lightness: -25%)};
+  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+}

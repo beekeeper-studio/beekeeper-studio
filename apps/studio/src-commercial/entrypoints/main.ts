@@ -27,6 +27,8 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
+import { initializeSecurity } from '@/backend/lib/security'
+import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -147,7 +149,7 @@ async function initBasics() {
   }
 
   log.debug("setting up the menu")
-  menuHandler = new MenuHandler(electron, settings)
+  menuHandler = new MenuHandler(electron, settings, bksConfig)
   menuHandler.initialize()
   log.debug("Building the window")
   log.debug("managing updates")
@@ -164,6 +166,8 @@ async function initBasics() {
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
+  ipcMain.emit("disable-connection-menu-items");
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -223,6 +227,8 @@ app.on('ready', async () => {
   } else {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
+      initializeSecurity(app);
+      initializeFileHelpers();
       await createUtilityProcess()
 
       await buildWindow(settings)
@@ -231,7 +237,7 @@ app.on('ready', async () => {
 
 })
 
-function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
+function createAndSendPorts(filter: boolean, utilDied = false) {
   getActiveWindows().forEach((w) => {
     if (!filter || newWindows.includes(w.winId)) {
       const { port1, port2 } = new electron.MessageChannelMain();

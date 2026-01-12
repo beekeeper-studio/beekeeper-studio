@@ -1,6 +1,6 @@
 <template>
   <div class="fixed">
-    <div class="data-select-wrap">
+    <div class="data-select-wrap" :class="{'disabled-db-dropdown': isRefreshing}">
       <p
         v-if="!supportsMultipleDatabases"
         class="sqlite-db-name"
@@ -23,9 +23,10 @@
         @click.prevent="refreshDatabases"
         :title="$t('Refresh Databases')"
       >
-        <i class="material-icons">refresh</i>
+        <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
       </a>
       <a
+        v-if="!usedConfig?.readOnlyMode"
         class="refresh"
         @click.prevent="$modal.show('config-add-database')"
         :title="$t('Add Database')"
@@ -97,6 +98,7 @@
     data() {
       return {
         selectedDatabase: null,
+        isRefreshing: false,
         OpenIndicator: {
           render: createElement => createElement('i', {class: {'material-icons': true}}, 'arrow_drop_down')
         }
@@ -107,10 +109,21 @@
       AddDatabaseForm
     },
     methods: {
-      ...mapActions({refreshDatabases: 'updateDatabaseList'}),
+      ...mapActions({updateDatabaseList: 'updateDatabaseList'}),
+      async refreshDatabases() {
+        if (this.isRefreshing) {
+          return
+        }
+        this.isRefreshing = true
+        try {
+          await this.updateDatabaseList()
+        } finally {
+          this.isRefreshing = false
+        }
+      },
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        if (this.dialect.disabledFeatures?.multipleDatabase) {
+        if (this.dialect.disabledFeatures?.multipleDatabases) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
@@ -135,7 +148,7 @@
         return _.without(this.dbs, this.selectedDatabase)
       },
       ...mapGetters(['dialect', 'dialectData']),
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType'}),
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType', usedConfig: 'usedConfig'}),
     },
     watch: {
       currentDatabase(newValue) {
@@ -145,7 +158,7 @@
       },
       selectedDatabase() {
         // mongodb doesn't actually create the db until a collection has been added
-        if (this.selectedDatabase != this.currentDatabase && (this.dbs.includes(this.selectedDatabase) || this.dialect === 'mongodb')) {
+        if (this.selectedDatabase != this.currentDatabase && (this.dbs.includes(this.selectedDatabase) || this.connectionType === 'mongodb')) {
           this.$emit('databaseSelected', this.selectedDatabase)
         }
       }
@@ -154,6 +167,19 @@
 </script>
 
 <style lang="scss" scoped>
+  .disabled-db-dropdown {
+    pointer-events: none;
+
+    .refreshing-db-icon {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  }
+
   .sqlite-db-name {
     width: 90%;
     overflow: hidden;

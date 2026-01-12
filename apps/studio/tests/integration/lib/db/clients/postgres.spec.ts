@@ -11,6 +11,7 @@ import { PostgresTestDriver } from './postgres/container'
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { DatabaseElement } from '../../../../../src/lib/db/types';
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -125,6 +126,24 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           PRIMARY KEY (first_key, second_key)
         );
       `)
+
+      const jsonbCol = dockerTag === '9.3' ? '' : `,\n data jsonb NOT NULL DEFAULT '{"a": {"b": ["foo", "bar"]}}'::jsonb`;
+      const jsonbIndex = dockerTag === '9.3' ? '' : `CREATE INDEX expression_with_jsonb_operator ON test_indexes ((data #>> '{a,b,1}'));`
+
+      await util.knex.raw(`
+        CREATE TABLE public.test_indexes (
+          first_name text NOT NULL,
+          last_name text NOT NULL${jsonbCol}
+        );
+
+        CREATE INDEX single_column ON test_indexes (first_name);
+        CREATE INDEX multi_column ON test_indexes (first_name, last_name);
+        CREATE INDEX single_expression ON test_indexes (lower(first_name));
+        CREATE INDEX multi_expression ON test_indexes (lower(first_name), lower(last_name));
+        CREATE INDEX expression_with_comma ON test_indexes ((lower(first_name) || ', ' || lower(last_name)));
+        CREATE INDEX expression_with_double_quote ON test_indexes (('"' || first_name));
+        ${jsonbIndex}
+      `);
     })
 
     afterAll(async () => {
@@ -450,6 +469,86 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       ])
     })
 
+    it("should filter foreign keys by schema when calling getTableKeys", async () => {
+      // Create two schemas with the same table name in each
+      await util.knex.raw(`
+        CREATE SCHEMA schema_test_1;
+        CREATE SCHEMA schema_test_2;
+
+        -- Create parent tables in both schemas
+        CREATE TABLE schema_test_1.parent (
+          id INTEGER PRIMARY KEY,
+          name VARCHAR(100)
+        );
+
+        CREATE TABLE schema_test_2.parent (
+          id INTEGER PRIMARY KEY,
+          name VARCHAR(100)
+        );
+
+        -- Create child tables with the same name in both schemas
+        CREATE TABLE schema_test_1.child (
+          id INTEGER PRIMARY KEY,
+          parent_id INTEGER,
+          description VARCHAR(100),
+          FOREIGN KEY (parent_id) REFERENCES schema_test_1.parent(id)
+        );
+
+        CREATE TABLE schema_test_2.child (
+          id INTEGER PRIMARY KEY,
+          parent_id INTEGER,
+          description VARCHAR(100),
+          FOREIGN KEY (parent_id) REFERENCES schema_test_2.parent(id)
+        );
+      `);
+
+      // Get foreign keys from schema_test_1
+      const keys1 = await util.connection.getTableKeys('child', 'schema_test_1');
+
+      // Get foreign keys from schema_test_2
+      const keys2 = await util.connection.getTableKeys('child', 'schema_test_2');
+
+      // Verify foreign keys from schema_test_1 refer to the correct parent table
+      expect(keys1.length).toBe(1);
+      expect(keys1[0].fromSchema).toBe('schema_test_1');
+      expect(keys1[0].fromTable).toBe('child');
+      expect(keys1[0].toSchema).toBe('schema_test_1');
+      expect(keys1[0].toTable).toBe('parent');
+
+      // Verify foreign keys from schema_test_2 refer to the correct parent table
+      expect(keys2.length).toBe(1);
+      expect(keys2[0].fromSchema).toBe('schema_test_2');
+      expect(keys2[0].fromTable).toBe('child');
+      expect(keys2[0].toSchema).toBe('schema_test_2');
+      expect(keys2[0].toTable).toBe('parent');
+
+      // Verify no cross-schema references (schema_test_1.child shouldn't reference schema_test_2.parent)
+      expect(keys1.some(k => k.toSchema === 'schema_test_2')).toBe(false);
+      expect(keys2.some(k => k.toSchema === 'schema_test_1')).toBe(false);
+    })
+
+    // Regression test for #3260 "BUG: dropping a PostgreSQL schema results in error"
+    it("should be able to drop a schema without error", async () => {
+      // Skip in read-only mode since we can't create/drop schemas
+      if (util.connection.readOnlyMode) return;
+
+      const testSchemaName = 'test_schema_drop';
+
+      // Create a test schema
+      await util.knex.raw(`CREATE SCHEMA ${testSchemaName};`);
+
+      // Verify the schema was created
+      const schemasBeforeDrop = await util.connection.listSchemas();
+      expect(schemasBeforeDrop).toContain(testSchemaName);
+
+      // Drop the schema using the dropElement method (this should not throw an error)
+      await util.connection.dropElement(testSchemaName, DatabaseElement.SCHEMA);
+
+      // Verify the schema was dropped
+      const schemasAfterDrop = await util.connection.listSchemas();
+      expect(schemasAfterDrop).not.toContain(testSchemaName);
+    })
+
     it("should be able to define array column correctly", async () => {
       const arrayTable = await util.connection.listTableColumns('witharrays');
       const enumTable = await util.connection.listTableColumns('moody_people');
@@ -462,6 +561,20 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(arrayColumn.array).toBeTruthy()
       expect(enumColumn.array).toBeFalsy()
       expect(enumArrayColumn.array).toBeTruthy()
+    })
+
+    it("should be able to list basic indexes", async () => {
+      const indexes = await util.connection.listTableIndexes('test_indexes')
+      expect(indexes.length).toBe(dockerTag === "9.3" ? 6 : 7)
+      expect(indexes.find((idx) => idx.name === 'single_column').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'multi_column').columns.length).toBe(2)
+      expect(indexes.find((idx) => idx.name === 'single_expression').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'multi_expression').columns.length).toBe(2)
+      expect(indexes.find((idx) => idx.name === 'expression_with_comma').columns.length).toBe(1)
+      expect(indexes.find((idx) => idx.name === 'expression_with_double_quote').columns.length).toBe(1)
+      if (dockerTag !== "9.3") {
+        expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
+      }
     })
 
     it("Should be able to add comments to columns and retrieve them", async () => {
@@ -490,12 +603,109 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       })
     }
 
+    it("should handle complex foreign key scenarios (composite keys, actions, edge cases)", async () => {
+      // Test for issue #1557 - comprehensive foreign key scenarios that might fail with information_schema
+      await util.knex.raw(`
+        CREATE SCHEMA fk_test_schema;
+
+        -- Create tables with composite primary keys
+        CREATE TABLE fk_test_schema.departments (
+          dept_code VARCHAR(10),
+          location_id INTEGER,
+          dept_name VARCHAR(100),
+          PRIMARY KEY (dept_code, location_id)
+        );
+
+        -- Create table with simple primary key
+        CREATE TABLE fk_test_schema.managers (
+          manager_id SERIAL PRIMARY KEY,
+          manager_name VARCHAR(100)
+        );
+
+        -- Create table with multiple foreign keys, including composite and different actions
+        CREATE TABLE fk_test_schema.employees (
+          emp_id SERIAL PRIMARY KEY,
+          emp_name VARCHAR(100),
+          dept_code VARCHAR(10),
+          location_id INTEGER,
+          manager_id INTEGER,
+          -- Composite foreign key with CASCADE actions
+          CONSTRAINT fk_emp_dept FOREIGN KEY (dept_code, location_id)
+            REFERENCES fk_test_schema.departments(dept_code, location_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+          -- Simple foreign key with different actions
+          CONSTRAINT fk_emp_manager FOREIGN KEY (manager_id)
+            REFERENCES fk_test_schema.managers(manager_id)
+            ON UPDATE SET NULL ON DELETE RESTRICT
+        );
+
+        -- Create table with self-referencing foreign key
+        CREATE TABLE fk_test_schema.categories (
+          cat_id SERIAL PRIMARY KEY,
+          cat_name VARCHAR(100),
+          parent_cat_id INTEGER,
+          CONSTRAINT fk_cat_parent FOREIGN KEY (parent_cat_id)
+            REFERENCES fk_test_schema.categories(cat_id)
+            ON UPDATE NO ACTION ON DELETE SET DEFAULT
+        );
+      `);
+
+      // Test composite foreign key
+      const empKeys = await util.connection.getTableKeys('employees', 'fk_test_schema');
+      expect(empKeys.length).toBe(2);
+
+      // Find the composite foreign key
+      const compositeKey = empKeys.find(k => k.constraintName === 'fk_emp_dept');
+      expect(compositeKey).toBeDefined();
+      expect(compositeKey.isComposite).toBe(true);
+      expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
+      expect(Array.isArray(compositeKey.toColumn)).toBe(true);
+      expect(compositeKey.fromColumn).toHaveLength(2);
+      expect(compositeKey.toColumn).toHaveLength(2);
+      expect(compositeKey.fromColumn).toContain('dept_code');
+      expect(compositeKey.fromColumn).toContain('location_id');
+      expect(compositeKey.toColumn).toContain('dept_code');
+      expect(compositeKey.toColumn).toContain('location_id');
+      expect(compositeKey.toTable).toBe('departments');
+      expect(compositeKey.onUpdate).toBe('CASCADE');
+      expect(compositeKey.onDelete).toBe('CASCADE');
+
+      // Find the simple foreign key with different actions
+      const simpleKey = empKeys.find(k => k.constraintName === 'fk_emp_manager');
+      expect(simpleKey).toBeDefined();
+      expect(simpleKey.isComposite).toBe(false);
+      expect(simpleKey.fromColumn).toBe('manager_id');
+      expect(simpleKey.toColumn).toBe('manager_id');
+      expect(simpleKey.toTable).toBe('managers');
+      expect(simpleKey.onUpdate).toBe('SET NULL');
+      expect(simpleKey.onDelete).toBe('RESTRICT');
+
+      // Test self-referencing foreign key
+      const catKeys = await util.connection.getTableKeys('categories', 'fk_test_schema');
+      expect(catKeys.length).toBe(1);
+
+      const selfRefKey = catKeys[0];
+      expect(selfRefKey.constraintName).toBe('fk_cat_parent');
+      expect(selfRefKey.fromTable).toBe('categories');
+      expect(selfRefKey.toTable).toBe('categories');
+      expect(selfRefKey.fromColumn).toBe('parent_cat_id');
+      expect(selfRefKey.toColumn).toBe('cat_id');
+      expect(selfRefKey.onUpdate).toBe('NO ACTION');
+      expect(selfRefKey.onDelete).toBe('SET DEFAULT');
+    })
+
     describe("Common Tests", () => {
       if (readonly) {
         runReadOnlyTests(() => util)
       } else {
         runCommonTests(() => util, { dbReadOnlyMode: readonly })
       }
+    })
+
+    describe("Param tests", () => {
+      it("Should be able to handle numbered ($1) params", async () => {
+        await util.paramTest(['$1', '$2', '$3']);
+      })
     })
   })
 }

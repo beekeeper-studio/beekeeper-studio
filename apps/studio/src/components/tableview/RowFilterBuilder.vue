@@ -17,7 +17,7 @@
         v-if="filterMode === RAW"
         class="filter-group row gutter expand"
       >
-        <div class="btn-wrap">
+        <div class="btn-wrap" v-if="canBuilderFilter">
           <button
             class="btn btn-flat btn-fab"
             type="button"
@@ -62,7 +62,7 @@
         class="filter-group row gutter expand"
       >
         <div class="left-section">
-          <div class="btn-wrap">
+          <div class="btn-wrap" v-if="canRawFilter">
             <button
               class="btn btn-flat btn-fab"
               type="button"
@@ -107,8 +107,7 @@
             :columns="columns"
             @changed="singleFilterChanged"
             @blur="updateMinimalModeByFilters"
-          >
-        </builder-filter>
+          />
         </div>
         <div class="right-section">
           <div class="ghost-add-apply">
@@ -204,7 +203,7 @@ export default Vue.extend({
       hideInMinimalMode: true,
       filters: this.reactiveFilters,
       filterRaw: "",
-      filterMode: BUILDER,
+      filterMode: BUILDER, // Will be changed in mounted()
       submittedWithEmptyValue: false,
       RAW,
       BUILDER,
@@ -228,6 +227,12 @@ export default Vue.extend({
     externalFilters() {
       return this.reactiveFilters;
     },
+    canRawFilter() {
+      return !this.dialectData?.disabledFeatures?.rawFilters;
+    },
+    canBuilderFilter() {
+      return !this.dialectData?.disabledFeatures?.builderFilters;
+    }
   },
   methods: {
     singleFilterChanged(index, filter) {
@@ -330,6 +335,12 @@ export default Vue.extend({
       }
       this.submittedWithEmptyValue = false
     },
+  },
+  mounted() {
+    // Set initial filter mode based on disabled features
+    if (this.dialectData?.disabledFeatures?.builderFilters) {
+      this.filterMode = RAW;
+    }
   },
 });
 </script>

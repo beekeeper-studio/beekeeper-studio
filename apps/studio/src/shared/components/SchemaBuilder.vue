@@ -257,6 +257,7 @@ export default Vue.extend({
 
 
 <style lang="scss">
+  @use 'sass:color';
   @import '../../shared/assets/styles/_variables';
   @import '../../shared/assets/styles/_extends';
   $row-height:             42px;
@@ -316,12 +317,11 @@ export default Vue.extend({
     // Field Rows
     .tabulator-row {
       margin: 4px 0;
-      background: rgba($theme-base, 0.05)!important;
+      background: rgba($theme-base, 0.05);
       border-radius: 5px;
       &.tabulator-row-even,
       &:nth-child(odd) {
         background: rgba($theme-base, 0.05);
-        --row-bg-color: #{rgba($theme-base, 0.05)};
       }
       .tabulator-cell {
         min-height: $row-height;
@@ -339,8 +339,20 @@ export default Vue.extend({
           height: $row-height;
           line-height: $row-height;
           box-shadow: inset 0 1px $theme-base;
-          pre, input:not([type="checkbox"]) {
-            font-family: 'Roboto';
+
+          pre,
+          input:not([type="checkbox"]) {
+            font-family: system-ui,
+              -apple-system, BlinkMacSystemFont,
+              "Segoe UI",
+              "Roboto",
+              "Oxygen",
+              "Ubuntu",
+              "Cantarell",
+              "Fira Sans",
+              "Droid Sans",
+              "Helvetica Neue",
+              Arial, sans-serif;
             min-height: $row-height;
             line-height: $row-height;
             padding: 0 $cell-padding!important;
@@ -380,7 +392,6 @@ export default Vue.extend({
         // Read Only
         &.read-only,
         &.read-only:hover {
-          --row-bg-color: transparent;
           --row-hover-bg-color: transparent;
           background: transparent!important;
           cursor: default;
@@ -461,7 +472,7 @@ export default Vue.extend({
       &.tabulator-moving {
         @extend .card-shadow-hover;
         border: 0;
-        background: lighten($theme-bg, 15%)!important;
+        background: color.adjust($theme-bg, $lightness: 15%)!important;
         opacity: 1!important;
       }
     }

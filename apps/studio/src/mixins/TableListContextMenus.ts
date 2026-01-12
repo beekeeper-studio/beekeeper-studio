@@ -1,4 +1,5 @@
 import { AppEvent } from "@/common/AppEvent";
+import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseElement } from "@/lib/db/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { DialectData } from "@shared/lib/dialects/models";
@@ -41,6 +42,7 @@ export default {
   computed: {
     tableMenuOptions() {
       const dialect: DialectData = this.$store.getters.dialectData;
+      const usedConfig: IConnection = this.$store.state.usedConfig;
       return [
         {
           name: this.$t("View Data"),
@@ -66,7 +68,7 @@ export default {
         },
         {
           name: this.$t("Import from File"),
-          class: disabled(dialect.disabledFeatures?.importFromFile),
+          class: disabled(dialect.disabledFeatures?.importFromFile, usedConfig.readOnlyMode),
           slug: 'import',
           ultimate: true,
           handler: ({ item }) => {
@@ -112,6 +114,9 @@ export default {
             if (item.entityType === 'view' && dialect.disabledFeatures?.alter?.renameView) {
               return 'disabled'
             }
+            if (usedConfig.readOnlyMode) {
+              return 'disabled'
+            }
             return ''
           },
           handler: ({ item }) => {
@@ -124,7 +129,7 @@ export default {
         {
           name: this.$t("Drop"),
           slug: 'sql-drop',
-          class: disabled(dialect.disabledFeatures?.dropTable),
+          class: disabled(dialect.disabledFeatures?.dropTable, usedConfig.readOnlyMode),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'drop' })
           }
@@ -132,7 +137,7 @@ export default {
         {
           name: this.$t("Truncate"),
           slug: 'sql-truncate',
-          class: disabled(dialect.disabledFeatures?.truncateElement),
+          class: disabled(dialect.disabledFeatures?.truncateElement, usedConfig.readOnlyMode),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
@@ -140,7 +145,7 @@ export default {
         {
           name: this.$t("Duplicate"),
           slug: 'sql-duplicate',
-          class: disabled(dialect.disabledFeatures?.duplicateTable),
+          class: disabled(dialect.disabledFeatures?.duplicateTable, usedConfig.readOnlyMode),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }
@@ -168,6 +173,7 @@ export default {
         {
           name: "Drop",
           slug: 'sql-drop',
+          disabled: disabled(dialect.disabledFeatures?.dropSchema),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'drop'})
           }

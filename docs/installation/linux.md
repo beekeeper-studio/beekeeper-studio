@@ -28,7 +28,7 @@ Download the latest AppImage [from the Beekeeper Studio homepage](https://www.be
 If you want to integrate the AppImage into your system shell (so it appears in your Application menu), we recommend you [install AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher/releases/latest).
 
 ## DEB
-A repo is provided for Debian and Ubuntu 20.04+.
+A repo is provided for Debian and Ubuntu 22.04+.
 
 DEB builds are provided for both x86_64 and ARM64 systems.
 
@@ -68,15 +68,15 @@ sudo dnf install beekeeper-studio
 sudo yum install beekeeper-studio
 ```
 
-## AUR
+## Arch Linux (and derivatives)
 
-AUR files are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
+Pacman (installed as local packages using `pacman -U`) packages are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
 
 Real AUR integration coming soon.
 
 ## Flatpak
 
-AUR files are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
+Flatpak (.flatpak) files are provided separately for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
 
 Flathub integration coming soon.
 

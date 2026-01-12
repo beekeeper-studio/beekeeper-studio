@@ -35,8 +35,8 @@ export default {
       const countExported = this.countExported;
       const percentComplete = this.percentComplete;
       return percentComplete
-        ? this.$t('({percent}%) Exporting table \'{exportName}\'', {percent: percentComplete, exportName: this.exportName})
-        : this.$t('({rows} rows) Exporting query \'{exportName}\'', {rows: countExported, exportName: this.exportName})
+        ? `(${percentComplete}%) Exporting table '${this.exportName}'`
+        : `(${countExported ?? "0"} rows) Exporting query '${this.exportName}'`// Fallback to "0" if countExported is undefined
     },
   },
   methods: {
@@ -59,6 +59,11 @@ export default {
     }
   },
   watch: {
+    percentComplete() {
+      if(this.percentComplete === 100) {
+        setTimeout(()=> this.notification.close(), 2000);
+      }
+    },
     notificationText: {
       handler() {
         if (this.notification) {

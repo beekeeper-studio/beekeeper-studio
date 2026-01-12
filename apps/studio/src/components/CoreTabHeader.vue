@@ -12,8 +12,8 @@
         class="nav-link"
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
-        @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
-        :class="{ active: selected }"
+        @contextmenu="$bks.openMenu({id: headerContextMenuId, item: tab, options: contextOptions, event: $event})"
+        :class="{ active: selected, 'active-transaction': isTransaction }"
       >
         <tab-icon :tab="tab" />
         <span
@@ -84,6 +84,7 @@
 <script>
 import TabIcon from './tab/TabIcon.vue'
 import { mapState } from 'vuex'
+import _ from 'lodash'
 
   export default {
   components: { TabIcon },
@@ -142,8 +143,17 @@ import { mapState } from 'vuex'
     },
     computed: {
       ...mapState('tabs', { 'activeTab': 'active' }),
+      headerContextMenuId() {
+        // "tab.query.header", "tab.table.header", "tab.tableProperties.header", etc..
+        return `tab.${_.camelCase(this.tab.tabType)}-header`
+      },
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
+
+        const devOptions = []
+        if (this.tab.tabType === "plugin-shell" || this.tab.tabType === "plugin-base") {
+          devOptions.push({ name: "[DEV] Reload plugin view", slug: 'dev-reload-plugin-view', handler: ({item}) => this.$emit('reloadPluginView', item) })
+        }
 
         return [
           { name: this.$t("Close"), slug: 'close', handler: ({event}) => this.maybeClose(event)},
@@ -151,7 +161,8 @@ import { mapState } from 'vuex'
           { name: this.$t('Close All'), slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
           { name: this.$t("Close Tabs to Right"), slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
           { name: this.$t("Duplicate"), slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
-          { name: this.$t("Copy Entity Name"), slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass }
+          { name: this.$t("Copy Entity Name"), slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
+          ...(window.platformInfo.isDevelopment ? devOptions : []),
         ];
       },
       modalName() {
@@ -207,6 +218,9 @@ import { mapState } from 'vuex'
       title() {
         return this.queryTabTitle || this.tableTabTitle || this.$t("Unknown")
       },
+      isTransaction() {
+        return this.tab.isTransaction === true;
+      }
     }
   }
 

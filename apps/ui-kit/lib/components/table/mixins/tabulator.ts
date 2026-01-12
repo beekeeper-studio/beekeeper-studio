@@ -20,6 +20,13 @@ export interface YesNoParams {
   falseEmpty?: boolean
 }
 
+export interface TabulatorFormatterParams { 
+  fk?: any[];
+  isPK?: boolean;
+  fkOnClick?: (e: MouseEvent, cell: CellComponent) => void
+  binaryEncoding?: string
+}
+
 
 function yesNoResult(value: boolean) {
   const result = value ? 'YES' : 'NO'

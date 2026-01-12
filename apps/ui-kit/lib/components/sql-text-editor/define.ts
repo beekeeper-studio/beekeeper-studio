@@ -1,16 +1,3 @@
-import { SqlTextEditor } from ".";
-import CodeMirror from "codemirror";
+import { SqlTextEditorElement } from "./index";
 
-window.customElements.define("bks-sql-text-editor", SqlTextEditor);
-
-declare module "codemirror" {
-  interface Editor {
-    lastCompletionState?: {
-      token: string;
-      from: Position;
-      to: Position;
-      list: any[];
-      picked?: boolean;
-    };
-  }
-}
+window.customElements.define("bks-sql-text-editor", SqlTextEditorElement);

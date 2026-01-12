@@ -1,0 +1,269 @@
+<template>
+  <section class="import-section-wrapper schema-builder">
+    <div class="card-flat padding">
+      <h3 class="card-title">
+        Create Table
+      </h3>
+      <div class="table-switch">
+        <label for="createTableSwitch">
+          Create Table from Import File
+        </label>
+        <x-switch
+          id="createTableSwitch"
+          @click.prevent="updateTableSwitch"
+          :toggled="createTableFromFile"
+        />
+      </div>
+    </div>
+    <h3 class="card-title decision-break">
+      OR
+    </h3>
+    <div class="card-flat padding">
+      <h3 class="card-title" v-if="selectedTable">
+        Selected Table: {{ selectedTableName }}
+      </h3>
+      <h3 class="card-title" v-else>
+        Select Table 
+      </h3>
+      <div class="fixed">
+        <div class="filter">
+          <div class="filter-wrap">
+            <input
+              class="filter-input"
+              type="text"
+              placeholder="Filter"
+              v-model="filterQuery"
+            >
+            <x-buttons class="filter-actions">
+              <x-button
+                @click="clearFilter"
+                v-if="filterQuery"
+              >
+                <i class="clear material-icons">cancel</i>
+              </x-button>
+            </x-buttons>
+          </div>
+        </div>
+      </div>
+      <form class="schema-toggle-container">
+        <toggle-form-area
+          v-for="(schemaTable, index) in this.schemaTables" :key="index"
+          :title="schemaTable.schema ?? 'Select Table'"
+          :expanded="true"
+          class="schema-toggle-item"
+        >
+          <template v-slot:default>
+            <div class="import-table-form">
+              <!-- eslint-disable-next-line vue/no-use-v-if-with-v-for -->
+              <div v-for="(tableData, tIndex) in schemaTable.tables" :key="tIndex" v-if="tableData.entityType === 'table'">
+                <input
+                  :id="buildTableHTMLId('table', tIndex)"
+                  type="radio"
+                  :value="tableKeyByMatrix({ schema: schemaTable.schema, name: tableData.name })"
+                  v-model="selectedTable"
+                >
+                <label :for="buildTableHTMLId('table', tIndex)">{{ tableData.name }}</label>
+              </div>
+            </div>
+          </template>
+        </toggle-form-area>
+      </form>
+    </div>
+  </section>
+</template>
+
+<script>
+import { mapGetters, mapState } from 'vuex'
+import ToggleFormArea from '../common/ToggleFormArea.vue'
+export default {
+  components: {
+    ToggleFormArea
+  },
+  props: {
+    stepperProps: {
+      type: Object,
+      required: true,
+      default: () => ({
+        schema: null,
+        table: null,
+        tabId: null
+      })
+    }
+  },
+  data() {
+    return {
+      importerId: null,
+      table: null,
+      selectedTable: null,
+      createTableFromFile: false
+    }
+  },
+  computed: {
+    ...mapGetters(['schemaTables']),
+    selectedTableName() {
+      return this.selectedTable == null ? '' : this.selectedTable.replace('==|==', '.')
+    },
+    filterQuery: {
+      get() {
+        return this.$store.state.entityFilter.filterQuery
+      },
+      set(newFilter) {
+        this.$store.dispatch('setFilterQuery', newFilter)
+      }
+    },
+  },
+  methods: {
+    buildTableHTMLId(title, index){
+      return `${title}-${index}`
+    },
+    clearFilter() {
+      this.filterQuery = null
+    },
+    updateTableSwitch() {
+      this.createTableFromFile = !this.createTableFromFile
+      if (this.createTableFromFile) this.selectedTable = null
+    },
+    getStartingTable() {
+      if (!this.stepperProps.schema && !this.stepperProps.table) return null
+      let foundSchema = ''
+      if (this.schemaTables.length > 1) {
+        foundSchema = this.schemaTables.find(s => s.schema === this.stepperProps.schema)
+      } else {
+        foundSchema = this.schemaTables[0]
+      }
+      return foundSchema.tables.find(t => t.name === this.stepperProps.table)
+    },
+    onFocus(){
+      this.initialize()
+    },
+    getTable() {
+      if (!this.selectedTable) return null
+
+      const tableNameSplit = this.selectedTable.split('==|==')
+      let tableName = ''
+      let schema = ''
+      let foundSchema = ''
+
+      if (tableNameSplit.length === 1) {
+        tableName = tableNameSplit[0]
+      } else if (tableNameSplit.length === 2) {
+        schema = tableNameSplit[0]
+        tableName = tableNameSplit[1]
+      }
+
+      if (this.schemaTables.length > 1) {
+        foundSchema = this.schemaTables.find(s => s.schema === schema)
+      } else {
+        foundSchema = this.schemaTables[0]
+      }
+      return foundSchema.tables.find(t => t.name === tableName)
+    },
+    tableKeyByMatrix({ schema: schemaName = null, name: tableName }){
+      const schema = schemaName ? `${schemaName}==|==` : ''
+      return `${schema}${tableName}`
+    },
+    async onNext() {
+      const importData = {
+        table: `new-import-${this.stepperProps.tabId}`,
+        importOptions: {
+          createNewTable: this.createTableFromFile,
+          table: null
+        }
+      }
+
+      if (!this.createTableFromFile){
+        importData.importOptions.table = this.getTable()
+      }
+
+      return await this.$store.commit('imports/upsertImport', importData)
+    },
+    async initialize () {
+      this.selectedTable = this.getStartingTable()
+      if (this.selectedTable != null) {
+        this.selectedTable = this.tableKeyByMatrix(this.selectedTable)
+      } else {
+        this.createTableFromFile = true
+      }
+    },
+  },
+  mounted () {
+    this.initialize()
+  },
+  watch: {
+    selectedTable () {
+      this.createTableFromFile = !this.selectedTable
+      this.$emit('change', Boolean(this.table) || this.createTableFromFile)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+  .mapper-wrapper {
+    margin-top: 2rem;
+  }
+  .checkbox-group:last-of-type {
+    padding-top: 1rem;
+  }
+
+  .import-table-form {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    div {
+      width: 50%;
+      display: flex;
+      align-items: start;
+      padding-bottom:.5rem;
+      label {
+        display: block;
+        word-break: break-all;
+      }
+    }
+  }
+
+  .table-switch {
+    display: flex;
+    justify-content: start;
+    label {
+      padding-right: 1rem;
+    }
+  }
+
+  .card-title.decision-break {
+    margin: 1rem 0;
+    text-align: center;
+  }
+
+  .schema-toggle-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .schema-toggle-item {
+    margin-bottom: .5rem;
+    position: relative;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Ensure the toggle-form area doesn't overlay other content */
+    :deep(.advanced-body) {
+      position: relative;
+      overflow: visible;
+      height: auto !important; /* Override transition height */
+      z-index: 1;
+    }
+  }
+
+  .filter-wrap {
+    position: relative;
+  }
+  .filter-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: none;
+  }
+</style>

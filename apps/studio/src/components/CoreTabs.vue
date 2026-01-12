@@ -17,7 +17,7 @@
           :key="tab.id"
           :tab="tab"
           :tabs-count="tabItems.length"
-          :selected="activeTab.id === tab.id"
+          :selected="activeTab?.id === tab.id"
           @click="click"
           @close="close"
           @closeAll="closeAll"
@@ -26,15 +26,36 @@
           @forceClose="forceClose"
           @duplicate="duplicate"
           @copyName="copyName"
+          @reloadPluginView="handleReloadPluginView"
         />
       </Draggable>
       <!-- </div> -->
-      <span class="actions expand">
+      <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
-        ><i class=" material-icons">add_circle</i></a>
-        <!-- TODO (@day): when we have SQL queries for mongo, add an action dropdown here for shell/query tab -->
+        ><i class=" material-icons">add</i></a>
+        <x-button
+          class="btn-fab add-tab-dropdown"
+          menu
+          v-if="newTabDropdownItems.length > 1"
+        >
+          <i class="material-icons">arrow_drop_down</i>
+          <x-menu>
+            <template v-for="(menuItem, index) in newTabDropdownItems">
+              <x-menuitem
+                :key="index"
+                @click.prevent="createTab(menuItem.config)"
+              >
+                <x-label>
+                  <i class="material-icons">{{ menuItem.config.icon }}</i>
+                  {{ menuItem.label }}
+                </x-label>
+                <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
+              </x-menuitem>
+            </template>
+          </x-menu>
+        </x-button>
       </span>
       <a
         @click.prevent="showUpgradeModal"
@@ -50,27 +71,41 @@
         <div class="expand layout-center">
           <shortcut-hints />
         </div>
-        <statusbar class="tabulator-footer" />
       </div>
       <div
         v-for="(tab, idx) in tabItems"
         class="tab-pane"
         :id="'tab-' + idx"
         :key="tab.id"
-        :class="{active: (activeTab.id === tab.id)}"
-        v-show="activeTab.id === tab.id"
+        :class="{active: (activeTab?.id === tab.id)}"
+        v-show="activeTab?.id === tab.id"
       >
         <QueryEditor
           v-if="tab.tabType === 'query'"
-          :active="activeTab.id === tab.id"
+          :active="activeTab?.id === tab.id"
+          :tab="tab"
+          :tab-id="tab.id"
+          @update-tab="updateTab"
+         />
+        <Shell
+          v-if="tab.tabType === 'shell'"
+          :active="activeTab?.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
         />
-        <Shell
-          v-if="tab.tabType === 'shell'"
-          :active="activeTab.id === tab.id"
+        <PluginBase
+          v-if="tab.tabType === 'plugin-base'"
           :tab="tab"
-          :tab-id="tab.id"
+          :active="activeTab.id === tab.id"
+          :reload="reloader[tab.id]"
+          @close="close"
+        />
+        <PluginShell
+          v-if="tab.tabType === 'plugin-shell'"
+          :tab="tab"
+          :active="activeTab.id === tab.id"
+          :reload="reloader[tab.id]"
+          @close="close"
         />
         <tab-with-table
           v-if="tab.tabType === 'table'"
@@ -80,7 +115,7 @@
           <template v-slot:default="slotProps">
             <TableTable
               :tab="tab"
-              :active="activeTab.id === tab.id"
+              :active="activeTab?.id === tab.id"
               :table="slotProps.table"
             />
           </template>
@@ -92,7 +127,7 @@
         >
           <template v-slot:default="slotProps">
             <TableProperties
-              :active="activeTab.id === tab.id"
+              :active="activeTab?.id === tab.id"
               :tab="tab"
               :tab-id="tab.id"
               :table="slotProps.table"
@@ -101,7 +136,7 @@
         </tab-with-table>
         <TableBuilder
           v-if="tab.tabType === 'table-builder'"
-          :active="activeTab.id === tab.id"
+          :active="activeTab?.id === tab.id"
           :tab="tab"
           :tab-id="tab.id"
         />
@@ -109,13 +144,14 @@
           v-if="tab.tabType === 'import-export-database'"
           :schema="tab.schemaName"
           :tab="tab"
+          :active="activeTab?.id === tab.id"
           @close="close"
         />
         <DatabaseBackup
           v-if="tab.tabType === 'backup'"
           :connection="connection"
           :is-restore="false"
-          :active="activeTab.id === tab.id"
+          :active="activeTab?.id === tab.id"
           :tab="tab"
           @close="close"
         />
@@ -123,7 +159,7 @@
           v-if="tab.tabType === 'restore'"
           :connection="connection"
           :is-restore="true"
-          :active="activeTab.id === tab.id"
+          :active="activeTab?.id === tab.id"
           :tab="tab"
           @close="close"
         />
@@ -132,6 +168,7 @@
           :tab="tab"
           :schema="tab.schemaName"
           :table="tab.tableName"
+          :active="activeTab?.id === tab.id"
           :connection="connection"
           @close="close"
         />
@@ -269,6 +306,8 @@ import TableBuilder from './TabTableBuilder.vue'
 import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
 import ImportTable from './TabImportTable.vue'
 import DatabaseBackup from './TabDatabaseBackup.vue'
+import PluginShell from './TabPluginShell.vue'
+import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
@@ -289,53 +328,63 @@ import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.
 import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
+import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { wait } from '@/shared/lib/wait'
 
-  export default Vue.extend({
-    props: [],
-    components: {
-      Statusbar,
-      QueryEditor,
-      CoreTabHeader,
-      TableTable,
-      TableProperties,
-      ImportExportDatabase,
-      ImportTable,
-      Draggable,
-      ShortcutHints,
-      TableBuilder,
-      TabWithTable,
-      TabIcon,
-      DatabaseBackup,
-      PendingChangesButton,
-      ConfirmationModal,
-      SqlFilesImportModal,
-      CreateCollectionModal,
-      Shell
-    },
-    data() {
-      return {
-        showExportModal: false,
-        tableExportOptions: null,
-        dragOptions: {
-          handle: '.nav-item'
-        },
-        // below are connected to the modal for delete/truncate
-        sureOpen: false,
-        lastFocused: null,
-        dbAction: null,
-        dbElement: null,
-        dbEntityType: null,
-        dbDeleteElementParams: null,
-        // below are connected to the modal for duplicate
-        dbDuplicateTableParams: null,
-        duplicateTableName: null,
-        closingTab: null,
-        confirmModalId: 'core-tabs-close-confirmation',
+export default Vue.extend({
+  props: [],
+  components: {
+    Statusbar,
+    QueryEditor,
+    CoreTabHeader,
+    TableTable,
+    TableProperties,
+    ImportExportDatabase,
+    ImportTable,
+    Draggable,
+    ShortcutHints,
+    TableBuilder,
+    TabWithTable,
+    TabIcon,
+    DatabaseBackup,
+    PendingChangesButton,
+    ConfirmationModal,
+    SqlFilesImportModal,
+    CreateCollectionModal,
+    Shell,
+    PluginShell,
+    PluginBase,
+  },
+  data() {
+    return {
+      showExportModal: false,
+      tableExportOptions: null,
+      dragOptions: {
+        handle: '.nav-item'
+      },
+      // below are connected to the modal for delete/truncate
+      sureOpen: false,
+      lastFocused: null,
+      dbAction: null,
+      dbElement: null,
+      dbEntityType: null,
+      dbDeleteElementParams: null,
+      // below are connected to the modal for duplicate
+      dbDuplicateTableParams: null,
+      duplicateTableName: null,
+      closingTab: null,
+      confirmModalId: 'core-tabs-close-confirmation',
+      reloader: {},
+    }
+  },
+  watch: {
+    async usedConfig() {
+      await this.$store.dispatch('tabs/load')
+      if (!this.tabItems?.length) {
+        await this.createQuery()
       }
-    },
-    watch: {
-
+      wait(800).then(() => this.$tour.start("connectedScreen"));
+    }
   },
   filters: {
     titleCase: function (value) {
@@ -347,8 +396,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
   computed: {
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
-    ...mapState(['connection']),
-    ...mapGetters({ 'dialect': 'dialect', 'dialectData': 'dialectData', 'dialectTitle': 'dialectTitle' }),
+    ...mapState(['connection', 'connectionType', 'usedConfig']),
+    ...mapGetters({
+       'dialect': 'dialect',
+       'dialectData': 'dialectData',
+       'dialectTitle': 'dialectTitle',
+       'newTabDropdownItems': 'tabs/newTabDropdownItems',
+    }),
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -378,7 +432,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         { event: AppEvent.closeTab, handler: this.closeCurrentTab },
         { event: AppEvent.closeAllTabs, handler: this.closeAll },
         { event: AppEvent.newTab, handler: this.createQuery },
+        { event: AppEvent.newCustomTab, handler: this.addTab },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
+        { event: AppEvent.createTableFromFile, handler: this.beginImport },
         { event: 'historyClick', handler: this.createQueryFromItem },
         { event: AppEvent.loadTable, handler: this.openTable },
         { event: AppEvent.openTableProperties, handler: this.openTableProperties },
@@ -428,8 +484,6 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
         result['meta+shift+t'] = this.reopenLastClosedTab
-        result['shift+meta+['] = this.previousTab
-        result['shift+meta+]'] = this.nextTab
       }
 
       return result
@@ -439,6 +493,10 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     this.$root.$refs.CoreTabs = this;
   },
   methods: {
+    async updateTab(tab: TransportOpenTab) {
+      const newTab = Object.assign({}, tab);
+      await this.$store.commit('tabs/replaceTab', newTab);
+    },
     showUpgradeModal() {
       this.$root.$emit(AppEvent.upgradeModal)
     },
@@ -612,8 +670,32 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
     closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
     },
-    handleCreateTab() {
-      this.createQuery()
+    async createTab(config: TabTypeConfig.Config) {
+      if (config.type === "query") {
+        this.createQuery()
+      } else if (config.type === "shell") {
+        this.createShell()
+      } else if (config.type === "plugin-shell" || config.type === "plugin-base") {
+        let tNum = 0;
+        let title = config.name;
+        do {
+          tNum = tNum + 1;
+          title = `${config.name} #${tNum}`;
+        } while (this.tabItems.filter((t) => t.title === title).length > 0);
+
+        const tab = {
+          tabType: config.type,
+          title,
+          unsavedChanges: false,
+          context: {
+            pluginId: config.pluginId,
+            pluginTabTypeId: config.pluginTabTypeId,
+            command: config.menuItem?.command,
+            params: config.menuItem?.params,
+          },
+        } as TransportPluginTab;
+        await this.addTab(tab)
+      }
     },
     async createShell() {
       let sNum = 0;
@@ -629,14 +711,9 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       result.unsavedChanges = false;
       await this.addTab(result);
     },
-    async createQuery(optionalText, queryTitle?) {
-      if (this.dialect === 'mongodb') {
-        return await this.createShell();
-      }
-      // const text = optionalText ? optionalText : ""
-      console.log("Creating tab")
-      let qNum = 0
-      let tabName = this.$t("New Query")
+    getNextQueryTitle(queryTitle?) {
+      let qNum = 0;
+      let tabName = this.$t("New Query");
       if (queryTitle) {
         tabName = queryTitle
       } else {
@@ -645,6 +722,13 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
           tabName = this.$t(`Query #${qNum}`)
         } while (this.tabItems.filter((t) => t.title === tabName).length > 0);
       }
+
+      return tabName;
+    },
+    async createQuery(optionalText, queryTitle?) {
+      // const text = optionalText ? optionalText : ""
+      console.log("Creating tab")
+      const tabName = this.getNextQueryTitle(queryTitle);
 
       const result = {} as TransportOpenTab;
       result.tabType = 'query'
@@ -697,16 +781,19 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       if (existing) return this.$store.dispatch('tabs/setActive', existing);
       this.addTab(t);
     },
-    beginImport({ table }) {
-      if (table.entityType !== 'table') {
+    beginImport(data = {}) {
+      const { table } = data
+      if (table && table.entityType !== 'table') {
         this.$noty.error(this.$t("You can only import data into a table"))
         return;
       }
       const t = { tabType: 'import-table' }
-      t.title = this.$t(`Import Table: ${table.name}`)
+      t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false
-      t.schemaName = table.schema
-      t.tableName = table.name
+      if (table) {
+        t.schemaName = table.schema
+        t.tableName = table.name
+      }
       const existing = this.tabItems.find(tab => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
@@ -871,11 +958,14 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       }
     },
     async handlePromptQueryExport(query) {
-      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_')
+      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');
+      const fileName = `${safeFilename}.sql`;
+
+      const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.defaultExportPath(fileName));
 
       const filePath = this.$native.dialog.showSaveDialogSync({
         title: this.$t("Export Query"),
-        defaultPath: await window.main.getLastExportPath(`${safeFilename}.sql`),
+        defaultPath: lastExportPath,
         filters: [
           { name: this.$t('SQL (*.sql)'), extensions: ['sql'] },
           { name: this.$t('All Files (*.*)'), extensions: ['*'] },
@@ -905,7 +995,7 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
     },
     openTableBuilder() {
-      if (this.dialect === 'mongodb') {
+      if (this.connectionType === 'mongodb') {
         this.$root.$emit(AppEvent.openCreateCollectionModal);
         return;
       }
@@ -977,6 +1067,8 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
         this.closingTab = null
         if (!confirmed) return
       }
+
+      this.trigger(AppEvent.closingTab, tab)
 
       if (this.activeTab === tab) {
         if (tab === this.lastTab) {
@@ -1078,24 +1170,43 @@ import { TransportOpenTab, setFilters, matches, duplicate } from '@/common/trans
       this.addTab(tab)
 
     },
-    createQueryFromItem(item) {
-      this.createQuery(item.text ?? item.unsavedQueryText, item.title ?? null)
+    async createQueryFromItem(item) {
+      const tab = {} as TransportOpenTab;
+      tab.tabType = 'query';
+      tab.title = this.getNextQueryTitle();
+      if (item.id) {
+        tab.usedQueryId = item.id;
+      }
+      tab.unsavedChanges = false;
+
+      const existing = this.tabItems.find((t) => matches(t, tab))
+      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+
+      this.addTab(tab);
     },
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
       this.$copyText(item.tableName)
-    }
+    },
+    handleReloadPluginView(tab) {
+      this.reloader = {
+        ...this.reloader,
+        [tab.id]: Date.now(),
+      }
+    },
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
   },
 
   async mounted() {
-    await this.$store.dispatch('tabs/load')
-    if (!this.tabItems?.length) {
-      this.createQuery()
-    }
     this.registerHandlers(this.rootBindings)
   }
 })
 </script>
+
+<style lang="scss">
+  .add-tab-dropdown {
+    padding: 0 0 !important;
+  }
+</style>

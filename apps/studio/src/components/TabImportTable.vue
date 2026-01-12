@@ -90,7 +90,7 @@
       </div>
     </div>
 
-    <status-bar>
+    <status-bar :active="true">
       <div class="statusbar-info col flex expand">
         <span
           class="statusbar-item"
@@ -113,6 +113,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import Stepper from './stepper/Stepper.vue'
   import ImportFile from './importtable/ImportFile.vue'
+  import ImportTable from './importtable/ImportTable.vue'
   import ImportMapper from './importtable/ImportMapper.vue'
   import ImportPreview from './importtable/ImportPreview.vue'
   import UpsellContent from '@/components/upsell/UpsellContent.vue'
@@ -131,17 +132,18 @@
       schema: {
         type: String,
         required: false,
-        default: ''
+        default: null
       },
       table: {
         type: String,
-        required: true,
+        required: false,
         default: ''
       },
       tab: {
         type: Object,
         required: true
-      }
+      },
+      active: Boolean,
     },
     data() {
       return {
@@ -155,15 +157,28 @@
         importStarted: false,
         importSteps: [
           {
+            component: ImportTable,
+            title: 'Select/Create Table',
+            icon: 'grid_on',
+            stepperProps: {
+              schema: this.schema,
+              table: this.table,
+              tabId: this.tab.id
+            },
+            completed: false,
+            completePrevious: false,
+            nextButtonText: 'Choose File',
+            nextButtonIcon: 'keyboard_arrow_right'
+          },
+          {
             component: ImportFile,
             title: this.$t('Choose File'),
             icon: 'attach_file',
             stepperProps: {
-              schema: this.schema,
-              table: this.table
+              tabId: this.tab.id
             },
             completed: false,
-            completePrevious: false,
+            completePrevious: true,
             nextButtonText: this.$t('Map to Table'),
             nextButtonIcon: 'keyboard_arrow_right'
           },
@@ -172,8 +187,7 @@
             title: this.$t('Map to Table'),
             icon: 'settings',
             stepperProps: {
-              schema: this.schema,
-              table: this.table
+              tabId: this.tab.id
             },
             completed: false,
             validateOnNext: true,
@@ -183,11 +197,10 @@
           },
           {
             component: ImportPreview,
-            title: this.$t('Review & Execute'),
+            title: 'Review & Execute',
             icon: 'check',
             stepperProps: {
-              schema: this.schema,
-              table: this.table
+              tabId: this.tab.id
             },
             completed: false,
             completePrevious: true,
@@ -208,14 +221,17 @@
         return `tab-import-table-statusbar-${this.tab.id}`
       },
       tableName () {
-        const schema = this.schema ? `${this.schema}.` : ''
-        return `${schema}${this.table}`
+        const schema = this.importTable?.schema ? `${this.importTable?.schema}.` : ''
+        return `${schema}${this.importTable?.name}`
       },
       dialectTitle () {
         return DialectTitles[this.dialect]
       },
       isSupported () {
         return !this.dialectData.disabledFeatures.importFromFile
+      },
+      importKey() {
+        return `new-import-${this.tab.id}`
       },
       tableKey() {
         const schema = this.schema ? `${this.schema}_` : ''
@@ -272,25 +288,39 @@
       goBack() {
         this.importStarted = false
       },
+      async createNewTable (newTableSchema) {
+        return await this.$util.send('generator/build', { schema: newTableSchema });
+      },
       async handleImport() {
-        const importOptions = await this.tablesToImport.get(this.tableKey)
+        const importOptions = await this.tablesToImport.get(this.importKey)
+        const isNewTable = importOptions.createNewTable
         let importerClass
+        this.schema = importOptions.table.schema
+        this.table = importOptions.table.name
+        this.importTable = importOptions.table
+
         if (!importOptions.importProcessId) {
           importerClass = await this.$util.send('import/init', { options: importOptions })
         } else {
           importerClass = importOptions.importProcessId
         }
+
         const start = new Date()
+
         this.tab.isRunning = true
-        this.importTable = importOptions.table
         this.importError = null
         try {
+          let sql = null
           this.importStarted = true
-          const data = await this.$util.send('import/importFile', { id: importerClass })
-          this.timer = `${(new Date() - start) / 1000} ${this.$t('seconds')}`
+          if (isNewTable) {
+            sql = await this.createNewTable(importOptions.table)
+          }
+          await this.$util.send('import/importFile', { id: importerClass, createTableSql: sql })
+          this.timer = `${(new Date() - start) / 1000} seconds`
         } catch (err) {
           this.importError = err.message
         } finally {
+          await this.$store.dispatch('updateTables')
           this.tab.isRunning = false
         }
       }

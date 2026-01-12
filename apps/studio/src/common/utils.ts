@@ -3,7 +3,7 @@
 import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
 import { format } from 'sql-formatter';
-import { TableFilter, TableOrView, Routine } from '@/lib/db/models';
+import { TableFilter, TableOrView, Routine, TableColumn } from '@/lib/db/models';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
 import type { Stream } from 'stream';
@@ -299,4 +299,71 @@ export function stringToTypedArray(str: string, forceEncoding?: 'hex' | 'base64'
     // @ts-expect-error polyfill
     return Uint8Array.fromHex(str);
   }
+}
+
+export function removeUnsortableColumnsFromSortBy(sortParms: { field: string; dir: string }[], tableColumns: TableColumn[], disallowedSortColumns = []) {
+  return sortParms.reduce((acc, sortObj) => {
+      const found = tableColumns.find(el => el.columnName.toLowerCase() === sortObj.field.toLowerCase())
+
+      if (!found) return acc
+      if (disallowedSortColumns.includes(found.dataType.toLowerCase())) return acc
+
+      acc.push(sortObj)
+      return acc
+    }, [])
+}
+
+export function toRegexSafe(input: string) {
+  const match = input.match(/^\/(.+)\/([a-z]*)$/);
+  if (!match) return null;
+  try {
+    return new RegExp(match[1], match[2]);
+  } catch (e) {
+    return null;
+  }
+}
+
+export function normalizeDataType (dataType) {
+  return dataType.toLowerCase()
+    .replace(/\(.+?\)/g, '')
+    .replace(/\b(unsigned|zerofill)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function isDateDataType (dataType) {
+  const base = normalizeDataType(dataType)
+
+  const dateLikeStarts = [
+    'date',
+    'time',
+    'smalldatetime',
+    'year',
+    'interval'
+  ]
+
+  return dateLikeStarts.some(t => base.startsWith(t))
+}
+
+export function isNumericDataType (dataType) {
+  const base = normalizeDataType(dataType)
+  const numericStarts = [
+    'smallint',
+    'int',
+    'bigint',
+    'serial',
+    'bigserial',
+    'decimal',
+    'numeric',
+    'real',
+    'float',
+    'double',
+    'money',
+    'smallmoney',
+    'tinyint',
+    'mediumint',
+    'bit'
+  ]
+
+  return numericStarts.some(t => base.startsWith(t))
 }

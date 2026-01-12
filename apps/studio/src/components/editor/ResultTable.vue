@@ -1,8 +1,46 @@
 <template>
   <div
     class="result-table"
+    :class="{ 'hidden-filter': hiddenFilter }"
     v-hotkey="keymap"
   >
+    <form
+      class="table-search-wrapper table-filter"
+      @submit.prevent="searchHandler"
+      v-hotkey="tableFilterKeymap"
+    >
+      <div class="input-wrapper filter">
+        <input
+          type="text"
+          v-model="filterValue"
+          ref="filterInput"
+          class="form-control filter-value"
+          placeholder="Search Results"
+        >
+        <button
+          type="button"
+          class="clear btn-link"
+          title="clear search filter"
+          @click.prevent="clearSearchFilters"
+        >
+          <i class="material-icons">cancel</i>
+        </button>
+      </div>
+      <button
+        type="submit"
+        class="btn btn-primary btn-fab"
+        title="filter results table"
+      >
+        <i class="material-icons">search</i>
+      </button>
+      <button
+        class="close-btn btn btn-flat btn-fab"
+        title="Close filter"
+        @click="closeTableFilter"
+      >
+        <i class="material-icons">close</i>
+      </button>
+    </form>
     <div
       ref="tabulator"
       class="spreadsheet-table"
@@ -24,11 +62,12 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem } from '@/lib/menu/tableMenu';
   import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
+  import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -37,6 +76,9 @@
         tabulator: null,
         actualTableHeight: '100%',
         selectedRowData: {},
+        filterValue: '',
+        selectedRowPosition: -1,
+        hiddenFilter: true,
       }
     },
     props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
@@ -69,9 +111,16 @@
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
       ...mapGetters(['isUltimate']),
+      ...mapGetters('popupMenu', ['getExtraPopupMenu']),
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
+          'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
+        });
+      },
+      tableFilterKeymap() {
+        return this.$vHotkeyKeymap({
+          'queryEditor.closeTableFilter': this.closeTableFilter.bind(this),
         });
       },
       tableData() {
@@ -83,12 +132,24 @@
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
+        const filterMenuItem = {
+          label: createMenuItem("Search results"),
+          action: () => {
+            this.focusOnFilterInput()
+          }
+        }
+
         const cellMenu = (_e, cell) => {
-          return copyActionsMenu({
-            ranges: cell.getRanges(),
-            table: this.result.tableName,
-            schema: this.defaultSchema,
-          })
+          return [
+            ...copyActionsMenu({
+              ranges: cell.getRanges(),
+              table: this.result.tableName,
+              schema: this.defaultSchema,
+            }),
+            { separator: true },
+            filterMenuItem,
+            ...this.getExtraPopupMenu('results.cell', { transform: "tabulator" }),
+          ]
         }
 
         const columnMenu = (_e, column) => {
@@ -100,6 +161,9 @@
             }),
             { separator: true },
             ...commonColumnMenu,
+            { separator: true },
+            filterMenuItem,
+            ...this.getExtraPopupMenu('results.columnHeader', { transform: "tabulator" }),
           ]
         }
 
@@ -181,6 +245,9 @@
         const columns = 'columns-' + this.result.fields.reduce((str, field) => `${str},${field.name}`, '')
         return `${workspace}.${connection}.${table}.${columns}`
       },
+      selectedRowId() {
+        return `${this.tableId ? `${this.tableId}.` : ''}tab-${this.tab.id}.row-${this.selectedRowPosition}`
+      },
       rootBindings() {
         return [
           { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
@@ -223,12 +290,65 @@
             columnHeaders: true
           },
           onRangeChange: this.handleRangeChange,
+          rowHeader: {
+            contextMenu: (_e, cell) => {
+              return [
+                ...copyActionsMenu({
+                  ranges: cell.getRanges(),
+                  table: this.result.tableName || "mytable",
+                  schema: this.result.schema,
+                }),
+                ...this.getExtraPopupMenu('results.rowHeader', { transform: "tabulator" }),
+              ];
+            },
+            headerContextMenu: (_e, column) => {
+              return [
+                ...copyActionsMenu({
+                  ranges: column.getTable().getRanges(),
+                  table: this.result.tableName || "mytable",
+                  schema: this.result.schema,
+                }),
+                { separator: true },
+                resizeAllColumnsToFitContent,
+                resizeAllColumnsToFixedWidth,
+                ...this.getExtraPopupMenu('results.corner', { transform: "tabulator" }),
+              ];
+            },
+          },
         });
       },
-      copySelection() {
-        const classes = [...document.activeElement.classList.values()];
-        const isFocusingTable = classes.some(c => c.startsWith('tabulator'));
+      focusOnFilterInput() {
+        this.hiddenFilter = false
+        this.$nextTick(() => {
+          this.$refs.filterInput.focus()
+        })
+      },
+      closeTableFilter() {
+        this.hiddenFilter = true
+        this.triggerFocus()
+      },
+      searchHandler() {
+        this.tabulator.clearFilter()
 
+        const columns = this.tableColumns
+        const filters = columns.map(({field}) => ({
+          type: 'like',
+          value: this.filterValue.trim(),
+          field
+        }))
+
+        this.tabulator.setFilter([filters])
+      },
+      clearSearchFilters() {
+        this.filterValue = ''
+        this.tabulator.clearFilter()
+      },
+      checkTableFocus() {
+        const classes = [...document.activeElement.classList.values()];
+        return classes.some(c => c.startsWith('tabulator'));
+      },
+      copySelection() {
+        const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
         copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
       },
@@ -279,7 +399,14 @@
              const ws = XLSX.utils.aoa_to_sheet(values);
              const wb = XLSX.utils.book_new();
 
-             XLSX.utils.book_append_sheet(wb, ws, title);
+             // sheet title cannot be more than 31 characters and sheet title cannot be 'history'
+             // source: https://support.microsoft.com/en-us/office/rename-a-worksheet-3f1f7148-ee83-404d-8ef0-9ff99fbad1f9
+             let sheetTitle = title.slice(0,31);
+             if (title.toLowerCase() === "history") {
+              sheetTitle = "history-sheet";
+             }
+
+             XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
              const excel = XLSX.write(wb, { type: 'buffer' });
              setFileContents(excel);
           }
@@ -367,20 +494,26 @@
       triggerFocus() {
         this.tabulator.rowManager.getElement().focus();
       },
-      handleRangeChange(ranges) {
-        this.selectedRowData = this.dataToJson(ranges[0].getRows()[0].getData(), true)
+      updateJsonViewerSidebar() {
+        /** @type {import('@/lib/data/jsonViewer').UpdateOptions} */
         const data = {
+          dataId: this.selectedRowId,
           value: this.selectedRowData,
           expandablePaths: [],
+          editablePaths: [],
+          signs: {},
         }
         this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
+      handleRangeChange(ranges) {
+        const row = ranges[0].getRows()[0];
+        const parsedData = parseRowDataForJsonViewer(row.getData(), this.tableColumns)
+        this.selectedRowData = this.dataToJson(parsedData, true)
+        this.selectedRowPosition = row.getPosition()
+        this.updateJsonViewerSidebar()
+      },
       handleTabActive() {
-        const data = {
-          value: this.selectedRowData,
-          expandablePaths: [],
-        }
-        this.trigger(AppEvent.updateJsonViewerSidebar, data)
+        this.updateJsonViewerSidebar()
       },
       handleSwitchedTab(tab) {
         if (tab.id === this.tab.id) {
@@ -390,3 +523,66 @@
     },
 	}
 </script>
+
+<style lang="scss" scoped>
+  @import '@/assets/styles/app/mixins';
+
+  .result-table {
+    position: relative;
+
+    &.hidden-filter .table-search-wrapper {
+      display: none;
+    }
+
+    &::v-deep:not(.hidden-filter) {
+      .tabulator-tableholder {
+        padding-bottom: 5rem;
+      }
+    }
+  }
+
+  .table-search-wrapper.table-filter {
+    display: flex;
+    padding: 0.8rem 1rem;
+    justify-content: space-between;
+    width: auto;
+    position: absolute;
+    bottom: 1rem;
+    right: 1.5rem;
+    z-index: 10;
+    align-items: center;
+    background-color: var(--query-editor-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    @include card-shadow;
+
+    .btn-fab {
+      min-width: auto;
+      width: 1.6rem;
+      height: 1.5rem;
+      margin-left: 0.4rem;
+
+      &[type=submit] {
+        margin-left: 0.75rem;
+      }
+
+      .material-icons {
+        font-size: 1.2rem;
+      }
+    }
+  }
+
+  .input-wrapper {
+    width: 17rem;
+    position: relative;
+    .clear {
+      visibility: hidden;
+      position: absolute;
+      right: 0;
+      top: 5px;
+    }
+    &:hover .clear {
+      visibility: visible;
+    }
+  }
+</style>

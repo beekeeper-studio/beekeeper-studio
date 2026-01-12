@@ -39,6 +39,10 @@ module.exports = {
       to: 'demo.db'
     },
     {
+      from: './extra_resources/production_pub.pem',
+      to: 'production_pub.pem'
+    },
+    {
       from: 'build/launcher-script.sh',
       to: 'launcher-script.sh'
     },
@@ -55,6 +59,10 @@ module.exports = {
       to: ".",
       filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
     },
+    {
+      from: "node_modules/ws",
+      to: "node_modules/ws"
+    }
   ],
   fileAssociations: [
     {
@@ -146,7 +154,9 @@ module.exports = {
       'pacman'
     ],
     desktop: {
-      'StartupWMClass': 'beekeeper-studio'
+      entry: {
+        'StartupWMClass': 'beekeeper-studio',
+      }
     },
     publish: ['github']
   },
@@ -157,6 +167,22 @@ module.exports = {
     fpm: fpmOptions,
     // when we upgrade Electron we need to check these
     depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libsecret-1-0", "gnupg"]
+  },
+  flatpak: {
+    runtime: "org.freedesktop.Platform",
+    runtimeVersion: "23.08",
+    sdk: "org.freedesktop.Sdk",
+    base: "org.electronjs.Electron2.BaseApp",
+    baseVersion: "23.08",
+    finishArgs: [
+      "--share=network",
+      "--socket=x11",
+      "--socket=wayland",
+      "--device=dri",
+      "--socket=pulseaudio",
+      "--filesystem=home",
+      "--talk-name=org.freedesktop.Notifications"
+    ]
   },
   rpm: {
     publish: [ 'github' ],
@@ -178,7 +204,9 @@ module.exports = {
     // FIXME: Add AppX/MSIX build back in once certificate issues resolved
     target: ['nsis', 'portable'],
     publish: ['github'],
-    sign: "./build/win/sign.js",
+    signtoolOptions: {
+      sign: "./build/win/sign.js",
+    },
   },
   portable: {
     "artifactName": "${productName}-${version}-portable.exe",

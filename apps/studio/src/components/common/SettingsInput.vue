@@ -44,8 +44,7 @@ export default Vue.extend({
     },
     value: {
       set(newValue) {
-        this.setting.value = newValue
-        this.saveSetting()
+        this.saveSetting(newValue)
       },
       get() {
         return this.setting.value
@@ -53,9 +52,9 @@ export default Vue.extend({
     }
   },
   methods: {
-    saveSetting: _.debounce(async function() {
+    saveSetting: _.debounce(async function(value: string) {
       if (!this.setting) return
-      await this.$store.dispatch('settings/saveSetting', this.setting)
+      await this.$store.dispatch('settings/save', { key: this.settingKey, value })
       this.$emit('changed', this.value)
     }, 500)
   },

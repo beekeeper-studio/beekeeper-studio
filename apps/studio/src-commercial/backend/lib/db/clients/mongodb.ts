@@ -1,7 +1,8 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
-import { Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
+import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
+import { identify } from 'sql-query-identifier';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
@@ -13,6 +14,12 @@ import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
+import { QueryLeaf } from '@queryleaf/lib'
+import { MongoDBCursor } from './mongodb/MongoDBCursor';
+import { wrapIdentifier } from "@/lib/db/clients/postgresql"; 
+import knexlib from 'knex'
+
+const knex = knexlib({ client: 'pg' })
 
 const log = rawLog.scope('mongodb');
 
@@ -34,10 +41,11 @@ const mongoContext = {
 export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   conn: MongoClient;
   runtime: MongoRuntime;
+  queryLeaf: QueryLeaf;
   transcoders = [MongoDBObjectIdTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(null, mongoContext, server, database);
+    super(knex, mongoContext, server, database);
   }
 
   async connect(): Promise<void> {
@@ -60,6 +68,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     const service = new NodeDriverServiceProvider(this.conn, new EventEmitter(), { productDocsLink: '', productName: 'BeekeeperStudio' });
     this.runtime = new MongoRuntime(service);
     this.runtime.evaluate(`use ${this.db}`)
+
+    this.queryLeaf = new QueryLeaf(this.conn, this.db);
   }
 
   async disconnect() {
@@ -88,7 +98,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: false
+      transactions: false,
+      filterTypes: ['standard', 'ilike']
     }
   }
 
@@ -174,7 +185,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return [];
   }
 
-  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return [];
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
     return [];
   }
 
@@ -239,12 +254,63 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async selectTopSql(_table: string, _offset: number, _limit: number, _orderBy: OrderBy[], _filters: string | TableFilter[], _schema?: string, _selects?: string[]): Promise<string> {
-    log.error("MongoDB does not support generating SQL scripts");
-    return '';
+  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[] = ['*']): Promise<string> {
+    let orderByString = ""
+    let filterString = ""
+    let params: (string | string[])[] = []
+
+    if (orderBy && orderBy.length > 0) {
+      orderByString = "ORDER BY " + (orderBy.map((item) => {
+        if (_.isObject(item)) {
+          return `${wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
+        } else {
+          return wrapIdentifier(item)
+        }
+      })).join(",")
+    }
+
+    if (_.isString(filters)) {
+      filterString = `WHERE ${filters}`
+    } else if (filters && filters.length > 0) {
+      let paramIdx = 1
+      const allFilters = filters.map((item) => {
+        if (item.type === 'in' && _.isArray(item.value)) {
+          const values = item.value.map((v, idx) => {
+            return knex.raw('?', [v]).toQuery();
+          })
+          paramIdx += values.length
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
+        } else if (item.type.includes('is')) {
+          return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
+        }
+        const value = knex.raw('?', [item.value]);
+        paramIdx += 1
+        return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
+      })
+      filterString = "WHERE " + joinFilters(allFilters, filters)
+
+      params = filters.filter((item) => !!item.value).flatMap((item) => {
+        return _.isArray(item.value) ? item.value : [item.value]
+      })
+    }
+
+    const selectSQL = `SELECT ${selects.join(', ')}`
+    const baseSQL = `
+      FROM ${wrapIdentifier(table)}
+      ${filterString}
+    `
+
+    const query = `
+      ${selectSQL} ${baseSQL}
+      ${orderByString}
+      ${_.isNumber(limit) ? `LIMIT ${limit}` : ''}
+      ${_.isNumber(offset) ? `OFFSET ${offset}` : ''}
+      `;
+
+    return query;
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
+  private buildSelectTopCursor(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], selects?: string[], batchSize?: number): AggregationCursor {
     const collection = this.conn.db(this.db).collection(table);
 
     const convertedOrders = orderBy.length > 0 ? orderBy.reduce((all, ord) => ({
@@ -267,24 +333,45 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       }), init);
     }
 
+    let skip = null;
+    if (offset) {
+      skip = {
+        "$skip": offset
+      };
+    }
 
-    const result = await collection.aggregate([
+    let limitObj = null;
+    if (limit) {
+      limitObj = {
+        "$limit": limit
+      };
+    }
+
+    const options: any = {};
+
+    if (batchSize) {
+      options.batchSize = batchSize;
+    }
+
+    const result = collection.aggregate([
       {
         "$match": convertedFilters
       },
       convertedOrders ? {
         "$sort": convertedOrders
       } : null,
-      {
-        "$skip": offset
-      },
-      {
-        "$limit": limit
-      },
+      skip,
+      limitObj,
       convertedSelects ? {
         "$project": convertedSelects
       } : null
-    ].filter((v) => !!v)).toArray();
+    ].filter((v) => !!v), options);
+
+    return result;
+  }
+
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
+    const result = await this.buildSelectTopCursor(table, offset, limit, orderBy, filters, selects).toArray();
 
     const fields = this.parseQueryResultColumns(result[0] || {});
     const rows = await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)
@@ -612,6 +699,58 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
+    const queries = this.identifyCommands(queryText).map((q) => q.text);
+    let results = [];
+
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+      const r = await this.queryLeaf.execute(query);
+      let fields = [];
+      if (r) {
+        let f = [];
+        if (_.isArray(r)) {
+          f = _.uniq(_.flatten(_.takeRight(r, 10).map((obj) => Object.keys(obj))))
+        } else {
+          f = Object.keys(r);
+        }
+        fields = f.map((k) => ({
+          name: k,
+          id: k
+        }));
+      }
+
+      let returnResult = true;
+
+      let affectedRows = 0
+      if (r?.acknowledged) {
+        affectedRows = r?.insertedCount ?? r?.deletedCount ?? r?.modifiedCount;
+        returnResult = false;
+      }
+
+      let result = _.isArray(r) ? r : [r];
+      if (!returnResult) result = [];
+
+      results.push({
+        rows: result,
+        rowCount: r?.length ?? 0,
+        affectedRows,
+        fields,
+        command: query
+      })
+    }
+
+    return results;
+  }
+
+  private identifyCommands(queryText: string) {
+    try {
+      return identify(queryText, { strict: false, dialect: 'psql' });
+    } catch (err) {
+      return [];
+    }
+  }
+
+  async executeCommand(commandText: string, _options?: any): Promise<NgQueryResult[]> {
     let results: NgQueryResult[] = [];
 
     const listener = {
@@ -626,7 +765,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
     this.runtime.setEvaluationListener(listener);
 
-    const ev = await this.runtime.evaluate(queryText);
+    const ev = await this.runtime.evaluate(commandText);
 
     let fields = [];
     if (ev.type === 'Cursor' || ev.type === 'AggregationCursor') {
@@ -641,7 +780,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         rowCount: ev.printable?.documents?.length,
         fields,
         tableName: ev.source?.namespace?.collection ?? 'mycollection',
-        command: queryText
+        command: commandText
       })
     } else if (ev.type === 'Document') {
       if (ev.printable) {
@@ -655,7 +794,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         rowCount: ev.printable ? 1 : 0,
         fields,
         tableName: ev.source?.namespace?.collection ?? 'mycollection',
-        command: queryText
+        command: commandText
       })
     } else if (ev.type === null && ev.printable) {
       if (typeof ev.printable === 'number') {
@@ -663,7 +802,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           rows: [{ count: ev.printable }],
           rowCount: 1,
           fields: [{ name: 'count', id: 'count' }],
-          command: queryText
+          command: commandText
         });
       } else {
         if (ev.printable?.length > 0) {
@@ -677,7 +816,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           rowCount: ev.printable?.length,
           fields,
           tableName: ev.source?.namespace?.collection ?? 'mycollection',
-          command: queryText
+          command: commandText
         })
       }
     }
@@ -749,12 +888,37 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return [];
   }
 
-  async selectTopStream(_table: string, _orderBy: OrderBy[], _filters: string | TableFilter[], _chunkSize: number, _schema?: string): Promise<StreamResults> {
-    log.error('MongoDB does not currently support streaming results');
-    return null;
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, _schema?: string): Promise<StreamResults> {
+    const cursor = this.buildSelectTopCursor(table, null, null, orderBy, filters, null, chunkSize);
+
+    const columns = await this.listTableColumns(table);
+
+    const cursorOpts = {
+      cursor,
+      chunkSize
+    };
+
+    return {
+      totalRows: 0,// need to figure this out
+      columns,
+      cursor: new MongoDBCursor(cursorOpts)
+    };
   }
 
-  async queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const cursorOpts = {
+      query: query,
+      queryLeaf: this.queryLeaf,
+      chunkSize
+    };
+
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+
+    return {
+      totalRows,
+      columns,
+      cursor: new MongoDBCursor(cursorOpts)
+    }
     log.error('MongoDB does not support querying');
     return null;
   }
@@ -899,6 +1063,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       "=": "$eq",
       "!=": "$ne",
       "like": "$regex", // special case for regex
+      "ilike": "$regex", // special case for regex
+      "not like": "$not", // special case for not regex
+      "not ilike": "$regex", // special case for regex
       "<": "$lt",
       "<=": "$lte",
       ">": "$gt",
@@ -908,6 +1075,15 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       "is not": "$neq"
     };
     return opMap[type] || null;
+  }
+
+  private convertValueForFilter(value: any) {
+    if (ObjectId.isValid(value)) {
+      return new ObjectId(value);
+    } else if (value === 'true' || value === 'false') {
+      return value === 'true';
+    }
+    return value;
   }
 
   private convertFilters(filters: TableFilter[]) {
@@ -925,8 +1101,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         if (!_.isArray(filter.value)) {
           log.warn(`Value for "in" must be an array: ${JSON.stringify(filter)}`);
         }
-        condition = { [filter.field]: { [mongoOp]: filter.value }};
-      } else if (filter.type === "like" && _.isString(filter.value)) {
+        const value = filter.value.map((v) => this.convertValueForFilter(v));
+        condition = { [filter.field]: { [mongoOp]: value }};
+      } else if (filter.type === "ilike" && _.isString(filter.value)) {
         const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
         condition = {
           [filter.field]: {
@@ -934,12 +1111,38 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
             $options: "i" // case-insensitive
           }
         };
+      } else if (filter.type === "like" && _.isString(filter.value)) {
+        const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
+        condition = {
+          [filter.field]: {
+            [mongoOp]: reg
+          }
+        };
+      } else if (filter.type === "not like" && _.isString(filter.value)) {
+        const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
+        condition = {
+          [filter.field]: {
+            $not: {
+              $regex: reg
+            }
+          }
+        };
+      } else if (filter.type === "not ilike" && _.isString(filter.value)) {
+        const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
+        condition = {
+          [filter.field]: {
+            $not: {
+              $regex: reg,
+              $options: "i" // case-insensitive
+            }
+          }
+        };
       } else if (filter.type.includes('is')) {
         condition = {
           [filter.field]: { [mongoOp]: null }
         };
       } else {
-        condition = { [filter.field]: { [mongoOp]: filter.value }};
+        condition = { [filter.field]: { [mongoOp]: this.convertValueForFilter(filter.value) }};
       }
 
       if (index === 0) {
@@ -953,6 +1156,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       }
 
     });
+
+    log.info('FILTER: ', result)
 
     return result;
   }

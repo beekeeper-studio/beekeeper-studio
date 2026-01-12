@@ -13,7 +13,7 @@
         <li class="flex flex-row">
           <span class="bullet">🥞</span>
           <span>
-            {{ $t('Connect to Cassandra, Oracle, LibSQL, ClickHouse, and DuckDB.') }}
+            Connect to Cassandra, Oracle, LibSQL, ClickHouse, DuckDB, and Trino.
           </span>
         </li>
         <li class="flex flex-row">

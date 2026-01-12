@@ -12,7 +12,7 @@
     </a>
     <div class="alert-title">
       <i class="material-icons">error_outline</i>
-      <b class="error-title">{{ title || $t("There was a problem") }}</b>
+      <b class="error-title">{{ title || "There was a problem" }}</b>
     </div>
     <div class="alert-body">
       <ul class="error-list">
@@ -21,10 +21,10 @@
           @click="click(e)"
           v-for="(e, idx) in errors"
           :key="idx"
-          :title="$t('Click to copy').toString()"
+          title="Click to copy"
         >
           {{ e.message || e.toString() }}
-          {{ e.marker ? ` - ${$t("line")} ${e.marker.line}, ${$t("ch")} ${e.marker.ch}` : '' }}
+          {{ e.marker ? ` - line ${e.marker.line}, ch ${e.marker.ch}` : '' }}
           {{ helpText ? ` - ${helpText}` : '' }}
         </li>
       </ul>
@@ -34,8 +34,8 @@
       >
         <a
           :href="helpLink"
-          :title="$t('Read about this error on the Beekeeper Studio docs').toString()"
-        >{{ $t("Learn more about this error") }}</a>
+          title="More information about this error"
+        >Learn more about this error</a>
       </div>
     </div>
   </div>
@@ -44,7 +44,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 export default Vue.extend({
-  props: ['error', 'title', 'closable', 'helpText'],
+  props: ['error', 'title', 'closable', 'helpText', 'link'],
   computed: {
     dev() {
       return this.$config.isDevelopment
@@ -56,6 +56,7 @@ export default Vue.extend({
       })
     },
     helpLink() {
+      if (this.link) return this.link
       return this.errors.map((e) => e.helpLink).find((e) => e)
     }
   },
@@ -119,8 +120,6 @@ export default Vue.extend({
       margin-top: calc($gutter-h / 2);
       padding-left: $gutter-w;
     }
-    &:hover{
-      cursor: pointer;
-    }
+
   }
 </style>

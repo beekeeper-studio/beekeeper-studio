@@ -47,7 +47,7 @@
 
     <div class="expand" />
 
-    <status-bar class="tabulator-footer">
+    <status-bar class="tabulator-footer" :active="active">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
         <x-button
@@ -106,7 +106,7 @@ import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { mapGetters, mapState } from 'vuex'
-import { CreateRelationSpec, Dialect, DialectTitles, FormatterDialect, RelationAlterations } from '@shared/lib/dialects/models'
+import { CreateRelationSpec, Dialect, DialectTitles, FormatterDialect, RelationAlterations, TableKey } from '@shared/lib/dialects/models'
 import { TableColumn, TableOrView } from '@/lib/db/models'
 import _ from 'lodash'
 import { format } from 'sql-formatter'
@@ -134,18 +134,20 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['tables', 'connection']),
+    ...mapState(['tables', 'connection', 'usedConfig']),
     ...mapGetters(['schemas', 'dialect', 'schemaTables', 'dialectData']),
     enabled() {
-      return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData?.disabledFeatures?.relations;
+      return !this.usedConfig.readOnlyMode &&
+        !this.dialectData.disabledFeatures?.alter?.everything &&
+        !this.dialectData?.disabledFeatures?.relations;
     },
     hotkeys() {
       if (!this.active) return {}
       return this.$vHotkeyKeymap({
-        'refresh': () => this.$emit('refresh'),
-        'addRow': this.addRow.bind(this),
-        'submitApply': this.submitApply.bind(this),
-        'submitSql': this.submitSql.bind(this)
+        'general.refresh': () => this.$emit('refresh'),
+        'general.addRow': this.addRow.bind(this),
+        'general.save': this.submitApply.bind(this),
+        'general.openInSqlEditor': this.submitSql.bind(this)
       })
     },
     notice() {
@@ -200,13 +202,13 @@ export default Vue.extend({
           },
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
+        // @ts-expect-error Incorrectly typed
         ...( showSchema ? [{
           field: 'toSchema',
           title: this.$t("FK Schema"),
           editable,
           editor: 'list' as any,
           editorParams: {
-            // @ts-expect-error Incorrectly typed
             valuesLookup: () => this.schemas.map((s) => escapeHtml(s))
           },
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
@@ -216,8 +218,8 @@ export default Vue.extend({
           title: this.$t("FK Table"),
           editable,
           editor: 'list',
+          // @ts-expect-error Incorrectly typed
           editorParams: {
-            // @ts-expect-error Incorrectly typed
             valuesLookup: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null),
@@ -228,8 +230,8 @@ export default Vue.extend({
           title: this.$t("FK Column"),
           editable,
           editor: 'list',
+          // @ts-expect-error Incorrectly typed
           editorParams: {
-            // @ts-expect-error Incorrectly typed
             valuesLookup: this.getColumns
           },
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
@@ -239,6 +241,7 @@ export default Vue.extend({
           title: this.$t("On Update"),
           editor: 'list',
           editable,
+          // @ts-expect-error Incorrectly typed
           editorParams: {
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION'
@@ -258,10 +261,11 @@ export default Vue.extend({
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
       ]
-      return this.canDrop ? [...results, trashButton(this.removeRow)] : results
+      return this.canDrop && !this.usedConfig.readOnlyMode ? [...results, trashButton(this.removeRow)] : results
     },
     tableData() {
-      return this.properties.relations || []
+      return (this.properties.relations || [])
+        .filter((r: TableKey) => r.fromTable === this.table.name)
     },
   },
   watch: {

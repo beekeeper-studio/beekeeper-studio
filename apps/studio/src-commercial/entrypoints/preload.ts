@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, nativeImage } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
 import path from 'path';
 import fs from 'fs';
@@ -9,6 +9,7 @@ import username from 'username';
 import { execSync } from 'child_process';
 import 'electron-log/preload';
 import pluralize from 'pluralize';
+import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 
 
 const electron = require('@electron/remote');
@@ -38,6 +39,12 @@ export const api = {
   },
   isReady() {
     ipcRenderer.send('ready');
+  },
+  enableConnectionMenuItems(){
+    ipcRenderer.send("enable-connection-menu-items");
+  },
+  disableConnectionMenuItems(){
+    ipcRenderer.send("disable-connection-menu-items");
   },
   send(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
@@ -86,11 +93,8 @@ export const api = {
 
     return [];
   },
-  async getLastExportPath(filename?: string) {
-    return await SettingsPlugin.get(
-      "lastExportPath",
-      path.join(homedir(), filename)
-    );
+  async defaultExportPath(filename?: string) {
+    return path.join(homedir(), filename);
   },
   showOpenDialogSync(args: any) {
     return electron.dialog.showOpenDialogSync(args);
@@ -137,6 +141,9 @@ export const api = {
   writeTextToClipboard(text: string) {
     return electron.clipboard.writeText(text);
   },
+  writeImageToClipboard(dataUrl: string) {
+    return electron.clipboard.writeImage(nativeImage.createFromDataURL(dataUrl));
+  },
   readTextFromClipboard(): string {
     return electron.clipboard.readText();
   },
@@ -172,7 +179,12 @@ export const api = {
   },
   pluralize(word: string, count?: number, inclusive?: boolean) {
     return pluralize(word, count, inclusive);
-  }
+  },
+  fileHelpers: {
+    save(options: SaveFileOptions) {
+      return ipcRenderer.invoke('fileHelpers:save', options);
+    },
+  },
 }
 
 contextBridge.exposeInMainWorld('main', api);

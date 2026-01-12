@@ -1,3 +1,3 @@
-import { DataEditor } from ".";
+import { DataEditorElement } from ".";
 
-window.customElements.define("bks-data-editor", DataEditor);
+window.customElements.define("bks-data-editor", DataEditorElement);

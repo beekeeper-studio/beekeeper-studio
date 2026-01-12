@@ -1,6 +1,7 @@
 // import { OpenOptions } from "@/background/WindowBuilder"
 
 import { DevLicenseState } from "@/lib/license";
+import { CustomMenuAction } from "@/types";
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -21,6 +22,7 @@ export interface IMenuActionHandler {
   fullscreen: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  restart: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   contactSupport: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -42,4 +44,9 @@ export interface IMenuActionHandler {
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  /** `handleAction` is used by menus that are defined at runtime (unlike other
+   * actions) so the signature is a little bit different than the rest. */
+  handleAction: (action: Electron.MenuItem | CustomMenuAction, win: ElectronWindow) => void
 }

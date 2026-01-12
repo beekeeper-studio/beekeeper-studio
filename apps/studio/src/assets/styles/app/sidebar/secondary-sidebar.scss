@@ -1,6 +1,7 @@
 .secondary-sidebar {
   display: flex;
   flex-direction: column;
+  z-index: 0;
 
   .sidebar-heading x-tabs {
     padding: 0;
@@ -27,5 +28,16 @@
 
   .sidebar-body {
     flex: 1;
+  }
+
+  .isolated-plugin-view {
+    width: 100%;
+    height: 100%;
+
+    > iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
   }
 }

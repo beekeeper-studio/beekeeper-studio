@@ -9,10 +9,12 @@ import path from 'path';
 import { identify } from 'sql-query-identifier';
 
 const TEST_VERSIONS = [
-  { tag: 'latest', readOnly: false },
-  { tag: 'latest', readOnly: true },
-  { tag: '24.2', readOnly: false },
-  { tag: '24.2', readOnly: true },
+  { tag: 'latest', readOnly: false, dropInformation: false },
+  { tag: 'latest', readOnly: false, dropInformation: true },
+  { tag: 'latest', readOnly: true, dropInformation: false },
+  { tag: '24.2', readOnly: false, dropInformation: false },
+  { tag: '24.2', readOnly: false, dropInformation: true },
+  { tag: '24.2', readOnly: true, dropInformation: false },
 ] as const
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
@@ -41,6 +43,21 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         "--query",
         "CREATE DATABASE my_database;",
       ]);
+
+      if (options.dropInformation) {
+        // ensure that our driver works even if information schema isn't present, as it may not be on
+        // more legacy systems
+        await container.exec([
+          "clickhouse-client",
+          "--query",
+          "DROP DATABASE IF EXISTS information_schema"
+        ])
+        await container.exec([
+          "clickhouse-client",
+          "--query",
+          "DROP DATABASE IF EXISTS INFORMATION_SCHEMA"
+        ])
+      }
 
       const url = `http://${container.getHost()}:${container.getMappedPort(
         8123
@@ -123,6 +140,34 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           dataType: "UInt64",
           tableName: "up_down_votes_per_day_mv",
         },
+      ])
+    })
+
+    // Generated columns showing as NULL when browsing but returning values
+    // when selected directly.
+    // https://github.com/beekeeper-studio/beekeeper-studio/issues/2982
+    it("should query table with generated columns", async () => {
+      await util.knex.schema.raw(`
+        CREATE TABLE ch_generated_column
+        (
+            MinimumLevel UInt8, Cost UInt16, ProductValueMultiplier Float32,
+            CostPerProductValueMultiplier Float32 MATERIALIZED Cost / ProductValueMultiplier -- This is the generated (materialized) column
+        )
+        ENGINE = MergeTree()
+        ORDER BY MinimumLevel;
+      `)
+      await util.knex.schema.raw(`
+        INSERT INTO ch_generated_column (MinimumLevel, Cost, ProductValueMultiplier)
+        VALUES (1, 7, 1);
+      `)
+      const { result } = await util.connection.selectTop('ch_generated_column', 0, 10, [], [])
+      expect(result).toStrictEqual([
+        {
+          Cost: 7,
+          CostPerProductValueMultiplier: 7,
+          MinimumLevel: 1,
+          ProductValueMultiplier: 1,
+        }
       ])
     })
 

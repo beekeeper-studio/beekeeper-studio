@@ -7,6 +7,8 @@ export enum AppEvent {
   menuClick = 'menu-click',
   settingsChanged = "sc-refresh",
   newTab = 'nt',
+  /** Create a new custom tab. First argument is `TransportOpenTab`. */
+  newCustomTab = 'nct',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
   disconnect = 'dc',
@@ -18,6 +20,7 @@ export enum AppEvent {
   beginExport = 'be',
   beginImport = 'beginImport',
   createTable = 'new_table',
+  createTableFromFile = 'new_table_from_file',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
   quickSearch = 'quickSearch',
@@ -58,11 +61,19 @@ export enum AppEvent {
   switchLicenseState = 'switchLicenseState',
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
+  openPluginManager = 'openPluginManager',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
+  /** A tab is about to be switched. First argument is the tab. */
   switchingTab = 'switchingTab',
+  /** A tab has been switched. First argument is the tab. */
   switchedTab = 'switchedTab',
+  /** A tab is about to be closed. First argument is the tab. */
+  closingTab = 'closingTab',
+  updatePin = 'updatePin',
+  /** The theme has been changed. */
+  changedTheme = 'changedTheme',
 }
 
 export interface RootBinding {

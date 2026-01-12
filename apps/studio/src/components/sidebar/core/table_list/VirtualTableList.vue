@@ -103,6 +103,21 @@ export default Vue.extend({
         pinned: false,
       };
 
+      const expandedMap = new Map();
+      const pinnedMap = new Map();
+
+      if (this.generated && this.items.length > 0) {
+        for (const item of this.items) {
+          if (item.expanded) {
+            expandedMap.set(item.key, true);
+          }
+        }
+      }
+
+      for (const pin of this.pins) {
+        pinnedMap.set(pin.entity, pin);
+      }
+
       this.schemaTables.forEach((schema: any) => {
         let parent: BaseItem;
 
@@ -116,9 +131,7 @@ export default Vue.extend({
             entity: schema.schema,
             expanded: !this.generated
               ? this.defaultSchema === schema.schema
-              : this.items.findIndex(
-                  (item: Item) => item.key === key && item.expanded
-                ) >= 0,
+              : expandedMap.has(key),
             hidden: this.hiddenSchemas.includes(schema.schema),
             contextMenu: this.schemaMenuOptions,
             parent: root,
@@ -135,15 +148,12 @@ export default Vue.extend({
             type: "table",
             key,
             entity: table,
-            expanded:
-              this.items.findIndex(
-                (item: Item) => item.key === key && item.expanded
-              ) >= 0,
+            expanded: expandedMap.has(key),
             hidden: this.hiddenEntities.includes(table),
             contextMenu: this.tableMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
-            pinned: this.pins.find((pin: TransportPinnedEntity) => pin.entity === table),
+            pinned: pinnedMap.get(table) || false,
             loadingColumns: false,
           });
         });
@@ -154,17 +164,12 @@ export default Vue.extend({
             entity: routine,
             key,
             type: "routine",
-            expanded:
-              this.items.findIndex(
-                (item: Item) => item.key === key && item.expanded
-              ) >= 0,
+            expanded: expandedMap.has(key),
             hidden: this.hiddenEntities.includes(routine),
             contextMenu: this.routineMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
-            pinned: this.pins.find(
-              (pin: TransportPinnedEntity) => pin.entity === routine
-            ),
+            pinned: pinnedMap.get(routine) || false,
           });
         });
       });
@@ -271,6 +276,9 @@ export default Vue.extend({
         pinned = !item.pinned;
       }
       item.pinned = !item.pinned;
+
+      if (pinned) this.$store.dispatch('pins/add', entity)
+      else this.$store.dispatch('pins/remove', entity)
     },
     handleScrollEnd() {
       this.updateTableColumnsInRange(true);

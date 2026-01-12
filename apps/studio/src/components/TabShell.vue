@@ -11,13 +11,19 @@
       <mongo-shell
         v-bind.sync="editor"
         :vim-config="vimConfig"
+        :vim-keymaps="vimKeymaps"
+        :keymap="userKeymap"
         :output="mongoOutputResult"
+        :is-focused="focusingElement === 'text-editor'"
+        :auto-focus="true"
+        :extensions="extensions"
+        :promptSymbol="promptSymbol"
+        :line-wrapping="wrapText"
         @clear="clear"
         @submitCommand="submitMongoCommand"
-        :focus="focusingElement === 'text-editor'"
-        :auto-focus="true"
         @update:focus="updateTextEditorFocus"
-        @initialized="handleEditorInitialized"
+        @bks-initialized="handleEditorInitialized"
+        @bks-shell-run-command="submitMongoCommand"
       />
       <!-- This is we so we have the separating line -->
       <span class="expand"></span>
@@ -36,7 +42,7 @@
       ref="bottomPanel"
     >
       <progress-bar
-        @cancel="cancelQuery"
+        :canCancel="false"
         :message="runningText"
         v-if="running"
       />
@@ -83,13 +89,16 @@
       <!-- STATUS BAR -->
       <query-editor-status-bar
         v-model="selectedResult"
+        :hideWrapText="true"
         :results="results"
         :running="running"
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
+        @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
+        :active="active"
       />
     </div>
   </div>
@@ -104,8 +113,8 @@ import { mapGetters, mapState } from 'vuex'
 import ProgressBar from './editor/ProgressBar.vue'
 import ResultTable from './editor/ResultTable.vue'
 import ShortcutHints from './editor/ShortcutHints.vue'
-import SQLTextEditor from '@/components/common/texteditor/SQLTextEditor.vue'
-import MongoShell from '@/components/common/texteditor/MongoShell.vue'
+import MongoShell from '@beekeeperstudio/ui-kit/vue/mongo-shell'
+import { mongoHintExtension } from '@/lib/editor/extensions/mongoHint'
 
 import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
 import rawlog from '@bksLogger'
@@ -114,11 +123,12 @@ import MergeManager from '@/components/editor/MergeManager.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { PropType } from 'vue'
 import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
+import { getVimKeymapsFromVimrc } from '@/lib/editor/vim';
 
 const log = rawlog.scope('query-editor')
 
 export default Vue.extend({
-  components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor: SQLTextEditor, MongoShell },
+  components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, MongoShell },
   props: {
     tab: Object as PropType<TransportOpenTab>,
     active: Boolean
@@ -138,7 +148,6 @@ export default Vue.extend({
         initialized: false,
       },
       mongoOutputResult: null,
-      runningQuery: null,
       error: null,
       errorMarker: null,
       saveError: null,
@@ -152,6 +161,7 @@ export default Vue.extend({
       initialized: false,
       containerResizeObserver: null,
       onTextEditorBlur: null,
+      wrapText: false,
 
       /**
        * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
@@ -162,6 +172,9 @@ export default Vue.extend({
        */
       focusElement: 'none',
       focusingElement: 'none',
+      promptSymbol: null,
+      mongoHint: mongoHintExtension(),
+      vimKeymaps: []
     }
   },
   computed: {
@@ -174,6 +187,9 @@ export default Vue.extend({
     ...mapState('data/queries', {'savedQueries': 'items'}),
     ...mapState('settings', ['settings']),
     ...mapState('tabs', { 'activeTab': 'active' }),
+    extensions() {
+      return this.mongoHint.extensions;
+    },
     enabled() {
       return !this.dialectData?.disabledFeatures?.shell;
     },
@@ -310,6 +326,8 @@ export default Vue.extend({
     handleEditorInitialized() {
       this.editor.initialized = true;
 
+      this.mongoHint.setGetHints(this.connection.getCompletions);
+
       // this gives the dom a chance to kick in and render these
       // before we try to read their heights
       this.$nextTick(() => {
@@ -319,14 +337,6 @@ export default Vue.extend({
     },
     close() {
       this.$root.$emit(AppEvent.closeTab)
-    },
-    async cancelQuery() {
-      if (this.running && this.runningQuery) {
-        this.running = false
-        this.info = this.$t('Command Execution Cancelled')
-        await this.runningQuery.cancel();
-        this.runningQuery = null;
-      }
     },
     download(format) {
       this.$refs.table.download(format)
@@ -356,6 +366,7 @@ export default Vue.extend({
     clear() {
       this.selectedResult = 0;
       this.results = [];
+      this.selectEditor();
     },
     async submitMongoCommand(command) {
       this.tab.isRunning = true
@@ -364,10 +375,12 @@ export default Vue.extend({
       this.selectedResult = 0
 
       try {
-        this.runningQuery = await this.connection.query(command);
         const cmdStartTime = new Date();
-        const results = await this.runningQuery.execute();
+        const results = await this.connection.executeCommand(command);
         const cmdEndTime = new Date();
+
+        // update promptSymbol before we do any processing so the new prompt is correct
+        this.promptSymbol = await this.connection.getShellPrompt();
 
         // eslint-disable-next-line
         // @ts-ignore
@@ -392,7 +405,6 @@ export default Vue.extend({
         }
         // get rid of old empty results
         this.results = Object.freeze([...this.results.filter((r) => !!r.rows?.length), ...results])
-        log.info('RESULTS: ', this.results)
         const nonEmptyResult = _.chain(this.results).findLastIndex((r) => !!r.rows?.length).value()
         console.log("non empty result", nonEmptyResult)
         this.selectedResult = nonEmptyResult === -1 ? this.results.length - 1 : nonEmptyResult;
@@ -449,6 +461,8 @@ export default Vue.extend({
     },
   },
   async mounted() {
+    this.promptSymbol = await this.connection.getShellPrompt();
+
     if (this.shouldInitialize) this.initialize()
 
     this.containerResizeObserver = new ResizeObserver(() => {
@@ -460,6 +474,8 @@ export default Vue.extend({
       await this.$nextTick()
       this.focusElement = 'text-editor'
     }
+
+    this.vimKeymaps = await getVimKeymapsFromVimrc();
   },
   beforeDestroy() {
     if(this.split) {

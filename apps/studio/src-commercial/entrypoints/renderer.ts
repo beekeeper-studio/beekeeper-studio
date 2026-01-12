@@ -38,6 +38,10 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
+import { WebPluginManager } from '@/services/plugin/web'
+import PluginStoreService from '@/services/plugin/web/PluginStoreService'
+import * as UIKit from '@beekeeperstudio/ui-kit'
+import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 import i18n, { setI18nLanguage } from '@/i18n'
 
 (async () => {
@@ -74,6 +78,22 @@ import i18n, { setI18nLanguage } from '@/i18n'
       }
     });
 
+    UIKit.setClipboard(
+      new (class extends EventTarget implements Clipboard {
+        async writeText(text: string) {
+          window.main.writeTextToClipboard(text)
+        }
+        async readText() {
+          return window.main.readTextFromClipboard()
+        }
+        async read(): Promise<ClipboardItem[]> {
+          throw new Error("Not implemented")
+        }
+        async write(_items: ClipboardItem[]) {
+          throw new Error("Not implemented")
+        }
+      })()
+    );
 
     window.main.setTlsMinVersion("TLSv1");
     TimeAgo.addLocale(en)
@@ -97,17 +117,26 @@ import i18n, { setI18nLanguage } from '@/i18n'
     Vue.mixin({
       methods: {
         ctrlOrCmd(key) {
-          if (this.$config.isMac) return `meta+${key}`
-          return `ctrl+${key}`
+          const keys = key.split('+');
+          // First letter is uppercase
+          key = keys.map(k => _.upperFirst(k)).join('+');
+          if (this.$config.isMac) return `Meta+${key}`
+          return `Ctrl+${key}`
         },
         // codemirror sytax
         cmCtrlOrCmd(key: string) {
+          const keys = key.split('-');
+          // First letter is uppercase
+          key = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join('-');
           if (this.$config.isMac) return `Cmd-${key}`
           return `Ctrl-${key}`
         },
         ctrlOrCmdShift(key) {
-          if (this.$config.isMac) return `meta+shift+${key}`
-          return `ctrl+shift+${key}`
+          const keys = key.split('+');
+          // First letter is uppercase
+          key = keys.map(k => k.charAt(0).toUpperCase() + k.slice(1)).join('+');
+          if (this.$config.isMac) return `Meta+Shift+${key}`
+          return `Ctrl+Shift+${key}`
         },
         selectChildren(element) {
           const selection = window.getSelection()
@@ -124,11 +153,14 @@ import i18n, { setI18nLanguage } from '@/i18n'
       }
     })
 
+    const utility = new UtilityConnection()
 
     Vue.config.productionTip = false
     Vue.use(VueHotkey, {
       "pageup": 33,
-      "pagedown": 34
+      "pagedown": 34,
+      "numadd": 107,
+      "numsub": 109
     })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
@@ -146,6 +178,7 @@ import i18n, { setI18nLanguage } from '@/i18n'
       closeWith: ['button', 'click'],
     })
     Vue.use(VueKeyboardTrapDirectivePlugin)
+    Vue.use(ProductTourPlugin, { store, utility })
 
     const app = new Vue({
       render: h => h(App),
@@ -153,7 +186,7 @@ import i18n, { setI18nLanguage } from '@/i18n'
       i18n,
     })
 
-    Vue.prototype.$util = new UtilityConnection();
+    Vue.prototype.$util = utility;
     window.main.attachPortListener();
     window.onmessage = (event) => {
       if (event.source === window && event.data.type === 'port') {
@@ -179,6 +212,25 @@ import i18n, { setI18nLanguage } from '@/i18n'
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
     await store.dispatch('initRootStates')
+    const webPluginManager = new WebPluginManager({
+      utilityConnection: Vue.prototype.$util,
+      pluginStore: new PluginStoreService(store, {
+        emit: (...args) => app.$root.$emit(...args),
+        on: (...args) => app.$root.$on(...args),
+        off: (...args) => app.$root.$off(...args),
+      }),
+      appVersion: window.platformInfo.appVersion,
+      fileHelpers: window.main.fileHelpers,
+    });
+    webPluginManager.initialize().then(() => {
+      store.commit("webPluginManagerStatus", "ready")
+    }).catch((e) => {
+      log.error("Error initializing web plugin manager", e)
+      store.commit("webPluginManagerStatus", "failed-to-initialize")
+    })
+    Vue.prototype.$plugin = webPluginManager;
+    Vue.prototype.$bksPlugin = webPluginManager;
+    window.bksPlugin = webPluginManager; // For debugging
     app.$mount('#app')
   } catch (err) {
     console.error("ERROR INITIALIZING APP")
