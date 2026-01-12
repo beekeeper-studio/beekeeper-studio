@@ -17,7 +17,7 @@
             class="form-group"
             v-if="defaultSchema"
           >
-            <label for="schema">Schema</label>
+            <label for="schema">{{ $t('Schema') }}</label>
             <input
               type="text"
               v-model="tableSchema"
@@ -25,7 +25,7 @@
             >
           </div>
           <div class="form-group">
-            <label for="table">Table Name</label>
+            <label for="table">{{ $t('Table Name') }}</label>
             <input
               type="text"
               v-model="tableName"
@@ -56,7 +56,7 @@
               v-if="error"
               class="material-icons"
             >error</i>
-            <span>Create Table</span>
+            <span>{{ $t('Create Table') }}</span>
           </x-button>
           <x-button
             class="btn btn-primary"
@@ -65,11 +65,11 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="create">
-                <x-label>Create Table</x-label>
+                <x-label>{{ $t('Create Table') }}</x-label>
                 <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="sql">
-                <x-label>Copy to SQL</x-label>
+                <x-label>{{ $t('Copy to SQL') }}</x-label>
                 <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
               <!-- <x-menuitem @click.prevent="createAndImport"> -->
@@ -173,7 +173,7 @@ export default Vue.extend({
         const runningQuery: CancelableQuery = await this.connection.query(sql);
         await runningQuery.execute();
         this.success = true
-        this.$noty.success(`${this.simpleTableName} created`)
+        this.$noty.success(`${this.simpleTableName} ${this.$t('created')}`)
         await this.$store.dispatch('updateTables');
         const newTable = this.tables.find((t) => (
           t.name === this.tableName &&
@@ -205,7 +205,7 @@ export default Vue.extend({
       if (sql) {
         this.$root.$emit(AppEvent.newTab, formatted)
       } else {
-        this.$noty.error("Invalid table structure")
+        this.$noty.error(this.$t("Invalid table structure"))
       }
 
     }

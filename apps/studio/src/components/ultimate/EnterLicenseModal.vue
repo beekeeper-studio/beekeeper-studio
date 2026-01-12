@@ -3,14 +3,14 @@
     <form @submit.prevent="submitLicense">
       <div class="dialog-content">
         <div class="dialog-c-title">
-          License Key Management
+          {{ $t('License Key Management') }}
         </div>
         <!-- CLOSE BUTTON -->
         <a class="close-btn btn btn-fab" href="#" @click.prevent="$modal.hide('license')">
           <i class="material-icons">clear</i>
         </a>
         <div class="existing-licenses" v-if="license">
-          <p>Current license information</p>
+          <p>{{ $t('Current license information') }}</p>
           <div class="dialog-c-subtitle">
             <license-information :license="license" :license-status="licenseStatus" />
           </div>
@@ -18,32 +18,32 @@
         <div v-else>
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
-            <span>Entering a license will unlock premium features such as Oracle, DuckDB, and ClickHouse connections,
-              JSON view, multi-table features, and more. <a
-                href="https://docs.beekeeperstudio.io/support/upgrading-from-the-community-edition/">Learn
-                more</a>.</span>
+            <span>{{ $t('Entering a license will unlock premium features such as Oracle, DuckDB, and ClickHouse connections, JSON view, multi-table features, and more.') }} <a
+              href="https://docs.beekeeperstudio.io/support/upgrading-from-the-community-edition/"
+            >{{ $t('Learn more') }}</a>.</span>
           </div>
-          <p>You don't have any licenses registered with the application at the moment. Register a new license below.</p>
-          <p class="text-muted small" v-if="trialLicense">Free trial expiry: {{ timeAgo(trialLicense.validUntil) }}, on {{
-            trialLicense.validUntil.toLocaleDateString() }}
+          <p>{{ $t('You don\'t have any licenses registered with the application at the moment. Register a new license below.') }}</p>
+          <p class="text-muted small" v-if="trialLicense">
+            {{ $t('Free trial expiry:') }} {{ timeAgo(trialLicense.validUntil) }}, {{ $t('on') }} {{
+              trialLicense.validUntil.toLocaleDateString() }}
           </p>
           <error-alert :error=" error" />
           <div class="form-group">
-            <label for="email">License Name</label>
+            <label for="email">{{ $t('License Name') }}</label>
             <input type="text" v-model="email">
           </div>
           <div class="form-group">
-            <label for="key">License Key</label>
+            <label for="key">{{ $t('License Key') }}</label>
             <input type="text" v-model="key">
           </div>
         </div>
       </div>
       <div class="vue-dialog-buttons flex flex-middle">
-        <span class="app-version small text-muted">Current app version: {{ $config.appVersion }}</span>
+        <span class="app-version small text-muted">{{ $t('Current app version:') }} {{ $config.appVersion }}</span>
         <span class="expand" />
         <span>
-          <a href="https://beekeeperstudio.io/pricing" class="btn btn-flat">Buy a new license</a>
-          <button v-if="!realLicenses?.length" type="submit" class="btn btn-primary mt-2">Submit</button>
+          <a href="https://beekeeperstudio.io/pricing" class="btn btn-flat">{{ $t('Buy a new license') }}</a>
+          <button v-if="!realLicenses?.length" type="submit" class="btn btn-primary mt-2">{{ $t('Submit') }}</button>
         </span>
       </div>
     </form>
@@ -101,7 +101,7 @@ export default Vue.extend({
     async submitLicense() {
       try {
         await this.$store.dispatch('licenses/add', { email: this.email, key: this.key })
-        this.$noty.success("License registered, thanks for supporting Beekeeper Studio.")
+        this.$noty.success(this.$t("License registered, thanks for supporting Beekeeper Studio."))
         this.$modal.hide('license')
         this.$store.dispatch('licenseEntered')
       } catch (error) {

@@ -13,23 +13,23 @@
           <div class="card-flat padding" :class="determineLabelColor" v-else>
             <div class="flex flex-between">
               <h3 class="card-title" v-if="!pageTitle">
-                New Connection
+                {{ $t("New Connection") }}
               </h3>
               <h3 class="card-title" v-if="pageTitle">
                 {{ pageTitle }}
               </h3>
               <ImportButton :config="config">
-                Import from URL
+                {{ $t("Import from URL") }}
               </ImportButton>
             </div>
-            <error-alert :error="errors" title="Please fix the following errors" />
+            <error-alert :error="errors" :title="$t('Please fix the following errors')" />
             <form @action="submit" v-if="config">
               <div class="form-group">
-                <label for="connection-select">Connection Type</label>
+                <label for="connection-select">{{ $t("Connection Type") }}</label>
                 <select name="connectionType" class="form-control custom-select" v-model="config.connectionType"
                   id="connection-select">
                   <option disabled hidden value="null">
-                    Select a connection type...
+                    {{ $t("Select a connection type...") }}
                   </option>
                   <option :key="`${t.value}-${t.name}`" v-for="t in communityConnectionTypes" :value="t.value">
                     {{ t.name }}
@@ -76,10 +76,11 @@
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
-                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox"
-                      name="readOnlyMode" v-model="config.readOnlyMode">
-                    <span>Read Only Mode</span>
-                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
+                    <input :disabled="!isUltimate" class="form-control" id="readOnlyMode" type="checkbox" name="readOnlyMode"
+                           v-model="config.readOnlyMode"
+                    >
+                    <span>{{ $t("Read Only Mode") }}</span>
+                    <i v-if="!isUltimate" v-tooltip="$t('Upgrade to use Read Only Mode')" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
@@ -88,12 +89,14 @@
                   <span class="expand" />
                   <div class="btn-group">
                     <button :disabled="testing || connecting" class="btn btn-flat" type="button"
-                            @click.prevent="testConnection">
-                      Test
+                            @click.prevent="testConnection"
+                    >
+                      {{ $t("Test") }}
                     </button>
                     <button :disabled="testing || connecting" class="btn btn-primary" type="submit"
-                            @click.prevent="submit">
-                      Connect
+                            @click.prevent="submit"
+                    >
+                      {{ $t("Connect") }}
                     </button>
                   </div>
                 </div>
@@ -111,12 +114,11 @@
           <template v-if="!config.connectionType">
             <div class="pitch" v-if="!isUltimate">
               🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+              <a href="https://beekeeperstudio.io/pricing" class="">{{ $t("Upgrade") }}</a>.
             </div>
             <div class="pitch" v-else-if="isTrial">
-              🌟 <strong>Trial expires {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> Upgrade now to make sure you
-              don't lose access.
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+              🌟 <strong>{{ $t("Trial expires") }} {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> {{ $t("Upgrade now to make sure you don't lose access.") }}
+              <a href="https://beekeeperstudio.io/pricing" class="">{{ $t("Upgrade") }}</a>.
             </div>
             <div class="pitch" v-else>
               🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
@@ -126,7 +128,7 @@
         </div>
 
         <small class="app-version"><a href="https://www.beekeeperstudio.io/releases/latest">Beekeeper Studio {{ version
-            }}</a></small>
+        }}</a></small>
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
@@ -224,7 +226,7 @@ export default Vue.extend({
     },
     pageTitle() {
       if (_.isNull(this.config) || _.isUndefined(this.config.id)) {
-        return "New Connection"
+        return this.$t("New Connection")
       } else {
         return this.config.name
       }
@@ -336,7 +338,7 @@ export default Vue.extend({
         this.config = conf;
         this.submit();
       } catch {
-        this.$noty.error(`Unable to open '${file.name}'. It is not a valid SQLite file.`);
+        this.$noty.error(this.$t(`Unable to open '${file.name}'. It is not a valid SQLite file.`));
       }
 
     },
@@ -361,19 +363,19 @@ export default Vue.extend({
       }
       await this.$store.dispatch('pinnedConnections/remove', config)
       await this.$store.dispatch('data/connections/remove', config)
-      this.$noty.success(`${config.name} deleted`)
+      this.$noty.success(this.$t(`${config.name} deleted`))
     },
     async duplicate(config) {
       // Duplicates ES 6 class of the connection, without any reference to the old one.
       const duplicateConfig = await this.$store.dispatch('data/connections/clone', config)
-      duplicateConfig.name = 'Copy of ' + duplicateConfig.name
+      duplicateConfig.name = this.$t('Copy of') + ' ' + duplicateConfig.name
 
       try {
         const id = await this.$store.dispatch('data/connections/save', duplicateConfig)
-        this.$noty.success(`The connection was successfully duplicated!`)
+        this.$noty.success(this.$t(`The connection was successfully duplicated!`))
         this.config = this.connections.find((c) => c.id === id) || this.config
       } catch (ex) {
-        this.$noty.error(`Could not duplicate Connection: ${ex.message}`)
+        this.$noty.error(this.$t(`Could not duplicate Connection: ${ex.message}`))
       }
 
     },
@@ -399,9 +401,8 @@ export default Vue.extend({
         if (cancelled) return;
         await this.$store.dispatch('connect', { config: this.config, auth })
       } catch (ex) {
-        console.log("CONNECTION ERROR", ex)
         this.connectionError = ex
-        this.$noty.error("Error establishing a connection")
+        this.$noty.error(this.$t("Error establishing a connection"))
         log.error(ex)
       } finally {
         this.connecting = false
@@ -423,11 +424,11 @@ export default Vue.extend({
         this.testing = true
         this.connectionError = null
         await this.$store.dispatch('test', this.config)
-        this.$noty.success("Connection looks good!")
+        this.$noty.success(this.$t("Connection looks good!"))
         return true
       } catch (ex) {
         this.connectionError = ex
-        this.$noty.error("Error establishing a connection")
+        this.$noty.error(this.$t("Error establishing a connection"))
       } finally {
         this.testing = false
         this.afterConnect()
@@ -438,7 +439,7 @@ export default Vue.extend({
         this.errors = null
         this.connectionError = null
         if (!this.config.name) {
-          throw new Error("Name is required")
+          throw new Error(this.$t("Name is required"))
         }
         // create token cache for azure auth
         if (this.config.azureAuthOptions?.azureAuthEnabled && !this.config.authId) {
@@ -454,20 +455,20 @@ export default Vue.extend({
           await this.$store.dispatch('data/usedconnections/save', this.config);
         }
 
-        this.$noty.success("Connection Saved")
+        this.$noty.success(this.$t("Connection Saved"))
         // we want to fetch the saved one in case it's changed
         const connection = this.connections.find((c) => c.id === id)
         this.edit(connection)
       } catch (ex) {
         console.error(ex)
         this.errors = [ex.message]
-        this.$noty.error("Could not save connection information")
+        this.$noty.error(this.$t("Could not save connection information"))
       }
     },
     handleErrorMessage(message) {
       if (message) {
         this.errors = [message]
-        this.$noty.error("Could not parse connection URL.")
+        this.$noty.error(this.$t("Could not parse connection URL."))
       } else {
         this.errors = null
       }
@@ -489,7 +490,7 @@ export default Vue.extend({
     loadingSSOCanceled() {
       this.connection.azureCancelAuth();
     },
-  },
+  }
 })
 </script>
 

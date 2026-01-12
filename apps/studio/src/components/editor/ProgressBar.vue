@@ -1,13 +1,13 @@
 <template>
   <div class="progress-bar">
     <div class="flex-col layout-center">
-      <span>{{ message || 'loading...' }}</span>
+      <span>{{ message || $t('loading...') }}</span>
       <a
         v-if="canCancel"
         @click.prevent="$emit('cancel')"
-        title="Cancel Query Execution (Esc)"
+        :title="$t('Cancel Query Execution (Esc)')"
         class="cancel-query btn btn-flat"
-      >Cancel</a>
+      >{{ $t('Cancel') }}</a>
     </div>
   </div>
 </template>

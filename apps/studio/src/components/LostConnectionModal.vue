@@ -10,12 +10,12 @@
           <div 
             class="dialog-c-title" 
           >
-            Lost Connection
+            {{ $t('Lost Connection') }}
           </div>
         </slot>
         <slot name="message">
           <div>
-            {{ connError }} Would you like to reconnect?
+            {{ connError }} {{ $t('Would you like to reconnect?') }}
           </div>
         </slot>
       </div>
@@ -27,14 +27,14 @@
           autofocus
           ref="dcButton"
         >
-          Disconnect
+          {{ $t('Disconnect') }}
         </button>
         <button 
           class="btn btn-primary" 
           type="button"
           @click.prevent="connect"
         >
-          Reconnect
+          {{ $t('Reconnect') }}
         </button>
       </div>
     </modal>

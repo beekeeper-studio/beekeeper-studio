@@ -118,7 +118,7 @@ export default Vue.extend({
       const newOptions = [
         ...options.slice(0, pivot),
         {
-          name: "Format Query",
+          name: this.$t("Format Query"),
           slug: "format",
           handler: this.formatSql,
           shortcut: this.ctrlOrCmd("shift+f"),

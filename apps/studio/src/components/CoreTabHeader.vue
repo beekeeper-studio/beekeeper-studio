@@ -53,12 +53,12 @@
       >
         <div class="dialog-content">
           <div class="dialog-c-title">
-            Really close <span class="tab-like"><tab-icon
+            {{ $t("Really close") }} <span class="tab-like"><tab-icon
               :tab="tab"
               :force-icon="true"
             /> {{ this.tab.title }}</span>?
           </div>
-          <p>{{ tab.isRunning ? 'There is an active process still running. Closing the tab now will force it to stop and could result in catastrophe.' : 'You will lose unsaved changes' }}</p>
+          <p>{{ tab.isRunning ? $t('There is an active process still running. Closing the tab now will force it to stop and could result in catastrophe.') : $t('You will lose unsaved changes') }}</p>
         </div>
         <div class="vue-dialog-buttons">
           <span class="expand" />
@@ -67,14 +67,14 @@
             @click.prevent="$modal.hide(modalName)"
             class="btn btn-sm btn-flat"
           >
-            Cancel
+            {{ $t("Cancel") }}
           </button>
           <button
             @focusout="sureOpen && $refs.no && $refs.no.focus()"
             @click.prevent="closeForReal"
             class="btn btn-sm btn-primary"
           >
-            Close Tab
+            {{ $t("Close Tab") }}
           </button>
         </div>
       </modal>
@@ -156,12 +156,12 @@ import _ from 'lodash'
         }
 
         return [
-          { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
-          { name: "Close Others", slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
-          { name: 'Close All', slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
-          { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
-          { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
-          { name: "Copy Entity Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
+          { name: this.$t("Close"), slug: 'close', handler: ({event}) => this.maybeClose(event)},
+          { name: this.$t("Close Others"), slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
+          { name: this.$t('Close All'), slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
+          { name: this.$t("Close Tabs to Right"), slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
+          { name: this.$t("Duplicate"), slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
+          { name: this.$t("Copy Entity Name"), slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
           ...(window.platformInfo.isDevelopment ? devOptions : []),
         ];
       },
@@ -216,7 +216,7 @@ import _ from 'lodash'
         }
       },
       title() {
-        return this.queryTabTitle || this.tableTabTitle || "Unknown"
+        return this.queryTabTitle || this.tableTabTitle || this.$t("Unknown")
       },
       isTransaction() {
         return this.tab.isTransaction === true;

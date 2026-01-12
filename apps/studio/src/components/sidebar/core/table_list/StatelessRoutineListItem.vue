@@ -21,7 +21,7 @@
       </span>
       <span class="item-wrapper flex flex-middle expand">
         <div
-          :title="draggable ? 'drag me!' : ''"
+          :title="draggable ? String($t('drag me!')) : ''"
           class="table-item-wrapper"
           :class="{ draggable: draggable, 'drag-handle': draggable }"
         >
@@ -50,7 +50,7 @@
         <span
           class="btn-fab pin"
           :class="{ pinned: pinned }"
-          :title="pinned ? 'Unpin' : 'Pin'"
+          :title="pinned ? String($t('Unpin')) : String($t('Pin'))"
           @mousedown.prevent.stop="$emit('pin', $event)"
         >
           <i class="bk-pin" />
@@ -63,7 +63,7 @@
       class="sub-items"
     >
       <!-- <span class="sub-item" v-if="displayParams.length === 0">
-        <span class="title truncate">No Parameters</span>
+        <span class="title truncate">{{ $t('No Parameters') }}</span>
       </span>       -->
       <span
         :key="param.name"

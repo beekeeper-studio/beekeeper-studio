@@ -61,7 +61,7 @@
       />
     </div>
     <div class="empty-text">
-      Open a table to view its data
+      {{ $t('Open a table to view its data') }}
     </div>
     <json-viewer-upsell v-if="$store.getters.isCommunity" />
   </div>
@@ -169,7 +169,7 @@ export default Vue.extend({
   },
   computed: {
     sidebarTitle() {
-      return this.title ?? "JSON Row Viewer"
+      return this.title ?? this.$t("JSON Row Viewer")
     },
     empty() {
       return _.isEmpty(this.value);
@@ -332,32 +332,32 @@ export default Vue.extend({
     menuOptions() {
       return [
         {
-          name: "Copy Visible",
+          name: this.$t("Copy Visible"),
           handler: () => {
             this.$native.clipboard.writeText(this.text);
           },
         },
         {
-          name: "Collapse all",
+          name: this.$t("Collapse all"),
           handler: () => {
             this.foldAll++;
           },
         },
         {
-          name: "Expand all",
+          name: this.$t("Expand all"),
           handler: () => {
             this.unfoldAll++;
           },
         },
         {
-          name: "Always Expand Foreign Keys",
+          name: this.$t("Always Expand Foreign Keys"),
           handler: () => {
             this.$store.dispatch("toggleExpandFKDetailsByDefault");
           },
           checked: this.expandFKDetailsByDefault,
         },
         {
-          name: "Wrap Text",
+          name: this.$t("Wrap Text"),
           handler: () => {
             this.wrapText = !this.wrapText
           },

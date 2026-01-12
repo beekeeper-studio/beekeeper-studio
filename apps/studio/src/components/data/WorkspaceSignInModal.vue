@@ -10,35 +10,35 @@
           v-if="lockEmail"
           class="dialoc-c-title"
         >
-          Reauthenticate {{ email ? email : '' }}
+          {{ $t('Reauthenticate') }} {{ email ? email : '' }}
         </div>
         <div
           v-else
           class="dialog-c-title"
         >
-          Team workspace account sign-in <a
-            v-tooltip="'Store connections and queries in the cloud, share with colleagues. Click to learn more.'"
+          {{ $t('Team workspace account sign-in') }} <a
+            v-tooltip="$t('Store connections and queries in the cloud, share with colleagues. Click to learn more.')"
             href="https://beekeeperstudio.io/workspaces"
           ><i class="material-icons">help_outlined</i></a>
         </div>
         <error-alert :error="error" />
         <div class="form-group">
-          <label for="email">Email Address</label>
+          <label for="email">{{ $t('Email Address') }}</label>
           <input
             ref="email"
             type="text"
             :disabled="lockEmail"
             v-model="email"
-            placeholder="e.g. matthew@example.com"
+            :placeholder="$t('e.g. matthew@example.com')"
           >
         </div>
         <div class="form-group">
-          <label for="password">Password</label>
+          <label for="password">{{ $t('Password') }}</label>
           <input
             type="password"
             ref="password"
             v-model="password"
-            placeholder="Shh..."
+            :placeholder="$t('Shh...')"
           >
         </div>
       </div>
@@ -47,23 +47,23 @@
           <a
             href="https://app.beekeeperstudio.io/users/sign_up"
             class="small text-muted"
-          >Create Account</a>
+          >{{ $t('Create Account') }}</a>
           <a
             href="https://app.beekeeperstudio.io/users/sign_in"
             class="small text-muted"
-          >Forgot Password</a>
+          >{{ $t('Forgot Password') }}</a>
         </span>
         <span class="right">
           <button
             class="btn btn-flat"
             type="button"
             @click.prevent="$modal.hide('workspace')"
-          >Cancel</button>
+          >{{ $t('Cancel') }}</button>
           <button
             class="btn btn-primary"
             :disabled="loading"
             type="submit"
-          >{{ loading ? '...' : 'Submit' }}</button>
+          >{{ loading ? '...' : $t('Submit') }}</button>
         </span>
       </div>
     </form>

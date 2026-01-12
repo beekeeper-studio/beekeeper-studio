@@ -2,32 +2,39 @@
   <div class="license-information card card-flat padding">
     <h3 class="card-title flex flex-middle">
       <span class="expand">{{ license.email }}</span>
-      <a v-if="!licenseStatus.fromFile" @click.prevent="destroy" class="btn btn-danger btn-icon"><i class="material-icons">delete_outline</i><span>Remove from app</span></a></h3>
+      <a v-if="!licenseStatus.fromFile" @click.prevent="destroy" class="btn btn-danger btn-icon"><i class="material-icons">delete_outline</i><span>{{ $t('Remove from app') }}</span></a>
+    </h3>
     <div class="card-body">
       <table class="simple-table">
         <tr>
-          <td>License Type <a href="https://docs.beekeeperstudio.io/">learn more</a></td>
-          <td>{{ licenseStatus.fromFile ? "Offline File License" : "Online License" }}</td>
+          <td>{{ $t('License Type') }} <a href="https://docs.beekeeperstudio.io/">{{ $t('learn more') }}</a></td>
+          <td>{{ licenseStatus.fromFile ? $t('Offline File License') : $t('Online License') }}</td>
         </tr>
         <template v-if="licenseStatus.fromFile">
           <tr>
-            <td>File Path</td>
+            <td>{{ $t('File Path') }}</td>
             <td>{{ licenseStatus.filePath }}</td>
           </tr>
         </template>
         <tr>
-          <td>Status</td>
+          <td>{{ $t('Status') }}</td>
           <td>{{ status }}</td>
         </tr>
         <tr>
-          <td>Software Updates Until</td>
+          <td>{{ $t('Software Updates Until') }}</td>
           <td>{{ license.supportUntil.toLocaleDateString() }}</td>
         </tr>
         <tr>
-          <td>Valid for app version</td>
-          <td v-if="expiredLifetime">{{ license.maxAllowedAppRelease.tagName }} or lower</td>
-          <td v-else-if="activeLicense">Any version</td>
-          <td v-else>No access, new license required</td>
+          <td>{{ $t('Valid for app version') }}</td>
+          <td v-if="expiredLifetime">
+            {{ license.maxAllowedAppRelease.tagName }} {{ $t('or lower') }}
+          </td>
+          <td v-else-if="activeLicense">
+            {{ $t('Any version') }}
+          </td>
+          <td v-else>
+            {{ $t('No access, new license required') }}
+          </td>
         </tr>
       </table>
     </div>
@@ -70,9 +77,9 @@ export default {
       return this.licenseStatus.isSupportDateExpired && !this.licenseStatus.isValidDateExpired
     },
     status() {
-      if (this.expiredLifetime) return "Expired, with lifetime access"
-      if (this.activeLicense) return "Active License"
-      return "Expired, no lifetime access"
+      if (this.expiredLifetime) return this.$t('Expired, with lifetime access')
+      if (this.activeLicense) return this.$t('Active License')
+      return this.$t('Expired, no lifetime access')
     }
   },
   methods: {

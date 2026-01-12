@@ -12,11 +12,11 @@
         <span
           v-show="results?.length > 1"
           class="statusbar-item result-selector"
-          :title="'Results'"
+          :title="$t('Results')"
         >
           <div
             class="select-wrap"
-            v-tooltip="{ content: 'More query results in here', placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info'] }"
+            v-tooltip="{ content: $t('More query results in here'), placement: 'top', show: showHint, trigger: 'manual', classes: ['tooltip-info'] }"
           >
             <select
               name="resultSelector"
@@ -38,7 +38,7 @@
         <div
           class="statusbar-item row-counts"
           v-if="rowCount > 0"
-          v-tooltip="`${rowCount} Records${result && result.truncated ? ' (Truncated) - get the full resultset in the Download menu' : ''}`"
+          v-tooltip="`${rowCount} ${$t('Records')}${result && result.truncated ? ' ' + $t('(Truncated) - get the full resultset in the Download menu') : ''}`"
         >
           <i class="material-icons">list_alt</i>
           <span class="num-rows">{{ rowCount }}</span>
@@ -50,10 +50,10 @@
         <div
           class="statusbar-item affected-rows"
           v-if="affectedRowsText"
-          :title="affectedRowsText + ' ' + 'Rows Affected'"
+          :title="affectedRowsText + ' ' + $t('Rows Affected')"
         >
           <i class="material-icons">clear_all</i>
-          <span>{{ affectedRowsText }} affected</span>
+          <span>{{ affectedRowsText }} {{ $t('affected') }}</span>
         </div>
         <span
           class="statusbar-item execute-time "
@@ -268,16 +268,16 @@ export default {
       if (!this.executeTime) {
         return null;
       }
-      return `Execution time: ${humanizeDuration(this.executeTime)}`
+      return `${this.$t('Execution time:')} ${humanizeDuration(this.executeTime)}`
     },
     elapsedTimeText() {
       return formatSeconds(this.elapsedTime);
     },
     downloadFullTooltip() {
       if (this.result?.truncated) {
-        return `Re - run the query and send the full result to a file${ this.result?.truncated ? ' (' + this.result.totalRowCount + ' rows)' : '' }`
+        return `${this.$t('Re - run the query and send the full result to a file')}${ this.result?.truncated ? ' (' + this.result.totalRowCount + ' ' + this.$t('rows') + ')' : '' }`
       }
-      return `Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)`
+      return this.$t('Only needed for result sets that have been truncated (Beekeeper will tell you if this happens)')
     },
     keymap() {
       return this.$vHotkeyKeymap({

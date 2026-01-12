@@ -5,10 +5,10 @@
   >
     <div class="dialog-content">
       <div class="dialog-c-title">
-        Import Connections
+        {{ $t('Import Connections') }}
       </div>
       <div class="dialog-c-subtitle">
-        Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
+        {{ $t('Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.') }}
       </div>
       <error-alert :error="error" />
       <div>
@@ -43,14 +43,14 @@
         class="btn btn-flat"
         @click.prevent="$modal.hide('import-connections')"
       >
-        Close
+        {{ $t('Close') }}
       </button>
       <button
         :disabled="loading"
         class="btn btn-primary"
         @click.prevent="doImport"
       >
-        {{ loading ? '...' : 'Import' }}
+        {{ loading ? '...' : $t('Import') }}
       </button>
     </div>
   </modal>

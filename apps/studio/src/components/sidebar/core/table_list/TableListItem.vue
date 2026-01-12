@@ -21,7 +21,7 @@
         @mousedown="selectItem"
       >
         <span
-          :title="draggable ? 'drag me!' : ''"
+          :title="draggable ? String($t('drag me!')) : ''"
           class="table-item-wrapper"
           :class="{ 'draggable': draggable, 'drag-handle': draggable }"
         >
@@ -47,13 +47,13 @@
           v-if="!pinned"
           @mousedown.prevent.stop="pin"
           class="btn-fab pin"
-          :title="'Pin'"
+          :title="String($t('Pin'))"
         ><i class="bk-pin" /></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
           class="btn-fab unpin"
-          :title="'Unpin'"
+          :title="String($t('Unpin'))"
         ><i
           class="material-icons"
         >clear</i></span>
@@ -64,7 +64,7 @@
         >
           <i
             class="bk-pin"
-            :title="'Unpin'"
+            :title="String($t('Unpin'))"
           />
           <i class="material-icons">clear</i>
         </span>
@@ -78,7 +78,7 @@
         class="sub-item"
         v-if="!columnsLoading && table.columns.length === 0"
       >
-        No Columns
+        {{ $t('No Columns') }}
       </span>
       <template v-else-if="table.columns.length > 0">
         <span

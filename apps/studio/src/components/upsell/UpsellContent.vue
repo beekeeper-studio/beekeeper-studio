@@ -4,10 +4,10 @@
       <p class="intro">
         <i class="material-icons">stars</i>
         <span>
-          Upgrade required
+          {{ $t('Upgrade required') }}
         </span>
       </p>
-      <p>Get access to this feature, plus:</p>
+      <p>{{ $t('Get access to this feature, plus:') }}</p>
       <ul>
         <slot />
         <li class="flex flex-row">
@@ -19,17 +19,17 @@
         <li class="flex flex-row">
           <span class="bullet">🚀</span>
           <span>
-            Unlock JSON view, unlimited table filters, import/export, backup/restore, and more.
+            {{ $t('Unlock JSON view, unlimited table filters, import/export, backup/restore, and more.') }}
           </span>
         </li>
         <li class="flex flex-row">
           <span class="bullet">📬</span>
-          <span>Email real support staff, we're here whenever you have a problem.</span>
+          <span>{{ $t('Email real support staff, we\'re here whenever you have a problem.') }}</span>
         </li>
         <li class="flex flex-row">
           <span class="bullet">🤝</span>
           <span>
-            Sync data across machines with cloud workspaces and team collaboration tools.
+            {{ $t('Sync data across machines with cloud workspaces and team collaboration tools.') }}
           </span>
         </li>
       </ul>

@@ -8,7 +8,7 @@
       @click.prevent="submitApply"
       style="margin:0"
     >
-      <span>{{ labelApply || 'Apply' }}</span>
+      <span>{{ labelApply || $t('Apply') }}</span>
     </x-button>
     <x-button
       v-if="dialect !== 'mongodb'"
@@ -20,13 +20,13 @@
       <x-menu>
         <x-menuitem @click.prevent="submitApply">
           <x-label>
-            {{ labelApply || 'Apply' }}
+            {{ labelApply || $t('Apply') }}
           </x-label>
           <x-shortcut value="Control+S" />
         </x-menuitem>
         <x-menuitem @click.prevent="submitSql">
           <x-label>
-            {{ labelSql || 'Copy to SQL' }}
+            {{ labelSql || $t('Copy to SQL') }}
           </x-label>
           <x-shortcut value="Control+Shift+S" />
         </x-menuitem>

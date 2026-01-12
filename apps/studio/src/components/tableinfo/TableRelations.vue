@@ -21,7 +21,7 @@
 
         <div class="table-subheader">
           <div class="table-title">
-            <h2>Relations</h2>
+            <h2>{{ $t('Relations') }}</h2>
           </div>
           <div class="expand" />
           <div class="actions">
@@ -55,7 +55,7 @@
           class="btn btn-flat reset"
           @click.prevent="submitUndo"
         >
-          Reset
+          {{ $t('Reset') }}
         </x-button>
         <x-buttons
           v-if="hasEdits && !loading"
@@ -73,7 +73,7 @@
               class="badge"
               v-if="!error"
             ><small>{{ editCount }}</small></span>
-            <span>Apply</span>
+            <span>{{ $t('Apply') }}</span>
           </x-button>
           <x-button
             class="btn btn-primary"
@@ -82,11 +82,11 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
-                <x-label>Apply</x-label>
+                <x-label>{{ $t('Apply') }}</x-label>
                 <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
-                <x-label>Copy to SQL</x-label>
+                <x-label>{{ $t('Copy to SQL') }}</x-label>
                 <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
@@ -153,10 +153,10 @@ export default Vue.extend({
     notice() {
       const results = []
       if (!this.canAdd) {
-        results.push("Adding relations is not supported")
+        results.push(this.$t("Adding relations is not supported"))
       }
       if (!this.canDrop) {
-        results.push("Dropping constraints is not supported")
+        results.push(this.$t("Dropping constraints is not supported"))
       }
       if (this.dialectData.notices?.infoRelations) {
         results.push(this.dialectData.notices.infoRelations)
@@ -185,7 +185,7 @@ export default Vue.extend({
       const results: ColumnDefinition[] = [
         {
           field: 'constraintName',
-          title: "Name",
+          title: this.$t("Name"),
           widthGrow: 2,
           editable,
           editor: vueEditor(NullableInputEditorVue),
@@ -193,7 +193,7 @@ export default Vue.extend({
         },
         {
           field: 'fromColumn',
-          title: "Column",
+          title: this.$t("Column"),
           editable,
           editor: 'list',
           editorParams: {
@@ -205,7 +205,7 @@ export default Vue.extend({
         // @ts-expect-error Incorrectly typed
         ...( showSchema ? [{
           field: 'toSchema',
-          title: "FK Schema",
+          title: this.$t("FK Schema"),
           editable,
           editor: 'list' as any,
           editorParams: {
@@ -215,7 +215,7 @@ export default Vue.extend({
         }] : []),
         {
           field: 'toTable',
-          title: "FK Table",
+          title: this.$t("FK Table"),
           editable,
           editor: 'list',
           // @ts-expect-error Incorrectly typed
@@ -227,7 +227,7 @@ export default Vue.extend({
         },
         {
           field: 'toColumn',
-          title: "FK Column",
+          title: this.$t("FK Column"),
           editable,
           editor: 'list',
           // @ts-expect-error Incorrectly typed
@@ -238,7 +238,7 @@ export default Vue.extend({
         },
         {
           field: 'onUpdate',
-          title: "On Update",
+          title: this.$t("On Update"),
           editor: 'list',
           editable,
           // @ts-expect-error Incorrectly typed
@@ -250,7 +250,7 @@ export default Vue.extend({
         },
         {
           field: 'onDelete',
-          title: 'On Delete',
+          title: this.$t('On Delete'),
           editable,
           editor: 'list',
           // @ts-expect-error Bad Type
@@ -361,7 +361,7 @@ export default Vue.extend({
         this.error = null
         const payload = this.getPayload()
         await this.connection.alterRelation(payload);
-        this.$noty.success("Relations Updated")
+        this.$noty.success(this.$t("Relations Updated"))
         this.$emit('actionCompleted')
         this.newRows = []
         this.removedRows = []
@@ -396,7 +396,7 @@ export default Vue.extend({
           tooltip: true,
           headerSort: false,
         },
-        placeholder: "No Relations",
+        placeholder: this.$t("No Relations"),
         layout: 'fitColumns',
         height: 'auto',
       })

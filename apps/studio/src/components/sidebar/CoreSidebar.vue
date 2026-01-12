@@ -115,7 +115,7 @@
       },
       async disconnect() {
         await this.$store.dispatch('disconnect')
-        this.$noty.success("Successfully Disconnected")
+        this.$noty.success(this.$t("Successfully Disconnected"))
       },
       ...mapActions({
         setActiveItem: "sidebar/setGlobalSidebarActiveItem",

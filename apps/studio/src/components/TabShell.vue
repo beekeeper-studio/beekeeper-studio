@@ -31,10 +31,10 @@
     </div>
     <div class="not-supported" v-if="!enabled">
       <span class="title">
-        Shell
+        {{ $t('Shell') }}
       </span>
       <div class="body">
-        <p> We don't currently support a shell for {{ dialect }} </p>
+        <p> {{ $t('We don\'t currently support a shell for') }} {{ dialect }} </p>
       </div>
     </div>
     <div
@@ -61,7 +61,7 @@
       >
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
-          <span>Command {{ selectedResult + 1 }}/{{ results.length }}: No Results. {{ result.affectedRows || 0 }} rows affected. See the select box in the bottom left ↙ for more command results.</span>
+          <span>{{ $t('Command') }} {{ selectedResult + 1 }}/{{ results.length }}: {{ $t('No Results.') }} {{ result.affectedRows || 0 }} {{ $t('rows affected. See the select box in the bottom left ↙ for more command results.') }}</span>
         </div>
       </div>
       <div

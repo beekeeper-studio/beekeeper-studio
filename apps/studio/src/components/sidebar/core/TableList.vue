@@ -10,7 +10,7 @@
           <input
             class="filter-input"
             type="text"
-            placeholder="Filter"
+            :placeholder="$t('Filter')"
             v-model="filterQuery"
           >
           <x-buttons class="filter-actions">
@@ -22,7 +22,7 @@
             </x-button>
             <x-button
               v-if="this.dialect != 'mongodb'"
-              :title="entitiesHidden ? 'Filter active' : 'No filters'"
+              :title="entitiesHidden ? $t('Filter active') : $t('No filters')"
               class="btn btn-fab btn-link action-item"
               :class="{active: entitiesHidden}"
               menu
@@ -34,21 +34,21 @@
                     type="checkbox"
                     v-model="showTables"
                   >
-                  <span>Tables</span>
+                  <span>{{ $t('Tables') }}</span>
                 </label>
                 <label>
                   <input
                     type="checkbox"
                     v-model="showViews"
                   >
-                  <span>Views</span>
+                  <span>{{ $t('Views') }}</span>
                 </label>
                 <label v-if="supportsRoutines">
                   <input
                     type="checkbox"
                     v-model="showRoutines"
                   >
-                  <span>Routines</span>
+                  <span>{{ $t('Routines') }}</span>
                 </label>
                 <x-menuitem />
               </x-menu>
@@ -83,14 +83,14 @@
       ref="tables"
     >
       <div class="list-heading">
-        <span class="sub">Entities</span>
+        <span class="sub">{{ $t('Entities') }}</span>
         <span
-          :title="`Total Entities`"
+          :title="$t('Total Entities')"
           class="badge"
           v-if="!filterQuery"
         >{{ totalEntities }}</span>
         <span
-          :title="`${totalFilteredEntities} hidden by filters`"
+          :title="$t('{count} hidden by filters', { count: totalFilteredEntities })"
           class="badge"
           v-else
           :class="{active: entitiesHidden}"
@@ -104,21 +104,21 @@
             <span>{{ totalHiddenEntities > 99 ? '99+' : totalHiddenEntities }}</span>
           </span>
           <div class="hi-tooltip bks-tooltip bks-tooltip-bottom-center">
-            <span>Right click an entity to hide it. </span>
-            <a @click="$modal.show('hidden-entities')">View hidden</a><span>.</span>
+            <span>{{ $t('Right click an entity to hide it.') }} </span>
+            <a @click="$modal.show('hidden-entities')">{{ $t('View hidden') }}</a><span>.</span>
           </div>
         </span>
         <div class="actions">
           <button
             @click.prevent="toggleExpandCollapse"
-            :title="isExpanded ? 'Collapse All' : 'Expand All'"
+            :title="isExpanded ? $t('Collapse All') : $t('Expand All')"
             :disabled="tablesLoading"
           >
             <i class="material-icons">{{ isExpanded ? 'unfold_less' : 'unfold_more' }}</i>
           </button>
           <button
             @click.prevent="refreshTables"
-            :title="'Refresh'"
+            :title="$t('Refresh')"
             :disabled="tablesLoading"
           >
             <i class="material-icons">refresh</i>
@@ -168,7 +168,7 @@
           There are no entities in the <strong>{{ database }}</strong> database
         </p>
         <p class="no-entities" v-else>
-          Please select a database to see tables, views, and other entities
+          {{ $t('Please select a database to see tables, views, and other entities') }}
         </p>
       </div>
     </nav>
@@ -344,7 +344,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
           this.refreshExpandedColumns()
           this.refreshPinnedColumns()
         } catch (ex) {
-          this.$noty.error(`Unable to refresh tables ${ex.message}`)
+          this.$noty.error(this.$t('Unable to refresh tables {message}', { message: ex.message }))
         }
       },
       newTable() {

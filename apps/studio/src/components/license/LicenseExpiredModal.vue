@@ -2,22 +2,24 @@
   <portal to="modals">
     <modal class="vue-dialog beekeeper-modal" :name="modalName">
       <div class="dialog-content">
-        <div class="dialog-c-title">Your license has ended</div>
-        <div>Your license has ended</div>
+        <div class="dialog-c-title">
+          {{ $t('Your license has ended') }}
+        </div>
+        <div>{{ $t('Your license has ended') }}</div>
       </div>
       <div class="vue-dialog-buttons">
         <button class="btn btn-flat" type="button" @click.prevent="close">
-          Downgrade to limited free edition
+          {{ $t('Downgrade to limited free edition') }}
         </button>
         <a
           ref="learnMore"
           href="https://docs.beekeeperstudio.io/docs/upgrading-from-the-community-edition"
           class="btn btn-flat"
         >
-          Learn more
+          {{ $t('Learn more') }}
         </a>
         <button class="btn btn-flat" type="button" @click.prevent="purchase">
-          Purchase a license
+          {{ $t('Purchase a license') }}
         </button>
       </div>
     </modal>

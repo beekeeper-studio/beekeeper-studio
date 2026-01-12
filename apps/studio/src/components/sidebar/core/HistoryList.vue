@@ -11,12 +11,12 @@
               class="expand"
               title="Query execution history for this workspace"
             >
-              History
+              {{ $t('History') }}
             </div>
             <div class="actions">
               <a @click.prevent="refresh">
                 <i
-                  title="Refresh Query History"
+                  :title="$t('Refresh Query History')"
                   class="material-icons"
                 >refresh</i>
               </a>
@@ -30,14 +30,14 @@
         <error-alert
           v-if="error"
           :error="error"
-          title="Problem loading history"
+          :title="$t('Problem loading history')"
         />
         <sidebar-loading v-else-if="loading" />
         <div
           v-else-if="!currentHistory.length"
           class="empty"
         >
-          No recent queries
+          {{ $t('No recent queries') }}
         </div>
         <div
           v-else
@@ -60,7 +60,7 @@
               <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
               <div class="list-title flex-col">
                 <span class="item-text expand truncate">{{ nicelySized(item.excerpt) }}</span>
-                <span class="subtitle"><span>{{ item.numberOfRecords || 0 }} Results</span>, {{ formatTimeAgo(item) }}</span>
+                <span class="subtitle"><span>{{ item.numberOfRecords || 0 }} {{ $t('Results') }}</span>, {{ formatTimeAgo(item) }}</span>
               </div>
             </a>
           </div>
@@ -129,7 +129,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
           event, item,
           options: [
             {
-              name: "Remove",
+              name: this.$t("Remove"),
               handler: ({ item }) => this.remove(item)
             }
           ]

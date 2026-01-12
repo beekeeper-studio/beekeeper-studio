@@ -18,7 +18,7 @@
     <div class="not-supported">
       <div class="card-flat padding">
         <h3 class="card-title">
-          Beekeeper does not currently support {{ isRestore ? 'restore' : 'backups' }} for {{ dialect }} ☹️
+          {{ $t('Beekeeper does not currently support') }} {{ isRestore ? $t('restore') : $t('backups') }} {{ $t('for') }} {{ dialect }} ☹️
         </h3>
       </div>
     </div>
@@ -55,13 +55,13 @@
               <i class="material-icons">check</i>
             </div>
           </div>
-          <div>{{ isRestore ? 'Restore' : 'Backup' }} Successful!!</div>
+          <div>{{ isRestore ? $t('Restore') : $t('Backup') }} {{ $t('Successful!!') }}</div>
           <button
             ref="closeTab"
             @click="close"
             class="btn btn-primary primary-action"
           >
-            Close Tab
+            {{ $t('Close Tab') }}
           </button>
           <button
             @click="$modal.hide(`success-modal-${tab.id}`)"
@@ -82,20 +82,20 @@
               <i class="material-icons">error_outline</i>
             </div>
           </div>
-          <div>{{ isRestore ? 'Restore' : 'Backup' }} returned a non-zero exit code. Check the logs for details</div>
+          <div>{{ isRestore ? $t('Restore') : $t('Backup') }} {{ $t('returned a non-zero exit code. Check the logs for details') }}</div>
           <div class="btn-group">
             <button
               ref="ok"
               @click="$modal.hide(`fail-modal-${tab.id}`)"
               class="btn btn-primary primary-action"
             >
-              Ok
+              {{ $t('Ok') }}
             </button>
             <button
               @click="retry"
               class="btn btn-flat"
             >
-              Retry
+              {{ $t('Retry') }}
             </button>
             <button
               @click="$modal.hide(`fail-modal-${tab.id}`)"
@@ -107,7 +107,7 @@
         </div>
       </modal>
       <BackupProgress
-        :failed="this.failed"
+        :failed="failed"
         @openLog="openLog"
         @showLog="showLog"
         @retry="retry"
@@ -118,7 +118,7 @@
       <div class="statusbar-info col flex expand">
         <span
           class="statusbar-item"
-          :title="`Included Tables ${includedTables}`"
+          :title="`${$t('Included Tables')} ${includedTables}`"
         >
           <i class="material-icons">backup_table</i>
           <span>{{ includedTables }}</span>
@@ -205,26 +205,26 @@ export default Vue.extend({
       return [
         this.backupFeatures.selectObjects ? {
           component: BackupObjects,
-          title: 'Choose Entities',
+          title: this.$t('Choose Entities'),
           icon: 'data_object',
-          nextButtonText: this.isRestore ? 'Configure Restore' : 'Configure Backup',
+          nextButtonText: this.isRestore ? this.$t('Configure Restore') : this.$t('Configure Backup'),
           nextButtonIcon: 'keyboard_arrow_right',
           completed: false,
         } : null,
         this.backupFeatures.settings ? {
           component: BackupSettings,
-          title: this.isRestore ? 'Configure Restore' : 'Configure Backup',
+          title: this.isRestore ? this.$t('Configure Restore') : this.$t('Configure Backup'),
           icon: 'settings',
-          nextButtonText: 'Review',
+          nextButtonText: this.$t('Review'),
           nextButtonIcon: 'keyboard_arrow_right',
-          nextButtonDisabledTooltip: 'Please ensure that all required (*) fields are filled out.',
+          nextButtonDisabledTooltip: this.$t('Please ensure that all required (*) fields are filled out.'),
           completed: false,
         } : null,
         {
           component: BackupReview,
-          title: 'Review & Execute',
+          title: this.$t('Review & Execute'),
           icon: 'preview',
-          nextButtonText: this.isRestore ? 'Execute Restore' : 'Execute Backup',
+          nextButtonText: this.isRestore ? this.$t('Execute Restore') : this.$t('Execute Backup'),
           nextButtonIcon: 'start',
           completePrevious: true,
           completed: false,

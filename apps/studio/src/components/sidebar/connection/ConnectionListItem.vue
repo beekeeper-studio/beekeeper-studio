@@ -45,13 +45,13 @@
         <span
           v-if="!pinned"
           @mousedown.prevent.stop="pin"
-          :title="'Pin'"
+          :title="$t('Pin')"
           class="btn-fab pin"
         ><i class="bk-pin" /></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
-          :title="'Unpin'"
+          :title="$t('Unpin')"
           class="btn-fab unpin"
         ><i class="material-icons">clear</i></span>
         <span
@@ -61,7 +61,7 @@
         >
           <i
             class="bk-pin"
-            :title="'Unpin'"
+            :title="$t('Unpin')"
           />
           <i class="material-icons">clear</i>
         </span>
@@ -87,7 +87,6 @@ export default {
     'privacyMode'
   ],
   data: () => ({
-    timeAgo: new TimeAgo('en-US'),
     split: null
   }),
   computed: {
@@ -99,7 +98,7 @@ export default {
         .filter((folder) => folder.id !== this.config.connectionFolderId)
         .map((folder) => {
         return {
-          name: `Move to ${folder.name}`,
+          name: this.$t(`Move to {name}`, { name: folder.name }),
           slug: `move-${folder.id}`,
           handler: this.moveItem,
           folder
@@ -134,7 +133,7 @@ export default {
     },
     subtitleSimple() {
       if (this.isRecentList) {
-        return this.timeAgo.format(this.config.updatedAt)
+        return this.$bks.getTimeAgo().format(this.config.updatedAt)
       } else {
         return this.$bks.simpleConnectionString(this.config)
       }
@@ -166,26 +165,26 @@ export default {
 
       const options = [
         {
-          name: "View",
+          name: this.$t("View"),
           slug: 'view',
           handler: (blob) => this.click(blob.item)
         },
         ultimateCheck && {
-          name: 'Connect',
+          name: this.$t('Connect'),
           slug: 'connect',
           handler: (blob) => this.doubleClick(blob.item)
         },
         {
-          name: "Duplicate",
+          name: this.$t("Duplicate"),
           slug: 'duplicate',
           handler: this.duplicate
         },
         {
-          name: `Copy ${this.connectionType}`,
+          name: this.$t('Copy {type}', { type: this.$t(this.connectionType) }),
           handler: this.copyUrl
         },
         {
-          name: "Remove",
+          name: this.$t("Remove"),
           handler: this.remove
         },
       ].filter(v => v)
@@ -213,7 +212,7 @@ export default {
         updated.connectionFolderId = folder.id
         await this.$store.dispatch('data/connections/save', updated)
       } catch(ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
+        this.$noty.error(this.$t(`Move Error: {message}`, { message: ex.message }))
         console.error(ex)
       }
     },
@@ -240,9 +239,9 @@ export default {
     async copyUrl() {
       try {
         await this.$copyText(this.$bks.buildConnectionString(this.config))
-        this.$noty.success(`The ${this.connectionType} was successfully copied!`)
+        this.$noty.success(this.$t('The {type} was successfully copied!', { type: this.$t(this.connectionType) }))
       } catch (err) {
-        this.$noty.success(`The ${this.connectionType} could not be copied!`)
+        this.$noty.error(this.$t('The {type} could not be copied!', { type: this.$t(this.connectionType) }))
       }
     },
     pin() {

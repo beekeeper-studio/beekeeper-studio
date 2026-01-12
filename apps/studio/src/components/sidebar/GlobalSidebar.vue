@@ -5,7 +5,7 @@
       @click.prevent="$emit('select', 'tables')"
       class="nav-item selectable"
       :class="{ active: activeItem === 'tables'}"
-      title="Database"
+      :title="String($t('Database'))"
     >
       <span class="bk-database" />
     </a>
@@ -14,7 +14,7 @@
       @click.prevent="$emit('select', 'queries')"
       class="nav-item selectable"
       :class="{ active: activeItem === 'queries'}"
-      title="Saved Queries"
+      :title="String($t('Saved Queries'))"
     >
       <span class="material-icons">code</span>
     </a>
@@ -23,7 +23,7 @@
       @click.prevent="$emit('select', 'history')"
       class="nav-item selectable"
       :class="{ active: activeItem === 'history'}"
-      title="Run History"
+      :title="String($t('Run History'))"
     >
       <span class="material-icons">history</span>
     </a>

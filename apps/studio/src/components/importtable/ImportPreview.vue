@@ -2,7 +2,7 @@
   <section class="import-table-wrapper">
     <div class="import-section-wrapper">
       <div class="card-flat padding">
-        <h3>Table</h3>
+        <h3>{{ $t('Table') }}</h3>
         <p>{{ tableName }}</p>
       </div>
       <div class="preview-column-stats">
@@ -99,7 +99,7 @@ export default {
         data: await this.tableData(),
         columns: this.importColumns,
         renderHorizontal: 'virtual',
-        placeholder: 'No Data',
+        placeholder: this.$t('No Data'),
         columnDefaults: {
           resizable: false,
           headerSort: false,

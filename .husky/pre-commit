@@ -5,3 +5,13 @@ if git status --porcelain | grep -q '^M  .*default\.config\.ini$'; then
     git add */**/bkconfig.d.ts
   fi
 fi
+
+# Extract translation keys from changed files
+echo "Extracting translation keys..."
+node ./bin/extract-translations.js
+
+# Add any new keys to the translation files
+if git status --porcelain | grep -q "i18n/locales"; then
+  git add apps/studio/src/i18n/locales/*.json
+  echo "Added new translation keys to staging area"
+fi

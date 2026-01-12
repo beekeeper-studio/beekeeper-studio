@@ -23,12 +23,10 @@ import _ from 'lodash'
 import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
 import { mapState } from 'vuex'
-import TimeAgo from 'javascript-time-ago'
 
 export default Vue.extend({
   props: ['item', 'selected', 'active'],
   data: () => ({
-    timeAgo: new TimeAgo('en-US')
   }),
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
@@ -40,7 +38,7 @@ export default Vue.extend({
         .filter((folder) => folder.id !== this.item.queryFolderId)
         .map((folder: IQueryFolder) => {
         return {
-          name: `Move to ${folder.name}`,
+          name: this.$t('Move to {name}', { name: folder.name }),
           handler: this.moveItem,
           folder
         }
@@ -51,9 +49,9 @@ export default Vue.extend({
       if (this.item.user?.name) result.push(`${this.item.user.name}`)
       if (this.item.createdAt) {
         if (_.isNumber(this.item.createdAt)) {
-          result.push(this.timeAgo.format(new Date(this.item.createdAt * 1000)))
+          result.push(this.$bks.getTimeAgo().format(new Date(this.item.createdAt * 1000)))
         } else {
-          result.push(this.timeAgo.format(this.item.createdAt))
+          result.push(this.$bks.getTimeAgo().format(this.item.createdAt))
         }
       }
       return result.join(" ")
@@ -63,14 +61,14 @@ export default Vue.extend({
     async moveItem({ item, option }) {
       try {
         const folder = option.folder
-        console.log("moving item!", folder)
+        console.log(this.$t("moving item!"), folder)
         if (!folder || !folder.id) return
         const updated = _.clone(item)
         updated.queryFolderId = folder.id
         await this.$store.dispatch('data/queries/save', updated)
 
       } catch (ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
+        this.$noty.error(this.$t('Move Error: {message}', { message: ex.message }))
         console.error(ex)
       }
     },
@@ -79,23 +77,23 @@ export default Vue.extend({
         item, event,
         options: [
           {
-            name: "Open",
+            name: this.$t("Open"),
             handler: ({ item }) => this.$emit('open', item)
           },
           {
-            name: "Rename",
+            name: this.$t("Rename"),
             handler: ({ item }) => this.$emit('rename', item)
             
           },
           {
-            name: "Delete",
+            name: this.$t("Delete"),
             handler: ({ item }) => this.$emit('remove', item)
           },
           {
             type: 'divider'
           },
           {
-            name: "Export",
+            name: this.$t("Export"),
             handler: ({ item }) => this.$emit('export', item)
           },
           {

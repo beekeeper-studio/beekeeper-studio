@@ -1,5 +1,8 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { Nullable } from '@/common/interfaces/Nullable'
+import { FormatterDialect } from '@shared/lib/dialects/models'
+import i18n from "@/i18n"
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
@@ -62,6 +65,17 @@ export const IamAuthTypes = [
   { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
   { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
 ]
+
+// Use function method to dynamically get translations, so each call will get the latest translations
+export const getIamAuthTypes = () => {
+  return [
+    { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
+    { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+  ].map(type => ({
+    ...type,
+    name: i18n.t(type.name)
+  }))
+}
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
 export const AzureAuthTypes = [

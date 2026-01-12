@@ -1,7 +1,7 @@
 <template>
   <nav class="list-group flex-col">
     <div class="list-heading">
-      <span class="sub">Pinned</span>
+      <span class="sub">{{ $t('Pinned') }}</span>
       <span class="badge">{{ orderedPins.length }}</span>
       <div class="actions">
         <sidebar-sort-buttons
@@ -69,8 +69,8 @@ export default Vue.extend({
   data: () => ({
     sort: { field: 'position', order: 'asc' },
     sortOptions: {
-      position: 'Drag & Drop',
-      entityName: 'Alphanumeric'
+      position: this.$t('Drag & Drop'),
+      entityName: this.$t('Alphanumeric')
     },
     initialized: false,
   }),

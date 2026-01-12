@@ -5,9 +5,9 @@
     v-tooltip="hoverTitle"
   >
     <i class="material-icons">tag</i>
-    <span v-if="fetchingTotalRecords">loading...</span>
-    <span v-else-if="error">error</span>
-    <span v-else-if="totalRecords === null">Unknown</span>
+    <span v-if="fetchingTotalRecords">{{ $t("loading...") }}</span>
+    <span v-else-if="error">{{ $t("error") }}</span>
+    <span v-else-if="totalRecords === null">{{ $t("Unknown") }}</span>
     <span v-else>~{{ Number(totalRecords).toLocaleString() }}</span>
   </a>
 </template>
@@ -29,9 +29,9 @@ export default Vue.extend({
       if (this.error) return this.error.message
 
       if (this.totalRecords === null)
-        return 'Click to fetch total record count'
+        return this.$t('Click to fetch total record count')
 
-      return `Approximately ${Number(this.totalRecords).toLocaleString()} Records`
+      return this.$t('Approximately {count} Records', {count: Number(this.totalRecords).toLocaleString()})
     }
   },
   methods: {
@@ -51,7 +51,7 @@ export default Vue.extend({
           this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema);
         }
       } catch (ex) {
-        console.error("unable to fetch total records", ex)
+        console.error(this.$t("unable to fetch total records"), ex)
         this.totalRecords = 0
         this.error = ex
       } finally {

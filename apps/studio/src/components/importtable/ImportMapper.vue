@@ -10,7 +10,7 @@
           class="form-control"
           v-model="truncateTable"
         >
-        Truncate the table before importing new data
+        {{ $t('Truncate the table before importing new data') }}
       </label>
       <label class="checkbox-group">
         <input
@@ -18,7 +18,7 @@
           class="form-control"
           v-model="runAsUpsert"
         >
-        Import data as an Upsert (Be sure to map a primary key field!)
+        {{ $t('Import data as an Upsert (Be sure to map a primary key field!)') }}
       </label>
     </div>
     <form
@@ -205,13 +205,13 @@ export default {
 
       return [
         {
-          title: 'File Column',
+          title: this.$t('File Column'),
           field: 'fileColumn',
           formatter: this.fileColumnFormatter,
           cssClass: 'import-file-column'
         },
         {
-          title: 'Table Column',
+          title: this.$t('Table Column'),
           field: 'tableColumn',
           editable: true,
           editor: 'list',
@@ -222,7 +222,7 @@ export default {
         {
           field: 'trash-button',
           title: null,
-          formatter: (_cell) => `<div class="dynamic-action" title="Remove mapping" />`,
+          formatter: (_cell) => `<div class="dynamic-action" title="${this.$t('Remove mapping')}" />`,
           width: 36,
           minWidth: 36,
           hozAlign: 'center',
@@ -407,7 +407,7 @@ export default {
       })
 
       if (nonNullableColumns.size > 0) {
-        this.$noty.error(`The following table columns are 'NOT NULL' columns without a default, so they must be included in your mapping: ${Array.from(nonNullableColumns).join(', ')}`)
+        this.$noty.error(this.$t('The following table columns are \'NOT NULL\' columns without a default, so they must be included in your mapping: {0}', [Array.from(nonNullableColumns).join(', ')]))
         return false
       }
 
@@ -420,7 +420,7 @@ export default {
           }
         })
 
-        this.$noty.error(`The following table columns can only be mapped to one header: ${duplicates.join(', ')}`)
+        this.$noty.error(this.$t('The following table columns can only be mapped to one header: {0}', [duplicates.join(', ')]))
         return false
       }
 

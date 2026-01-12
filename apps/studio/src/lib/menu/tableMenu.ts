@@ -13,6 +13,7 @@ import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
 import Vue from "vue";
+import i18n from "@/i18n";
 
 type ColumnMenuItem = MenuObject<ColumnComponent>;
 type RangeData = Record<string, any>[];
@@ -22,22 +23,22 @@ interface ExtractedData {
 }
 
 export const sortAscending: ColumnMenuItem = {
-  label: createMenuItem("Sort ascending"),
-  action: (_, column) => column.getTable().setSort(column.getField(), "asc"),
+  label: createMenuItem(i18n.t("Sort ascending").toString()),
+  action: (_e, column) => column.getTable().setSort(column.getField(), "asc"),
 };
 
 export const sortDescending: ColumnMenuItem = {
-  label: createMenuItem("Sort descending"),
-  action: (_, column) => column.getTable().setSort(column.getField(), "desc"),
+  label: createMenuItem(i18n.t("Sort descending").toString()),
+  action: (_e, column) => column.getTable().setSort(column.getField(), "desc"),
 };
 
 export const hideColumn: ColumnMenuItem = {
-  label: createMenuItem("Hide column"),
-  action: (_, column) => column.hide(),
+  label: createMenuItem(i18n.t("Hide column").toString()),
+  action: (_e, column) => column.hide(),
 };
 
 export const resizeAllColumnsToMatch: ColumnMenuItem = {
-  label: createMenuItem("Resize all columns to match"),
+  label: createMenuItem(i18n.t("Resize all columns to match").toString()),
   action: (_, column) => {
     try {
       column.getTable().blockRedraw();
@@ -56,12 +57,12 @@ export const resizeAllColumnsToMatch: ColumnMenuItem = {
 };
 
 export const resizeAllColumnsToFitContent: ColumnMenuItem = {
-  label: createMenuItem("Resize all columns to fit content"),
+  label: createMenuItem(i18n.t("Resize all columns to fit content").toString()),
   action: (_, column) => resizeAllColumnsToFitContentAction(column.getTable()),
 };
 
 export const resizeAllColumnsToFixedWidth: ColumnMenuItem = {
-  label: createMenuItem("Resize all columns to fixed width"),
+  label: createMenuItem(i18n.t("Resize all columns to fixed width").toString()),
   action: (_, column) => {
     try {
       column.getTable().blockRedraw();
@@ -361,7 +362,7 @@ export function copyActionsMenu(options: {
   const columnCount = ranges[0].getColumns().length
   const copyActions = [
     {
-      label: createMenuItem("Copy", "Control+C"),
+      label: createMenuItem(i18n.t("Copy").toString(), "Control+C"),
       action: () => copyRanges({ ranges, type: "plain" }),
     },
     {
@@ -369,19 +370,19 @@ export function copyActionsMenu(options: {
       action: () => copyRanges({ ranges, type: "columnName" }),
     },
     {
-      label: createMenuItem("Copy as TSV for Excel"),
+      label: createMenuItem(i18n.t("Copy as TSV for Excel").toString()),
       action: () => copyRanges({ ranges, type: "tsv" }),
     },
     {
-      label: createMenuItem("Copy as JSON"),
+      label: createMenuItem(i18n.t("Copy as JSON").toString()),
       action: () => copyRanges({ ranges, type: "json" }),
     },
     {
-      label: createMenuItem("Copy as Markdown"),
+      label: createMenuItem(i18n.t("Copy as Markdown").toString()),
       action: () => copyRanges({ ranges, type: "markdown" }),
     },
     {
-      label: createMenuItem("Copy as SQL"),
+      label: createMenuItem(i18n.t("Copy as SQL").toString()),
       action: () =>
         copyRanges({
           ranges,
@@ -405,7 +406,7 @@ export function copyActionsMenu(options: {
 export function pasteActionsMenu(range: RangeComponent) {
   return [
     {
-      label: createMenuItem("Paste", "Control+V"),
+      label: createMenuItem(i18n.t("Paste").toString(), "Control+V"),
       action: () => pasteRange(range),
     },
   ];

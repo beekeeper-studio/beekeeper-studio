@@ -19,7 +19,7 @@
             :key="pill.id"
             class="nav-pill"
             :class="{active: pill.id === activePill}"
-            :title="pill.dirty ? 'Unsaved Changes' : ''"
+            :title="pill.dirty ? $t('Unsaved Changes') : ''"
             @click.prevent="activePill = pill.id"
           >
             {{ pill.name }} {{ pill.dirty ? '*' : '' }}
@@ -55,9 +55,9 @@
               <x-button
                 @click.prevent="openData"
                 class="btn btn-flat btn-icon end"
-                title="View Data"
+                :title="$t('View Data')"
               >
-                Data <i class="material-icons">north_east</i>
+                {{ $t('Data') }} <i class="material-icons">north_east</i>
               </x-button>
               <template v-if="properties">
                 <table-length
@@ -66,7 +66,7 @@
                 <span
                   class="statusbar-item"
                   v-if="humanSize !== null"
-                  :title="`Table Size ${humanSize}`"
+                  :title="$t('Table Size {size}', { size: humanSize })"
                 >
                   <i class="material-icons">aspect_ratio</i>
                   <span>{{ humanSize }}</span>
@@ -74,7 +74,7 @@
                 <span
                   class="statusbar-item"
                   v-if="humanIndexSize !== null"
-                  :title="`Index Size ${humanIndexSize}`"
+                  :title="$t('Index Size {size}', { size: humanIndexSize })"
                 >
                   <i class="material-icons">location_searching</i>
                   <span>{{ humanIndexSize }}</span>
@@ -82,9 +82,9 @@
                 <span
                   class="statusbar-item"
                   v-if="!editable"
-                  title="Only tables can be edited."
+                  :title="$t('Only tables can be edited.')"
                 >
-                  <i class="material-icons-outlined">report_problem</i> Read Only
+                  <i class="material-icons-outlined">report_problem</i> {{ $t('Read Only') }}
                 </span>
                 <span
                   class="statusbar-item permission-warning"
@@ -101,16 +101,16 @@
           <template v-slot:actions>
             <x-button
               class="actions-btn btn btn-flat"
-              title="Actions"
+              :title="$t('Actions')"
             >
               <i class="material-icons">settings</i>
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="refresh">
-                  <x-label>Refresh</x-label>
+                  <x-label>{{ $t('Refresh') }}</x-label>
                 </x-menuitem>
                 <x-menuitem @click.prevent="openTable">
-                  <x-label>View Data</x-label>
+                  <x-label>{{ $t('View Data') }}</x-label>
                 </x-menuitem>
                 <template v-for="item in extraPopupMenu">
                   <hr v-if="item.type === 'divider'" :key="item.slug">
@@ -127,13 +127,13 @@
                   v-if="dev"
                   @click.prevent="triggerError"
                 >
-                  <x-label>[DEV] Toggle Error</x-label>
+                  <x-label>{{ $t('[DEV] Toggle Error') }}</x-label>
                 </x-menuitem>
                 <x-menuitem
                   v-if="dev"
                   @click.prevent="loading = !loading"
                 >
-                  <x-label>[DEV] Toggle Loading</x-label>
+                  <x-label>{{ $t('[DEV] Toggle Loading') }}</x-label>
                 </x-menuitem>
               </x-menu>
             </x-button>
@@ -166,7 +166,7 @@ export default {
   data() {
     return {
       initialized: false,
-      dev: platformInfo.isDevelopment,
+      dev: process.env.NODE_ENV === 'development',
       loading: true,
       error: null,
       primaryKeys: [],
@@ -175,7 +175,7 @@ export default {
       rawPills: [
         {
           id: 'schema',
-          name: "Columns",
+          name: this.$t("Columns"),
           needsProperties: false,
           needsPartitions: false,
           component: TableSchemaVue,
@@ -183,7 +183,7 @@ export default {
         },
         {
           id: 'indexes',
-          name: "Indexes",
+          name: this.$t("Indexes"),
           tableOnly: true,
           needsProperties: true,
           needsPartitions: false,
@@ -192,7 +192,7 @@ export default {
         },
         {
           id: 'relations',
-          name: "Relations",
+          name: this.$t("Relations"),
           tableOnly: true,
           needsRelations: true,
           needsProperties: true,
@@ -202,7 +202,7 @@ export default {
         },
         {
           id: 'triggers',
-          name: "Triggers",
+          name: this.$t("Triggers"),
           tableOnly: true,
           needsTriggers: true,
           needsProperties: true,
@@ -212,7 +212,7 @@ export default {
         },
         {
           id: 'partitions',
-          name: 'Partitions',
+          name: this.$t('Partitions'),
           tableOnly: true,
           needsProperties: true,
           needsPartitions: true,
@@ -221,7 +221,7 @@ export default {
         },
         {
           id: 'schema-validation',
-          name: 'Schema Validation',
+          name: this.$t('Schema Validation'),
           tableOnly: true,
           mongoOnly: true,
           needsProperties: false,
@@ -324,43 +324,43 @@ export default {
     },
     triggerError() {
       // this is for dev only
-      this.error = new Error("Something went wrong")
+      this.error = new Error(this.$t("Something went wrong"))
     },
     async fetchTotalRecords() {
       this.fetchingTotalRecords = true
       try {
         this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema);
       } catch (ex) {
-        console.error("unable to fetch total records", ex)
+        console.error(this.$t("unable to fetch total records"), ex)
         this.totalRecords = 0
       } finally {
         this.fetchingTotalRecords = false
       }
     },
     async initialize() {
-      log.info("initializing")
+      log.info(this.$t("initializing"))
       this.initialized = true
       await this.refresh()
     },
     async refresh() {
       if (!this.table) return;
-      log.info("refresh")
+      log.info(this.$t("refresh"))
       this.loading = true
       this.error = null
       // this.properties = null
       try {
         await this.$store.dispatch('updateTableColumns', this.table)
-        console.log("getting primary keys")
+        console.log(this.$t("getting primary keys"))
         this.primaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
         if (this.table.entityType === 'table') {
-          console.log("calling getTableProperties")
+          console.log(this.$t("calling getTableProperties"))
           this.properties = await this.connection.getTableProperties(this.table.name, this.table.schema);
         }
         this.loading = false
       } catch (ex) {
         this.error = ex
       } finally {
-        log.info("setting loaded = false")
+        log.info(this.$t("setting loaded = false"))
         this.loading = false
       }
     },

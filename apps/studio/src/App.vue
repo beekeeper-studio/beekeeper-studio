@@ -126,7 +126,7 @@ export default Vue.extend({
   },
   watch: {
     database() {
-      log.info('database changed', this.database)
+      log.info(this.$t('database changed'), this.database)
     },
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
@@ -141,6 +141,9 @@ export default Vue.extend({
         await this.$nextTick()
         this.validateLicenseExpiry()
       }
+    },
+    '$i18n.locale'() {
+      this.notifyFreeTrial()
     },
   },
   async beforeDestroy() {
@@ -176,7 +179,7 @@ export default Vue.extend({
         await this.$store.dispatch('openUrl', { url: this.url, auth })
       } catch (error) {
         console.error(error)
-        this.$noty.error(`Error opening ${this.url}: ${error}`)
+        this.$noty.error(this.$t('Error opening {url}: {error}', { url: this.url, error }))
         throw error
       }
     }
@@ -186,20 +189,32 @@ export default Vue.extend({
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {
-        const ta = new TimeAgo('en-US')
         const validUntil = this.status.license.validUntil
+        const dateStr = this.$bks.getTimeAgo().format(validUntil)
+        const localDateStr = validUntil.toLocaleDateString()
+        
+        let text = ''
+        if (this.$i18n.locale === 'en') {
+          text = `Your free trial expires ${dateStr} (${localDateStr})`
+        } else {
+          text = this.$t('Your free trial expires {date} ({localDate})', { 
+            date: dateStr, 
+            localDate: localDateStr 
+          })
+        }
+        
         const options = {
-          text: `Your free trial expires ${ta.format(validUntil)} (${validUntil.toLocaleDateString()})`,
+          text: text,
           type: 'warning',
           closeWith: ['button'],
           layout: 'bottomRight',
           timeout: false,
           queue: 'trial',
           buttons: [
-            Noty.button('Buy a License', 'btn btn-flat', () => {
+            Noty.button(this.$t('Buy a License'), 'btn btn-flat', () => {
               window.location.href = "https://beekeeperstudio.io/pricing"
             }),
-            Noty.button('Enter License', 'btn btn-primary', () => {
+            Noty.button(this.$t('Enter License'), 'btn btn-primary', () => {
               this.$root.$emit(AppEvent.enterLicense)
             })
           ]

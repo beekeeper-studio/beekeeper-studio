@@ -21,14 +21,14 @@
 
         <div v-if="loading">
           <div class="alert alert-info">
-            Applying changes...
+            {{ $t('Applying changes...') }}
           </div>
           <x-progressbar />
         </div>
         <div class="content-wrap">
           <div class="table-subheader">
             <div class="table-title">
-              <h2>Indexes</h2>
+              <h2>{{ $t('Indexes') }}</h2>
             </div>
             <span class="expand" />
             <div class="actions">
@@ -63,7 +63,7 @@
           class="btn btn-flat reset"
           @click.prevent="submitUndo"
         >
-          Reset
+          {{ $t('Reset') }}
         </x-button>
         <x-buttons
           v-if="hasEdits && !loading"
@@ -81,7 +81,7 @@
               class="badge"
               v-if="!error"
             ><small>{{ editCount }}</small></span>
-            <span>Apply</span>
+            <span>{{ $t('Apply') }}</span>
           </x-button>
           <x-button
             class="btn btn-primary"
@@ -91,11 +91,11 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem @click.prevent="submitApply">
-                <x-label>Apply</x-label>
+                <x-label>{{ $t('Apply') }}</x-label>
                 <x-shortcut value="Control+S" />
               </x-menuitem>
               <x-menuitem @click.prevent="submitSql">
-                <x-label>Copy to SQL</x-label>
+                <x-label>{{ $t('Copy to SQL') }}</x-label>
                 <x-shortcut value="Control+Shift+S" />
               </x-menuitem>
             </x-menu>
@@ -233,7 +233,7 @@ export default Vue.extend({
       const result = [
         (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
         {
-          title:'Name',
+          title: this.$t('Name'),
           field: 'name',
           editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
@@ -241,7 +241,7 @@ export default Vue.extend({
           cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell),
         },
         {
-          title: 'Unique',
+          title: this.$t('Unique'),
           field: 'unique',
           formatter: vueFormatter(CheckboxFormatterVue),
           formatterParams: {
@@ -251,15 +251,15 @@ export default Vue.extend({
           editable,
           editor: vueEditor(CheckboxEditorVue),
         },
-        (this.dialectData?.disabledFeatures?.index?.primary ? null : {title: 'Primary', field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85}),
+        (this.dialectData?.disabledFeatures?.index?.primary ? null : {title: this.$t('Primary'), field: 'primary', formatter: vueFormatter(CheckboxFormatterVue), width: 85}),
         // TODO (@day): fix
         (
           this.connection.supportedFeatures().indexNullsNotDistinct
-            ? { title: 'Info', field: 'info' }
+            ? { title: this.$t('Info'), field: 'info' }
             : null
         ),
         {
-          title: 'Columns',
+          title: this.$t('Columns'),
           field: 'columns',
           editable,
           editor: 'list',
@@ -320,10 +320,10 @@ export default Vue.extend({
       this.newRows.forEach((row: RowComponent) => {
         const data = row.getData()
         if (_.isEmpty(data.name)) {
-          throw new Error('Name cannot be empty')
+          throw new Error(this.$t('Name cannot be empty'))
         }
         if (_.isEmpty(data.columns)) {
-          throw new Error('Columns cannot be empty')
+          throw new Error(this.$t('Columns cannot be empty'))
         }
       })
     },
@@ -370,7 +370,7 @@ export default Vue.extend({
         const payload = this.getPayload()
 
         await this.connection.alterIndex(payload)
-        this.$noty.success("Indexes Updated")
+        this.$noty.success(this.$t("Indexes Updated"))
         this.$emit('actionCompleted')
         this.clearChanges()
         this.error = null
@@ -416,7 +416,7 @@ export default Vue.extend({
         data: this.tableData,
         columns: this.tableColumns,
         layout: 'fitColumns',
-        placeholder: "No Indexes",
+        placeholder: this.$t("No Indexes"),
         height: 'auto',
         columnDefaults: {
           title: '',

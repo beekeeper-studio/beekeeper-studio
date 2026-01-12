@@ -5,6 +5,7 @@ import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
+import i18n from "@/i18n"
 
 export interface ContextOption {
   name: string,
@@ -30,11 +31,28 @@ export const BeekeeperPlugin = {
     if (date > new Date('2888-01-01')) {
       return 'forever'
     }
-    const ta = new TimeAgo('en-US')
-
+    const currentLocale = i18n.locale
+    let timeagoLocale = 'en-US'
+    
+    if (currentLocale === 'zh-CN') {
+      timeagoLocale = 'zh'
+    }
+    
+    const ta = new TimeAgo(timeagoLocale)
     return ta.format(date)
-
   },
+  
+  getTimeAgo() {
+    const currentLocale = i18n.locale
+    let timeagoLocale = 'en-US'
+    
+    if (currentLocale === 'zh-CN') {
+      timeagoLocale = 'zh'
+    }
+    
+    return new TimeAgo(timeagoLocale)
+  },
+
   closeTab(id?: string) {
     this.$root.$emit(AppEvent.closeTab, id)
   },

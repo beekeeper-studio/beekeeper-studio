@@ -23,12 +23,12 @@
         <div class="alert alert-danger">
           <i class="material-icons">error_outline</i>
           <div class="alert-body">
-            This query was deleted by someone else. It is no longer editable.
+            {{ $t('This query was deleted by someone else. It is no longer editable.') }}
           </div>
           <a
             @click.prevent="close"
             class="btn btn-flat"
-          >Close Tab</a>
+          >{{ $t('Close Tab') }}</a>
         </div>
       </div>
       <component
@@ -172,7 +172,7 @@
             :disabled="isCommunity"
             @click="dryRun = !dryRun"
           >
-            <x-label>Dry Run</x-label>
+            <x-label>{{ $t('Dry Run') }}</x-label>
             <i
               v-if="isCommunity"
               class="material-icons menu-icon"
@@ -193,7 +193,7 @@
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
           >
-            Save
+            {{ $t('Save') }}
           </x-button>
 
           <x-buttons class="">
@@ -203,7 +203,7 @@
               @click.prevent="submitTabQuery"
               :disabled="this.tab.isRunning || running"
             >
-              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+              <x-label>{{ hasSelectedText ? $t('Run Selection') : $t('Run') }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
@@ -213,11 +213,11 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+                  <x-label>{{ hasSelectedText ? $t('Run Selection') : $t('Run') }}</x-label>
                   <x-shortcut value="Control+Enter" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>Run Current</x-label>
+                  <x-label>{{ $t('Run Current') }}</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <hr>
@@ -225,7 +225,7 @@
                   @click.prevent="submitQueryToFile"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
+                  <x-label>{{ hasSelectedText ? $t('Run Selection to File') : $t('Run to File') }}</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
@@ -237,7 +237,7 @@
                   @click.prevent="submitCurrentQueryToFile"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>Run Current to File</x-label>
+                  <x-label>{{ $t('Run Current to File') }}</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
@@ -253,10 +253,10 @@
     </div>
     <div class="not-supported" v-if="!enabled">
       <span class="title">
-        Query Editor
+        {{ $t('Query Editor') }}
       </span>
       <div class="body">
-        <p> We don't currently support queries for {{ dialect }} </p>
+        <p> {{ $t('We don\'t currently support queries for') }} {{ dialect }} </p>
       </div>
     </div>
     <div
@@ -285,7 +285,7 @@
       >
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
-          <span>Query {{ selectedResult + 1 }}/{{ results.length }}: No Results. {{ result.affectedRows || 0 }} rows affected. See the select box in the bottom left ↙ for more query results.</span>
+          <span>{{ $t('Query') }} {{ selectedResult + 1 }}/{{ results.length }}: {{ $t('No Results.') }} {{ result.affectedRows || 0 }} {{ $t('rows affected. See the select box in the bottom left ↙ for more query results.') }}</span>
         </div>
       </div>
       <div
@@ -387,7 +387,7 @@
         >
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Saved Query Name
+              {{ $t('Saved Query Name') }}
             </div>
             <div class="modal-form">
               <div
@@ -414,13 +414,13 @@
               type="button"
               @click.prevent="$modal.hide(`save-modal-${tab.id}`)"
             >
-              Cancel
+              {{ $t('Cancel') }}
             </button>
             <button
               class="btn btn-primary"
               type="submit"
             >
-              Save
+              {{ $t('Save') }}
             </button>
           </div>
         </form>
@@ -443,10 +443,10 @@
         >
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Provide parameter values
+              {{ $t('Provide parameter values') }}
             </div>
             <div class="dialog-c-subtitle">
-              You need to use single quotes around string values. Blank values are invalid
+              {{ $t('You need to use single quotes around string values. Blank values are invalid') }}
             </div>
             <div class="modal-form">
               <div class="form-group">
@@ -475,13 +475,13 @@
               type="button"
               @click.prevent="$modal.hide(`parameters-modal-${tab.id}`)"
             >
-              Cancel
+              {{ $t('Cancel') }}
             </button>
             <button
               class="btn btn-primary"
               type="submit"
             >
-              Run
+              {{ $t('Run') }}
             </button>
           </div>
         </form>
@@ -1156,7 +1156,7 @@
       async saveQuery() {
         if (this.remoteDeleted) return
         if (!this.hasTitle || !this.hasText) {
-          this.saveError = new Error("You need both a title, and some query text.")
+          this.saveError = new Error(this.$t("You need both a title, and some query text."))
           return
         } else {
           try {
@@ -1179,10 +1179,10 @@
               this.tab.title = this.query.title
               this.originalText = this.query.text
             })
-            this.$noty.success('Query Saved')
+            this.$noty.success(this.$t('Query Saved'))
           } catch (ex) {
             this.saveError = ex
-            this.$noty.error(`Save Error: ${ex.message}`)
+            this.$noty.error(`${this.$t('Save Error')}: ${ex.message}`)
           }
         }
       },
@@ -1313,7 +1313,7 @@
             }
           }
         } catch (ex) {
-          log.error("Unable to identify query", ex)
+          log.error(this.$t("Unable to identify query"), ex)
         }
 
         try {
@@ -1339,8 +1339,8 @@
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
           if (!document.hasFocus() && window.Notification && Notification.permission === "granted") {
-            new window.Notification("Query Complete", {
-              body: `${this.tab.title} has been executed successfully.`,
+            new window.Notification(this.$t("Query Complete"), {
+              body: `${this.tab.title} ${this.$t('has been executed successfully.')}`
             });
           }
 

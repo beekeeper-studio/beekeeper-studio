@@ -6,7 +6,7 @@
           <label
             for="Database"
             required
-          >Database File</label>
+          >{{ $t('Database File') }}</label>
           <file-picker v-model="config.defaultDatabase" />
 
           <toggle-form-area
@@ -19,9 +19,9 @@
                 <i class="material-icons-outlined">info</i>
                 <span class="flex">
                   <span class="expand">
-                    This is a global setting that affects all SQLite connections.
+                    {{ $t('This is a global setting that affects all SQLite connections.') }}
                   </span>
-                  <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+                  <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">{{ $t('Learn more') }}</a>
                 </span>
               </div>
 
@@ -64,9 +64,9 @@
           >
             <i class="material-icons">error_outline</i>
             <div>
-              Hey snap user! If you want to use a sqlite database on an external drive you'll need to give Beekeeper some extra permissions
+              {{ $t('Hey snap user! If you want to use a sqlite database on an external drive you\'ll need to give Beekeeper some extra permissions') }}
               <external-link :href="snap">
-                Read more
+                {{ $t('Read more') }}
               </external-link>
             </div>
           </div>

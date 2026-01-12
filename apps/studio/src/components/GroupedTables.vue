@@ -31,13 +31,13 @@ export default {
       if (this.tablesHaveSchemas) {
         return [
           rowSelection,
-          { title: 'Schema', field: 'schema', editable: false, headerFilter: 'input' },
-          { title: 'Table Name', field: 'name', editable: false, headerFilter: 'input' }
+          { title: this.$t('Schema'), field: 'schema', editable: false, headerFilter: 'input' },
+          { title: this.$t('Table Name'), field: 'name', editable: false, headerFilter: 'input' }
         ]
       }
       return [
         rowSelection,
-        { title: 'Table Name', field: 'name' }
+        { title: this.$t('Table Name'), field: 'name' }
       ]
     },
     tableData() {
@@ -69,7 +69,7 @@ export default {
       }
 
       if (!selectedGroup) {
-        throw new Error(`${buttonAction} group not found`)
+        throw new Error(`${buttonAction} ${this.$t('group not found')}`)
       }
 
       this.$emit('select-schema', buttonAction)
@@ -138,7 +138,7 @@ export default {
         data: this.tableData,
         columns: this.tableColumns,
         layout: 'fitColumns',
-        placeholder: 'Tables Loading...',
+        placeholder: this.$t('Tables Loading...'),
         selectable: true,
         width: '100%',
         // height: '100%',
@@ -152,7 +152,7 @@ export default {
           if (hasGroups) {
             this.$nextTick(this.setSelectHeaderListener)
           }
-          return `<div class="group-header"><input name="group-header-select" class="select-group" type="checkbox" value="${sanValue}" /><span>${sanValue}</span> <span style="margin-left:10px;">(${count} ${pluralize('item', count)})</span> </div>`;
+          return `<div class="group-header"><input name="group-header-select" class="select-group" type="checkbox" value="${sanValue}" /><span>${sanValue}</span> <span style="margin-left:10px;">(${count} ${this.$t('item', count)})</span> </div>`;
         } : null,
         columnDefaults: {
           resizable: false,

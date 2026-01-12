@@ -18,13 +18,13 @@
         <span
           class="clear"
           @click.prevent="searchTerm = null"
-        ><i class="material-icons">cancel</i></span>
+        ><i class="material-icons">{{ $t('cancel') }}</i></span>
       </div>
       <ul
         class="results no-results"
         v-if="!results.length && searchTerm"
       >
-        <li>No Results</li>
+        <li>{{ $t('No Results') }}</li>
       </ul>
       <ul
         class="results"
@@ -68,39 +68,39 @@
         class="results empty"
         v-if="!results.length && !searchTerm"
       >
-        <p>Type a table name or query name</p>
+        <p>{{ $t('Type a table name or query name') }}</p>
         <div class="shortcut-item">
-          <div>Open </div>
+          <div>{{ $t('Open') }}</div>
           <div class="shortcut">
             <span>Enter</span>
           </div>
         </div>
         <div class="shortcut-item">
-          <div>Alt Open</div>
+          <div>{{ $t('Alt Open') }}</div>
           <div class="shortcut">
             <span v-if="this.$config.isMac">Cmd</span>
             <span v-if="!this.$config.isMac">Ctrl</span>
             <span>Enter</span>
           </div>
-          <span class="hint">(tables only)</span>
+          <span class="hint">{{ $t('(tables only)') }}</span>
         </div>
         <div class="shortcut-item">
-          <div>Open In Background</div>
+          <div>{{ $t('Open In Background') }}</div>
           <div class="shortcut">
             <!-- <span v-if="this.$config.isMac">Cmd</span>
             <span v-if="!this.$config.isMac">Ctrl</span> -->
-            <span>Right Arrow</span>
+            <span>{{ $t('Right Arrow') }}</span>
           </div>
-          <span class="hint">(tables only)</span>
+          <span class="hint">{{ $t('(tables only)') }}</span>
         </div>
         <div class="shortcut-item">
-          <div>Alt In Background</div>
+          <div>{{ $t('Alt In Background') }}</div>
           <div class="shortcut">
             <span v-if="this.$config.isMac">Cmd</span>
             <span v-if="!this.$config.isMac">Ctrl</span>
             <span>Right Arrow</span>
           </div>
-          <span class="hint">(tables only)</span>
+          <span class="hint">{{ $t('(tables only)') }}</span>
         </div>
       </div>
       <ul

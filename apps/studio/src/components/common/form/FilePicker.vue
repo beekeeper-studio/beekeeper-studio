@@ -6,7 +6,7 @@
       :id="inputId"
       type="text"
       class="form-control clickable"
-      placeholder="No file selected"
+      :placeholder="$t('No file selected')"
       :title="value"
       :value="inputValue"
       :disabled="disabled"
@@ -23,7 +23,7 @@
         type="button"
         class="btn btn-flat"
         :class="{disabled}"
-      >{{ buttonText }}</a>
+      >{{ buttonText ? $t(buttonText) : $t('Choose File') }}</a>
     </div>
     <div
       v-if="showCreateButton"
@@ -34,7 +34,7 @@
         class="btn btn-flat"
         @click="openFilePickerDialog({ save: true })"
       >
-        Create
+        {{ $t('Create') }}
       </a>
     </div>
     <slot name="actions" />
@@ -104,7 +104,7 @@ export default {
 
       if (Array.isArray(files)) {
         if (files.length > 1) {
-          return `${files[0]} (${files.length} files)`
+          return `${files[0]} (${this.$t('files', {count: files.length})})` 
         }
         return files[0]
       }

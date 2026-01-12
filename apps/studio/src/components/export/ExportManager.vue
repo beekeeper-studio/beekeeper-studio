@@ -71,7 +71,7 @@ export default Vue.extend({
         let errorMessage = "An unexpected error occurred during export.";
         const error_notice = this.$noty.error(`Export of ${exportName} failed: ${errorMessage}`, {
             buttons: [
-              Noty.button('Close', "btn btn-primary", () => {
+              Noty.button(this.$t('Close'), "btn btn-primary", () => {
                 error_notice.close()
               })
             ]
@@ -79,9 +79,9 @@ export default Vue.extend({
           return
         }
         if (status !== ExportStatus.Completed) return;
-        const n = this.$noty.success(`Export of ${exportName} complete`, {
+        const n = this.$noty.success(this.$t('Export of {exportName} complete', {exportName}), {
           buttons: [
-            Noty.button('Show', "btn btn-primary", () => {
+            Noty.button(this.$t('Show'), "btn btn-primary", () => {
               this.$native.files.showItemInFolder(options.filePath)
               n.close()
             })

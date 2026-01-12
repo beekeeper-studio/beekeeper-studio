@@ -6,18 +6,18 @@
       <span class="expand flex flex-middle">
         <i class="material-icons me-2">info_outline</i>
         <span>
-          Your existing license is not valid for this version of the app.
-          <a @click.prevent="showLicenseInfo">Learn more.</a>
+          {{ $t('Your existing license is not valid for this version of the app.') }}
+          <a @click.prevent="showLicenseInfo">{{ $t('Learn more.') }}</a>
         </span>
       </span>
     </p>
     <div class="actions">
-      <a v-if="trialAvailable" class="btn btn-flat" v-tooltip="'14 day free trial, no email or credit card required'" @click.prevent="startTrial">Start Free Trial</a>
-      <a v-else :href="learnUrl" class="btn btn-flat">Learn more</a>
-      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Buy License</a>
+      <a v-if="trialAvailable" class="btn btn-flat" v-tooltip="$t('14 day free trial, no email or credit card required')" @click.prevent="startTrial">{{ $t('Start Free Trial') }}</a>
+      <a v-else :href="learnUrl" class="btn btn-flat">{{ $t('Learn more') }}</a>
+      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="$t('Get lifetime app access with any purchase')">{{ $t('Buy License') }}</a>
     </div>
     <p class="help text-right text-muted small" v-if="trialExpired">
-      Your free trial ended on {{ trialEndDate }}
+      {{ $t('Your free trial ended on') }} {{ trialEndDate }}
     </p>
   </div>
 </template>

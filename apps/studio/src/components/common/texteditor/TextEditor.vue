@@ -483,19 +483,19 @@ export default {
       const menu = {
         options: [
           {
-            name: "Undo",
+            name: this.$t("Undo"),
             handler: () => this.editor.execCommand("undo"),
             shortcut: this.ctrlOrCmd("z"),
             write: true,
           },
           {
-            name: "Redo",
+            name: this.$t("Redo"),
             handler: () => this.editor.execCommand("redo"),
             shortcut: this.ctrlOrCmd("shift+z"),
             write: true,
           },
           {
-            name: "Cut",
+            name: this.$t("Cut"),
             handler: () => {
               const selection = this.editor.getSelection();
               this.editor.replaceSelection("");
@@ -506,7 +506,7 @@ export default {
             write: true,
           },
           {
-            name: "Copy",
+            name: this.$t("Copy"),
             handler: () => {
               const selection = this.editor.getSelection();
               this.$native.clipboard.writeText(selection);
@@ -515,7 +515,7 @@ export default {
             shortcut: this.ctrlOrCmd("c"),
           },
           {
-            name: "Paste",
+            name: this.$t("Paste"),
             handler: () => {
               const clipboard = this.$native.clipboard.readText();
               if (this.editor.getSelection()) {
@@ -529,7 +529,7 @@ export default {
             write: true,
           },
           {
-            name: "Delete",
+            name: this.$t("Delete"),
             handler: () => {
               this.editor.replaceSelection("");
             },
@@ -537,7 +537,7 @@ export default {
             write: true,
           },
           {
-            name: "Select All",
+            name: this.$t("Select All"),
             handler: () => {
               this.editor.execCommand("selectAll");
             },
@@ -547,14 +547,14 @@ export default {
             type: "divider",
           },
           {
-            name: "Find",
+            name: this.$t("Find"),
             handler: () => {
               this.editor.execCommand("find");
             },
             shortcut: this.ctrlOrCmd("f"),
           },
           {
-            name: "Replace",
+            name: this.$t("Replace"),
             handler: () => {
               this.editor.execCommand("replace");
             },
@@ -562,7 +562,7 @@ export default {
             write: true,
           },
           {
-            name: "Replace All",
+            name: this.$t("Replace All"),
             handler: () => {
               this.editor.execCommand("replaceAll");
             },

@@ -9,7 +9,7 @@
           @click="handleTabClick($event, tab)"
           @click.right="handleTabRightClick($event, tab)"
         >
-          <x-label>{{ tab.label }}</x-label>
+          <x-label>{{ $t(tab.label) }}</x-label>
         </x-tab>
       </x-tabs>
       <div class="actions">
