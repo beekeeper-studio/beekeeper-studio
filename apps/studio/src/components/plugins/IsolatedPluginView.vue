@@ -1,5 +1,10 @@
 <template>
   <div class="isolated-plugin-view" ref="container">
+    <div v-if="error" class="alert alert-danger">
+      <i class="material-icons-outlined">error</i>
+      <div class="alert-body">{{ error }}</div>
+      <button class="btn btn-flat" @click="reload">Reload</button>
+    </div>
     <div v-if="$bksConfig.plugins?.[pluginId]?.disabled" class="alert">
       <i class="material-icons-outlined">info</i>
       <div>This plugin ({{ pluginId }}) has been disabled via configuration</div>
@@ -11,6 +16,9 @@
 import Vue, { PropType } from "vue";
 import { LoadViewParams } from "@beekeeperstudio/plugin";
 import { ThemeChangedNotification } from "@beekeeperstudio/plugin";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("IsolatedPluginView");
 
 export default Vue.extend({
   name: "IsolatedPluginView",
@@ -23,8 +31,13 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    viewId: {
+      type: String,
+      required: true,
+    },
     command: String,
     params: null as PropType<LoadViewParams>,
+    // @todo move url creation to this component by using pluginId and viewId
     url: {
       type: String,
       required: true,
@@ -42,6 +55,7 @@ export default Vue.extend({
       unsubscribeOnReady: null,
       unsubscribeOnDispose: null,
       iframe: null,
+      error: null as string | null,
     };
   },
   computed: {
@@ -74,8 +88,27 @@ export default Vue.extend({
     },
   },
   methods: {
-    mountIframe() {
+    async mountIframe() {
       if (this.iframe) {
+        return;
+      }
+      console.log('hello', this.pluginId, this.viewId)
+
+      this.error = null;
+
+      try {
+        const exists = await this.$plugin.viewEntrypointExists(
+          this.pluginId,
+          this.viewId
+        );
+        if (!exists) {
+          this.error = "Plugin view entrypoint does not exist";
+          return;
+        }
+      } catch (e) {
+        this.error =
+          `${e.message} - The plugin may not be installed, or it tried to ` +
+          "load a view that doesn't exist."
         return;
       }
 
@@ -120,17 +153,23 @@ export default Vue.extend({
       this.iframe = null;
       this.mounted = false;
     },
-    handleError(e) {
-      console.error(`${this.pluginId} iframe error`, e);
-    }
+    reload() {
+      this.unmountIframe();
+      this.mountIframe();
+    },
   },
   mounted() {
-    this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
-      this.loaded = true;
-    });
-    this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
-      this.loaded = false;
-    })
+    try {
+      this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
+        this.loaded = true;
+      });
+      this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
+        this.loaded = false;
+      })
+    } catch (e) {
+      log.error(e);
+      this.error = e.message;
+    }
   },
   beforeDestroy() {
     this.unsubscribeOnReady?.();
@@ -139,3 +178,9 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.isolated-plugin-view .alert {
+  margin: 1rem;
+}
+</style>
