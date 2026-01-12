@@ -266,16 +266,24 @@ export default class WebPluginLoader {
           response.result = window.main.writeImageToClipboard(response.args.data);
           break;
         case "noty.info":
-          this.context.noty.info(response.args.message);
+          this.context.noty.info(response.args.message, {
+            allowRawHtml: false,
+          });
           break;
         case "noty.success":
-          this.context.noty.success(response.args.message);
+          this.context.noty.success(response.args.message, {
+            allowRawHtml: false,
+          });
           break;
         case "noty.error":
-          this.context.noty.error(response.args.message);
+          this.context.noty.error(response.args.message, {
+            allowRawHtml: false,
+          });
           break;
         case "noty.warning":
-          this.context.noty.warning(response.args.message);
+          this.context.noty.warning(response.args.message, {
+            allowRawHtml: false,
+          });
           break;
         case "confirm":
           response.result = await this.context.confirm(

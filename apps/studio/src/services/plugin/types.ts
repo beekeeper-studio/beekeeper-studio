@@ -181,10 +181,10 @@ export type WebPluginContext = {
   appVersion: string;
   fileHelpers: FileHelpers;
   noty: {
-    success(text: string): Noty;
-    error(text: string): Noty;
-    warning(text: string): Noty;
-    info(text: string): Noty;
+    success(text: string, options?: any): Noty;
+    error(text: string, options?: any): Noty;
+    warning(text: string, options?: any): Noty;
+    info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
