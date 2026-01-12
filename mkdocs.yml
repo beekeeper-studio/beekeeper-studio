@@ -15,6 +15,7 @@ extra:
       name: Beekeeper Studio on GitHub
   generator: false
 theme:
+  language: en
   logo: assets/bks.svg
   favicon: assets/favicon-96x96.png
   name: material
@@ -23,7 +24,7 @@ theme:
   font:
     text: Rubik
   features:
-    - navigation.instant
+    # - navigation.instant - broken with i18n
     # - navigation.tabs
     - navigation.tabs.sticky
     - navigation.tracking
@@ -50,6 +51,49 @@ extra_javascript:
 plugins:
   - search
   - include-markdown
+  # i18n plugin for multi-language documentation
+  # Target languages (10 total):
+  #   - en: English (default)
+  #   - es: Spanish
+  #   - pt-BR: Portuguese (Brazil)
+  #   - de: German
+  #   - fr: French
+  #   - el: Greek
+  #   - ja: Japanese
+  #   - it: Italian
+  #   - ko: Korean
+  #   - id: Indonesian
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: es
+          name: Espanol
+          build: true
+          site_name: Documentacion de Beekeeper Studio
+          site_description: Documentacion de usuario de Beekeeper Studio - como instalar, configurar y usar Beekeeper Studio
+          nav_translations:
+            Introduction: Introduccion
+            Installation: Instalacion
+            Connecting To A Database: Conectar a una Base de Datos
+            Connection Options: Opciones de Conexion
+            Features: Caracteristicas
+            Data Import: Importar Datos
+            Diagrams: Diagramas
+            Cloud Workspaces: Espacios de Trabajo en la Nube
+            Plugins: Plugins
+            Configuration: Configuracion
+            Support: Soporte
+            Upgrading: Actualizar
+            ClickHouse: ClickHouse
+            SQLite: SQLite
+            Trino: Trino
 #  - social:
 #      cards_layout_options:
 #        background_color: "#2c2c2c"
