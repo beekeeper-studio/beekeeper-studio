@@ -1,5 +1,5 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "@/lib/db/types";
 import {
   BasicDatabaseClient,
   ExecutionContext,
@@ -988,9 +988,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,
-    schema: string
+    schema: string,
+    options?: DropElementOptions
   ): Promise<void> {
     let query: string;
+    const cascade = options?.cascade && typeOfElement === DatabaseElement.TABLE ? ' CASCADE' : '';
 
     if (typeOfElement === DatabaseElement["TABLE"]) {
       query = "DROP TABLE";
@@ -1006,7 +1008,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     elementName = DuckDBData.wrapIdentifier(elementName);
     schema = DuckDBData.wrapIdentifier(schema);
 
-    await this.driverExecuteSingle(`${query} ${schema}.${elementName}`);
+    await this.driverExecuteSingle(`${query} ${schema}.${elementName}${cascade}`);
   }
 
   async truncateAllTables(schema: string): Promise<void> {

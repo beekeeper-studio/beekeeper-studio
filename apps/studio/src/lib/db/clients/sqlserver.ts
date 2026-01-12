@@ -7,7 +7,7 @@ import knexlib from 'knex'
 import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'
 
-import { DatabaseElement, IDbConnectionDatabase } from "../types"
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "../types"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -589,7 +589,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return `EXEC sp_rename ${elementName}, ${newElementName};`
   }
 
-  async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo') {
+  async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'dbo', _options?: DropElementOptions) {
     const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
     await this.driverExecuteSingle(sql)
   }

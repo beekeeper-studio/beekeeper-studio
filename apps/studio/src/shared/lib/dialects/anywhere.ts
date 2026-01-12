@@ -65,6 +65,7 @@ export const SqlAnywhereData: DialectData = {
     dropSchema: true,
     informationSchema: {
       extra: true
-    }
+    },
+    dropCascade: true,
   }
 }

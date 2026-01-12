@@ -152,6 +152,10 @@ export enum DatabaseElement {
   SCHEMA = 'SCHEMA'
 }
 
+export interface DropElementOptions {
+  cascade?: boolean;
+}
+
 export interface IDbConnectionDatabase {
   database: string,
   connected: Nullable<boolean>,
@@ -265,7 +269,7 @@ export interface IBasicDatabaseClient {
   applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
   setTableDescription(table: string, description: string, schema?: string): Promise<string>
   setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
-  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
+  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string, options?: DropElementOptions): Promise<void>,
   truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   truncateAllTables(schema?: string): Promise<void>
 

@@ -8,7 +8,7 @@ import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
-import { DatabaseElement, IDbConnectionDatabase } from '../types'
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
@@ -1159,11 +1159,12 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return sql
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema, options?: DropElementOptions): Promise<void> {
+    const cascade = options?.cascade && typeOfElement === DatabaseElement.TABLE ? ' CASCADE' : '';
     // Schemas are top-level objects and don't need schema prefixing
     const sql = typeOfElement === DatabaseElement.SCHEMA
-      ? `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(elementName)}`
-      : `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+      ? `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(elementName)}${cascade}`
+      : `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}${cascade}`
 
     await this.driverExecuteSingle(sql)
   }

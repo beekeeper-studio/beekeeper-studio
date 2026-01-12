@@ -69,7 +69,8 @@ export const SqlServerData: DialectData = {
     },
     informationSchema: {
       extra: true
-    }
+    },
+    dropCascade: true,
   }
 
 }

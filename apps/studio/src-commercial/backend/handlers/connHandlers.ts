@@ -1,7 +1,7 @@
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
-import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
+import { DatabaseElement, DropElementOptions, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
 import ConnectionProvider from '../lib/connection-provider';
@@ -88,7 +88,7 @@ export interface IConnectionHandlers {
   'conn/applyChanges': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<TableUpdateResult[]>,
   'conn/setTableDescription': ({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) => Promise<string>,
   'conn/setElementName': ({ elementName, newElementName, typeOfElement, schema, sId }: { elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
-  'conn/dropElement': ({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
+  'conn/dropElement': ({ elementName, typeOfElement, schema, options, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, options?: DropElementOptions, sId: string }) => Promise<void>,
   'conn/truncateElement': ({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
   'conn/truncateAllTables': ({ schema, sId }: { schema?: string, sId: string }) => Promise<void>,
 
@@ -500,9 +500,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.setElementName(elementName, newElementName, typeOfElement, schema);
   },
 
-  'conn/dropElement': async function({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) {
+  'conn/dropElement': async function({ elementName, typeOfElement, schema, options, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, options?: DropElementOptions, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.dropElement(elementName, typeOfElement, schema);
+    return await state(sId).connection.dropElement(elementName, typeOfElement, schema, options);
   },
 
   'conn/truncateElement': async function({ elementName, typeOfElement, schema, sId }: {elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) {

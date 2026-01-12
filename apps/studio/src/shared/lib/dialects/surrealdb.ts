@@ -120,6 +120,7 @@ export const SurrealDBData: DialectData = {
     dropTable: true,
     compositeKeys: true,
     importFromFile: true,
+    dropCascade: true,
   },
   boolean: {
     true: true,

@@ -24,6 +24,7 @@ import {
 import {
   IDbConnectionDatabase,
   DatabaseElement,
+  DropElementOptions,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
 import {createCancelablePromise} from "@/common/utils";
@@ -1055,7 +1056,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,
-    _schema?: string
+    _schema?: string,
+    _options?: DropElementOptions
   ): Promise<void> {
     await this.runWithConnection(async (connection) => {
       const sql = `

@@ -1,7 +1,7 @@
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from '@/lib/db/clients/BasicDatabaseClient';
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, BksField, TableInsert, TableUpdate, TableDelete } from '@/lib/db/models';
-import { DatabaseElement, IDbConnectionDatabase } from '@/lib/db/types';
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from '@/lib/db/types';
 import { TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import rawLog from '@bksLogger';
@@ -1075,7 +1075,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     return '';
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string, _options?: DropElementOptions): Promise<void> {
     if ([DatabaseElement.DATABASE, DatabaseElement.SCHEMA].includes(typeOfElement)) {
       throw new Error(`Cannot drop element type ${typeOfElement}`);
     }
