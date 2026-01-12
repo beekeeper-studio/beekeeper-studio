@@ -220,3 +220,19 @@ English is the primary language. To find all files needing translation for a new
 3. For each English file found, create the corresponding `.{locale}.md` translation
 
 Example: If you find `docs/user_guide/security.md`, create `docs/user_guide/security.es.md` for Spanish.
+
+### README Translations
+
+The main `README.md` has translations in the repo root using the pattern `README-{locale}.md` or `README.{locale}.md`:
+- `README.md` - English (primary)
+- `README-es.md` - Spanish
+- `README.pt-br.md` - Portuguese (Brazil)
+
+When adding a new README translation:
+1. Create `README-{locale}.md` in the repo root
+2. Add a link to it in the translation line at the top of `README.md`
+
+The first line of `README.md` links to all translations using the format:
+```markdown
+🌐 [ES](README-es.md) | [PT-BR](README.pt-br.md)
+```
