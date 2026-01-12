@@ -51,6 +51,18 @@ extra_javascript:
 plugins:
   - search
   - include-markdown
+  # i18n plugin for multi-language documentation
+  # Target languages (10 total):
+  #   - en: English (default)
+  #   - es: Spanish
+  #   - pt-BR: Portuguese (Brazil)
+  #   - de: German
+  #   - fr: French
+  #   - el: Greek
+  #   - ja: Japanese
+  #   - it: Italian
+  #   - ko: Korean
+  #   - id: Indonesian
   - i18n:
       docs_structure: suffix
       fallback_to_default: true
