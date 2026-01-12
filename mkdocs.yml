@@ -64,6 +64,24 @@ plugins:
         - locale: es
           name: Espanol
           build: true
+          site_name: Documentacion de Beekeeper Studio
+          site_description: Documentacion de usuario de Beekeeper Studio - como instalar, configurar y usar Beekeeper Studio
+          nav_translations:
+            Introduction: Introduccion
+            Installation: Instalacion
+            Connecting To A Database: Conectar a una Base de Datos
+            Connection Options: Opciones de Conexion
+            Features: Caracteristicas
+            Data Import: Importar Datos
+            Diagrams: Diagramas
+            Cloud Workspaces: Espacios de Trabajo en la Nube
+            Plugins: Plugins
+            Configuration: Configuracion
+            Support: Soporte
+            Upgrading: Actualizar
+            ClickHouse: ClickHouse
+            SQLite: SQLite
+            Trino: Trino
 #  - social:
 #      cards_layout_options:
 #        background_color: "#2c2c2c"
