@@ -15,6 +15,7 @@ extra:
       name: Beekeeper Studio on GitHub
   generator: false
 theme:
+  language: en
   logo: assets/bks.svg
   favicon: assets/favicon-96x96.png
   name: material
@@ -23,7 +24,7 @@ theme:
   font:
     text: Rubik
   features:
-    - navigation.instant
+    # - navigation.instant - broken with i18n
     # - navigation.tabs
     - navigation.tabs.sticky
     - navigation.tracking
@@ -50,6 +51,19 @@ extra_javascript:
 plugins:
   - search
   - include-markdown
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: es
+          name: Espanol
+          build: true
 #  - social:
 #      cards_layout_options:
 #        background_color: "#2c2c2c"
