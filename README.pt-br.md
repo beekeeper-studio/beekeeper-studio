@@ -1,4 +1,5 @@
-🌐 [EN](README.md) | [ES](README-es.md)
+<!-- Target languages: ["en", "pt-BR", "es", "de", "fr", "el", "ja", "it", "ko", "id"] -->
+🌐 [EN](README.md) | [ES](README-es.md) | [DE](README-de.md) | [FR](README-fr.md) | [EL](README-el.md) | [JA](README-ja.md) | [IT](README-it.md) | [KO](README-ko.md) | [ID](README-id.md)
 
 # Beekeeper Studio
 
