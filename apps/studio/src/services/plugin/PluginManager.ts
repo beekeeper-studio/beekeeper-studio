@@ -25,9 +25,6 @@ export type PluginManagerOptions = {
   fileManager: PluginFileManager;
   registry?: PluginRegistry;
   appVersion: string;
-
-  /** This is triggered when registry module fails to fetch during initialization, e.g. if the app runs in offline. */
-  initialRegistryFallback?: () => Promise<PluginRegistryEntry[]>;
 }
 
 type InstallGuard = (plugin: {
@@ -120,10 +117,7 @@ export default class PluginManager {
     const { errors } = await this.registry.fetch();
     if (errors.core || errors.community) {
       // TODO show errors to user?
-      if (this.options.initialRegistryFallback) {
-        const entries = await this.options.initialRegistryFallback();
-        this.registry.entries = entries;
-      }
+      log.error("Failed to fetch plugin registry", errors);
     }
 
     this.initialized = true;
