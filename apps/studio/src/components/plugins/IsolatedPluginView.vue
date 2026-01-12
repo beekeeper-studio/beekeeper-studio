@@ -92,7 +92,6 @@ export default Vue.extend({
       if (this.iframe) {
         return;
       }
-      console.log('hello', this.pluginId, this.viewId)
 
       this.error = null;
 
