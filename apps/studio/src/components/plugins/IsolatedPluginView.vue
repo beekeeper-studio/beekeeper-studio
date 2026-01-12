@@ -153,19 +153,34 @@ export default Vue.extend({
       this.iframe = null;
       this.mounted = false;
     },
-    reload() {
-      this.unmountIframe();
-      this.mountIframe();
-    },
-  },
-  mounted() {
-    try {
+    subscribe() {
       this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
         this.loaded = true;
       });
       this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
         this.loaded = false;
       })
+    },
+    unsubscribe() {
+      this.unsubscribeOnReady?.();
+      this.unsubscribeOnDispose?.();
+      this.loaded = false;
+    },
+    reload() {
+      try {
+        this.unsubscribe();
+        this.unmountIframe();
+        this.subscribe();
+        this.mountIframe();
+      } catch (e) {
+        log.error(e);
+        this.error = e.message;
+      }
+    },
+  },
+  mounted() {
+    try {
+      this.subscribe();
     } catch (e) {
       log.error(e);
       this.error = e.message;
