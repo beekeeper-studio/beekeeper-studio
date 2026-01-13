@@ -94,6 +94,27 @@ plugins:
             ClickHouse: ClickHouse
             SQLite: SQLite
             Trino: Trino
+        - locale: pt-BR
+          name: Português (Brasil)
+          build: true
+          site_name: Documentação do Beekeeper Studio
+          site_description: Documentação de usuário do Beekeeper Studio - como instalar, configurar e usar o Beekeeper Studio
+          nav_translations:
+            Introduction: Introdução
+            Installation: Instalação
+            Connecting To A Database: Conectar a um Banco de Dados
+            Connection Options: Opções de Conexão
+            Features: Recursos
+            Data Import: Importação de Dados
+            Diagrams: Diagramas
+            Cloud Workspaces: Espaços de Trabalho na Nuvem
+            Plugins: Plugins
+            Configuration: Configuração
+            Support: Suporte
+            Upgrading: Atualização
+            ClickHouse: ClickHouse
+            SQLite: SQLite
+            Trino: Trino
 #  - social:
 #      cards_layout_options:
 #        background_color: "#2c2c2c"
