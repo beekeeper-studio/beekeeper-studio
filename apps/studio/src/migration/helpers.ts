@@ -1,20 +1,9 @@
+import { UserSettingValueType } from "@/common/appdb/models/user_setting";
 import type { QueryRunner } from "typeorm";
 
 /**
  * Helper functions for database migrations
  */
-
-/**
- * Value types for user settings
- */
-const UserSettingValueType = {
-  string: 0,
-  int: 1,
-  float: 2,
-  object: 3,
-  array: 4,
-  boolean: 5,
-}
 
 /**
  * Options for adding a user setting
@@ -76,7 +65,7 @@ export async function addUserSetting(
       valueType
     ) VALUES (
       '${key}',
-      ${_.isNil(userValue) ? "NULL" : `'${userValue}'`},
+      ${userValue == null ? "NULL" : `'${userValue}'`},
       '${defaultValue}',
       '${linuxDefault}',
       '${macDefault}',
