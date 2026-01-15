@@ -57,5 +57,8 @@ export default Vue.extend({
       this.$emit('cancel');
     },
   },
+  beforeDestroy() {
+    this.$modal.hide(this.modalName);
+  }
 });
 </script>
