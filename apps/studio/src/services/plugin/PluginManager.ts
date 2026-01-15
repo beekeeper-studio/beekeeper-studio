@@ -266,7 +266,11 @@ export default class PluginManager {
    * Enable or disable automatic update checks for a specific plugin
    */
   async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
-    this.pluginSettings[id].autoUpdate = enabled;
+    if (!this.pluginSettings[id]) {
+      this.pluginSettings[id] = { autoUpdate: enabled };
+    } else {
+      this.pluginSettings[id].autoUpdate = enabled;
+    }
     // Persist the changes to the database
     await this.savePluginSettings();
   }

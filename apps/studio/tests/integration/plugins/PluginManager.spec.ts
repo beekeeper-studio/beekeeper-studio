@@ -15,7 +15,10 @@ import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { mkdirSync, writeFileSync } from "fs";
+import fs from "fs-extra";
 import path from "path";
+import os from "os";
+import ensureBundledPluginsInstalled from "@commercial/backend/plugin-system/hooks/ensureBundledPluginsInstalled";
 
 describe("Basic Plugin Management", () => {
   const server = createPluginServer();
@@ -132,7 +135,7 @@ describe("Basic Plugin Management", () => {
     });
   });
 
-  describe("Installing", () => {
+  describe("Installing (online)", () => {
     it("can install the latest plugins if compatible", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
@@ -154,43 +157,121 @@ describe("Basic Plugin Management", () => {
         NotFoundPluginError
       );
     });
+  });
+
+  describe("Installing (offline)", () => {
+    let bundledPluginsPath: string;
+    let testPluginPath: string;
+    let frozenBananaPath: string;
+    const fileManager = createFileManager();
+
+    beforeAll(async () => {
+      // Create a temporary directory with plugin files
+      const tmpDir = os.tmpdir();
+      bundledPluginsPath = path.join(tmpDir, `tmp_plugins_${Date.now()}`);
+      mkdirSync(bundledPluginsPath, { recursive: true });
+
+      testPluginPath = path.join(bundledPluginsPath, "test-plugin");
+      frozenBananaPath = path.join(bundledPluginsPath, "frozen-banana");
+
+      mkdirSync(testPluginPath, { recursive: true });
+      mkdirSync(frozenBananaPath, { recursive: true });
+
+      // Create manifest.json files
+      writeFileSync(
+        path.join(testPluginPath, "manifest.json"),
+        JSON.stringify({
+          id: "test-plugin",
+          name: "Test Plugin",
+          version: "1.0.0",
+          minAppVersion: AppVer.COMPAT,
+          author: "test-plugin-author",
+          description: "Test Plugin description",
+          manifestVersion: 1,
+          capabilities: { views: [], menu: [] },
+        } as Manifest)
+      );
+
+      writeFileSync(
+        path.join(frozenBananaPath, "manifest.json"),
+        JSON.stringify({
+          id: "frozen-banana",
+          name: "Frozen Banana",
+          version: "1.0.0",
+          minAppVersion: AppVer.COMPAT,
+          author: "frozen-banana-author",
+          description: "Frozen Banana description",
+          manifestVersion: 1,
+          capabilities: { views: [], menu: [] },
+        } as Manifest)
+      );
+    });
+
+    afterAll(() => {
+      // Clean up temporary directory
+      if (bundledPluginsPath && fs.existsSync(bundledPluginsPath)) {
+        fs.removeSync(bundledPluginsPath);
+      }
+    });
+
+    afterEach(() => {
+      cleanFileManager(fileManager);
+    });
 
     it("can install plugins manually", async () => {
-      // 1. Create 2 folders for the plugins
-      const testPlugin = path.join(fileManager.options.pluginsDirectory, "test-plugin");
-      const frozenBanana = path.join(fileManager.options.pluginsDirectory, "frozen-banana");
+      // Copy plugins from tmp to fileManager's plugins directory
+      fs.copySync(
+        testPluginPath,
+        path.join(fileManager.options.pluginsDirectory, "test-plugin")
+      );
+      fs.copySync(
+        frozenBananaPath,
+        path.join(fileManager.options.pluginsDirectory, "frozen-banana")
+      );
 
-      mkdirSync(testPlugin, { recursive: true });
-      mkdirSync(frozenBanana, { recursive: true });
-
-      // 2. In each folder, create `manifest.json` file
-      writeFileSync(path.join(testPlugin, "manifest.json"), JSON.stringify({
-        id: "test-plugin",
-        name: "Test Plugin",
-        version: "1.0.0",
-        minAppVersion: AppVer.COMPAT,
-        author: "test-plugin-author",
-        description: "Test Plugin description",
-        manifestVersion: 1,
-        capabilities: { views: [], menu: [] },
-      } as Manifest));
-
-      writeFileSync(path.join(frozenBanana, "manifest.json"), JSON.stringify({
-        id: "frozen-banana",
-        name: "Frozen Banana",
-        version: "1.0.0",
-        minAppVersion: AppVer.COMPAT,
-        author: "frozen-banana-author",
-        description: "Frozen Banana description",
-        manifestVersion: 1,
-        capabilities: { views: [], menu: [] },
-      } as Manifest));
-
-      // 3. Check if the plugins are installed
-      const manager = await initPluginManager(AppVer.COMPAT);
+      // Check if the plugins are installed
+      const manager = await initPluginManager({
+        fileManager,
+        appVersion: AppVer.COMPAT,
+      });
       expect(manager.getPlugins()).toHaveLength(2);
       expect(manager.getPlugins()[0].manifest.id).toBe("frozen-banana");
       expect(manager.getPlugins()[1].manifest.id).toBe("test-plugin");
+    });
+
+    it("ensures bundled plugins are installed", async () => {
+      // First initialization - bundled plugins should be copied
+      const firstManager = new PluginManager({
+        fileManager,
+        registry,
+        appVersion: AppVer.COMPAT,
+      });
+      ensureBundledPluginsInstalled(firstManager, bundledPluginsPath);
+      console.log('ininini first')
+      await firstManager.initialize();
+
+      // Verify plugins were installed
+      expect(firstManager.getPlugins()).toHaveLength(2);
+      expect(firstManager.getPlugins()[0].manifest.id).toBe("frozen-banana");
+      expect(firstManager.getPlugins()[1].manifest.id).toBe("test-plugin");
+
+      // Bundled plugins should NOT be copied again after uninstall
+      await firstManager.uninstallPlugin("frozen-banana");
+      await firstManager.uninstallPlugin("test-plugin");
+      expect(firstManager.getPlugins()).toHaveLength(0);
+      const secondManager = new PluginManager({
+        fileManager,
+        registry,
+        appVersion: AppVer.COMPAT,
+      });
+      ensureBundledPluginsInstalled(secondManager, bundledPluginsPath);
+      console.log('inininininininiinininin')
+      console.log(
+        await UserSetting.findOneBy({ key: "pluginSettings" })
+      );
+      console.log(secondManager)
+      await secondManager.initialize();
+      expect(secondManager.getPlugins()).toHaveLength(0);
     });
   });
 
@@ -246,13 +327,9 @@ describe("Basic Plugin Management", () => {
         "frozen-banana": { autoUpdate: true },
       });
 
-      console.log(manager.getPlugins());
-
       // Simulate plugin updates on the server
-      console.log(repositoryService.plugins);
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
       repositoryService.plugins[1].latestRelease.version = "1.3.0";
-      console.log(repositoryService.plugins);
 
       // Simulate app restart
       const manager2 = await initPluginManager(AppVer.COMPAT);
