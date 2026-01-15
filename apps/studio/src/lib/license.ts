@@ -14,6 +14,7 @@ export enum DevLicenseState {
   expiredLifetimeCoversEarlierVersion,
 }
 
+export type LicenseTier = "free" | "indie" | "pro+";
 
 export class LicenseStatus {
   edition: "community" | "ultimate"
@@ -21,6 +22,18 @@ export class LicenseStatus {
   license?: TransportLicenseKey
   fromFile = false
   filePath?: string = undefined
+
+  get tier() {
+    if (this.edition === "ultimate") {
+      if (this.license!.licenseType === "BusinessLicense") {
+        return "pro+";
+      }
+
+      return "indie";
+    }
+
+    return "free";
+  }
 
   get isUltimate() {
     return this.edition === "ultimate";

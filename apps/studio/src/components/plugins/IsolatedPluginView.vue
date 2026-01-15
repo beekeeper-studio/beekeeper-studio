@@ -1,10 +1,5 @@
 <template>
-  <div class="isolated-plugin-view" ref="container">
-    <div v-if="$bksConfig.plugins?.[pluginId]?.disabled" class="alert">
-      <i class="material-icons-outlined">info</i>
-      <div>This plugin ({{ pluginId }}) has been disabled via configuration</div>
-    </div>
-  </div>
+  <div class="isolated-plugin-view" ref="container" />
 </template>
 
 <script lang="ts">
