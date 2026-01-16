@@ -28,7 +28,7 @@
     ;download installer
     inetc::get "$VCRedistDownload" $TEMP\bks-setup\vcppredist.exe
     ;exec installer
-    ExecWait "$TEMP\bks-setup\vcppredist.exe"
+    ExecWait '"$TEMP\bks-setup\vcppredist.exe" /passive /norestart'
   ${EndIf}
 
 
