@@ -193,6 +193,13 @@ export default class WebPluginManager {
     return loader.buildEntryUrl(entry);
   }
 
+  async viewEntrypointExists(pluginId: string, viewId: string): Promise<boolean> {
+    return await this.utilityConnection.send("plugin/viewEntrypointExists", {
+      pluginId,
+      viewId,
+    });
+  }
+
   /**
    * Subscribe to view requests from a specific plugin. Inspired by Pinia's `$onAction`.
    *

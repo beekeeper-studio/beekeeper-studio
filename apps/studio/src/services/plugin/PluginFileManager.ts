@@ -6,7 +6,7 @@ import {
   DownloaderConfig,
   DownloaderReport,
 } from "nodejs-file-downloader";
-import { Manifest, Release } from "./types";
+import { Manifest, PluginView, Release } from "./types";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
@@ -279,15 +279,24 @@ export default class PluginFileManager {
     return path.join(this.options.pluginsDirectory, id);
   }
 
-  readAsset(manifest: Manifest, filename: string): string {
-    const filePath = path.join(
+  private getPath(manifest: Manifest, filename: string): string {
+    return path.join(
       this.options.pluginsDirectory,
       manifest.id,
       path.normalize(filename)
     );
+  }
+
+  readAsset(manifest: Manifest, filename: string): string {
+    const filePath = this.getPath(manifest, filename);
     if (!fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
     return fs.readFileSync(filePath, { encoding: "utf-8" });
+  }
+
+  /** Check if view's entrypoint exists */
+  viewEntrypointExists(manifest: Manifest, view: PluginView): boolean {
+    return fs.existsSync(this.getPath(manifest, view.entry));
   }
 }
