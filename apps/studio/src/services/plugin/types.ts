@@ -3,6 +3,7 @@ import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { FileHelpers } from "@/types";
+import type Noty from "noty";
 
 /**
  * The kind of the tab. There is only one kind currently:
@@ -179,6 +180,13 @@ export type WebPluginContext = {
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
   fileHelpers: FileHelpers;
+  noty: {
+    success(text: string, options?: any): Noty;
+    error(text: string, options?: any): Noty;
+    warning(text: string, options?: any): Noty;
+    info(text: string, options?: any): Noty;
+  };
+  confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
 
 export type PluginContext = {
