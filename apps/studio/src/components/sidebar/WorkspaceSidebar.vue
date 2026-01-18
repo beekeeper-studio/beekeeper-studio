@@ -81,7 +81,19 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
           name: "Add Users",
           slug: 'invite',
           handler: ({item}) => window.location.href = `${item.workspace.url}/invitations/new`
-        })
+        },
+        {
+          name: "Remove Workspace",
+          slug: 'remove',
+          handler: ({item}) => window.location.href = `${item.workspace.url}/delete`
+          // TODO: Connect modals and all that jazz to emulate the full experience on the app itself.
+          //       Should call the API and everything when done 
+          // handler: () => this.$root.$emit(AppEvent.promptDeleteWorkspace, {
+          //   workspace: blob.workspace,
+          //   client: blob.client,
+          // })
+        }
+      )
       }
       return result
     },
