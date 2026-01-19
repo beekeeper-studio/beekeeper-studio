@@ -116,13 +116,6 @@ export default Vue.extend({
       }
 
       const iframe = document.createElement("iframe");
-
-      this.$plugin.registerIframe(
-        this.pluginId,
-        iframe,
-        { command: this.command, params: this.params }
-      );
-
       iframe.src = this.baseUrl;
       iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
       iframe.allow = "clipboard-read; clipboard-write;";
@@ -138,6 +131,11 @@ export default Vue.extend({
         } as ThemeChangedNotification);
       };
 
+      this.$plugin.registerIframe(
+        this.pluginId,
+        iframe,
+        { command: this.command, params: this.params }
+      );
       this.unsubscribe = this.$plugin.onViewRequest(this.pluginId, (args) => {
         if (args.source === iframe) {
           this.onRequest?.(args);
