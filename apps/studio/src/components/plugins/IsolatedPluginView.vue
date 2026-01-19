@@ -3,7 +3,7 @@
     <div v-if="error" class="alert alert-danger">
       <i class="material-icons-outlined">error</i>
       <div class="alert-body">{{ error }}</div>
-      <button class="btn btn-flat" @click="reload">Reload</button>
+      <button class="btn btn-flat" @click="reloadComponent">Reload</button>
     </div>
     <div v-if="$bksConfig.plugins?.[pluginId]?.disabled" class="alert">
       <i class="material-icons-outlined">info</i>
@@ -48,7 +48,6 @@ export default Vue.extend({
   data() {
     return {
       loaded: false,
-      mounted: false,
       // Use a timestamp parameter to force iframe refresh
       timestamp: Date.now(),
       unsubscribe: null,
@@ -56,6 +55,7 @@ export default Vue.extend({
       unsubscribeOnDispose: null,
       iframe: null,
       error: null as string | null,
+      mounting: false,
     };
   },
   computed: {
@@ -69,6 +69,9 @@ export default Vue.extend({
         return this.loaded;
       }
       return this.visible && this.loaded;
+    },
+    mounted() {
+      return !!this.iframe;
     },
   },
   watch: {
@@ -89,10 +92,11 @@ export default Vue.extend({
   },
   methods: {
     async mountIframe() {
-      if (this.iframe) {
+      if (this.iframe || this.mounting) {
         return;
       }
 
+      this.mounting = true;
       this.error = null;
 
       try {
@@ -139,7 +143,7 @@ export default Vue.extend({
       });
       this.$refs.container.appendChild(iframe);
       this.iframe = iframe;
-      this.mounted = true;
+      this.mounting = false;
     },
     unmountIframe() {
       if (!this.iframe) {
@@ -150,9 +154,8 @@ export default Vue.extend({
       this.unsubscribe?.();
       this.iframe.remove();
       this.iframe = null;
-      this.mounted = false;
     },
-    subscribe() {
+    initialize() {
       this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
         this.loaded = true;
       });
@@ -160,17 +163,17 @@ export default Vue.extend({
         this.loaded = false;
       })
     },
-    unsubscribe() {
+    cleanup() {
       this.unsubscribeOnReady?.();
       this.unsubscribeOnDispose?.();
       this.loaded = false;
     },
-    reload() {
+    async reloadComponent() {
       try {
-        this.unsubscribe();
+        this.cleanup();
         this.unmountIframe();
-        this.subscribe();
-        this.mountIframe();
+        this.initialize();
+        await this.mountIframe();
       } catch (e) {
         log.error(e);
         this.error = e.message;
@@ -179,15 +182,14 @@ export default Vue.extend({
   },
   mounted() {
     try {
-      this.subscribe();
+      this.initialize();
     } catch (e) {
       log.error(e);
       this.error = e.message;
     }
   },
   beforeDestroy() {
-    this.unsubscribeOnReady?.();
-    this.unsubscribeOnDispose?.();
+    this.cleanup();
     this.unmountIframe();
   },
 });
