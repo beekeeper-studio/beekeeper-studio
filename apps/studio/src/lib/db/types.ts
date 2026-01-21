@@ -95,7 +95,6 @@ export interface IamAuthOptions {
   accessKeyId?: string;
   secretAccessKey?: string;
   awsRegion?: string;
-  isServerless?: boolean;
   authType?: IamAuthType;
   cliPath?: string;
 }

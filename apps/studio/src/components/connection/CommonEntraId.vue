@@ -90,10 +90,6 @@
           </button>
         </div>
       </div>
-      <div class="form-group" v-show="showUser">
-        <label for="user">User</label>
-        <masked-input :value="username" :privacy-mode="privacyMode" @input="val => username = val" />
-      </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="tenantId">
           Tenant ID
@@ -159,14 +155,6 @@ export default {
   computed: {
     ...mapState('settings', ['privacyMode']),
     ...mapState(['connection']),
-    username: {
-      get() {
-        return this.config.username;
-      },
-      set(value) {
-        this.config.username = value;
-      },
-    },
     toggleClientSecretIcon() {
       return this.showClientSecret ? "visibility_off" : "visibility"
     },

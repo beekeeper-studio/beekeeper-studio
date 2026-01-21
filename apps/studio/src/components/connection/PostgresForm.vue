@@ -42,6 +42,9 @@ export default {
   props: ['config'],
   mounted() {
     this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+    if (this.authType !== 'default') {
+      this.showPasswordForm = false;
+    }
   },
   data() {
     return {

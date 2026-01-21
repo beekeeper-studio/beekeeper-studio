@@ -43,7 +43,7 @@
             name="cliPath"
             type="text"
             class="form-control"
-            v-model="config.iamAuthOptions.cliPath"
+            v-model="cliPath"
           />
         </div>
       </div>
@@ -51,12 +51,12 @@
       <div v-show="isRedshift" class="flex flex-middle mb-3">
         <h4
           class="advanced-heading flex"
-          :class="{enabled: config.iamAuthOptions.isServerless}"
+          :class="{enabled: config.redshiftOptions.isServerless}"
         >
           <span class="expand">Is Serverless Instance</span>
           <x-switch
             @click.prevent="toggleServerless"
-            :toggled="config.iamAuthOptions.isServerless"
+            :toggled="config.redshiftOptions.isServerless"
           />
         </h4>
       </div>
@@ -160,6 +160,14 @@ export default {
     hasProfiles() {
       const p = this.config.iamAuthOptions?.profiles;
       return Array.isArray(p) && p.length > 0 && !this.profilesError;
+    },
+    cliPath: {
+      get() {
+        return this.config.iamAuthOptions?.cliPath;
+      },
+      set(value) {
+        this.config.iamAuthOptions.cliPath = value;
+      },
     },
   },
   methods: {
