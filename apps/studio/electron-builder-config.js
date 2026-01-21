@@ -154,7 +154,9 @@ module.exports = {
       'pacman'
     ],
     desktop: {
-      'StartupWMClass': 'beekeeper-studio'
+      entry: {
+        'StartupWMClass': 'beekeeper-studio',
+      }
     },
     publish: ['github']
   },
@@ -202,7 +204,9 @@ module.exports = {
     // FIXME: Add AppX/MSIX build back in once certificate issues resolved
     target: ['nsis', 'portable'],
     publish: ['github'],
-    sign: "./build/win/sign.js",
+    signtoolOptions: {
+      sign: "./build/win/sign.js",
+    },
   },
   portable: {
     "artifactName": "${productName}-${version}-portable.exe",
