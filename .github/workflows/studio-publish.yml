@@ -90,7 +90,7 @@ jobs:
             type: linux
             setup_python: true
             clean_zfs: true
-          - name: macos-13
+          - name: macos-14-large
             arch: x64
             type: macos
           - name: macos-14
@@ -220,7 +220,7 @@ jobs:
           cache: yarn
 
       - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v2
+        uses: samuelmeuli/action-snapcraft@v3
         if: matrix.os.type == 'linux' && matrix.os.arch != 'arm64'
 
       - name: Clean cache
@@ -417,6 +417,20 @@ jobs:
                 'content-type': 'application/octet-stream'
               }
             });
+  publish_snapcraft:
+    # The release pushes to edge. We need to promote the edge release if we have a stable release
+    needs: [release, identify_channel]
+    runs-on: ubuntu-latest
+    if: needs.identify_channel.outputs.channel == 'latest'
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
+    steps:
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v3
+      - name: Move release snap from edge to stable
+        continue-on-error: true
+        run: |
+          snapcraft promote beekeeper-studio --from-channel "edge" --to-channel "stable" --yes
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]

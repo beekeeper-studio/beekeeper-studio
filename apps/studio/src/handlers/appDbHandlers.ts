@@ -67,7 +67,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
             await niceValidateOrReject(newEnt);
             return newEnt;
           }));
-          return (await cls.save(newEnts, options)).map((e) => transform(e, cls));
+          return await Promise.all((await cls.save(newEnts, options)).map((e) => transform(e, cls)));
       } else {
         let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
         if (dbObj && obj.id) {

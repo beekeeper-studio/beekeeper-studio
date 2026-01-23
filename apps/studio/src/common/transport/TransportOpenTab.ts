@@ -9,7 +9,7 @@ export type PluginTabType = 'plugin-base' | 'plugin-shell';
 export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
 export type TabType = CoreTabType | PluginTabType
 
-const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
+const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'context']
 
 export interface TransportOpenTab<Context = {}> extends Transport {
   tabType: TabType,

@@ -19,7 +19,7 @@
           Failed to initialize plugin manager.
         </template>
       </div>
-      <div v-else-if="!plugin.loadable" class="plugin-status">
+      <div v-else-if="plugin && !plugin.loadable" class="plugin-status">
         <p>
           Plugin "{{ plugin.manifest.name }}" isn’t compatible with this version of Beekeeper Studio.
           It requires version {{ plugin.manifest.minAppVersion }} or newer.
@@ -36,6 +36,7 @@
         v-else
         :visible="active"
         :plugin-id="tab.context.pluginId"
+        :view-id="tab.context.pluginTabTypeId"
         :url="url"
         :reload="reload"
         :on-request="handleRequest"
@@ -79,6 +80,7 @@
       </div>
     </div>
     <query-editor-status-bar
+      v-if="showStatusBarUI"
       v-model="selectedResult"
       :results="results"
       :running="isRunningQuery"
@@ -117,6 +119,9 @@ import { mapState, mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
 import type { OnViewRequestListenerParams, PluginContext } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('TabPluginShell')
 
 export default Vue.extend({
   components: {
@@ -152,26 +157,37 @@ export default Vue.extend({
       focusingElement: "table",
       query: "",
       isTablePanelVisible: false,
+      showStatusBarUI: true,
     };
   },
   computed: {
     ...mapState(["pluginManagerStatus"]),
     ...mapGetters(["isCommunity"]),
     plugin(): PluginContext {
-      return this.$plugin.pluginOf(this.tab.context.pluginId);
+      try {
+        return this.$plugin.pluginOf(this.tab.context.pluginId);
+      } catch (e) {
+        log.error(e);
+        return null;
+      }
     },
     url() {
-      const plugin = this.$plugin.pluginOf(this.tab.context.pluginId);
-      let tabType = plugin.manifest.capabilities.views.find?.(
-        (v) => v.id === this.tab.context.pluginTabTypeId
-      );
-      if (!tabType) {
-        // Using the old plugin shell API
-        tabType = plugin.manifest.capabilities.views.tabTypes?.find?.(
-          (t) => t.id === this.tab.context.pluginTabTypeId
+      try {
+        const plugin = this.$plugin.pluginOf(this.tab.context.pluginId);
+        let tabType = plugin.manifest.capabilities.views.find?.(
+          (v) => v.id === this.tab.context.pluginTabTypeId
         );
+        if (!tabType) {
+          // Using the old plugin shell API
+          tabType = plugin.manifest.capabilities.views.tabTypes?.find?.(
+            (t) => t.id === this.tab.context.pluginTabTypeId
+          );
+        }
+        return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
+      } catch (e) {
+        log.error(e);
+        return "";
       }
-      return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
     },
     shouldInitialize() {
       return !this.isCommunity && this.active && !this.initialized;
@@ -305,6 +321,14 @@ export default Vue.extend({
           await this.$store.dispatch('tabs/save', this.tab)
           break;
         }
+        case "toggleStatusBarUI": {
+          if (typeof request.args?.force === "boolean") {
+            this.showStatusBarUI = request.args.force;
+          } else {
+            this.showStatusBarUI = !this.showStatusBarUI;
+          }
+          break;
+        }
       }
     },
     async switchPaneFocus(
@@ -352,7 +376,7 @@ export default Vue.extend({
     if (this.split) {
       this.split.destroy();
     }
-    this.containerResizeObserver.disconnect();
+    this.containerResizeObserver?.disconnect();
   },
 });
 </script>

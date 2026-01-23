@@ -1162,9 +1162,18 @@
           try {
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
+            payload.excerpt = payload.text.substr(0, 250)
             this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
+            try {
+              const savedQuery = await this.$store.dispatch('data/queries/findOne', id)
+              this.fullQuery = savedQuery
+            } catch (e) {
+              log.error("Could not find saved query", e);
+              // fallback to payload
+              this.fullQuery = payload;
+            }
 
             this.$nextTick(async () => {
               this.unsavedText = this.query.text
