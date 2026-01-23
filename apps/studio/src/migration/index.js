@@ -77,6 +77,8 @@ import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_colum
 import addTabDropdownAIShellHintShownSetting from './20251003_add_tab_dropdown_ai_shell_hint_shown_setting'
 import fixMissingExcerpts from './20251222_fix_missing_excerpts'
 import addWindowMaximizedSetting from './20251021_add_window_maximized_setting'
+import addIamAuthOptions from './20250819_add_iamAuthOptions'
+import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_options'
 
 import ultimate from './ultimate/index'
 
@@ -118,7 +120,8 @@ const realMigrations = [
   surrealDbOptions, upgradeSqliteExtensions,
   addUsedQueryId, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting,
   createFormatterPresets, populateFormatterPresets, uniqueNameFormatterPresets,
-  addWindowMaximizedSetting, fixMissingExcerpts
+  addWindowMaximizedSetting, fixMissingExcerpts,
+addIamAuthOptions, migrateRedshiftToIamOptions
 ]
 
 // fixtures require the models
