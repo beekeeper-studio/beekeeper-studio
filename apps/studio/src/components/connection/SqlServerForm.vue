@@ -82,13 +82,10 @@
     watch: {
       async authType() {
         if (this.authType === 'default') {
-          // this is good
           this.azureAuthEnabled = false
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
           if (this.$store.getters.isCommunity) {
-            // we want to display a modal
-            console.log('MODAL')
             this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
             this.authType = 'default'
           } else {
@@ -111,7 +108,7 @@
     computed: {
       ...mapState(['connection']),
       showPassword() {
-        return [AzureAuthType.Password].includes(this.authType)
+        return this.authType === AzureAuthType.Password;
       }
     }
   }

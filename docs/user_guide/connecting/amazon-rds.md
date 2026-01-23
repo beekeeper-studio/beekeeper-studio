@@ -59,7 +59,7 @@ Uses your local AWS CLI session to retrieve an access token.
 [Install AWS CLI From Amazon](https://aws.amazon.com/cli/)
 
 **Steps:**
-1. Make sure AWS Credentials arne set
+1. Make sure AWS Credentials are set
 2. In the application, select **AWS CLI Authentication**.
 3. Provide:
    - **Host**

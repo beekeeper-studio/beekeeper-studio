@@ -57,7 +57,7 @@ export default Vue.extend({
   watch: {
     connError(value) {
       if (value && value != "") {
-        //this.$modal.show(this.modalName);
+        this.$modal.show(this.modalName);
       }
     }
   },

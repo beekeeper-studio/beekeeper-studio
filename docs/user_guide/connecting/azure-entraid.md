@@ -28,7 +28,7 @@ Uses your local Azure CLI session to retrieve an access token.
    ```bash
    az login
    ```
-2. In the application, select **Azure CLI Authentication**.
+2. In Beekeeper, select **Azure CLI Authentication**.
 3. Provide:
    - **Server**
    - **Database**
@@ -93,7 +93,7 @@ Best suited for automated services or non-interactive applications.
 **Cause:**
 This error occurs when the SSO-authenticated user is not mapped to a SQL database user.
 
-**Resolution:**
+**Solution:**
 
 You need to explicitly create a user in SQL that maps to the Microsoft Entra identity.
 

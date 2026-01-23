@@ -79,9 +79,11 @@ export default {
           this.showPasswordForm = false
           if (typeof this.authType === 'string' && this.authType.includes('iam')) {
             this.iamAuthenticationEnabled = true;
+            this.azureAuthEnabled = false;
             this.config.iamAuthOptions.authType = this.authType;
           } else if (this.authType === AzureAuthType.CLI) {
             this.azureAuthEnabled = true;
+            this.iamAuthenticationEnabled = false;
             this.config.azureAuthOptions.azureAuthType = this.authType;
           }
         }

@@ -19,7 +19,7 @@
 
       <div class="form-group col" v-show="showCli">
         <div class="form-group">
-          <label for="cliPath">AWS Tool
+          <label for="cliPath">AWS CLI Path
             <i
               class="material-icons"
               style="padding-left: 0.25rem"
@@ -179,10 +179,8 @@ export default {
       this.$set(this.config.redshiftOptions, 'isServerless', !this.config.redshiftOptions.isServerless);
     },
 
-    // returns resolved cliPath (or null)
     async tryFindAWSCli() {
       try {
-        // keep your existing IPC name, but fix the state wiring
         const result = await this.$util.send('backup/whichDumpTool', { toolName: 'aws' });
         if (result) {
           this.$set(this.config.iamAuthOptions, 'cliPath', result);
@@ -200,21 +198,17 @@ export default {
       }
     },
 
-    // accepts cliPath; uses it as the toolName requested
     async tryFindAWSProfiles(cliPath) {
       try {
-        // If no CLI, don't even try; force textbox
         if (!cliPath) {
           this.$set(this.config.iamAuthOptions, 'profiles', null);
           this.profilesError = true;
           return;
         }
 
-        // NOTE: per your requirement #2, pass the CLI path as toolName
         const result = await this.$util.send('aws/getProfiles', { toolName: cliPath });
 
         if (Array.isArray(result) && result.length > 0) {
-          // Normalize to string[]
           const unique = Array.from(new Set(result.map(String)));
           this.$set(this.config.iamAuthOptions, 'profiles', unique);
           this.profilesError = false;
@@ -223,7 +217,6 @@ export default {
             this.$set(this.config.iamAuthOptions, 'awsProfile', unique[0]);
           }
         } else {
-          // empty -> textbox fallback
           this.$set(this.config.iamAuthOptions, 'profiles', null);
           this.profilesError = true;
         }
@@ -233,8 +226,6 @@ export default {
       }
     },
   },
-
-  // Ensure ordered execution (#2)
   async mounted() {
     const cliPath = await this.tryFindAWSCli();
     await this.tryFindAWSProfiles(cliPath);

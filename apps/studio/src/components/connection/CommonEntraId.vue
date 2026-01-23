@@ -2,7 +2,11 @@
   <div v-show="azureAuthEnabled" class="host-port-user-password">
     <div class="alert alert-info">
       <i class="material-icons-outlined">info</i>
-      <div>
+      <div v-if="showCli">
+        You are signing in using the <b>'Azure CLI'</b> Beekeeper Studio will attempt to use the AZ tool in path specified.
+        <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+      </div>
+      <div v-else>
         You are using azure authentication, depending on the authentication
         method you might need to configure some existing items first. Please
         refer to our
@@ -15,20 +19,17 @@
     </div>
     <div class="form-group col">
       <div v-show="showCli" class="form-group">
-        <label for="cliPath"
-          >AZ Tool
-          <i
-            class="material-icons"
-            style="padding-left: 0.25rem"
-            v-tooltip="{
-              content:
-                'You are signing in using the <code>\'Azure CLI\' Beekeeper Studio will attempt to use the AZ tool in path specified.</code>',
-              html: true,
-            }"
-            >help_outlined</i
-          ></label
+        <label for="cliPath">
+          Azure CLI Path (az)
+          </label
         >
-        <div class="alert alert-danger" v-show="!config.azureAuthOptions.cliPath">
+        <input
+          name="cliPath"
+          type="text"
+          class="form-control"
+          v-model="config.azureAuthOptions.cliPath"
+        />
+        <div class="alert alert-danger" v-show="!cliFound">
           <i class="material-icons-outlined">warning</i>
           <div>
             NO CLI FOUND, Please refer to our
@@ -39,12 +40,6 @@
             for more information
           </div>
         </div>
-        <input
-          name="cliPath"
-          type="text"
-          class="form-control"
-          v-model="config.azureAuthOptions.cliPath"
-        />
       </div>
       <div class="form-group">
         <label for="server">
@@ -149,7 +144,8 @@ export default {
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
-      showClientSecret: false
+      showClientSecret: false,
+      cliError: false
     };
   },
   computed: {
@@ -176,6 +172,9 @@ export default {
     hasAccessTokenCache() {
       return Boolean(this.accountName);
     },
+    cliFound() {
+      return !!this.config?.azureAuthOptions?.cliPath && !this.cliError;
+    }
   },
   watch: {
     async authType() {
@@ -217,11 +216,14 @@ export default {
           const result = await this.$util.send('backup/whichDumpTool', {toolName: "az"});
           if (result) {
             this.config.azureAuthOptions.cliPath = result;
+            this.cliError = false;
           } else {
             this.config.azureAuthOptions.cliPath = null;
+            this.cliError = true;
           }
         } catch (e) {
           this.config.azureAuthOptions.cliPath = null;
+          this.cliError = true;
         }
       }
     },

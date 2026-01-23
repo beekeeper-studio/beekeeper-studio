@@ -1,3 +1,5 @@
+import _ from 'lodash'
+
 export default {
   name: "20250820_migrate_redshift_to_iam_options",
   async run(runner) {
@@ -17,6 +19,7 @@ export default {
         FROM ${table}
         WHERE redshiftOptions != '{}'
       `);
+      if (!_.isArray(records)) continue;
 
       for (const record of records) {
         const redshiftOpts = JSON.parse(record.redshiftOptions || '{}');
