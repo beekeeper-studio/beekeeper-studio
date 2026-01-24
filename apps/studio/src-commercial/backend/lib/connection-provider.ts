@@ -44,6 +44,7 @@ export default {
       oracleConfigLocation: settings?.oracleConfigLocation?.stringValue || undefined,
       options: config.options,
       redshiftOptions: config.redshiftOptions,
+      iamAuthOptions: config.iamAuthOptions,
       readOnlyMode: config.readOnlyMode,
       cassandraOptions: config.cassandraOptions,
       bigQueryOptions: config.bigQueryOptions,

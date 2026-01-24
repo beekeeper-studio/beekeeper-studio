@@ -10,7 +10,7 @@ const MoneyMagic: Magic = {
   autocompleteHints: CurrencyCodes.map((cc) => cc.cc.toLowerCase()),
   render: function (args: string[]): MagicColumn {
     // defaulting applocale to US (sorry friends, but that's where I am). Maybe add it to the ini file at some point?
-    // https://www.electronjs.org/docs/latest/api/app#appgetlocale mentiones the getLocale must be called after the ready event so maybe something here?
+    // https://www.electronjs.org/docs/latest/api/app#appgetlocale mentions the getLocale must be called after the ready event so maybe something here?
     const locale = window.platformInfo.locale || 'en-US'
     const currency = args[3]?.toUpperCase() || 'USD'
     const result = {
@@ -21,9 +21,9 @@ const MoneyMagic: Magic = {
           currency,
           currencyDisplay: 'narrowSymbol'
         })
-        if (!isNaN(_.toNumber(cell.getValue()))) {
+        try {
           return format.format(cell.getValue())
-        } else {
+        } catch {
           return 'NaN'
         }
       }

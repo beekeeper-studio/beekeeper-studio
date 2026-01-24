@@ -4,14 +4,17 @@ import logRaw from '@bksLogger'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
-import {fromIni} from "@aws-sdk/credential-providers";
-import {Signer} from "@aws-sdk/rds-signer";
+import { fromIni } from "@aws-sdk/credential-providers";
+import { Signer } from "@aws-sdk/rds-signer";
 import globals from "@/common/globals";
 import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
-import {RedshiftOptions} from "@/lib/db/types";
+import { IamAuthOptions, IamAuthType, IDbConnectionServerConfig } from "@/lib/db/types";
+import { AuthOptions } from "@/lib/db/authentication/azure";
+import { spawn } from "child_process";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
+import { AwsCredentialIdentity, RuntimeConfigAwsCredentialIdentityProvider } from '@aws-sdk/types'
 
 const log = logRaw.scope('db/util')
 
@@ -39,7 +42,6 @@ export function joinQueries(queries) {
   })
   return results.join("")
 }
-
 
 export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   if (!filter) return null
@@ -89,6 +91,18 @@ function wrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
+export function getEntraOptions(server, extra): AuthOptions {
+  return {
+    password: server.config?.password,
+    userName: server.config?.user,
+    tenantId: server.config?.azureAuthOptions.tenantId,
+    clientId: server.config?.azureAuthOptions.clientId,
+    clientSecret: server.config?.azureAuthOptions.clientSecret,
+    msiEndpoint: server.config?.azureAuthOptions.msiEndpoint,
+    cliPath: server.config?.azureAuthOptions.cliPath,
+    ...extra
+  };
+}
 
 export function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = ""
@@ -342,31 +356,41 @@ export const errorMessages = {
   maxReservedConnections: 'You have reserved the max connections available for manual transactions. Stop one of your active transactions to start a new one.'
 }
 
-export async function resolveAWSCredentials(redshiftOptions: RedshiftOptions): Promise<AWSCredentials> {
-  if (redshiftOptions.accessKeyId && redshiftOptions.secretAccessKey) {
+export async function resolveAWSCredentials(iamOptions: IamAuthOptions): Promise<AWSCredentials> {
+  if (iamOptions.accessKeyId && iamOptions.secretAccessKey) {
     return {
-      accessKeyId: redshiftOptions.accessKeyId,
-      secretAccessKey: redshiftOptions.secretAccessKey,
+      accessKeyId: iamOptions.accessKeyId,
+      secretAccessKey: iamOptions.secretAccessKey,
     };
   }
 
   // Fallback to AWS profile-based credentials
   const provider = fromIni({
-    profile: redshiftOptions.awsProfile || "default",
+    profile: iamOptions.awsProfile || "default",
   });
   return provider();
 }
 
-export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname: string, port: number, username: string): Promise<string> {
-  const {awsProfile, accessKeyId, secretAccessKey} = redshiftOptions
-  let {awsRegion: region} = redshiftOptions
+export async function getIAMPassword(iamOptions: IamAuthOptions, hostname: string, port: number, username: string): Promise<string> {
+  const {
+    awsProfile,
+    accessKeyId,
+    secretAccessKey,
+    authType
+  } = iamOptions;
 
-  let credentials: {
-    profile?: string,
-    accessKeyId?: string,
-    secretAccessKey?: string,
-  } = {
-    profile: awsProfile || "default"
+  let { awsRegion: region } = iamOptions;
+
+  let credentials: AwsCredentialIdentity | RuntimeConfigAwsCredentialIdentityProvider;
+
+  if (authType === IamAuthType.Key) {
+    credentials = {
+      accessKeyId,
+      secretAccessKey,
+    }
+  } else {
+    const profileCreds = { profile: awsProfile || "default" };
+    credentials = fromIni(profileCreds);
   }
 
   if (!region) {
@@ -377,48 +401,94 @@ export async function getIAMPassword(redshiftOptions: RedshiftOptions, hostname:
     }
   }
 
-  if(accessKeyId && secretAccessKey) {
-    credentials = {
-      profile: awsProfile || "default",
-      accessKeyId,
-      secretAccessKey
-    }
-  }
-
-  const nodeProviderChainCredentials = fromIni(credentials);
   const signer = new Signer({
-    credentials: nodeProviderChainCredentials,
+    credentials,
     hostname,
     region,
     port,
     username,
   });
+
   return  await signer.getAuthToken();
 }
 
-let resolvedPw: string | undefined;
-let tokenExpiryTime: number | null = null;
-let redshiftOptionsCheck: RedshiftOptions | null = null
-
-export async function refreshTokenIfNeeded(redshiftOptions: RedshiftOptions, server: any, port: number): Promise<string> {
-  if(!redshiftOptions?.iamAuthenticationEnabled){
+export async function refreshTokenIfNeeded(iamOptions: IamAuthOptions, server: any, port: number): Promise<string> {
+  if(!iamOptions?.iamAuthenticationEnabled){
     return null
   }
 
-  const now = Date.now();
+  let resolvedPw: string = null;
 
-  if (redshiftOptionsCheck != redshiftOptions || (!resolvedPw || !tokenExpiryTime || now >= tokenExpiryTime - globals.iamRefreshBeforeTime)) { // Refresh 2 minutes before expiry
-    redshiftOptionsCheck = redshiftOptions
-    log.info("Refreshing IAM token...");
+  if (iamOptions?.authType === IamAuthType.CLI) {
+    resolvedPw = await getAWSCLIToken(
+      server.config,
+      iamOptions
+    );
+  } else {
+    // TODO (@day): why are we passing in the port like this?!?
     resolvedPw = await getIAMPassword(
-      redshiftOptions,
+      iamOptions,
       server.config.host,
       server.config.port || port,
       server.config.user
     );
-
-    tokenExpiryTime = now + globals.iamExpiryTime; // Tokens last 15 minutes
   }
 
   return resolvedPw;
 }
+
+export async function getAWSCLIToken(server: IDbConnectionServerConfig, options: IamAuthOptions): Promise<string> {
+  if (!options?.cliPath) {
+    throw new Error('AZ command not specified');
+  }
+
+  const extraArgs = []
+
+  if(options.awsProfile){
+    extraArgs.push('--profile', options.awsProfile)
+  }
+
+  return new Promise<string>((resolve, reject) => {
+    const proc = spawn(options.cliPath, [
+      'rds',
+      'generate-db-auth-token',
+      '--hostname',
+      server.host,
+      '--port',
+      server.port.toString(),
+      '--region',
+      options.awsRegion,
+      '--username',
+      server.user,
+      ...extraArgs
+    ]);
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    proc.on('error', (err) => {
+      reject(err);
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        try {
+          resolve(stdout.trim());
+        } catch (err) {
+          reject(`Failed to parse token JSON: ${err}\nRaw output: ${stdout}`);
+        }
+      } else {
+        reject(`Process exited with code ${code}\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
+      }
+    });
+  });
+}
+
