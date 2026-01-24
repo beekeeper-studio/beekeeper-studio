@@ -13,6 +13,7 @@ interface IPluginHandlers {
   "plugin/checkForUpdates": ({ id }: { id: string }) => Promise<boolean>
   "plugin/setAutoUpdateEnabled": ({ id, enabled }: { id: string, enabled: boolean }) => Promise<void>
   "plugin/getAutoUpdateEnabled": ({ id }: { id: string }) => Promise<boolean>
+  "plugin/viewEntrypointExists": ({ pluginId, viewId }: { pluginId: string, viewId: string }) => Promise<boolean>
 
   "plugin/getData": ({ manifest, key }: { manifest: Manifest, key?: string }) => Promise<unknown>
   "plugin/setData": ({ manifest, key }: { manifest: Manifest, key?: string, value?: unknown }) => Promise<void>
@@ -67,6 +68,9 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
   },
   "plugin/getAutoUpdateEnabled": async ({ id }) => {
     return pluginManager.getPluginAutoUpdateEnabled(id);
+  },
+  "plugin/viewEntrypointExists": async ({ pluginId, viewId }) => {
+    return pluginManager.viewEntrypointExists(pluginId, viewId);
   },
 
   "plugin/setData": async ({ manifest, key, value }) => {

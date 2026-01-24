@@ -166,7 +166,7 @@
     </div>
 
     <div class="row gutter">
-      <div class="col s6 form-group">
+      <div class="col form-group" :class="[showPasswordForm ? 's6' : 's12']">
         <label for="user">User</label>
         <masked-input
           :value="config.username"
@@ -174,7 +174,7 @@
           @input="val => config.username = val"
         />
       </div>
-      <div class="col s6 form-group">
+      <div class="col s6 form-group" v-show="showPasswordForm">
         <label for="password">Password</label>
         <input
           :type="togglePasswordInputType"
@@ -219,6 +219,10 @@ export default {
     config: Object,
     sslHelp: String,
     supportComplexSSL: {
+      type: Boolean,
+      default: true
+    },
+    showPasswordForm: {
       type: Boolean,
       default: true
     }

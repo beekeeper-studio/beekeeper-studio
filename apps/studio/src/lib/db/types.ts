@@ -55,12 +55,20 @@ export enum AzureAuthType {
   Password,
   AccessToken,
   MSIVM,
-  ServicePrincipalSecret
+  ServicePrincipalSecret,
+  CLI
+}
+
+export enum IamAuthType {
+  Key = 'iam_key',
+  File = 'iam_file',
+  CLI = 'iam_cli'
 }
 
 export const IamAuthTypes = [
-  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
-  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: IamAuthType.Key },
+  { name: 'IAM Authentication Using Credentials File', value: IamAuthType.File },
+  { name: 'AWS CLI Authentication', value: IamAuthType.CLI }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -70,20 +78,25 @@ export const AzureAuthTypes = [
   { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
   // This may be reactivated when we move to client server architecture
   // { name: 'MSI VM', value: AzureAuthType.MSIVM },
-  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
+  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret },
+  { name: 'Azure CLI Authentication', value: AzureAuthType.CLI }
 ];
 
 export interface RedshiftOptions {
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+  isServerless?: boolean;
+}
+
+export interface IamAuthOptions {
   awsProfile?: string
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
   awsRegion?: string;
-  clusterIdentifier?: string;
-  databaseGroup?: string;
-  tokenDurationSeconds?: number;
-  isServerless?: boolean;
-  authType?: string;
+  authType?: IamAuthType;
+  cliPath?: string;
 }
 
 export interface CassandraOptions {
@@ -102,6 +115,7 @@ export interface AzureAuthOptions {
   tenantId?: string;
   clientSecret?: string;
   msiEndpoint?: string;
+  cliPath?: string;
 }
 export interface LibSQLOptions {
   mode: 'url' | 'file';
@@ -198,6 +212,7 @@ export interface IDbConnectionServerConfig {
   oracleConfigLocation?: string
   options?: any
   redshiftOptions?: RedshiftOptions
+  iamAuthOptions?: IamAuthOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
   azureAuthOptions?: AzureAuthOptions

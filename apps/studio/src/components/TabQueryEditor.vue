@@ -1162,6 +1162,7 @@
           try {
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
+            payload.excerpt = payload.text.substr(0, 250)
             this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id

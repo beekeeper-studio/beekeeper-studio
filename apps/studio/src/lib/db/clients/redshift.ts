@@ -283,11 +283,12 @@ export class RedshiftClient extends PostgresClient {
     // that can be used to resolve the latest password.
     let passwordResolver: () => Promise<string>;
 
+    const iamOptions = server.config.iamAuthOptions;
     const redshiftOptions = server.config.redshiftOptions;
-    if (redshiftOptions?.iamAuthenticationEnabled) {
+    if (iamOptions?.iamAuthenticationEnabled) {
 
       const clusterConfig: ClusterCredentialConfiguration = {
-        awsRegion: redshiftOptions.awsRegion,
+        awsRegion: iamOptions.awsRegion,
         clusterIdentifier: redshiftOptions.clusterIdentifier,
         dbName: database.database,
         dbUser: server.config.user,
@@ -298,7 +299,7 @@ export class RedshiftClient extends PostgresClient {
 
       const credentialResolver = RedshiftCredentialResolver.getInstance();
 
-      const awsCreds = await resolveAWSCredentials(redshiftOptions);
+      const awsCreds = await resolveAWSCredentials(iamOptions);
 
       // We need resolve credentials once to get the temporary database user, which does not change
       // on each call to get credentials.

@@ -517,8 +517,8 @@ const store = new Vuex.Store<State>({
 
       context.commit('clearConnection')
       context.commit('newConnection', null)
-      context.dispatch('updateWindowTitle')
-      context.dispatch('refreshConnections')
+      await context.dispatch('updateWindowTitle')
+      await context.dispatch('refreshConnections')
     },
     async syncDatabase(context) {
       await context.state.connection.syncDatabase();

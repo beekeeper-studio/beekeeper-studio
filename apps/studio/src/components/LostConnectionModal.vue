@@ -7,8 +7,8 @@
     >
       <div class="dialog-content">
         <slot name="title">
-          <div 
-            class="dialog-c-title" 
+          <div
+            class="dialog-c-title"
           >
             Lost Connection
           </div>
@@ -20,8 +20,8 @@
         </slot>
       </div>
       <div class="vue-dialog-buttons">
-        <button 
-          class="btn btn-flat" 
+        <button
+          class="btn btn-flat"
           type="button"
           @click.prevent="disconnect"
           autofocus
@@ -29,8 +29,8 @@
         >
           Disconnect
         </button>
-        <button 
-          class="btn btn-primary" 
+        <button
+          class="btn btn-primary"
           type="button"
           @click.prevent="connect"
         >
@@ -56,7 +56,7 @@ export default Vue.extend({
   },
   watch: {
     connError(value) {
-      if (value) {
+      if (value && value != "") {
         this.$modal.show(this.modalName);
       }
     }
