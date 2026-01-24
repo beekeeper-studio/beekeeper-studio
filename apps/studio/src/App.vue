@@ -33,6 +33,7 @@
     <workspace-sign-in-modal />
     <workspace-create-modal />
     <workspace-rename-modal />
+    <workspace-delete-modal />
     <import-queries-modal />
     <import-connections-modal />
     <plugin-controller />
@@ -62,6 +63,7 @@ import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vu
 
 import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
 import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
+import WorkspaceDeleteModal from '@/components/data/WorkspaceDeleteModal.vue'
 import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
@@ -97,7 +99,7 @@ export default Vue.extend({
     StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
+    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager,
   },
   data() {

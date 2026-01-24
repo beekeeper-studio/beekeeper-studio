@@ -105,7 +105,7 @@ export const CredentialsModule: Module<State, RootState> = {
           ws.name = payload.name
         }
       }))
-    },
+    }
   },
 
   actions: {
@@ -164,6 +164,13 @@ export const CredentialsModule: Module<State, RootState> = {
         name: payload.name,
       } as IWorkspace)
       context.commit('pushWorkspace', { blobId: payload.blobId, workspace })
+    },
+    async deleteWorkspace(context, payload: { client: CloudClient, workspaceId: number }) {
+      await payload.client.workspaces.delete({
+        id: payload.workspaceId
+      } as IWorkspace)
+      await context.dispatch('load')
+      await context.commit('workspaceId', -1, { root: true })
     },
     async renameWorkspace(context, payload: { client: CloudClient, workspace: IWorkspace, name: string }) {
       const workspace = await payload.client.workspaces.update({

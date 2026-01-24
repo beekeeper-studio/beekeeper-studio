@@ -6,17 +6,28 @@
   >
     <form @submit.prevent="submit">
       <div class="dialog-content">
-        <div class="dialog-c-title">
-          Rename Workspace
+        <div class="dialog-c-title text-danger">
+          Delete Workspace
         </div>
+        <p class="alert alert-warning" aria-role="alert">
+          Warning: You are about to delete the workspace "{{ workspaceName }}". 
+        </p>
+        <p>
+          This action will remove the {{ workspaceName }} workspace and all associated data. All members will be notified via email. This CANNOT be undone. 
+        </p>
         <error-alert :error="error" />
         <div class="form-group">
-          <label for="account">Account</label>
-          <input name="account" id="account" :value="account" disabled>
-        </div>
-        <div class="form-group">
-          <label for="workspace-name">Workspace Name</label>
-          <input id="workspace-name" name="workspace-name" v-model="workspaceName" type="text" ref="nameInput" placeholder="e.g. Matthew's Workspace">
+          <label for="workspace-name">
+            Please type&nbsp;<strong>{{ workspaceName }}</strong>
+          </label>
+          <input
+            id="workspace-name"
+            name="workspace-name"
+            v-model="workspaceToDelete"
+            type="text"
+            ref="nameInput"
+            :placeholder="inputPlaceholder"
+          >
         </div>
       </div>
       <div class="vue-dialog-buttons flex-between">
@@ -25,8 +36,8 @@
           <button class="btn btn-flat" type="button" @click.prevent="close">
             Cancel
           </button>
-          <button class="btn btn-primary" :disabled="loading" type="submit">
-            {{ loading ? "..." : "Rename Workspace" }}
+          <button class="btn btn-primary" :disabled="!canSubmit" type="submit">
+            {{ loading ? "..." : "Delete Workspace" }}
           </button>
         </span>
       </div>
@@ -46,9 +57,9 @@ export default Vue.extend({
     return {
       modalName: "delete-workspace",
       workspaceName: "",
+      workspaceToDelete: '',
       workspace: null,
       client: null,
-      account: "",
       loading: false,
       error: null,
     };
@@ -74,6 +85,15 @@ export default Vue.extend({
     rootBindings() {
       return [{ event: AppEvent.promptDeleteWorkspace, handler: this.open }];
     },
+    isOwner() {
+      return this.workspace?.isOwner ?? false
+    },
+    canSubmit() {
+      return !this.loading && this.workspaceName === this.workspaceToDelete && this.workspace?.isOwner
+    },
+    inputPlaceholder() {
+      return `Type "${this.workspaceName}" to delete`
+    }
   },
   methods: {
     focus() {
@@ -83,7 +103,6 @@ export default Vue.extend({
       this.workspace = workspace
       this.workspaceName = workspace.name;
       this.client = client;
-      this.account = client.options.email;
       this.$modal.show(this.modalName);
     },
     close() {
@@ -93,10 +112,9 @@ export default Vue.extend({
       try {
         this.error = null;
         this.loading = true;
-        await this.$store.dispatch("credentials/renameWorkspace", {
+        await this.$store.dispatch("credentials/deleteWorkspace", {
           client: this.client,
-          workspace: this.workspace,
-          name: this.workspaceName,
+          workspaceId: this.workspace.id
         });
         this.close();
       } catch (ex) {
