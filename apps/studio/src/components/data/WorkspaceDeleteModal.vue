@@ -9,12 +9,21 @@
         <div class="dialog-c-title text-danger">
           Delete Workspace
         </div>
-        <p class="alert alert-warning" aria-role="alert">
+        <p class="alert alert-danger" aria-role="alert">
           Warning: You are about to delete the workspace "{{ workspaceName }}". 
         </p>
         <p>
-          This action will remove the {{ workspaceName }} workspace and all associated data. All members will be notified via email. This CANNOT be undone. 
+          This action will remove the {{ workspaceName }} workspace and all associated data which includes:
         </p>
+        <ul>
+          <li>
+            Shared queries
+          </li>
+          <li>
+            Shared connections
+          </li>
+        </ul>
+        <p>All members will be notified via email.</p>
         <error-alert :error="error" />
         <div class="form-group">
           <label for="workspace-name">
@@ -29,6 +38,9 @@
             :placeholder="inputPlaceholder"
           >
         </div>
+        <p class="alert alert-danger" aria-role="alert">
+          This CANNOT be undone
+        </p>
       </div>
       <div class="vue-dialog-buttons flex-between">
         <span class="left" />
@@ -103,6 +115,7 @@ export default Vue.extend({
       this.workspace = workspace
       this.workspaceName = workspace.name;
       this.client = client;
+      this.workspaceToDelete = ''
       this.$modal.show(this.modalName);
     },
     close() {
