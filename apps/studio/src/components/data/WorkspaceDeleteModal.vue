@@ -36,7 +36,7 @@
           <button class="btn btn-flat" type="button" @click.prevent="close">
             Cancel
           </button>
-          <button class="btn btn-primary" :disabled="!canSubmit" type="submit">
+          <button class="btn btn-danger" :disabled="!canSubmit" type="submit">
             {{ loading ? "..." : "Delete Workspace" }}
           </button>
         </span>
