@@ -73,11 +73,25 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       accelerator: 'CommandOrControl+=',
       click: actionHandler.zoomin
     },
+    zoominNumpad: {
+      id: 'zoom-in-numpad',
+      label: "Zoom In (numpad)",
+      accelerator: 'CommandOrControl+numadd',
+      click: actionHandler.zoomin,
+      visible: false,
+    },
     zoomout: {
       id: 'zoom-out',
       label: "Zoom Out",
       accelerator: "CommandOrControl+-",
       click: actionHandler.zoomout
+    },
+    zoomoutNumpad: {
+      id: 'zoom-out-numpad',
+      label: "Zoom Out (numpad)",
+      accelerator: "CommandOrControl+numsub",
+      click: actionHandler.zoomout,
+      visible: false,
     },
     fullscreen: {
       id: 'fullscreen',

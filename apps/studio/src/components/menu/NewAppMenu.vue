@@ -29,7 +29,7 @@
           <li
             class="menu-item"
             :class="{'has-children': !!item.submenu, ...hoverClass(item), 'disabled-app-menu': isMenuItemDisabled(item.id)}"
-            v-for="(item, idx) in (menu.submenu || [])"
+            v-for="(item, idx) in visibleSubmenuItems(menu)"
             :key="item.id || idx"
           >
             <a
@@ -140,6 +140,9 @@ export default {
   methods: {
     isMenuItemDisabled(itemId){
       return this.connectionMenuItems.includes(itemId) && !this.connected;
+    },
+    visibleSubmenuItems(menu) {
+      return (menu.submenu || []).filter(item => item.visible !== false);
     },
     getNext(array, item) {
       const selectedIndex = item ? _.indexOf(array, item) : -1

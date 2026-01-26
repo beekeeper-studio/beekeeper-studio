@@ -1,6 +1,7 @@
 import { GetClusterCredentialsCommand, RedshiftClient } from '@aws-sdk/client-redshift';
 import { RedshiftServerlessClient, GetCredentialsCommand } from "@aws-sdk/client-redshift-serverless";
 import rawLog from '@bksLogger';
+import { IamAuthOptions, IDbConnectionServerConfig } from '../types';
 
 // The number of minutes to consider credentials expired *before* their actual expiration.
 // This accounts for potential client clock drift.
@@ -29,7 +30,6 @@ export interface TemporaryClusterCredentials {
     dbPassword: string;
     expiration: Date;
 }
-
 /**
  * RedshiftCredentialResolver provides the ability to use temporary cluster credentials to access
  * an Amazon Redshift cluster.

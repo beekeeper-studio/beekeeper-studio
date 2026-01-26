@@ -1,7 +1,7 @@
-import platformInfo from "@/common/platform_info";
 import { Command } from "@/lib/db/models";
 import { spawn } from "child_process";
 import { state } from "@/handlers/handlerState";
+import platformInfo from "@/common/platform_info";
 
 const errorMessages = {
   nonZero: 'Command returned non-zero exit code'
@@ -18,7 +18,7 @@ export const BackupHandlers: IBackupHandlers = {
     if (command.isSql) {
       // Execute SQL command on connection
       return new Promise<void>(async (resolve, reject) => {
-        (await state(sId).connection.query(`${command.mainCommand} ${command.options ? command.options.join(' ') : ''}`)).execute()
+        (await state(sId).connection.query(`${command.mainCommand} ${command.options ? command.options.join(' ') : ''}`, null)).execute()
           .catch((reason) => {
             state(sId).port.postMessage({
               type: 'backupNotif',
@@ -97,32 +97,35 @@ export const BackupHandlers: IBackupHandlers = {
     }
   },
   'backup/whichDumpTool': async function({ toolName }: { toolName: string }) {
-    const command = `${platformInfo.isWindows ? 'where' : 'which'}`
+    const command = platformInfo.isWindows ? 'where' : 'which';
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const proc = spawn(command, [toolName], { shell: true });
 
+      let stdout = '';
+      let stderr = '';
+
       proc.stdout.on('data', (chunk) => {
-        if (chunk) {
-          const path: string = chunk.toString().trim();
-          resolve(path);
-        }
+        stdout += chunk.toString();
       });
 
       proc.stderr.on('data', (chunk) => {
-        reject(chunk.toString());
-      })
+        stderr += chunk.toString();
+      });
 
       proc.on('error', (err) => {
         reject(err);
-      })
+      });
 
       proc.on('close', (code) => {
-        if (code != 0) {
-          reject('ERROR: Command exited with errors');
+        if (code === 0) {
+          const path = stdout.trim().split('\n')[0]; // pick first result
+          resolve(path);
+        } else {
+          reject(`whichTool failed (code ${code})\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);
         }
-      })
-    })
+      });
+    });
   },
   'backup/cancelCommand': async function({ sId }: { sId: string }) {
     if (state(sId).backupProc) {
