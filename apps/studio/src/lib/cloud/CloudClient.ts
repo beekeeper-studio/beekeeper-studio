@@ -12,7 +12,7 @@ import { ConnectionFoldersController } from '@/lib/cloud/controllers/ConnectionF
 import { QueryFoldersController } from '@/lib/cloud/controllers/QueryFoldersController';
 import { UsedQueriesController } from '@/lib/cloud/controllers/UsedQueriesController';
 import { LicenseKeyController } from './controllers/LicenseKeyController';
-import { PluginDataController } from '@/lib/cloud/controllers/PluginDataController';
+import { WorkspacePluginsController } from '@/lib/cloud/controllers/WorkspacePluginsController';
 import { camelCaseObjectKeys, snakeCaseObjectKeys } from '@/common/utils';
 
 import { IPlatformInfo } from '@/common/IPlatformInfo';
@@ -76,7 +76,7 @@ export class CloudClient {
   public queryFolders: QueryFoldersController
   public usedQueries: UsedQueriesController
   public workspaces: WorkspacesController
-  public pluginData: PluginDataController
+  public workspacePlugins: WorkspacePluginsController
   public workspaceId: number
   constructor(public options: CloudClientOptions) {
     this.axios = axios.create({
@@ -100,7 +100,7 @@ export class CloudClient {
     this.queryFolders = new QueryFoldersController(this.axios)
     this.workspaces = new WorkspacesController(this.axios)
     this.usedQueries = new UsedQueriesController(this.axios)
-    this.pluginData = new PluginDataController(this.axios)
+    this.workspacePlugins = new WorkspacePluginsController(this.axios)
 
     this.axios.interceptors.request.use(request => {
       log.debug('REQ', JSON.stringify(request, null, 2))

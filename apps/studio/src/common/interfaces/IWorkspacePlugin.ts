@@ -1,4 +1,4 @@
-export default interface IPluginData {
+export default interface IWorkspacePlugin {
   id: number | null
   pluginId: string
   key: string
