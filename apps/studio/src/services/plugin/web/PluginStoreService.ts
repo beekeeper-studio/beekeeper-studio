@@ -25,6 +25,7 @@ import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
 import IWorkspacePluginStorageItem from "@/common/interfaces/IWorkspacePluginStorageItem";
+import { IWorkspace } from "@/common/interfaces/IWorkspace";
 
 type Table = {
   name: string;
@@ -260,6 +261,16 @@ export default class PluginStoreService {
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
+    };
+  }
+
+  getWorkspaceInfo() {
+    const workspace: IWorkspace = this.store.getters.workspace;
+    return {
+      id: workspace.id,
+      name: workspace.name,
+      type: workspace.type,
+      isOwner: workspace.isOwner,
     };
   }
 
