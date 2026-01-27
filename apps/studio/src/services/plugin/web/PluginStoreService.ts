@@ -23,10 +23,17 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
+import IWorkspacePluginStorageItem from "@/common/interfaces/IWorkspacePluginStorageItem";
 
 type Table = {
   name: string;
   schema?: string;
+};
+
+type WorkspaceStorageMeta = {
+  pluginId: string;
+  connectionId: number;
+  key: string;
 };
 
 /**
@@ -360,19 +367,8 @@ export default class PluginStoreService {
     this.store.commit("plugins/removeView", pluginId);
   }
 
-  async getWorkspaceData(options: {
-    pluginId: string;
-    connectionId: number;
-    key?: string;
-  }): Promise<unknown> {
-    const key = options.key ?? "default";
-    const items = this.store.state["data/workspacePluginStorage"].items;
-    const item = items.find(
-      (i) =>
-        i.pluginId === options.pluginId &&
-        i.connectionId === options.connectionId &&
-        i.key === key
-    );
+  async getWorkspaceData(metadata: WorkspaceStorageMeta): Promise<unknown> {
+    const item = this.findWorkspacePluginStorageItem(metadata);
     if (!item) return null;
     try {
       return JSON.parse(item.value);
@@ -381,27 +377,21 @@ export default class PluginStoreService {
     }
   }
 
-  async setWorkspaceData(options: {
-    pluginId: string;
-    connectionId: number;
-    key?: string;
-    value: unknown;
-  }): Promise<void> {
-    const key = options.key ?? "default";
-    const items = this.store.state["data/workspacePluginStorage"].items;
-    const existing = items.find(
-      (i) =>
-        i.pluginId === options.pluginId &&
-        i.connectionId === options.connectionId &&
-        i.key === key
+  async setWorkspaceData(
+    metadata: WorkspaceStorageMeta,
+    value: unknown
+  ): Promise<void> {
+    const existing = await this.store.dispatch(
+      "data/workspacePluginStorage/findBy",
+      metadata
     );
 
     const item = {
       id: existing?.id ?? null,
-      plugin_id: options.pluginId,
-      connection_id: options.connectionId,
-      key,
-      value: JSON.stringify(options.value),
+      plugin_id: metadata.pluginId,
+      connection_id: metadata.connectionId,
+      key: metadata.key,
+      value: JSON.stringify(value),
     };
 
     await this.store.dispatch("data/workspacePluginStorage/save", item);
@@ -441,5 +431,16 @@ export default class PluginStoreService {
         command: options.command,
       },
     };
+  }
+
+  private findWorkspacePluginStorageItem(options: WorkspaceStorageMeta) {
+    const items = this.store.state["data/workspacePluginStorage"]
+      .items as IWorkspacePluginStorageItem[];
+    return items.find(
+      (item: IWorkspacePluginStorageItem) =>
+        item.pluginId === options.pluginId &&
+        item.connectionId === options.connectionId &&
+        item.key === options.key
+    );
   }
 }

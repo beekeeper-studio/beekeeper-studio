@@ -270,12 +270,14 @@ export default class WebPluginLoader {
         }
         case "workspaceStorage.setConnectionItem": {
           const { id: connectionId } = this.pluginStore.getConnectionInfo();
-          await this.pluginStore.setWorkspaceData({
-            pluginId: this.manifest.id,
-            connectionId,
-            key: response.args.key,
-            value: response.args.value,
-          });
+          await this.pluginStore.setWorkspaceData(
+            {
+              pluginId: this.manifest.id,
+              connectionId,
+              key: response.args.key,
+            },
+            response.args.value
+          );
           break;
         }
         case "clipboard.writeText":
