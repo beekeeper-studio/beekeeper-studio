@@ -183,8 +183,13 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
   return {
     async load(context) {
       context.commit("error", null)
+      if (context.getters.preventPoll) {
+        return;
+      }
       await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list()
+        const items: any[] = await cli[scope].list({
+          params: context.getters.listParams,
+        })
         // this is to account for when the store module changes
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {
@@ -194,13 +199,18 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     },
     // TODO THIS ISNT WORKING
     async poll(context) {
+      if (context.getters.preventPoll) {
+        return;
+      }
       // TODO (matthew): This should only fetch items since last update.
       await havingCli(context, async (cli) => {
         try {
           // we just re-fetch everything. It's pretty heavy handed
           // we don't call load because that updates `loading`.
 
-          const items = await cli[scope].list()
+          const items = await cli[scope].list({
+            params: context.getters.listParams,
+          })
           // this is to account for when the store module changes
           const rightItems = items.filter((item) => item.workspaceId === context.rootState.workspaceId)
           if (rightItems.length === items.length) {
