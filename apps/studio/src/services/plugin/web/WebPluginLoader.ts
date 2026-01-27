@@ -395,12 +395,10 @@ export default class WebPluginLoader {
 
   registerViewInstance(options: WebPluginViewInstance) {
     this.viewInstances.push(options);
-    this.pluginStore.addPluginView(this.manifest.id);
   }
 
   unregisterViewInstance(iframe: HTMLIFrameElement) {
     this.viewInstances = this.viewInstances.filter((ins) => ins.iframe !== iframe);
-    this.pluginStore.removePluginView(this.manifest.id);
   }
 
   postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | ResponsePayload) {

@@ -1,36 +1,24 @@
 import { Module } from "vuex";
 import { State as RootState } from "../index";
-import { PluginView } from "@/services/plugin";
+import { PluginSnapshot } from "@/services/plugin";
 
 interface State {
-  /** All views that are active. */
-  views: {
-    pluginId: string;
-    // TODO (Azmi): add more info here when needed
-  }[];
+  pluginSnapshots: PluginSnapshot[];
 }
 
 export const PluginModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
-    views: [],
+    pluginSnapshots: [],
   }),
   getters: {
-    activePlugins(context) {
-      return context.views.map((view) => view.pluginId);
+    enabledPlugins(state) {
+      return state.pluginSnapshots.filter((plugin) => !plugin.disabled);
     },
   },
   mutations: {
-    addView(state, pluginId: string) {
-      state.views.push({ pluginId });
-    },
-    removeView(state, pluginId: string) {
-      const viewIdx = state.views.findIndex(
-        (view) => view.pluginId === pluginId
-      );
-      if (viewIdx !== -1) {
-        state.views.splice(viewIdx, 1);
-      }
+    addPluginSnapshot(state, plugin: PluginSnapshot) {
+      state.pluginSnapshots.push(plugin);
     },
   },
 };

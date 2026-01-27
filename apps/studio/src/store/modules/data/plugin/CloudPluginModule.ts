@@ -1,4 +1,5 @@
 import IWorkspacePluginStorageItem from "@/common/interfaces/IWorkspacePluginStorageItem";
+import { PluginSnapshot } from "@/services/plugin";
 import {
   actionsFor,
   DataState,
@@ -24,20 +25,17 @@ export const WorkspacePluginModule: DataStore<
     { field: "pluginId", direction: "asc" }
   ),
   getters: {
-    // Don't poll if we're not connected or if we have no active plugins
-    preventPoll(_state, _getters, rootState, rootGetters) {
-      if (!rootState.connected) {
-        return true;
-      }
-      if (rootGetters["plugins/activePlugins"].length === 0) {
+    preventPoll(_state, _getters, _rootState, rootGetters) {
+      // Don't poll if there are no plugins
+      if (rootGetters["plugins/enabledPlugins"].length === 0) {
         return true;
       }
       return false;
     },
     listParams(_state, _getters, _rootState, rootGetters) {
-      const activePlugins: string[] = rootGetters["plugins/activePlugins"];
+      const plugins: PluginSnapshot[] = rootGetters["plugins/enabledPlugins"];
       return {
-        pluginId: activePlugins,
+        pluginId: plugins.map((plugin) => plugin.manifest.id),
         connectionId: rootGetters["connection/connectionId"],
       };
     },

@@ -15,6 +15,7 @@ import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
   Manifest,
   PluginMenuItem,
+  PluginSnapshot,
   PluginView,
   TabType,
 } from "../types";
@@ -359,12 +360,8 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
-  addPluginView(pluginId: string) {
-    this.store.commit("plugins/addView", pluginId);
-  }
-
-  removePluginView(pluginId: string) {
-    this.store.commit("plugins/removeView", pluginId);
+  addPluginSnapshot(plugin: PluginSnapshot) {
+    this.store.commit("plugins/addPluginSnapshot", plugin);
   }
 
   async getWorkspaceData(metadata: WorkspaceStorageMeta): Promise<unknown> {
