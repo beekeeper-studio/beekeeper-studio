@@ -378,10 +378,7 @@ export default class PluginStoreService {
     metadata: WorkspaceStorageMeta,
     value: unknown
   ): Promise<void> {
-    const existing = await this.store.dispatch(
-      "data/workspacePluginStorage/findBy",
-      metadata
-    );
+    const existing = this.findWorkspacePluginStorageItem(metadata);
 
     const item = {
       id: existing?.id ?? null,

@@ -32,6 +32,7 @@ export const WorkspacePluginModule: DataStore<
       }
       return false;
     },
+    // Select plugins that are not disabled
     listParams(_state, _getters, _rootState, rootGetters) {
       const plugins: PluginSnapshot[] = rootGetters["plugins/enabledPlugins"];
       return {
@@ -40,5 +41,8 @@ export const WorkspacePluginModule: DataStore<
       };
     },
   },
-  actions: actionsFor<IWorkspacePluginStorageItem>("workspacePluginStorage", {}),
+  actions: actionsFor<IWorkspacePluginStorageItem>(
+    "workspacePluginStorage",
+    {}
+  ),
 };
