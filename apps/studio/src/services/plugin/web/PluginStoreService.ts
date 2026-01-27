@@ -349,6 +349,61 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
+  addPluginView(pluginId: string) {
+    this.store.commit("plugins/addView", pluginId);
+  }
+
+  removePluginView(pluginId: string) {
+    this.store.commit("plugins/removeView", pluginId);
+  }
+
+  async getWorkspaceData(options: {
+    pluginId: string;
+    connectionId: number;
+    key?: string;
+  }): Promise<unknown> {
+    const key = options.key ?? "default";
+    const items = this.store.state["data/workspacePluginStorage"].items;
+    const item = items.find(
+      (i) =>
+        i.pluginId === options.pluginId &&
+        i.connectionId === options.connectionId &&
+        i.key === key
+    );
+    if (!item) return null;
+    try {
+      return JSON.parse(item.value);
+    } catch {
+      return null;
+    }
+  }
+
+  async setWorkspaceData(options: {
+    pluginId: string;
+    connectionId: number;
+    key?: string;
+    value: unknown;
+  }): Promise<void> {
+    const key = options.key ?? "default";
+    const items = this.store.state["data/workspacePluginStorage"].items;
+    const existing = items.find(
+      (i) =>
+        i.pluginId === options.pluginId &&
+        i.connectionId === options.connectionId &&
+        i.key === key
+    );
+
+    const item = {
+      id: existing?.id ?? null,
+      plugin_id: options.pluginId,
+      connection_id: options.connectionId,
+      key,
+      value: JSON.stringify(options.value),
+    };
+
+    await this.store.dispatch("data/workspacePluginStorage/save", item);
+  }
+
   buildPluginTabInit(options: {
     manifest: Manifest;
     viewId: string;

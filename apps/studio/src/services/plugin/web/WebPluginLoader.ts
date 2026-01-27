@@ -236,6 +236,15 @@ export default class WebPluginLoader {
           response.result = value;
           break;
         }
+        case "workspaceStorage.getConnectionItem": {
+          const { id: connectionId } = this.pluginStore.getConnectionInfo();
+          response.result = await this.pluginStore.getWorkspaceData({
+            pluginId: this.manifest.id,
+            connectionId,
+            key: response.args.key,
+          });
+          break;
+        }
         case "clipboard.readText":
           response.result = window.main.readTextFromClipboard();
           break;
@@ -257,6 +266,16 @@ export default class WebPluginLoader {
               : "plugin/setData",
             { manifest: this.manifest, key: response.args.key, value: response.args.value }
           )
+          break;
+        }
+        case "workspaceStorage.setConnectionItem": {
+          const { id: connectionId } = this.pluginStore.getConnectionInfo();
+          await this.pluginStore.setWorkspaceData({
+            pluginId: this.manifest.id,
+            connectionId,
+            key: response.args.key,
+            value: response.args.value,
+          });
           break;
         }
         case "clipboard.writeText":
@@ -374,10 +393,12 @@ export default class WebPluginLoader {
 
   registerViewInstance(options: WebPluginViewInstance) {
     this.viewInstances.push(options);
+    this.pluginStore.addPluginView(this.manifest.id);
   }
 
   unregisterViewInstance(iframe: HTMLIFrameElement) {
     this.viewInstances = this.viewInstances.filter((ins) => ins.iframe !== iframe);
+    this.pluginStore.removePluginView(this.manifest.id);
   }
 
   postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | ResponsePayload) {
