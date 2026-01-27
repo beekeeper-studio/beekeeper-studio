@@ -240,6 +240,9 @@ export default class PluginStoreService {
   }
 
   getConnectionInfo() {
+    if (!this.store.state.connected) {
+      throw new Error("Not connected");
+    }
     return {
       id: this.store.state.usedConfig.id,
       workspaceId: this.store.state.workspaceId,
