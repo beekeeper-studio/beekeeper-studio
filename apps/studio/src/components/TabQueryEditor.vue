@@ -199,7 +199,7 @@
           <x-buttons class="">
             <x-button
               class="btn btn-primary btn-small"
-              v-tooltip="'Ctrl+Enter'"
+              v-tooltip="$formatKeybindHint('queryEditor.submitTabQuery', true)"
               @click.prevent="submitTabQuery"
               :disabled="this.tab.isRunning || running"
             >
@@ -214,11 +214,11 @@
               <x-menu>
                 <x-menuitem @click.prevent="submitTabQuery">
                   <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
-                  <x-shortcut value="Control+Enter" />
+                  <x-shortcut :value="$formatKeybindHint('queryEditor.submitTabQuery', false, true)" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
-                  <x-shortcut value="Control+Shift+Enter" />
+                  <x-shortcut :value="$formatKeybindHint('queryEditor.submitCurrentQuery', false, true)" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
@@ -226,6 +226,7 @@
                   :disabled="disableRunToFile"
                 >
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
+                  <x-shortcut v-if="!isCommunity" :value="$formatKeybindHint('queryEditor.submitQueryToFile', false, true)"></x-shortcut>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
@@ -238,6 +239,7 @@
                   :disabled="disableRunToFile"
                 >
                   <x-label>Run Current to File</x-label>
+                  <x-shortcut v-if="!isCommunity" :value="$formatKeybindHint('queryEditor.submitCurrentQueryToFile', false, true)"></x-shortcut>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
