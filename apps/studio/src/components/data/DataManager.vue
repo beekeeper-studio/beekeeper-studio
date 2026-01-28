@@ -6,7 +6,6 @@ import _ from 'lodash'
 import {DataModules} from '@/store/DataModules'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
-import { AppEvent } from '@/common/AppEvent'
 
 
 export default Vue.extend({
@@ -62,12 +61,11 @@ export default Vue.extend({
       this.$store.dispatch('tabs/save', this.activeTab)
     }, 500),
     poll() {
-      const promises = DataModules.map((module) => {
+      DataModules.forEach((module) => {
         if (this.$store.hasModule(module.path)) {
-          return this.$store.dispatch(`${module.path}/poll`)
+          this.$store.dispatch(`${module.path}/poll`)
         }
       })
-      Promise.all(promises).then(() => this.trigger(AppEvent.dataPollSucceeded));
     },
     mountAndRefresh() {
       console.log('mount and refresh: ', this.workspace)

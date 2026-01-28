@@ -74,7 +74,6 @@ export enum AppEvent {
   updatePin = 'updatePin',
   /** The theme has been changed. */
   changedTheme = 'changedTheme',
-  dataPollSucceeded = 'dataPollSucceeded',
 }
 
 export interface RootBinding {

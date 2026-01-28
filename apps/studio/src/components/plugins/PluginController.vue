@@ -11,10 +11,6 @@ export default Vue.extend({
           event: AppEvent.changedTheme,
           handler: this.handleChangedTheme,
         },
-        {
-          event: AppEvent.dataPollSucceeded,
-          handler: this.handleDataPollSucceeded,
-        },
       ];
     },
   },
@@ -23,12 +19,6 @@ export default Vue.extend({
       const data: PluginNotificationData = {
         name: "themeChanged",
         args: this.$plugin.pluginStore.getTheme(),
-      };
-      this.$plugin.notifyAll(data);
-    },
-    handleDataPollSucceeded() {
-      const data: PluginNotificationData = {
-        name: "dataPollSucceeded",
       };
       this.$plugin.notifyAll(data);
     },
