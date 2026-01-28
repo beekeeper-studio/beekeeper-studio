@@ -226,7 +226,7 @@ export default class WebPluginLoader {
           response.result = this.pluginStore.getConnectionInfo();
           break;
         case "getWorkspaceInfo":
-          response.result = await this.pluginStore.getWorkspaceInfo();
+          response.result = this.context.store.getWorkspaceInfo();
           break;
         case "getData":
         case "getEncryptedData": {
@@ -239,9 +239,9 @@ export default class WebPluginLoader {
           response.result = value;
           break;
         }
-        case "workspaceStorage.getConnectionItem": {
-          const { id: connectionId } = this.pluginStore.getConnectionInfo();
-          response.result = await this.pluginStore.getWorkspaceData({
+        case "workspaceConnectionStorage.getItem": {
+          const { id: connectionId } = this.context.store.getConnectionInfo();
+          response.result = await this.context.store.getWorkspaceData({
             pluginId: this.manifest.id,
             connectionId,
             key: response.args.key,
@@ -271,9 +271,9 @@ export default class WebPluginLoader {
           )
           break;
         }
-        case "workspaceStorage.setConnectionItem": {
-          const { id: connectionId } = this.pluginStore.getConnectionInfo();
-          await this.pluginStore.setWorkspaceData(
+        case "workspaceConnectionStorage.setItem": {
+          const { id: connectionId } = this.context.store.getConnectionInfo();
+          await this.context.store.setWorkspaceData(
             {
               pluginId: this.manifest.id,
               connectionId,

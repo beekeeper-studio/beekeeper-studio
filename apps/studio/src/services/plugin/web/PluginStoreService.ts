@@ -270,7 +270,7 @@ export default class PluginStoreService {
       id: workspace.id,
       name: workspace.name,
       type: workspace.type,
-      isOwner: workspace.isOwner,
+      isOwner: workspace.isOwner ?? false,
     };
   }
 
