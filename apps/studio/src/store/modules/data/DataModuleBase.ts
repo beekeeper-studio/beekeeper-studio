@@ -179,16 +179,19 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
   }
 }
 
-export function actionsFor<T extends HasId>(scope: string, obj: any) {
+export function actionsFor<T extends HasId, State = unknown>(scope: string, obj: any, options?: {
+  preventPoll?: (context: ActionContext<State, RootState>) => boolean;
+  listParams?: (context: ActionContext<State, RootState>) => Record<string, any>;
+}) {
   return {
     async load(context) {
       context.commit("error", null)
-      if (context.getters.preventPoll) {
+      if (options?.preventPoll(context)) {
         return;
       }
       await safelyDo(context, async (cli) => {
         const items: any[] = await cli[scope].list({
-          params: context.getters.listParams,
+          params: options?.listParams(context),
         })
         // this is to account for when the store module changes
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
@@ -199,7 +202,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     },
     // TODO THIS ISNT WORKING
     async poll(context) {
-      if (context.getters.preventPoll) {
+      if (options?.preventPoll(context)) {
         return;
       }
       // TODO (matthew): This should only fetch items since last update.
@@ -209,7 +212,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
           // we don't call load because that updates `loading`.
 
           const items = await cli[scope].list({
-            params: context.getters.listParams,
+            params: options?.listParams(context),
           })
           // this is to account for when the store module changes
           const rightItems = items.filter((item) => item.workspaceId === context.rootState.workspaceId)

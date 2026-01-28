@@ -8,7 +8,7 @@ export class WorkspacePluginStorageController extends GenericController<IWorkspa
   path = "/workspace_plugin_storage_items";
 
   /**
-   * Create or update by key - PUT /workspace_plugin_storage_items/create_or_update_by_key
+   * Create or update by key - PUT /workspace_plugin_storage_items/upsert
    * Creates if not exists, updates if exists. Finds by [workspace_id, plugin_id, key, connection_id].
    */
   async upsert(

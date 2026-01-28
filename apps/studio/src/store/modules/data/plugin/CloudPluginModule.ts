@@ -24,25 +24,25 @@ export const WorkspacePluginModule: DataStore<
     {},
     { field: "pluginId", direction: "asc" }
   ),
-  getters: {
-    preventPoll(_state, _getters, _rootState, rootGetters) {
-      // Don't poll if there are no plugins
-      if (rootGetters["plugins/enabledPlugins"].length === 0) {
-        return true;
-      }
-      return false;
-    },
-    // Select plugins that are not disabled
-    listParams(_state, _getters, _rootState, rootGetters) {
-      const plugins: PluginSnapshot[] = rootGetters["plugins/enabledPlugins"];
-      return {
-        pluginId: plugins.map((plugin) => plugin.manifest.id),
-        connectionId: rootGetters["connection/connectionId"],
-      };
-    },
-  },
-  actions: actionsFor<IWorkspacePluginStorageItem>(
+  actions: actionsFor<IWorkspacePluginStorageItem, State>(
     "workspacePluginStorage",
-    {}
+    {},
+    {
+      preventPoll(context) {
+        // Don't poll if there are no plugins
+        if (context.rootGetters["plugins/enabledPlugins"].length === 0) {
+          return true;
+        }
+        return false;
+      },
+      listParams(context) {
+        const plugins: PluginSnapshot[] =
+          context.rootGetters["plugins/enabledPlugins"];
+        return {
+          pluginId: plugins.map((plugin) => plugin.manifest.id),
+          connectionId: context.rootGetters["connection/connectionId"],
+        };
+      },
+    }
   ),
 };
