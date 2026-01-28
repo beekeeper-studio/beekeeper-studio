@@ -12,7 +12,8 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
+import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 
 const log = rawLog.scope("PluginManager");
 
@@ -96,6 +97,29 @@ export default class PluginManager {
       throw new Error(`Plugin "${id}" not found in registry.`);
     }
     return entry;
+  }
+
+  /**
+   * Check if the view's entrypoint exists. The plugin must be installed,
+   * and the view must be defined in the plugin's manifest.
+   *
+   * @throws if `pluginId` or `viewId` is not found
+   **/
+  viewEntrypointExists(pluginId: string, viewId: string): boolean {
+    const manifest = this.plugins.find((p) => p.manifest.id === pluginId)?.manifest;
+    if (!manifest) {
+      throw new NotFoundPluginError(`Plugin "${pluginId}" not found.`);
+    }
+    const { views } = isManifestV0(manifest)
+      ? mapViewsAndMenuFromV0ToV1(manifest)
+      : manifest.capabilities;
+    const view = views.find((v) => v.id === viewId);
+    if (!view) {
+      throw new NotFoundPluginViewError(
+        `View "${viewId}" not found in plugin "${pluginId}".`
+      );
+    }
+    return this.fileManager.viewEntrypointExists(manifest, view);
   }
 
   async getRepository(pluginId: string): Promise<PluginRepository> {

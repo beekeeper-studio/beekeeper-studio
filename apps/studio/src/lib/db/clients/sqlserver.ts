@@ -17,6 +17,7 @@ import {
   escapeString,
   joinQueries,
   buildInsertQuery,
+  getEntraOptions,
   errorMessages
 } from './utils';
 import logRaw from '@bksLogger'
@@ -1246,14 +1247,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       this.authService = new AzureAuthService();
       await this.authService.init(server.config.authId)
 
-      const options: AuthOptions = {
-        password: server.config.password,
-        userName: server.config.user,
-        tenantId: server.config.azureAuthOptions.tenantId,
-        clientSecret: server.config.azureAuthOptions.clientSecret,
-        msiEndpoint: server.config.azureAuthOptions.msiEndpoint,
-        signal,
-      };
+      const options = getEntraOptions(server, { signal })
 
       config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
 
