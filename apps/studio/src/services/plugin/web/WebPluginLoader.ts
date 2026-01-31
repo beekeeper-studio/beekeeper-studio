@@ -239,7 +239,7 @@ export default class WebPluginLoader {
           response.result = value;
           break;
         }
-        case "workspaceConnectionStorage.getItem": {
+        case "cloudStorage.connection.getItem": {
           const { id: connectionId } = this.context.store.getConnectionInfo();
           response.result = await this.context.store.getCloudPluginData({
             pluginId: this.manifest.id,
@@ -271,7 +271,7 @@ export default class WebPluginLoader {
           )
           break;
         }
-        case "workspaceConnectionStorage.setItem": {
+        case "cloudStorage.connection.setItem": {
           const { id: connectionId } = this.context.store.getConnectionInfo();
           await this.context.store.setWorkspaceData(
             {
