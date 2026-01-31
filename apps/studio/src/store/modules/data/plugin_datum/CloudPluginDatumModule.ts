@@ -1,4 +1,4 @@
-import IWorkspacePluginStorageItem from "@/common/interfaces/IWorkspacePluginStorageItem";
+import IPluginData from "@/common/interfaces/IPluginData";
 import { PluginSnapshot } from "@/services/plugin";
 import {
   actionsFor,
@@ -7,10 +7,10 @@ import {
   mutationsFor,
 } from "@/store/modules/data/DataModuleBase";
 
-type State = DataState<IWorkspacePluginStorageItem>;
+type State = DataState<IPluginData>;
 
-export const WorkspacePluginModule: DataStore<
-  IWorkspacePluginStorageItem,
+export const CloudPluginDatumModule: DataStore<
+  IPluginData,
   State
 > = {
   namespaced: true,
@@ -20,12 +20,12 @@ export const WorkspacePluginModule: DataStore<
     error: null,
     pollError: null,
   },
-  mutations: mutationsFor<IWorkspacePluginStorageItem>(
+  mutations: mutationsFor<IPluginData>(
     {},
     { field: "pluginId", direction: "asc" }
   ),
-  actions: actionsFor<IWorkspacePluginStorageItem, State>(
-    "workspacePluginStorage",
+  actions: actionsFor<IPluginData, State>(
+    "pluginData",
     {},
     {
       preventPoll(context) {

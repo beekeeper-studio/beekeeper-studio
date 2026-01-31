@@ -24,7 +24,7 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
-import IWorkspacePluginStorageItem from "@/common/interfaces/IWorkspacePluginStorageItem";
+import IPluginData from "@/common/interfaces/IPluginData";
 import { IWorkspace } from "@/common/interfaces/IWorkspace";
 
 type Table = {
@@ -32,7 +32,7 @@ type Table = {
   schema?: string;
 };
 
-type WorkspaceStorageMeta = {
+type PluginDataMeta = {
   pluginId: string;
   connectionId: number;
   key: string;
@@ -375,8 +375,8 @@ export default class PluginStoreService {
     this.store.commit("plugins/addPluginSnapshot", plugin);
   }
 
-  async getWorkspaceData(metadata: WorkspaceStorageMeta): Promise<unknown> {
-    const item = this.findWorkspacePluginStorageItem(metadata);
+  async getCloudPluginData(metadata: PluginDataMeta): Promise<unknown> {
+    const item = this.findCloudPluginDatum(metadata);
     if (!item) return null;
     try {
       return JSON.parse(item.value);
@@ -386,10 +386,10 @@ export default class PluginStoreService {
   }
 
   async setWorkspaceData(
-    metadata: WorkspaceStorageMeta,
+    metadata: PluginDataMeta,
     value: unknown
   ): Promise<void> {
-    const existing = this.findWorkspacePluginStorageItem(metadata);
+    const existing = this.findCloudPluginDatum(metadata);
 
     const item = {
       id: existing?.id ?? null,
@@ -399,7 +399,7 @@ export default class PluginStoreService {
       value: JSON.stringify(value),
     };
 
-    await this.store.dispatch("data/workspacePluginStorage/save", item);
+    await this.store.dispatch("data/pluginData/save", item);
   }
 
   buildPluginTabInit(options: {
@@ -438,11 +438,11 @@ export default class PluginStoreService {
     };
   }
 
-  private findWorkspacePluginStorageItem(options: WorkspaceStorageMeta) {
-    const items = this.store.state["data/workspacePluginStorage"]
-      .items as IWorkspacePluginStorageItem[];
+  private findCloudPluginDatum(options: PluginDataMeta) {
+    const items = this.store.state["data/pluginData"]
+      .items as IPluginData[];
     return items.find(
-      (item: IWorkspacePluginStorageItem) =>
+      (item: IPluginData) =>
         item.pluginId === options.pluginId &&
         item.connectionId === options.connectionId &&
         item.key === options.key

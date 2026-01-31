@@ -241,7 +241,7 @@ export default class WebPluginLoader {
         }
         case "workspaceConnectionStorage.getItem": {
           const { id: connectionId } = this.context.store.getConnectionInfo();
-          response.result = await this.context.store.getWorkspaceData({
+          response.result = await this.context.store.getCloudPluginData({
             pluginId: this.manifest.id,
             connectionId,
             key: response.args.key,

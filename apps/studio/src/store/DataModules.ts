@@ -9,8 +9,8 @@ import { CloudQueryFolderModule } from "./modules/data/query_folder/CloudQueryFo
 import { UtilUsedConnectionModule } from "./modules/data/used_connection/UtilityUsedConnectionModule";
 import { CloudUsedQueryModule } from "./modules/data/used_query/CloudUsedQueryModule";
 import { UtilUsedQueryModule } from "./modules/data/used_query/UtilityUsedQueryModule";
-import { WorkspacePluginModule } from "./modules/data/plugin/CloudPluginModule";
-import { LocalWorkspacePluginModule } from "./modules/data/plugin/LocalPluginModule";
+import { CloudPluginDatumModule } from "./modules/data/plugin_datum/CloudPluginDatumModule";
+import { LocalPluginDatumModule } from "./modules/data/plugin_datum/LocalPluginDatumModule";
 
 
 export const DataModules = [
@@ -45,8 +45,8 @@ export const DataModules = [
     local: UtilUsedConnectionModule
   },
   {
-    path: 'data/workspacePluginStorage',
-    cloud: WorkspacePluginModule,
-    local: LocalWorkspacePluginModule,
+    path: 'data/pluginData',
+    cloud: CloudPluginDatumModule,
+    local: LocalPluginDatumModule,
   },
 ]

@@ -1,15 +1,15 @@
-import IWorkspacePluginStorageItem from "@/common/interfaces/IWorkspacePluginStorageItem";
+import IPluginData from "@/common/interfaces/IPluginData";
 import {
   DataState,
   DataStore,
   mutationsFor,
 } from "@/store/modules/data/DataModuleBase";
 
-interface State extends DataState<IWorkspacePluginStorageItem> {
+interface State extends DataState<IPluginData> {
   unsupported: boolean;
 }
 
-export const LocalWorkspacePluginModule: DataStore<IWorkspacePluginStorageItem, State> = {
+export const LocalPluginDatumModule: DataStore<IPluginData, State> = {
   namespaced: true,
   state: {
     items: [],
@@ -18,7 +18,7 @@ export const LocalWorkspacePluginModule: DataStore<IWorkspacePluginStorageItem, 
     unsupported: true,
     pollError: null,
   },
-  mutations: mutationsFor<IWorkspacePluginStorageItem>({}),
+  mutations: mutationsFor<IPluginData>({}),
   actions: {
     async load() {
       // Workspace plugin storage is not supported in local workspace
