@@ -116,7 +116,7 @@
     "split.js": "^1.5.11",
     "sql-formatter": "15.6.10",
     "sql-query-identifier": "^2.8.0",
-    "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
+    "tabulator-tables": "beekeeper-studio/tabulator#f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1",
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",
     "vite": "~5.4.19",
