@@ -401,6 +401,7 @@ export default Vue.extend({
     ...mapState(['tables', 'tablesInitialLoaded', 'usedConfig', 'database', 'workspaceId', 'connectionType', 'connection']),
     ...mapGetters(['dialectData', 'dialect', 'minimalMode']),
     ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+    ...mapState('popupMenu', { 'keybindingDefs': 'keybindingDefs' }),
     canJumpToLastPage() {
       const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
       return this.$bksConfig.db[dbType].allowSkipToLastPage;
@@ -469,6 +470,10 @@ export default Vue.extend({
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
         'tableTable.firstPage': this.navigatePage.bind(this, 'first'),
         'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
+        ...this.keybindingDefs['tableTable.cell'] ?? {},
+        ...this.keybindingDefs['tableTable.columnHeader'] ?? {},
+        ...this.keybindingDefs['tableTable.rowHeader'] ?? {},
+        ...this.keybindingDefs['tableTable.corner'] ?? {},
       })
     },
 

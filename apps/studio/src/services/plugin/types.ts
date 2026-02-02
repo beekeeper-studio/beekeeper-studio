@@ -56,6 +56,9 @@ export interface PluginMenuItem {
   /** User-facing label shown in the UI for this menu item. */
   name: string;
 
+  /** Short explanation of what this command does. */
+  description?: string;
+
   /** The ID of a view defined in `capabilities.views`; the host opens a
    * new tab of that view. */
   view: string;

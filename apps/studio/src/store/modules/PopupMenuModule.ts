@@ -9,14 +9,23 @@ import Vue from "vue";
 
 type TabulatorComponent = RowComponent | ColumnComponent | CellComponent;
 
+type KeybindingDefinition = {
+  menuId: string;
+  /** The path to the keybinding in the config */
+  keybindingPath: string;
+  handler: Function;
+};
+
 interface State {
   extraPopupMenu: { [menuId: string]: ContextOption[] };
+  keybindingDefs: KeybindingDefinition[];
 }
 
 export const PopupMenuModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
     extraPopupMenu: {},
+    keybindingDefs: [],
   }),
   getters: {
     getExtraPopupMenu(state) {
@@ -80,6 +89,19 @@ export const PopupMenuModule: Module<State, RootState> = {
       state.extraPopupMenu[options.menuId] = state.extraPopupMenu[
         options.menuId
       ].filter((i) => i.slug !== options.slug);
+    },
+    addKeybinding(state, definition: KeybindingDefinition) {
+      state.keybindingDefs.push(definition);
+    },
+    removeKeybinding(state, definition: Omit<KeybindingDefinition, "handler">) {
+      const idx = state.keybindingDefs.findIndex(
+        (d) =>
+          d.menuId === definition.menuId &&
+          d.keybindingPath === definition.keybindingPath
+      );
+      if (idx !== -1) {
+        state.keybindingDefs.splice(idx, 1);
+      }
     },
   },
 };

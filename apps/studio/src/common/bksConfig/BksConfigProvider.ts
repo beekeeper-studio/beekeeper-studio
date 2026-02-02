@@ -28,6 +28,8 @@ type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
+export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror";
+
 interface IBksConfigDebugInfo {
   path: string;
   value: string | number | undefined;
@@ -97,7 +99,7 @@ const vHotkeyModifierMap = {
 } as const;
 
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror",
+  target: KeybindingTarget,
   keybinding: string,
   platform: "windows" | "mac" | "linux"
 ) {
@@ -145,10 +147,9 @@ export function convertKeybinding(
 }
 
 /**
- * Array that is parsed by ini.parse is not exactly an array because
- * it doesn't have `length` property. Testing it with `Array.isArray` or
- * `_.isArray` will fail. Use this to test it.
- */
+ * `ini.parse` encodes arrays as objects without a `.length` property.
+ * This checks whether a value matches that structure.
+ **/
 export function isIniArray(value: any): value is IniArray {
   return (
     _.isObject(value) &&
@@ -254,7 +255,7 @@ export class BksConfigProvider {
     return getDebugAll(this.mergedConfig);
   }
 
-  getKeybindings(target: "electron" | "v-hotkey" | "codemirror", path: KeybindingPath) {
+  getKeybindings(target: KeybindingTarget, path: KeybindingPath) {
     const keybindings = this.get(`keybindings.${path}`);
 
     if (isIniArray(keybindings)) {
@@ -265,9 +266,9 @@ export class BksConfigProvider {
 
     if (typeof keybindings !== "string") {
       log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
+      return [];
     }
 
-    // @ts-expect-error keybindings should be a string
     return convertKeybinding(target, keybindings, this.platformInfo.platform);
   }
 
