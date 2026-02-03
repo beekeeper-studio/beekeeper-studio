@@ -29,7 +29,7 @@ export function searchItems(
   limit = 20
 ): SearchResult[] {
   const titles = items.map((item) => item.title);
-  const [idxs, info, order] = uf.search(titles, searchTerm);
+  const [idxs, info, order] = uf.search(titles, searchTerm, 0, Infinity);
 
   if (!idxs || !order) {
     return [];
