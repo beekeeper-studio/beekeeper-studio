@@ -20,6 +20,7 @@ import {
   RowMenuParams,
   RowMenuTarget,
 } from "@beekeeperstudio/plugin";
+import { getParsedKeybinding } from "../utils";
 
 type BigIntSerialized = number;
 
@@ -147,12 +148,15 @@ function serializeArray(arr: unknown[]): unknown[] {
 
 const pluginMenuFactories: MenuFactories = {
   newTabDropdown: {
-    create(context, menuItem) {
+    create(context, menuItem, { keyPath }) {
       return {
         add() {
           context.store.setTabDropdownItem({
             manifest: context.manifest,
             menuItem,
+            keybindingLabel: keyPath ?
+              getParsedKeybinding(window.bksConfig, keyPath, "xel")
+              : undefined,
           });
         },
         remove() {
@@ -168,7 +172,7 @@ const pluginMenuFactories: MenuFactories = {
     },
   },
   "menubar.tools": {
-    create(context, menuItem) {
+    create(context, menuItem, { keyPath }) {
       const id = `${context.manifest.id}-${menuItem.command}`;
       return {
         add() {
@@ -177,6 +181,9 @@ const pluginMenuFactories: MenuFactories = {
             label: menuItem.name,
             parentId: "tools",
             disableWhenDisconnected: true,
+            accelerator: keyPath ?
+              getParsedKeybinding(window.bksConfig, keyPath, "electron")
+              : undefined,
             action: {
               event: AppEvent.newCustomTab,
               args: context.store.buildPluginTabInit({
@@ -188,9 +195,11 @@ const pluginMenuFactories: MenuFactories = {
           });
         },
         remove: () => context.store.removeMenuBarItem(id),
-        keybindingHandler() {
-          context.createNewTab(menuItem.view, menuItem.command);
-        },
+        // NOTE: The `accelerator` is parsed to v-hotkey automatically so this
+        // isn't necessary.
+        // keybindingHandler() {
+        //   context.createNewTab(menuItem.view, menuItem.command);
+        // },
       };
     },
   },

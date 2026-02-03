@@ -14,8 +14,25 @@ type MenuHandler = {
   keybindingHandler?: (event: KeyboardEvent) => void;
 };
 
+type MenuFactoryCreateOptions = {
+  /**
+   * The path to the key binding added in `config.ini` minus the
+   * `"keybindings."`
+   *
+   * @example
+   *
+   * `"plugins.my-plugin.my-command"` ✓
+   * `"keybindings.plugins.my-plugin.my-command"` ✗
+   **/
+  keyPath?: string;
+};
+
 export type MenuFactory = {
-  create: (context: WebPluginContext, menuItem: PluginMenuItem) => MenuHandler;
+  create: (
+    context: WebPluginContext,
+    menuItem: PluginMenuItem,
+    options: MenuFactoryCreateOptions
+  ) => MenuHandler;
 };
 
 export type MenuFactories = {
@@ -66,10 +83,7 @@ export class PluginMenuManager {
         ? [menuItem.placement]
         : menuItem.placement;
 
-      /**
-       * This is the path to the key binding added in config.ini.
-       * E.g. => "plugins.my-plugin.my-command"
-       **/
+      /** See {@link MenuFactoryCreateOptions.keyPath} */
       const keyPath = `plugins.${this.context.manifest.id}.${menuItem.command}` as const;
       const hasKeybinding = window.bksConfig.has('keybindings.' + keyPath);
 
@@ -81,7 +95,9 @@ export class PluginMenuManager {
           );
           return;
         }
-        const handler = factory.create(this.context, menuItem);
+        const handler = factory.create(this.context, menuItem, {
+          keyPath: hasKeybinding ? keyPath : undefined,
+        });
 
         if (action === 'add') {
           handler.add();

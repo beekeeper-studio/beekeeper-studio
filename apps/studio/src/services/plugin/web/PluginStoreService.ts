@@ -149,6 +149,7 @@ export default class PluginStoreService {
   setTabDropdownItem(options: {
     menuItem: PluginMenuItem;
     manifest: Manifest;
+    keybindingLabel?: string;
   }): void {
     const ref: TabTypeConfig.PluginRef = {
       pluginId: options.manifest.id,
@@ -157,6 +158,7 @@ export default class PluginStoreService {
     const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
       label: options.menuItem.name,
       command: options.menuItem.command,
+      shortcut: options.keybindingLabel,
     }
     this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
   }

@@ -1,5 +1,9 @@
+import type { BksConfig, KeybindingTarget } from "@/common/bksConfig/BksConfigProvider";
 import { Manifest, ManifestV0, PluginMenuItem, PluginView } from "./types";
 import _ from "lodash";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("plugin/utils");
 
 export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
   views: PluginView[];
@@ -31,3 +35,20 @@ export function isManifestV0(m: Manifest): m is ManifestV0 {
   return m.manifestVersion === undefined || m.manifestVersion === 0;
 }
 
+export function getParsedKeybinding(
+  bksConfig: BksConfig,
+  keyPath: string,
+  target: KeybindingTarget
+) {
+  try {
+    const keybindings = bksConfig.getKeybindings(target, keyPath);
+    if (keybindings) {
+      return typeof keybindings === "string"
+        ? keybindings
+        : keybindings[0];
+    }
+  } catch (e) {
+    log.error(e);
+  }
+  return undefined;
+}

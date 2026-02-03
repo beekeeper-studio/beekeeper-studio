@@ -28,7 +28,7 @@ type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
-export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror";
+export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror" | "xel";
 
 interface IBksConfigDebugInfo {
   path: string;
@@ -98,6 +98,24 @@ const vHotkeyModifierMap = {
   WINDOWS: "windows",
 } as const;
 
+const xelModifierMap = {
+  CTRL: "Control",
+  CMD: "Meta",
+  CTRLORCMD: "Control",
+  CMDORCTRL: "Control",
+  CONTROL: "Control",
+  COMMAND: "Command",
+  CONTROLORCOMMAND: "Control",
+  COMMANDORCONTROL: "Control",
+  SHIFT: "Shift",
+  ALT: "Alt",
+  OPTION: "Alt",
+  ALTGR: "AltGraph",
+  SUPER: "Super",
+  META: "Meta",
+  WINDOWS: "Meta",
+} as const;
+
 export function convertKeybinding(
   target: KeybindingTarget,
   keybinding: string,
@@ -117,6 +135,9 @@ export function convertKeybinding(
     case "codemirror":
       modifierMap = codeMirrorModifierMap;
       joinChar = '-'
+      break;
+    case "xel":
+      modifierMap = xelModifierMap;
       break;
     default:
       log.error("Unrecognized target for keybinding conversion: ", target)
@@ -214,8 +235,7 @@ export class BksConfigProvider {
   }
 
   get(path: string): ConfigValue {
-    const { value } = this.resolvePath(path);
-    return value;
+    return this.resolvePath(path).value;
   }
 
   getAll(): IBksConfig {
