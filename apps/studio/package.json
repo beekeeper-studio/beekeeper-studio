@@ -128,7 +128,7 @@
     "sqlanywhere": "beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d",
     "ssh2": "^1.14.0",
     "surrealdb": "^1.3.2",
-    "tabulator-tables": "beekeeper-studio/tabulator#137018661b71291b18f19324ef39484496da281b",
+    "tabulator-tables": "beekeeper-studio/tabulator#f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1",
     "tinyduration": "^3.2.4",
     "trino-client": "^0.2.7",
     "typeface-roboto": "^0.0.75",
