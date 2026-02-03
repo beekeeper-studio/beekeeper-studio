@@ -17,14 +17,12 @@ export const KeybindingsModule: Module<State, RootState> = {
     /**
      * @example
      *
-     * Assume the `config.ini` looks like this:
+     * Keybindings are resolved by menu `placement` (alias).
      *
      * ```ini
      * [keybindings.plugins.bks-ai-shell]
      * new-tab-dropdown-item = ctrlOrCmd+l
      * ```
-     *
-     * And the `manifest.json` looks like this:
      *
      * ```json
      * {
@@ -38,9 +36,7 @@ export const KeybindingsModule: Module<State, RootState> = {
      * }
      * ```
      *
-     * Then you can get the keybindings for the `"new-tab-dropdown-item"` command
-     * like this:
-     *
+     * Usage:
      * ```ts
      * // Use $vHotkeyKeymap or $CMKeymap
      * $vHotkeyKeymap({
@@ -64,7 +60,7 @@ export const KeybindingsModule: Module<State, RootState> = {
   },
   mutations: {
     add(state, keybinding: Keybinding) {
-      if (state.map[keybinding.alias]) {
+      if (!state.map[keybinding.alias]) {
         Vue.set(state.map, keybinding.alias, []);
       }
       state.map[keybinding.alias].push(keybinding);

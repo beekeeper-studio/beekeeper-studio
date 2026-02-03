@@ -2,7 +2,7 @@ import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/di
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
-import { FileHelpers } from "@/types";
+import { FileHelpers, JsonValue } from "@/types";
 import type Noty from "noty";
 
 /**
@@ -190,7 +190,7 @@ export type WebPluginContext = {
     info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
-  createNewTab(viewId: string, command: string): void;
+  createNewTab(viewId: string, command: string, params?: JsonValue): void;
 }
 
 export type PluginContext = {
