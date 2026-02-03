@@ -358,14 +358,6 @@ export default class PluginStoreService {
     return this.store.state.plugins?.snapshots?.all ?? [];
   }
 
-  setEntries(entries: PluginRegistryEntry[]) {
-    this.store.commit("plugins/entries/set", entries);
-  }
-
-  getEntries() {
-    return this.store.state.plugins?.entries?.all ?? [];
-  }
-
   async loadEntries() {
     await this.store.dispatch("plugins/entries/load");
   }
