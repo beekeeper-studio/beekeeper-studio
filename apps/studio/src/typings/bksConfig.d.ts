@@ -305,6 +305,11 @@ declare interface IBksConfig {
             refresh: string[];
             save: string;
         };
+        plugins: {
+            "bks-ai-shell": {
+                "new-tab-dropdown-item": string;
+            };
+        };
         queryEditor: {
             closeTableFilter: string;
             copyResultSelection: string;
@@ -356,6 +361,9 @@ declare interface IBksConfig {
     };
     plugins: {
         "bks-ai-shell": {
+            disabled: boolean;
+        };
+        "bks-er-diagram": {
             disabled: boolean;
         };
     };

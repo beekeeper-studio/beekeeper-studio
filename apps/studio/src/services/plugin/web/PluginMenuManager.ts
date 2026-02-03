@@ -11,6 +11,7 @@ import pluginMenuFactories from "./PluginMenuFactories";
 type MenuHandler = {
   add: () => void;
   remove: () => void;
+  keybindingHandler?: (event: KeyboardEvent) => void;
 };
 
 export type MenuFactory = {
@@ -41,7 +42,7 @@ export class PluginMenuManager {
   }
 
   private applyMenuItems(
-    handlerType: keyof MenuHandler,
+    action: "remove" | "add",
     views: PluginView[],
     menu: PluginMenuItem[]
   ) {
@@ -65,6 +66,13 @@ export class PluginMenuManager {
         ? [menuItem.placement]
         : menuItem.placement;
 
+      /**
+       * This is the path to the key binding added in config.ini.
+       * E.g. => "plugins.my-plugin.my-command"
+       **/
+      const keyPath = `plugins.${this.context.manifest.id}.${menuItem.command}` as const;
+      const hasKeybinding = window.bksConfig.has('keybindings.' + keyPath);
+
       placement.forEach((placement) => {
         const factory = pluginMenuFactories[placement];
         if (!factory) {
@@ -74,7 +82,31 @@ export class PluginMenuManager {
           return;
         }
         const handler = factory.create(this.context, menuItem);
-        handler[handlerType]();
+
+        if (action === 'add') {
+          handler.add();
+          if (handler.keybindingHandler && hasKeybinding) {
+            this.context.store.addKeybinding({
+              alias: placement,
+              path: keyPath,
+              handler: handler.keybindingHandler,
+            });
+          }
+          return;
+        }
+
+        if (action === 'remove') {
+          handler.remove();
+          if (handler.keybindingHandler && hasKeybinding) {
+            this.context.store.removeKeybinding(
+              placement,
+              handler.keybindingHandler
+            );
+          }
+          return;
+        }
+
+        throw new Error(`Unknown action: ${action}`);
       });
     });
   }

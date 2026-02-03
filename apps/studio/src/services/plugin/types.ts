@@ -190,6 +190,7 @@ export type WebPluginContext = {
     info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
+  createNewTab(viewId: string, command: string): void;
 }
 
 export type PluginContext = {
@@ -203,3 +204,9 @@ export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
   context: any;
 }
+
+export type Keybinding = {
+  alias: PluginMenuItemPlacement;
+  path: string;
+  handler: Function;
+};

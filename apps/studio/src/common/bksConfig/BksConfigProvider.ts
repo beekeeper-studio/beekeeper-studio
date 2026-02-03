@@ -210,7 +210,7 @@ export class BksConfigProvider {
   }
 
   has(path: string): boolean {
-    return this.userConfig.has(path);
+    return !_.isNil(_.get(this.mergedConfig, path));
   }
 
   get(path: string): ConfigValue {

@@ -13,6 +13,7 @@ import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
+  Keybinding,
   Manifest,
   PluginMenuItem,
   PluginView,
@@ -347,6 +348,14 @@ export default class PluginStoreService {
 
   removeMenuBarItem(id: string) {
     this.store.commit("menuBar/remove", id);
+  }
+
+  addKeybinding(keybinding: Keybinding) {
+    this.store.commit("plugins/keybindings/add", keybinding);
+  }
+
+  removeKeybinding(alias: Keybinding["alias"], handler: Keybinding["handler"]) {
+    this.store.commit("plugins/keybinding/remove", { alias, handler });
   }
 
   buildPluginTabInit(options: {

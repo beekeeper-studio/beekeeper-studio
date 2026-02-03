@@ -7,6 +7,7 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
 import { FileHelpers } from "@/types";
 import type Noty from "noty";
+import { AppEvent } from "@/common/AppEvent";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -277,6 +278,17 @@ export default class WebPluginManager {
       fileHelpers: this.fileHelpers,
       noty: this.noty,
       confirm: this.confirm,
+      createNewTab: (viewId, command, params) => {
+        this.pluginStore.appEventBus.emit(
+          AppEvent.newCustomTab,
+          this.pluginStore.buildPluginTabInit({
+            manifest,
+            viewId,
+            command,
+            params,
+          })
+        );
+      },
     });
     await loader.load();
     this.loaders.set(manifest.id, loader);

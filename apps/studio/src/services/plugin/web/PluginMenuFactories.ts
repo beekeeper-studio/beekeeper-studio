@@ -161,6 +161,9 @@ const pluginMenuFactories: MenuFactories = {
             menuItem,
           });
         },
+        keybindingHandler() {
+          context.createNewTab(menuItem.view, menuItem.command);
+        },
       };
     },
   },
@@ -185,6 +188,9 @@ const pluginMenuFactories: MenuFactories = {
           });
         },
         remove: () => context.store.removeMenuBarItem(id),
+        keybindingHandler() {
+          context.createNewTab(menuItem.view, menuItem.command);
+        },
       };
     },
   },
