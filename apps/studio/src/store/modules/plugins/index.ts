@@ -6,7 +6,7 @@ interface State {
   pluginSnapshots: PluginSnapshot[];
 }
 
-export const PluginModule: Module<State, RootState> = {
+export const PluginsModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
     pluginSnapshots: [],
