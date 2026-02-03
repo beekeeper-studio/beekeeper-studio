@@ -99,7 +99,8 @@ export default Vue.extend({
     DisabledPluginAlert,
   },
   computed: {
-    ...mapState(["pluginManagerStatus", "pluginSnapshots"]),
+    ...mapState(["pluginManagerStatus"]),
+    ...mapState("plugins/snapshots", { snapshots: "all" }),
     data() {
       const pluginManagerStatus: WebPluginManagerStatus = this.pluginManagerStatus;
       if (pluginManagerStatus === "initializing") {
@@ -115,7 +116,7 @@ export default Vue.extend({
 
       // At this point, plugin manager is ready.
 
-      const snapshot: PluginSnapshot = this.pluginSnapshots.find((p) => p.manifest.id === this.pluginId);
+      const snapshot: PluginSnapshot = this.snapshots.find((p) => p.manifest.id === this.pluginId);
       if (!snapshot) {
         return {
           status: "error" as const,

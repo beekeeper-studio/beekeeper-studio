@@ -80,7 +80,7 @@ export default class WebPluginManager {
 
     await this.updatePluginSnapshots();
 
-    for (const plugin of this.pluginStore.getPluginSnapshots()) {
+    for (const plugin of this.pluginStore.getSnapshots()) {
       try {
         await this.loadPlugin(plugin.manifest);
       } catch (e) {
@@ -95,19 +95,11 @@ export default class WebPluginManager {
   }
 
   async updatePluginSnapshots() {
-    const pluginSnapshots = await this.utilityConnection.send("plugin/plugins");
-    this.pluginStore.setPluginSnapshots(pluginSnapshots);
+    await this.pluginStore.loadSnapshots();
   }
 
   async updatePluginEntries() {
-    this.pluginStore.setLoadingPluginEntries(true);
-    try {
-      const entries = await this.utilityConnection.send("plugin/entries", { refresh: true });
-      this.pluginStore.setPluginEntries(entries);
-    } catch (e) {
-      log.error(e);
-    }
-    this.pluginStore.setLoadingPluginEntries(false);
+    await this.pluginStore.loadEntries();
   }
 
   // TODO implement enable/disable plugins
@@ -188,7 +180,7 @@ export default class WebPluginManager {
 
   /** Get the snapshot of a plugin */
   pluginOf(pluginId: string) {
-    const plugin = this.pluginStore.getPluginSnapshots().find((p) => p.manifest.id === pluginId);
+    const plugin = this.pluginStore.getSnapshots().find((p) => p.manifest.id === pluginId);
     if (!plugin) {
       throw new Error("Plugin not found: " + pluginId);
     }

@@ -37,7 +37,8 @@ import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
-import { PluginRegistryEntry, PluginSnapshot, WebPluginManagerStatus } from '@/services/plugin'
+import { WebPluginManagerStatus } from '@/services/plugin'
+import { PluginsModule } from './modules/plugins'
 import { MenuBarModule } from './modules/MenuBarModule'
 
 
@@ -82,9 +83,6 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
-  pluginSnapshots: PluginSnapshot[];
-  pluginEntries: PluginRegistryEntry[];
-  loadingPluginEntries: boolean;
 }
 
 Vue.use(Vuex)
@@ -108,6 +106,7 @@ const store = new Vuex.Store<State>({
     sidebar: SidebarModule,
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
+    plugins: PluginsModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -144,9 +143,6 @@ const store = new Vuex.Store<State>({
     namespace: null,
     namespaceList: [],
     pluginManagerStatus: "initializing",
-    pluginSnapshots: [],
-    pluginEntries: [],
-    loadingPluginEntries: false,
   },
 
   getters: {
@@ -419,15 +415,6 @@ const store = new Vuex.Store<State>({
     },
     webPluginManagerStatus(state, status: WebPluginManagerStatus) {
       state.pluginManagerStatus = status
-    },
-    setPluginSnapshots(state, snapshots: PluginSnapshot[]) {
-      state.pluginSnapshots = snapshots;
-    },
-    setPluginEntries(state, entries: PluginRegistryEntry[]) {
-      state.pluginEntries = entries;
-    },
-    setLoadingPluginEntries(state, loading: boolean) {
-      state.loadingPluginEntries = loading;
     },
   },
   actions: {

@@ -350,24 +350,24 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
-  setPluginSnapshots(plugins: PluginSnapshot[]) {
-    this.store.commit("setPluginSnapshots", plugins);
+  async loadSnapshots() {
+    await this.store.dispatch("plugins/snapshots/load");
   }
 
-  getPluginSnapshots() {
-    return this.store.state.pluginSnapshots;
+  getSnapshots() {
+    return this.store.state.plugins?.snapshots?.all ?? [];
   }
 
-  setPluginEntries(entries: PluginRegistryEntry[]) {
-    this.store.commit("setPluginEntries", entries);
+  setEntries(entries: PluginRegistryEntry[]) {
+    this.store.commit("plugins/entries/set", entries);
   }
 
-  getPluginEntries() {
-    return this.store.state.pluginEntries;
+  getEntries() {
+    return this.store.state.plugins?.entries?.all ?? [];
   }
 
-  setLoadingPluginEntries(loading: boolean) {
-    this.store.commit("setLoadingPluginEntries", loading);
+  async loadEntries() {
+    await this.store.dispatch("plugins/entries/load");
   }
 
   buildPluginTabInit(options: {

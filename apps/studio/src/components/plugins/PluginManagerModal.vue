@@ -12,7 +12,7 @@
           Plugins
         </div>
         <div class="top-right-buttons">
-          <button class="btn btn-fab" @click.prevent="$plugin.updatePluginEntries()" :disabled="loadingPluginEntries"
+          <button class="btn btn-fab" @click.prevent="$plugin.updatePluginEntries()" :disabled="loadingEntries"
             title="Refresh list">
             <i class="material-icons">refresh</i>
           </button>
@@ -20,7 +20,7 @@
             <i class="material-icons">clear</i>
           </button>
         </div>
-        <x-progressbar v-if="pluginManagerStatus === 'initializing' || loadingPluginEntries" style="margin-top: -5px" />
+        <x-progressbar v-if="pluginManagerStatus === 'initializing' || loadingEntries" style="margin-top: -5px" />
         <div class="plugin-manager-content">
           <div class="plugin-list-container" :class="{ shrink: selectedPlugin }">
             <div class="description">
@@ -136,7 +136,9 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings);
   },
   computed: {
-    ...mapState(["pluginManagerStatus", "pluginSnapshots", "pluginEntries", "loadingPluginEntries"]),
+    ...mapState(["pluginManagerStatus"]),
+    ...mapState("plugins/snapshots", { snapshots: "all" }),
+    ...mapState("plugins/entries", { entries: "all", loadingEntries: "loading" }),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
     },
@@ -169,8 +171,8 @@ export default Vue.extend({
     },
     plugins(): UIPlugin[] {
       const list: UIPlugin[] = [];
-      const entries: PluginRegistryEntry[] = this.pluginEntries;
-      const pluginSnapshots: PluginSnapshot[] = this.pluginSnapshots;
+      const entries: PluginRegistryEntry[] = this.entries;
+      const pluginSnapshots: PluginSnapshot[] = this.snapshots;
       const pluginStates: Record<string, UIPluginState> = this.pluginStates;
 
       for (const entry of entries) {
