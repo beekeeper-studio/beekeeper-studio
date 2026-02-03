@@ -39,7 +39,7 @@ import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
-import { PluginModule } from './modules/PluginModule'
+import { PluginsModule } from './modules/plugins'
 
 
 const log = RawLog.scope('store/index')
@@ -106,7 +106,7 @@ const store = new Vuex.Store<State>({
     sidebar: SidebarModule,
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
-    plugins: PluginModule,
+    plugins: PluginsModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
