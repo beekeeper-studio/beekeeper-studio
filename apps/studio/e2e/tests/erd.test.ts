@@ -34,15 +34,8 @@ test.describe.only("ERD (Entity Relationship Diagram) Feature", () => {
     // Wait for connection to be established
     await expect(queryTab.queryTabTextArea).toBeVisible();
 
-    // // Debug: Check plugin state
-    // console.log('Before waiting for plugin:');
-    // await userAttemptsTo.debugPluginState();
-
-    // // Wait for ERD plugin to fully load and register menu items
-    // await userAttemptsTo.waitForErdPluginToLoad();
-
-    // console.log('After plugin loaded:');
-    // await userAttemptsTo.debugPluginState();
+    // Wait for ERD plugin to fully load and register menu items
+    await userAttemptsTo.waitForErdPluginToLoad();
   });
 
   afterEach(async () => {
@@ -53,16 +46,30 @@ test.describe.only("ERD (Entity Relationship Diagram) Feature", () => {
     // Right-click on 'actor' table in sidebar and select ERD option
     await userAttemptsTo.openErdFromTableContextMenu('actor');
 
-    // Verify ERD tab is opened
-    await expect(erd.erdTab).toBeVisible({ timeout: 10000 });
+    // Verify ERD tab header appears (text like "actor - ERD")
+    const tabHeader = await erd.erdTabHeader();
+    await expect(tabHeader).toBeVisible({ timeout: 10000 });
+
+    // Verify ERD iframe is loaded inside the tab
+    await expect(erd.erdIframe).toBeVisible({ timeout: 10000 });
   });
 
-  test("ERD tab appears in tab list", async () => {
+  test("ERD tab shows schema content", async () => {
     // Open ERD from table context menu
     await userAttemptsTo.openErdFromTableContextMenu('actor');
 
-    // Verify ERD tab header is visible
-    const tabHeader = await erd.erdTabHeader();
-    await expect(tabHeader).toBeVisible({ timeout: 10000 });
+    // Verify ERD tab is visible
+    await expect(erd.erdTab).toBeVisible({ timeout: 10000 });
+
+    // Verify iframe is loaded
+    await expect(erd.erdIframe).toBeVisible({ timeout: 10000 });
+
+    // Get the iframe content and verify schema elements exist
+    const iframe = erd.erdIframe;
+    const frameContent = await iframe.contentFrame();
+
+    // Verify the schema folder/structure is visible in the ERD
+    // Based on recording: "folderpublic" text appears in the ERD
+    await expect(frameContent.getByText(/folder|public|schema/i)).toBeVisible({ timeout: 10000 });
   });
 });
