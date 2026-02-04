@@ -2,7 +2,7 @@ import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/di
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
-import { FileHelpers } from "@/types";
+import { FileHelpers, JsonValue } from "@/types";
 import type Noty from "noty";
 
 /**
@@ -74,6 +74,14 @@ export interface PluginMenuItem {
    * @todo planned */
   order?: number;
 }
+
+/** For NativeMenuBuilder.ts */
+export type NativePluginMenuItem = {
+  id: string;
+  pluginId: string;
+  label: string;
+  command: string;
+};
 
 /** Used by earlier versions of AI Shell. */
 type LegacyViews = {
@@ -200,3 +208,10 @@ export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
   context: any;
 }
+
+export type CreatePluginTabOptions = {
+  manifest: Manifest;
+  viewId: string;
+  params?: JsonValue;
+  command: string;
+};

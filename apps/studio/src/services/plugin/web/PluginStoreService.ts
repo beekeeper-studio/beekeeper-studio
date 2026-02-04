@@ -17,6 +17,7 @@ import {
   PluginMenuItem,
   PluginView,
   TabType,
+  CreatePluginTabOptions,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -29,10 +30,7 @@ type Table = {
   schema?: string;
 };
 
-/**
- * An interface that bridges plugin system and Vuex. It also stores some states
- * for context menu because they don't exist in Vuex.
- */
+/** An interface that bridges plugin system with Vuex and AppEvents. */
 export default class PluginStoreService {
   private tablesChangedListeners: Set<() => void> = new Set();
 
@@ -305,6 +303,11 @@ export default class PluginStoreService {
     };
   }
 
+  createPluginTab(options: CreatePluginTabOptions) {
+    const transport = this.buildPluginTabInit(options);
+    this.appEventBus.emit(AppEvent.newCustomTab, transport);
+  }
+
   openTab(options: OpenTabRequest['args']): void {
     if (options.type === "query") {
       if (!options.query) {
@@ -349,12 +352,9 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
-  buildPluginTabInit(options: {
-    manifest: Manifest;
-    viewId: string;
-    params?: JsonValue;
-    command: string;
-  }): TransportOpenTabInit<PluginTabContext> {
+  buildPluginTabInit(
+    options: CreatePluginTabOptions
+  ): TransportOpenTabInit<PluginTabContext> {
     // FIXME(azmi): duplicated code from CoreTabs.vue
     const tabItems = this.store.getters["tabs/sortedTabs"];
     let title = options.manifest.name;

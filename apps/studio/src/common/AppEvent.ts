@@ -74,6 +74,8 @@ export enum AppEvent {
   updatePin = 'updatePin',
   /** The theme has been changed. */
   changedTheme = 'changedTheme',
+  /** A plugin menu item was clicked in the native/client menu under the tools. */
+  pluginMenuClicked = 'pluginMenuClicked',
 }
 
 export interface RootBinding {
