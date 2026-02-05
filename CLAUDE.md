@@ -130,6 +130,96 @@ assets/            # Styles, fonts, images
 - **TypeScript**: `apps/studio/tsconfig.json`
 - **Jest**: `apps/studio/jest.config.js` (plus specialized configs)
 - **Electron Builder**: `apps/studio/electron-builder-config.js`
+- **App Configuration**: `apps/studio/default.config.ini` (default user-configurable settings)
+
+## Application Configuration System
+
+Beekeeper Studio uses an INI-based configuration system for user-configurable settings. This allows users to customize behavior through config files.
+
+### Adding New Configuration Options
+
+**1. Add to `apps/studio/default.config.ini`**
+
+Configuration settings are organized into sections. Common sections include:
+- `[ui.queryEditor]` - Query editor settings
+- `[ui.tableTable]` - Table view settings
+- `[security]` - Security settings
+- `[db.default]` - Default database settings
+- `[db.postgres]`, `[db.mysql]`, etc. - Database-specific settings
+
+Example of adding a new setting:
+```ini
+[ui.queryEditor]
+maxResults = 50000
+defaultFormatter = bk-default
+; Parameter sorting mode for query parameter input modal
+; Options: 'insertion' (default) or 'alphanumeric'
+; insertion: displays parameters in query order (:1, :10, :2)
+; alphanumeric: sorts with smart numeric handling (:1, :2, :10)
+parameterSortMode = insertion
+```
+
+**2. Add a getter in the Settings Store**
+
+Add a getter in `src/store/modules/settings/SettingStoreModule.ts`:
+```typescript
+parameterSortMode(state) {
+  if (!state.settings.parameterSortMode) return 'insertion'
+  const value = state.settings.parameterSortMode.value as string
+  return (value === 'alphanumeric' || value === 'insertion') ? value : 'insertion'
+}
+```
+
+**3. Access the setting in components**
+```typescript
+// In a Vue component
+const sortMode = this.$store.getters['settings/parameterSortMode']
+```
+
+### Documenting Configuration in User Docs
+
+**Use the `ini-include` plugin** to reference configuration from `default.config.ini`:
+
+**Option 1: Include entire config file**
+```markdown
+{% ini-include %}
+```
+
+**Option 2: Include specific section**
+```markdown
+{% ini-include section="ui.queryEditor" %}
+```
+
+**Option 3: Include specific database section**
+```markdown
+{% ini-include section="db.postgres" %}
+```
+
+**Best Practices:**
+- Create reusable include files in `docs/includes/` for configuration snippets
+- Use `{% include-markdown %}` to include these files in multiple places
+- Always include both English and translated versions (`.es.md`, etc.)
+- Add explanatory text before the ini-include to provide context
+
+**Example include file** (`docs/includes/parameter_sort_mode_config.md`):
+```markdown
+You can configure the parameter sorting mode using the [config file](../user_guide/configuration.md):
+
+{% ini-include section="ui.queryEditor" %}
+```
+
+**Using the include in documentation:**
+```markdown
+### Parameter Sorting Configuration
+
+{% include-markdown '../../includes/parameter_sort_mode_config.md'%}
+```
+
+This approach:
+- ✅ Keeps documentation in sync with actual config
+- ✅ Avoids hard-coding INI snippets that can go stale
+- ✅ Shows users the exact config section they need
+- ✅ Includes comments from the default config
 
 ## Running Tests
 
