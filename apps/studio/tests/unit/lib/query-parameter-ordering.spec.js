@@ -8,7 +8,7 @@
 
 describe("Query Parameter Ordering", () => {
   // This simulates the fixed logic in TabQueryEditor.vue line 739
-  // Before fix: return _.uniq(params) - sorts alphabetically
+  // Before fix: used lodash uniq() which sorted alphabetically
   // After fix: return Array.from(new Set(params)) - preserves order
   const deduplicateParams = (params) => {
     return Array.from(new Set(params));
@@ -19,7 +19,7 @@ describe("Query Parameter Ordering", () => {
       const params = [":1", ":2", ":3", ":4", ":5", ":6", ":7", ":8", ":9", ":10", ":11", ":12"];
       const result = deduplicateParams(params);
 
-      // Before fix with _.uniq: would be [":1", ":10", ":11", ":12", ":2", ":3", ..., ":9"]
+      // Before fix (lodash uniq): would be [":1", ":10", ":11", ":12", ":2", ":3", ..., ":9"]
       // After fix with Set: preserves order [":1", ":2", ":3", ..., ":10", ":11", ":12"]
       expect(result).toEqual([":1", ":2", ":3", ":4", ":5", ":6", ":7", ":8", ":9", ":10", ":11", ":12"]);
 
@@ -141,7 +141,7 @@ describe("Query Parameter Ordering", () => {
     it("demonstrates the bug that was fixed", () => {
       const params = [":1", ":2", ":3", ":4", ":5", ":6", ":7", ":8", ":9", ":10", ":11"];
 
-      // Simulating old behavior with _.uniq (which sorts)
+      // Simulating old behavior (lodash uniq which sorted alphabetically)
       // We'll use sort() to show what the buggy behavior was
       const buggyResult = [...new Set(params)].sort();
 
