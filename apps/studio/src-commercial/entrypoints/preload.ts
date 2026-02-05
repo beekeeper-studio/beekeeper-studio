@@ -11,7 +11,6 @@ import 'electron-log/preload';
 import pluralize from 'pluralize';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 
-
 const electron = require('@electron/remote');
 
 const testMode = process.env.TEST_MODE ? true : false;

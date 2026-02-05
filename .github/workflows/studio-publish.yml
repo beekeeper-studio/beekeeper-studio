@@ -129,7 +129,7 @@ jobs:
         if: matrix.os.setup_ruby
 
       - name: Install fpm
-        run: sudo gem install fpm -v 1.15.1
+        run: sudo gem install fpm -v 1.17.0
         if: matrix.os.setup_ruby
 
       - name: Update repository
