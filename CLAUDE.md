@@ -142,12 +142,89 @@ Test files are organized in `apps/studio/tests/`:
 - `integration/` - Integration tests
 - `e2e/` - End-to-end tests with Playwright
 
+### Testing Tips & Best Practices
+
+**IMPORTANT: Build UI Kit First**
+- If you get module resolution errors for `@beekeeperstudio/ui-kit` when running tests, build the library first:
+  ```bash
+  yarn lib:build  # From project root
+  ```
+- This is especially important after pulling changes or when testing components that use ui-kit
+
+**Running Single Integration Tests**
+- The full integration test suite takes a long time to run (50+ seconds)
+- Run individual test files for faster feedback:
+  ```bash
+  # From apps/studio/
+  yarn test:integration tests/integration/lib/db/clients/postgres.spec.ts
+  yarn test:integration tests/integration/lib/db/clients/sqlite.spec.js
+  ```
+- This is much faster than running the entire suite
+
+**Component Testing Challenges**
+- Complex components with many dependencies (like `TabQueryEditor.vue`) are difficult to mount in unit tests
+- Consider creating focused unit tests for utility functions instead of full component tests
+- Example: Test the logic in `src/lib/db/` rather than mounting the entire component
+- Use the `Task` tool with `subagent_type=Explore` when you need to understand component dependencies
+
+**Test Organization**
+- Unit tests for utilities belong in `tests/unit/lib/`
+- Component logic tests can be in `tests/unit/lib/` if they test pure functions
+- Only create component tests in `tests/unit/components/` if absolutely necessary
+- Integration tests verify database-specific functionality
+
+**Running Specific Test Patterns**
+```bash
+# Run tests matching a pattern
+yarn test:unit tests/unit/lib/parameter-sorting.spec.ts
+yarn test:unit tests/unit/lib/query-parameter-ordering.spec.js
+
+# Run all tests in a directory
+yarn test:unit tests/unit/lib/
+
+# View test output with tail for long-running tests
+yarn test:integration tests/integration/lib/db/clients/postgres.spec.ts 2>&1 | tail -100
+```
+
 ## Development Workflow
 
 1. **Setup**: `yarn install` from root
 2. **Start development**: `yarn bks:dev` (from root) or `yarn electron:serve` (from apps/studio)
 3. **Run tests**: `yarn test:unit` before committing
 4. **Build**: `yarn bks:build` for production build
+
+### Development Tips
+
+**Settings and Configuration**
+- User settings are stored in `src/store/modules/settings/SettingStoreModule.ts`
+- Add new settings by:
+  1. Creating a getter in `SettingStoreModule.ts` (e.g., `parameterSortMode`)
+  2. Using the setting via `this.$store.getters['settings/yourSetting']`
+  3. Saving settings with `this.$store.dispatch('settings/save', { key: 'yourKey', value: 'yourValue' })`
+- Settings are persisted to the app's SQLite database automatically
+
+**Creating Utility Functions**
+- Place reusable logic in `src/lib/` organized by feature
+- Example: Database utilities in `src/lib/db/`, editor utilities in `src/lib/editor/`
+- Export TypeScript types alongside functions for better type safety
+- Always write unit tests for utility functions in `tests/unit/lib/`
+
+**Working with Vue Components**
+- Component files can be very large (e.g., `TabQueryEditor.vue` is 1000+ lines)
+- Use `Read` tool with offset/limit to view specific sections
+- Look for computed properties, methods, and lifecycle hooks
+- Check imports to understand dependencies
+
+**Vuex Store Access**
+- Use `mapGetters`, `mapState` from `vuex` in components
+- Access getters: `this.$store.getters['module/getter']`
+- Dispatch actions: `this.$store.dispatch('module/action', payload)`
+- Direct state access: `this.$store.state.module.property`
+
+**Path Aliases**
+- Use `@/` for imports from `src/` (e.g., `import { foo } from '@/lib/utils'`)
+- Use `@commercial/` for imports from `src-commercial/`
+- Aliases are configured in `tsconfig.json` and `vite.config.mjs`
 
 ## Path Aliases (Vite/TypeScript)
 
@@ -236,3 +313,71 @@ The first line of `README.md` links to all translations using the format:
 ```markdown
 🌐 [ES](README-es.md) | [PT-BR](README.pt-br.md)
 ```
+
+## Common Issues & Troubleshooting
+
+### Module Resolution Errors
+
+**Problem**: `Cannot find module '@beekeeperstudio/ui-kit/vue/...'`
+
+**Solution**: Build the ui-kit library first:
+```bash
+yarn lib:build  # From project root
+```
+
+This happens because the ui-kit is a local workspace dependency that needs to be built before components can import from it.
+
+### Test Failures Due to Dependencies
+
+**Problem**: Component tests fail with missing module errors or undefined methods
+
+**Solution**:
+- Don't test complex components directly - test their utility functions instead
+- Create focused unit tests for business logic in `src/lib/`
+- Use mocks sparingly - prefer testing pure functions
+- Example: Test `parameter-sorting.ts` logic rather than mounting `TabQueryEditor.vue`
+
+### Long-Running Test Suites
+
+**Problem**: Integration test suites take too long (50+ seconds)
+
+**Solution**:
+- Run individual test files: `yarn test:integration tests/integration/lib/db/clients/postgres.spec.ts`
+- Use background tasks for long operations and check results later
+- Pipe output to `tail` to see just the summary: `yarn test:integration ... 2>&1 | tail -100`
+
+### TypeScript Type Errors in Vue Files
+
+**Problem**: Type errors when accessing store or using Vue features
+
+**Solution**:
+- Use proper type annotations: `this.$store.getters['settings/foo'] as YourType`
+- Check `tsconfig.json` for path alias configuration
+- Import types from the right location (e.g., `import { ParameterSortMode } from '../lib/db/parameter-sorting'`)
+
+### Working Directory Issues
+
+**Problem**: Commands fail because you're in the wrong directory
+
+**Solution**:
+- Stay in `/apps/studio` when working on the main app
+- Only run commands from project root when explicitly needed (e.g., `yarn lib:build`)
+- Use absolute paths in tools when possible to avoid directory confusion
+
+### Debugging Integration Tests
+
+**Problem**: Integration tests fail but you can't see what's wrong
+
+**Solution**:
+- Look for test output in background task output files
+- Run single test file to isolate issues
+- Check database-specific test files in `tests/integration/lib/db/clients/`
+- Review test setup in `tests/lib/db.ts` for common test patterns
+
+### Browser Data Warning
+
+**Problem**: Warning about `browserslist: caniuse-lite is 12 months old`
+
+**Solution**:
+- This is just a warning and can be ignored
+- To fix: `npx update-browserslist-db@latest` (optional)
