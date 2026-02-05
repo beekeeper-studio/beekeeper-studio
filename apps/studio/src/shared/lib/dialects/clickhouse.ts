@@ -93,6 +93,7 @@ export const ClickHouseData: DialectData = {
     }
   ],
   disabledFeatures: {
+    readOnlyPrimaryKeys: false, // ClickHouse uses async ALTER TABLE UPDATE, not suitable for row editing
     manualCommit: true,
     shell: true,
     triggers: true,
