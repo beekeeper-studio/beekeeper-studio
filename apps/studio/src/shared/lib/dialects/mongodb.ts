@@ -13,6 +13,7 @@ export const MongoDBData: DialectData = {
   queryDialectOverride: 'postgresql',
   textEditorMode: 'text/x-pgsql',
   disabledFeatures: {
+    readOnlyPrimaryKeys: false, // MongoDB _id field is immutable
     manualCommit: true,
     rawFilters: true,
     truncateElement: true,

@@ -625,8 +625,8 @@ export default Vue.extend({
       const paths = []
       for (const column of this.table.columns) {
         const isPrimaryKey = this.isPrimaryKey(column.columnName);
-        // Allow primary key editing for dialects that don't have read-only primary keys (e.g., Redis key renaming)
-        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+        // Primary keys are editable by default (unless dialect explicitly disables this feature)
+        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys !== false;
 
         if((isPrimaryKey && !canEditPrimaryKeys) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
@@ -1324,8 +1324,8 @@ export default Vue.extend({
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
       const isPrimaryKey = this.isPrimaryKey(cell.getField());
-      // i know, the logic is a bit awkward (disable the disabling of editing the primary keys)
-      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys === true;
+      // Primary keys are editable by default unless explicitly disabled by the dialect
+      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys !== false;
       return this.editable && (!isPrimaryKey || canEditPrimaryKeys) && !pendingDelete;
     },
     insertionCellCheck(cell: CellComponent) {
