@@ -386,7 +386,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port
       this.username = extractedUser ?? parsed.user
-      this.password = extractedPassword ?? parsed.password
+      this.password = decodeURIComponent(extractedPassword ?? parsed.password)
       this.defaultDatabase = parsed.path?.join('/') ?? this.defaultDatabase
       return true
     } catch (ex) {
