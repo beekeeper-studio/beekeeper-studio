@@ -34,6 +34,10 @@ function shouldSkipUpdater() {
 }
 
 function checkForUpdates() {
+  if (!BksConfig.general.checkForUpdatesEnabled) {
+    log.info('update checks are disabled, skipping')
+    return
+  }
   log.info('checking for updates right now')
   try {
     autoUpdater.checkForUpdates()
@@ -53,6 +57,12 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
     log.info("not doing any updates, didn't meet conditional")
     return
   }
+
+  if (!BksConfig.general.checkForUpdatesEnabled) {
+    log.info("automatic update checks are disabled")
+    return
+  }
+
   setAllowBeta(allowBeta);
 
   dealWithAppImage();
