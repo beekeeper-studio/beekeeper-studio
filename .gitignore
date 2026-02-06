@@ -26,4 +26,3 @@ apps/studio/test-results
 *.log
 *.orig
 surreal_data/
-apps/studio/extra_resources/bundled_plugins

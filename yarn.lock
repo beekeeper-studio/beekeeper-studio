@@ -2071,6 +2071,16 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
+"@beekeeperstudio/bks-ai-shell@^3.0.4":
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.4.tgz#9647f49af1dbc5d610436eb7649706ef1d722800"
+  integrity sha512-WILP1D49U20ANHGOqgrt1QOP73ayvOtIaSFNJ8eYMspwruQ9RZzHmTuCCnsGphkpDLhfwcuY4BjQ+o6F5U1usw==
+
+"@beekeeperstudio/bks-er-diagram@^1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.7.tgz#e453f982699a95f2ad7847e127d2d7f3a43b56bb"
+  integrity sha512-VjMrK3rxmSVmkBypbWp8TtPhGciwvDeqGmNuiJqaa7AQ6iKNlO7W1M3vjmklxWLjyQH6SSOtu/O78DTk9h3TZA==
+
 "@beekeeperstudio/plugin@^1.6.0":
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.6.0.tgz#7ba0cd3ca01cd1bc463434c7e75b905081fb8df6"

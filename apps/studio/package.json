@@ -9,8 +9,6 @@
     "url": "https://beekeeperstudio.io"
   },
   "scripts": {
-    "prebuild": "yarn prepareBundledPlugins",
-    "preelectron:serve": "yarn prepareBundledPlugins",
     "build:esbuild": "node ./esbuild.mjs",
     "build:vite": "vite build",
     "build": "concurrently -n esbuild,vite \"yarn build:esbuild\" \"yarn build:vite\"",
@@ -27,8 +25,7 @@
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
     "dev:esbuild": "./esbuild.mjs watch",
-    "dev:vite": "vite dev",
-    "prepareBundledPlugins": "tsx ./scripts/prepareBundledPlugins.ts"
+    "dev:vite": "vite dev"
   },
   "main": "dist/main.js",
   "dependencies": {
@@ -40,6 +37,8 @@
     "@azure/msal-node": "^2.12.0",
     "@babel/plugin-transform-class-static-block": "^7.26.0",
     "@beekeeperstudio/plugin": "^1.6.0",
+    "@beekeeperstudio/bks-ai-shell": "^3.0.4",
+    "@beekeeperstudio/bks-er-diagram": "^1.0.7",
     "@cleverbrush/async": "^1.1.10",
     "@cleverbrush/deep": "^1.1.10",
     "@clickhouse/client": "^1.8.1",

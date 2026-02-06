@@ -238,7 +238,6 @@ jobs:
           command: "yarn install --frozen-lockfile --network-timeout 100000"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Remove dist directory
         if: matrix.os.type != 'windows'

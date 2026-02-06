@@ -43,7 +43,10 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
-ensureBundledPluginsInstalled(pluginManager);
+ensureBundledPluginsInstalled(pluginManager, [
+  "@beekeeperstudio/bks-ai-shell",
+  "@beekeeperstudio/bks-er-diagram",
+]);
 
 interface Reply {
   id: string,

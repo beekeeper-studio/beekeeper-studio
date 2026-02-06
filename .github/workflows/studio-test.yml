@@ -46,7 +46,6 @@ jobs:
         run: yarn install --frozen-lockfile
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint
         run: yarn workspace beekeeper-studio run lint
@@ -106,7 +105,6 @@ jobs:
           command: "yarn install --frozen-lockfile --network-timeout 100000"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test
         uses: nick-fields/retry@v2
@@ -160,7 +158,6 @@ jobs:
         run: yarn install --frozen-lockfile
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Start postgres container
         run: docker compose up psql15 -d
