@@ -16,6 +16,15 @@ import { camelCaseObjectKeys, snakeCaseObjectKeys } from '@/common/utils';
 
 import { IPlatformInfo } from '@/common/IPlatformInfo';
 
+// Helper function to check if cloud workspaces are enabled
+function isCloudWorkspacesEnabled(): boolean {
+  // In renderer process, use window.bksConfig
+  if (typeof window !== 'undefined' && window.bksConfig) {
+    return !window.bksConfig.general.disableCloudWorkspaces;
+  }
+  return true; // Default to enabled if config not available
+}
+
 const log = rawLog.scope('cloudClient')
 
 const ad = axios.defaults
@@ -52,6 +61,10 @@ const staticAxios = (baseUrl) => axios.create({
 
 export class CloudClient {
   static async login(baseUrl, email, password, app): Promise<string> {
+    if (!isCloudWorkspacesEnabled()) {
+      throw new Error('Cloud workspaces are disabled in configuration');
+    }
+    
     const cli = staticAxios(baseUrl)
 
     const response = await cli.post('/api/login', {
@@ -63,6 +76,7 @@ export class CloudClient {
 
 
   public static async getLicense(baseUrl: string, email: string, key: string, installationId = "", platformInfo: IPlatformInfo) {
+    // License checks are always allowed as they're for license validation, not workspaces
     const controller = new LicenseKeyController(staticAxios(baseUrl))
     log.info("Fetching license info! Installation id", installationId)
     return await controller.get(email, key, installationId, platformInfo)
@@ -77,6 +91,10 @@ export class CloudClient {
   public workspaces: WorkspacesController
   public workspaceId: number
   constructor(public options: CloudClientOptions) {
+    if (!isCloudWorkspacesEnabled()) {
+      throw new Error('Cloud workspaces are disabled in configuration');
+    }
+    
     this.axios = axios.create({
       baseURL: `${options.baseUrl}/api`,
       timeout: 5000,
