@@ -172,6 +172,7 @@ const store = new Vuex.Store<State>({
       }).find((e) => !!e)
     },
     cloudClient(state: State, getters): CloudClient | null {
+      if (!getters['settings/cloudWorkspacesEnabled']) return null
       if (state.workspaceId === LocalWorkspace.id) return null
 
       const workspaces: WSWithClient[] = getters['credentials/workspaces']

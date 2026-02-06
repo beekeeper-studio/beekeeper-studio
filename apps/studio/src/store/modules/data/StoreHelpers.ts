@@ -13,11 +13,15 @@ interface BasicContext {
   }
   rootGetters: {
     cloudClient: any | null
+    'settings/cloudWorkspacesEnabled': boolean
   }
   commit(str: string, item: any)
 }
 
 export function havingCli<U>(context: BasicContext, f: (c: any) => Promise<U>) {
+  if (!context.rootGetters['settings/cloudWorkspacesEnabled']) {
+    throw new Error('Cloud workspaces are disabled')
+  }
   return having(context.rootGetters.cloudClient, f, "You are not logged in")
 }
 

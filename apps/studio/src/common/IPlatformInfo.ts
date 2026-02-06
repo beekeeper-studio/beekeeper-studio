@@ -32,6 +32,7 @@ export interface IPlatformInfo {
   testMode: boolean,
   appDbPath: string,
   updatesDisabled: boolean,
+  cloudWorkspacesDisabled: boolean,
   appVersion: string,
   parsedAppVersion: BksVersion,
   cloudUrl: string,

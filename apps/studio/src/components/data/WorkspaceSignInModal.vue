@@ -74,6 +74,7 @@
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
+import { mapGetters } from 'vuex'
 export default Vue.extend({
   components: { ErrorAlert },
   mounted() {
@@ -89,6 +90,7 @@ export default Vue.extend({
     }
   },
   computed: {
+    ...mapGetters('settings', ['cloudWorkspacesEnabled']),
     rootBindings() {
       return [
         {
@@ -100,6 +102,9 @@ export default Vue.extend({
   },
   methods: {
     openModal(email?: string) {
+      if (!this.cloudWorkspacesEnabled) {
+        return
+      }
       console.log("open modal with ", email)
       this.email = email ? email : null
       this.lockEmail = !!email

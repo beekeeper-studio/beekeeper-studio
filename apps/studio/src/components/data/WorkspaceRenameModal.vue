@@ -38,7 +38,7 @@
 import Vue from "vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { AppEvent } from "@/common/AppEvent";
-import { mapState } from "vuex";
+import { mapState, mapGetters } from "vuex";
 
 export default Vue.extend({
   components: { ErrorAlert },
@@ -71,6 +71,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState('credentials', ['credentials']),
+    ...mapGetters('settings', ['cloudWorkspacesEnabled']),
     rootBindings() {
       return [{ event: AppEvent.promptRenameWorkspace, handler: this.open }];
     },
@@ -80,6 +81,9 @@ export default Vue.extend({
       this.$refs.nameInput.focus();
     },
     open({ workspace, client }) {
+      if (!this.cloudWorkspacesEnabled) {
+        return
+      }
       this.workspace = workspace
       this.workspaceName = workspace.name;
       this.client = client;

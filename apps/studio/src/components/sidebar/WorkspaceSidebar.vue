@@ -14,7 +14,7 @@
           <workspace-avatar :workspace="blob.workspace" />
         </span>
       </a>
-      <new-workspace-button />
+      <new-workspace-button v-if="cloudWorkspacesEnabled" />
     </div>
     <div
       v-if="loading"
@@ -31,13 +31,14 @@
     </div>
     <span class="expand" />
     <a
+      v-if="cloudWorkspacesEnabled"
       @click.prevent="refresh"
       class="nav-item refresh"
       title="Refresh Workspaces"
     >
       <span class="avatar"><i class="material-icons">refresh</i></span>
     </a>
-    <account-status-button />
+    <account-status-button v-if="cloudWorkspacesEnabled" />
   </div>
 </template>
 
@@ -61,7 +62,14 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
     ...mapState('credentials', ['credentials', 'loading']),
     ...mapState(['workspaceId']),
     ...mapState('settings', ['settings']),
-    ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'}),
+    ...mapGetters('credentials', { 'allWorkspaces': 'workspaces'}),
+    ...mapGetters('settings', ['cloudWorkspacesEnabled']),
+    availableWorkspaces() {
+      if (!this.cloudWorkspacesEnabled) {
+        return this.allWorkspaces.filter(ws => ws.workspace.type === 'local')
+      }
+      return this.allWorkspaces
+    },
 
   },
   methods: {

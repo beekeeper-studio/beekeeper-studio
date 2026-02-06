@@ -103,7 +103,7 @@
 import { AppEvent } from '@/common/AppEvent'
 import { CredentialBlob } from '@/store/modules/CredentialsModule'
 import Vue from 'vue'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import pluralize from 'pluralize'
 import StatusBadge from './StatusBadge.vue'
 
@@ -115,6 +115,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState('credentials', ['credentials', 'error']),
+    ...mapGetters('settings', ['cloudWorkspacesEnabled']),
     creds() {
       return this.credentials.map((i) => i.credential)
     },
@@ -134,6 +135,7 @@ export default Vue.extend({
       return pluralize("Workspace", blob.workspaces.length, true)
     },
     showAccountsModal() {
+      if (!this.cloudWorkspacesEnabled) return
       if (this.credentials.length) {
         this.$modal.show('account-status-modal')
       } else {
@@ -141,14 +143,17 @@ export default Vue.extend({
       }
     },
     reauth(c: CredentialBlob) {
+      if (!this.cloudWorkspacesEnabled) return
       this.$modal.hide('account-status-modal')
       this.$root.$emit(AppEvent.promptLogin, c.credential.email)
     },
     refresh() {
+      if (!this.cloudWorkspacesEnabled) return
       this.$modal.hide('account-status-modal')
       this.$store.dispatch('credentials/load')
     },
     login() {
+      if (!this.cloudWorkspacesEnabled) return
       this.$modal.hide('account-status-modal')
       this.$root.$emit(AppEvent.promptLogin)
     },

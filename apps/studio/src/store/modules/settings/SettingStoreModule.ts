@@ -111,6 +111,11 @@ const SettingStoreModule: Module<State, any> = {
     sqliteRuntimeExtensions(state) {
       if (!state.settings.sqliteExtensionFile) return null
       return state.settings.sqliteExtensionFile
+    },
+    cloudWorkspacesEnabled(state) {
+      if (window.platformInfo?.cloudWorkspacesDisabled) return false
+      if (!state.settings.cloudWorkspacesEnabled) return true
+      return state.settings.cloudWorkspacesEnabled.value
     }
   }
 }

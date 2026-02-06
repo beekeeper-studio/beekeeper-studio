@@ -21,25 +21,30 @@
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import Vue from 'vue'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 export default Vue.extend({
   computed: {
     ...mapState('credentials', {credentials: 'credentials'}),
+    ...mapGetters('settings', ['cloudWorkspacesEnabled']),
     title() {
       return this.credentials.length ? '' : 'Create Workspace - Please sign in to your workspace account first'
     },
   },
   methods: {
     addWorkspace() {
+      if (!this.cloudWorkspacesEnabled) return
       this.$root.$emit(AppEvent.promptLogin)
     },
     createWorkspace() {
+      if (!this.cloudWorkspacesEnabled) return
       this.$root.$emit(AppEvent.promptCreateWorkspace)
     },
     signup() {
+      if (!this.cloudWorkspacesEnabled) return
       document.location.href = `${this.$config.cloudUrl}/users/sign_up`
     },
     onClick() {
+      if (!this.cloudWorkspacesEnabled) return
       if (this.$store.getters.isCommunity) {
         this.$root.$emit(AppEvent.upgradeModal)
       }

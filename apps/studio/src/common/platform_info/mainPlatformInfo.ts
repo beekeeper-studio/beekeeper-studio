@@ -45,6 +45,7 @@ export function mainPlatformInfo(): IPlatformInfo {
   const windowPrefersDarkMode = false
 
   const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
+  const cloudWorkspacesDisabled = !!p.env.BEEKEEPER_DISABLE_CLOUD_WORKSPACES
 
   // previous builds of Beekeeper Studio required native libs for Oracle,
   // but now it should work on all platforms
@@ -101,6 +102,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     updatesDisabled,
+    cloudWorkspacesDisabled,
     appVersion,
     parsedAppVersion,
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',

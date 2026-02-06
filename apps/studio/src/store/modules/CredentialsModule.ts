@@ -110,6 +110,12 @@ export const CredentialsModule: Module<State, RootState> = {
 
   actions: {
     async load(context) {
+      if (!context.rootGetters['settings/cloudWorkspacesEnabled']) {
+        context.commit('replace', [])
+        context.commit('loading', false)
+        return
+      }
+      
       context.commit('loading', true)
       try {
         const creds = await Vue.prototype.$util.send('appdb/credential/find');
@@ -126,6 +132,10 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async login(context, { email, password }) {
+      if (!context.rootGetters['settings/cloudWorkspacesEnabled']) {
+        throw new Error('Cloud workspaces are disabled')
+      }
+      
       const existing = await Vue.prototype.$util.send('appdb/credential/findOneBy', { email })
       const appId = (await Vue.prototype.$util.send('appdb/credential/findOneBy', {}))?.appId || genAppId()
       let cred: TransportCloudCredential = existing || {
@@ -159,6 +169,10 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async createWorkspace(context, payload: { blobId: number, name: string }) {
+      if (!context.rootGetters['settings/cloudWorkspacesEnabled']) {
+        throw new Error('Cloud workspaces are disabled')
+      }
+      
       const client = context.state.credentials.find((c) => c.id === payload.blobId).client
       const workspace = await client.workspaces.create({
         name: payload.name,
@@ -166,6 +180,10 @@ export const CredentialsModule: Module<State, RootState> = {
       context.commit('pushWorkspace', { blobId: payload.blobId, workspace })
     },
     async renameWorkspace(context, payload: { client: CloudClient, workspace: IWorkspace, name: string }) {
+      if (!context.rootGetters['settings/cloudWorkspacesEnabled']) {
+        throw new Error('Cloud workspaces are disabled')
+      }
+      
       const workspace = await payload.client.workspaces.update({
         ...payload.workspace,
         name: payload.name,
