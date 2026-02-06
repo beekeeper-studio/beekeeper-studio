@@ -195,7 +195,7 @@
     "electron-builder": "~26.4.0",
     "esbuild": "^0.21.2",
     "esbuild-node-externals": "^1.13.1",
-    "eslint": "^6.7.2",
+    "eslint": "^9.26.0",
     "eslint-plugin-vue": "^6.2.2",
     "execa": "npm:@esm2cjs/execa",
     "jest": "^29.7.0",
