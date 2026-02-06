@@ -26,10 +26,6 @@ module.exports = {
   ],
   extraResources: [
     {
-      from: './extra_resources/bundled_plugins',
-      to: 'bundled_plugins'
-    },
-    {
       from: './extra_resources/demo.db',
       to: 'demo.db'
     },
