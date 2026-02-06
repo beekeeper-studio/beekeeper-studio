@@ -738,7 +738,7 @@
         // Sort/deduplicate parameters based on user preference
         // 'insertion' (default): preserves query order, fixes issue #3651 (:1, :2, :10)
         // 'alphanumeric': smart sorting that handles numeric suffixes correctly
-        const sortMode = this.$store.getters['settings/parameterSortMode'] as ParameterSortMode
+        const sortMode = this.$bksConfig.ui.queryEditor.parameterSortMode as ParameterSortMode
         return sortParameters(params, sortMode)
       },
       deparameterizedQuery() {

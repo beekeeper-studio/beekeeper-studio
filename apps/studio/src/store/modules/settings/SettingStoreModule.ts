@@ -111,12 +111,6 @@ const SettingStoreModule: Module<State, any> = {
     sqliteRuntimeExtensions(state) {
       if (!state.settings.sqliteExtensionFile) return null
       return state.settings.sqliteExtensionFile
-    },
-    parameterSortMode(state) {
-      // Default to 'insertion' order (preserves query order)
-      if (!state.settings.parameterSortMode) return 'insertion'
-      const value = state.settings.parameterSortMode.value as string
-      return (value === 'alphanumeric' || value === 'insertion') ? value : 'insertion'
     }
   }
 }

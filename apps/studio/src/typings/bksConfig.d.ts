@@ -385,6 +385,7 @@ declare interface IBksConfig {
         queryEditor: {
             defaultFormatter: string;
             maxResults: number;
+            parameterSortMode: string;
         };
         tableList: {
             itemHeight: number;

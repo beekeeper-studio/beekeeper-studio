@@ -159,22 +159,82 @@ defaultFormatter = bk-default
 parameterSortMode = insertion
 ```
 
-**2. Add a getter in the Settings Store**
+**2. Update TypeScript types (manual until generator is fixed)**
 
-Add a getter in `src/store/modules/settings/SettingStoreModule.ts`:
+Since the auto-generator currently has issues, manually update `src/typings/bksConfig.d.ts`:
 ```typescript
-parameterSortMode(state) {
-  if (!state.settings.parameterSortMode) return 'insertion'
-  const value = state.settings.parameterSortMode.value as string
-  return (value === 'alphanumeric' || value === 'insertion') ? value : 'insertion'
-}
+queryEditor: {
+    defaultFormatter: string;
+    maxResults: number;
+    parameterSortMode: string;  // Add your new setting here
+};
 ```
 
 **3. Access the setting in components**
+
+**IMPORTANT**: Always use `$bksConfig` to access configuration, NOT the Vuex store.
+
 ```typescript
-// In a Vue component
+// ✅ CORRECT - Use $bksConfig
+const sortMode = this.$bksConfig.ui.queryEditor.parameterSortMode
+
+// ❌ WRONG - Don't use Vuex store for config
 const sortMode = this.$store.getters['settings/parameterSortMode']
 ```
+
+### Why Use `$bksConfig` Instead of Vuex Store?
+
+The `$bksConfig` system is the correct way to access user-configurable settings because:
+
+1. **Single source of truth**: Config comes from INI files, processed once at startup
+2. **Performance**: Direct access, no store getters/actions overhead
+3. **Type safety**: Full TypeScript types in `bksConfig.d.ts`
+4. **Consistency**: All config throughout the app uses `$bksConfig`
+5. **No state management**: Config is read-only, doesn't need reactivity
+
+**Example usage in components:**
+```typescript
+// In a Vue component
+export default {
+  computed: {
+    maxResults() {
+      return this.$bksConfig.ui.queryEditor.maxResults
+    },
+    columnWidth() {
+      return this.$bksConfig.ui.tableTable.maxColumnWidth
+    }
+  }
+}
+```
+
+**Common patterns:**
+```typescript
+// UI settings
+this.$bksConfig.ui.queryEditor.maxResults
+this.$bksConfig.ui.tableTable.pageSize
+this.$bksConfig.ui.layout.primarySidebarMinWidth
+
+// Security settings
+this.$bksConfig.security.lockMode
+this.$bksConfig.security.disconnectOnSuspend
+
+// Database settings
+this.$bksConfig.db.postgres.connectionTimeout
+this.$bksConfig.db.mysql.maxConnections
+this.$bksConfig.db.default.allowSkipToLastPage
+```
+
+### The Vuex Store vs $bksConfig
+
+**Vuex Store** (`this.$store`) is for:
+- ✅ Runtime application state (current connection, tabs, data)
+- ✅ User actions that modify state
+- ✅ Reactive data that changes during app usage
+
+**$bksConfig** is for:
+- ✅ User-configurable settings from INI files
+- ✅ Read-only configuration that doesn't change at runtime
+- ✅ Default values and preferences
 
 ### Documenting Configuration in User Docs
 
