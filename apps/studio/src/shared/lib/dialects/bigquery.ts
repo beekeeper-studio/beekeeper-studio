@@ -57,6 +57,7 @@ export const BigQueryData: DialectData = {
     createIndex: true,
     comments: true,
     initialSort: true,
+    dropCascade: true,
   },
   notices: {
     infoIndexes: 'BigQuery: table indexes are not supported.',

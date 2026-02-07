@@ -86,7 +86,8 @@ export const TrinoData: DialectData = {
     binaryColumn: true,
     sqlCreate: true,
     compositeKeys: true,    // Whether composite keys are supported
-    schemaValidation: true  // Whether schema validation features are disabled
+    schemaValidation: true,  // Whether schema validation features are disabled
+    dropCascade: true,
   },
   notices: {
     infoIndexes: 'Trino: table indexes are not supported.',

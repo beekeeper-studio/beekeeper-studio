@@ -193,6 +193,7 @@ export interface DialectData {
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
     readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
+    dropCascade?: boolean  // Whether DROP CASCADE is not supported
   },
   notices?: {
     infoSchema?: string

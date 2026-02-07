@@ -190,6 +190,25 @@
               /> {{ this.dbElement }}</span>?
             </div>
             <p>This change cannot be undone</p>
+            <div
+              v-if="showCascadeOption"
+              class="form-group checkbox-form-group"
+            >
+              <label
+                class="checkbox"
+                :class="{ disabled: !cascadeSupported }"
+                v-tooltip="cascadeSupported
+                  ? 'Also drop dependent objects (foreign keys, views)'
+                  : `CASCADE not supported for ${dialectTitle}`"
+              >
+                <input
+                  type="checkbox"
+                  v-model="dropCascade"
+                  :disabled="!cascadeSupported"
+                >
+                <span>CASCADE (drop dependent objects)</span>
+              </label>
+            </div>
           </div>
           <div class="vue-dialog-buttons">
             <span class="expand" />
@@ -370,6 +389,7 @@ export default Vue.extend({
       dbElement: null,
       dbEntityType: null,
       dbDeleteElementParams: null,
+      dropCascade: false,
       // below are connected to the modal for duplicate
       dbDuplicateTableParams: null,
       duplicateTableName: null,
@@ -413,6 +433,12 @@ export default Vue.extend({
     },
     titleCaseAction() {
       return _.capitalize(this.dbAction)
+    },
+    cascadeSupported() {
+      return !this.dialectData?.disabledFeatures?.dropCascade;
+    },
+    showCascadeOption() {
+      return this.dbEntityType === 'table' && this.dbAction === 'drop';
     },
     modalName() {
       return "dropTruncateModal"
@@ -511,7 +537,8 @@ export default Vue.extend({
       this.$nextTick(async () => {
         try {
           if (this.dbAction.toLowerCase() === 'drop') {
-            await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema);
+            const options = entityType === 'table' ? { cascade: this.dropCascade } : undefined;
+            await this.connection.dropElement(dbName, entityType?.toUpperCase(), schema, options);
             // timeout is more about aesthetics so it doesn't refresh the table right away.
 
               setTimeout(() => {
@@ -762,6 +789,7 @@ export default Vue.extend({
       this.dbAction = dbAction
       this.dbEntityType = dbActionParams.entityType || 'schema'
       this.dbDeleteElementParams = dbActionParams
+      this.dropCascade = false
 
       this.$modal.show(this.modalName)
     },

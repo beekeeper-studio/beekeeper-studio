@@ -2,7 +2,7 @@ import * as bq from '@google-cloud/bigquery';
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete, BksField } from "../models";
-import { DatabaseElement, IDbConnectionDatabase } from "../types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
 import Client from 'knex/lib/client';
@@ -506,7 +506,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return ''
   }
 
-  async dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+  async dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string, _options?: DropElementOptions): Promise<void> {
     throw new Error("Method not implemented.");
   }
 

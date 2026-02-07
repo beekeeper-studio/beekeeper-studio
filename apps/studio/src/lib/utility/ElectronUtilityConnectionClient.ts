@@ -1,4 +1,4 @@
-import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
+import { DatabaseElement, DropElementOptions, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
@@ -218,8 +218,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/setElementName', { elementName, newElementName, typeOfElement, schema });
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
-    return await Vue.prototype.$util.send('conn/dropElement', { elementName, typeOfElement, schema });
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string, options?: DropElementOptions): Promise<void> {
+    return await Vue.prototype.$util.send('conn/dropElement', { elementName, typeOfElement, schema, options });
   }
 
   async truncateElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {

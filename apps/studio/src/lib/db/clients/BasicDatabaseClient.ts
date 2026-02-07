@@ -5,7 +5,7 @@ import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { identify } from 'sql-query-identifier';
-import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
+import { ConnectionType, DatabaseElement, DropElementOptions, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "@bksLogger";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
@@ -304,7 +304,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     await this.driverExecuteSingle(sql);
   }
 
-  abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>;
+  abstract dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string, options?: DropElementOptions): Promise<void>;
 
   abstract truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string>;
 

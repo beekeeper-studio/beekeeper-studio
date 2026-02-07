@@ -2,7 +2,7 @@ import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
 import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
-import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
+import { IDbConnectionDatabase, DatabaseElement, DropElementOptions } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import BksConfig from '@/common/bksConfig';
 import {
@@ -876,8 +876,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return sql
   }
 
-  async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public'): Promise<void> {
-    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+  async dropElement (elementName: string, typeOfElement: DatabaseElement, schema = 'public', options?: DropElementOptions): Promise<void> {
+    const cascade = options?.cascade && typeOfElement === DatabaseElement.TABLE ? ' CASCADE CONSTRAINTS' : '';
+    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}${cascade}`
 
     await this.driverExecuteSingle(sql)
   }
