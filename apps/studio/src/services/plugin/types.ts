@@ -189,6 +189,15 @@ export type WebPluginContext = {
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
 
+/**
+ * @todo Replaced by this PR
+ * @link https://github.com/beekeeper-studio/beekeeper-studio/pull/3727/changes#diff-6a9b0aadf5c9a610b259c9ce1d492e8354555f0384c787b643bb3b59be80ba1cR199
+ * */
+export type PluginSnapshot = {
+  manifest: Manifest;
+  disabled: false;
+};
+
 export type PluginContext = {
   manifest: Manifest;
   loadable: boolean;

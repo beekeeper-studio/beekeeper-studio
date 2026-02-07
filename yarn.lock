@@ -2071,10 +2071,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@beekeeperstudio/plugin@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.6.0.tgz#7ba0cd3ca01cd1bc463434c7e75b905081fb8df6"
-  integrity sha512-it+Wbg5zUFfK8yDUY81Rq5c1jRzMat/eBXnu5vjpqSscniGPZXfY5YB3PWdZstWBM40sFo+aKEWOd7DvHNesvw==
+"@beekeeperstudio/plugin@^1.7.1-beta.1":
+  version "1.7.1-beta.1"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.7.1-beta.1.tgz#46e182c659d83c9d9f2dc10c61acad4ec7027fb6"
+  integrity sha512-9m952Arm2VeAizhJvbvzjf7bAv9kwgYyCVr/6Nd/XsDSoFpvqY5guzYY935PDAKIAOFY2IeDuRtnrEWnFUyaxw==
 
 "@bufbuild/protobuf@^2.0.0":
   version "2.2.3"

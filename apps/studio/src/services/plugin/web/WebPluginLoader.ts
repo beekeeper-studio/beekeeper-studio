@@ -225,6 +225,9 @@ export default class WebPluginLoader {
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
+        case "getWorkspaceInfo":
+          response.result = this.context.store.getWorkspaceInfo();
+          break;
         case "getData":
         case "getEncryptedData": {
           const value = await this.utilityConnection.send(
@@ -234,6 +237,15 @@ export default class WebPluginLoader {
             { manifest: this.manifest, key: response.args.key }
           );
           response.result = value;
+          break;
+        }
+        case "cloudStorage.connection.getItem": {
+          const { id: connectionId } = this.context.store.getConnectionInfo();
+          response.result = await this.context.store.getCloudPluginData({
+            pluginId: this.manifest.id,
+            connectionId,
+            key: response.args.key,
+          });
           break;
         }
         case "clipboard.readText":
@@ -257,6 +269,18 @@ export default class WebPluginLoader {
               : "plugin/setData",
             { manifest: this.manifest, key: response.args.key, value: response.args.value }
           )
+          break;
+        }
+        case "cloudStorage.connection.setItem": {
+          const { id: connectionId } = this.context.store.getConnectionInfo();
+          await this.context.store.setWorkspaceData(
+            {
+              pluginId: this.manifest.id,
+              connectionId,
+              key: response.args.key,
+            },
+            response.args.value
+          );
           break;
         }
         case "clipboard.writeText":

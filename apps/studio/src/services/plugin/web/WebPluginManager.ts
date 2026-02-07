@@ -91,6 +91,9 @@ export default class WebPluginManager {
         continue;
       }
       try {
+        // FIXME (Azmi): Replaced by this PR
+        // https://github.com/beekeeper-studio/beekeeper-studio/pull/3727/changes#diff-2e20e5390eacc4ddd8dd669ac515fdcd65298b242d4af973e961bf55a07c7033R97-R100
+        this.pluginStore.addPluginSnapshot({ manifest, disabled: false });
         await this.loadPlugin(manifest);
       } catch (e) {
         log.error(`Failed to load plugin: ${manifest.id}`, e);
