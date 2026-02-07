@@ -96,10 +96,16 @@ export default Vue.extend({
           handler: this.openModal
         }
       ]
-    }
+    },
+    cloudWorkspacesEnabled() {
+      return !this.$bksConfig.general.disableCloudWorkspaces;
+    },
   },
   methods: {
     openModal(email?: string) {
+      if (!this.cloudWorkspacesEnabled) {
+        return; // Don't open modal if cloud workspaces are disabled
+      }
       console.log("open modal with ", email)
       this.email = email ? email : null
       this.lockEmail = !!email

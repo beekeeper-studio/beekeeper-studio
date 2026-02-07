@@ -166,6 +166,7 @@ nav:
     - user_guide/security.md
     - Plugins: user_guide/plugins.md
     - Configuration: user_guide/configuration.md
+    - Enterprise Deployment: user_guide/enterprise-deployment.md
   # - Plugin Development:
   #   - Introduction: plugin_development/index.md
   #   - Creating your first plugin: plugin_development/creating-your-first-plugin.md

@@ -7,6 +7,14 @@ import { upsert } from "./data/StoreHelpers";
 import Vue from "vue";
 import { TransportCloudCredential } from "@/common/transport";
 
+// Helper function to check if cloud workspaces are enabled
+function isCloudWorkspacesEnabled(): boolean {
+  if (typeof window !== 'undefined' && window.bksConfig) {
+    return !window.bksConfig.general.disableCloudWorkspaces;
+  }
+  return true; // Default to enabled if config not available
+}
+
 function genAppId() {
   return `beekeeper-app-${uuidv4()}`
 }
@@ -30,6 +38,16 @@ interface State {
 }
 
 async function credentialToBlob(c: TransportCloudCredential): Promise<CredentialBlob> {
+  if (!isCloudWorkspacesEnabled()) {
+    return {
+      id: c.id,
+      credential: c,
+      client: null as any, // No client when disabled
+      workspaces: [],
+      error: new Error('Cloud workspaces are disabled in configuration')
+    }
+  }
+  
   const clientOptions: CloudClientOptions = {
     app: c.appId, email: c.email, token: c.token, baseUrl: window.platformInfo.cloudUrl
   }
@@ -126,6 +144,10 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async login(context, { email, password }) {
+      if (!isCloudWorkspacesEnabled()) {
+        throw new Error('Cloud workspaces are disabled in configuration');
+      }
+      
       const existing = await Vue.prototype.$util.send('appdb/credential/findOneBy', { email })
       const appId = (await Vue.prototype.$util.send('appdb/credential/findOneBy', {}))?.appId || genAppId()
       let cred: TransportCloudCredential = existing || {
@@ -159,6 +181,10 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async createWorkspace(context, payload: { blobId: number, name: string }) {
+      if (!isCloudWorkspacesEnabled()) {
+        throw new Error('Cloud workspaces are disabled in configuration');
+      }
+      
       const client = context.state.credentials.find((c) => c.id === payload.blobId).client
       const workspace = await client.workspaces.create({
         name: payload.name,
@@ -166,6 +192,10 @@ export const CredentialsModule: Module<State, RootState> = {
       context.commit('pushWorkspace', { blobId: payload.blobId, workspace })
     },
     async renameWorkspace(context, payload: { client: CloudClient, workspace: IWorkspace, name: string }) {
+      if (!isCloudWorkspacesEnabled()) {
+        throw new Error('Cloud workspaces are disabled in configuration');
+      }
+      
       const workspace = await payload.client.workspaces.update({
         ...payload.workspace,
         name: payload.name,

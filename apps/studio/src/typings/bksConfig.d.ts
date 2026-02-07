@@ -291,6 +291,7 @@ declare interface IBksConfig {
     general: {
         checkForUpdatesInterval: number;
         dataSyncInterval: number;
+        disableCloudWorkspaces: boolean;
         workspaceSyncInterval: number;
     };
     keybindings: {
