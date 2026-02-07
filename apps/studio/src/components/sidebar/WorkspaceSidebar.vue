@@ -81,7 +81,16 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
           name: "Add Users",
           slug: 'invite',
           handler: ({item}) => window.location.href = `${item.workspace.url}/invitations/new`
-        })
+        },
+        {
+          name: "Delete Workspace",
+          slug: 'Delete',
+          handler: () => this.$root.$emit(AppEvent.promptDeleteWorkspace, {
+            workspace: blob.workspace,
+            client: blob.client
+          })
+        }
+      )
       }
       return result
     },
