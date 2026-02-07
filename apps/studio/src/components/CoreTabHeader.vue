@@ -122,6 +122,11 @@ import _ from 'lodash'
         event.preventDefault()
         this.$emit('close', this.tab)
       },
+      forceClose(event) {
+        event.stopPropagation()
+        event.preventDefault()
+        this.$emit('forceClose', this.tab)
+      },
       doNothing() {
         // Empty on purpose
       },
@@ -178,6 +183,7 @@ import _ from 'lodash'
 
         return this.$vHotkeyKeymap({
           'tab.closeTab': this.maybeClose,
+          'tab.forceCloseTab': this.forceClose,
         })
       },
       cleanText() {

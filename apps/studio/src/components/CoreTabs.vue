@@ -1089,13 +1089,15 @@ export default Vue.extend({
         this.$store.commit('selectSidebarItem', null);
       }
     },
-    async forceClose(tab: TransportOpenTab) {
+    async forceClose(tab: TransportOpenTab): Promise<void> {
       // ensure the tab is active
       this.$store.dispatch('tabs/setActive', tab);
       switch (tab.tabType) {
         case 'backup':
         case 'restore':
           break;
+        case 'query':
+          return void this.close(tab, { ignoreUnsavedChanges: true });
         default:
           console.log('No force close behaviour defined for tab type')
       }
