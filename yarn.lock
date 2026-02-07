@@ -3341,10 +3341,10 @@
   resolved "https://registry.yarnpkg.com/@marijn/find-cluster-break/-/find-cluster-break-1.0.2.tgz#775374306116d51c0c500b8c4face0f9a04752d8"
   integrity sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==
 
-"@marimo-team/codemirror-languageserver@^1.15.13":
-  version "1.15.13"
-  resolved "https://registry.yarnpkg.com/@marimo-team/codemirror-languageserver/-/codemirror-languageserver-1.15.13.tgz#cacadc655501fb2abbba064c9b6971e559c48395"
-  integrity sha512-Ff7ED3wI4TPyyZjEK//asxfaWHU+0Duhkg7n+dDUKOcOwnq0IsNrqYtWmKYTV2hb8KSIjZre9xfIwM3fh1FSug==
+"@marimo-team/codemirror-languageserver@^1.16.11":
+  version "1.16.11"
+  resolved "https://registry.yarnpkg.com/@marimo-team/codemirror-languageserver/-/codemirror-languageserver-1.16.11.tgz#31b7fce4c43b2a2f16c4bd57600f0f6b89610b41"
+  integrity sha512-ZDYg8td8BK7DIYlTJCDeDN21/0HlFWh+63opMXVZ9jHleg7C/yvY8B8pfPmX/UCizkf39OSGJkJPqyMPjL7swg==
   dependencies:
     "@codemirror/autocomplete" "^6.18.4"
     "@codemirror/lint" "^6.8.4"

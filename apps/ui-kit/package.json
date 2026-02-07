@@ -69,7 +69,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "@marimo-team/codemirror-languageserver": "azmy60/codemirror-languageserver#b815a92e5f9120a845385ddfb89e85b0fa60fbde",
+    "@marimo-team/codemirror-languageserver": "^1.16.11",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21"
@@ -87,7 +87,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "@marimo-team/codemirror-languageserver": "^1.15.13",
+    "@marimo-team/codemirror-languageserver": "^1.16.11",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21",
