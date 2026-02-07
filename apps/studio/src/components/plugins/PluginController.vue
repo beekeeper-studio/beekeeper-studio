@@ -2,6 +2,7 @@
 import Vue from "vue";
 import { PluginNotificationData } from "@beekeeperstudio/plugin";
 import { AppEvent } from "@/common/AppEvent";
+import { NativePluginMenuItem } from "@/services/plugin";
 
 export default Vue.extend({
   computed: {
@@ -10,6 +11,10 @@ export default Vue.extend({
         {
           event: AppEvent.changedTheme,
           handler: this.handleChangedTheme,
+        },
+        {
+          event: AppEvent.pluginMenuClicked,
+          handler: this.handlePluginMenuClicked,
         },
       ];
     },
@@ -21,6 +26,9 @@ export default Vue.extend({
         args: this.$plugin.pluginStore.getTheme(),
       };
       this.$plugin.notifyAll(data);
+    },
+    handlePluginMenuClicked(item: NativePluginMenuItem) {
+      this.$plugin.execute(item.pluginId, item.command);
     },
   },
   mounted() {

@@ -20,6 +20,7 @@ import {
   RowMenuParams,
   RowMenuTarget,
 } from "@beekeeperstudio/plugin";
+import { NativePluginMenuItem } from "../types";
 
 type BigIntSerialized = number;
 
@@ -167,6 +168,12 @@ const pluginMenuFactories: MenuFactories = {
   "menubar.tools": {
     create(context, menuItem) {
       const id = `${context.manifest.id}-${menuItem.command}`;
+      const item: NativePluginMenuItem = {
+        id,
+        pluginId: context.manifest.id,
+        label: menuItem.name,
+        command: menuItem.command,
+      };
       return {
         add() {
           context.store.addMenuBarItem({
@@ -174,17 +181,14 @@ const pluginMenuFactories: MenuFactories = {
             label: menuItem.name,
             parentId: "tools",
             disableWhenDisconnected: true,
-            action: {
-              event: AppEvent.newCustomTab,
-              args: context.store.buildPluginTabInit({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              }),
-            },
+            action: { event: AppEvent.pluginMenuClicked, args: item },
           });
+          window.main.addNativeMenuItem(item);
         },
-        remove: () => context.store.removeMenuBarItem(id),
+        remove: () => {
+          context.store.removeMenuBarItem(id);
+          window.main.removeMenuBarItem(id);
+        },
       };
     },
   },
