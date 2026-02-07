@@ -2,7 +2,7 @@ import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/di
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
-import { FileHelpers } from "@/types";
+import { FileHelpers, JsonValue } from "@/types";
 import type Noty from "noty";
 
 /**
@@ -55,6 +55,9 @@ export interface PluginMenuItem {
 
   /** User-facing label shown in the UI for this menu item. */
   name: string;
+
+  /** Short explanation of what this command does. */
+  description?: string;
 
   /** The ID of a view defined in `capabilities.views`; the host opens a
    * new tab of that view. */
@@ -187,6 +190,7 @@ export type WebPluginContext = {
     info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
+  createNewTab(viewId: string, command: string, params?: JsonValue): void;
 }
 
 export type PluginContext = {
@@ -200,3 +204,9 @@ export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
   context: any;
 }
+
+export type Keybinding = {
+  alias: PluginMenuItemPlacement;
+  path: string;
+  handler: Function;
+};

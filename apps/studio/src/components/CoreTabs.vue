@@ -403,6 +403,7 @@ export default Vue.extend({
        'dialectData': 'dialectData',
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
+       'getKeybindingsByAlias': 'plugins/keybindings/getKeybindingsByAlias',
     }),
     tabIcon() {
       return {
@@ -481,6 +482,7 @@ export default Vue.extend({
         'tab.switchTab7': this.handleSwitchTab.bind(this, 6),
         'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
         'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
+        ...this.getKeybindingsByAlias("newTabDropdown"),
       })
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {

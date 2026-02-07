@@ -28,6 +28,8 @@ type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
+export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror" | "xel";
+
 interface IBksConfigDebugInfo {
   path: string;
   value: string | number | undefined;
@@ -96,8 +98,26 @@ const vHotkeyModifierMap = {
   WINDOWS: "windows",
 } as const;
 
+const xelModifierMap = {
+  CTRL: "Control",
+  CMD: "Meta",
+  CTRLORCMD: "Control",
+  CMDORCTRL: "Control",
+  CONTROL: "Control",
+  COMMAND: "Command",
+  CONTROLORCOMMAND: "Control",
+  COMMANDORCONTROL: "Control",
+  SHIFT: "Shift",
+  ALT: "Alt",
+  OPTION: "Alt",
+  ALTGR: "AltGraph",
+  SUPER: "Super",
+  META: "Meta",
+  WINDOWS: "Meta",
+} as const;
+
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror",
+  target: KeybindingTarget,
   keybinding: string,
   platform: "windows" | "mac" | "linux"
 ) {
@@ -115,6 +135,9 @@ export function convertKeybinding(
     case "codemirror":
       modifierMap = codeMirrorModifierMap;
       joinChar = '-'
+      break;
+    case "xel":
+      modifierMap = xelModifierMap;
       break;
     default:
       log.error("Unrecognized target for keybinding conversion: ", target)
@@ -145,10 +168,9 @@ export function convertKeybinding(
 }
 
 /**
- * Array that is parsed by ini.parse is not exactly an array because
- * it doesn't have `length` property. Testing it with `Array.isArray` or
- * `_.isArray` will fail. Use this to test it.
- */
+ * `ini.parse` encodes arrays as objects without a `.length` property.
+ * This checks whether a value matches that structure.
+ **/
 export function isIniArray(value: any): value is IniArray {
   return (
     _.isObject(value) &&
@@ -209,12 +231,11 @@ export class BksConfigProvider {
   }
 
   has(path: string): boolean {
-    return this.userConfig.has(path);
+    return !_.isNil(_.get(this.mergedConfig, path));
   }
 
   get(path: string): ConfigValue {
-    const { value } = this.resolvePath(path);
-    return value;
+    return this.resolvePath(path).value;
   }
 
   getAll(): IBksConfig {
@@ -254,7 +275,7 @@ export class BksConfigProvider {
     return getDebugAll(this.mergedConfig);
   }
 
-  getKeybindings(target: "electron" | "v-hotkey" | "codemirror", path: KeybindingPath) {
+  getKeybindings(target: KeybindingTarget, path: KeybindingPath) {
     const keybindings = this.get(`keybindings.${path}`);
 
     if (isIniArray(keybindings)) {
@@ -265,9 +286,9 @@ export class BksConfigProvider {
 
     if (typeof keybindings !== "string") {
       log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
+      return [];
     }
 
-    // @ts-expect-error keybindings should be a string
     return convertKeybinding(target, keybindings, this.platformInfo.platform);
   }
 
