@@ -14,6 +14,13 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";
 import { UserSetting } from "@/common/appdb/models/user_setting";
+import fs from "fs-extra";
+import path from "path";
+import ensureBundledPluginsInstalled, {
+  resolveBundledPluginPath,
+} from "@commercial/backend/plugin-system/hooks/ensureBundledPluginsInstalled";
+import aiShellManifest from "@beekeeperstudio/bks-ai-shell/manifest.json";
+import erDiagramManifest from "@beekeeperstudio/bks-er-diagram/manifest.json";
 
 describe("Basic Plugin Management", () => {
   const server = createPluginServer();
@@ -64,7 +71,6 @@ describe("Basic Plugin Management", () => {
   });
 
   beforeEach(async () => {
-    PluginManager.PREINSTALLED_PLUGINS = [];
     const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
     setting.userValue = "{}";
     await setting.save();
@@ -87,6 +93,18 @@ describe("Basic Plugin Management", () => {
         latestRelease: { version: "1.0.0" },
         readme: "# Watermelon Sticker\n\nThe sticker for watermelons.",
       },
+      {
+        id: "bks-ai-shell",
+        name: "AI Shell",
+        latestRelease: aiShellManifest,
+        readme: "# AI Shell\n\nThis is an AI Shell.",
+      },
+      {
+        id: "bks-er-diagram",
+        name: "ER Diagram",
+        latestRelease: erDiagramManifest,
+        readme: "# ER Diagram\n\nThis is an ER Diagram.",
+      },
     ];
     registry.clearCache();
     fileManager = createFileManager();
@@ -100,10 +118,12 @@ describe("Basic Plugin Management", () => {
     it("can list plugin entries", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       const entries = await manager.getEntries();
-      expect(entries).toHaveLength(3);
+      expect(entries).toHaveLength(5);
       expect(entries[0].id).toBe("test-plugin");
       expect(entries[1].id).toBe("frozen-banana");
       expect(entries[2].id).toBe("watermelon-sticker");
+      expect(entries[3].id).toBe("bks-ai-shell");
+      expect(entries[4].id).toBe("bks-er-diagram");
     });
 
     it("can get plugin details (versions, readme, etc..)", async () => {
@@ -131,7 +151,7 @@ describe("Basic Plugin Management", () => {
     });
   });
 
-  describe("Installing", () => {
+  describe("Installing (online)", () => {
     it("can install the latest plugins if compatible", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
@@ -153,14 +173,71 @@ describe("Basic Plugin Management", () => {
         NotFoundPluginError
       );
     });
+  });
 
-    it("can preinstall plugins", async () => {
-      PluginManager.PREINSTALLED_PLUGINS = ["test-plugin", "frozen-banana"];
-      const manager = await initPluginManager(AppVer.COMPAT);
+  describe("Installing (offline)", () => {
+    const fileManager = createFileManager();
+
+    afterEach(() => {
+      cleanFileManager(fileManager);
+    });
+
+    it("can install plugins manually", async () => {
+      // Plugins are detected by a folder containing a manifest.json.
+      // Here we copy from node_modules, but any source works.
+      fs.copySync(
+        resolveBundledPluginPath("@beekeeperstudio/bks-ai-shell"),
+        path.join(fileManager.options.pluginsDirectory, "bks-ai-shell")
+      );
+      fs.copySync(
+        resolveBundledPluginPath("@beekeeperstudio/bks-er-diagram"),
+        path.join(fileManager.options.pluginsDirectory, "bks-er-diagram")
+      );
+
+      // Check if the plugins are installed
+      const manager = await initPluginManager({
+        fileManager,
+        appVersion: AppVer.COMPAT,
+      });
       expect(manager.getPlugins()).toHaveLength(2);
-      expect(manager.getPlugins()[0].manifest.id).toBe("test-plugin");
-      expect(manager.getPlugins()[1].manifest.id).toBe("frozen-banana");
-    })
+      expect(manager.getPlugins()[0].manifest.id).toBe("bks-ai-shell");
+      expect(manager.getPlugins()[1].manifest.id).toBe("bks-er-diagram");
+    });
+
+    it("ensures bundled plugins are installed", async () => {
+      // First initialization - bundled plugins should be copied
+      const firstManager = new PluginManager({
+        fileManager,
+        registry,
+        appVersion: AppVer.COMPAT,
+      });
+      ensureBundledPluginsInstalled(firstManager, [
+        "@beekeeperstudio/bks-ai-shell",
+        "@beekeeperstudio/bks-er-diagram",
+      ]);
+      await firstManager.initialize();
+
+      // Verify plugins were installed
+      expect(firstManager.getPlugins()).toHaveLength(2);
+      expect(firstManager.getPlugins()[0].manifest.id).toBe("bks-ai-shell");
+      expect(firstManager.getPlugins()[1].manifest.id).toBe("bks-er-diagram");
+
+      // Bundled plugins should NOT be copied again after uninstall
+      await firstManager.uninstallPlugin("bks-ai-shell");
+      await firstManager.uninstallPlugin("bks-er-diagram");
+      expect(firstManager.getPlugins()).toHaveLength(0);
+      const secondManager = new PluginManager({
+        fileManager,
+        registry,
+        appVersion: AppVer.COMPAT,
+      });
+      ensureBundledPluginsInstalled(secondManager, [
+        "@beekeeperstudio/bks-ai-shell",
+        "@beekeeperstudio/bks-er-diagram",
+      ]);
+      await secondManager.initialize();
+      expect(secondManager.getPlugins()).toHaveLength(0);
+    });
   });
 
   describe("Loading", () => {
@@ -215,13 +292,9 @@ describe("Basic Plugin Management", () => {
         "frozen-banana": { autoUpdate: true },
       });
 
-      console.log(manager.getPlugins());
-
       // Simulate plugin updates on the server
-      console.log(repositoryService.plugins);
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
       repositoryService.plugins[1].latestRelease.version = "1.3.0";
-      console.log(repositoryService.plugins);
 
       // Simulate app restart
       const manager2 = await initPluginManager(AppVer.COMPAT);

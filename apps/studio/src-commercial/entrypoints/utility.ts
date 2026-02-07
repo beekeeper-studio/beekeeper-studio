@@ -28,6 +28,7 @@ import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
+import ensureBundledPluginsInstalled from '@commercial/backend/plugin-system/hooks/ensureBundledPluginsInstalled';
 
 import * as sms from 'source-map-support'
 
@@ -42,6 +43,10 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
+ensureBundledPluginsInstalled(pluginManager, [
+  "@beekeeperstudio/bks-ai-shell",
+  "@beekeeperstudio/bks-er-diagram",
+]);
 
 interface Reply {
   id: string,
