@@ -1,15 +1,5 @@
 <template>
-  <div class="isolated-plugin-view" ref="container">
-    <div v-if="error" class="alert alert-danger">
-      <i class="material-icons-outlined">error</i>
-      <div class="alert-body">{{ error }}</div>
-      <button class="btn btn-flat" @click="reloadComponent">Reload</button>
-    </div>
-    <div v-if="$bksConfig.plugins?.[pluginId]?.disabled" class="alert">
-      <i class="material-icons-outlined">info</i>
-      <div>This plugin ({{ pluginId }}) has been disabled via configuration</div>
-    </div>
-  </div>
+<div class="isolated-plugin-view" ref="container" />
 </template>
 
 <script lang="ts">
@@ -167,17 +157,6 @@ export default Vue.extend({
       this.unsubscribeOnReady?.();
       this.unsubscribeOnDispose?.();
       this.loaded = false;
-    },
-    async reloadComponent() {
-      try {
-        this.cleanup();
-        this.unmountIframe();
-        this.initialize();
-        await this.mountIframe();
-      } catch (e) {
-        log.error(e);
-        this.error = e.message;
-      }
     },
   },
   mounted() {

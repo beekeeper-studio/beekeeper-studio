@@ -55,8 +55,8 @@
           >storage</i>
           <i
             class="material-icons item-icon plugin"
-            v-else-if="blob.tabType.startsWith('plugin-')"
-          >{{ $bksPlugin.pluginOf(blob.generatedPluginId)?.manifest.icon }}</i>
+            v-else-if="blob.tabType.startsWith('plugin-') && findPlugin(blob.generatedPluginId)"
+          >{{ findPlugin(blob.generatedPluginId).manifest.icon }}</i>
           <i
             class="material-icons item-icon database"
             v-else
@@ -140,7 +140,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters, mapState, mapActions } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
 import TableIcon from '@/components/common/TableIcon.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
@@ -215,6 +215,7 @@ export default Vue.extend({
     }
   },
   methods: {
+    ...mapActions('plugins/snapshots', { 'find': 'findPlugin' }),
     async getTabHistory() {
       const results = await Vue.prototype.$util.send('appdb/tabhistory/get', { workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
       this.historyResults = results

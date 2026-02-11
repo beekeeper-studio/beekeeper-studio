@@ -38,7 +38,10 @@ import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
+import { PluginsModule } from './modules/plugins'
 import { MenuBarModule } from './modules/MenuBarModule'
+import { PluginSnapshotsState } from './modules/plugins/PluginSnapshotsModule'
+import { PluginEntriesState } from './modules/plugins/PluginEntriesModule'
 
 
 const log = RawLog.scope('store/index')
@@ -82,6 +85,12 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+
+  /** Set by VueX module */
+  plugins?: {
+    snapshots: PluginSnapshotsState;
+    entries: PluginEntriesState;
+  };
 }
 
 Vue.use(Vuex)
@@ -105,6 +114,7 @@ const store = new Vuex.Store<State>({
     sidebar: SidebarModule,
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
+    plugins: PluginsModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -667,8 +677,9 @@ const store = new Vuex.Store<State>({
         globals.licenseCheckInterval
       )
     },
-    licenseEntered(context) {
+    async licenseEntered(context) {
       context.dispatch('updateWindowTitle')
+      await context.dispatch('plugins/snapshots/load')
     },
     toggleFlag(context, { flag, value }: { flag: string, value?: boolean }) {
       if (typeof value === 'undefined') {

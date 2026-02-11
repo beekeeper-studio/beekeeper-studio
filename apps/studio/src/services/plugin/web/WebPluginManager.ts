@@ -1,6 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginContext } from "../types";
+import { ManifestV1 as Manifest, OnViewRequestListener } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -12,10 +12,13 @@ import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
 const log = rawLog.scope("WebPluginManager");
 
 export type WebPluginManagerParams = {
+  /** For communicating with the PluginManager through handlers that are prefixed with `plugin/` */
   utilityConnection: UtilityConnection;
-  pluginStore: PluginStoreService;
+  /** For UI related functionality, e.g. adding menu items */
+  pluginStore?: PluginStoreService;
   appVersion: string;
-  fileHelpers: FileHelpers;
+/** For file saving APIs, e.g. requestFileSave */
+  fileHelpers?: FileHelpers;
   noty: {
     success(text: string): Noty;
     error(text: string): Noty;
@@ -46,10 +49,9 @@ export type WebPluginManagerParams = {
  * and `onViewRequest`. (Don't forget to register the iframe first! Use
  * `registerIframe` and `unregisterIframe`)
  *
- * For more info about a plugin, use `pluginOf`.
+ * @see {PluginStoreService.getSnapshots} - to find info about plugins
  */
 export default class WebPluginManager {
-  plugins: PluginContext[] = [];
   /** A map of plugin id -> loader */
   loaders: Map<string, WebPluginLoader> = new Map();
 
@@ -78,27 +80,28 @@ export default class WebPluginManager {
 
     await this.utilityConnection.send("plugin/waitForInit");
 
-    this.plugins = await this.utilityConnection.send(
-      "plugin/plugins"
-    );
+    await this.updatePluginSnapshots();
 
-    for (const { loadable, manifest } of this.plugins) {
-      if (!loadable) {
-        log.warn(`Plugin "${manifest.id}" is not loadable. Skipping...`);
-        continue;
-      }
-      if (window.bksConfig.plugins[manifest.id]?.disabled) {
-        log.info(`Plugin "${manifest.id}" is disabled. Skipping...`);
-        continue;
-      }
+    for (const plugin of this.pluginStore.getSnapshots()) {
       try {
-        await this.loadPlugin(manifest);
+        await this.loadPlugin(plugin.manifest);
       } catch (e) {
-        log.error(`Failed to load plugin: ${manifest.id}`, e);
+        log.error(`Failed to load plugin: ${plugin.manifest.id}`, e);
       }
     }
 
     this.initialized = true;
+
+    // run in the background
+    this.updatePluginEntries();
+  }
+
+  async updatePluginSnapshots() {
+    await this.pluginStore.loadSnapshots();
+  }
+
+  async updatePluginEntries() {
+    await this.pluginStore.loadEntries();
   }
 
   // TODO implement enable/disable plugins
@@ -112,7 +115,7 @@ export default class WebPluginManager {
       id,
     });
     await this.loadPlugin(manifest);
-    this.plugins.push({ manifest, loadable: true });
+    await this.updatePluginSnapshots();
     return manifest;
   }
 
@@ -128,8 +131,8 @@ export default class WebPluginManager {
   /** Uninstall a plugin by its id */
   async uninstall(id: string) {
     await this.utilityConnection.send("plugin/uninstall", { id });
+    await this.updatePluginSnapshots();
     await this.unloadPlugin(id);
-    this.plugins = this.plugins.filter((p) => p.manifest.id !== id);
   }
 
   private async reloadPlugin(id: string, manifest?: Manifest) {
@@ -175,15 +178,6 @@ export default class WebPluginManager {
     this.loaders.forEach((loader) => {
       loader.broadcast(data);
     })
-  }
-
-  /** Get more info about a specific plugin */
-  pluginOf(pluginId: string) {
-    const plugin = this.plugins.find((p) => p.manifest.id === pluginId);
-    if (!plugin) {
-      throw new Error("Plugin not found: " + pluginId);
-    }
-    return plugin;
   }
 
   buildUrlFor(pluginId: string, entry: string) {
@@ -290,6 +284,7 @@ export default class WebPluginManager {
       fileHelpers: this.fileHelpers,
       noty: this.noty,
       confirm: this.confirm,
+      disabled: snapshot.disabled,
     });
     await loader.load();
     this.loaders.set(manifest.id, loader);
