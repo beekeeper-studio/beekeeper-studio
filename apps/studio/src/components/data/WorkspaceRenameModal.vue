@@ -74,12 +74,18 @@ export default Vue.extend({
     rootBindings() {
       return [{ event: AppEvent.promptRenameWorkspace, handler: this.open }];
     },
+    cloudWorkspacesEnabled() {
+      return !this.$bksConfig.general.disableCloudWorkspaces;
+    },
   },
   methods: {
     focus() {
       this.$refs.nameInput.focus();
     },
     open({ workspace, client }) {
+      if (!this.cloudWorkspacesEnabled) {
+        return; // Don't open modal if cloud workspaces are disabled
+      }
       this.workspace = workspace
       this.workspaceName = workspace.name;
       this.client = client;

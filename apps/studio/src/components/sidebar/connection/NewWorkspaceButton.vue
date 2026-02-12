@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="cloudWorkspacesEnabled"
     class="add-workspace-button"
     :class="{disabled: !credentials.length}"
     v-tooltip="title"
@@ -27,6 +28,9 @@ export default Vue.extend({
     ...mapState('credentials', {credentials: 'credentials'}),
     title() {
       return this.credentials.length ? '' : 'Create Workspace - Please sign in to your workspace account first'
+    },
+    cloudWorkspacesEnabled() {
+      return !this.$bksConfig.general.disableCloudWorkspaces;
     },
   },
   methods: {

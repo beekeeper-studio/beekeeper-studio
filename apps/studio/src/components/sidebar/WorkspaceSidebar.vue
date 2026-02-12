@@ -1,5 +1,5 @@
 <template>
-  <div class="workspace-items global-items">
+  <div class="workspace-items global-items" v-if="cloudWorkspacesEnabled">
     <div v-if="!loading">
       <a
         v-for="blob in availableWorkspaces"
@@ -62,7 +62,9 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
     ...mapState(['workspaceId']),
     ...mapState('settings', ['settings']),
     ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'}),
-
+    cloudWorkspacesEnabled() {
+      return !this.$bksConfig.general.disableCloudWorkspaces;
+    },
   },
   methods: {
     contextOptionsFor(blob: WSWithClient ) {

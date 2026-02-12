@@ -76,12 +76,18 @@ export default Vue.extend({
     rootBindings() {
       return [{ event: AppEvent.promptCreateWorkspace, handler: this.open }];
     },
+    cloudWorkspacesEnabled() {
+      return !this.$bksConfig.general.disableCloudWorkspaces;
+    },
   },
   methods: {
     focus() {
       this.$refs.nameInput.focus();
     },
     open() {
+      if (!this.cloudWorkspacesEnabled) {
+        return; // Don't open modal if cloud workspaces are disabled
+      }
       this.$modal.show(this.modalName);
     },
     close() {
