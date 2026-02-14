@@ -27,6 +27,7 @@ import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
 
@@ -750,6 +751,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             cancelable.wait(),
             this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
+          console.info("QUERYDATA: ", data)
 
           pid = null;
 
@@ -798,9 +800,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const arrayMode: boolean = options?.arrayMode;
     const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
-    const commands = this.identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText);
+    log.info("COMMANDS: ", commands)
 
-    return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
+    return await Promise.all(data.map(async (result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode)));
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
@@ -1375,13 +1378,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     })
   }
 
-  parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
-    const fields = this.parseFields(data.columns, rowResults)
+  async parseRowQueryResult(data: QueryResult, command: IdentifyResult, rowResults: boolean): Promise<NgQueryResult> {
+    let fields = this.parseFields(data.columns, rowResults)
+    fields = await this.maybeGetEditData(command, fields);
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
     return {
-      command: command || data.command,
+      command: command.type || data.command,
       rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
       fields: fields,
       rowCount: rowCount,
@@ -1784,7 +1788,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   private identifyCommands(queryText: string) {
     try {
-      return identify(queryText);
+      return identify(queryText, { identifyColumns: true, identifyTables: true });
     } catch (err) {
       return [];
     }

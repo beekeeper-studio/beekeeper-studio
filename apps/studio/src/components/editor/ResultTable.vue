@@ -68,6 +68,8 @@
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
+  import { vueEditor } from '@shared/lib/tabulator/helpers';
+  import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -171,6 +173,8 @@
           const results = []
           const magic = MagicColumnBuilder.build(column.name) || {}
           const title = magic?.title ?? column.name ?? `Result ${index}`
+          const editData = column.editData;
+          console.log('FIELD: ', column)
 
           let cssClass = 'hide-header-menu-icon'
 
@@ -189,6 +193,9 @@
               binaryEncoding: this.binaryEncoding,
             },
           }
+
+          // TEMP (@day): we can possibly do better if we get datatypes
+          const ne = vueEditor(NullableInputEditorVue);
 
           const result = {
             ...defaults,
@@ -209,6 +216,8 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
+            editable: editData?.editable,
+            editor: ne,
             ...magicStuff
           }
 
@@ -316,6 +325,18 @@
             },
           },
         });
+
+        this.tabulator.on('cellEdited', this.cellEdited);
+      },
+      cellEdited(cell) {
+        // TODO (@day): get pk cells
+        if (cell.getOldValue() == cell.getValue()) {
+          return;
+        }
+
+        // Should this be id?
+        const field = this.result.fields.find(f => f.id === cell.getField());
+        cell.getElement().classList.add('edited');
       },
       focusOnFilterInput() {
         this.hiddenFilter = false

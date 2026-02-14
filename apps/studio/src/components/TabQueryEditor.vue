@@ -1298,7 +1298,7 @@
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
@@ -1344,6 +1344,7 @@
               body: `${this.tab.title} has been executed successfully.`,
             });
           }
+          log.info("RESULTS: ", results)
 
           // eslint-disable-next-line
           // @ts-ignore
@@ -1362,11 +1363,12 @@
 
             const identifiedTables = identification[idx]?.tables || []
             if (identifiedTables.length > 0) {
-              result.tableName = identifiedTables[0]
+              result.tableName = identifiedTables[0]?.name
+              result.schema = identifiedTables[0]?.schema
             } else {
               result.tableName = "mytable"
+              result.schema = this.defaultSchema
             }
-            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
 

@@ -254,10 +254,29 @@ export interface SupportedFeatures {
   filterTypes: IncludedFilterTypes[];
 }
 
+export enum FieldReadOnlyReason {
+  NoLinkedTable,
+  MissingPK,
+  ImproperMapping,
+  IsGenerated
+}
+
+// NOTE (@day): reasons: no linked table, missing PK
+// NOTE (@day): do we need schema separate here?
+export interface FieldEditData {
+  editable: boolean;
+  columnName?: string;
+  linkedTable?: string;
+  linkedSchema?: string;
+  isPK?: boolean;
+  readOnlyReason?: FieldReadOnlyReason;
+}
+
 export interface FieldDescriptor {
   name: string;
   id: string;
   dataType?: string;
+  editData?: FieldEditData;
 }
 
 export interface NgQueryResult {
