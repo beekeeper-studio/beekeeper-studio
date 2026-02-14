@@ -7,6 +7,7 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
 import { FileHelpers } from "@/types";
 import type Noty from "noty";
+import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -261,6 +262,18 @@ export default class WebPluginManager {
     }
     return loader.onDispose(fn);
   }
+
+  execute(pluginId: string, command: string) {
+    const loader = this.loaders.get(pluginId);
+    if (!loader) {
+      throw new Error(
+        `Attempting to execute a command on a plugin that is not loaded. (pluginId: ${pluginId})`
+      );
+    }
+    const executor = new WebPluginCommandExecutor(loader.context);
+    executor.execute(command);
+  }
+
 
   private async loadPlugin(manifest: Manifest) {
     if (this.loaders.has(manifest.id)) {

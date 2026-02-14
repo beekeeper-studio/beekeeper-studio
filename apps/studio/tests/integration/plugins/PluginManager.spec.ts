@@ -74,18 +74,21 @@ describe("Basic Plugin Management", () => {
         name: "Test Plugin",
         latestRelease: { version: "1.0.0", minAppVersion: AppVer.COMPAT },
         readme: "# Test Plugin\n\nThis is a test plugin.",
+        origin: "official",
       },
       {
         id: "frozen-banana",
         name: "Frozen Banana",
         latestRelease: { version: "1.0.0", minAppVersion: AppVer.COMPAT },
         readme: "# Frozen Banana\n\nThis is a frozen banana.",
+        origin: "official",
       },
       {
         id: "watermelon-sticker",
         name: "Watermelon Sticker",
         latestRelease: { version: "1.0.0" },
         readme: "# Watermelon Sticker\n\nThe sticker for watermelons.",
+        origin: "community",
       },
     ];
     registry.clearCache();
@@ -99,11 +102,12 @@ describe("Basic Plugin Management", () => {
   describe("Discovery", () => {
     it("can list plugin entries", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
-      const entries = await manager.getEntries();
-      expect(entries).toHaveLength(3);
-      expect(entries[0].id).toBe("test-plugin");
-      expect(entries[1].id).toBe("frozen-banana");
-      expect(entries[2].id).toBe("watermelon-sticker");
+      const { official, community } = await manager.registry.getEntries();
+      expect(official).toHaveLength(2);
+      expect(official[0].id).toBe("test-plugin");
+      expect(official[1].id).toBe("frozen-banana");
+      expect(community).toHaveLength(1);
+      expect(community[0].id).toBe("watermelon-sticker");
     });
 
     it("can get plugin details (versions, readme, etc..)", async () => {

@@ -620,7 +620,7 @@ export default Vue.extend({
       return signs
     },
     editablePaths() {
-      if (!this.table.columns) return []
+      if (!this.table.columns || !this.editable) return []
 
       const paths = []
       for (const column of this.table.columns) {
@@ -2050,6 +2050,9 @@ export default Vue.extend({
       ])
     },
     handleJsonValueChange({key, value}) {
+      // this is just a safeguard, we shouldn't hit it but if we do it can save us from catastrophe
+      if (!this.editable) return;
+
       const column = this.table.columns.find((c) => c.columnName === key);
       if (column) {
         const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
