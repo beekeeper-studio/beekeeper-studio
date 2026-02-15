@@ -22,7 +22,7 @@
 import _ from 'lodash'
 import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
 
 export default Vue.extend({
@@ -32,6 +32,7 @@ export default Vue.extend({
   }),
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
+    ...mapGetters(['isCloud']),
     truncatedText() {
       return _.truncate(this.item.excerpt, { length: 100});
     },
@@ -45,6 +46,16 @@ export default Vue.extend({
           folder
         }
       })
+    },
+    shareQueryLink() {
+      if (this.isCloud) {
+        return {
+            name: 'Share Link to Query',
+            handler: ({ item }) => this.$emit('rename', item)
+          }
+      }
+      
+      return null
     },
     subtitle() {
       const result = []
@@ -75,34 +86,43 @@ export default Vue.extend({
       }
     },
     openContextMenu(event, item) {
+      const options = [
+        {
+          name: "Open",
+          handler: ({ item }) => this.$emit('open', item)
+        },
+        {
+          name: "Rename",
+          handler: ({ item }) => this.$emit('rename', item)
+          
+        },
+        {
+          name: "Delete",
+          handler: ({ item }) => this.$emit('remove', item)
+        },
+        {
+          type: 'divider'
+        },
+        {
+          name: "Export",
+          handler: ({ item }) => this.$emit('export', item)
+        },
+        {
+          type: 'divider'
+        },
+        ...this.moveToOptions
+      ]
+
+      if (this.isCloud) {
+        options.push({
+            name: 'Get Query Link',
+            handler: ({ item }) => this.$emit('getQueryLink', item)
+          })
+      }
+      
       this.$bks.openMenu({
         item, event,
-        options: [
-          {
-            name: "Open",
-            handler: ({ item }) => this.$emit('open', item)
-          },
-          {
-            name: "Rename",
-            handler: ({ item }) => this.$emit('rename', item)
-            
-          },
-          {
-            name: "Delete",
-            handler: ({ item }) => this.$emit('remove', item)
-          },
-          {
-            type: 'divider'
-          },
-          {
-            name: "Export",
-            handler: ({ item }) => this.$emit('export', item)
-          },
-          {
-            type: 'divider'
-          },
-          ...this.moveToOptions
-        ]
+        options
       })
     },
   }
