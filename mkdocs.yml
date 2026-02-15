@@ -147,6 +147,7 @@ nav:
     - SQLite: user_guide/connecting/sqlite.md
     - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md
+    - user_guide/connecting/azure-entraid.md
 
   - Features:
     - user_guide/sql_editor/editor.md

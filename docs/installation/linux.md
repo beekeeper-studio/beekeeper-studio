@@ -140,3 +140,15 @@ touch ~/.config/bks-flags.conf
 echo "--ozone-platform-hint=auto" >> ~/.config/bks-flags.conf
 echo "--enable-features=UseOzonePlatform" >> ~/.config/bks-flags.conf
 ```
+
+### Fixing weird colors on Wayland
+
+If you experience incorrect colors when using Wayland (e.g. oranges appearing yellow, greys looking almost black, overly bright whites, or poor text readability), this is caused by a [Chromium/Electron bug with the Wayland color management protocol](https://github.com/electron/electron/issues/49566).
+
+To fix this, add the following flag to your `~/.config/bks-flags.conf` file:
+
+```bash
+echo "--disable-features=WaylandWpColorManagerV1" >> ~/.config/bks-flags.conf
+```
+
+Then restart Beekeeper Studio for the change to take effect.

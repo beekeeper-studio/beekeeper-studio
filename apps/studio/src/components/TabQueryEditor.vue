@@ -523,7 +523,7 @@
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
-  import { IdentifyResult } from 'sql-query-identifier/defines'
+  import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))

@@ -3,7 +3,7 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
-import { parseIni, processRawConfig } from "../../../src/config/helpers.mjs";
+import { parseIni, processRawConfig } from "@/config/helpers";
 import {
   BksConfigProvider,
   ConfigEntryDetailWarning,

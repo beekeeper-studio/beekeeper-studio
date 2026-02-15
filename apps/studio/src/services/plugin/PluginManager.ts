@@ -25,7 +25,7 @@ export type PluginManagerOptions = {
 
 export default class PluginManager {
   private initialized = false;
-  private registry: PluginRegistry;
+  public readonly registry: PluginRegistry;
   private fileManager: PluginFileManager;
   private plugins: PluginContext[] = [];
   pluginSettings: PluginSettings = {};
@@ -82,21 +82,6 @@ export default class PluginManager {
         await this.updatePlugin(plugin.id);
       }
     }
-  }
-
-  async getEntries() {
-    this.initializeGuard();
-    return await this.registry.getEntries();
-  }
-
-  async findPluginEntry(id: string): Promise<PluginRegistryEntry> {
-    this.initializeGuard();
-    const entries = await this.getEntries();
-    const entry = entries.find((entry) => entry.id === id);
-    if (!entry) {
-      throw new Error(`Plugin "${id}" not found in registry.`);
-    }
-    return entry;
   }
 
   /**

@@ -325,6 +325,7 @@
       },
       closeTableFilter() {
         this.hiddenFilter = true
+        if (this.$refs.filterInput !== document.activeElement) return
         this.triggerFocus()
       },
       searchHandler() {

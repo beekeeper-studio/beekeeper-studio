@@ -1,5 +1,5 @@
 import { Extension } from "@codemirror/state";
-import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
+import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/lsp";
 import { WebSocketTransport } from "@open-rpc/client-js";
 import { VimOptions } from "./extensions/keymap";
 import { LanguageServerClient } from "./LanguageServerClient";
