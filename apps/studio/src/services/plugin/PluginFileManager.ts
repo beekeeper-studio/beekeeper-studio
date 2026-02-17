@@ -266,7 +266,7 @@ export default class PluginFileManager {
     return manifests;
   }
 
-  getManifest(id: string) {
+  getManifest(id: string): Manifest {
     const directory = this.getDirectoryOf(id);
     const manifestContent = fs.readFileSync(
       path.join(directory, PLUGIN_MANIFEST_FILENAME),

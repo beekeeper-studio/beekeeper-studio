@@ -24,12 +24,15 @@ import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers } from '@/handlers/pluginHandlers';
+import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
+import bksConfig from '@/common/bksConfig'
 
 import * as sms from 'source-map-support'
+import bindLicenseConstraints from '@commercial/backend/plugin-system/hooks/licenseConstraints';
+import bindIniConfig from '@commercial/backend/plugin-system/hooks/iniConfig';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -169,6 +172,8 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
+  bindIniConfig(pluginManager, bksConfig);
+  bindLicenseConstraints(pluginManager);
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
   });

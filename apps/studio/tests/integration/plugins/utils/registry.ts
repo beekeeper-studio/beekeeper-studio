@@ -1,6 +1,7 @@
 import { Manifest, PluginOrigin, PluginRegistryEntry, Release } from "@/services/plugin";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
+import _ from "lodash";
 
 export type Plugin = {
   id: string;
@@ -78,16 +79,18 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
     return plugin.readme;
   }
 
-  private createLatestRelease(plugin: Plugin) {
-    const manifest = {
+  private createLatestRelease(plugin: Plugin): Release {
+    const manifest: Manifest = {
       id: plugin.id,
       name: plugin.name,
       version: plugin.latestRelease.version,
       minAppVersion: plugin.latestRelease.minAppVersion,
       author: this.authorStr(plugin),
       description: this.descriptionStr(plugin),
+      manifestVersion: 1 as const,
       capabilities: {
         views: [],
+        menu: [],
       },
     };
     return {
