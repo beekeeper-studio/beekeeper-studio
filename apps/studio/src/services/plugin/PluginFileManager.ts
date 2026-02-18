@@ -113,7 +113,7 @@ export default class PluginFileManager {
     }
 
     try {
-      this.copyDirectory(sourceDir, directory);
+      fs.cpSync(sourceDir, directory, { recursive: true });
     } catch (e) {
       // Ressurect the old plugin if the copy failed
       fs.renameSync(oldPlugin, directory);
@@ -172,35 +172,6 @@ export default class PluginFileManager {
     }
   }
 
-  /**
-   * Copy all files from source to destination directory
-   */
-  private copyDirectory(source: string, destination: string) {
-    // Create destination directory if it doesn't exist
-    if (!fs.existsSync(destination)) {
-      fs.mkdirSync(destination, { recursive: true });
-    }
-
-    // Read the source directory
-    const files = fs.readdirSync(source);
-
-    // Copy each file/directory
-    for (const file of files) {
-      const sourcePath = path.join(source, file);
-      const destPath = path.join(destination, file);
-
-      const stat = fs.statSync(sourcePath);
-
-      if (stat.isDirectory()) {
-        // Recursively copy directories
-        this.copyDirectory(sourcePath, destPath);
-      } else {
-        // Copy files
-        fs.copyFileSync(sourcePath, destPath);
-      }
-    }
-  }
-
   async update(
     pluginId: string,
     release: Release,
@@ -221,7 +192,7 @@ export default class PluginFileManager {
       fs.mkdirSync(finalDirectory, { recursive: true });
 
       // Copy all files from temp to final directory
-      this.copyDirectory(tmpDirectory, finalDirectory);
+      fs.cpSync(tmpDirectory, finalDirectory, { recursive: true });
 
       // Clean up temp directory
       fs.rmSync(tmpDirectory, { recursive: true, force: true });
