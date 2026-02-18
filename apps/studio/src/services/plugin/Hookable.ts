@@ -2,7 +2,7 @@ import type PluginManager from "./PluginManager";
 import { type Module, type ModuleClass, type ModuleHookMap } from "./Module";
 
 export abstract class Hookable {
-  modules: Module[] = [];
+  private modules: Module[] = [];
 
   registerModule(this: PluginManager, moduleCls: ModuleClass) {
     this.modules.push(new moduleCls({ manager: this }));

@@ -174,7 +174,7 @@
     "@types/lodash": "^4.14.159",
     "@types/mkdirp": "^1.0.1",
     "@types/mssql": "^9.1.5",
-    "@types/node": "^12.12.54",
+    "@types/node": "^22.13.4",
     "@types/oracledb": "^6.5.3",
     "@types/papaparse": "^5.2.5",
     "@types/pg": "^8.11.3",

@@ -50,10 +50,6 @@ export abstract class Module {
   get hooks(): ReadonlyArray<ModuleHook> {
     return this._hooks;
   }
-
-  protected getModule<T extends Module>(cls: ModuleClass<T>): T | undefined {
-    return this.manager.modules.find((module) => module instanceof cls) as T;
-  }
 }
 
-export type ModuleClass<T extends Module> = new (options: ModuleOptions) => T;
+export type ModuleClass = new (options: ModuleOptions) => Module;
