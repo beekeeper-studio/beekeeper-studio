@@ -2,9 +2,9 @@ import type PluginManager from "./PluginManager";
 import type { PluginSnapshot } from "./types";
 
 export type PluginSourcePathParams = {
-  path: string;
+  sourceDir: string;
   id: string;
-  cleanupAfterInstall: boolean;
+  removeSourceDir: boolean;
 };
 
 export interface ModuleHookMap {

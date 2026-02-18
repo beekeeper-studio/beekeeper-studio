@@ -98,7 +98,7 @@ export default class PluginFileManager {
   install(
     pluginId: string,
     sourceDir: string,
-    options?: { removeSourcePath?: boolean; }
+    options?: { removeSourceDir?: boolean; }
   ) {
     const directory = this.getDirectoryOf(pluginId);
     const oldPlugin = this.getDirectoryOf(`${pluginId}-tmp-${Date.now()}`);
@@ -123,12 +123,19 @@ export default class PluginFileManager {
 
     fs.rmSync(oldPlugin, { recursive: true, force: true });
 
-    if (options.removeSourcePath) {
+    if (options.removeSourceDir) {
       fs.rmSync(sourceDir, { recursive: true, force: true });
     }
   }
 
-  /** Download plugin source archive to `directory` and extract it */
+  /**
+   * Download plugin source archive to a temporary directory and extract it.
+   * @param pluginId Plugin ID
+   * @param release Release metadata containing the archive URL and manifest
+   * @param options Download options
+   * @param options.signal Optional AbortSignal to cancel the download
+   * @returns Path to the temporary directory containing the extracted files
+   */
   async download(
     pluginId: string,
     release: Release,
@@ -172,39 +179,7 @@ export default class PluginFileManager {
     }
   }
 
-  async update(
-    pluginId: string,
-    release: Release,
-    options: { signal?: AbortSignal } = {}
-  ) {
-    // Download to temp location
-    const tmpDirectory = await this.download(pluginId, release, {
-      ...options,
-      tmp: true,
-    });
-    const finalDirectory = this.getDirectoryOf(pluginId);
-
-    try {
-      // Remove existing plugin directory
-      fs.rmSync(finalDirectory, { recursive: true, force: true });
-
-      // Create final directory
-      fs.mkdirSync(finalDirectory, { recursive: true });
-
-      // Copy all files from temp to final directory
-      fs.cpSync(tmpDirectory, finalDirectory, { recursive: true });
-
-      // Clean up temp directory
-      fs.rmSync(tmpDirectory, { recursive: true, force: true });
-    } catch (e) {
-      // Clean up on error
-      fs.rmSync(tmpDirectory, { recursive: true, force: true });
-      log.debug("Update failed", e);
-      throw e;
-    }
-  }
-
-  remove(id: string) {
+  uninstall(id: string) {
     fs.rmSync(this.getDirectoryOf(id), { recursive: true, force: true });
   }
 
@@ -250,8 +225,16 @@ export default class PluginFileManager {
     return manifests;
   }
 
-  getManifest(id: string) {
-    const directory = this.getDirectoryOf(id);
+  /**
+   * Read and parse the manifest file for a plugin.
+   * @param id Plugin ID
+   * @param sourceDir Optional alternative directory path to read the manifest from,
+   *                  instead of the default plugins directory. Useful for reading
+   *                  manifests from temporary or staging directories (e.g. after download
+   *                  but before installation).
+   */
+  getManifest(id: string, sourceDir?: string) {
+    const directory = sourceDir || this.getDirectoryOf(id);
     const manifestContent = fs.readFileSync(
       path.join(directory, PLUGIN_MANIFEST_FILENAME),
       { encoding: "utf-8" }

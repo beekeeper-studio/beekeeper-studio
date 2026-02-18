@@ -1,3 +1,5 @@
+import fs from "fs";
+import { tmpdir } from "os";
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager, {
   PluginManagerOptions,
@@ -157,6 +159,26 @@ describe("Basic Plugin Management", () => {
       await expect(manager.installPlugin("microwave-pizza")).rejects.toThrow(
         NotFoundPluginError
       );
+    });
+
+    it("cleans up temp files after installing and updating a plugin", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+
+      let tempDirs = fs.readdirSync(tmpdir()).filter(
+        (dir) => dir.startsWith("beekeeper-plugin-test-plugin-")
+      );
+      expect(tempDirs).toHaveLength(0);
+
+      // Simulate plugin update on the server
+      repositoryService.plugins[0].latestRelease.version = "1.2.0";
+
+      await manager.updatePlugin("test-plugin");
+
+      tempDirs = fs.readdirSync(tmpdir()).filter(
+        (dir) => dir.startsWith("beekeeper-plugin-test-plugin-")
+      );
+      expect(tempDirs).toHaveLength(0);
     });
   });
 

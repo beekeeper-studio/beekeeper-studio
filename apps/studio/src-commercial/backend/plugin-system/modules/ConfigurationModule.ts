@@ -30,23 +30,19 @@ type ConfigurationOptions = {
  * ```
  */
 export class ConfigurationModule extends Module {
-  private config: BksConfig;
-
-  constructor(options: ConfigurationOptions & ModuleOptions) {
+  constructor(private options: ConfigurationOptions & ModuleOptions) {
     super(options);
 
-    this.config = options.config;
-
-    if (this.config.pluginSystem.disabled) {
+    if (this.options.config.pluginSystem.disabled) {
       this.manager.registry.communityDisabled = true;
       this.manager.registry.officialDisabled = true;
     }
 
-    if (this.config.pluginSystem.communityDisabled) {
+    if (this.options.config.pluginSystem.communityDisabled) {
       this.manager.registry.communityDisabled = true;
     }
 
-    this.hook("before-install-plugin", this.beforeInstallGuard);
+    this.hook("before-install-plugin", this.validatePluginInstall);
     this.hook("plugin-snapshots", this.applyConfig);
   }
 
@@ -58,11 +54,8 @@ export class ConfigurationModule extends Module {
     };
   }
 
-  private beforeInstallGuard(id: string) {
-    if (
-      this.config.pluginSystem.disabled &&
-      !this.config.pluginSystem.allow.includes(id)
-    ) {
+  private validatePluginInstall(pluginId: string): void {
+    if (this.options.config.pluginSystem.disabled) {
       throw new PluginSystemDisabledError();
     }
   }
@@ -74,8 +67,8 @@ export class ConfigurationModule extends Module {
         return snapshot;
       }
 
-      if (this.config.pluginSystem.disabled) {
-        if (this.config.pluginSystem.allow.includes(snapshot.manifest.id)) {
+      if (this.options.config.pluginSystem.disabled) {
+        if (this.options.config.pluginSystem.allow.includes(snapshot.manifest.id)) {
           return snapshot;
         }
 
@@ -87,7 +80,7 @@ export class ConfigurationModule extends Module {
 
       if (
         snapshot.origin === "community" &&
-        this.config.pluginSystem.communityDisabled
+        this.options.config.pluginSystem.communityDisabled
       ) {
         return {
           ...snapshot,
@@ -98,7 +91,7 @@ export class ConfigurationModule extends Module {
         };
       }
 
-      if (this.config.plugins?.[snapshot.manifest.id]?.disabled) {
+      if (this.options.config.plugins?.[snapshot.manifest.id]?.disabled) {
         return {
           ...snapshot,
           disableState: { disabled: true, reason: "disabled-by-config" },

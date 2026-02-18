@@ -3,22 +3,9 @@ import fs from "fs";
 import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import globals from "@/common/globals";
-import {
-  Module,
-  PluginSourcePathParams,
-  type ModuleOptions,
-} from "@/services/plugin/Module";
-import { PluginSystemDisabledError } from "@/services/plugin/errors";
-import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
-import { Manifest } from "@/services/plugin";
+import { Module, type ModuleOptions } from "@/services/plugin/Module";
 
 const log = rawLog.scope("BundledPluginModule");
-
-type BundledPluginOptions = {
-  config: BksConfig;
-  /** For testing only. */
-  testIgnoreEnsureInstalled?: boolean;
-};
 
 /**
  * A plugin system module that copies bundled plugins from node_modules (dev)
@@ -33,26 +20,13 @@ type BundledPluginOptions = {
  * ```
  **/
 export class BundledPluginModule extends Module {
-  constructor(private options: BundledPluginOptions & ModuleOptions) {
+  constructor(options: ModuleOptions) {
     super(options);
 
     this.hook("before-initialize", this.installBundledPlugins);
-    this.hook("plugin-source", this.resolvePluginSource);
-  }
-
-  static with(options: BundledPluginOptions) {
-    return class extends BundledPluginModule {
-      constructor(baseOptions: ModuleOptions) {
-        super({ ...baseOptions, ...options });
-      }
-    };
   }
 
   private async installBundledPlugins() {
-    if (this.options.testIgnoreEnsureInstalled) {
-      return;
-    }
-
     for (const plugin of globals.plugins.ensureInstalled) {
       try {
         await this.ensureInstall(plugin);
@@ -60,37 +34,6 @@ export class BundledPluginModule extends Module {
         log.error(`Error installing plugin ${plugin}`, e);
       }
     }
-  }
-
-  private resolvePluginSource(
-    params: PluginSourcePathParams
-  ): PluginSourcePathParams {
-    if (!this.options.config.pluginSystem.disabled) {
-      return params;
-    }
-
-    if (this.options.config.pluginSystem.allow.includes(params.id)) {
-      for (const pkg of globals.plugins.ensureInstalled) {
-        const pluginPath = BundledPluginModule.resolve(pkg);
-        const manifest = this.parseManifest(pluginPath);
-
-        if (params.id === manifest?.id) {
-          return {
-            ...params,
-            path: pluginPath,
-            cleanupAfterInstall: false,
-          };
-        }
-      }
-
-      throw new PluginSystemDisabledError(
-        `Cannot install "${params.id}": the plugin is in the allow list but no bundled version is available.`
-      );
-    }
-
-    throw new PluginSystemDisabledError(
-      `Cannot install "${params.id}": the plugin system is disabled and this plugin is not in the allow list.`
-    );
   }
 
   /**
@@ -102,24 +45,26 @@ export class BundledPluginModule extends Module {
     log.info(`Resolving ${pkg}`);
 
     const pluginPath = BundledPluginModule.resolve(pkg);
-
-    const manifest = this.parseManifest(pluginPath);
-    if (!manifest) {
-      throw new Error(`Manifest not found for ${pkg}`);
-    }
-
-    const pluginId = manifest.id;
-
-    // Have installed before?
-    if (this.manager.pluginSettings[pluginId]) {
-      log.info(`Plugin "${pluginId}" is previously installed, skipping.`);
-      return;
-    }
-
     const pluginsDirectory = this.manager.fileManager.options.pluginsDirectory;
 
     if (!fs.existsSync(pluginsDirectory)) {
       fs.mkdirSync(pluginsDirectory, { recursive: true });
+    }
+
+    const manifestPath = path.join(pluginPath, "manifest.json");
+    if (!fs.existsSync(manifestPath)) {
+      throw new Error(`Plugin not found at ${pluginPath}`);
+    }
+
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    const pluginId = manifest.id;
+
+    // Have installed before?
+    if (this.manager.pluginSettings[pluginId]) {
+      log.info(
+        `Plugin "${pluginId}" is previously installed, skipping.`
+      );
+      return;
     }
 
     const dst = path.join(pluginsDirectory, pluginId);
@@ -137,16 +82,6 @@ export class BundledPluginModule extends Module {
 
     // This must be set, otherwise the plugin will be copied again
     await this.manager.setPluginAutoUpdateEnabled(pluginId, true);
-  }
-
-  private parseManifest(pluginPath: string): Manifest | undefined {
-    const manifestPath = path.join(pluginPath, "manifest.json");
-
-    if (!fs.existsSync(manifestPath)) {
-      return undefined;
-    }
-
-    return JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
   }
 
   /**

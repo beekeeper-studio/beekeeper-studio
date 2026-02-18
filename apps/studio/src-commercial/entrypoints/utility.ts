@@ -48,7 +48,7 @@ const pluginManager = new PluginManager({
   }),
 });
 pluginManager.registerModule(ConfigurationModule.with({ config: bksConfig }));
-pluginManager.registerModule(BundledPluginModule.with({ config: bksConfig }));
+pluginManager.registerModule(BundledPluginModule);
 
 interface Reply {
   id: string,
