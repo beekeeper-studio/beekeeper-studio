@@ -71,9 +71,14 @@ export class ClickHouseCursor extends BeeCursor {
   }
 
   private pop() {
-    const result = this.rowBuffer;
-    this.rowBuffer = [];
-    return result;
+    if (this.rowBuffer.length <= this.chunkSize) {
+      const result = this.rowBuffer;
+      this.rowBuffer = [];
+      return result;
+    } else {
+      const result = this.rowBuffer.splice(0, this.chunkSize);
+      return result;
+    }
   }
 
   private resume() {
