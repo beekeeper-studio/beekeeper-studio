@@ -62,6 +62,7 @@ export enum AppEvent {
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
   openPluginManager = 'openPluginManager',
+  openKeyboardShortcuts = 'openKeyboardShortcuts',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',

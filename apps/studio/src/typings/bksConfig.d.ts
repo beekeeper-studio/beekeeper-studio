@@ -289,8 +289,8 @@ declare interface IBksConfig {
         };
     };
     general: {
-        checkForUpdatesInterval: number;
         checkForUpdatesDisabled: boolean;
+        checkForUpdatesInterval: number;
         dataSyncInterval: number;
         workspaceSyncInterval: number;
     };
@@ -333,6 +333,7 @@ declare interface IBksConfig {
         };
         tab: {
             closeTab: string;
+            forceCloseTab: string;
             nextTab: string[];
             previousTab: string[];
             reopenLastClosedTab: string;
