@@ -50,7 +50,7 @@ export function checkUnrecognized(
           section,
           path,
         });
-      } else if (typeof value === "object") {
+      } else if (typeof value === "object" && !Array.isArray(value)) {
         traverse(value, path);
       }
     }
@@ -73,7 +73,7 @@ export function checkConflicts(
     for (const key of Object.keys(obj)) {
       const path = parentPath ? `${parentPath}.${key}` : key;
       const value = obj[key];
-      if (typeof value === "object") {
+      if (typeof value === "object" && !Array.isArray(value)) {
         traverse(value, path);
       } else if (_.has(target, path)) {
         results.push({
