@@ -383,6 +383,11 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
         this.ssl = true
       }
+
+      if (parsed.params?.TrustServerCertificate && parsed.params.TrustServerCertificate === 'true') {
+        this.trustServerCertificate = true
+      }
+
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port
       this.username = extractedUser ?? parsed.user

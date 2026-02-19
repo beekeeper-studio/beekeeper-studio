@@ -1,0 +1,19 @@
+{
+  "sections": [
+    {
+      "key": "keybindings.general",
+      "label": "General",
+      "properties": [
+        { "key": "refresh", "label": "Refresh" }
+      ]
+    },
+    {
+      "key": "keybindings.tab",
+      "label": "Tabs",
+      "properties": [
+        { "key": "closeTab", "label": "Close Tab" },
+        { "key": "switchTab1", "label": "Switch to Tab 1" }
+      ]
+    }
+  ]
+}
