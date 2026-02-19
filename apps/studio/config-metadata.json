@@ -20,6 +20,7 @@
       "label": "Tabs",
       "properties": [
         { "key": "closeTab", "label": "Close Tab" },
+        { "key": "forceCloseTab", "label": "Force Close Tab" },
         { "key": "nextTab", "label": "Next Tab" },
         { "key": "previousTab", "label": "Previous Tab" },
         { "key": "reopenLastClosedTab", "label": "Reopen Last Closed Tab" },
