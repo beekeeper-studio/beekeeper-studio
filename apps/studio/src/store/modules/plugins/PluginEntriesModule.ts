@@ -39,18 +39,6 @@ export const PluginEntriesModule: Module<PluginEntriesState, RootState> = {
     all(state) {
       return [...state.officialEntries, ...state.communityEntries];
     },
-    findEntryOrigin(state): (id: string) => PluginOrigin {
-      const entries: Record<string, PluginOrigin> = {};
-      for (const entry of state.communityEntries) {
-        entries[entry.id] = "community";
-      }
-      for (const entry of state.officialEntries) {
-        entries[entry.id] = "official";
-      }
-      return (id: string) => {
-        return entries[id] || "unlisted";
-      }
-    },
   },
   actions: {
     async load(context) {

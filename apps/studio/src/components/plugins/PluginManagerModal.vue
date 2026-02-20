@@ -97,8 +97,8 @@ export default Vue.extend({
     }),
     ...mapGetters("plugins/entries", {
       entries: "all",
-      findEntryOrigin: "findEntryOrigin",
     }),
+    ...mapGetters("plugins", ["findPluginOrigin"]),
     ...mapGetters("plugins/snapshots", ['snapshotsById']),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
@@ -277,7 +277,7 @@ export default Vue.extend({
 
       return list.map((item) => ({
         ...item,
-        origin: this.findEntryOrigin(item.id),
+        origin: this.findPluginOrigin(item.id),
       }));
     },
     open() {
