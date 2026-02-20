@@ -160,42 +160,34 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-install-plugin", id);
 
+    let update = false;
+
+    // If plugin is already installed, perform update
+    if (this.manifests.find((manifest) => manifest.id === id)) {
+      update = true;
+    }
+
     return await this.withPluginLock(id, async () => {
-      const source = await this.applyHook("plugin-source", {
-        id,
-        sourceDir: "",
-        removeSourceDir: true,
-      });
-
-      if (!source.sourceDir) {
-        const info = await this.registry.getRepository(id);
-        if (!info) {
-          throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
-        }
-
-        if (!this.isPluginLoadable(info.latestRelease.manifest)) {
-          throw new NotSupportedPluginError(
-            `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ ${info.latestRelease.manifest.minAppVersion}.`
-          );
-        }
-
-        log.info(`Downloading plugin "${id}" ${info.latestRelease.manifest.version}...`);
-
-        source.sourceDir = await this.fileManager.download(id, info.latestRelease);
+      const info = await this.registry.getRepository(id);
+      if (!info) {
+        throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
       }
 
-      const manifest = convertToManifestV1(
-        this.fileManager.getManifest(id, source.sourceDir)
-      );
+      if (!this.isPluginLoadable(info.latestRelease.manifest)) {
+        throw new NotSupportedPluginError(
+          `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
+        );
+      }
 
-      log.info(`Installing plugin "${id}" v${manifest.version}...`);
+      log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
 
-      this.fileManager.install(id, source.sourceDir, {
-        removeSourceDir: source.removeSourceDir,
-      });
+      if (update) {
+        await this.fileManager.update(id, info.latestRelease);
+      } else {
+        await this.fileManager.download(id, info.latestRelease);
+      }
 
-      log.info(`Installed plugin "${id}" v${manifest.version}`);
-
+      const manifest = this.fileManager.getManifest(id);
       const installedPluginIdx = this.manifests.findIndex(
         (manifest) => manifest.id === id
       );
@@ -212,7 +204,7 @@ export default class PluginManager extends Hookable {
       }
       await this.savePluginSettings();
 
-      log.info("Saved plugin manifest and settings");
+      log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
       return manifest;
     });
@@ -229,7 +221,7 @@ export default class PluginManager extends Hookable {
     return await this.withPluginLock(id, async () => {
       log.debug(`Uninstalling plugin "${id}"...`);
 
-      this.fileManager.uninstall(id);
+      this.fileManager.remove(id);
       this.manifests = this.manifests.filter(
         (manifest) => manifest.id !== id
       );

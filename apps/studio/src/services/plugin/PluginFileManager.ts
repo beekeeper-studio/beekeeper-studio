@@ -86,64 +86,21 @@ async function extractArchive(
 export default class PluginFileManager {
   constructor(readonly options: PluginFileManagerOptions) {}
 
-  /**
-   * Copy `sourceDir` to app's `pluginsDirectory`. It assumes that the source
-   * directory is a plugin directory with valid file structure.
-   *
-   * If the plugin is already installed, it will be replaced.
-   *
-   * @param pluginId Plugin ID
-   * @param sourceDir Source directory to the plugin
-   **/
-  install(
-    pluginId: string,
-    sourceDir: string,
-    options?: { removeSourceDir?: boolean; }
-  ) {
-    const directory = this.getDirectoryOf(pluginId);
-    const oldPlugin = this.getDirectoryOf(`${pluginId}-tmp-${Date.now()}`);
-
-    try {
-      if (fs.existsSync(directory)) {
-        fs.renameSync(directory, oldPlugin);
-      }
-    } catch (e) {
-      log.error(`Failed to rename plugin directory ${directory} -> ${oldPlugin}`, e);
-      throw e;
-    }
-
-    try {
-      fs.cpSync(sourceDir, directory, { recursive: true });
-    } catch (e) {
-      // Ressurect the old plugin if the copy failed
-      fs.renameSync(oldPlugin, directory);
-      log.error(`Failed to copy plugin directory ${sourceDir} -> ${directory}`, e);
-      throw e;
-    }
-
-    fs.rmSync(oldPlugin, { recursive: true, force: true });
-
-    if (options.removeSourceDir) {
-      fs.rmSync(sourceDir, { recursive: true, force: true });
-    }
-  }
-
-  /**
-   * Download plugin source archive to a temporary directory and extract it.
-   * @param pluginId Plugin ID
-   * @param release Release metadata containing the archive URL and manifest
-   * @param options Download options
-   * @param options.signal Optional AbortSignal to cancel the download
-   * @returns Path to the temporary directory containing the extracted files
-   */
+  /** Download plugin source archive to `directory` and extract it */
   async download(
     pluginId: string,
     release: Release,
     options: {
       signal?: AbortSignal;
+      /** for update */
+      tmp?: boolean;
     } = {}
-  ): Promise<string> {
-    const tmpDirectory = path.join(tmpdir(), `beekeeper-plugin-${pluginId}-${Date.now()}`);
+  ) {
+    const directory = this.getDirectoryOf(pluginId);
+    const mustCleanup = !this.options?.downloadDirectory;
+    const tmpDirectory =
+      this.options?.downloadDirectory ||
+      path.join(tmpdir(), `beekeeper-plugin-${pluginId}-${Date.now()}`);
 
     try {
       // Create temp directory for initial download
@@ -170,16 +127,101 @@ export default class PluginFileManager {
       // Extract the archive to the temp directory
       log.debug(`Extracting plugin archive...`);
       await extractArchive(archivePath, tmpDirectory);
-      return tmpDirectory;
+
+      // If we're updating, keep in temp directory
+      if (options.tmp) {
+        return tmpDirectory;
+      }
+
+      // Create final directory
+      fs.mkdirSync(directory, { recursive: true });
+
+      // Copy extracted files to final directory
+      // First remove the archive file to not copy it
+      fs.unlinkSync(archivePath);
+
+      // Copy all files from temp to final directory
+      this.copyDirectory(tmpDirectory, directory);
+
+      // Clean up temp directory
+      if (mustCleanup) {
+        fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      }
     } catch (e) {
       // Clean up on error
-      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      if (mustCleanup) {
+        fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      }
+      if (!options.tmp) {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
       log.debug("Download failed", e);
       throw e;
     }
   }
 
-  uninstall(id: string) {
+  /**
+   * Copy all files from source to destination directory
+   */
+  private copyDirectory(source: string, destination: string) {
+    // Create destination directory if it doesn't exist
+    if (!fs.existsSync(destination)) {
+      fs.mkdirSync(destination, { recursive: true });
+    }
+
+    // Read the source directory
+    const files = fs.readdirSync(source);
+
+    // Copy each file/directory
+    for (const file of files) {
+      const sourcePath = path.join(source, file);
+      const destPath = path.join(destination, file);
+
+      const stat = fs.statSync(sourcePath);
+
+      if (stat.isDirectory()) {
+        // Recursively copy directories
+        this.copyDirectory(sourcePath, destPath);
+      } else {
+        // Copy files
+        fs.copyFileSync(sourcePath, destPath);
+      }
+    }
+  }
+
+  async update(
+    pluginId: string,
+    release: Release,
+    options: { signal?: AbortSignal } = {}
+  ) {
+    // Download to temp location
+    const tmpDirectory = await this.download(pluginId, release, {
+      ...options,
+      tmp: true,
+    });
+    const finalDirectory = this.getDirectoryOf(pluginId);
+
+    try {
+      // Remove existing plugin directory
+      fs.rmSync(finalDirectory, { recursive: true, force: true });
+
+      // Create final directory
+      fs.mkdirSync(finalDirectory, { recursive: true });
+
+      // Copy all files from temp to final directory
+      this.copyDirectory(tmpDirectory, finalDirectory);
+
+      // Clean up temp directory
+      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+    } catch (e) {
+      // Clean up on error
+      fs.rmSync(tmpDirectory, { recursive: true, force: true });
+      log.debug("Update failed", e);
+      throw e;
+    }
+  }
+
+  remove(id: string) {
     fs.rmSync(this.getDirectoryOf(id), { recursive: true, force: true });
   }
 
@@ -215,8 +257,7 @@ export default class PluginFileManager {
       });
 
       try {
-        const manifest = JSON.parse(manifestContent);
-        manifests.push(manifest);
+        manifests.push(JSON.parse(manifestContent));
       } catch (e) {
         log.error(`Failed to parse manifest for plugin "${dir}":`, e);
       }
@@ -225,16 +266,8 @@ export default class PluginFileManager {
     return manifests;
   }
 
-  /**
-   * Read and parse the manifest file for a plugin.
-   * @param id Plugin ID
-   * @param sourceDir Optional alternative directory path to read the manifest from,
-   *                  instead of the default plugins directory. Useful for reading
-   *                  manifests from temporary or staging directories (e.g. after download
-   *                  but before installation).
-   */
-  getManifest(id: string, sourceDir?: string) {
-    const directory = sourceDir || this.getDirectoryOf(id);
+  getManifest(id: string) {
+    const directory = this.getDirectoryOf(id);
     const manifestContent = fs.readFileSync(
       path.join(directory, PLUGIN_MANIFEST_FILENAME),
       { encoding: "utf-8" }

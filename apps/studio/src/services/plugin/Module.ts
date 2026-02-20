@@ -13,9 +13,6 @@ export interface ModuleHookMap {
   "plugin-snapshots": (
     snapshots: PluginSnapshot[]
   ) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
-  "plugin-source": (
-    params: PluginSourcePathParams
-  ) => PluginSourcePathParams | Promise<PluginSourcePathParams>;
 }
 
 export type ModuleHook = {

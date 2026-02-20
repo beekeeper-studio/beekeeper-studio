@@ -251,15 +251,7 @@ export default {
     unpin() {
       this.$store.dispatch('pinnedConnections/remove', this.config);
     }
-  },
-
-//   mounted() {
-//     console.log(this.label)
-//   if ((this.label === "local app-dev.db" || this.label ==="Beekeeper's Database") && !window.wawawaw) {
-//   window.wawawaw = true
-//   this.doubleClick();
-// }
-// }
+  }
 
 }
 </script>
