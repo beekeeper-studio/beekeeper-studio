@@ -9,10 +9,10 @@ import defaultConfigIni from "../../../default.config.ini";
  * @example
  * ```js
  * const bksConfig = createBksConfig(`
- *   [plugins.general]
+ *   [pluginSystem]
  *   disabled = true
  * `);
- * bksConfig.get("plugins.general.disabled"); // true
+ * bksConfig.get("pluginSystem.disabled"); // true
  **/
 export function createConfig(text: string) {
   return BksConfigProvider.create(

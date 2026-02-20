@@ -11,6 +11,8 @@ type ConfigurationOptions = {
 /**
  * Handles plugin configuration via `config.ini`.
  *
+ * Plugins can be configured via [pluginSystem] and [plugins.<pluginId>] sections.
+ *
  * @example
  *
  * ```ts
@@ -20,13 +22,6 @@ type ConfigurationOptions = {
  * // Initialize the plugin manager
  * pluginManager.initialize();
  *
- * ```
- *
- * The ini file contains the following:
- *
- * ```ini
- * [plugins.general]
- * communityDisabled = true
  * ```
  */
 export class ConfigurationModule extends Module {
