@@ -10,6 +10,7 @@ import {
   BksConfigSource,
   BksConfig,
 } from "./BksConfigProvider";
+import globals from "@/common/globals";
 
 type ConfigFileName =
   | "default.config.ini"
@@ -57,6 +58,23 @@ export function checkUnrecognized(
   }
 
   traverse(newConfig);
+
+  // Validate that pluginSystem.allow only contains known bundled plugin IDs
+  const allow = _.get(newConfig, "pluginSystem.allow") as string[] | undefined;
+  if (Array.isArray(allow)) {
+    const bundledPluginIds = globals.plugins.ensureInstalled.map((p) => p.id);
+    for (const id of allow) {
+      if (!bundledPluginIds.includes(id)) {
+        results.push({
+          type: "unknown-allow-plugin",
+          sourceName,
+          section: "pluginSystem",
+          path: "pluginSystem.allow",
+          value: id,
+        });
+      }
+    }
+  }
 
   return results;
 }

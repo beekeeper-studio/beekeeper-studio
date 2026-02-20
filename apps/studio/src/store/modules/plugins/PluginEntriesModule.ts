@@ -1,6 +1,6 @@
 import { Module } from "vuex";
 import { State as RootState } from "@/store";
-import { PluginRegistryEntry } from "@/services/plugin";
+import { PluginOrigin, PluginRegistryEntry } from "@/services/plugin";
 import Vue from "vue";
 import rawLog from "@bksLogger";
 
@@ -38,6 +38,18 @@ export const PluginEntriesModule: Module<PluginEntriesState, RootState> = {
   getters: {
     all(state) {
       return [...state.officialEntries, ...state.communityEntries];
+    },
+    findEntryOrigin(state): (id: string) => PluginOrigin {
+      const entries: Record<string, PluginOrigin> = {};
+      for (const entry of state.communityEntries) {
+        entries[entry.id] = "community";
+      }
+      for (const entry of state.officialEntries) {
+        entries[entry.id] = "official";
+      }
+      return (id: string) => {
+        return entries[id] || "unlisted";
+      }
     },
   },
   actions: {

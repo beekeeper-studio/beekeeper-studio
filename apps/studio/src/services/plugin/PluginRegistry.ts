@@ -7,7 +7,9 @@ const log = rawLog.scope("PluginRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
+  /** Disable fetching community entries. */
   public communityDisabled = false;
+  /** Disable fetching official entries. */
   public officialDisabled = false;
 
   private officialEntries: PluginRegistryEntry[] = [];

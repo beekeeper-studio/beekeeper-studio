@@ -54,7 +54,7 @@ export class ConfigurationModule extends Module {
     };
   }
 
-  private validatePluginInstall(pluginId: string): void {
+  private validatePluginInstall(): void {
     if (this.options.config.pluginSystem.disabled) {
       throw new PluginSystemDisabledError();
     }
