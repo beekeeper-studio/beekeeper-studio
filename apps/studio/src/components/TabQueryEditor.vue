@@ -523,7 +523,7 @@
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
-  import { IdentifyResult } from 'sql-query-identifier/defines'
+  import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -1352,14 +1352,7 @@
           results.forEach((result, idx) => {
             result.rowCount = result.rowCount || 0
 
-            // TODO (matthew): remove truncation logic somewhere sensible
-            totalRows += result.rowCount
-            if (result.rowCount > this.$bksConfig.ui.queryEditor.maxResults) {
-              result.rows = _.take(result.rows, this.$bksConfig.ui.queryEditor.maxResults)
-              result.truncated = true
-              result.totalRowCount = result.rowCount
-            }
-
+            totalRows += result.totalRowCount
             const identifiedTables = identification[idx]?.tables || []
             if (identifiedTables.length > 0) {
               result.tableName = identifiedTables[0]

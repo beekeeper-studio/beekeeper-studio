@@ -105,8 +105,8 @@ jobs:
         # Why does it fill up zfs? I don't understand what it does at all
       - name: Free Up ZFS Space
         run: |
-          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
-          sudo zfs list -H -o name | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy -r {}
+          sudo zfs list -H -o name | grep "snapcraft" | xargs -I{} sudo zfs destroy -r {}
         if: matrix.os.clean_zfs
 
       - name: Install flatpak tools

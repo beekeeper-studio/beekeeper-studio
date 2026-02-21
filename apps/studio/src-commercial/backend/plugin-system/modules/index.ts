@@ -1,0 +1,1 @@
+export { BundledPluginModule } from "./BundledPluginModule";

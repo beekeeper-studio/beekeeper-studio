@@ -43,6 +43,7 @@ import {
   QueryResult,
   Routine,
   SchemaFilterOptions,
+  ServerStatistics,
   StreamResults,
   SupportedFeatures,
   TableChanges,
@@ -1572,6 +1573,55 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   async rollbackTransaction(tabId: number): Promise<void> {
     const conn = this.peekConnection(tabId);
     await this.driverExecuteSingle('ROLLBACK', { connection: conn });
+  }
+
+  async getServerStatistics(): Promise<ServerStatistics> {
+    return this.runWithConnection(async (connection) => {
+      const { rows: statusRows } = await this.driverExecuteSingle(
+        "SHOW GLOBAL STATUS",
+        { connection }
+      );
+      const { rows: variableRows } = await this.driverExecuteSingle(
+        "SHOW GLOBAL VARIABLES",
+        { connection }
+      );
+
+      const statusMap: Record<string, string> = {};
+      for (const row of statusRows) {
+        statusMap[row.Variable_name] = row.Value;
+      }
+
+      const variableMap: Record<string, string> = {};
+      for (const row of variableRows) {
+        variableMap[row.Variable_name] = row.Value;
+      }
+
+      const uptime = parseInt(statusMap["Uptime"] || "1", 10);
+      const questions = parseInt(statusMap["Questions"] || "0", 10);
+
+      return {
+        queryCache: {
+          size: variableMap["query_cache_size"] || "0",
+          limit: variableMap["query_cache_limit"] || "0",
+          hits: parseInt(statusMap["Qcache_hits"] || "0", 10),
+          inserts: parseInt(statusMap["Qcache_inserts"] || "0", 10),
+          lowMemoryPrunes: parseInt(statusMap["Qcache_lowmem_prunes"] || "0", 10),
+        },
+        performance: {
+          connections: parseInt(statusMap["Connections"] || "0", 10),
+          uptime,
+          threadsRunning: parseInt(statusMap["Threads_running"] || "0", 10),
+          threadsConnected: parseInt(statusMap["Threads_connected"] || "0", 10),
+          slowQueries: parseInt(statusMap["Slow_queries"] || "0", 10),
+          questionsPerSecond: uptime > 0 ? Math.round((questions / uptime) * 100) / 100 : 0,
+        },
+        memory: {
+          keyBufferSize: variableMap["key_buffer_size"] || "0",
+          innodbBufferPoolSize: variableMap["innodb_buffer_pool_size"] || "0",
+          innodbBufferPoolUsed: statusMap["Innodb_buffer_pool_bytes_data"] || "0",
+        },
+      };
+    });
   }
 
   protected parseQueryResultColumns(qr: ResultType): BksField[] {
