@@ -146,7 +146,10 @@
               <i class="material-icons">close</i>
             </button>
           </div>
-          <div>
+          <div v-if="querySelected.isPersonal">
+            In order to share this query, it must be a Team level query. Please move the query to the "Team" folder.
+          </div>
+          <div v-else>
             <span>
               {{ queryURL }}
             </span>
@@ -221,7 +224,6 @@ export default {
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     queryURL() {
-      // get the url structure for the cloud stuff
       return `${this.$config.cloudUrl}/queries/${this.querySelected.slug}`
     },
     filterQuery: {
