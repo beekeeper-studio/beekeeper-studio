@@ -137,7 +137,7 @@ const uiModifierMap: ModifierMap = {
 };
 
 export function convertKeybinding(
-  target: KeybindingTarget,
+  target: Exclude<KeybindingTarget, "ui">,
   keybinding: string,
   platform: Platform
 ): string;
@@ -147,7 +147,7 @@ export function convertKeybinding(
   platform: Platform
 ): string[];
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror" | "ui",
+  target: KeybindingTarget,
   keybinding: string,
   platform: Platform
 ): string[] | string {

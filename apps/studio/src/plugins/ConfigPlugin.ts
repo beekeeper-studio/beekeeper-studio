@@ -24,7 +24,7 @@ export function createVHotkeyKeymap(
   return keymap;
 }
 
-export function createCodemirroKeymap(
+export function createCodemirrorKeymap(
   obj: Partial<Record<KeybindingPath, any>>
 ): Record<string, any> {
   const keymap = {};
@@ -55,6 +55,6 @@ export default {
     });
     Vue.prototype.$config = buildConfig(window.platformInfo);
     Vue.prototype.$vHotkeyKeymap = createVHotkeyKeymap;
-    Vue.prototype.$CMKeymap = createCodemirroKeymap;
+    Vue.prototype.$CMKeymap = createCodemirrorKeymap;
   },
 };
