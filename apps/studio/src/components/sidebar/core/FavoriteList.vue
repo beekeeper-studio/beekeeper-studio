@@ -224,7 +224,7 @@ export default {
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     queryURL() {
-      return `${this.$config.cloudUrl}/queries/${this.querySelected.slug}`
+      return `${this.$config.cloudUrl}/query/${this.querySelected.slug}`
     },
     filterQuery: {
       get() {
