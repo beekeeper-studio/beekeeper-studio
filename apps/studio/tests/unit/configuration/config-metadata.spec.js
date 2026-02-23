@@ -3,10 +3,10 @@ import {
 } from "@/common/bksConfig/BksConfigProvider";
 import { ConfigMetadataProvider } from "@/common/bksConfig/ConfigMetadataProvider";
 import { parseIni, processRawConfig } from "@/config/helpers";
-import testConfigIni from "../fixtures/bksConfig/config.ini";
-import testMetadata from "../fixtures/bksConfig/config-metadata.json";
-import fullConfigIni from "../../default.config.ini";
-import fullMetadata from "../../config-metadata.json";
+import testConfigIni from "@tests/fixtures/bksConfig/config.ini";
+import testMetadata from "@tests/fixtures/bksConfig/config-metadata.json";
+import fullConfigIni from "../../../default.config.ini";
+import fullMetadata from "../../../config-metadata.json";
 
 /** @type {import("@/common/IPlatformInfo").IPlatformInfo} */
 const linuxPlatformInfo = {
