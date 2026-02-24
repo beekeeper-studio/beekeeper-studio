@@ -1,8 +1,9 @@
 import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import { MaxLength } from 'class-validator';
-import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
+import { Entity, Column, Index, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 import { QueryLike } from './base'
+import { QueryFolder } from './QueryFolder'
 
 @Entity({ name: 'favorite_query' })
 export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISavedQuery {
@@ -30,6 +31,10 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
 
   @Column({ type: 'integer', nullable: true, default: null })
   queryFolderId: Nullable<number> = null
+
+  @ManyToOne(() => QueryFolder, (folder) => folder.queries, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'queryFolderId' })
+  queryFolder: Nullable<QueryFolder> = null
 
   @BeforeInsert()
   @BeforeUpdate()

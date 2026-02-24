@@ -1,5 +1,6 @@
-import { Entity, Column } from 'typeorm'
+import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
+import { SavedConnection } from './saved_connection'
 
 @Entity({ name: 'connection_folder' })
 export class ConnectionFolder extends ApplicationEntity {
@@ -19,4 +20,11 @@ export class ConnectionFolder extends ApplicationEntity {
 
   @Column({ type: 'integer', nullable: true, default: null })
   parentId: Nullable<number> = null
+
+  @ManyToOne(() => ConnectionFolder, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'parentId' })
+  parent: Nullable<ConnectionFolder> = null
+
+  @OneToMany(() => SavedConnection, (conn) => conn.connectionFolder)
+  connections: SavedConnection[]
 }

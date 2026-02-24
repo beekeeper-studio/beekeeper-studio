@@ -111,7 +111,6 @@
                     <i class="material-icons">save_alt</i>
                   </a>
                   <a
-                    v-if="foldersSupported"
                     @click.prevent="createFolder"
                     title="New Folder"
                   >
@@ -270,6 +269,7 @@
         class="vue-dialog beekeeper-modal"
         name="connection-folder-modal"
         @closed="folderModalName = ''; folderModalItem = null"
+        @opened="$refs.folderNameInput && $refs.folderNameInput.focus()"
         height="auto"
         :scrollable="true"
       >
@@ -363,13 +363,13 @@ export default {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
-      foldersUnsupported: 'unsupported'
     }),
     ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
       isCloud: 'isCloud',
+      isUltimate: 'isUltimate',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections'
@@ -387,9 +387,6 @@ export default {
     },
     noPins() {
       return !this.pinnedConnections?.length;
-    },
-    foldersSupported() {
-      return !this.foldersUnsupported
     },
     rootFolders() {
       return this.folders.filter((f) => !f.parentId)
@@ -509,13 +506,14 @@ export default {
       return `label-${color}`
     },
     createFolder() {
+      if (!this.isUltimate && !this.isCloud) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your connections into folders')
+        return
+      }
       this.folderModalName = ''
       this.folderModalItem = null
       this.folderModalParentId = this.rootFolders[0]?.id ?? null
       this.$modal.show('connection-folder-modal')
-      this.$nextTick(() => {
-        if (this.$refs.folderNameInput) this.$refs.folderNameInput.focus()
-      })
     },
     showFolderContextMenu(event, folder) {
       this.$bks.openMenu({
@@ -537,13 +535,14 @@ export default {
       this.folderModalName = folder.name
       this.folderModalItem = folder
       this.$modal.show('connection-folder-modal')
-      this.$nextTick(() => {
-        if (this.$refs.folderNameInput) this.$refs.folderNameInput.focus()
-      })
     },
     async deleteFolder(folder) {
-      if (await this.$confirm(`Delete folder "${folder.name}"?`, 'All connections in this folder will be moved to the top level.')) {
-        await this.$store.dispatch('data/connectionFolders/remove', folder)
+      if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
+        try {
+          await this.$store.dispatch('data/connectionFolders/remove', folder)
+        } catch (e) {
+          this.$noty.error(e.message)
+        }
       }
     },
     async submitFolderModal() {

@@ -7,14 +7,14 @@ export default {
         name VARCHAR(255) NOT NULL,
         description VARCHAR(255),
         expanded BOOLEAN NOT NULL DEFAULT 1,
-        parentId INTEGER,
+        parentId INTEGER REFERENCES connection_folder(id) ON DELETE SET NULL,
         createdAt DATETIME NOT NULL DEFAULT (datetime('now')),
         updatedAt DATETIME NOT NULL DEFAULT (datetime('now')),
         version INTEGER NOT NULL DEFAULT 0
       )
     `)
     await runner.query(
-      'ALTER TABLE saved_connection ADD COLUMN connectionFolderId INTEGER'
+      'ALTER TABLE saved_connection ADD COLUMN connectionFolderId INTEGER REFERENCES connection_folder(id) ON DELETE SET NULL'
     )
   }
 }

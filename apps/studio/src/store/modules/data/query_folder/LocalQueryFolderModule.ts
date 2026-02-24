@@ -5,9 +5,7 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 
-interface State extends DataState<IQueryFolder> {
-  unsupported: boolean
-}
+type State = DataState<IQueryFolder>
 
 export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
@@ -16,19 +14,12 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     loading: false,
     error: null,
     pollError: null,
-    unsupported: true
   },
   mutations: {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
-    setUnsupported(state, v: boolean) { state.unsupported = v }
   },
   actions: {
     async load(context) {
-      if (!context.rootGetters.isUltimate) {
-        context.commit('setUnsupported', true)
-        return
-      }
-      context.commit('setUnsupported', false)
       context.commit('error', null)
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/queryFolder/find', { options: { order: { name: 'ASC' } } })
@@ -48,9 +39,13 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       context.commit('upsert', updated)
       return updated.id
     },
-    async remove(context, item) {
-      await Vue.prototype.$util.send('appdb/queryFolder/remove', { obj: item })
-      context.commit('remove', item)
+    async remove(context, folder) {
+      const items = await Vue.prototype.$util.send('appdb/query/find', { options: { where: { queryFolderId: folder.id } } })
+      if (items.length > 0) {
+        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${items.length} quer${items.length === 1 ? 'y' : 'ies'} first.`)
+      }
+      await Vue.prototype.$util.send('appdb/queryFolder/remove', { obj: folder })
+      context.commit('remove', folder)
     },
     async reload(context, id) {
       const item = await Vue.prototype.$util.send('appdb/queryFolder/findOneBy', { options: { id } })

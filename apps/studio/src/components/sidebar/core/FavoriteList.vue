@@ -9,7 +9,6 @@
             </div>
             <div class="actions">
               <a
-                v-if="foldersSupported"
                 @click.prevent="createFolder"
                 title="New Folder"
               >
@@ -155,6 +154,7 @@
         class="vue-dialog beekeeper-modal"
         name="query-folder-modal"
         @closed="folderModalName = ''; folderModalItem = null"
+        @opened="$refs.folderNameInput && $refs.folderNameInput.focus()"
         height="auto"
         :scrollable="true"
       >
@@ -242,11 +242,11 @@ export default {
     document.removeEventListener('mousedown', this.maybeUnselect)
   },
   computed: {
-    ...mapGetters(['workspace', 'isCloud']),
+    ...mapGetters(['workspace', 'isCloud', 'isUltimate']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
+    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     filterQuery: {
       get() {
         return this.savedQueryFilter;
@@ -254,9 +254,6 @@ export default {
       set(newFilter) {
         this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
       }
-    },
-    foldersSupported() {
-      return !this.foldersUnsupported
     },
     rootFolders() {
       return this.folders.filter((f) => !f.parentId)
@@ -349,13 +346,14 @@ export default {
       this.checkedFavorites = [];
     },
     createFolder() {
+      if (!this.isUltimate && !this.isCloud) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your queries into folders')
+        return
+      }
       this.folderModalName = ''
       this.folderModalItem = null
       this.folderModalParentId = this.rootFolders[0]?.id ?? null
       this.$modal.show('query-folder-modal')
-      this.$nextTick(() => {
-        if (this.$refs.folderNameInput) this.$refs.folderNameInput.focus()
-      })
     },
     showFolderContextMenu(event, folder) {
       this.$bks.openMenu({
@@ -377,13 +375,14 @@ export default {
       this.folderModalName = folder.name
       this.folderModalItem = folder
       this.$modal.show('query-folder-modal')
-      this.$nextTick(() => {
-        if (this.$refs.folderNameInput) this.$refs.folderNameInput.focus()
-      })
     },
     async deleteFolder(folder) {
-      if (await this.$confirm(`Delete folder "${folder.name}"?`, 'All queries in this folder will be moved to the top level.')) {
-        await this.$store.dispatch('data/queryFolders/remove', folder)
+      if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
+        try {
+          await this.$store.dispatch('data/queryFolders/remove', folder)
+        } catch (e) {
+          this.$noty.error(e.message)
+        }
       }
     },
     async submitFolderModal() {
