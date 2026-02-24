@@ -289,6 +289,7 @@ declare interface IBksConfig {
         };
     };
     general: {
+        checkForUpdatesDisabled: boolean;
         checkForUpdatesInterval: number;
         dataSyncInterval: number;
         workspaceSyncInterval: number;
@@ -302,8 +303,10 @@ declare interface IBksConfig {
             openInSqlEditor: string;
             openQuickSearch: string;
             pasteSelection: string;
+            redo: string[];
             refresh: string[];
             save: string;
+            undo: string;
         };
         queryEditor: {
             closeTableFilter: string;
@@ -332,6 +335,7 @@ declare interface IBksConfig {
         };
         tab: {
             closeTab: string;
+            forceCloseTab: string;
             nextTab: string[];
             previousTab: string[];
             reopenLastClosedTab: string;

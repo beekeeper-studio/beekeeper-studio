@@ -37,8 +37,6 @@
         :visible="active"
         :plugin-id="tab.context.pluginId"
         :view-id="tab.context.pluginTabTypeId"
-        :url="url"
-        :reload="reload"
         :on-request="handleRequest"
         :command="tab.context.command"
         :params="tab.context.params"
@@ -139,7 +137,6 @@ export default Vue.extend({
       required: true,
     },
     active: Boolean,
-    reload: null,
   },
   data() {
     return {
@@ -169,24 +166,6 @@ export default Vue.extend({
       } catch (e) {
         log.error(e);
         return null;
-      }
-    },
-    url() {
-      try {
-        const plugin = this.$plugin.pluginOf(this.tab.context.pluginId);
-        let tabType = plugin.manifest.capabilities.views.find?.(
-          (v) => v.id === this.tab.context.pluginTabTypeId
-        );
-        if (!tabType) {
-          // Using the old plugin shell API
-          tabType = plugin.manifest.capabilities.views.tabTypes?.find?.(
-            (t) => t.id === this.tab.context.pluginTabTypeId
-          );
-        }
-        return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
-      } catch (e) {
-        log.error(e);
-        return "";
       }
     },
     shouldInitialize() {

@@ -2427,6 +2427,16 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
+"@beekeeperstudio/bks-ai-shell@^3.0.8":
+  version "3.0.8"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.8.tgz#77a2142fe52f71be61eb91642934d043c44a1d49"
+  integrity sha512-pz14TlCwbH8f3skcAT0bkqs5Ad3ZLhiqC94H1GDbe7J++C2wM6Qrrne5vOKlZyFiB+49Im+qLaB1gFLKEKUT2Q==
+
+"@beekeeperstudio/bks-er-diagram@^1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.7.tgz#e453f982699a95f2ad7847e127d2d7f3a43b56bb"
+  integrity sha512-VjMrK3rxmSVmkBypbWp8TtPhGciwvDeqGmNuiJqaa7AQ6iKNlO7W1M3vjmklxWLjyQH6SSOtu/O78DTk9h3TZA==
+
 "@beekeeperstudio/plugin@^1.6.0":
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.6.0.tgz#7ba0cd3ca01cd1bc463434c7e75b905081fb8df6"
@@ -5507,11 +5517,6 @@
   dependencies:
     undici-types "~6.21.0"
 
-"@types/node@^12.12.54":
-  version "12.20.55"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.55.tgz#c329cbd434c42164f846b909bd6f85b5537f6240"
-  integrity sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==
-
 "@types/node@^18.11.18":
   version "18.19.76"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.19.76.tgz#7991658e0ba41ad30cc8be01c9bbe580d58f2112"
@@ -5523,6 +5528,13 @@
   version "20.19.11"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-20.19.11.tgz#728cab53092bd5f143beed7fbba7ba99de3c16c4"
   integrity sha512-uug3FEEGv0r+jrecvUUpbY8lLisvIjg6AAic6a2bSP5OEOLeJsDSnvhCDov7ipFFMXS3orMpzlmi0ZcuGkBbow==
+  dependencies:
+    undici-types "~6.21.0"
+
+"@types/node@^22.13.4":
+  version "22.19.10"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.19.10.tgz#a802d3cc6bdc190ec2b0cbf6958bf127c0ec2926"
+  integrity sha512-tF5VOugLS/EuDlTBijk0MqABfP8UxgYazTLo3uIn3b4yJgg26QRbVYJYsDtHrjdDUIRfP70+VfhTTc+CE1yskw==
   dependencies:
     undici-types "~6.21.0"
 

@@ -80,32 +80,32 @@ export function runCommonTests(getUtil, opts = {}) {
 
     describe("stream tests", () => {
       beforeAll(async () => {
-        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        if (getUtil().dbType === 'cockroachdb') return
         await getUtil().prepareStreamTests()
       })
 
       test("should get all columns", async () => {
-        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        if (getUtil().dbType === 'cockroachdb') return
         await getUtil().streamColumnsTest()
       })
 
       test("should count exact number of rows", async () => {
-        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        if (getUtil().dbType === 'cockroachdb') return
         await getUtil().streamCountTest()
       })
 
       test("should stop/cancel streaming", async () => {
-        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        if (getUtil().dbType === 'cockroachdb') return
         await getUtil().streamStopTest()
       })
 
       test("should use custom chunk size", async () => {
-        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        if (getUtil().dbType === 'cockroachdb') return
         await getUtil().streamChunkTest()
       })
 
       test("should read all rows", async () => {
-        if (getUtil().dbType === 'cockroachdb' || getUtil().dbType === 'clickhouse') return
+        if (getUtil().dbType === 'cockroachdb') return
         await getUtil().streamReadTest()
       })
     })
