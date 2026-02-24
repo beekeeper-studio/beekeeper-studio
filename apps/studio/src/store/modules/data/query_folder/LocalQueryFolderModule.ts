@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import _ from 'lodash'
+import pluralize from 'pluralize'
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
@@ -42,7 +43,7 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     async remove(context, folder) {
       const items = await Vue.prototype.$util.send('appdb/query/find', { options: { where: { queryFolderId: folder.id } } })
       if (items.length > 0) {
-        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${items.length} quer${items.length === 1 ? 'y' : 'ies'} first.`)
+        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${pluralize('query', items.length, true)} first.`)
       }
       await Vue.prototype.$util.send('appdb/queryFolder/remove', { obj: folder })
       context.commit('remove', folder)

@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import _ from 'lodash'
+import pluralize from 'pluralize'
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
@@ -42,7 +43,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     async remove(context, folder) {
       const items = await Vue.prototype.$util.send('appdb/saved/find', { options: { where: { connectionFolderId: folder.id } } })
       if (items.length > 0) {
-        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${items.length} connection${items.length === 1 ? '' : 's'} first.`)
+        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${pluralize('connection', items.length, true)} first.`)
       }
       await Vue.prototype.$util.send('appdb/connectionFolder/remove', { obj: folder })
       context.commit('remove', folder)

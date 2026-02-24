@@ -1,6 +1,7 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn, BeforeRemove } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
 import { SavedConnection } from './saved_connection'
+import pluralize from 'pluralize'
 
 @Entity({ name: 'connection_folder' })
 export class ConnectionFolder extends ApplicationEntity {
@@ -32,7 +33,7 @@ export class ConnectionFolder extends ApplicationEntity {
   async preventRemoveIfNotEmpty(): Promise<void> {
     const count = await SavedConnection.countBy({ connectionFolderId: this.id })
     if (count > 0) {
-      throw new Error(`Cannot delete folder "${this.name}" — move or remove its ${count} connection${count === 1 ? '' : 's'} first.`)
+      throw new Error(`Cannot delete folder "${this.name}" — move or remove its ${pluralize('connection', count, true)} first.`)
     }
   }
 }

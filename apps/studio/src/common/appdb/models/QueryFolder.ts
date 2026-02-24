@@ -1,6 +1,7 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn, BeforeRemove } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
 import { FavoriteQuery } from './favorite_query'
+import pluralize from 'pluralize'
 
 @Entity({ name: 'query_folder' })
 export class QueryFolder extends ApplicationEntity {
@@ -32,7 +33,7 @@ export class QueryFolder extends ApplicationEntity {
   async preventRemoveIfNotEmpty(): Promise<void> {
     const count = await FavoriteQuery.countBy({ queryFolderId: this.id })
     if (count > 0) {
-      throw new Error(`Cannot delete folder "${this.name}" — move or remove its ${count} quer${count === 1 ? 'y' : 'ies'} first.`)
+      throw new Error(`Cannot delete folder "${this.name}" — move or remove its ${pluralize('query', count, true)} first.`)
     }
   }
 }
