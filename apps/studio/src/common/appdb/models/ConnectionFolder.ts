@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, Column, OneToMany, ManyToOne, JoinColumn, BeforeRemove } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
 import { SavedConnection } from './saved_connection'
 
@@ -27,4 +27,12 @@ export class ConnectionFolder extends ApplicationEntity {
 
   @OneToMany(() => SavedConnection, (conn) => conn.connectionFolder)
   connections: SavedConnection[]
+
+  @BeforeRemove()
+  async preventRemoveIfNotEmpty(): Promise<void> {
+    const count = await SavedConnection.countBy({ connectionFolderId: this.id })
+    if (count > 0) {
+      throw new Error(`Cannot delete folder "${this.name}" — move or remove its ${count} connection${count === 1 ? '' : 's'} first.`)
+    }
+  }
 }
