@@ -1044,8 +1044,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return { totalRows, columns, cursor };
   }
 
-  queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const cursorOpts = {
+      query,
+      params: [],
+      client: this.client,
+      chunkSize
+    }
+
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+
+    return {
+      totalRows,
+      columns,
+      cursor: new ClickHouseCursor(cursorOpts)
+    }
   }
 
   wrapIdentifier(value: string): string {

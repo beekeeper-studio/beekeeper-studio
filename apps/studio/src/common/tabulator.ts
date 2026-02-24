@@ -19,7 +19,7 @@ interface Options extends TabulatorOptions {
   onRangeChange?: (ranges: RangeComponent[]) => void;
 }
 
-export interface TabulatorFormatterParams { 
+export interface TabulatorFormatterParams {
   fk?: any[];
   isPK?: boolean;
   fkOnClick?: (e: MouseEvent, cell: CellComponent) => void
@@ -48,6 +48,11 @@ export function tabulatorForTableData(
     height: "100%",
     editTriggerEvent: "dblclick",
     debugInvalidComponentFuncs: false,
+    history: true,
+    keybindings: {
+      undo: window.bksConfig.getKeybindings("tabulator", "general.undo"),
+      redo: window.bksConfig.getKeybindings("tabulator", "general.redo"),
+    },
     rowHeader: {
       field: rowHeaderField,
       resizable: false,

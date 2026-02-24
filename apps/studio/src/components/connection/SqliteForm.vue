@@ -7,7 +7,12 @@
             for="Database"
             required
           >Database File</label>
-          <file-picker v-model="config.defaultDatabase" />
+          <file-picker 
+            v-model="config.defaultDatabase"
+            input-id="Database"
+            editable
+            show-create-button
+          />
 
           <toggle-form-area
             v-show="isUltimate"
