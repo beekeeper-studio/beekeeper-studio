@@ -29,8 +29,9 @@ export function url(...parts: (string | number)[]) {
   return res.startsWith('/') ? res : `/${res}`
 }
 
+// Accept any 2xx status as success. POST (create) returns 201, GET/PATCH return 200,
+// so checking for exactly 200 would incorrectly reject successful creates.
 export function res<T extends CloudResponseBase>(response: AxiosResponse < T >, key: string) {
-  console.log('creating result from - ', response)
-  if (response.status !== 200) throw new CloudError(response.status, response.data?.message, response.data?.errors)
+  if (response.status < 200 || response.status >= 300) throw new CloudError(response.status, response.data?.message, response.data?.errors)
   return response.data[key]
 }

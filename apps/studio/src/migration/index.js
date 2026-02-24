@@ -80,6 +80,8 @@ import fixMissingExcerpts from './20251222_fix_missing_excerpts'
 import addWindowMaximizedSetting from './20251021_add_window_maximized_setting'
 import addIamAuthOptions from './20250819_add_iamAuthOptions'
 import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_options'
+import createConnectionFolders from './20260223_create_connection_folders'
+import createQueryFolders from './20260223_create_query_folders'
 
 import ultimate from './ultimate/index'
 
@@ -123,6 +125,7 @@ const realMigrations = [
   createFormatterPresets, populateFormatterPresets, uniqueNameFormatterPresets,
   addWindowMaximizedSetting, fixMissingExcerpts,
   addIamAuthOptions, migrateRedshiftToIamOptions, addEditorFontSize,
+  createConnectionFolders, createQueryFolders,
 ]
 
 // fixtures require the models

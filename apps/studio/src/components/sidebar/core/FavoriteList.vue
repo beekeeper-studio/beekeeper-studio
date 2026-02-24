@@ -8,6 +8,13 @@
               Saved Queries
             </div>
             <div class="actions">
+              <a
+                v-if="foldersSupported"
+                @click.prevent="createFolder"
+                title="New Folder"
+              >
+                <i class="material-icons-outlined">create_new_folder</i>
+              </a>
               <x-button
                 title="Import queries"
               >
@@ -73,11 +80,11 @@
           ref="wrapper"
         >
           <sidebar-folder
-            v-for="({ folder, queries }) in foldersWithQueries"
+            v-for="({ folder, queries, subfolders }) in foldersWithQueries"
             :key="`${folder.id}-${queries.length}`"
             :title="`${folder.name} (${queries.length})`"
-
             :expanded-initially="true"
+            @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
           >
             <favorite-list-item
               v-for="item in queries"
@@ -91,6 +98,26 @@
               @rename="rename"
               @export="exportTo"
             />
+            <sidebar-folder
+              v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
+              :key="`${subfolder.id}-${subQueries.length}`"
+              :title="`${subfolder.name} (${subQueries.length})`"
+              :expanded-initially="true"
+              @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+            >
+              <favorite-list-item
+                v-for="item in subQueries"
+                :key="item.id"
+                :item="item"
+                :active="isActive(item)"
+                :selected="selected === item"
+                @remove="remove"
+                @select="select"
+                @open="open"
+                @rename="rename"
+                @export="exportTo"
+              />
+            </sidebar-folder>
           </sidebar-folder>
           <favorite-list-item
             v-for="item in lonelyQueries"
@@ -124,6 +151,44 @@
       </div>
     </div>
     <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        name="query-folder-modal"
+        @closed="folderModalName = ''; folderModalItem = null"
+        height="auto"
+        :scrollable="true"
+      >
+        <form @submit.prevent="submitFolderModal">
+          <div class="dialog-content" v-kbd-trap="true">
+            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : 'New Folder' }}</div>
+            <div class="form-group">
+              <label>Folder Name</label>
+              <input
+                ref="folderNameInput"
+                v-model="folderModalName"
+                type="text"
+                placeholder="Folder name"
+                @keydown.esc.prevent="$modal.hide('query-folder-modal')"
+              >
+            </div>
+            <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
+              <label>Parent Folder</label>
+              <select v-model="folderModalParentId">
+                <option v-for="f in rootFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="vue-dialog-buttons flex-between">
+            <span class="left" />
+            <span class="right">
+              <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('query-folder-modal')">Cancel</button>
+              <button class="btn btn-primary" type="submit" :disabled="!folderModalName.trim()">
+                {{ folderModalItem ? 'Rename' : 'Create' }}
+              </button>
+            </span>
+          </div>
+        </form>
+      </modal>
       <modal
         class="vue-dialog beekeeper-modal"
         name="rename-modal"
@@ -164,7 +229,10 @@ export default {
     return {
       checkedFavorites: [],
       selected: null,
-      renameMe: null
+      renameMe: null,
+      folderModalName: '',
+      folderModalItem: null,
+      folderModalParentId: null
     }
   },
   mounted() {
@@ -178,7 +246,7 @@ export default {
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'foldersUnsupported': 'unsupported'}),
     filterQuery: {
       get() {
         return this.savedQueryFilter;
@@ -187,6 +255,12 @@ export default {
         this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
       }
     },
+    foldersSupported() {
+      return !this.foldersUnsupported
+    },
+    rootFolders() {
+      return this.folders.filter((f) => !f.parentId)
+    },
     loading() {
       return this.queriesLoading || this.foldersLoading || null
     },
@@ -194,14 +268,17 @@ export default {
       return this.queriesError || this.foldersError || null
     },
     foldersWithQueries() {
-      return this.folders.map((folder) => {
-        return {
-          folder,
-          queries: this.filteredQueries.filter((q) =>
-            q.queryFolderId === folder.id
-          )
-        }
-      })
+      const rootFolders = this.folders.filter((f) => !f.parentId)
+      return rootFolders.map((folder) => ({
+        folder,
+        queries: this.filteredQueries.filter((q) => q.queryFolderId === folder.id),
+        subfolders: this.folders
+          .filter((f) => f.parentId === folder.id)
+          .map((subfolder) => ({
+            folder: subfolder,
+            queries: this.filteredQueries.filter((q) => q.queryFolderId === subfolder.id)
+          }))
+      }))
     },
     lonelyQueries() {
       return this.filteredQueries.filter((query) => {
@@ -270,7 +347,55 @@ export default {
     },
     discardCheckedFavorites() {
       this.checkedFavorites = [];
-    }
+    },
+    createFolder() {
+      this.folderModalName = ''
+      this.folderModalItem = null
+      this.folderModalParentId = this.rootFolders[0]?.id ?? null
+      this.$modal.show('query-folder-modal')
+      this.$nextTick(() => {
+        if (this.$refs.folderNameInput) this.$refs.folderNameInput.focus()
+      })
+    },
+    showFolderContextMenu(event, folder) {
+      this.$bks.openMenu({
+        event,
+        item: folder,
+        options: [
+          {
+            name: 'Rename Folder',
+            handler: ({ item }) => this.renameQueryFolder(item)
+          },
+          {
+            name: 'Delete Folder',
+            handler: ({ item }) => this.deleteFolder(item)
+          }
+        ]
+      })
+    },
+    renameQueryFolder(folder) {
+      this.folderModalName = folder.name
+      this.folderModalItem = folder
+      this.$modal.show('query-folder-modal')
+      this.$nextTick(() => {
+        if (this.$refs.folderNameInput) this.$refs.folderNameInput.focus()
+      })
+    },
+    async deleteFolder(folder) {
+      if (await this.$confirm(`Delete folder "${folder.name}"?`, 'All queries in this folder will be moved to the top level.')) {
+        await this.$store.dispatch('data/queryFolders/remove', folder)
+      }
+    },
+    async submitFolderModal() {
+      const name = this.folderModalName.trim()
+      if (!name) return
+      if (this.folderModalItem) {
+        await this.$store.dispatch('data/queryFolders/save', { ...this.folderModalItem, name })
+      } else {
+        await this.$store.dispatch('data/queryFolders/save', { id: null, name, parentId: this.folderModalParentId ?? null })
+      }
+      this.$modal.hide('query-folder-modal')
+    },
   }
 }
 </script>

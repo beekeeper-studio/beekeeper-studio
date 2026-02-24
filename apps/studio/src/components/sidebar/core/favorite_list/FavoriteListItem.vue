@@ -31,7 +31,10 @@ export default Vue.extend({
     timeAgo: new TimeAgo('en-US')
   }),
   computed: {
-    ...mapState('data/queryFolders', {'folders': 'items'}),
+    ...mapState('data/queryFolders', {'folders': 'items', 'foldersUnsupported': 'unsupported'}),
+    foldersSupported() {
+      return !this.foldersUnsupported
+    },
     truncatedText() {
       return _.truncate(this.item.excerpt, { length: 100});
     },
@@ -75,34 +78,33 @@ export default Vue.extend({
       }
     },
     openContextMenu(event, item) {
+      const options = [
+        {
+          name: "Open",
+          handler: ({ item }) => this.$emit('open', item)
+        },
+        {
+          name: "Rename",
+          handler: ({ item }) => this.$emit('rename', item)
+        },
+        {
+          name: "Delete",
+          handler: ({ item }) => this.$emit('remove', item)
+        },
+        {
+          type: 'divider'
+        },
+        {
+          name: "Export",
+          handler: ({ item }) => this.$emit('export', item)
+        },
+      ]
+      if (this.foldersSupported || this.folders.length > 0) {
+        options.push({ type: 'divider' }, ...this.moveToOptions)
+      }
       this.$bks.openMenu({
         item, event,
-        options: [
-          {
-            name: "Open",
-            handler: ({ item }) => this.$emit('open', item)
-          },
-          {
-            name: "Rename",
-            handler: ({ item }) => this.$emit('rename', item)
-            
-          },
-          {
-            name: "Delete",
-            handler: ({ item }) => this.$emit('remove', item)
-          },
-          {
-            type: 'divider'
-          },
-          {
-            name: "Export",
-            handler: ({ item }) => this.$emit('export', item)
-          },
-          {
-            type: 'divider'
-          },
-          ...this.moveToOptions
-        ]
+        options
       })
     },
   }

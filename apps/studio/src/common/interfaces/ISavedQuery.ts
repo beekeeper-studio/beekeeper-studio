@@ -7,9 +7,7 @@ export default interface ISavedQuery {
   text: string
   excerpt: string
   database: string | null
-  // TODO (matthew)
-  // queryFolderId: number | null
-  // userId: number | null
+  queryFolderId?: number | null
   createdAt: Date | number | null
   updatedAt: Date | null
   user?: {

@@ -58,6 +58,7 @@ export interface ISimpleConnection extends Transport {
   libsqlOptions?: LibSQLOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
+  connectionFolderId?: Nullable<number>
 }
 
 export interface IConnection extends ISimpleConnection {

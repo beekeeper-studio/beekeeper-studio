@@ -592,6 +592,9 @@
     > div {
       position: relative;
     }
+    > div > .schema-wrapper {
+      margin-left: 0.8rem;
+    }
     .list-item {
       padding-left: $gutter-h * 0.5;
       &:before {

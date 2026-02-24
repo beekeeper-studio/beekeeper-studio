@@ -283,6 +283,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({type: 'boolean', default: false})
   readOnlyMode = false
 
+  @Column({ type: 'integer', nullable: true, default: null })
+  connectionFolderId: Nullable<number> = null
+
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 

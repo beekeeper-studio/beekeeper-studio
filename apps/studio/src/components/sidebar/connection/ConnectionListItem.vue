@@ -94,6 +94,9 @@ export default {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
+    foldersSupported() {
+      return !this.$store.state['data/connectionFolders']?.unsupported
+    },
     moveToOptions() {
       return this.folders
         .filter((folder) => folder.id !== this.config.connectionFolderId)
@@ -190,7 +193,7 @@ export default {
         },
       ].filter(v => v)
 
-      if (this.isCloud) {
+      if (this.isCloud || this.foldersSupported) {
         options.push(...[
           {
             type: 'divider'

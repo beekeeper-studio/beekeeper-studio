@@ -28,6 +28,9 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   @Column({type: "varchar", nullable: false})
   connectionHash!: string
 
+  @Column({ type: 'integer', nullable: true, default: null })
+  queryFolderId: Nullable<number> = null
+
   @BeforeInsert()
   @BeforeUpdate()
   setDefaultDatabase(): void {
