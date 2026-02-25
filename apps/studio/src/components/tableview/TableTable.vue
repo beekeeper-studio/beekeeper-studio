@@ -1091,6 +1091,16 @@ export default Vue.extend({
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
+      this.tabulator.on('historyUndo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
+      })
+      this.tabulator.on('historyRedo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
+      })
 
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])

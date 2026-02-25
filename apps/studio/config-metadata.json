@@ -1,0 +1,86 @@
+{
+  "sections": [
+    {
+      "key": "keybindings.general",
+      "label": "General",
+      "properties": [
+        { "key": "refresh", "label": "Refresh" },
+        { "key": "addRow", "label": "Add Row" },
+        { "key": "save", "label": "Save" },
+        { "key": "openInSqlEditor", "label": "Open in SQL Editor" },
+        { "key": "openQuickSearch", "label": "Open Quick Search" },
+        { "key": "copySelection", "label": "Copy Selection" },
+        { "key": "pasteSelection", "label": "Paste Selection" },
+        { "key": "cloneSelection", "label": "Clone Selection" },
+        { "key": "deleteSelection", "label": "Delete Selection" },
+        { "key": "undo", "label": "Undo" },
+        { "key": "redo", "label": "Redo" }
+      ]
+    },
+    {
+      "key": "keybindings.tab",
+      "label": "Tabs",
+      "properties": [
+        { "key": "closeTab", "label": "Close Tab" },
+        { "key": "forceCloseTab", "label": "Force Close Tab" },
+        { "key": "nextTab", "label": "Next Tab" },
+        { "key": "previousTab", "label": "Previous Tab" },
+        { "key": "reopenLastClosedTab", "label": "Reopen Last Closed Tab" },
+        { "key": "switchTab1", "label": "Switch to Tab 1" },
+        { "key": "switchTab2", "label": "Switch to Tab 2" },
+        { "key": "switchTab3", "label": "Switch to Tab 3" },
+        { "key": "switchTab4", "label": "Switch to Tab 4" },
+        { "key": "switchTab5", "label": "Switch to Tab 5" },
+        { "key": "switchTab6", "label": "Switch to Tab 6" },
+        { "key": "switchTab7", "label": "Switch to Tab 7" },
+        { "key": "switchTab8", "label": "Switch to Tab 8" },
+        { "key": "switchTab9", "label": "Switch to Tab 9" }
+      ]
+    },
+    {
+      "key": "keybindings.quickSearch",
+      "label": "Quick Search",
+      "properties": [
+        { "key": "focusSearch", "label": "Focus Search" },
+        { "key": "close", "label": "Close" },
+        { "key": "selectUp", "label": "Select Up" },
+        { "key": "selectDown", "label": "Select Down" },
+        { "key": "open", "label": "Open" },
+        { "key": "altOpen", "label": "Open (Alternate)" },
+        { "key": "openInBackground", "label": "Open in Background" },
+        { "key": "altOpenInBackground", "label": "Open in Background (Alternate)" }
+      ]
+    },
+    {
+      "key": "keybindings.queryEditor",
+      "label": "Query Editor",
+      "properties": [
+        { "key": "selectEditor", "label": "Focus Editor" },
+        { "key": "submitTabQuery", "label": "Run All Queries" },
+        { "key": "submitCurrentQuery", "label": "Run Current Query" },
+        { "key": "submitQueryToFile", "label": "Run All Queries to File" },
+        { "key": "submitCurrentQueryToFile", "label": "Run Current Query to File" },
+        { "key": "selectNextResult", "label": "Select Next Result" },
+        { "key": "selectPreviousResult", "label": "Select Previous Result" },
+        { "key": "copyResultSelection", "label": "Copy Result Selection" },
+        { "key": "switchPaneFocus", "label": "Switch Pane Focus" },
+        { "key": "openTableFilter", "label": "Open Table Filter" },
+        { "key": "closeTableFilter", "label": "Close Table Filter" },
+        { "key": "manualCommit", "label": "Manual Commit" },
+        { "key": "manualRollback", "label": "Manual Rollback" }
+      ]
+    },
+    {
+      "key": "keybindings.tableTable",
+      "label": "Table View",
+      "properties": [
+        { "key": "nextPage", "label": "Next Page" },
+        { "key": "previousPage", "label": "Previous Page" },
+        { "key": "focusOnFilterInput", "label": "Focus Filter Input" },
+        { "key": "openEditorModal", "label": "Open Editor Modal" },
+        { "key": "firstPage", "label": "First Page" },
+        { "key": "lastPage", "label": "Last Page" }
+      ]
+    }
+  ]
+}

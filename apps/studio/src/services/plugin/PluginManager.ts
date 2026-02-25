@@ -14,6 +14,7 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
+import { Hookable } from "./Hookable";
 
 const log = rawLog.scope("PluginManager");
 
@@ -23,9 +24,9 @@ export type PluginManagerOptions = {
   appVersion: string;
 }
 
-export default class PluginManager {
+export default class PluginManager extends Hookable {
   private initialized = false;
-  private registry: PluginRegistry;
+  public readonly registry: PluginRegistry;
   private fileManager: PluginFileManager;
   private plugins: PluginContext[] = [];
   pluginSettings: PluginSettings = {};
@@ -33,12 +34,9 @@ export default class PluginManager {
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
-  /** This is a list of plugins that are preinstalled by default. When the
-   * application starts, these plugins will be installed automatically. The user
-   * should be able to uninstall them later. */
-  static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell", "bks-er-diagram"];
 
   constructor(readonly options: PluginManagerOptions) {
+    super();
     this.fileManager = options.fileManager;
     this.registry =
       options.registry ||
@@ -51,11 +49,14 @@ export default class PluginManager {
       return;
     }
 
+    // FIXME: Migrate to full ini file configuration
+    await this.loadPluginSettings();
+
+    await this.callHook("before-initialize");
+
     const installedPlugins = this.fileManager.scanPlugins();
 
     log.debug("Installed plugins:", installedPlugins);
-
-    await this.loadPluginSettings();
 
     this.plugins = installedPlugins.map((manifest) => ({
       manifest,
@@ -64,39 +65,19 @@ export default class PluginManager {
 
     this.initialized = true;
 
-    for (const id of PluginManager.PREINSTALLED_PLUGINS) {
-      // have installed before?
-      if (this.pluginSettings[id]) {
+    for (const plugin of installedPlugins) {
+      if (!this.pluginSettings[plugin.id]?.autoUpdate) {
         continue;
       }
 
-      await this.installPlugin(id);
-    }
-
-
-    for (const plugin of installedPlugins) {
-      if (
-        this.pluginSettings[plugin.id]?.autoUpdate &&
-        (await this.checkForUpdates(plugin.id))
-      ) {
-        await this.updatePlugin(plugin.id);
+      try {
+        if (await this.checkForUpdates(plugin.id)) {
+          await this.updatePlugin(plugin.id);
+        }
+      } catch (e) {
+        log.error(`Failed to check for updates for plugin "${plugin.id}"`, e);
       }
     }
-  }
-
-  async getEntries() {
-    this.initializeGuard();
-    return await this.registry.getEntries();
-  }
-
-  async findPluginEntry(id: string): Promise<PluginRegistryEntry> {
-    this.initializeGuard();
-    const entries = await this.getEntries();
-    const entry = entries.find((entry) => entry.id === id);
-    if (!entry) {
-      throw new Error(`Plugin "${id}" not found in registry.`);
-    }
-    return entry;
   }
 
   /**
@@ -294,7 +275,11 @@ export default class PluginManager {
    * Enable or disable automatic update checks for a specific plugin
    */
   async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
-    this.pluginSettings[id].autoUpdate = enabled;
+    if (!this.pluginSettings[id]) {
+      this.pluginSettings[id] = { autoUpdate: enabled };
+    } else {
+      this.pluginSettings[id].autoUpdate = enabled;
+    }
     // Persist the changes to the database
     await this.savePluginSettings();
   }

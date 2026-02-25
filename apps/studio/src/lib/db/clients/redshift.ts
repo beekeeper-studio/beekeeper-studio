@@ -1,12 +1,12 @@
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
-import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn } from "../models";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn, TableIndex } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
 import BksConfig from "@/common/bksConfig";
-import { TableKey } from "@shared/lib/dialects/models";
+import { IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
 
@@ -83,6 +83,70 @@ export class RedshiftClient extends PostgresClient {
     }));
   }
 
+  async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
+    const sql = `
+      SELECT
+          ic.relname                     AS indexname,
+          s.ordinality                   AS index_order,
+          i.indexrelid                   AS id,
+          i.indisunique                  AS indisunique,
+          i.indisprimary                 AS indisprimary,
+          pg_get_indexdef(i.indexrelid, s.ordinality, true) AS index_column,
+          true                           AS ascending
+      FROM pg_class t
+      JOIN pg_namespace ns
+        ON ns.oid = t.relnamespace
+      JOIN pg_index i
+        ON i.indrelid = t.oid
+      JOIN pg_class ic
+        ON ic.oid = i.indexrelid
+      JOIN (
+          SELECT 1 AS ordinality
+          UNION ALL SELECT 2
+          UNION ALL SELECT 3
+          UNION ALL SELECT 4
+          UNION ALL SELECT 5
+      ) s
+        ON s.ordinality <= i.indnatts
+      WHERE ns.nspname = $1
+        AND t.relname  = $2
+      ORDER BY indexname, index_order;
+    `
+    const params = [
+      schema,
+      table,
+    ];
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    const grouped = _.groupBy(data.rows, 'indexname')
+
+    const result = Object.keys(grouped).map((indexName) => {
+      const blob = grouped[indexName]
+      const unique = blob[0].indisunique
+      const id = blob[0].id
+      const primary = blob[0].indisprimary
+      const columns: IndexColumn[] = _.sortBy(blob, 'index_order').map((b) => {
+        return {
+          name: b.index_column,
+          order: b.ascending ? 'ASC' : 'DESC'
+        }
+      })
+      const nullsNotDistinct = blob[0].indnullsnotdistinct
+      const item: TableIndex = {
+        table, schema,
+        id,
+        name: indexName,
+        unique,
+        primary,
+        columns,
+        nullsNotDistinct,
+      }
+      return item
+    })
+
+    return result
+  }
 
   async getTableProperties(_table: string, _schema?: string): Promise<TableProperties> {
     return null;
@@ -120,7 +184,7 @@ export class RedshiftClient extends PostgresClient {
     }
   }
 
-  async getOutgoingKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query for foreign keys FROM this table (outgoing - referencing other tables)
     const sql = `
       SELECT
@@ -184,7 +248,7 @@ export class RedshiftClient extends PostgresClient {
     }));
   }
 
-  async getIncomingKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query for foreign keys TO this table (incoming - other tables referencing this table)
     const sql = `
       SELECT
@@ -215,9 +279,7 @@ export class RedshiftClient extends PostgresClient {
         tc.constraint_type = 'FOREIGN KEY' AND
         kcu.table_schema NOT LIKE 'pg_%' AND
         rc.unique_constraint_schema = $2 AND
-        (SELECT kcu2.table_name
-         FROM information_schema.key_column_usage AS kcu2
-         WHERE kcu2.constraint_name = rc.unique_constraint_name) = $1;
+        to_table = $1;
     `;
 
     const params = [

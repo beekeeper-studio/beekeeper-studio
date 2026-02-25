@@ -118,6 +118,7 @@
   // Common CodeMirror styles
   .cm-editor {
     font-family: $font-family-mono;
+    font-size: var(--bks-text-editor-font-size, 0.875rem);
     height: 100%;
     background-color: var(--bks-text-editor-bg-color);
     color: var(--bks-text-editor-fg-color);
@@ -126,6 +127,7 @@
   .cm-scroller {
     outline: none;
     font-family: $font-family-mono;
+    font-size: var(--bks-text-editor-font-size, 0.875rem);
   }
 
   // Semantic token styles for v2 - using distinct colors in 6-digit hex format

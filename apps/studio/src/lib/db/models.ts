@@ -264,7 +264,9 @@ export interface NgQueryResult {
   output?: any;
   fields?: FieldDescriptor[];
   rows?: any[];
+  truncated?: boolean;
   rowCount?: number;
+  totalRowCount?: number;
   affectedRows?: number;
   command?: any;
 }
@@ -378,4 +380,27 @@ export interface BuildInsertOptions {
   runAsUpsert?: boolean
   primaryKeys?: string[]
   createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
+}
+
+export interface ServerStatistics {
+  queryCache: {
+    size: string;
+    limit: string;
+    hits: number;
+    inserts: number;
+    lowMemoryPrunes: number;
+  };
+  performance: {
+    connections: number;
+    uptime: number;
+    threadsRunning: number;
+    threadsConnected: number;
+    slowQueries: number;
+    questionsPerSecond: number;
+  };
+  memory: {
+    keyBufferSize: string;
+    innodbBufferPoolSize: string;
+    innodbBufferPoolUsed: string;
+  };
 }

@@ -39,6 +39,7 @@ import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
+import { PluginsModule } from './modules/plugins'
 
 
 const log = RawLog.scope('store/index')
@@ -105,6 +106,7 @@ const store = new Vuex.Store<State>({
     sidebar: SidebarModule,
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
+    plugins: PluginsModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -666,6 +668,7 @@ const store = new Vuex.Store<State>({
         () => context.dispatch('licenses/sync'),
         globals.licenseCheckInterval
       )
+      await context.dispatch('plugins/initialize')
     },
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')
