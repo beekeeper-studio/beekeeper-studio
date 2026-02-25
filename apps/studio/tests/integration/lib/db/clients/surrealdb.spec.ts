@@ -5,7 +5,6 @@ import { createServer } from '@commercial/backend/lib/db/server'
 import { SurrealDBClient } from '../../../../../src-commercial/backend/lib/db/clients/surrealdb'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { TableOrView } from '@/lib/db/models'
-import { DatabaseElement } from '@/lib/db/types'
 
 describe('SurrealDB Integration Tests', () => {
   jest.setTimeout(dbtimeout)
@@ -16,7 +15,7 @@ describe('SurrealDB Integration Tests', () => {
 
   beforeAll(async () => {
     // Start SurrealDB container
-    container = await new GenericContainer('surrealdb/surrealdb:latest')
+    container = await new GenericContainer('surrealdb/surrealdb:v2')
       .withCommand(['start', '--log', 'trace', '--user', 'root', '--pass', 'root'])
       .withExposedPorts(8000)
       .withStartupTimeout(dbtimeout)

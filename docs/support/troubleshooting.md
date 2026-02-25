@@ -157,6 +157,20 @@ CREATE table foo("myColumn" int);
 
 See [this StackOverflow answer](https://stackoverflow.com/a/20880247/18818) or [this section in the PostgreSQL manual](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS)
 
+## Linux (Wayland)
+
+### Weird colors on Wayland (wrong saturation, contrast, or readability)
+
+If colors look wrong when running Beekeeper Studio on Wayland — for example oranges appearing yellow, greys looking almost black, whites being overly bright, or text being hard to read — this is caused by a [Chromium/Electron bug with the Wayland color management protocol](https://github.com/electron/electron/issues/49566).
+
+To fix this, add the following flag to your `~/.config/bks-flags.conf` file:
+
+```bash
+echo "--disable-features=WaylandWpColorManagerV1" >> ~/.config/bks-flags.conf
+```
+
+Then restart Beekeeper Studio. See [Linux Installation - Wayland support](../installation/linux.md#wayland-support-including-fractional-scaling) for more details on configuring Wayland flags.
+
 ## Linux (Snap)
 
 ### The Filepicker shows 'little rectangles' instead of a font

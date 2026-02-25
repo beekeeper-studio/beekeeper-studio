@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "apps/studio"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "@beekeeperstudio/bks-ai-shell"
+      - dependency-name: "@beekeeperstudio/bks-er-diagram"
