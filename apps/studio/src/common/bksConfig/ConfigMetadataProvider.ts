@@ -45,26 +45,28 @@ export class ConfigMetadataProvider {
     const missingLabels: string[] = [];
     const sectionsMap = new Map<string, KeybindingSection['actions']>();
 
-    for (let { key: action, path } of recurse(
+    for (let { key: actionKey, path } of recurse(
       this.options.bksConfig.keybindings
     )) {
       const sectionKey = path.slice(0, -1).join(".");
       const fullKey = path.join(".") as KeybindingPath;
-      const { label, missing } = this.getActionLabel(sectionKey, action);
+      const { label, missing } = this.getActionLabel(sectionKey, actionKey);
 
       if (missing) {
-        missingLabels.push(`keybindings.${sectionKey}.${action}`);
+        missingLabels.push(`keybindings.${sectionKey}.${actionKey}`);
+      }
+
+      const keybindings = this.options.bksConfig.getKeybindings("ui", fullKey);
+
+      if (keybindings.length === 0) {
+        continue;
       }
 
       if (!sectionsMap.has(sectionKey)) {
         sectionsMap.set(sectionKey, []);
       }
 
-      sectionsMap.get(sectionKey).push({
-        key: action,
-        label,
-        keybindings: this.options.bksConfig.getKeybindings("ui", fullKey),
-      });
+      sectionsMap.get(sectionKey).push({ key: actionKey, label, keybindings });
     }
 
     const sections: KeybindingSection[] = [];

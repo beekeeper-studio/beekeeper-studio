@@ -145,26 +145,28 @@ const uiModifierMap: ModifierMap = {
   META: (isMac) => (isMac ? "^" : "Meta"),
   PAGEUP: "PageUp",
   PAGEDOWN: "PageDown",
+  NUMADD: "Numpad+",
+  NUMSUB: "Numpad-",
 };
 
 export function convertKeybinding(
   target: "ui",
-  keybinding: KeybindingValue,
+  keybinding: string,
   platform: Platform
 ): string[];
 export function convertKeybinding(
   target: Exclude<KeybindingTarget, "ui">,
-  keybinding: KeybindingValue,
+  keybinding: string,
   platform: Platform
 ): string;
 export function convertKeybinding(
   target: KeybindingTarget,
-  keybinding: KeybindingValue,
+  keybinding: string,
   platform: Platform
 ): string[] | string;
 export function convertKeybinding(
   target: KeybindingTarget,
-  keybinding: KeybindingValue,
+  keybinding: string,
   platform: Platform
 ): string[] | string {
 
@@ -191,14 +193,6 @@ export function convertKeybinding(
     default:
       log.error("Unrecognized target for keybinding conversion: ", target)
       return;
-  }
-
-  if (typeof keybinding === "object") {
-    const target = platform === "windows" ? "win" : platform;
-    keybinding = keybinding[target] ?? keybinding.default;
-    if (!keybinding) {
-      return [];
-    }
   }
 
   const combination: string[] = [];
@@ -354,32 +348,14 @@ export class BksConfigProvider {
   getKeybindings(
     target: Exclude<KeybindingTarget, "ui">,
     path: KeybindingPath
-  ): string | string[];
+  ): string[];
   getKeybindings(
     target: KeybindingTarget,
     path: KeybindingPath
-  ): string | string[] | string[][] {
-    const keybindings = this.get(`keybindings.${path}`);
-
-    if (isIniArray(keybindings)) {
-      const filtered = _.filter(keybindings, isKeybindingValue);
-      return Object.values(filtered).map((value) =>
-        convertKeybinding(target, value, this.platformInfo.platform)
-      ) as string[] | string[][];
-    }
-
-    if (!isKeybindingValue(keybindings)) {
-      log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
-      return [];
-    }
-
-    if (target === "ui") {
-      return [
-        convertKeybinding(target, keybindings, this.platformInfo.platform),
-      ];
-    }
-
-    return convertKeybinding(target, keybindings, this.platformInfo.platform);
+  ): string[] | string[][] {
+    return this.resolveKeybindings(path).map((value) =>
+      convertKeybinding(target, value, this.platformInfo.platform)
+    );
   }
 
   getFirstKeybinding(target: "ui", path: KeybindingPath): string[];
@@ -391,18 +367,46 @@ export class BksConfigProvider {
     target: KeybindingTarget,
     path: KeybindingPath
   ): string[] | string | undefined {
-    if (target === "ui") {
-      return this.getKeybindings(target, path)[0];
-    }
-    const keybindings = this.getKeybindings(target, path);
-    if (_.isArray(keybindings)) {
-      return keybindings[0];
-    }
-    return keybindings;
+    return this.getKeybindings(target, path)[0];
   }
 
   get warnings() {
     return this.source.warnings;
+  }
+
+  private resolveKeybindings(path: KeybindingPath): string[] {
+    let values = this.get(`keybindings.${path}`);
+
+    if (!_.isArray(values)) {
+      values = [values];
+    }
+
+    const keybindings: string[] = [];
+
+    for (const value of values) {
+      if (!isKeybindingValue(value)) {
+        log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
+        continue;
+      }
+
+      if (typeof value === "string") {
+        keybindings.push(value);
+        continue;
+      }
+
+      const platform =
+        this.platformInfo.platform === "windows"
+          ? "win"
+          : this.platformInfo.platform;
+
+      const val = value[platform] ?? value.default;
+
+      if (val) {
+        keybindings.push(val);
+      }
+    }
+
+    return keybindings;
   }
 
   private resolvePath(path: string) {
