@@ -385,7 +385,7 @@ export class BksConfigProvider {
 
     for (const value of values) {
       if (!isKeybindingValue(value)) {
-        log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
+        log.warn(`Invalid keybindings: ${value} at ${path}`);
         continue;
       }
 
