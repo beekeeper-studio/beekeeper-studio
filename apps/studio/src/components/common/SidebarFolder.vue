@@ -12,6 +12,8 @@
         :class="{'open': expanded}"
         role="button"
         @click.prevent="manuallyExpanded = !manuallyExpanded"
+        @dragover.prevent="handleDragOver"
+        @dragleave="handleDragLeave"
       >
         <span class="btn-fab open-close">
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -54,6 +56,7 @@
     data() {
       return {
         manuallyExpanded: false,
+        dragExpandTimer: null,
       }
     },
     mounted() {
@@ -66,6 +69,21 @@
       expanded() {
         return this.manuallyExpanded
       }
+    },
+    methods: {
+      handleDragOver() {
+        if (this.expanded || this.dragExpandTimer) return
+        this.dragExpandTimer = setTimeout(() => {
+          this.manuallyExpanded = true
+          this.dragExpandTimer = null
+        }, 600)
+      },
+      handleDragLeave() {
+        if (this.dragExpandTimer) {
+          clearTimeout(this.dragExpandTimer)
+          this.dragExpandTimer = null
+        }
+      },
     },
     watch: {
       forceExpand() {

@@ -8,6 +8,7 @@ export default interface ISavedQuery {
   excerpt: string
   database: string | null
   queryFolderId?: number | null
+  position?: number
   createdAt: Date | number | null
   updatedAt: Date | null
   user?: {

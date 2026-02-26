@@ -179,29 +179,15 @@
                 :expanded-initially="true"
                 @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
               >
-                <connection-list-item
-                  v-for="c in connections"
-                  :key="c.id"
-                  :config="c"
-                  :selected-config="selectedConfig"
-                  :show-duplicate="true"
-                  :pinned="pinnedConnections.includes(c)"
-                  :privacy-mode="privacyMode"
-                  @edit="edit"
-                  @remove="remove"
-                  @duplicate="duplicate"
-                  @doubleClick="connect"
-                />
-                <sidebar-folder
-                  v-for="{ folder: subfolder, connections: subConnections } in subfolders"
-                  :key="`${subfolder.id}-${subConnections.length}`"
-                  :title="`${subfolder.name} (${subConnections.length})`"
-                  placeholder="No Items"
-                  :expanded-initially="true"
-                  @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+                <Draggable
+                  :list="connections"
+                  group="connections"
+                  :disabled="isCloud"
+                  ghost-class="drag-ghost"
+                  @change="onConnectionDrop($event, folder, connections)"
                 >
                   <connection-list-item
-                    v-for="c in subConnections"
+                    v-for="c in connections"
                     :key="c.id"
                     :config="c"
                     :selected-config="selectedConfig"
@@ -213,21 +199,59 @@
                     @duplicate="duplicate"
                     @doubleClick="connect"
                   />
+                </Draggable>
+                <sidebar-folder
+                  v-for="{ folder: subfolder, connections: subConnections } in subfolders"
+                  :key="`${subfolder.id}-${subConnections.length}`"
+                  :title="`${subfolder.name} (${subConnections.length})`"
+                  placeholder="No Items"
+                  :expanded-initially="true"
+                  @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+                >
+                  <Draggable
+                    :list="subConnections"
+                    group="connections"
+                    :disabled="isCloud"
+                    ghost-class="drag-ghost"
+                    @change="onConnectionDrop($event, subfolder, subConnections)"
+                  >
+                    <connection-list-item
+                      v-for="c in subConnections"
+                      :key="c.id"
+                      :config="c"
+                      :selected-config="selectedConfig"
+                      :show-duplicate="true"
+                      :pinned="pinnedConnections.includes(c)"
+                      :privacy-mode="privacyMode"
+                      @edit="edit"
+                      @remove="remove"
+                      @duplicate="duplicate"
+                      @doubleClick="connect"
+                    />
+                  </Draggable>
                 </sidebar-folder>
               </sidebar-folder>
-              <connection-list-item
-                v-for="c in lonelyConnections"
-                :key="c.id"
-                :config="c"
-                :selected-config="selectedConfig"
-                :show-duplicate="true"
-                :pinned="pinnedConnections.includes(c)"
-                :privacy-mode="privacyMode"
-                @edit="edit"
-                @remove="remove"
-                @duplicate="duplicate"
-                @doubleClick="connect"
-              />
+              <Draggable
+                :list="lonelyConnections"
+                group="connections"
+                :disabled="isCloud"
+                ghost-class="drag-ghost"
+                @change="onConnectionDrop($event, null, lonelyConnections)"
+              >
+                <connection-list-item
+                  v-for="c in lonelyConnections"
+                  :key="c.id"
+                  :config="c"
+                  :selected-config="selectedConfig"
+                  :show-duplicate="true"
+                  :pinned="pinnedConnections.includes(c)"
+                  :privacy-mode="privacyMode"
+                  @edit="edit"
+                  @remove="remove"
+                  @duplicate="duplicate"
+                  @doubleClick="connect"
+                />
+              </Draggable>
             </nav>
           </div>
         </div>
@@ -320,6 +344,7 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
+import Draggable from 'vuedraggable'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -330,7 +355,8 @@ export default {
     ErrorAlert,
     SidebarFolder,
     SidebarSortButtons,
-    WorkspaceSidebar
+    WorkspaceSidebar,
+    Draggable
   },
   props: ['selectedConfig'],
   data: () => ({
@@ -393,9 +419,9 @@ export default {
     },
     lonelyConnections() {
       const folderIds = this.folders.map((c) => c.id)
-      return this.sortedConnections.filter((config) => {
-        return !config.connectionFolderId || !folderIds.includes(config.connectionFolderId)
-      })
+      return [...this.filteredConnections]
+        .filter((config) => !config.connectionFolderId || !folderIds.includes(config.connectionFolderId))
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     },
     foldersWithConnections() {
       if (this.loading) return []
@@ -501,7 +527,7 @@ export default {
       }
       this.folderModalName = ''
       this.folderModalItem = null
-      this.folderModalParentId = this.rootFolders[0]?.id ?? null
+      this.folderModalParentId = null
       this.$modal.show('connection-folder-modal')
     },
     showFolderContextMenu(event, folder) {
@@ -534,6 +560,35 @@ export default {
         }
       }
     },
+    async onConnectionDrop(event, folder, currentList) {
+      // vuedraggable mutates :list in place before firing @change, so currentList
+      // is already in the correct final order when this handler runs.
+      console.info('[ConnectionDrop]', {
+        eventType: event.added ? 'added' : event.moved ? 'moved' : event.removed ? 'removed' : 'unknown',
+        folder: folder ? { id: folder.id, name: folder.name } : null,
+        currentList: currentList.map((c) => ({ id: c.id, name: c.name, position: c.position })),
+        eventDetail: event.added || event.moved || event.removed
+      })
+      try {
+        if (event.added) {
+          // Item is already present in currentList at the correct index
+          await this.$store.dispatch('data/connections/saveMany',
+            currentList.map((item, idx) => ({
+              ...item,
+              connectionFolderId: folder?.id ?? null,
+              position: idx + 1
+            }))
+          )
+        } else if (event.moved) {
+          // currentList is already in the correct new order (works for both folder and lonely list)
+          await this.$store.dispatch('data/connections/saveMany',
+            currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
+          )
+        }
+      } catch (ex) {
+        this.$noty.error(`Move error: ${ex.message}`)
+      }
+    },
     async submitFolderModal() {
       const name = this.folderModalName.trim()
       if (!name) return
@@ -547,3 +602,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.drag-ghost {
+  opacity: 0.4;
+}
+</style>

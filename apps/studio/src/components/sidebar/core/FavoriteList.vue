@@ -85,27 +85,15 @@
             :expanded-initially="true"
             @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
           >
-            <favorite-list-item
-              v-for="item in queries"
-              :key="item.id"
-              :item="item"
-              :active="isActive(item)"
-              :selected="selected === item"
-              @remove="remove"
-              @select="select"
-              @open="open"
-              @rename="rename"
-              @export="exportTo"
-            />
-            <sidebar-folder
-              v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
-              :key="`${subfolder.id}-${subQueries.length}`"
-              :title="`${subfolder.name} (${subQueries.length})`"
-              :expanded-initially="true"
-              @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+            <Draggable
+              :list="queries"
+              group="queries"
+              :disabled="isCloud"
+              ghost-class="drag-ghost"
+              @change="onQueryDrop($event, folder, queries)"
             >
               <favorite-list-item
-                v-for="item in subQueries"
+                v-for="item in queries"
                 :key="item.id"
                 :item="item"
                 :active="isActive(item)"
@@ -116,20 +104,56 @@
                 @rename="rename"
                 @export="exportTo"
               />
+            </Draggable>
+            <sidebar-folder
+              v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
+              :key="`${subfolder.id}-${subQueries.length}`"
+              :title="`${subfolder.name} (${subQueries.length})`"
+              :expanded-initially="true"
+              @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+            >
+              <Draggable
+                :list="subQueries"
+                group="queries"
+                :disabled="isCloud"
+                ghost-class="drag-ghost"
+                @change="onQueryDrop($event, subfolder, subQueries)"
+              >
+                <favorite-list-item
+                  v-for="item in subQueries"
+                  :key="item.id"
+                  :item="item"
+                  :active="isActive(item)"
+                  :selected="selected === item"
+                  @remove="remove"
+                  @select="select"
+                  @open="open"
+                  @rename="rename"
+                  @export="exportTo"
+                />
+              </Draggable>
             </sidebar-folder>
           </sidebar-folder>
-          <favorite-list-item
-            v-for="item in lonelyQueries"
-            :key="item.id"
-            :item="item"
-            :active="isActive(item)"
-            :selected="selected === item"
-            @remove="remove"
-            @select="select"
-            @open="open"
-            @rename="rename"
-            @export="exportTo"
-          />
+          <Draggable
+            :list="lonelyQueries"
+            group="queries"
+            :disabled="isCloud"
+            ghost-class="drag-ghost"
+            @change="onQueryDrop($event, null, lonelyQueries)"
+          >
+            <favorite-list-item
+              v-for="item in lonelyQueries"
+              :key="item.id"
+              :item="item"
+              :active="isActive(item)"
+              :selected="selected === item"
+              @remove="remove"
+              @select="select"
+              @open="open"
+              @rename="rename"
+              @export="exportTo"
+            />
+          </Draggable>
         </nav>
         <div
           class="empty"
@@ -222,9 +246,10 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
+import Draggable from 'vuedraggable'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm, Draggable },
   data: function () {
     return {
       checkedFavorites: [],
@@ -265,23 +290,13 @@ export default {
       return this.queriesError || this.foldersError || null
     },
     foldersWithQueries() {
-      const rootFolders = this.folders.filter((f) => !f.parentId)
-      return rootFolders.map((folder) => ({
-        folder,
-        queries: this.filteredQueries.filter((q) => q.queryFolderId === folder.id),
-        subfolders: this.folders
-          .filter((f) => f.parentId === folder.id)
-          .map((subfolder) => ({
-            folder: subfolder,
-            queries: this.filteredQueries.filter((q) => q.queryFolderId === subfolder.id)
-          }))
-      }))
+      return this.$store.getters['data/queryFolders/foldersWithQueries'](this.filteredQueries)
     },
     lonelyQueries() {
-      return this.filteredQueries.filter((query) => {
-        const folderIds = this.folders.map((f) => f.id)
-        return !query.queryFolderId || !folderIds.includes(query.queryFolderId)
-      })
+      const folderIds = this.folders.map((f) => f.id)
+      return [...this.filteredQueries]
+        .filter((query) => !query.queryFolderId || !folderIds.includes(query.queryFolderId))
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
@@ -352,7 +367,7 @@ export default {
       }
       this.folderModalName = ''
       this.folderModalItem = null
-      this.folderModalParentId = this.rootFolders[0]?.id ?? null
+      this.folderModalParentId = null
       this.$modal.show('query-folder-modal')
     },
     showFolderContextMenu(event, folder) {
@@ -385,6 +400,35 @@ export default {
         }
       }
     },
+    async onQueryDrop(event, folder, currentList) {
+      // vuedraggable mutates :list in place before firing @change, so currentList
+      // is already in the correct final order when this handler runs.
+      console.info('[QueryDrop]', {
+        eventType: event.added ? 'added' : event.moved ? 'moved' : event.removed ? 'removed' : 'unknown',
+        folder: folder ? { id: folder.id, name: folder.name } : null,
+        currentList: currentList.map((q) => ({ id: q.id, title: q.title, position: q.position })),
+        eventDetail: event.added || event.moved || event.removed
+      })
+      try {
+        if (event.added) {
+          // Item is already present in currentList at the correct index
+          await this.$store.dispatch('data/queries/saveMany',
+            currentList.map((item, idx) => ({
+              ...item,
+              queryFolderId: folder?.id ?? null,
+              position: idx + 1
+            }))
+          )
+        } else if (event.moved) {
+          // currentList is already in the correct new order (works for both folder and lonely list)
+          await this.$store.dispatch('data/queries/saveMany',
+            currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
+          )
+        }
+      } catch (ex) {
+        this.$noty.error(`Move error: ${ex.message}`)
+      }
+    },
     async submitFolderModal() {
       const name = this.folderModalName.trim()
       if (!name) return
@@ -398,3 +442,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.drag-ghost {
+  opacity: 0.4;
+}
+</style>

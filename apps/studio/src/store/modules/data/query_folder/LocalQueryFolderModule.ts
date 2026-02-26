@@ -19,6 +19,22 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   mutations: {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
   },
+  getters: {
+    foldersWithQueries: (state) => (queries: any[]) => {
+      const byPosition = (a: any, b: any) => a.position - b.position
+      const rootFolders = state.items.filter((f) => !f.parentId)
+      return rootFolders.map((folder) => ({
+        folder,
+        queries: queries.filter((q) => q.queryFolderId === folder.id).sort(byPosition),
+        subfolders: state.items
+          .filter((f) => f.parentId === folder.id)
+          .map((subfolder) => ({
+            folder: subfolder,
+            queries: queries.filter((q) => q.queryFolderId === subfolder.id).sort(byPosition)
+          }))
+      }))
+    }
+  },
   actions: {
     async load(context) {
       context.commit('error', null)
@@ -62,6 +78,10 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       r.id = null
       r.createdAt = null
       return r
+    },
+    async moveToFolder(context, { query, folder }) {
+      const updated = { ...query, queryFolderId: folder?.id ?? null }
+      await context.dispatch('data/queries/save', updated, { root: true })
     }
   }
 }

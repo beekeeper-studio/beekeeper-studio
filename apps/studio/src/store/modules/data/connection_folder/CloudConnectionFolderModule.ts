@@ -15,15 +15,16 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   mutations: mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc'}),
   getters: {
     foldersWithConnections: (state) => (connections: any[]) => {
+      const byPosition = (a: any, b: any) => a.position - b.position
       const rootFolders = state.items.filter((f) => !f.parentId)
       return rootFolders.map((folder) => ({
         folder,
-        connections: connections.filter((c) => c.connectionFolderId === folder.id),
+        connections: connections.filter((c) => c.connectionFolderId === folder.id).sort(byPosition),
         subfolders: state.items
           .filter((f) => f.parentId === folder.id)
           .map((subfolder) => ({
             folder: subfolder,
-            connections: connections.filter((c) => c.connectionFolderId === subfolder.id)
+            connections: connections.filter((c) => c.connectionFolderId === subfolder.id).sort(byPosition)
           }))
       }))
     }

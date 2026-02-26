@@ -149,6 +149,15 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
       return updated.id;
     },
 
+    async saveMany(context, items: T[]) {
+      // Optimistic commit so any re-renders during the async saves see correct state
+      context.commit('upsert', items);
+      const saved = await Promise.all(
+        items.map(item => Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item }))
+      );
+      context.commit('upsert', saved);
+    },
+
     async remove(context, item: T) {
       await Vue.prototype.$util.send(`appdb/${type}/remove`, { obj: item });
       context.commit('remove', item)

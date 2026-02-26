@@ -82,6 +82,7 @@ import addIamAuthOptions from './20250819_add_iamAuthOptions'
 import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_options'
 import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
+import addPositionToItems from './20260227_add_position_to_items'
 
 import ultimate from './ultimate/index'
 
@@ -126,6 +127,7 @@ const realMigrations = [
   addWindowMaximizedSetting, fixMissingExcerpts,
   addIamAuthOptions, migrateRedshiftToIamOptions, addEditorFontSize,
   createConnectionFolders, createQueryFolders,
+  addPositionToItems,
 ]
 
 // fixtures require the models

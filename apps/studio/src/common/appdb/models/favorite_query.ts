@@ -32,6 +32,9 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   @Column({ type: 'integer', nullable: true, default: null })
   queryFolderId: Nullable<number> = null
 
+  @Column({ type: 'float', nullable: false, default: 0 })
+  position = 0.0
+
   // Do NOT initialize this to null. A null initializer becomes an own property
   // that gets copied into transport objects by cls.merge(), and TypeORM treats an
   // explicitly-null relation as "unset this FK", overriding the queryFolderId column.
