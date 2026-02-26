@@ -7,6 +7,7 @@ import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 import { NativePluginMenuItem } from '@/services/plugin/types'
 import _ from 'lodash'
+import { BksConfig } from '@/common/bksConfig/BksConfigProvider'
 
 const log = rawLog.scope('NativeMenuBuilder')
 
@@ -17,7 +18,7 @@ export default class NativeMenuBuilder {
   /** Array of native menu items from plugins */
   private pluginMenuItems: MenuItemConstructorOptions[] = []
 
-  constructor(private electron: any, settings: IGroupedUserSettings, bksConfig: IBksConfig){
+  constructor(private electron: any, settings: IGroupedUserSettings, bksConfig: BksConfig){
     this.handler = new NativeMenuActionHandlers(settings)
     // We only support native titlebars for Mac now
     if (platformInfo.isMac) {

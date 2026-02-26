@@ -1,7 +1,4 @@
-import {
-  convertKeybinding,
-  BksConfigProvider,
-} from "@/common/bksConfig/BksConfigProvider";
+import { BksConfigProvider } from "@/common/bksConfig/BksConfigProvider";
 import { parseIni, processRawConfig } from "@/config/helpers";
 import _ from "lodash";
 import { checkConflicts, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";

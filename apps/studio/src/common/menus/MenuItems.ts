@@ -2,9 +2,10 @@ import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler';
 import { DevLicenseState } from '@/lib/license';
 import { IPlatformInfo } from '../IPlatformInfo';
 import { IGroupedUserSettings } from '../transport/TransportUserSetting';
+import { BksConfig } from '@/common/bksConfig/BksConfigProvider';
 
 
-export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings, platformInfo: IPlatformInfo) {
+export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedUserSettings, platformInfo: IPlatformInfo, bksConfig: BksConfig) {
   return {
     upgradeModal: (label: string) => {
       return {
@@ -16,25 +17,25 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     quit: {
       id: 'quit',
       label: platformInfo.isMac ? 'Quit' : 'Exit',
-      accelerator: platformInfo.isMac ? 'CommandOrControl+Q' : undefined,
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.quit'),
       click: actionHandler.quit
     },
     undo: {
       id: 'undo',
       label: "Undo",
-      accelerator: "CommandOrControl+Z",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.undo'),
       click: actionHandler.undo
     },
     redo: {
       id: "redo",
       label: "Redo",
-      accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.redo'),
       click: actionHandler.redo
     },
     cut: {
       id: 'cut',
       label: 'Cut',
-      accelerator: 'CommandOrControl+X',
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.cut'),
       click: actionHandler.cut,
       registerAccelerator: false
 
@@ -42,14 +43,14 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     copy: {
       id: 'copy',
       label: 'Copy',
-      accelerator: 'CommandOrControl+C',
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.copy'),
       click: actionHandler.copy,
       registerAccelerator: false
     },
     paste: {
       id: 'paste',
       label: 'Paste',
-      accelerator: 'CommandOrControl+V',
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.paste'),
       click: actionHandler.paste,
       registerAccelerator: false
     },
@@ -57,39 +58,39 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     selectAll: {
       id: 'select-all',
       label: 'Select All',
-      accelerator: 'CommandOrControl+A',
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.selectAll'),
       click: actionHandler.selectAll
     },
     // view
     zoomreset: {
       id: 'zoom-reset',
       label: "Reset Zoom",
-      accelerator: "CommandOrControl+0",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.resetZoom'),
       click: actionHandler.zoomreset
     },
     zoomin: {
       id: 'zoom-in',
       label: "Zoom In",
-      accelerator: 'CommandOrControl+=',
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.zoomIn'),
       click: actionHandler.zoomin
     },
-    zoominNumpad: {
-      id: 'zoom-in-numpad',
-      label: "Zoom In (numpad)",
-      accelerator: 'CommandOrControl+numadd',
+    zoominAlt: {
+      id: 'zoom-in-alt',
+      label: "Zoom In (alt)",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.zoomInAlt'),
       click: actionHandler.zoomin,
       visible: false,
     },
     zoomout: {
       id: 'zoom-out',
       label: "Zoom Out",
-      accelerator: "CommandOrControl+-",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.zoomOut'),
       click: actionHandler.zoomout
     },
-    zoomoutNumpad: {
-      id: 'zoom-out-numpad',
-      label: "Zoom Out (numpad)",
-      accelerator: "CommandOrControl+numsub",
+    zoomoutAlt: {
+      id: 'zoom-out-alt',
+      label: "Zoom Out (alt)",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.zoomOutAlt'),
       click: actionHandler.zoomout,
       visible: false,
     },
@@ -101,19 +102,19 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     editorFontSizeIncrease: {
       id: 'editor-font-size-increase',
       label: "Increase Editor Font Size",
-      accelerator: platformInfo.isMac ? "Command+Shift+." : "Ctrl+Shift+.",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'queryEditor.increaseFontSize'),
       click: actionHandler.editorFontSizeIncrease
     },
     editorFontSizeDecrease: {
       id: 'editor-font-size-decrease',
       label: "Decrease Editor Font Size",
-      accelerator: platformInfo.isMac ? "Command+Shift+," : "Ctrl+Shift+,",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'queryEditor.decreaseFontSize'),
       click: actionHandler.editorFontSizeDecrease
     },
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
-      accelerator: platformInfo.isMac ? 'Command+Control+F' : 'F11',
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.toggleFullScreen'),
       click: actionHandler.fullscreen
     },
     // help
@@ -151,13 +152,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     reload: {
       id: 'reload-window',
       label: "Reload Window",
-      accelerator: "CommandOrControl+Shift+R",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.reloadWindow'),
       click: actionHandler.reload
     },
     newWindow: {
       id: 'new-window',
       label: "New Window",
-      accelerator: "CommandOrControl+Shift+N",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.newWindow'),
       click: actionHandler.newWindow
     },
     addBeekeeper: {
@@ -168,14 +169,14 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     newTab: {
       id: "new-query-menu",
       label: "New Tab",
-      accelerator: "CommandOrControl+T",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'tab.newTab'),
       click: actionHandler.newQuery,
       enabled: false,
     },
     closeTab: {
       id: 'close-tab',
       label: "Close Tab",
-      accelerator: "CommandOrControl+W",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'tab.closeTab'),
       click: actionHandler.closeTab,
       registerAccelerator: false,
       enabled: false,
@@ -183,7 +184,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     importSqlFiles: {
       id: 'import-sql-files',
       label: "Import Saved Queries",
-      accelerator: "CommandOrControl+I",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.importSqlFiles'),
       click: actionHandler.importSqlFiles,
       showWhenConnected: true,
       enabled: false,
@@ -191,7 +192,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     quickSearch: {
       id: 'go-to',
       label: "Quick Search",
-      accelerator: "CommandOrControl+P",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.openQuickSearch'),
       registerAccelerator: false,
       click: actionHandler.quickSearch,
       enabled: false,
@@ -199,14 +200,14 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",
-      accelerator: "Shift+CommandOrControl+Q",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'general.disconnect'),
       click: actionHandler.disconnect,
       enabled: false,
     },
     primarySidebarToggle: {
       id: 'menu-toggle-sidebar',
       label: 'Toggle Primary Sidebar',
-      accelerator: platformInfo.isMac? "CommandOrControl+B" : "Alt+S",
+      accelerator: bksConfig.getFirstKeybinding('electron', 'primarySidebar.toggleOpen'),
       click: actionHandler.togglePrimarySidebar,
       enabled: false,
     },

@@ -1,7 +1,8 @@
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { IPlatformInfo } from "../IPlatformInfo";
-import type { KeybindingTarget, Platform } from "@/types";
+import type { KeybindingTarget, KeybindingValue, Platform } from "@/types";
+import { isKeybindingValue } from "./utils";
 
 export interface BksConfigSource {
   defaultConfig: IBksConfig;
@@ -23,7 +24,16 @@ export interface ConfigEntryDetailWarning {
   path: string;
 }
 
-type IniValue = string | number | boolean | IniArray | undefined;
+/** @see `tags.ts` */
+export type TaggedString = {
+  $$type: "taggedString";
+  default?: string;
+  [key: string]: string;
+};
+
+type IniPrimitive = string | number | boolean | TaggedString;
+
+export type IniValue = IniPrimitive | IniPrimitive[] | undefined;
 
 export type ConfigValue = IniValue | Record<string, IniValue>;
 
@@ -60,7 +70,8 @@ const codeMirrorModifierMap = {
   META: "Meta",
   WINDOWS: "Meta",
   ENTER: "Enter",
-  F5: "F5"
+  F5: "F5",
+  ESC: "Escape",
 } as const;
 
 const electronModifierMap = {
@@ -137,18 +148,23 @@ const uiModifierMap: ModifierMap = {
 };
 
 export function convertKeybinding(
-  target: Exclude<KeybindingTarget, "ui">,
-  keybinding: string,
-  platform: Platform
-): string;
-export function convertKeybinding(
   target: "ui",
-  keybinding: string,
+  keybinding: KeybindingValue,
   platform: Platform
 ): string[];
 export function convertKeybinding(
+  target: Exclude<KeybindingTarget, "ui">,
+  keybinding: KeybindingValue,
+  platform: Platform
+): string;
+export function convertKeybinding(
   target: KeybindingTarget,
-  keybinding: string,
+  keybinding: KeybindingValue,
+  platform: Platform
+): string[] | string;
+export function convertKeybinding(
+  target: KeybindingTarget,
+  keybinding: KeybindingValue,
   platform: Platform
 ): string[] | string {
 
@@ -177,6 +193,14 @@ export function convertKeybinding(
       return;
   }
 
+  if (typeof keybinding === "object") {
+    const target = platform === "windows" ? "win" : platform;
+    keybinding = keybinding[target] ?? keybinding.default;
+    if (!keybinding) {
+      return [];
+    }
+  }
+
   const combination: string[] = [];
   for (const _key of keybinding.split("+")) {
     const key = _key.toUpperCase().trim();
@@ -201,7 +225,7 @@ export function convertKeybinding(
     if (target === "tabulator" && !modifierMap[key]) {
       mod = mod.toLowerCase();
     }
-    
+
     if (target === "ui" && !modifierMap[key]) {
       mod = _.upperFirst(mod.toLowerCase());
     }
@@ -326,21 +350,55 @@ export class BksConfigProvider {
     return getDebugAll(this.mergedConfig);
   }
 
-  getKeybindings(target: KeybindingTarget, path: KeybindingPath) {
+  getKeybindings(target: "ui", path: KeybindingPath): string[][];
+  getKeybindings(
+    target: Exclude<KeybindingTarget, "ui">,
+    path: KeybindingPath
+  ): string | string[];
+  getKeybindings(
+    target: KeybindingTarget,
+    path: KeybindingPath
+  ): string | string[] | string[][] {
     const keybindings = this.get(`keybindings.${path}`);
 
     if (isIniArray(keybindings)) {
-      return Object.keys(keybindings).map((idx) =>
-        convertKeybinding(target, keybindings[idx], this.platformInfo.platform)
-      );
+      const filtered = _.filter(keybindings, isKeybindingValue);
+      return Object.values(filtered).map((value) =>
+        convertKeybinding(target, value, this.platformInfo.platform)
+      ) as string[] | string[][];
     }
 
-    if (typeof keybindings !== "string") {
+    if (!isKeybindingValue(keybindings)) {
       log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
       return [];
     }
 
+    if (target === "ui") {
+      return [
+        convertKeybinding(target, keybindings, this.platformInfo.platform),
+      ];
+    }
+
     return convertKeybinding(target, keybindings, this.platformInfo.platform);
+  }
+
+  getFirstKeybinding(target: "ui", path: KeybindingPath): string[];
+  getFirstKeybinding(
+    target: Exclude<KeybindingTarget, "ui">,
+    path: KeybindingPath
+  ): string | undefined;
+  getFirstKeybinding(
+    target: KeybindingTarget,
+    path: KeybindingPath
+  ): string[] | string | undefined {
+    if (target === "ui") {
+      return this.getKeybindings(target, path)[0];
+    }
+    const keybindings = this.getKeybindings(target, path);
+    if (_.isArray(keybindings)) {
+      return keybindings[0];
+    }
+    return keybindings;
   }
 
   get warnings() {

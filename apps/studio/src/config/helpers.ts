@@ -1,6 +1,8 @@
 import ini from "ini";
 import _ from "lodash";
 import { DatabaseTypes } from "../lib/db/types";
+import { parseTags } from "./tags";
+import { IniValue } from "@/common/bksConfig/BksConfigProvider";
 
 // https://stackoverflow.com/a/175787/10012118
 function isNumeric(str: unknown): boolean {
@@ -18,6 +20,31 @@ function parseIni(text: string): Record<string, unknown> {
       return _.toNumber(value);
     }
   });
+}
+
+/**
+ * Walks a nested object and yields every non-object value with its key and
+ * parent. Objects with a `$$type` property are treated as values, not
+ * recursed into.
+ **/
+export function* recurse(obj: object, path: string[] = []): Generator<{
+  key: string;
+  path: string[];
+  value: IniValue;
+  parent: object;
+}> {
+  for (const key of Object.keys(obj)) {
+    const value = obj[key];
+    if (
+      _.isObject(value) &&
+      !_.isArray(value) &&
+      typeof value["$$type"] !== "string"
+    ) {
+      yield* recurse(value, [...path, key]);
+    } else {
+      yield { key, path: [...path, key], value, parent: obj };
+    }
+  }
 }
 
 function populateDefaults(config: Record<string, unknown>, parentPath: string, defaultPath: string): void {
@@ -57,6 +84,10 @@ function processRawConfig(config: Record<string, unknown>): Record<string, unkno
       const section = d === "postgresql" ? "postgres" : d;
       populateDefaults(config, `db.${section}`, "db.default")
     }
+  }
+
+  if (config.keybindings) {
+    parseTags(config.keybindings as object);
   }
 
   return config;
