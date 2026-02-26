@@ -1,0 +1,34 @@
+name: UI Kit - Build & Publish
+
+on:
+  push:
+    tags:
+      - "ui-kit:v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: yarn install
+        run: yarn install --frozen-lockfile --network-timeout 100000
+
+      - name: Run tests
+        run: yarn workspace @beekeeperstudio/ui-kit run test
+
+      - name: Build
+        run: yarn workspace @beekeeperstudio/ui-kit run build
+
+      - name: Publish to npm
+        run: yarn workspace @beekeeperstudio/ui-kit npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

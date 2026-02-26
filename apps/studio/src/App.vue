@@ -35,7 +35,7 @@
     <workspace-rename-modal />
     <import-queries-modal />
     <import-connections-modal />
-    <plugin-controller />
+    <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
