@@ -85,15 +85,6 @@
             :expanded-initially="true"
             @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
           >
-            <template #folder-drop-zone>
-              <Draggable
-                :list="queries"
-                group="queries"
-                :disabled="isCloud"
-                class="folder-drop-zone"
-                @change="onQueryDrop($event, folder, queries)"
-              />
-            </template>
             <Draggable
               :list="queries"
               group="queries"
@@ -122,15 +113,6 @@
               :expanded-initially="true"
               @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
             >
-              <template #folder-drop-zone>
-                <Draggable
-                  :list="subQueries"
-                  group="queries"
-                  :disabled="isCloud"
-                  class="folder-drop-zone"
-                  @change="onQueryDrop($event, subfolder, subQueries)"
-                />
-              </template>
               <Draggable
                 :list="subQueries"
                 group="queries"

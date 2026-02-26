@@ -179,15 +179,6 @@
                 :expanded-initially="true"
                 @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
               >
-                <template #folder-drop-zone>
-                  <Draggable
-                    :list="connections"
-                    group="connections"
-                    :disabled="isCloud"
-                    class="folder-drop-zone"
-                    @change="onConnectionDrop($event, folder, connections)"
-                  />
-                </template>
                 <Draggable
                   :list="connections"
                   group="connections"
@@ -217,15 +208,6 @@
                   :expanded-initially="true"
                   @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
                 >
-                  <template #folder-drop-zone>
-                    <Draggable
-                      :list="subConnections"
-                      group="connections"
-                      :disabled="isCloud"
-                      class="folder-drop-zone"
-                      @change="onConnectionDrop($event, subfolder, subConnections)"
-                    />
-                  </template>
                   <Draggable
                     :list="subConnections"
                     group="connections"
