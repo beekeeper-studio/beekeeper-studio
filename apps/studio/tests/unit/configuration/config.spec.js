@@ -63,14 +63,14 @@ minRes = 10
       {
         sourceName: "user",
         type: "unrecognized-key",
-        section: "generall",
-        path: "generall",
+        section: "ui.general",
+        path: "ui.general.load",
       },
       {
         sourceName: "user",
         type: "unrecognized-key",
-        section: "ui.general",
-        path: "ui.general.load",
+        section: "generall",
+        path: "generall",
       },
       {
         sourceName: "user",
