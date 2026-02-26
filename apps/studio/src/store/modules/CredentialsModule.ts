@@ -31,7 +31,7 @@ interface State {
 
 async function credentialToBlob(c: TransportCloudCredential): Promise<CredentialBlob> {
   const clientOptions: CloudClientOptions = {
-    app: c.appId, email: c.email, token: c.token, baseUrl: window.platformInfo.cloudUrl
+    app: c.appId, email: c.email, token: c.token, baseUrl: window.platformInfo.cloudUrl, clientVersion: window.platformInfo.appVersion
   }
   const client = new CloudClient(clientOptions)
   try {
