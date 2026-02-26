@@ -399,18 +399,7 @@ export default {
     },
     foldersWithConnections() {
       if (this.loading) return []
-
-      const rootFolders = this.folders.filter((f) => !f.parentId)
-      return rootFolders.map((folder) => ({
-        folder,
-        connections: this.sortedConnections.filter((c) => c.connectionFolderId === folder.id),
-        subfolders: this.folders
-          .filter((f) => f.parentId === folder.id)
-          .map((subfolder) => ({
-            folder: subfolder,
-            connections: this.sortedConnections.filter((c) => c.connectionFolderId === subfolder.id)
-          }))
-      }));
+      return this.$store.getters['data/connectionFolders/foldersWithConnections'](this.sortedConnections)
     },
     loading() {
       return this.connectionsLoading || this.foldersLoading

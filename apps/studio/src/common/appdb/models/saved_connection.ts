@@ -287,9 +287,12 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'integer', nullable: true, default: null })
   connectionFolderId: Nullable<number> = null
 
+  // Do NOT initialize this to null. A null initializer becomes an own property
+  // that gets copied into transport objects by cls.merge(), and TypeORM treats an
+  // explicitly-null relation as "unset this FK", overriding the connectionFolderId column.
   @ManyToOne(() => ConnectionFolder, (folder) => folder.connections, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'connectionFolderId' })
-  connectionFolder: Nullable<ConnectionFolder> = null
+  connectionFolder?: ConnectionFolder
 
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null

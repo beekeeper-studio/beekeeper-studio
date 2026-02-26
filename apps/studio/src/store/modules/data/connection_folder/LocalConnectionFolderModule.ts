@@ -19,6 +19,21 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
   },
+  getters: {
+    foldersWithConnections: (state) => (connections: any[]) => {
+      const rootFolders = state.items.filter((f) => !f.parentId)
+      return rootFolders.map((folder) => ({
+        folder,
+        connections: connections.filter((c) => c.connectionFolderId === folder.id),
+        subfolders: state.items
+          .filter((f) => f.parentId === folder.id)
+          .map((subfolder) => ({
+            folder: subfolder,
+            connections: connections.filter((c) => c.connectionFolderId === subfolder.id)
+          }))
+      }))
+    }
+  },
   actions: {
     async load(context) {
       context.commit('error', null)
@@ -62,6 +77,10 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       r.id = null
       r.createdAt = null
       return r
+    },
+    async moveToFolder(context, { connection, folder }) {
+      const updated = { ...connection, connectionFolderId: folder?.id ?? null }
+      await context.dispatch('data/connections/save', updated, { root: true })
     }
   }
 }

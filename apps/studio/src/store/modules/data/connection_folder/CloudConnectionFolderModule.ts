@@ -13,9 +13,28 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     pollError: null
   },
   mutations: mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc'}),
+  getters: {
+    foldersWithConnections: (state) => (connections: any[]) => {
+      const rootFolders = state.items.filter((f) => !f.parentId)
+      return rootFolders.map((folder) => ({
+        folder,
+        connections: connections.filter((c) => c.connectionFolderId === folder.id),
+        subfolders: state.items
+          .filter((f) => f.parentId === folder.id)
+          .map((subfolder) => ({
+            folder: subfolder,
+            connections: connections.filter((c) => c.connectionFolderId === subfolder.id)
+          }))
+      }))
+    }
+  },
   actions: actionsFor<IConnectionFolder>('connectionFolders', {
     async poll() {
       // empty on purpose
+    },
+    async moveToFolder(context, { connection, folder }) {
+      const updated = { ...connection, connectionFolderId: folder?.id ?? null }
+      await context.dispatch('data/connections/save', updated, { root: true })
     }
   })
 }

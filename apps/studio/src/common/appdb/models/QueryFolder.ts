@@ -22,9 +22,12 @@ export class QueryFolder extends ApplicationEntity {
   @Column({ type: 'integer', nullable: true, default: null })
   parentId: Nullable<number> = null
 
+  // Do NOT initialize this to null. A null initializer becomes an own property
+  // that gets copied into transport objects by cls.merge(), and TypeORM treats an
+  // explicitly-null relation as "unset this FK", overriding the parentId column.
   @ManyToOne(() => QueryFolder, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'parentId' })
-  parent: Nullable<QueryFolder> = null
+  parent?: QueryFolder
 
   @OneToMany(() => FavoriteQuery, (query) => query.queryFolder)
   queries: FavoriteQuery[]

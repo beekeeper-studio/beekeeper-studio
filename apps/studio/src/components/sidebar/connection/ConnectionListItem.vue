@@ -70,7 +70,6 @@
   </div>
 </template>
 <script>
-import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
@@ -212,9 +211,7 @@ export default {
       try {
         const folder = option.folder
         if (!folder || !folder.id) return
-        const updated = _.clone(item)
-        updated.connectionFolderId = folder.id
-        await this.$store.dispatch('data/connections/save', updated)
+        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: item, folder })
       } catch(ex) {
         this.$noty.error(`Move Error: ${ex.message}`)
         console.error(ex)
