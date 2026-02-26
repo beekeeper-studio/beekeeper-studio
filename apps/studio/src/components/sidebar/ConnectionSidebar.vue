@@ -179,6 +179,15 @@
                 :expanded-initially="true"
                 @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
               >
+                <template #folder-drop-zone>
+                  <Draggable
+                    :list="connections"
+                    group="connections"
+                    :disabled="isCloud"
+                    class="folder-drop-zone"
+                    @change="onConnectionDrop($event, folder, connections)"
+                  />
+                </template>
                 <Draggable
                   :list="connections"
                   group="connections"
@@ -208,6 +217,15 @@
                   :expanded-initially="true"
                   @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
                 >
+                  <template #folder-drop-zone>
+                    <Draggable
+                      :list="subConnections"
+                      group="connections"
+                      :disabled="isCloud"
+                      class="folder-drop-zone"
+                      @change="onConnectionDrop($event, subfolder, subConnections)"
+                    />
+                  </template>
                   <Draggable
                     :list="subConnections"
                     group="connections"
@@ -237,6 +255,7 @@
                 :disabled="isCloud"
                 ghost-class="drag-ghost"
                 @change="onConnectionDrop($event, null, lonelyConnections)"
+                @contextmenu.self.prevent="showLonelyContextMenu($event)"
               >
                 <connection-list-item
                   v-for="c in lonelyConnections"
@@ -299,7 +318,7 @@
       >
         <form @submit.prevent="submitFolderModal">
           <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : 'New Folder' }}</div>
+            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}</div>
             <div class="form-group">
               <label>Folder Name</label>
               <input
@@ -345,6 +364,7 @@ import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'
+import Noty from 'noty'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -368,15 +388,18 @@ export default {
       connectionType: "Type",
     },
     sort: { field: 'name', order: 'asc' },
+    sortInitialized: false,
     sizes: [33, 33, 33],
     folderModalName: '',
     folderModalItem: null,
     folderModalParentId: null
   }),
   watch: {
-    async sort() {
-      await this.$settings.set('connectionsSortOrder', this.sort.order)
-      await this.$settings.set('connectionsSortBy', this.sort.field)
+    async sort(newSort) {
+      await this.$settings.set('connectionsSortOrder', newSort.order)
+      await this.$settings.set('connectionsSortBy', newSort.field)
+      if (!this.sortInitialized) return
+      await this.reorderBySort(newSort)
     },
   },
   computed: {
@@ -472,6 +495,7 @@ export default {
     ]);
     this.sort.field = field
     this.sort.order = order
+    this.$nextTick(() => { this.sortInitialized = true })
   },
   methods: {
     ...mapActions({
@@ -531,19 +555,31 @@ export default {
       this.$modal.show('connection-folder-modal')
     },
     showFolderContextMenu(event, folder) {
+      const options = []
+      if (!folder.parentId) {
+        options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      }
+      options.push(
+        { name: 'Rename Folder', handler: ({ item }) => this.renameFolder(item) },
+        { name: 'Delete Folder', handler: ({ item }) => this.deleteFolder(item) }
+      )
+      this.$bks.openMenu({ event, item: folder, options })
+    },
+    createSubfolder(parentFolder) {
+      if (!this.isUltimate && !this.isCloud) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your connections into folders')
+        return
+      }
+      this.folderModalName = ''
+      this.folderModalItem = null
+      this.folderModalParentId = parentFolder.id
+      this.$modal.show('connection-folder-modal')
+    },
+    showLonelyContextMenu(event) {
       this.$bks.openMenu({
         event,
-        item: folder,
-        options: [
-          {
-            name: 'Rename Folder',
-            handler: ({ item }) => this.renameFolder(item)
-          },
-          {
-            name: 'Delete Folder',
-            handler: ({ item }) => this.deleteFolder(item)
-          }
-        ]
+        item: null,
+        options: [{ name: 'New Folder', handler: () => this.createFolder() }]
       })
     },
     renameFolder(folder) {
@@ -558,6 +594,58 @@ export default {
         } catch (e) {
           this.$noty.error(e.message)
         }
+      }
+    },
+    applySortOrder(connections, sort) {
+      let result
+      if (sort.field === 'labelColor') {
+        const mappings = { default: -1, red: 0, orange: 1, yellow: 2, green: 3, blue: 4, purple: 5, pink: 6 }
+        result = _.orderBy(connections, (c) => mappings[c.labelColor] ?? -1)
+      } else {
+        result = _.orderBy(connections, sort.field)
+      }
+      return sort.order === 'desc' ? result.reverse() : result
+    },
+    async reorderBySort(sort) {
+      // Snapshot current state for undo
+      const snapshot = this.filteredConnections.map((c) => ({ ...c }))
+
+      // Sort all connections by the chosen field
+      const sorted = this.applySortOrder(this.filteredConnections, sort)
+
+      // Assign sequential 1-based positions within each folder/lonely group
+      const groups = {}
+      for (const c of sorted) {
+        const key = c.connectionFolderId ?? '__lonely__'
+        if (!groups[key]) groups[key] = []
+        groups[key].push(c)
+      }
+      const updates = []
+      for (const group of Object.values(groups)) {
+        group.forEach((item, idx) => {
+          updates.push({ ...item, position: idx + 1 })
+        })
+      }
+
+      try {
+        await this.$store.dispatch('data/connections/saveMany', updates)
+        const n = new Noty({
+          text: `Connections reordered by ${this.sortables[sort.field]}`,
+          type: 'info',
+          timeout: 8000,
+          layout: 'bottomRight',
+          theme: 'mint',
+          closeWith: ['button'],
+          buttons: [
+            Noty.button('Undo', 'btn btn-sm', () => {
+              this.$store.dispatch('data/connections/saveMany', snapshot)
+              n.close()
+            })
+          ]
+        })
+        n.show()
+      } catch (ex) {
+        this.$noty.error(`Reorder error: ${ex.message}`)
       }
     },
     async onConnectionDrop(event, folder, currentList) {
@@ -606,5 +694,8 @@ export default {
 <style lang="scss" scoped>
 .drag-ghost {
   opacity: 0.4;
+}
+.folder-drop-zone {
+  min-height: 8px;
 }
 </style>

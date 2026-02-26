@@ -177,6 +177,10 @@ export default {
           slug: 'connect',
           handler: (blob) => this.doubleClick(blob.item)
         },
+        !this.isRecentList && {
+          name: this.pinned ? 'Unpin' : 'Pin',
+          handler: () => this.pinned ? this.unpin() : this.pin()
+        },
         {
           name: "Duplicate",
           slug: 'duplicate',

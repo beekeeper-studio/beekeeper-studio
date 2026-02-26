@@ -85,6 +85,15 @@
             :expanded-initially="true"
             @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
           >
+            <template #folder-drop-zone>
+              <Draggable
+                :list="queries"
+                group="queries"
+                :disabled="isCloud"
+                class="folder-drop-zone"
+                @change="onQueryDrop($event, folder, queries)"
+              />
+            </template>
             <Draggable
               :list="queries"
               group="queries"
@@ -103,6 +112,7 @@
                 @open="open"
                 @rename="rename"
                 @export="exportTo"
+                @duplicate="duplicate"
               />
             </Draggable>
             <sidebar-folder
@@ -112,6 +122,15 @@
               :expanded-initially="true"
               @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
             >
+              <template #folder-drop-zone>
+                <Draggable
+                  :list="subQueries"
+                  group="queries"
+                  :disabled="isCloud"
+                  class="folder-drop-zone"
+                  @change="onQueryDrop($event, subfolder, subQueries)"
+                />
+              </template>
               <Draggable
                 :list="subQueries"
                 group="queries"
@@ -130,6 +149,7 @@
                   @open="open"
                   @rename="rename"
                   @export="exportTo"
+                  @duplicate="duplicate"
                 />
               </Draggable>
             </sidebar-folder>
@@ -140,6 +160,7 @@
             :disabled="isCloud"
             ghost-class="drag-ghost"
             @change="onQueryDrop($event, null, lonelyQueries)"
+            @contextmenu.self.prevent="showLonelyContextMenu($event)"
           >
             <favorite-list-item
               v-for="item in lonelyQueries"
@@ -152,6 +173,7 @@
               @open="open"
               @rename="rename"
               @export="exportTo"
+              @duplicate="duplicate"
             />
           </Draggable>
         </nav>
@@ -184,7 +206,7 @@
       >
         <form @submit.prevent="submitFolderModal">
           <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : 'New Folder' }}</div>
+            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}</div>
             <div class="form-group">
               <label>Folder Name</label>
               <input
@@ -371,20 +393,38 @@ export default {
       this.$modal.show('query-folder-modal')
     },
     showFolderContextMenu(event, folder) {
+      const options = []
+      if (!folder.parentId) {
+        options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      }
+      options.push(
+        { name: 'Rename Folder', handler: ({ item }) => this.renameQueryFolder(item) },
+        { name: 'Delete Folder', handler: ({ item }) => this.deleteFolder(item) }
+      )
+      this.$bks.openMenu({ event, item: folder, options })
+    },
+    createSubfolder(parentFolder) {
+      if (!this.isUltimate && !this.isCloud) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your queries into folders')
+        return
+      }
+      this.folderModalName = ''
+      this.folderModalItem = null
+      this.folderModalParentId = parentFolder.id
+      this.$modal.show('query-folder-modal')
+    },
+    showLonelyContextMenu(event) {
       this.$bks.openMenu({
         event,
-        item: folder,
-        options: [
-          {
-            name: 'Rename Folder',
-            handler: ({ item }) => this.renameQueryFolder(item)
-          },
-          {
-            name: 'Delete Folder',
-            handler: ({ item }) => this.deleteFolder(item)
-          }
-        ]
+        item: null,
+        options: [{ name: 'New Folder', handler: () => this.createFolder() }]
       })
+    },
+    async duplicate(query) {
+      const cloned = await this.$store.dispatch('data/queries/clone', query)
+      cloned.title = 'Copy of ' + cloned.title
+      await this.$store.dispatch('data/queries/save', cloned)
+      this.$noty.success('Query duplicated')
     },
     renameQueryFolder(folder) {
       this.folderModalName = folder.name
@@ -446,5 +486,8 @@ export default {
 <style lang="scss" scoped>
 .drag-ghost {
   opacity: 0.4;
+}
+.folder-drop-zone {
+  min-height: 8px;
 }
 </style>

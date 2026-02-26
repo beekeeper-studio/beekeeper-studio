@@ -88,6 +88,10 @@ export default Vue.extend({
           handler: ({ item }) => this.$emit('rename', item)
         },
         {
+          name: "Duplicate",
+          handler: ({ item }) => this.$emit('duplicate', item)
+        },
+        {
           name: "Delete",
           handler: ({ item }) => this.$emit('remove', item)
         },
