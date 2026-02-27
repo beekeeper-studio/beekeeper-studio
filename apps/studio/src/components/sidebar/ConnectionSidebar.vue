@@ -538,7 +538,7 @@ export default {
     },
     showFolderContextMenu(event, folder) {
       const options = []
-      if (!folder.parentId) {
+      if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
       }
       options.push(
