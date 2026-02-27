@@ -197,12 +197,11 @@ export default {
       ].filter(v => v)
 
       if (this.isCloud || this.foldersSupported) {
-        options.push(...[
-          {
-            type: 'divider'
-          },
-          ...this.moveToOptions
-        ])
+        options.push({ type: 'divider' })
+        if (this.config.connectionFolderId) {
+          options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
+        }
+        options.push(...this.moveToOptions)
       }
 
       this.$bks.openMenu({
@@ -210,6 +209,14 @@ export default {
         item: this.config,
         options
       })
+    },
+    async moveToRoot() {
+      try {
+        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: this.config, folder: null })
+      } catch (ex) {
+        this.$noty.error(`Move Error: ${ex.message}`)
+        console.error(ex)
+      }
     },
     async moveItem({ item, option }) {
       try {

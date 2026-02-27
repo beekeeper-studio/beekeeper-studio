@@ -63,6 +63,16 @@ export default Vue.extend({
     }
   },
   methods: {
+    async moveToRoot(item) {
+      try {
+        const updated = _.clone(item)
+        updated.queryFolderId = null
+        await this.$store.dispatch('data/queries/save', updated)
+      } catch (ex) {
+        this.$noty.error(`Move Error: ${ex.message}`)
+        console.error(ex)
+      }
+    },
     async moveItem({ item, option }) {
       try {
         const folder = option.folder
@@ -104,7 +114,11 @@ export default Vue.extend({
         },
       ]
       if (this.foldersSupported || this.folders.length > 0) {
-        options.push({ type: 'divider' }, ...this.moveToOptions)
+        options.push({ type: 'divider' })
+        if (this.item.queryFolderId) {
+          options.push({ name: 'Move to top level', handler: ({ item }) => this.moveToRoot(item) })
+        }
+        options.push(...this.moveToOptions)
       }
       this.$bks.openMenu({
         item, event,
