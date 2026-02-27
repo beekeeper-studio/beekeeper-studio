@@ -82,7 +82,8 @@
             v-for="({ folder, queries, subfolders }) in foldersWithQueries"
             :key="`${folder.id}-${queries.length}`"
             :title="`${folder.name} (${queries.length})`"
-            :expanded-initially="true"
+            :expanded-initially="getFolderExpanded(folder.id)"
+            @toggle="onFolderToggle(folder.id, $event)"
             @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
           >
             <Draggable
@@ -110,7 +111,8 @@
               v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
               :key="`${subfolder.id}-${subQueries.length}`"
               :title="`${subfolder.name} (${subQueries.length})`"
-              :expanded-initially="true"
+              :expanded-initially="getFolderExpanded(subfolder.id)"
+              @toggle="onFolderToggle(subfolder.id, $event)"
               @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
             >
               <Draggable
@@ -244,6 +246,7 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 import { mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
@@ -261,10 +264,12 @@ export default {
       renameMe: null,
       folderModalName: '',
       folderModalItem: null,
-      folderModalParentId: null
+      folderModalParentId: null,
+      folderExpandedState: {}
     }
   },
   mounted() {
+    this.folderExpandedState = SmartLocalStorage.getJSON('queryFolderExpanded-v1', {})
     document.addEventListener('mousedown', this.maybeUnselect)
   },
   beforeDestroy() {
@@ -307,6 +312,14 @@ export default {
     }
   },
   methods: {
+    getFolderExpanded(folderId) {
+      const stored = this.folderExpandedState[folderId]
+      return stored !== undefined ? stored : true
+    },
+    onFolderToggle(folderId, expanded) {
+      this.$set(this.folderExpandedState, folderId, expanded)
+      SmartLocalStorage.addItem('queryFolderExpanded-v1', this.folderExpandedState)
+    },
     clearFilter() {
       this.filterQuery = null
     },

@@ -11,7 +11,7 @@
         class="folder-btn"
         :class="{'open': expanded}"
         role="button"
-        @click.prevent="manuallyExpanded = !manuallyExpanded"
+        @click.prevent="toggleExpanded"
         @dragover.prevent="handleDragOver"
         @dragleave="handleDragLeave"
       >
@@ -27,6 +27,7 @@
           :title="title"
         >{{ title }}</span>
       </a>
+      <slot name="folder-drop-zone" />
       <div v-if="expanded">
         <template v-if="hasSlot">
           <slot />
@@ -71,6 +72,10 @@
       }
     },
     methods: {
+      toggleExpanded() {
+        this.manuallyExpanded = !this.manuallyExpanded
+        this.$emit('toggle', this.manuallyExpanded)
+      },
       handleDragOver() {
         if (this.expanded || this.dragExpandTimer) return
         this.dragExpandTimer = setTimeout(() => {

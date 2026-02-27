@@ -176,7 +176,8 @@
                 :key="`${folder.id}-${connections.length}`"
                 :title="`${folder.name} (${connections.length})`"
                 placeholder="No Items"
-                :expanded-initially="true"
+                :expanded-initially="getFolderExpanded(folder.id)"
+                @toggle="onFolderToggle(folder.id, $event)"
                 @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
               >
                 <Draggable
@@ -205,7 +206,8 @@
                   :key="`${subfolder.id}-${subConnections.length}`"
                   :title="`${subfolder.name} (${subConnections.length})`"
                   placeholder="No Items"
-                  :expanded-initially="true"
+                  :expanded-initially="getFolderExpanded(subfolder.id)"
+                  @toggle="onFolderToggle(subfolder.id, $event)"
                   @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
                 >
                   <Draggable
@@ -335,6 +337,7 @@
 
 <script>
 import _ from 'lodash'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 import WorkspaceSidebar from './WorkspaceSidebar.vue'
 import { mapState, mapGetters, mapActions } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
@@ -374,7 +377,8 @@ export default {
     sizes: [33, 33, 33],
     folderModalName: '',
     folderModalItem: null,
-    folderModalParentId: null
+    folderModalParentId: null,
+    folderExpandedState: {}
   }),
   watch: {
     async sort(newSort) {
@@ -470,6 +474,7 @@ export default {
     },
   },
   async mounted() {
+    this.folderExpandedState = SmartLocalStorage.getJSON('connectionFolderExpanded-v1', {})
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
@@ -483,6 +488,14 @@ export default {
     ...mapActions({
       togglePrivacyMode: 'settings/togglePrivacyMode',
     }),
+    getFolderExpanded(folderId) {
+      const stored = this.folderExpandedState[folderId]
+      return stored !== undefined ? stored : true
+    },
+    onFolderToggle(folderId, expanded) {
+      this.$set(this.folderExpandedState, folderId, expanded)
+      SmartLocalStorage.addItem('connectionFolderExpanded-v1', this.folderExpandedState)
+    },
     clearFilter() {
       this.connFilter = null;
     },
