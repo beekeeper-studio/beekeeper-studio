@@ -62,9 +62,9 @@ export const PinConnectionModule: Module<State, RootState> = {
         return;
       }
 
-      const newPin = await Vue.prototype.$util.send('appdb/pinconn/new', { init: item });
+      let newPin = await Vue.prototype.$util.send('appdb/pinconn/new', { init: item });
       newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1;
-      await Vue.prototype.$util.send('appdb/pinconn/save', { obj: newPin })
+      newPin = await Vue.prototype.$util.send('appdb/pinconn/save', { obj: newPin })
       context.commit('add', newPin);
     },
     async reorder(context) {
