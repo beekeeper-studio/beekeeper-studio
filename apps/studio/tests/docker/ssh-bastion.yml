@@ -1,0 +1,48 @@
+version: '3'
+networks:
+  public:
+    driver: bridge
+  internal:
+    driver: bridge
+    internal: true
+services:
+  postgres:
+    image: postgres:13
+    container_name: test_ssh_bastion_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: integration_test
+    networks:
+      - internal
+  ssh_endpoint:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_endpoint
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=false
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
+    networks:
+      - internal
+  jumphost:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_jumphost
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=false
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
+    networks:
+      - public
+      - internal
+    ports:
+      - "2222:2222"

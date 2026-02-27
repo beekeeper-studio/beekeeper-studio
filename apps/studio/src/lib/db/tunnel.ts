@@ -42,8 +42,9 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           bindHost: '127.0.0.1'
         }
 
-        if (config.ssh.useAgent && appConfig.sshAuthSock) {
-          sshConfig.agentSocket = appConfig.sshAuthSock
+        const sshAuthSock = appConfig.testMode ? config.ssh.test_sshAuthSock : appConfig.sshAuthSock
+        if (config.ssh.useAgent && sshAuthSock) {
+          sshConfig.agentSocket = sshAuthSock
         }
 
         if (config.ssh.privateKey && !config.ssh.useAgent) {

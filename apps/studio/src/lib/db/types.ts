@@ -184,6 +184,8 @@ export interface IDbConnectionServerSSHConfig {
   bastionHost: Nullable<string>
   keepaliveInterval: number
   useAgent: boolean
+  /** For testing only */
+  test_sshAuthSock?: string
 }
 
 export interface IDbConnectionServerConfig {
