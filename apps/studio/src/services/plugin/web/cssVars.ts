@@ -54,6 +54,7 @@ export const cssVars = [
   "--bks-text-editor-error-fg-color",
   "--bks-text-editor-fg-color",
   "--bks-text-editor-focused-outline-color",
+  "--bks-text-editor-font-size",
   "--bks-text-editor-foldgutter-fg-color",
   "--bks-text-editor-foldgutter-fg-color-hover",
   "--bks-text-editor-gutter-bg-color",
