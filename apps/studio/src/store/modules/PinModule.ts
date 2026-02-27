@@ -7,7 +7,7 @@ import Vue from "vue";
 
 function matches(pin: TransportPinnedEntity, entity: DatabaseEntity, database?: string) {
   return entity.name === pin.entityName &&
-    ((_.isNil(entity.schema) && _.isNil(pin.schemaName)) || 
+    ((_.isNil(entity.schema) && _.isNil(pin.schemaName)) ||
       entity.schema === pin.schemaName) &&
     entity.entityType === pin.entityType &&
     (!database || database === pin.databaseName)
@@ -75,7 +75,7 @@ export const PinModule: Module<State, RootState> = {
       // this used to be !p.hasId(), hopefully this still works? the alternative is ugly
       const unsavedPins = context.state.pins.filter((p)=> !p.id)
       await Promise.all(unsavedPins.map((p) => {
-        p.connectionId === usedConfig.id && p.workspaceId === usedConfig.id && 
+        p.connectionId === usedConfig.id && p.workspaceId === usedConfig.id &&
           Vue.prototype.$util.send('appdb/pins/save', { obj: p });
       }))
     },
@@ -86,7 +86,7 @@ export const PinModule: Module<State, RootState> = {
 
       if (database && usedConfig) {
         console.log('GETTING NEW PIN: ', item, database, usedConfig)
-        const newPin = await Vue.prototype.$util.send('appdb/pins/new', {
+        let newPin = await Vue.prototype.$util.send('appdb/pins/new', {
           init: {
             table: item,
             db: database,
@@ -95,7 +95,9 @@ export const PinModule: Module<State, RootState> = {
         });
         console.log('RECEIVED NEW PIN: ', newPin)
         newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1
-        if(usedConfig.id) await Vue.prototype.$util.send('appdb/pins/save', { obj: newPin });
+        if(usedConfig.id) {
+          newPin = await Vue.prototype.$util.send('appdb/pins/save', { obj: newPin });
+        }
         context.commit('add', newPin)
       }
     },
