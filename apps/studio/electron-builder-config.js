@@ -1,7 +1,9 @@
 const path = require('path')
 
 const fpmOptions = [
-  "--after-install=build/deb-postinstall"
+  "--after-install=build/deb-postinstall",
+  "build/deb/beekeeper-studio-app.list=/etc/apt/sources.list.d/beekeeper-studio-app.list",
+  "build/deb/beekeeper-studio.asc=/usr/share/keyrings/beekeeper-studio.asc"
 ]
 
 const rpmFpmOptions = [
