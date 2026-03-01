@@ -6,7 +6,7 @@ import { JsonValue } from "@/types";
 import { LoadViewParams } from "@beekeeperstudio/plugin";
 
 export type PluginTabType = 'plugin-base' | 'plugin-shell';
-export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
+export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell' | 'server-status'
 export type TabType = CoreTabType | PluginTabType
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'context']
@@ -182,6 +182,8 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
       return obj.tabType === 'import-table' &&
       obj.tableName === other.tableName &&
       (obj.schemaName || null) === (other.schemaName || null);
+    case 'server-status':
+      return obj.tabType === 'server-status';
     default:
       return false
   }

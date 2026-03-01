@@ -92,6 +92,12 @@
           :tab="tab"
           :tab-id="tab.id"
         />
+        <ServerStatus
+          v-if="tab.tabType === 'server-status'"
+          :active="activeTab?.id === tab.id"
+          :tab="tab"
+          :tab-id="tab.id"
+        />
         <PluginBase
           v-if="tab.tabType === 'plugin-base'"
           :tab="tab"
@@ -324,6 +330,7 @@ import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import Shell from './TabShell.vue'
+import ServerStatus from './TabServerStatus.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
@@ -350,6 +357,7 @@ export default Vue.extend({
     SqlFilesImportModal,
     CreateCollectionModal,
     Shell,
+    ServerStatus,
     PluginShell,
     PluginBase,
   },
@@ -672,6 +680,13 @@ export default Vue.extend({
         this.createQuery()
       } else if (config.type === "shell") {
         this.createShell()
+      } else if (config.type === 'server-status') {
+        const tab = {
+          tabType: 'server-status',
+          title: 'Server Status',
+          unsavedChanges: false,
+        } as TransportOpenTab;
+        await this.addTab(tab)
       } else if (config.type === "plugin-shell" || config.type === "plugin-base") {
         let tNum = 0;
         let title = config.name;
