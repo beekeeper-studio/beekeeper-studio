@@ -204,7 +204,6 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
-
       installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
         .then((name) => console.log(`Added Extension:  ${name}`))
         .catch((err) => console.log('An error occurred: ', err));

@@ -121,6 +121,19 @@ class BeekeeperWindow {
       this.win.webContents.send(`leave-full-screen-${this.sId}`)
     })
 
+    // Handle open-query URL pattern: open-query/:db/:query
+    if (openOptions?.url) {
+      const match = openOptions.url.match(/open-query\/([^/]+)\/([^/]+)/)
+      if (match) {
+        const [, db, query] = match
+        const apiUrl = `${platformInfo.cloudUrl}/api/queries/open-from-share?database=${encodeURIComponent(db)}&query=${encodeURIComponent(query)}`
+        fetch(apiUrl)
+          .then(res => res.json())
+          .then(data => console.log('open-from-share response:', data))
+          .catch(err => console.error('open-from-share error:', err))
+      }
+    }
+
     this.initialize()
       .then(() => log.debug("initialize finished"))
       .catch((ex) => log.error("INITIALIZE ERROR", ex)  )
