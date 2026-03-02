@@ -179,12 +179,14 @@
                 :expanded-initially="getFolderExpanded(folder.id)"
                 @toggle="onFolderToggle(folder.id, $event)"
                 @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
+                @header-drop="onConnectionFolderHeaderDrop(folder)"
               >
                 <Draggable
                   :list="connections"
                   group="connections"
-                  :disabled="isCloud"
                   ghost-class="drag-ghost"
+                  @start="onConnectionDragStart($event, connections)"
+                  @end="draggingConnection = null"
                   @change="onConnectionDrop($event, folder, connections)"
                 >
                   <connection-list-item
@@ -209,12 +211,14 @@
                   :expanded-initially="getFolderExpanded(subfolder.id)"
                   @toggle="onFolderToggle(subfolder.id, $event)"
                   @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+                  @header-drop="onConnectionFolderHeaderDrop(subfolder)"
                 >
                   <Draggable
                     :list="subConnections"
                     group="connections"
-                    :disabled="isCloud"
                     ghost-class="drag-ghost"
+                    @start="onConnectionDragStart($event, subConnections)"
+                    @end="draggingConnection = null"
                     @change="onConnectionDrop($event, subfolder, subConnections)"
                   >
                     <connection-list-item
@@ -235,9 +239,10 @@
               </sidebar-folder>
               <Draggable
                 :list="lonelyConnections"
-                group="connections"
-                :disabled="isCloud"
+                :group="isCloud ? { name: 'connections', put: false } : 'connections'"
                 ghost-class="drag-ghost"
+                @start="onConnectionDragStart($event, lonelyConnections)"
+                @end="draggingConnection = null"
                 @change="onConnectionDrop($event, null, lonelyConnections)"
                 @contextmenu.self.prevent="showLonelyContextMenu($event)"
               >
@@ -378,7 +383,8 @@ export default {
     folderModalName: '',
     folderModalItem: null,
     folderModalParentId: null,
-    folderExpandedState: {}
+    folderExpandedState: {},
+    draggingConnection: null
   }),
   watch: {
     async sort(newSort) {
@@ -424,7 +430,7 @@ export default {
       return !this.pinnedConnections?.length;
     },
     rootFolders() {
-      return this.folders.filter((f) => !f.parentId)
+      return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
     lonelyConnections() {
       const folderIds = this.folders.map((c) => c.id)
@@ -546,13 +552,21 @@ export default {
       }
       this.folderModalName = ''
       this.folderModalItem = null
-      this.folderModalParentId = null
+      this.folderModalParentId = (this.isCloud && this.rootFolders.length > 0)
+        ? this.rootFolders[0].id
+        : null
       this.$modal.show('connection-folder-modal')
     },
     showFolderContextMenu(event, folder) {
       const options = []
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      }
+      if (folder.parentId) {
+        const otherRoots = this.rootFolders.filter(f => f.id !== folder.parentId)
+        otherRoots.forEach(root => {
+          options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
+        })
       }
       options.push(
         { name: 'Rename Folder', handler: ({ item }) => this.renameFolder(item) },
@@ -581,6 +595,9 @@ export default {
       this.folderModalName = folder.name
       this.folderModalItem = folder
       this.$modal.show('connection-folder-modal')
+    },
+    async moveFolderToParent(folder, newParent) {
+      await this.$store.dispatch('data/connectionFolders/save', { ...folder, parentId: newParent.id })
     },
     async deleteFolder(folder) {
       if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
@@ -643,30 +660,59 @@ export default {
         this.$noty.error(`Reorder error: ${ex.message}`)
       }
     },
+    onConnectionDragStart(event, list) {
+      this.draggingConnection = list[event.oldIndex]
+    },
+    cloudRelativePosition(list, newIndex) {
+      const prev = list[newIndex - 1]
+      const next = list[newIndex + 1]
+      if (prev) return { after: prev.id }
+      if (next) return { before: next.id }
+      return { before: null }
+    },
+    async onConnectionFolderHeaderDrop(folder) {
+      if (!this.draggingConnection) return
+      try {
+        await this.$store.dispatch('data/connections/save', {
+          ...this.draggingConnection,
+          connectionFolderId: folder.id,
+          position: { before: null }
+        })
+      } catch (ex) {
+        this.$noty.error(`Move error: ${ex.message}`)
+      }
+    },
     async onConnectionDrop(event, folder, currentList) {
-      // vuedraggable mutates :list in place before firing @change, so currentList
-      // is already in the correct final order when this handler runs.
-      console.info('[ConnectionDrop]', {
-        eventType: event.added ? 'added' : event.moved ? 'moved' : event.removed ? 'removed' : 'unknown',
-        folder: folder ? { id: folder.id, name: folder.name } : null,
-        currentList: currentList.map((c) => ({ id: c.id, name: c.name, position: c.position })),
-        eventDetail: event.added || event.moved || event.removed
-      })
       try {
         if (event.added) {
-          // Item is already present in currentList at the correct index
-          await this.$store.dispatch('data/connections/saveMany',
-            currentList.map((item, idx) => ({
+          const { element: item, newIndex } = event.added
+          if (this.isCloud) {
+            await this.$store.dispatch('data/connections/save', {
               ...item,
               connectionFolderId: folder?.id ?? null,
-              position: idx + 1
-            }))
-          )
+              position: this.cloudRelativePosition(currentList, newIndex)
+            })
+          } else {
+            await this.$store.dispatch('data/connections/saveMany',
+              currentList.map((item, idx) => ({
+                ...item,
+                connectionFolderId: folder?.id ?? null,
+                position: idx + 1
+              }))
+            )
+          }
         } else if (event.moved) {
-          // currentList is already in the correct new order (works for both folder and lonely list)
-          await this.$store.dispatch('data/connections/saveMany',
-            currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
-          )
+          const { element: item, newIndex } = event.moved
+          if (this.isCloud) {
+            await this.$store.dispatch('data/connections/save', {
+              ...item,
+              position: this.cloudRelativePosition(currentList, newIndex)
+            })
+          } else {
+            await this.$store.dispatch('data/connections/saveMany',
+              currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
+            )
+          }
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)

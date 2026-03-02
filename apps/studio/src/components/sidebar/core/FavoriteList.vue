@@ -85,12 +85,14 @@
             :expanded-initially="getFolderExpanded(folder.id)"
             @toggle="onFolderToggle(folder.id, $event)"
             @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
+            @header-drop="onQueryFolderHeaderDrop(folder)"
           >
             <Draggable
               :list="queries"
               group="queries"
-              :disabled="isCloud"
               ghost-class="drag-ghost"
+              @start="onQueryDragStart($event, queries)"
+              @end="draggingQuery = null"
               @change="onQueryDrop($event, folder, queries)"
             >
               <favorite-list-item
@@ -114,12 +116,14 @@
               :expanded-initially="getFolderExpanded(subfolder.id)"
               @toggle="onFolderToggle(subfolder.id, $event)"
               @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+              @header-drop="onQueryFolderHeaderDrop(subfolder)"
             >
               <Draggable
                 :list="subQueries"
                 group="queries"
-                :disabled="isCloud"
                 ghost-class="drag-ghost"
+                @start="onQueryDragStart($event, subQueries)"
+                @end="draggingQuery = null"
                 @change="onQueryDrop($event, subfolder, subQueries)"
               >
                 <favorite-list-item
@@ -140,9 +144,10 @@
           </sidebar-folder>
           <Draggable
             :list="lonelyQueries"
-            group="queries"
-            :disabled="isCloud"
+            :group="isCloud ? { name: 'queries', put: false } : 'queries'"
             ghost-class="drag-ghost"
+            @start="onQueryDragStart($event, lonelyQueries)"
+            @end="draggingQuery = null"
             @change="onQueryDrop($event, null, lonelyQueries)"
             @contextmenu.self.prevent="showLonelyContextMenu($event)"
           >
@@ -265,7 +270,8 @@ export default {
       folderModalName: '',
       folderModalItem: null,
       folderModalParentId: null,
-      folderExpandedState: {}
+      folderExpandedState: {},
+      draggingQuery: null
     }
   },
   mounted() {
@@ -290,7 +296,7 @@ export default {
       }
     },
     rootFolders() {
-      return this.folders.filter((f) => !f.parentId)
+      return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
     loading() {
       return this.queriesLoading || this.foldersLoading || null
@@ -384,13 +390,21 @@ export default {
       }
       this.folderModalName = ''
       this.folderModalItem = null
-      this.folderModalParentId = null
+      this.folderModalParentId = (this.isCloud && this.rootFolders.length > 0)
+        ? this.rootFolders[0].id
+        : null
       this.$modal.show('query-folder-modal')
     },
     showFolderContextMenu(event, folder) {
       const options = []
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      }
+      if (folder.parentId) {
+        const otherRoots = this.rootFolders.filter(f => f.id !== folder.parentId)
+        otherRoots.forEach(root => {
+          options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
+        })
       }
       options.push(
         { name: 'Rename Folder', handler: ({ item }) => this.renameQueryFolder(item) },
@@ -426,6 +440,9 @@ export default {
       this.folderModalItem = folder
       this.$modal.show('query-folder-modal')
     },
+    async moveFolderToParent(folder, newParent) {
+      await this.$store.dispatch('data/queryFolders/save', { ...folder, parentId: newParent.id })
+    },
     async deleteFolder(folder) {
       if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
         try {
@@ -435,30 +452,59 @@ export default {
         }
       }
     },
+    onQueryDragStart(event, list) {
+      this.draggingQuery = list[event.oldIndex]
+    },
+    cloudRelativePosition(list, newIndex) {
+      const prev = list[newIndex - 1]
+      const next = list[newIndex + 1]
+      if (prev) return { after: prev.id }
+      if (next) return { before: next.id }
+      return { before: null }
+    },
+    async onQueryFolderHeaderDrop(folder) {
+      if (!this.draggingQuery) return
+      try {
+        await this.$store.dispatch('data/queries/save', {
+          ...this.draggingQuery,
+          queryFolderId: folder.id,
+          position: { before: null }
+        })
+      } catch (ex) {
+        this.$noty.error(`Move error: ${ex.message}`)
+      }
+    },
     async onQueryDrop(event, folder, currentList) {
-      // vuedraggable mutates :list in place before firing @change, so currentList
-      // is already in the correct final order when this handler runs.
-      console.info('[QueryDrop]', {
-        eventType: event.added ? 'added' : event.moved ? 'moved' : event.removed ? 'removed' : 'unknown',
-        folder: folder ? { id: folder.id, name: folder.name } : null,
-        currentList: currentList.map((q) => ({ id: q.id, title: q.title, position: q.position })),
-        eventDetail: event.added || event.moved || event.removed
-      })
       try {
         if (event.added) {
-          // Item is already present in currentList at the correct index
-          await this.$store.dispatch('data/queries/saveMany',
-            currentList.map((item, idx) => ({
+          const { element: item, newIndex } = event.added
+          if (this.isCloud) {
+            await this.$store.dispatch('data/queries/save', {
               ...item,
               queryFolderId: folder?.id ?? null,
-              position: idx + 1
-            }))
-          )
+              position: this.cloudRelativePosition(currentList, newIndex)
+            })
+          } else {
+            await this.$store.dispatch('data/queries/saveMany',
+              currentList.map((item, idx) => ({
+                ...item,
+                queryFolderId: folder?.id ?? null,
+                position: idx + 1
+              }))
+            )
+          }
         } else if (event.moved) {
-          // currentList is already in the correct new order (works for both folder and lonely list)
-          await this.$store.dispatch('data/queries/saveMany',
-            currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
-          )
+          const { element: item, newIndex } = event.moved
+          if (this.isCloud) {
+            await this.$store.dispatch('data/queries/save', {
+              ...item,
+              position: this.cloudRelativePosition(currentList, newIndex)
+            })
+          } else {
+            await this.$store.dispatch('data/queries/saveMany',
+              currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
+            )
+          }
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)

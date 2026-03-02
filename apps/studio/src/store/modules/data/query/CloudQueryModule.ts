@@ -1,4 +1,5 @@
 import { DataState, mutationsFor, DataStore, actionsFor } from "../DataModuleBase";
+import { havingCli } from "../StoreHelpers";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 
@@ -23,7 +24,14 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   actions: actionsFor<ISavedQuery>('queries', {
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
-    }, 500)
+    }, 500),
+    async saveMany(context, items: ISavedQuery[]) {
+      context.commit('upsert', items)
+      return havingCli(context, async (cli) => {
+        const saved = await Promise.all(items.map(item => cli.queries.upsert(item)))
+        context.commit('upsert', saved)
+      })
+    }
   }),
   getters: {
     filteredQueries(state) {

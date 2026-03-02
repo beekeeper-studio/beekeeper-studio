@@ -1,5 +1,6 @@
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { havingCli } from "@/store/modules/data/StoreHelpers";
 import _ from "lodash";
 
 type State = DataState<ICloudSavedConnection>
@@ -21,7 +22,14 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   actions: actionsFor<ICloudSavedConnection>('connections', {
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
-    }, 500)
+    }, 500),
+    async saveMany(context, items: ICloudSavedConnection[]) {
+      context.commit('upsert', items)
+      return havingCli(context, async (cli) => {
+        const saved = await Promise.all(items.map(item => cli.connections.upsert(item)))
+        context.commit('upsert', saved)
+      })
+    }
   }),
   getters: {
     filteredConnections(state) {

@@ -97,16 +97,21 @@ export default {
       return !this.$store.state['data/connectionFolders']?.unsupported
     },
     moveToOptions() {
+      const rootById = {}
+      this.folders.forEach(f => { if (!f.parentId) rootById[f.id] = f.name })
       return this.folders
-        .filter((folder) => folder.id !== this.config.connectionFolderId)
-        .map((folder) => {
-        return {
-          name: `Move to ${folder.name}`,
-          slug: `move-${folder.id}`,
-          handler: this.moveItem,
-          folder
-        }
-      })
+        .filter(folder => folder.id !== this.config.connectionFolderId)
+        .map(folder => {
+          let name
+          if (!folder.parentId) {
+            const hasSubs = this.folders.some(f => f.parentId === folder.id)
+            name = hasSubs ? `Move to ${folder.name} (top level)` : `Move to ${folder.name}`
+          } else {
+            const parentName = rootById[folder.parentId] || ''
+            name = `Move to ${parentName} \u2192 ${folder.name}`
+          }
+          return { name, slug: `move-${folder.id}`, handler: this.moveItem, folder }
+        })
     },
     classList() {
       return {
