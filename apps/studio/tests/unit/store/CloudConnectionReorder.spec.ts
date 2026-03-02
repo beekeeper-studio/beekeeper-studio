@@ -36,7 +36,7 @@ function createMockConnection(
   } as TestConnection;
 }
 
-function createMockCloudClient(latencyMs: number = 0, siblingPositions?: { id: number; position: number }[]): MockCloudClient {
+function createMockCloudClient(latencyMs: number = 0, siblingPositions?: { id: number; position: number; connectionFolderId?: number | null }[]): MockCloudClient {
   return {
     connections: {
       reorder: jest.fn().mockImplementation(async (id, position, folderId) => {
@@ -49,6 +49,7 @@ function createMockCloudClient(latencyMs: number = 0, siblingPositions?: { id: n
           return siblingPositions.map(s => ({
             id: s.id,
             position: s.position,
+            connectionFolderId: s.connectionFolderId ?? folderId,
             updatedAt: Date.now(),
           }));
         }
@@ -56,6 +57,7 @@ function createMockCloudClient(latencyMs: number = 0, siblingPositions?: { id: n
         return [{
           id,
           position: 1,
+          connectionFolderId: folderId,
           updatedAt: Date.now(),
         }];
       }),

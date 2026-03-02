@@ -83,13 +83,14 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
             position,
             queryFolderId
           )
-          // Update all affected items with their new positions
+          // Update all affected items with their new positions and folder
           affectedItems.forEach(affected => {
             const existing = context.state.items.find(q => q.id === affected.id)
             if (existing) {
               context.commit('upsert', {
                 ...existing,
-                position: affected.position
+                position: affected.position,
+                queryFolderId: affected.queryFolderId
               })
             }
           })

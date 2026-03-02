@@ -5,6 +5,7 @@ import { res, url } from "@/lib/cloud/ClientHelpers";
 export interface ReorderResult {
   id: number;
   position: number;
+  connectionFolderId: number;
   updatedAt: number;
 }
 

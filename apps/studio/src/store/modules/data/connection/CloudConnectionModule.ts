@@ -81,13 +81,14 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
             position,
             connectionFolderId
           )
-          // Update all affected items with their new positions
+          // Update all affected items with their new positions and folder
           affectedItems.forEach(affected => {
             const existing = context.state.items.find(c => c.id === affected.id)
             if (existing) {
               context.commit('upsert', {
                 ...existing,
-                position: affected.position
+                position: affected.position,
+                connectionFolderId: affected.connectionFolderId
               })
             }
           })
