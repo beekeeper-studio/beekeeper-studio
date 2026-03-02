@@ -120,7 +120,7 @@
     "query-string": "^7.0.0",
     "redis": "^5.8.2",
     "redis-splitargs": "^1.0.2",
-    "reflect-metadata": "^0.1.10",
+    "reflect-metadata": "^0.2.2",
     "scrollyfills": "^1.0.0",
     "semver": "^7.7.2",
     "simple-encryptor": "^3.0.0",
