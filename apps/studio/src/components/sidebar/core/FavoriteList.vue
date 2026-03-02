@@ -465,11 +465,23 @@ export default {
     async onQueryFolderHeaderDrop(folder) {
       if (!this.draggingQuery) return
       try {
-        await this.$store.dispatch('data/queries/save', {
-          ...this.draggingQuery,
-          queryFolderId: folder.id,
-          position: { before: null }
-        })
+        if (this.isCloud) {
+          await this.$store.dispatch('data/queries/save', {
+            ...this.draggingQuery,
+            queryFolderId: folder.id,
+            position: { before: null }
+          })
+        } else {
+          const folderItems = this.filteredQueries.filter(q => q.queryFolderId === folder.id)
+          const newList = [this.draggingQuery, ...folderItems.filter(q => q.id !== this.draggingQuery.id)]
+          await this.$store.dispatch('data/queries/saveMany',
+            newList.map((item, idx) => ({
+              ...item,
+              queryFolderId: folder.id,
+              position: idx + 1
+            }))
+          )
+        }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)
       }

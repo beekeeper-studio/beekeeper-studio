@@ -673,11 +673,23 @@ export default {
     async onConnectionFolderHeaderDrop(folder) {
       if (!this.draggingConnection) return
       try {
-        await this.$store.dispatch('data/connections/save', {
-          ...this.draggingConnection,
-          connectionFolderId: folder.id,
-          position: { before: null }
-        })
+        if (this.isCloud) {
+          await this.$store.dispatch('data/connections/save', {
+            ...this.draggingConnection,
+            connectionFolderId: folder.id,
+            position: { before: null }
+          })
+        } else {
+          const folderItems = this.filteredConnections.filter(c => c.connectionFolderId === folder.id)
+          const newList = [this.draggingConnection, ...folderItems.filter(c => c.id !== this.draggingConnection.id)]
+          await this.$store.dispatch('data/connections/saveMany',
+            newList.map((item, idx) => ({
+              ...item,
+              connectionFolderId: folder.id,
+              position: idx + 1
+            }))
+          )
+        }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)
       }
