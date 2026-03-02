@@ -1444,6 +1444,11 @@ export class DBTestUtil {
       await this.knex.schema.raw(`INSERT INTO organizations SELECT * FROM read_csv('${fileLocation}');`)
       return
     }
+    if (this.dbType === 'clickhouse') {
+      const csvData = fs.readFileSync(fileLocation, 'utf-8')
+      await this.knex.schema.raw(`INSERT INTO organizations FORMAT CSVWithNames\n${csvData}`)
+      return
+    }
     return new Promise<void>(async (resolve, reject) => {
       const fileStream = fs.createReadStream(fileLocation)
       const promises = []

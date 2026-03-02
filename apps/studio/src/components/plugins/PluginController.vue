@@ -5,6 +5,9 @@ import { AppEvent } from "@/common/AppEvent";
 import { NativePluginMenuItem } from "@/services/plugin";
 
 export default Vue.extend({
+  props: {
+    editorFontSize: Number,
+  },
   computed: {
     rootBindings() {
       return [
@@ -17,6 +20,14 @@ export default Vue.extend({
           handler: this.handlePluginMenuClicked,
         },
       ];
+    },
+  },
+  watch: {
+    editorFontSize() {
+      this.$plugin.notifyAll({
+        name: "editorFontSizeChanged",
+        args: { value: this.editorFontSize },
+      });
     },
   },
   methods: {

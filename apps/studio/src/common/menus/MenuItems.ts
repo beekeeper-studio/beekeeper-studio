@@ -93,6 +93,23 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.zoomout,
       visible: false,
     },
+    editorFontSizeReset: {
+      id: 'editor-font-size-reset',
+      label: "Reset Editor Font Size",
+      click: actionHandler.editorFontSizeReset
+    },
+    editorFontSizeIncrease: {
+      id: 'editor-font-size-increase',
+      label: "Increase Editor Font Size",
+      accelerator: platformInfo.isMac ? "Command+Shift+." : "Ctrl+Shift+.",
+      click: actionHandler.editorFontSizeIncrease
+    },
+    editorFontSizeDecrease: {
+      id: 'editor-font-size-decrease',
+      label: "Decrease Editor Font Size",
+      accelerator: platformInfo.isMac ? "Command+Shift+," : "Ctrl+Shift+,",
+      click: actionHandler.editorFontSizeDecrease
+    },
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
@@ -323,6 +340,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'manage-plugins',
       label: 'Manage Plugins',
       click: actionHandler.managePlugins,
+    },
+    keyboardShortcuts: {
+      id: 'keyboard-shortcuts',
+      label: 'Keyboard Shortcuts',
+      click: actionHandler.keyboardShortcuts,
     },
   }
 }

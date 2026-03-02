@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { Dialect } from '@shared/lib/dialects/models'
-import { friendlyJsonObject } from '@/common/utils';
+import { friendlyJsonObject, stringifyWithBigInt } from '@/common/utils';
 import rawLog from '@bksLogger';
 
 const log = rawLog.scope('data/tools')
@@ -56,9 +56,10 @@ export const Mutators = {
     if (ArrayBuffer.isView(value)) {
       return value
     }
+    if (typeof value === 'bigint') return Number(value)
     if (_.isDate(value)) return value.toISOString()
-    if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : JSON.stringify(value)
-    if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : JSON.stringify(value)
+    if (_.isArray(value)) return preserveComplex? value.map((v) => mutate(v, preserveComplex)) : stringifyWithBigInt(value)
+    if (_.isObject(value)) return preserveComplex? _.mapValues(value, (v) => mutate(v, preserveComplex)) : stringifyWithBigInt(value)
     if (_.isBoolean(value)) return value
     return value
   },

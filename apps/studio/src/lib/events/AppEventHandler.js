@@ -31,6 +31,7 @@ export default class {
     this.forward(AppEvent.updatePin)
     this.forward(AppEvent.settingsChanged)
     this.forward(AppEvent.openPluginManager)
+    this.forward(AppEvent.openKeyboardShortcuts)
     this.forward(AppEvent.pluginMenuClicked)
   }
 
