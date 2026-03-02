@@ -4,6 +4,9 @@ import {
   Wait,
 } from "testcontainers";
 
+/** Internal SSH port used by the linuxserver/openssh-server image. */
+const SSH_INTERNAL_PORT = 2222;
+
 export class SshBastionEnvironment {
   private environment?: StartedDockerComposeEnvironment;
 
@@ -46,10 +49,19 @@ export class SshBastionEnvironment {
   getBastionHost() {
     if (!this.environment) {
       throw new Error(
-        "SshBastionServer.getJumphost() called before server was started"
+        "SshBastionServer.getBastionPort() called before server was started"
       );
     }
     return this.environment.getContainer("test_ssh_jumphost").getHost();
+  }
+
+  getBastionPort() {
+    if (!this.environment) {
+      throw new Error(
+        "SshBastionServer.getBastionPort() called before server was started"
+      );
+    }
+    return this.environment.getContainer("test_ssh_jumphost").getMappedPort(SSH_INTERNAL_PORT);
   }
 
   getSshEndpoint() {
@@ -57,6 +69,6 @@ export class SshBastionEnvironment {
   }
 
   getSshPort() {
-    return 2222;
+    return SSH_INTERNAL_PORT;
   }
 }

@@ -20,6 +20,7 @@ export default {
       privateKey: config.sshKeyfile,
       passphrase: config.sshKeyfilePassword,
       bastionHost: config.sshBastionHost,
+      bastionPort: config.sshBastionPort,
       useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null

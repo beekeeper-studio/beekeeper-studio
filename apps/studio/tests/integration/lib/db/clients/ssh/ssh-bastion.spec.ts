@@ -52,12 +52,6 @@ describe("SSH Jumphost (Bastion) Tunnel Tests", () => {
   });
 
   it("can ssh with agent", async () => {
-    // Bastion topology: test host -> jumphost (bastion) -> ssh_endpoint -> postgres
-    // Both SSH containers listen on port 2222 internally.
-    // jumphost is fixed-mapped to host port 2222.
-    // sshHost = ssh_endpoint (resolved by jumphost via Docker DNS on internal network)
-    // sshBastionHost = jumphost's host address
-    // sshPort = 2222 (used for both bastion and endpoint connections)
     // @ts-ignore
     const config: IConnection = {
       connectionType: "postgresql",
@@ -70,6 +64,7 @@ describe("SSH Jumphost (Bastion) Tunnel Tests", () => {
       sshPort: environment.getSshPort(),
       sshUsername: "beekeeper",
       sshBastionHost: environment.getBastionHost(),
+      sshBastionPort: environment.getBastionPort(),
       sshMode: "agent",
       sshKeepaliveInterval: 60,
     };

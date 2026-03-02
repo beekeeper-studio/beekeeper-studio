@@ -182,6 +182,7 @@ export interface IDbConnectionServerSSHConfig {
   privateKey: Nullable<string>
   passphrase: Nullable<string>
   bastionHost: Nullable<string>
+  bastionPort: Nullable<number>
   keepaliveInterval: number
   useAgent: boolean
   /** For testing only */

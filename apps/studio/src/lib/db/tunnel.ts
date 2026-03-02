@@ -31,6 +31,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           endHost: config.ssh.host || '',
           endPort: config.ssh.port,
           bastionHost: config.ssh.bastionHost || '',
+          bastionPort: config.ssh.bastionPort,
           agentForward: config.ssh.useAgent,
           passphrase: config.ssh.passphrase || undefined,
           username: config.ssh.user || undefined,

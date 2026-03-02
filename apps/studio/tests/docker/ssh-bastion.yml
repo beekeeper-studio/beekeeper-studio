@@ -1,3 +1,7 @@
+# For testing ssh tunneling
+#
+# Postgres <- ssh_endpoint <- jumphost (localhost:2222)
+
 version: '3'
 networks:
   public:
@@ -44,5 +48,5 @@ services:
     networks:
       - public
       - internal
-    ports:
-      - "2222:2222"
+    expose:
+      - "2222"

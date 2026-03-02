@@ -30,6 +30,7 @@ interface Options {
   privateKey?: string | Buffer
   agentForward?: boolean
   bastionHost?: string
+  bastionPort?: number
   passphrase?: string
   endPort?: number
   endHost: string
@@ -136,35 +137,35 @@ class SSHConnection {
     let connection: Client
     this.debug("establish with options", this.options)
     if (this.options.bastionHost) {
-      connection = await this.connectViaBastion(this.options.bastionHost)
+      connection = await this.connectViaBastion(this.options.bastionHost, this.options.bastionPort)
     } else {
-      connection = await this.connect(this.options.endHost)
+      connection = await this.connect(this.options.endHost, this.options.endPort)
     }
     return connection
   }
 
-  private async connectViaBastion(bastionHost: string) {
+  private async connectViaBastion(bastionHost: string, bastionPort?: number) {
     this.debug('Connecting to bastion host "%s"', bastionHost)
-    const connectionToBastion = await this.connect(bastionHost)
+    const connectionToBastion = await this.connect(bastionHost, bastionPort)
     return new Promise<Client>((resolve, reject) => {
       connectionToBastion.forwardOut('127.0.0.1', 22, this.options.endHost, this.options.endPort || 22, async (err, stream) => {
         if (err) {
           return reject(err)
         }
-        const connection = await this.connect(this.options.endHost, stream)
+        const connection = await this.connect(this.options.endHost, undefined, stream)
         return resolve(connection)
       })
     })
   }
 
-  private async connect(host: string, stream?: NodeJS.ReadableStream): Promise<Client> {
+  private async connect(host: string, port?: number, stream?: NodeJS.ReadableStream): Promise<Client> {
     this.debug('Connecting to "%s"', host)
     const connection = new Client()
     return new Promise<Client>((resolve, reject) => {
 
       const options = {
         host,
-        port: this.options.endPort,
+        port,
         username: this.options.username,
         password: this.options.password,
         privateKey: this.options.privateKey,

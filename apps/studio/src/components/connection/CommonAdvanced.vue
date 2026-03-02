@@ -36,7 +36,7 @@
         </div>
       </div>
       <div class="row gutter">
-        <div class="col s8 form-group">
+        <div class="col s6 form-group">
           <label for="bastionHost">Bastion Host (Jump Host)</label>
           <masked-input
             :value="config.sshBastionHost"
@@ -44,11 +44,18 @@
             @input="val => config.sshBastionHost = val"
           />
         </div>
-        <div class="col s4 form-group">
+        <div class="col s3 form-group">
+          <label for="bastionHost">Bastion Port</label>
+          <masked-input
+            :value="config.sshBastionPort"
+            :privacyMode="privacyMode"
+            @input="val => config.sshBastionPort = val"
+          />
+        </div>
+        <div class="col s3 form-group">
           <label for="sshKeepaliveInterval">
             Keepalive Interval <i
               class="material-icons"
-              style="padding-left: 0.25rem"
               v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
             >help_outlined</i>
           </label>
@@ -157,6 +164,7 @@
             <label for="sshKeyfile">Private Key File</label>
             <file-picker
               v-model="config.sshKeyfile"
+              editable
               :show-hidden-files="true"
               :default-path="filePickerDefaultPath"
             />
