@@ -673,23 +673,12 @@ export default {
     async onConnectionFolderHeaderDrop(folder) {
       if (!this.draggingConnection) return
       try {
-        if (this.isCloud) {
-          await this.$store.dispatch('data/connections/save', {
-            ...this.draggingConnection,
-            connectionFolderId: folder.id,
-            position: { before: null }
-          })
-        } else {
-          const folderItems = this.filteredConnections.filter(c => c.connectionFolderId === folder.id)
-          const newList = [this.draggingConnection, ...folderItems.filter(c => c.id !== this.draggingConnection.id)]
-          await this.$store.dispatch('data/connections/saveMany',
-            newList.map((item, idx) => ({
-              ...item,
-              connectionFolderId: folder.id,
-              position: idx + 1
-            }))
-          )
-        }
+        // Use reorder action for both local and cloud workspaces
+        await this.$store.dispatch('data/connections/reorder', {
+          item: this.draggingConnection,
+          connectionFolderId: folder.id,
+          position: { before: null }
+        })
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)
       }
@@ -698,33 +687,19 @@ export default {
       try {
         if (event.added) {
           const { element: item, newIndex } = event.added
-          if (this.isCloud) {
-            await this.$store.dispatch('data/connections/save', {
-              ...item,
-              connectionFolderId: folder?.id ?? null,
-              position: this.cloudRelativePosition(currentList, newIndex)
-            })
-          } else {
-            await this.$store.dispatch('data/connections/saveMany',
-              currentList.map((item, idx) => ({
-                ...item,
-                connectionFolderId: folder?.id ?? null,
-                position: idx + 1
-              }))
-            )
-          }
+          // Use reorder action for both local and cloud workspaces
+          await this.$store.dispatch('data/connections/reorder', {
+            item,
+            connectionFolderId: folder?.id ?? null,
+            position: this.cloudRelativePosition(currentList, newIndex)
+          })
         } else if (event.moved) {
           const { element: item, newIndex } = event.moved
-          if (this.isCloud) {
-            await this.$store.dispatch('data/connections/save', {
-              ...item,
-              position: this.cloudRelativePosition(currentList, newIndex)
-            })
-          } else {
-            await this.$store.dispatch('data/connections/saveMany',
-              currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
-            )
-          }
+          // Use reorder action for both local and cloud workspaces
+          await this.$store.dispatch('data/connections/reorder', {
+            item,
+            position: this.cloudRelativePosition(currentList, newIndex)
+          })
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)

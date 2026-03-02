@@ -465,23 +465,12 @@ export default {
     async onQueryFolderHeaderDrop(folder) {
       if (!this.draggingQuery) return
       try {
-        if (this.isCloud) {
-          await this.$store.dispatch('data/queries/save', {
-            ...this.draggingQuery,
-            queryFolderId: folder.id,
-            position: { before: null }
-          })
-        } else {
-          const folderItems = this.filteredQueries.filter(q => q.queryFolderId === folder.id)
-          const newList = [this.draggingQuery, ...folderItems.filter(q => q.id !== this.draggingQuery.id)]
-          await this.$store.dispatch('data/queries/saveMany',
-            newList.map((item, idx) => ({
-              ...item,
-              queryFolderId: folder.id,
-              position: idx + 1
-            }))
-          )
-        }
+        // Use reorder action for both local and cloud workspaces
+        await this.$store.dispatch('data/queries/reorder', {
+          item: this.draggingQuery,
+          queryFolderId: folder.id,
+          position: { before: null }
+        })
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)
       }
@@ -490,33 +479,19 @@ export default {
       try {
         if (event.added) {
           const { element: item, newIndex } = event.added
-          if (this.isCloud) {
-            await this.$store.dispatch('data/queries/save', {
-              ...item,
-              queryFolderId: folder?.id ?? null,
-              position: this.cloudRelativePosition(currentList, newIndex)
-            })
-          } else {
-            await this.$store.dispatch('data/queries/saveMany',
-              currentList.map((item, idx) => ({
-                ...item,
-                queryFolderId: folder?.id ?? null,
-                position: idx + 1
-              }))
-            )
-          }
+          // Use reorder action for both local and cloud workspaces
+          await this.$store.dispatch('data/queries/reorder', {
+            item,
+            queryFolderId: folder?.id ?? null,
+            position: this.cloudRelativePosition(currentList, newIndex)
+          })
         } else if (event.moved) {
           const { element: item, newIndex } = event.moved
-          if (this.isCloud) {
-            await this.$store.dispatch('data/queries/save', {
-              ...item,
-              position: this.cloudRelativePosition(currentList, newIndex)
-            })
-          } else {
-            await this.$store.dispatch('data/queries/saveMany',
-              currentList.map((item, idx) => ({ ...item, position: idx + 1 }))
-            )
-          }
+          // Use reorder action for both local and cloud workspaces
+          await this.$store.dispatch('data/queries/reorder', {
+            item,
+            position: this.cloudRelativePosition(currentList, newIndex)
+          })
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.message}`)
