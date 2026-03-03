@@ -177,7 +177,14 @@ export default Vue.extend({
       try {
         const { auth, cancelled  } = await this.$bks.unlock();
         if (cancelled) return;
-        await this.$store.dispatch('openUrl', { url: this.url, auth })
+
+        const match = this.url.match(/open-query\/([^/]+)\/([^/]+)/)
+        if (match) {
+          const [, db, query] = match
+          await this.$store.dispatch('openSharedQuery', { db, query, auth })
+        } else {
+          await this.$store.dispatch('openUrl', { url: this.url, auth })
+        }
       } catch (error) {
         console.error(error)
         this.$noty.error(`Error opening ${this.url}: ${error}`)

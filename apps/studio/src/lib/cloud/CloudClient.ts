@@ -69,6 +69,14 @@ export class CloudClient {
     return await controller.get(email, key, installationId, platformInfo)
   }
 
+  public static async openFromShare(baseUrl: string, database: string, query: string): Promise<{ databaseId: number, queryId: number, workspaceId: number }> {
+    const cli = staticAxios(baseUrl)
+    const response = await cli.get('/api/queries/open-from-share', {
+      params: { database, query }
+    })
+    return res(response, 'data')
+  }
+
   axios: AxiosInstance
   public queries: QueriesController
   public connections: ConnectionsController

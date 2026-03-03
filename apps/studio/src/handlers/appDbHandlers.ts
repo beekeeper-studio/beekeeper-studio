@@ -23,6 +23,7 @@ import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
+import { CloudClient } from '@/lib/cloud/CloudClient';
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -175,6 +176,9 @@ export const AppDbHandlers = {
       throw `Unable to parse ${url}`;
     }
     return defaultTransform(conn, SavedConnection);
+  },
+  'appdb/share-query': async function({ db, query }: { db: string, query: string }) {
+    return await CloudClient.openFromShare(platformInfo.cloudUrl, db, query);
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOneBy({ key });

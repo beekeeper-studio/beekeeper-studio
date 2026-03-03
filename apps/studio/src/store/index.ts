@@ -432,6 +432,12 @@ const store = new Vuex.Store<State>({
       await context.dispatch('connect', { config: conn, auth })
     },
 
+    async openSharedQuery(context, { db, query }: { db: string, query: string }) {
+      const response = await Vue.prototype.$util.send('appdb/share-query', { db, query });
+
+      console.log(response)
+    },
+
     updateWindowTitle(context) {
       const config = context.state.usedConfig
       let title = config
