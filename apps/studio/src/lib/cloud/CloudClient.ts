@@ -69,14 +69,6 @@ export class CloudClient {
     return await controller.get(email, key, installationId, platformInfo)
   }
 
-  public static async openFromShare(baseUrl: string, database: string, query: string): Promise<{ databaseId: number, queryId: number, workspaceId: number }> {
-    const cli = staticAxios(baseUrl)
-    const response = await cli.get('/api/queries/open-from-share', {
-      params: { database, query }
-    })
-    return res(response, 'data')
-  }
-
   axios: AxiosInstance
   public queries: QueriesController
   public connections: ConnectionsController
@@ -110,12 +102,12 @@ export class CloudClient {
     this.usedQueries = new UsedQueriesController(this.axios)
 
     this.axios.interceptors.request.use(request => {
-      log.debug('REQ', JSON.stringify(request, null, 2))
+      try { log.debug('REQ', JSON.stringify(request, null, 2)) } catch { /* circular */ }
       return request
     })
 
     this.axios.interceptors.response.use(response => {
-      log.debug('RES:', JSON.stringify(response, null, 2))
+      try { log.debug('RES:', JSON.stringify(response, null, 2)) } catch { /* circular */ }
       return response
     })
 

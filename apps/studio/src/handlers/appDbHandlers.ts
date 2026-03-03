@@ -178,7 +178,22 @@ export const AppDbHandlers = {
     return defaultTransform(conn, SavedConnection);
   },
   'appdb/share-query': async function({ db, query }: { db: string, query: string }) {
-    return await CloudClient.openFromShare(platformInfo.cloudUrl, db, query);
+    const credential = await CloudCredential.findOne({ where: {} });
+    if (!credential) throw new Error('No cloud credentials found. Please log in to Beekeeper Cloud.');
+    const client = new CloudClient({
+      token: credential.token,
+      email: credential.email,
+      app: credential.appId,
+      clientVersion: platformInfo.appVersion,
+      baseUrl: platformInfo.cloudUrl,
+    });
+    const response = await client.axios.get('/queries/open-from-share', {
+      params: { database: db, query },
+    });
+    if (response.status !== 200) {
+      throw new Error(`Cloud error (${response.status}): ${response.data?.message ?? 'Unknown error'}`);
+    }
+    return response.data;
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOneBy({ key });
