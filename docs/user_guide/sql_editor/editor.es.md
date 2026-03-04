@@ -76,6 +76,61 @@ quoted[] = '@'
 quoted[] = '$'
 ```
 
+### Ordenamiento de Parametros
+
+Cuando ejecutas una consulta parametrizada, Beekeeper muestra un modal donde puedes ingresar valores para cada parametro. Puedes controlar como se ordenan los parametros en este modal.
+
+**Dos modos de ordenamiento estan disponibles:**
+
+1. **Orden de Insercion (Predeterminado)** - Los parametros aparecen en el orden en que los escribiste en tu consulta
+2. **Alfanumerico** - Los parametros se ordenan con manejo inteligente de numeros
+
+#### Orden de Insercion (Predeterminado)
+
+Este es el modo predeterminado. Los parametros aparecen en el orden exacto en que los escribiste en tu consulta, lo cual es util cuando el orden es importante para entender tu consulta.
+
+**Ejemplo:**
+```sql
+SELECT * FROM users
+WHERE id = :1
+  AND age > :10
+  AND status = :2
+```
+
+Los parametros se mostraran como: `:1`, `:10`, `:2` (en el orden en que aparecen)
+
+#### Ordenamiento Alfanumerico
+
+Cuando esta habilitado, este modo ordena los parametros inteligentemente. Los parametros numericos se ordenan numericamente (no alfabeticamente), por lo que `:1` viene antes de `:2` que viene antes de `:10` (no `:1`, `:10`, `:2`).
+
+**La misma consulta con ordenamiento alfanumerico:**
+```sql
+SELECT * FROM users
+WHERE id = :1
+  AND age > :10
+  AND status = :2
+```
+
+Los parametros se mostraran como: `:1`, `:2`, `:10` (ordenados numericamente)
+
+Los parametros con nombre se ordenan alfabeticamente:
+```sql
+SELECT * FROM users
+WHERE name = :userName
+  AND email = :userEmail
+  AND age > :minAge
+```
+
+Se muestra como: `:minAge`, `:userEmail`, `:userName` (orden alfabetico)
+
+#### Configurar el Modo de Ordenamiento de Parametros
+
+{% include-markdown '../../includes/parameter_sort_mode_config.es.md'%}
+
+!!! tip "Cuando usar cada modo"
+    - **Orden de insercion**: Mejor cuando llenas los parametros en el orden en que los escribiste, o cuando el orden de los parametros es significativo
+    - **Alfanumerico**: Mejor cuando tienes muchos parametros y quieres encontrar especificos mas facilmente
+
 
 ## Descargar resultados
 
