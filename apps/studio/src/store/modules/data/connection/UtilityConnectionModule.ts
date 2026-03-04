@@ -30,7 +30,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
       const existing = context.state.items.find(c => c.id === item.id)
       if (!existing) return
 
-      const targetFolderId = connectionFolderId ?? existing.connectionFolderId
+      const targetFolderId = connectionFolderId !== undefined ? connectionFolderId : existing.connectionFolderId
 
       // Get all siblings in the target folder, sorted by position
       const siblings = context.state.items

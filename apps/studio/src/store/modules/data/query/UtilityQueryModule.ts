@@ -29,7 +29,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
       const existing = context.state.items.find(q => q.id === item.id)
       if (!existing) return
 
-      const targetFolderId = queryFolderId ?? existing.queryFolderId
+      const targetFolderId = queryFolderId !== undefined ? queryFolderId : existing.queryFolderId
 
       // Get all siblings in the target folder, sorted by position
       const siblings = context.state.items

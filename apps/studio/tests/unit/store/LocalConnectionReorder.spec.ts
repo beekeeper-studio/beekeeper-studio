@@ -134,6 +134,39 @@ describe('UtilConnectionModule reorder', () => {
       ])
     })
 
+    it('moves connection to top level when connectionFolderId is explicitly null', async () => {
+      // Reproduces the drag-to-top-level bug: connectionFolderId: null was being treated
+      // the same as connectionFolderId: undefined (i.e. "keep existing folder") because
+      // the nullish coalescing operator (??) short-circuits on null.
+      const items = [
+        { id: 1, name: 'A', position: 1, connectionFolderId: null },
+        { id: 2, name: 'B', position: 1, connectionFolderId: 10 },
+        { id: 3, name: 'C', position: 2, connectionFolderId: 10 },
+      ]
+
+      store.commit('connections/replace', items)
+
+      // Drag item 2 (in folder 10) to the top-level drop zone
+      await store.dispatch('connections/reorder', {
+        item: items.find(i => i.id === 2)!,
+        connectionFolderId: null, // explicit null = "move to top level"
+        position: { before: null }  // first position among top-level items
+      })
+
+      const item2 = store.state.connections.items.find((i: any) => i.id === 2)
+      expect(item2.connectionFolderId).toBeNull()
+
+      // Item 2 should now live alongside item 1 at the top level
+      const topLevel = store.state.connections.items
+        .filter((i: any) => i.connectionFolderId === null)
+        .sort((a: any, b: any) => a.position - b.position)
+      expect(topLevel.map((i: any) => i.id)).toContain(2)
+
+      // Item 3 should still be in folder 10
+      const item3 = store.state.connections.items.find((i: any) => i.id === 3)
+      expect(item3.connectionFolderId).toBe(10)
+    })
+
     it('maintains correct positions when moving within unsorted state', async () => {
       // Simulate real-world scenario: items loaded in arbitrary order
       const items = [
