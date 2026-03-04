@@ -197,6 +197,7 @@
                     :show-duplicate="true"
                     :pinned="pinnedConnections.includes(c)"
                     :privacy-mode="privacyMode"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
                     @edit="edit"
                     @remove="remove"
                     @duplicate="duplicate"
@@ -229,6 +230,7 @@
                       :show-duplicate="true"
                       :pinned="pinnedConnections.includes(c)"
                       :privacy-mode="privacyMode"
+                      :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
                       @edit="edit"
                       @remove="remove"
                       @duplicate="duplicate"
@@ -254,6 +256,7 @@
                   :show-duplicate="true"
                   :pinned="pinnedConnections.includes(c)"
                   :privacy-mode="privacyMode"
+                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
@@ -398,7 +401,8 @@ export default {
     ...mapState('data/connections', {
       connectionsLoading: 'loading',
       connectionsError: 'error',
-      connectionFilter: 'filter'
+      connectionFilter: 'filter',
+      pendingSaveIds: 'pendingSaveIds'
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
@@ -680,7 +684,7 @@ export default {
           position: { before: null }
         })
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.message}`)
+        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
     async onConnectionDrop(event, folder, currentList) {
@@ -702,7 +706,7 @@ export default {
           })
         }
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.message}`)
+        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
     async submitFolderModal() {
@@ -725,5 +729,8 @@ export default {
 }
 .folder-drop-zone {
   min-height: 8px;
+}
+.drag-pending {
+  opacity: 0.5;
 }
 </style>

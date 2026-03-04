@@ -101,6 +101,7 @@
                 :item="item"
                 :active="isActive(item)"
                 :selected="selected === item"
+                :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
                 @remove="remove"
                 @select="select"
                 @open="open"
@@ -132,6 +133,7 @@
                   :item="item"
                   :active="isActive(item)"
                   :selected="selected === item"
+                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
                   @remove="remove"
                   @select="select"
                   @open="open"
@@ -157,6 +159,7 @@
               :item="item"
               :active="isActive(item)"
               :selected="selected === item"
+              :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
               @remove="remove"
               @select="select"
               @open="open"
@@ -285,7 +288,7 @@ export default {
     ...mapGetters(['workspace', 'isCloud', 'isUltimate']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
-    ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter'}),
+    ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     filterQuery: {
       get() {
@@ -472,7 +475,7 @@ export default {
           position: { before: null }
         })
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.message}`)
+        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
     async onQueryDrop(event, folder, currentList) {
@@ -494,7 +497,7 @@ export default {
           })
         }
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.message}`)
+        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
     async submitFolderModal() {
@@ -514,6 +517,9 @@ export default {
 <style lang="scss" scoped>
 .drag-ghost {
   opacity: 0.4;
+}
+.drag-pending {
+  opacity: 0.5;
 }
 .folder-drop-zone {
   min-height: 8px;

@@ -63,6 +63,9 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
         }
       }
 
+      // Snapshot before any mutation (upsert mutates existing in-place via Object.assign)
+      const snapshot = { ...existing }
+
       // Mark as pending to protect from poll overwrites
       context.commit('addPendingSave', item.id)
 
@@ -94,6 +97,10 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
           })
           return item.id
         })
+      } catch (e) {
+        // Revert optimistic update using pre-mutation snapshot
+        context.commit('upsert', snapshot)
+        throw e
       } finally {
         // Clear pending status
         context.commit('removePendingSave', item.id)
