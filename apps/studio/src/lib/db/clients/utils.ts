@@ -6,7 +6,6 @@ import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { fromIni } from "@aws-sdk/credential-providers";
 import { Signer } from "@aws-sdk/rds-signer";
-import globals from "@/common/globals";
 import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
@@ -15,6 +14,7 @@ import { AuthOptions } from "@/lib/db/authentication/azure";
 import { spawn } from "child_process";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 import { AwsCredentialIdentity, RuntimeConfigAwsCredentialIdentityProvider } from '@aws-sdk/types'
+import platformInfo from '@/common/platform_info'
 
 const log = logRaw.scope('db/util')
 
@@ -437,6 +437,18 @@ export async function refreshTokenIfNeeded(iamOptions: IamAuthOptions, server: a
   return resolvedPw;
 }
 
+export function sanitizeCommandPath(path: string): string {
+  if (!path) return path;
+
+  if (platformInfo.isWindows) {
+    const escaped = path.replace(/"/g, '""');
+    return `"${escaped}"`;
+  } else {
+    const escaped = path.replace(/'/g, "'\\''");
+    return `'${escaped}'`;
+  }
+}
+
 export async function getAWSCLIToken(server: IDbConnectionServerConfig, options: IamAuthOptions): Promise<string> {
   if (!options?.cliPath) {
     throw new Error('AZ command not specified');
@@ -449,7 +461,7 @@ export async function getAWSCLIToken(server: IDbConnectionServerConfig, options:
   }
 
   return new Promise<string>((resolve, reject) => {
-    const proc = spawn(options.cliPath, [
+    const proc = spawn(sanitizeCommandPath(options.cliPath), [
       'rds',
       'generate-db-auth-token',
       '--hostname',
@@ -461,7 +473,7 @@ export async function getAWSCLIToken(server: IDbConnectionServerConfig, options:
       '--username',
       server.user,
       ...extraArgs
-    ]);
+    ], { shell: true });
 
     let stdout = '';
     let stderr = '';

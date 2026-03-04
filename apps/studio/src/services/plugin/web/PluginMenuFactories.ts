@@ -21,6 +21,7 @@ import {
   RowMenuTarget,
 } from "@beekeeperstudio/plugin";
 import { getParsedKeybinding } from "../utils";
+import { NativePluginMenuItem } from "../types";
 
 type BigIntSerialized = number;
 
@@ -174,6 +175,16 @@ const pluginMenuFactories: MenuFactories = {
   "menubar.tools": {
     create(context, menuItem, { keyPath }) {
       const id = `${context.manifest.id}-${menuItem.command}`;
+      const accelerator = keyPath ?
+        getParsedKeybinding(window.bksConfig, keyPath, "electron")
+        : undefined,
+      const item: NativePluginMenuItem = {
+        id,
+        pluginId: context.manifest.id,
+        label: menuItem.name,
+        command: menuItem.command,
+        accelerator,
+      };
       return {
         add() {
           context.store.addMenuBarItem({
@@ -181,20 +192,15 @@ const pluginMenuFactories: MenuFactories = {
             label: menuItem.name,
             parentId: "tools",
             disableWhenDisconnected: true,
-            accelerator: keyPath ?
-              getParsedKeybinding(window.bksConfig, keyPath, "electron")
-              : undefined,
-            action: {
-              event: AppEvent.newCustomTab,
-              args: context.store.buildPluginTabInit({
-                manifest: context.manifest,
-                viewId: menuItem.view,
-                command: menuItem.command,
-              }),
-            },
+            accelerator,
+            action: { event: AppEvent.pluginMenuClicked, args: item },
           });
+          window.main.addNativeMenuItem(item);
         },
-        remove: () => context.store.removeMenuBarItem(id),
+        remove: () => {
+          context.store.removeMenuBarItem(id);
+          window.main.removeMenuBarItem(id);
+        },
         // NOTE: The `accelerator` is parsed to v-hotkey automatically so this
         // isn't necessary.
         // keybindingHandler() {

@@ -3,6 +3,7 @@
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
+      :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }"
     >
       <titlebar />
       <template v-if="storeInitialized">
@@ -13,7 +14,6 @@
           v-else
         />
         <auto-updater />
-        <state-manager />
         <notification-manager />
         <upgrade-required-modal />
       </template>
@@ -35,8 +35,9 @@
     <workspace-rename-modal />
     <import-queries-modal />
     <import-connections-modal />
-    <plugin-controller />
+    <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
+    <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <util-died-modal />
@@ -55,7 +56,6 @@ import Titlebar from './components/Titlebar.vue'
 import CoreInterface from './components/CoreInterface.vue'
 import ConnectionInterface from './components/ConnectionInterface.vue'
 import AutoUpdater from './components/AutoUpdater.vue'
-import StateManager from './components/quicksearch/StateManager.vue'
 import DataManager from './components/data/DataManager.vue'
 import querystring from 'query-string'
 import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vue'
@@ -81,6 +81,7 @@ import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExp
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
+import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 
@@ -94,11 +95,11 @@ export default Vue.extend({
   mixins: [assignContextMenuToAllInputs],
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
-    StateManager, DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
+    DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
-    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager,
+    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
   },
   data() {
     return {
@@ -122,7 +123,10 @@ export default Vue.extend({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
       'themeValue': 'settings/themeValue',
-    })
+    }),
+    editorFontSize() {
+      return this.$store.state.settings?.settings?.editorFontSize?.value || 14
+    }
   },
   watch: {
     database() {

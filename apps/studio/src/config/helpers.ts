@@ -1,17 +1,17 @@
 import ini from "ini";
 import _ from "lodash";
-import { DatabaseTypes } from "../lib/db/types.ts"
+import { DatabaseTypes } from "../lib/db/types";
 
 // https://stackoverflow.com/a/175787/10012118
-function isNumeric(str) {
+function isNumeric(str: unknown): boolean {
   if (typeof str != "string") return false; // we only process strings!
   return (
-    !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(str as unknown as number) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
     !isNaN(parseFloat(str))
   ); // ...and ensure strings of whitespace fail
 }
 
-function parseIni(text) {
+function parseIni(text: string): Record<string, unknown> {
   const obj = ini.parse(text);
   return _.cloneDeepWith(obj, (value) => {
     if (isNumeric(value)) {
@@ -20,8 +20,8 @@ function parseIni(text) {
   });
 }
 
-function populateDefaults(config, parentPath, defaultPath) {
-  const defaultObj = _.get(config, defaultPath)
+function populateDefaults(config: Record<string, unknown>, parentPath: string, defaultPath: string): void {
+  const defaultObj = _.get(config, defaultPath) as Record<string, unknown> | undefined;
   if (!defaultObj) {
     throw new Error(`Failed to retrieve default object for key path: ${defaultPath}`)
   }
@@ -46,14 +46,13 @@ function populateDefaults(config, parentPath, defaultPath) {
   }
 }
 
-function processRawConfig(config) {
-  const dbObj = config.db;
+function processRawConfig(config: Record<string, unknown>): Record<string, unknown> {
+  const dbObj = config.db as Record<string, unknown> | undefined;
 
   if (dbObj && _.has(dbObj, "default")) {
     // this sanitizes the defaults before we set them for all other dbs (ie [ '' ] => [])
     populateDefaults(config, `db.default_parsed`, 'db.default')
-    config.db.default = config.db.default_parsed
-    config.db.default_parsed = undefined
+    config.db = { ...dbObj, default: (config.db as Record<string, unknown>).default_parsed, default_parsed: undefined };
     for (const d of DatabaseTypes) {
       const section = d === "postgresql" ? "postgres" : d;
       populateDefaults(config, `db.${section}`, "db.default")

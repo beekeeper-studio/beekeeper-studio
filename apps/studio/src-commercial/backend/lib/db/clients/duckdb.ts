@@ -87,6 +87,11 @@ interface DuckDBResultArrayData extends DuckDBResultBase {
   rows: RowArray[];
 }
 
+interface ColumnsAndTotalRows {
+  columns: TableColumn[]
+  totalRows: number
+}
+
 type DuckDBResult<Mode = "object"> = Mode extends "array" ? DuckDBResultArrayData : DuckDBResultObjectData;
 
 function buildFilterString(
@@ -1078,18 +1083,40 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     chunkSize: number,
     schema: string
   ): Promise<StreamResults> {
+    const query = await this.selectTopSql(table, null, null, orderBy, filters, schema);
     const columns = await this.listTableColumns(table, schema);
     const totalRows = await this.getTableLength(table, schema);
-    const options = { schema, table, orderBy, filters, chunkSize };
-    const cursor = new DuckDBCursor(this, options);
+    const cursor = new DuckDBCursor(this.connectionInstance, query, chunkSize);
     return { totalRows, columns, cursor };
   }
 
   async queryStream(
-    _query: string,
-    _chunkSize: number
+    query: string,
+    chunkSize: number
   ): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+    const cursor = new DuckDBCursor(this.connectionInstance, query, chunkSize);
+
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+
+    return {
+      totalRows,
+      columns,
+      cursor
+    }
+  }
+
+  async getColumnsAndTotalRows(query: string): Promise<ColumnsAndTotalRows> {
+    const [result] = await this.executeQuery(query)
+    const {fields, rowCount: totalRows} = result
+    const columns = fields.map(f => ({
+      columnName: f.name,
+      dataType: f.dataType
+    }))
+
+    return {
+      columns,
+      totalRows
+    }
   }
 
   async getTableLength(table: string, schema: string): Promise<number> {

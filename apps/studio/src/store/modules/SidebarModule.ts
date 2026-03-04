@@ -131,7 +131,7 @@ export const SidebarModule: Module<State, RootState> = {
         if (_.isNumber(size)) {
           const width = params.containerWidth * (size / 100);
           const clampedWidth = Math.max(
-            Math.min(window.bksConfig.ui.layout.primarySidebarMaxWidth, width),
+            width,
             window.bksConfig.ui.layout.primarySidebarMinWidth
           );
           context.dispatch("setPrimarySidebarWidth", clampedWidth);
@@ -144,7 +144,7 @@ export const SidebarModule: Module<State, RootState> = {
         if (_.isNumber(size)) {
           const width = params.containerWidth * (size / 100);
           const clampedWidth = Math.max(
-            Math.min(window.bksConfig.ui.layout.secondarySidebarMaxWidth, width),
+            width,
             window.bksConfig.ui.layout.secondarySidebarMinWidth
           );
           context.dispatch("setSecondarySidebarWidth", clampedWidth);

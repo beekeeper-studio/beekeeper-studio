@@ -37,19 +37,11 @@ export default Vue.extend({
     },
     command: String,
     params: null as PropType<LoadViewParams>,
-    // @todo move url creation to this component by using pluginId and viewId
-    url: {
-      type: String,
-      required: true,
-    },
     onRequest: Function,
-    reload: null,
   },
   data() {
     return {
       loaded: false,
-      // Use a timestamp parameter to force iframe refresh
-      timestamp: Date.now(),
       unsubscribe: null,
       unsubscribeOnReady: null,
       unsubscribeOnDispose: null,
@@ -59,10 +51,6 @@ export default Vue.extend({
     };
   },
   computed: {
-    baseUrl() {
-      // FIXME move this somewhere
-      return `${this.url}?timestamp=${this.timestamp}`;
-    },
     shouldMountIframe() {
       // If it's already mounted, do not unmount it unless it's not loaded
       if (this.mounted) {
@@ -75,14 +63,14 @@ export default Vue.extend({
     },
   },
   watch: {
-    reload() {
-      this.timestamp = Date.now();
-    },
     shouldMountIframe: {
       async handler() {
         await this.$nextTick();
         if (this.shouldMountIframe) {
-          this.mountIframe();
+          this.mountIframe().catch((e) => {
+            log.error(e);
+            this.error = e instanceof Error ? e.message : String(e);
+          });
         } else {
           this.unmountIframe();
         }
@@ -116,7 +104,7 @@ export default Vue.extend({
       }
 
       const iframe = document.createElement("iframe");
-      iframe.src = this.baseUrl;
+      iframe.src = this.$plugin.buildUrlFor(this.pluginId, this.viewId);
       iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
       iframe.allow = "clipboard-read; clipboard-write;";
 
@@ -176,7 +164,7 @@ export default Vue.extend({
         await this.mountIframe();
       } catch (e) {
         log.error(e);
-        this.error = e.message;
+        this.error = e instanceof Error ? e.message : String(e);
       }
     },
   },

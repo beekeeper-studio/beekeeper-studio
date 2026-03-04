@@ -72,7 +72,14 @@ sudo yum install beekeeper-studio
 
 Pacman (installed as local packages using `pacman -U`) packages are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
 
-Real AUR integration coming soon.
+There are also several options in the AUR. The Beekeeper Studio Team maintain the [beekeeper-studio-appimage](https://aur.archlinux.org/packages/beekeeper-studio-appimage) and [beekeeper-studio-bin](https://aur.archlinux.org/packages/beekeeper-studio-bin) packages.
+
+These can be installed with your favourite AUR helper like so:
+```bash
+paru -S beekeeper-studio-appimage
+# Or
+paru -S beekeeper-studio-bin
+```
 
 ## Flatpak
 
@@ -140,3 +147,15 @@ touch ~/.config/bks-flags.conf
 echo "--ozone-platform-hint=auto" >> ~/.config/bks-flags.conf
 echo "--enable-features=UseOzonePlatform" >> ~/.config/bks-flags.conf
 ```
+
+### Fixing weird colors on Wayland
+
+If you experience incorrect colors when using Wayland (e.g. oranges appearing yellow, greys looking almost black, overly bright whites, or poor text readability), this is caused by a [Chromium/Electron bug with the Wayland color management protocol](https://github.com/electron/electron/issues/49566).
+
+To fix this, add the following flag to your `~/.config/bks-flags.conf` file:
+
+```bash
+echo "--disable-features=WaylandWpColorManagerV1" >> ~/.config/bks-flags.conf
+```
+
+Then restart Beekeeper Studio for the change to take effect.

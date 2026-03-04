@@ -10,6 +10,7 @@ import { execSync } from 'child_process';
 import 'electron-log/preload';
 import pluralize from 'pluralize';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
+import type { NativePluginMenuItem } from '@/services/plugin/types';
 
 const electron = require('@electron/remote');
 
@@ -183,6 +184,12 @@ export const api = {
     save(options: SaveFileOptions) {
       return ipcRenderer.invoke('fileHelpers:save', options);
     },
+  },
+  addNativeMenuItem(item: NativePluginMenuItem) {
+    ipcRenderer.send('add-native-menu-item', item);
+  },
+  removeNativeMenuItem(id: string) {
+    ipcRenderer.send('remove-native-menu-item', id);
   },
 }
 

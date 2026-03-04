@@ -18,6 +18,7 @@ import {
   PluginMenuItem,
   PluginView,
   TabType,
+  CreatePluginTabOptions,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -30,10 +31,7 @@ type Table = {
   schema?: string;
 };
 
-/**
- * An interface that bridges plugin system and Vuex. It also stores some states
- * for context menu because they don't exist in Vuex.
- */
+/** An interface that bridges plugin system with Vuex and AppEvents. */
 export default class PluginStoreService {
   private tablesChangedListeners: Set<() => void> = new Set();
 
@@ -62,7 +60,7 @@ export default class PluginStoreService {
   }
 
   getTheme()  {
-    const styles = getComputedStyle(document.body);
+    const styles = getComputedStyle(this.getAppEl());
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
@@ -308,6 +306,11 @@ export default class PluginStoreService {
     };
   }
 
+  createPluginTab(options: CreatePluginTabOptions) {
+    const transport = this.buildPluginTabInit(options);
+    this.appEventBus.emit(AppEvent.newCustomTab, transport);
+  }
+
   openTab(options: OpenTabRequest['args']): void {
     if (options.type === "query") {
       if (!options.query) {
@@ -360,12 +363,9 @@ export default class PluginStoreService {
     this.store.commit("plugins/keybinding/remove", { alias, handler });
   }
 
-  buildPluginTabInit(options: {
-    manifest: Manifest;
-    viewId: string;
-    params?: JsonValue;
-    command: string;
-  }): TransportOpenTabInit<PluginTabContext> {
+  buildPluginTabInit(
+    options: CreatePluginTabOptions
+  ): TransportOpenTabInit<PluginTabContext> {
     // FIXME(azmi): duplicated code from CoreTabs.vue
     const tabItems = this.store.getters["tabs/sortedTabs"];
     let title = options.manifest.name;
@@ -394,5 +394,9 @@ export default class PluginStoreService {
         command: options.command,
       },
     };
+  }
+
+  private getAppEl() {
+    return document.body.querySelector('.beekeeper-studio-wrapper');
   }
 }
