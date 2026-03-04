@@ -2,7 +2,7 @@
 const fpmOptions = [
   "--after-install=build/deb-postinstall",
   "build/deb/beekeeper-studio-app.list=/etc/apt/sources.list.d/beekeeper-studio-app.list",
-  "build/deb/beekeeper-studio.asc=/usr/share/keyrings/beekeeper-studio.asc"
+  "build/deb/beekeeper-studio.gpg=/usr/share/keyrings/beekeeper-studio.gpg"
 ]
 
 const rpmFpmOptions = [
