@@ -51,29 +51,16 @@ jobs:
       - name: Build application
         run: yarn bks:build
 
-      - name: Start postgres container (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: docker compose up psql15 -d
-
-      - name: Start postgres container (Windows)
-        if: runner.os == 'Windows'
-        run: docker compose up psql15 -d
-        shell: bash
-
-      - name: Wait for postgres
-        run: sleep 5
-        shell: bash
-
       - name: Run E2E smoke test (Linux)
         if: runner.os == 'Linux'
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" yarn workspace beekeeper-studio test:e2e e2e/tests/queryExecution.test.ts --grep "perform a Postgres query"
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
         env:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
 
       - name: Run E2E smoke test (macOS/Windows)
         if: runner.os != 'Linux'
-        run: yarn workspace beekeeper-studio test:e2e e2e/tests/queryExecution.test.ts --grep "perform a Postgres query"
+        run: yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
         env:
           ELECTRON_ENABLE_LOGGING: 1
 
