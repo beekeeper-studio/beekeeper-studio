@@ -15608,6 +15608,17 @@ vite@~5.4.19:
   optionalDependencies:
     fsevents "~2.3.3"
 
+vite@~5.4.21:
+  version "5.4.21"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.21.tgz#84a4f7c5d860b071676d39ba513c0d598fdc7027"
+  integrity sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==
+  dependencies:
+    esbuild "^0.21.3"
+    postcss "^8.4.43"
+    rollup "^4.20.0"
+  optionalDependencies:
+    fsevents "~2.3.3"
+
 vitest@~3.0.5:
   version "3.0.9"
   resolved "https://registry.yarnpkg.com/vitest/-/vitest-3.0.9.tgz#8cf607d27dcaa12b9f21111f001a4e3e92511ba5"
