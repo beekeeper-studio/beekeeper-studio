@@ -148,6 +148,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Contact Support',
       click: actionHandler.contactSupport
     },
+    gettingStartedGuide: {
+      id: 'gettingStartedGuide',
+      label: 'Getting Started Guide',
+      click: actionHandler.openGettingStarted
+    },
     reload: {
       id: 'reload-window',
       label: "Reload Window",

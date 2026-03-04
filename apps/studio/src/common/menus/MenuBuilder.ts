@@ -55,6 +55,7 @@ export default class extends DefaultMenu {
         this.menuItems.checkForUpdate,
         this.menuItems.opendocs,
         this.menuItems.support,
+        this.menuItems.gettingStartedGuide,
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
         this.menuItems.about,
