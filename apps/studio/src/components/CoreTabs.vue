@@ -26,7 +26,6 @@
           @forceClose="forceClose"
           @duplicate="duplicate"
           @copyName="copyName"
-          @reloadPluginView="handleReloadPluginView"
         />
       </Draggable>
       <!-- </div> -->
@@ -97,14 +96,12 @@
           v-if="tab.tabType === 'plugin-base'"
           :tab="tab"
           :active="activeTab.id === tab.id"
-          :reload="reloader[tab.id]"
           @close="close"
         />
         <PluginShell
           v-if="tab.tabType === 'plugin-shell'"
           :tab="tab"
           :active="activeTab.id === tab.id"
-          :reload="reloader[tab.id]"
           @close="close"
         />
         <tab-with-table
@@ -375,7 +372,6 @@ export default Vue.extend({
       duplicateTableName: null,
       closingTab: null,
       confirmModalId: 'core-tabs-close-confirmation',
-      reloader: {},
     }
   },
   watch: {
@@ -1192,12 +1188,6 @@ export default Vue.extend({
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
       this.$copyText(item.tableName)
-    },
-    handleReloadPluginView(tab) {
-      this.reloader = {
-        ...this.reloader,
-        [tab.id]: Date.now(),
-      }
     },
   },
   beforeDestroy() {

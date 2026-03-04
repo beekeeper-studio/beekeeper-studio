@@ -264,7 +264,9 @@ export interface NgQueryResult {
   output?: any;
   fields?: FieldDescriptor[];
   rows?: any[];
+  truncated?: boolean;
   rowCount?: number;
+  totalRowCount?: number;
   affectedRows?: number;
   command?: any;
 }

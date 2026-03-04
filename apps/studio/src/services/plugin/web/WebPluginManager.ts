@@ -8,6 +8,7 @@ import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plug
 import { FileHelpers } from "@/types";
 import type Noty from "noty";
 import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
+import { convertToManifestV1, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -186,12 +187,19 @@ export default class WebPluginManager {
     return plugin;
   }
 
-  buildUrlFor(pluginId: string, entry: string) {
+  buildUrlFor(pluginId: string, viewId: string) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    return loader.buildEntryUrl(entry);
+    // TODO (azmi): later, we don't need to convert the manifest when plugin snapshot is added
+    const view = convertToManifestV1(loader.manifest).capabilities.views.find(
+      (v) => v.id === viewId
+    );
+    if (!view) {
+      throw new Error(`View not found: ${viewId} in plugin ${pluginId}`);
+    }
+    return loader.buildEntryUrl(view.entry);
   }
 
   async viewEntrypointExists(pluginId: string, viewId: string): Promise<boolean> {

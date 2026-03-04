@@ -1,5 +1,9 @@
 name: Studio - Build [non production]
 
+permissions:
+  contents: read
+  actions: write
+
 on:
   pull_request:
     paths-ignore:

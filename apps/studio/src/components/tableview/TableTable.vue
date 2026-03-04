@@ -1091,6 +1091,16 @@ export default Vue.extend({
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
+      this.tabulator.on('historyUndo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
+      })
+      this.tabulator.on('historyRedo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
+      })
 
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
@@ -1808,7 +1818,8 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
-            await this.getTableKeys();
+            // Removed getTableKeys() call here to fix 5-10 second performance regression
+            // Keys are now fetched only on initialization and explicit refresh (issue #3775)
             resolve({
               last_page: 1,
               data
@@ -1867,6 +1878,10 @@ export default Vue.extend({
 
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
+
+      // Re-fetch table keys on explicit refresh to pick up schema changes (issue #3775)
+      await this.getTableKeys()
+
       await this.tabulator.replaceData()
       await this.tabulator.setColumns(this.tableColumns)
       this.tabulator.setPage(page)

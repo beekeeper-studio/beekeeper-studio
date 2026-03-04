@@ -12,7 +12,9 @@
         { "key": "copySelection", "label": "Copy Selection" },
         { "key": "pasteSelection", "label": "Paste Selection" },
         { "key": "cloneSelection", "label": "Clone Selection" },
-        { "key": "deleteSelection", "label": "Delete Selection" }
+        { "key": "deleteSelection", "label": "Delete Selection" },
+        { "key": "undo", "label": "Undo" },
+        { "key": "redo", "label": "Redo" }
       ]
     },
     {

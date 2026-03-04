@@ -1,5 +1,9 @@
 name: Studio Tests
 
+permissions:
+  contents: read
+  actions: write
+
 on:
   # Trigger the workflow on push or pull request,
   # but only for the main branch
