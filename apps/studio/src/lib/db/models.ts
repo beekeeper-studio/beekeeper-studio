@@ -261,14 +261,14 @@ export enum FieldReadOnlyReason {
   IsGenerated
 }
 
-// NOTE (@day): reasons: no linked table, missing PK
-// NOTE (@day): do we need schema separate here?
 export interface FieldEditData {
   editable: boolean;
+  id?: string; // this is what the field is referred to as in the object
   columnName?: string;
   linkedTable?: string;
   linkedSchema?: string;
   isPK?: boolean;
+  generated?: boolean;
   readOnlyReason?: FieldReadOnlyReason;
 }
 
@@ -276,7 +276,6 @@ export interface FieldDescriptor {
   name: string;
   id: string;
   dataType?: string;
-  editData?: FieldEditData;
 }
 
 export interface NgQueryResult {
@@ -288,6 +287,7 @@ export interface NgQueryResult {
   totalRowCount?: number;
   affectedRows?: number;
   command?: any;
+  text?: string;
 }
 
 export type QueryResult = NgQueryResult[];

@@ -21,7 +21,7 @@
             <select
               name="resultSelector"
               id="resultSelector"
-              @change="selectedResult = parseInt($event.target.value);"
+              @change="selectResult(parseInt($event.target.value))"
               class="form-control"
             >
               <option
@@ -76,6 +76,35 @@
       </span>
     </template>
     <span class="expand" />
+    <x-button
+      v-if="!editing"
+      :disabled="results?.length === 0"
+      class="btn btn-flat"
+      @click.prevent="editResults"
+    >
+      Edit Results
+    </x-button>
+    <x-button
+      v-if="editing"
+      class="btn btn-flat"
+      @click.prevent="discardChanges"
+    >
+      Reset
+    </x-button>
+    <x-buttons v-if="editing" class="pending-changes">
+      <x-button
+        class="btn btn-primary btn-badge btn-icon"
+        @click.prevent="saveChanges"
+      >
+      <span>Apply</span>
+      </x-button>
+      <x-button
+        class="btn btn-primary"
+        menu
+      >
+        <i class="material-icons">arrow_drop_down</i>
+      </x-button>
+    </x-buttons>
     <x-button
       class="btn btn-flat btn-icon end"
       :disabled="results?.length === 0"
@@ -189,7 +218,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing'],
   components: { Statusbar },
   data() {
     return {
@@ -213,10 +242,10 @@ export default {
       }
     },
     selectedResult(newValue, oldValue) {
-        this.$emit('input', this.selectedResult);
-        if (this.hasUsedDropdown === false) {
-          this.hasUsedDropdown = true
-        }
+      this.$emit('input', this.selectedResult);
+      if (this.hasUsedDropdown === false) {
+        this.hasUsedDropdown = true
+      }
     }
   },
   computed: {
@@ -309,6 +338,22 @@ export default {
         d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
         e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
       return e;
+    },
+    selectResult(result) {
+      if (!this.editing) {
+        this.selectedResult = result
+      } else {
+        this.$emit('confirmSwitchResult', { oldValue: this.selectedResult, newValue: result })
+      }
+    },
+    editResults() {
+      this.$emit('editResults');
+    },
+    saveChanges() {
+      this.$emit('saveChanges');
+    },
+    discardChanges() {
+      this.$emit('discardChanges');
     },
     download(format) {
       this.$emit('download', format)

@@ -48,7 +48,7 @@
   </div>
 </template>
 
-<script type="text/javascript">
+<script lang="ts">
   import _ from 'lodash'
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
@@ -63,13 +63,18 @@
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem } from '@/lib/menu/tableMenu';
-  import { rowHeaderField } from '@/common/utils'
   import { tabulatorForTableData } from '@/common/tabulator';
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
   import { vueEditor } from '@shared/lib/tabulator/helpers';
-  import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
+  import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
+  import rawLog from '@bksLogger';
+  import { FieldDescriptor, FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
+  import { CellComponent, RowComponent } from 'tabulator-tables'
+  import { PropType } from 'vue'
+
+  const log = rawLog.scope('ResultTable');
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -81,9 +86,23 @@
         filterValue: '',
         selectedRowPosition: -1,
         hiddenFilter: true,
+        pendingChanges: {
+          updates: [],
+          deletes: []
+        },
+        saveError: null
       }
     },
-    props: ['result', 'tableHeight', 'query', 'active', 'tab', 'focus', 'binaryEncoding'],
+    props: {
+      result: Object as PropType<NgQueryResult>,
+      editData: Map as PropType<Map<string, FieldEditData>>,
+      tableHeight: Number,
+      query: Object,
+      active: Boolean,
+      tab: Object,
+      focus: Boolean,
+      binaryEncoding: String as PropType<"hex" | "base64">
+    },
     watch: {
       active() {
         if (!this.tabulator) return;
@@ -114,6 +133,9 @@
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
       ...mapGetters(['isUltimate']),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      allPks() {
+        return this.editData.entries().filter(([_id, editData]) => editData?.isPk).map(([id]) => id);
+      },
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
@@ -171,15 +193,22 @@
 
         const columns = this.result.fields.flatMap((column, index) => {
           const results = []
-          const magic = MagicColumnBuilder.build(column.name) || {}
+          const magic: any = MagicColumnBuilder.build(column.name) || {}
           const title = magic?.title ?? column.name ?? `Result ${index}`
-          const editData = column.editData;
-          console.log('FIELD: ', column)
+          const editData: FieldEditData = this.editData?.get(column.id);
 
-          let cssClass = 'hide-header-menu-icon'
+          let cssClass = 'hide-header-menu-icon';
 
           if (magic.cssClass) {
-            cssClass += ` ${magic.cssClass}`
+            cssClass += ` ${magic.cssClass}`;
+          }
+
+          if (editData?.isPK) {
+            cssClass += ` primary-key`;
+          }
+
+          if (editData?.generated) {
+            cssClass += ' generated-column';
           }
 
           if (magic.formatterParams?.fk) {
@@ -216,7 +245,7 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            editable: editData?.editable,
+            editable: editData?.editable ?? false,
             editor: ne,
             ...magicStuff
           }
@@ -300,6 +329,7 @@
           },
           onRangeChange: this.handleRangeChange,
           rowHeader: {
+            // @ts-ignore
             contextMenu: (_e, cell) => {
               return [
                 ...copyActionsMenu({
@@ -328,15 +358,130 @@
 
         this.tabulator.on('cellEdited', this.cellEdited);
       },
-      cellEdited(cell) {
-        // TODO (@day): get pk cells
+      cellEdited(cell: CellComponent) {
+        // Should this be id?
+        const field: FieldDescriptor = this.result.fields.find((f) => f.id === cell.getField());
+        const fieldEditData: FieldEditData = this.editData?.get(field.id);
+        if (!field) {
+          log.warn('Could not find matching field for', cell.getField());
+          return;
+        }
+
+        const pkFields: Map<string, FieldEditData> = new Map(
+          this.editData
+            .entries()
+            .filter(([_id, editData]) => editData?.isPK && editData?.linkedTable === fieldEditData?.linkedTable && editData?.linkedSchema === fieldEditData?.linkedSchema)
+        );
+        const pkCells: CellComponent[] = cell.getRow().getCells().filter((c) => pkFields.has(c.getField()));
+
         if (cell.getOldValue() == cell.getValue()) {
           return;
         }
 
-        // Should this be id?
-        const field = this.result.fields.find(f => f.id === cell.getField());
+        log.info('PK CELLS: ', pkCells)
+        if (!pkCells || !pkCells.length || pkFields.size !== pkCells.length) {
+          this.$noty.error("Can't edit column -- couldn't figure out primary key");
+          cell.restoreOldValue();
+          return;
+        }
+
+        // TODO (@day): if we're going to do inserts we'll have to check if edit is in a pending insert here
+
+        const pks = pkCells.map((cell) => ({ cell, data: pkFields.get(cell.getField())}));
+        const pkValues = pkCells.map((cell) => cell.getValue()).join('-');
+        const key = `${pkValues}-${cell.getField()}`;
+
         cell.getElement().classList.add('edited');
+        const currentEdit = _.find(this.pendingChanges.updates, { key: key });
+
+        if (typeof currentEdit?.oldValue === 'undefined' && cell.getValue() == null) {
+          // don't do anything because of an issue found when trying to set to null, undefined == null so was getting rid of the need to make a change\
+        } else if (currentEdit?.oldValue == cell.getValue()) {
+          this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit));
+          cell.getElement().classList.remove('edited');
+          this.propogateChanges(pkCells, cell, true);
+          return;
+        }
+
+        const primaryKeys = pks.map(({ cell: pkCell, data }) => {
+          return {
+            column: data.columnName,
+            // Use old value if this primary key cell is the one being edited, otherwise current value
+            // This is for redis key renaming to work
+            value: pkCell === cell ? pkCell.getOldValue() : pkCell.getValue()
+          }
+        });
+
+        if (currentEdit) {
+          currentEdit.value = cell.getValue();
+        } else {
+          const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
+            key: key,
+            table: fieldEditData?.linkedTable,
+            schema: fieldEditData?.linkedSchema,
+            dataset: null, // TODO (@day): figure this out
+            column: fieldEditData?.columnName,
+            columnType: undefined, // TODO (@day): return when getting editData
+            columnObject: undefined, // TODO (@day): possibly same as above
+            primaryKeys,
+            oldValue: cell.getOldValue(),
+            cell: cell,
+            value: cell.getValue(),
+          };
+
+          // remove existing pending updates with identical pKey-column combo
+          let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key });
+          pendingUpdates.push(payload);
+          log.info('PENDING UPDATES: ', pendingUpdates)
+          this.$set(this.pendingChanges, 'updates', pendingUpdates);
+        }
+
+        this.propogateChanges(pkCells, cell);
+      },
+      propogateChanges(pkCells: CellComponent[], cell: CellComponent, removeEdited: boolean = false) {
+        this.tabulator.blockRedraw();
+        const filters = pkCells.map((cell) => {
+          return {
+            field: cell.getField(),
+            type: "=",
+            value: cell.getValue()
+          };
+        });
+        const rows: RowComponent[] = this.tabulator.searchRows(filters);
+        rows.forEach((row) => {
+          const rowCell = row.getCell(cell.getField());
+          if (removeEdited) {
+            rowCell.getElement().classList.remove('edited');
+          } else {
+            rowCell.getElement().classList.add('edited');
+          }
+          row.update({ [cell.getField()]: cell.getValue() });
+        })
+        this.tabulator.restoreRedraw();
+        this.$nextTick(() => {
+          this.tabulator.redraw()
+        })
+      },
+      buildPendingUpdates() {
+        return this.pendingChanges.updates.map((update) => {
+          return _.omit(update, ['key', 'oldValue', 'cell']);
+        });
+      },
+      pendingChangesCount() {
+        return this.pendingChanges.updates.length
+               + this.pendingChanges.deletes.length
+      },
+      hasPendingChanges() {
+        return this.pendingChangesCount > 0
+      },
+      hasPendingUpdates() {
+        return this.pendingChanges.updates.length > 0
+      },
+      hasPendingDeletes() {
+        return this.pendingChanges.deletes.length > 0
+      },
+      discardChanges() {
+        this.saveError = null;
       },
       focusOnFilterInput() {
         this.hiddenFilter = false
@@ -380,6 +525,66 @@
           return this.$bks.cleanData(data, this.tableColumns)
         })
         return firstObjectOnly ? result[0] : result
+      },
+      rebuildColumns() {
+        const newColumns = this.tableColumns;
+        console.log('EDIT DATA: ', this.editData)
+        this.tabulator.setColumns(newColumns);
+      },
+      resetPendingChanges() {
+        this.pendingChanges = {
+          updates: [],
+          deletes: []
+        }
+      },
+      async saveChanges() {
+        this.saveError = null;
+
+        try {
+          const payload = {
+            inserts: [],
+            updates: this.buildPendingUpdates(),
+            deletes: [], // TODO (@day): deletes
+          };
+
+          // @ts-ignore
+          const result = await this.connection.applyChanges(payload);
+
+          if (this.hasPendingUpdates) {
+            this.tabulator.clearCellEdited();
+            //update data
+            this.pendingChanges.updates.forEach(edit => {
+              edit.cell.getElement().classList.remove('edited');
+              edit.cell.getElement().classList.add('edit-success');
+              setTimeout(() => {
+                if (edit.cell.getElement()) {
+                  edit.cell.getElement().classList.remove('edit-success');
+                }
+              }, 1000)
+            })
+          }
+
+          // maybe replace data? idk
+
+          this.resetPendingChanges();
+
+        } catch (err) {
+          this.pendingChanges.updates.forEach(edit => {
+            edit.cell.getElement().classList.add('edit-error');
+          });
+
+          this.saveError = {
+            title: err.message,
+            message: err.message,
+            err
+          };
+
+          this.$noty.error(err.message);
+
+          return;
+        } finally {
+          // forceRedraw??
+        }
       },
       download(format) {
         let formatter = format;
@@ -541,7 +746,17 @@
         if (tab.id === this.tab.id) {
           this.handleTabActive()
         }
-      }
+      },
+      buildPendingDeletes() {
+        return this.pendingChanges.deletes.map((update) => {
+          return _.omit(update, ['row'])
+        });
+      },
+      buildPendingUpdates() {
+        return this.pendingChanges.updates.map((update) => {
+          return _.omit(update, ['key', 'oldValue', 'cell', 'rowIndex'])
+        });
+      },
     },
 	}
 </script>

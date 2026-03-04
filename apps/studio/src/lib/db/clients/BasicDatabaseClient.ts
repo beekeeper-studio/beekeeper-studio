@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -13,7 +13,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
-import { ColumnReference } from 'sql-query-identifier/defines';
+import { ColumnReference, TableReference } from 'sql-query-identifier/defines';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -209,7 +209,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return Promise.resolve([]);
   }
 
-  // TODO (@day): we almost don't need to store the PKs? Just need to probably mark certain columns as the pks and then I guess mark tables as editable or not
   private async fetchTableMetadata(command: IdentifyResult): Promise<TableMetadata[]> {
     const hasTopLevelWildcard = command.columns.some((c) => c.isWildcard && !c.table && !c.schema);
     const wildcards = command.columns.filter((c) => c.isWildcard && !!c.table);
@@ -228,7 +227,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
             return command.columns.some((col) => {
               return col.name === pk.columnName &&
                 ((command.tables.length === 1 && !col.table) ||
-                  this.matchesTable(col, table.name, table.schema))
+                  this.matchesTable(col, table))
             })
           });
           isEditable = allPks;
@@ -244,94 +243,104 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     }))
   }
 
-  private matchesTable(column: ColumnReference, tableName: string, tableSchema?: string) {
-    if (column.table !== tableName) {
-      return false
+  private matchesTable(column: ColumnReference, table: TableReference) {
+    if ((!!table.alias && table.alias === column.table) ||
+        (!table.alias && table.name === column.name)) {
+      if (column.schema === table.schema || !column.schema || !table.schema) {
+        return true;
+      }
     }
 
-    if (column.schema && tableSchema && column.schema !== tableSchema) {
-      return false;
-    }
-
-    return true;
+    return false;
   }
 
   // TODO (@day): should probably have our own structure for this for non-identifier dialects
-  protected async maybeGetEditData(command: IdentifyResult, fields: FieldDescriptor[]): Promise<FieldDescriptor[]> {
-    if (command.executionType !== 'LISTING') return fields;
+  async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
+    const commands = identify(queryText, { identifyTables: true, identifyColumns: true });
+    if (commands.length !== 1) return [];
+    const command = commands[0];
+    if (command?.executionType !== 'LISTING') return [];
 
     const tableData = await this.fetchTableMetadata(command);
 
+    const instanceCounter = new Map<string, number>(fields.map((f) => [f.name, 0]));
+
     // TODO (@day): we need to handle wildcards
-    fields = fields.map((field) => {
-      // TODO (@day): we need to match to the column column
-      const fieldColumn = command.columns.find((c) =>
+    return fields.map((field) => {
+      const maybeColumns = command.columns.filter((c) =>
         (!c.alias && c.name === field.name) ||
         (!!c.alias && c.alias === field.name)
       );
+      let fieldColumn: ColumnReference = null;
+      let editData: FieldEditData = {
+        id: field.id,
+        editable: false
+      };
 
-      if (!fieldColumn) {
-        field.editData = {
-          editable: false,
-          readOnlyReason: FieldReadOnlyReason.ImproperMapping
+      // I know this looks annoying, but this handles duplication in the result set
+      // For instance if someone joins two tables and both have a last_updated column that
+      // ends up in the data, we will go off of position in the query (ie first grab the
+      // first instance of last_updated, then grab the second, etc)
+      if (maybeColumns && maybeColumns.length > 0) {
+        try {
+          fieldColumn = maybeColumns[instanceCounter.get(field.name)];
+          instanceCounter.set(field.name, instanceCounter.get(field.name) + 1);
+        } catch {
+          log.warn('Something has gone wrong with the weird instance counting logic');
         }
-        return field;
       }
 
-      const resolvedTable = fieldColumn.table ?? (tableData.length === 1 ? tableData[0].name : null);
-      const resolvedSchema = fieldColumn.schema ?? (tableData.length === 1 ? tableData[0].schema : null);
+      if (!fieldColumn) {
+        editData.readOnlyReason = FieldReadOnlyReason.ImproperMapping;
+        return editData;
+      }
 
-      // Not totally sure on all of this logic
-      const table = tableData.find((t) => {
-        return ((!t.alias && t.name === resolvedTable) ||
-          (!!t.alias && t.alias === resolvedTable)) &&
-          (t.schema === resolvedSchema || !t.schema || !resolvedSchema)
-      })
+      let table: TableMetadata;
+
+      if (fieldColumn.table) {
+        table = tableData.find((t) => {
+          return ((!t.alias && t.name === fieldColumn.table) ||
+            (!!t.alias && t.alias === fieldColumn.table)) &&
+            (t.schema === fieldColumn.schema || !t.schema || !fieldColumn.schema)
+        })
+      } else {
+        table = tableData.find((t) => t.columns.some((c) => c.columnName === fieldColumn.name ))
+      }
 
       if (!table) {
-        field.editData = {
-          editable: false,
-          readOnlyReason: FieldReadOnlyReason.NoLinkedTable
-        }
-        return field;
+        editData.readOnlyReason = FieldReadOnlyReason.NoLinkedTable;
+        return editData;
       }
 
       const tableColumn = table.columns.find((c) => c.columnName === fieldColumn.name);
 
       if (!tableColumn) {
-        field.editData = {
-          editable: false,
-          readOnlyReason: FieldReadOnlyReason.ImproperMapping
-        }
-        return field;
+        editData.readOnlyReason = FieldReadOnlyReason.ImproperMapping;
+        return editData;
       }
 
       if (!table.isEditable) {
         // In the future we could actually say what PK we are missing?
-        field.editData = {
-          editable: false,
-          readOnlyReason: FieldReadOnlyReason.MissingPK,
-        }
-        return field;
+        editData.readOnlyReason = FieldReadOnlyReason.MissingPK;
+        return editData;
       }
 
-      field.editData = {
+      editData = {
+        id: field.id,
         editable: !tableColumn.generated,
         columnName: fieldColumn.name,
-        linkedTable: fieldColumn.table,
-        linkedSchema: fieldColumn.schema,
-        isPK: false
+        linkedTable: table.name,
+        linkedSchema: table.schema,
+        isPK: false,
+        generated: tableColumn.generated
       };
 
-      // TODO (@day): will need to handle unqualified as well here
       if (table?.isEditable) {
-        field.editData.isPK = table.pks.some((pk) => pk.columnName === fieldColumn.name);
+        editData.isPK = table.pks.some((pk) => pk.columnName === fieldColumn.name);
       }
 
-      return field;
+      return editData;
     })
-
-    return fields;
   }
 
   abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;

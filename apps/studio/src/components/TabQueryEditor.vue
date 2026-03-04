@@ -271,6 +271,7 @@
       <result-table
         ref="table"
         v-else-if="showResultTable"
+        :editData="resultEditData"
         :focus="focusingElement === 'table'"
         :active="active"
         :table-height="tableHeight"
@@ -315,6 +316,11 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
+        :editing="editingResult"
+        @confirmSwitchResult="confirmSwitchResult"
+        @editResults="editResults"
+        @saveChanges="saveChanges"
+        @discardChanges="discardChanges"
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
@@ -599,6 +605,8 @@
         warningNoty: null,
         showTransactionActiveTooltip: false,
         enteredTransactionFromIdent: false,
+        editingResult: false,
+        resultsEditData: []
       }
     },
     computed: {
@@ -688,6 +696,9 @@
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
+      },
+      resultEditData() {
+        return this.resultsEditData[this.selectedResult]
       },
       result() {
         return this.results[this.selectedResult]
@@ -1115,6 +1126,29 @@
           this.runningQuery = null;
         }
       },
+      confirmSwitchResult() {
+
+      },
+      async editResults() {
+        const resultEditData = await this.connection.getResultEditData(this.result?.text, this.result.fields);
+
+        const mapped = new Map(resultEditData.map((e) => [e.id, e]));
+        this.$set(this.resultsEditData, this.selectedResult, mapped)
+        this.editingResult = true;
+        await this.$nextTick();
+        this.$refs.table.rebuildColumns()
+      },
+      saveChanges() {
+        this.$refs.table.saveChanges();
+        this.editingResult = false;
+      },
+      copyToSql() {
+        this.$refs.table.copyToSql();
+      },
+      discardChanges() {
+        this.$refs.table.discardChanges();
+        this.editingResult = false;
+      },
       download(format) {
         this.$refs.table.download(format)
       },
@@ -1295,6 +1329,8 @@
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
+        this.resultsEditable = []
+        this.resultsEditData = []
         this.selectedResult = 0
         let identification = []
         try {
@@ -1364,6 +1400,8 @@
             }
           })
           this.results = Object.freeze(results);
+          this.resultsEditable = this.results.map(() => false)
+          this.resultsEditData = this.results.map(() => null)
 
           // const defaultResult = Math.max(results.length - 1, 0)
 

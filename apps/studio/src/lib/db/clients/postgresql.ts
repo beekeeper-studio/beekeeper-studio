@@ -1379,13 +1379,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async parseRowQueryResult(data: QueryResult, command: IdentifyResult, rowResults: boolean): Promise<NgQueryResult> {
-    let fields = this.parseFields(data.columns, rowResults)
-    fields = await this.maybeGetEditData(command, fields);
+    const fields = this.parseFields(data.columns, rowResults)
+    // fields = await this.maybeGetEditData(command, fields);
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
     return {
-      command: command.type || data.command,
+      command: command?.type || data.command,
+      text: command.text,
       rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
       fields: fields,
       rowCount: rowCount,
