@@ -220,7 +220,7 @@ export type WebPluginViewInstance = {
 }
 
 export type Keybinding = {
-  alias: PluginMenuItemPlacement;
+  placement: PluginMenuItemPlacement;
   path: string;
   handler: Function;
 };

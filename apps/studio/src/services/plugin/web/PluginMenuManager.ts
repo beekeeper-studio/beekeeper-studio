@@ -103,7 +103,7 @@ export class PluginMenuManager {
           handler.add();
           if (handler.keybindingHandler && hasKeybinding) {
             this.context.store.addKeybinding({
-              alias: placement,
+              placement,
               path: keyPath,
               handler: handler.keybindingHandler,
             });

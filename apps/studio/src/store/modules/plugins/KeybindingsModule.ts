@@ -4,8 +4,8 @@ import { Keybinding } from "@/services/plugin";
 import Vue from "vue";
 
 interface State {
-  /** `alias` as a key for fast lookup.*/
-  map: Partial<Record<Keybinding["alias"], Keybinding[]>>;
+  /** `placement` as a key for fast lookup.*/
+  map: Partial<Record<Keybinding["placement"], Keybinding[]>>;
 }
 
 export const KeybindingsModule: Module<State, RootState> = {
@@ -17,41 +17,41 @@ export const KeybindingsModule: Module<State, RootState> = {
     /**
      * @example
      *
-     * Keybindings are resolved by menu `placement` (alias).
+     * Keybindings are resolved by menu `placement`.
      *
      * ```ini
      * [keybindings.plugins.bks-ai-shell]
      * new-tab-dropdown-item = ctrlOrCmd+l
      * ```
      *
-     * ```json
+     * ```js
      * {
      *   "id": "bks-ai-shell",
      *   "capabilities": {
      *     "menu": [{
      *       "command": "new-tab-dropdown-item",
-     *       "placement": "newTabDropdown"
+     *       "placement": "newTabDropdown" // <-- This is the key
      *     }],
      *   }
      * }
      * ```
      *
      * Usage:
+     *
      * ```ts
-     * // Use $vHotkeyKeymap or $CMKeymap
-     * $vHotkeyKeymap({
-     *   "queryEditor.switchPaneFocus": this.switchPaneFocus,
-     *   ...getKeybindingsByAlias("newTabDropdown"),
-     * })
+     * // Use $vHotkeyKeymap
+     * $vHotkeyKeymap({ ...getKeybindings("newTabDropdown") });
+     * // or $CMKeymap
+     * $CMKeymap({ ...getKeybindings("newTabDropdown") });
      * ```
      */
-    getKeybindingsByAlias(state) {
-      return (alias: string): Record<string, Function> => {
-        if (!state.map[alias]) {
+    getKeybindings(state) {
+      return (placement: string): Record<string, Function> => {
+        if (!state.map[placement]) {
           return {};
         }
         const keybindings: Record<string, Function> = {};
-        for (const keybinding of state.map[alias]) {
+        for (const keybinding of state.map[placement]) {
           keybindings[keybinding.path] = keybinding.handler;
         }
         return keybindings;
@@ -60,20 +60,20 @@ export const KeybindingsModule: Module<State, RootState> = {
   },
   mutations: {
     add(state, keybinding: Keybinding) {
-      if (!state.map[keybinding.alias]) {
-        Vue.set(state.map, keybinding.alias, []);
+      if (!state.map[keybinding.placement]) {
+        Vue.set(state.map, keybinding.placement, []);
       }
-      state.map[keybinding.alias].push(keybinding);
+      state.map[keybinding.placement].push(keybinding);
     },
     remove(state, keybinding: Omit<Keybinding, "path">) {
-      if (!state.map[keybinding.alias]) {
+      if (!state.map[keybinding.placement]) {
         return;
       }
-      const handlerIdx = state.map[keybinding.alias].findIndex(
+      const handlerIdx = state.map[keybinding.placement].findIndex(
         (k) => k.handler === keybinding.handler
       );
       if (handlerIdx !== -1) {
-        state.map[keybinding.alias].splice(handlerIdx, 1);
+        state.map[keybinding.placement].splice(handlerIdx, 1);
       }
     },
   },

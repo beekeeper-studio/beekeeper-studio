@@ -359,8 +359,8 @@ export default class PluginStoreService {
     this.store.commit("plugins/keybindings/add", keybinding);
   }
 
-  removeKeybinding(alias: Keybinding["alias"], handler: Keybinding["handler"]) {
-    this.store.commit("plugins/keybinding/remove", { alias, handler });
+  removeKeybinding(placement: Keybinding["placement"], handler: Keybinding["handler"]) {
+    this.store.commit("plugins/keybinding/remove", { placement, handler });
   }
 
   buildPluginTabInit(
