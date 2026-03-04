@@ -84,6 +84,7 @@ export type NativePluginMenuItem = {
   pluginId: string;
   label: string;
   command: string;
+  accelerator?: string;
 };
 
 /** Used by earlier versions of AI Shell. */

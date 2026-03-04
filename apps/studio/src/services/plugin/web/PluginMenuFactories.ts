@@ -177,7 +177,7 @@ const pluginMenuFactories: MenuFactories = {
       const id = `${context.manifest.id}-${menuItem.command}`;
       const accelerator = keyPath ?
         getParsedKeybinding(window.bksConfig, keyPath, "electron")
-        : undefined,
+        : undefined;
       const item: NativePluginMenuItem = {
         id,
         pluginId: context.manifest.id,
@@ -201,11 +201,6 @@ const pluginMenuFactories: MenuFactories = {
           context.store.removeMenuBarItem(id);
           window.main.removeMenuBarItem(id);
         },
-        // NOTE: The `accelerator` is parsed to v-hotkey automatically so this
-        // isn't necessary.
-        // keybindingHandler() {
-        //   context.createNewTab(menuItem.view, menuItem.command);
-        // },
       };
     },
   },
