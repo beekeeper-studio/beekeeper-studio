@@ -71,14 +71,26 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
         position: idx + 1
       }))
 
+      // Snapshot affected items before mutation (upsert mutates in-place via Object.assign)
+      const affectedIds = new Set(updates.map(q => q.id))
+      const snapshot = context.state.items
+        .filter(q => affectedIds.has(q.id))
+        .map(q => ({ ...q }))
+
       // Optimistic update
       context.commit('upsert', updates)
 
-      // Save all items
-      const saved = await Promise.all(
-        updates.map(q => Vue.prototype.$util.send('appdb/query/save', { obj: q }))
-      )
-      context.commit('upsert', saved)
+      try {
+        // Save all items
+        const saved = await Promise.all(
+          updates.map(q => Vue.prototype.$util.send('appdb/query/save', { obj: q }))
+        )
+        context.commit('upsert', saved)
+      } catch (e) {
+        // Revert optimistic update using pre-mutation snapshots
+        context.commit('upsert', snapshot)
+        throw e
+      }
 
       return item.id
     }

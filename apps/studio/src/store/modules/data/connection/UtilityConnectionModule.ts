@@ -72,14 +72,26 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
         position: idx + 1
       }))
 
+      // Snapshot affected items before mutation (upsert mutates in-place via Object.assign)
+      const affectedIds = new Set(updates.map(c => c.id))
+      const snapshot = context.state.items
+        .filter(c => affectedIds.has(c.id))
+        .map(c => ({ ...c }))
+
       // Optimistic update
       context.commit('upsert', updates)
 
-      // Save all items
-      const saved = await Promise.all(
-        updates.map(c => Vue.prototype.$util.send('appdb/saved/save', { obj: c }))
-      )
-      context.commit('upsert', saved)
+      try {
+        // Save all items
+        const saved = await Promise.all(
+          updates.map(c => Vue.prototype.$util.send('appdb/saved/save', { obj: c }))
+        )
+        context.commit('upsert', saved)
+      } catch (e) {
+        // Revert optimistic update using pre-mutation snapshots
+        context.commit('upsert', snapshot)
+        throw e
+      }
 
       return item.id
     }
