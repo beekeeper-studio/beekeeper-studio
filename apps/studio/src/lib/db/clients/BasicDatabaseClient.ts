@@ -209,52 +209,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return Promise.resolve([]);
   }
 
-  private async fetchTableMetadata(command: IdentifyResult): Promise<TableMetadata[]> {
-    const hasTopLevelWildcard = command.columns.some((c) => c.isWildcard && !c.table && !c.schema);
-    const wildcards = command.columns.filter((c) => c.isWildcard && !!c.table);
-    return await Promise.all(command.tables.map(async (table) => {
-      const pks = await this.getPrimaryKeys(table.name, table.schema);
-      const columns = await this.listTableColumns(table.name, table.schema);
-      let isEditable = false;
-      if (!!pks?.length) {
-        const hasTableWildcard = wildcards.some((w) =>
-          w.table === table.name &&
-          (w.schema === table.schema || !w.schema || !table.schema));
-        if (hasTopLevelWildcard || hasTableWildcard) {
-          isEditable = true;
-        } else {
-          const allPks = pks.every((pk) => {
-            return command.columns.some((col) => {
-              return col.name === pk.columnName &&
-                ((command.tables.length === 1 && !col.table) ||
-                  this.matchesTable(col, table))
-            })
-          });
-          isEditable = allPks;
-        }
-      }
 
-      return {
-        ...table,
-        pks,
-        columns,
-        isEditable
-      }
-    }))
-  }
 
-  private matchesTable(column: ColumnReference, table: TableReference) {
-    if ((!!table.alias && table.alias === column.table) ||
-        (!table.alias && table.name === column.name)) {
-      if (column.schema === table.schema || !column.schema || !table.schema) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  // TODO (@day): should probably have our own structure for this for non-identifier dialects
   async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
     const commands = identify(queryText, { identifyTables: true, identifyColumns: true });
     if (commands.length !== 1) return [];
@@ -265,9 +221,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
     const instanceCounter = new Map<string, number>(fields.map((f) => [f.name, 0]));
 
-    // TODO (@day): we need to handle wildcards
+    const columns: ColumnReference[] = this.expandWildcards(command.columns, tableData);
+
     return fields.map((field) => {
-      const maybeColumns = command.columns.filter((c) =>
+      const maybeColumns = columns.filter((c) =>
         (!c.alias && c.name === field.name) ||
         (!!c.alias && c.alias === field.name)
       );
@@ -298,11 +255,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       let table: TableMetadata;
 
       if (fieldColumn.table) {
-        table = tableData.find((t) => {
-          return ((!t.alias && t.name === fieldColumn.table) ||
-            (!!t.alias && t.alias === fieldColumn.table)) &&
-            (t.schema === fieldColumn.schema || !t.schema || !fieldColumn.schema)
-        })
+        table = tableData.find((t) => this.matchesTable(fieldColumn, t))
       } else {
         table = tableData.find((t) => t.columns.some((c) => c.columnName === fieldColumn.name ))
       }
@@ -327,7 +280,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
       editData = {
         id: field.id,
-        editable: !tableColumn.generated,
+        editable: false,
         columnName: fieldColumn.name,
         linkedTable: table.name,
         linkedSchema: table.schema,
@@ -339,10 +292,11 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         editData.isPK = table.pks.some((pk) => pk.columnName === fieldColumn.name);
       }
 
+      editData.editable = !editData.isPK && !tableColumn.generated;
+
       return editData;
     })
   }
-
   abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
@@ -841,5 +795,85 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       throw new Error("Could not retrieve reserved connection, please report this issue on our GitHub.");
     }
     return this.reservedConnections.get(tabId);
+  }
+
+  private async fetchTableMetadata(command: IdentifyResult): Promise<TableMetadata[]> {
+    const hasTopLevelWildcard = command.columns.some((c) => c.isWildcard && !c.table && !c.schema);
+    const wildcards = command.columns.filter((c) => c.isWildcard && !!c.table);
+    return await Promise.all(command.tables.map(async (table) => {
+      const pks = await this.getPrimaryKeys(table.name, table.schema);
+      const columns = await this.listTableColumns(table.name, table.schema);
+      let isEditable = false;
+      if (!!pks?.length) {
+        const hasTableWildcard = wildcards.some((w) => this.matchesTable(w, table));
+        if (hasTopLevelWildcard || hasTableWildcard) {
+          isEditable = true;
+        } else {
+          const allPks = pks.every((pk) => {
+            return command.columns.some((col) => {
+              return col.name === pk.columnName &&
+                ((command.tables.length === 1 && !col.table) ||
+                  this.matchesTable(col, table))
+            })
+          });
+          isEditable = allPks;
+        }
+      }
+
+      return {
+        ...table,
+        pks,
+        columns,
+        isEditable
+      }
+    }))
+  }
+
+  private matchesTable(column: ColumnReference, table: TableReference) {
+    if ((!!table.alias && table.alias === column.table) ||
+        (!table.alias && table.name === column.table)) {
+      if (column.schema === table.schema || !column.schema || !table.schema) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private expandWildcards(commandColumns: ColumnReference[], tableData: TableMetadata[]): ColumnReference[] {
+    const columns: ColumnReference[] = [];
+
+    commandColumns.forEach((c) => {
+      // handle wildcard
+      if (c.isWildcard) {
+        // top level wildcard (SELECT * FROM table)
+        if (!c.table && !c.schema) {
+          tableData.forEach((t) => {
+            t.columns.forEach((col) => {
+              columns.push({
+                name: col.columnName,
+                table: col.tableName,
+                schema: col.schemaName,
+                isWildcard: false
+              });
+            });
+          });
+        } else {
+          const table = tableData.find((t) => this.matchesTable(c, t));
+          table.columns.forEach((col) => {
+            columns.push({
+              name: col.columnName,
+              table: c.table,
+              schema: c.schema,
+              isWildcard: false
+            });
+          });
+        }
+      } else {
+        columns.push(c);
+      }
+    });
+
+    return columns;
   }
 }
