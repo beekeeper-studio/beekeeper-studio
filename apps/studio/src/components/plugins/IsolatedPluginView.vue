@@ -68,6 +68,7 @@ export default Vue.extend({
         await this.$nextTick();
         if (this.shouldMountIframe) {
           this.mountIframe().catch((e) => {
+            log.error(e);
             this.error = e instanceof Error ? e.message : String(e);
           });
         } else {

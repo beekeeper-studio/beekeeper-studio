@@ -111,11 +111,15 @@ export default Vue.extend({
           if (item.expanded) {
             expandedMap.set(item.key, true);
           }
+          if (item.pinned) {
+            pinnedMap.set(item.key, true);
+          }
         }
       }
 
       for (const pin of this.pins) {
-        pinnedMap.set(pin.entity, pin);
+        const key = entityId(pin.schemaName, pin.entity);
+        pinnedMap.set(key, true);
       }
 
       this.schemaTables.forEach((schema: any) => {
@@ -153,7 +157,7 @@ export default Vue.extend({
             contextMenu: this.tableMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
-            pinned: pinnedMap.get(table) || false,
+            pinned: pinnedMap.has(key) || false,
             loadingColumns: false,
           });
         });
@@ -169,7 +173,7 @@ export default Vue.extend({
             contextMenu: this.routineMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
-            pinned: pinnedMap.get(routine) || false,
+            pinned: pinnedMap.has(key) || false,
           });
         });
       });
@@ -272,13 +276,12 @@ export default Vue.extend({
     },
     handleTogglePinned(entity: Entity, pinned?: boolean) {
       const item = this.items.find((item: Item) => item.entity === entity);
+      if (!item) return;
+
       if (typeof pinned === "undefined") {
         pinned = !item.pinned;
       }
-      item.pinned = !item.pinned;
-
-      if (pinned) this.$store.dispatch('pins/add', entity)
-      else this.$store.dispatch('pins/remove', entity)
+      item.pinned = pinned;
     },
     handleScrollEnd() {
       this.updateTableColumnsInRange(true);

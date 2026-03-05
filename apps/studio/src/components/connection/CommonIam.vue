@@ -39,12 +39,7 @@
             </div>
           </div>
 
-          <input
-            name="cliPath"
-            type="text"
-            class="form-control"
-            v-model="cliPath"
-          />
+          <file-picker v-model="cliPath"/>
         </div>
       </div>
 
@@ -125,12 +120,14 @@
 
 <script>
 import MaskedInput from '@/components/MaskedInput.vue'
+  import FilePicker from '@/components/common/form/FilePicker.vue'
 import { mapState } from 'vuex'
 
 export default {
   props: ['config', 'authType'],
   components: {
     MaskedInput,
+    FilePicker
   },
   data() {
     return {

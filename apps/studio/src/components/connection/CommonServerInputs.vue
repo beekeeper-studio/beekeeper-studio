@@ -68,102 +68,11 @@
       </div>
     </div>
 
-    <toggle-form-area
-      title="Enable SSL"
-      v-if="supportComplexSSL && supportsSsl"
-    >
-      <template v-slot:header>
-        <x-switch
-          @click.prevent="toggleSsl"
-          :toggled="config.ssl"
-        />
-      </template>
-
-      <template v-slot:default>
-        <div class="row gutter">
-          <div class="alert alert-info">
-            <i class="material-icons-outlined">info</i>
-            <div>
-              Providing certificate files is optional. By default Beekeeper will just trust the server certificate.
-              <external-link href="https://docs.beekeeperstudio.io/user_guide/connecting/connecting/#ssl">
-                Read More
-              </external-link>
-            </div>
-          </div>
-        </div>
-        <div class="row gutter">
-          <div class="col form-group">
-            <label>CA Cert (optional)</label>
-            <file-picker
-              v-model="config.sslCaFile"
-              :disabled="!config.ssl"
-            />
-          </div>
-        </div>
-
-        <div class="row gutter">
-          <div class="col form-group">
-            <label>Certificate (optional)</label>
-            <file-picker
-              v-model="config.sslCertFile"
-              :disabled="!config.ssl"
-            />
-          </div>
-        </div>
-
-        <div class="row gutter">
-          <div class="col form-group">
-            <label>Key File (optional)</label>
-            <file-picker
-              v-model="config.sslKeyFile"
-              :disabled="!config.ssl"
-            />
-          </div>
-        </div>
-        <div class="row gutter">
-          <div class="col form-group">
-            <label
-              class="checkbox-group"
-              for="reject"
-            >
-              <input
-                class="form-control"
-                id="reject"
-                type="checkbox"
-                name="rememberPassword"
-                v-model="config.sslRejectUnauthorized"
-              >
-              <span>Reject Unauthorized</span>
-              <i
-                class="material-icons"
-                v-tooltip="'This only takes effect if you provide certificate files'"
-              >help_outlined</i>
-            </label>
-          </div>
-        </div>
-      </template>
-    </toggle-form-area>
-
-
-    <!-- Simple SSL -->
-    <div
-      v-else-if="supportsSsl"
-      class="advanced-connection-settings"
-    >
-      <div class="flex flex-middle">
-        <h4
-          class="advanced-heading flex"
-          :class="{enabled: config.ssl}"
-        >
-          <span class="expand">Enable SSL</span>
-          <x-switch
-            @click.prevent="toggleSsl"
-            :toggled="config.ssl"
-          />
-        </h4>
-      </div>
-      <small class="text-muted help">{{ sslHelp }}</small>
-    </div>
+    <common-ssl
+      :config="config"
+      :ssl-help="sslHelp"
+      :supportComplexSSL="supportComplexSSL"
+    />
 
     <div class="row gutter">
       <div class="col form-group" :class="[showPasswordForm ? 's6' : 's12']">
@@ -207,11 +116,9 @@
 </template>
 
 <script>
-import FilePicker from '@/components/common/form/FilePicker.vue'
-import ExternalLink from '@/components/common/ExternalLink.vue'
 import { findClient } from '@/lib/db/clients'
-import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
+import CommonSsl from './CommonSsl.vue'
 import { mapState } from 'vuex'
 
 export default {
@@ -228,33 +135,21 @@ export default {
     }
   },
   components: {
-    FilePicker,
-    ExternalLink,
-    ToggleFormArea,
-    MaskedInput
+    MaskedInput,
+    CommonSsl
   },
   data() {
     return {
-      sslToggled: false,
       showPassword: false,
     }
   },
   computed: {
     ...mapState('settings', ['privacyMode']),
-    hasAdvancedSsl() {
-      return this.config.sslCaFile || this.config.sslCertFile || this.config.sslKeyFile
-    },
-    toggleIcon() {
-      return this.sslToggled ? 'keyboard_arrow_down' : 'keyboard_arrow_right'
-    },
     togglePasswordIcon() {
       return this.showPassword ? "visibility_off" : "visibility"
     },
     togglePasswordInputType() {
       return this.showPassword ? "text" : "password"
-    },
-    supportsSsl() {
-      return findClient(this.config.connectionType).supports('server:ssl')
     },
     supportsSocketPath() {
       return findClient(this.config.connectionType).supportsSocketPath
@@ -276,25 +171,9 @@ export default {
         return;
       }
     },
-    toggleSsl() {
-      this.config.ssl = !this.config.ssl
-
-      // Remove CA file when disabling ssl
-      if (!this.config.ssl) {
-        this.config.sslCaFile = null
-        this.config.sslCertFile = null
-        this.config.sslKeyFile = null
-      }
-    },
-    toggleSslAdvanced() {
-      this.sslToggled = !this.sslToggled;
-    },
     togglePassword() {
       this.showPassword = !this.showPassword
     }
-  },
-  mounted() {
-    this.sslToggled = this.hasAdvancedSsl
   }
 }
 </script>
