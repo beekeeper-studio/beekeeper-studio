@@ -18,6 +18,8 @@ import { UserPin } from "./models/UserPin"
 import { PluginData } from "./models/PluginData";
 import { EncryptedPluginData } from "./models/EncryptedPluginData"
 import { FormatterPreset } from "./models/FormatterPreset"
+import { QueryFolder } from "./models/QueryFolder"
+import { ConnectionFolder } from "./models/ConnectionFolder"
 
 const models = [
   SavedConnection,
@@ -38,6 +40,8 @@ const models = [
   PluginData,
   EncryptedPluginData,
   FormatterPreset,
+  QueryFolder,
+  ConnectionFolder,
 ]
 
 interface IConnectionState {

@@ -66,6 +66,32 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) await this.setZoom(win.webContents.zoomLevel - 0.5)
   }
 
+  setEditorFontSize = async (size: number): Promise<void> => {
+    const MIN_SIZE = 10
+    const MAX_SIZE = 24
+    const boundedSize = Math.max(MIN_SIZE, Math.min(MAX_SIZE, size))
+
+    this.settings.editorFontSize.value = boundedSize
+    await this.settings.editorFontSize.save()
+    getActiveWindows().forEach(window => {
+      window.send(AppEvent.settingsChanged, 'editorFontSize')
+    })
+  }
+
+  editorFontSizeReset = async (): Promise<void> => {
+    await this.setEditorFontSize(14)
+  }
+
+  editorFontSizeIncrease = async (): Promise<void> => {
+    const currentSize = (this.settings.editorFontSize?.value as number) || 14
+    await this.setEditorFontSize(currentSize + 2)
+  }
+
+  editorFontSizeDecrease = async (): Promise<void> => {
+    const currentSize = (this.settings.editorFontSize?.value as number) || 14
+    await this.setEditorFontSize(currentSize - 2)
+  }
+
   reload = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
     if (win) win.webContents.reloadIgnoringCache()
   }
@@ -205,6 +231,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   managePlugins = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.openPluginManager);
+  }
+
+  keyboardShortcuts = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openKeyboardShortcuts);
   }
 
   updatePin = (_1: Electron.MenuItem, win: ElectronWindow) => {

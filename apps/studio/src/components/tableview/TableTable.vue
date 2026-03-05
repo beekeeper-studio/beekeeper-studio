@@ -620,7 +620,7 @@ export default Vue.extend({
       return signs
     },
     editablePaths() {
-      if (!this.table.columns) return []
+      if (!this.table.columns || !this.editable) return []
 
       const paths = []
       for (const column of this.table.columns) {
@@ -1090,6 +1090,16 @@ export default Vue.extend({
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
+      })
+      this.tabulator.on('historyUndo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
+      })
+      this.tabulator.on('historyRedo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
       })
 
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
@@ -1808,7 +1818,8 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
-            await this.getTableKeys();
+            // Removed getTableKeys() call here to fix 5-10 second performance regression
+            // Keys are now fetched only on initialization and explicit refresh (issue #3775)
             resolve({
               last_page: 1,
               data
@@ -1867,6 +1878,10 @@ export default Vue.extend({
 
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
+
+      // Re-fetch table keys on explicit refresh to pick up schema changes (issue #3775)
+      await this.getTableKeys()
+
       await this.tabulator.replaceData()
       await this.tabulator.setColumns(this.tableColumns)
       this.tabulator.setPage(page)
@@ -2050,6 +2065,9 @@ export default Vue.extend({
       ])
     },
     handleJsonValueChange({key, value}) {
+      // this is just a safeguard, we shouldn't hit it but if we do it can save us from catastrophe
+      if (!this.editable) return;
+
       const column = this.table.columns.find((c) => c.columnName === key);
       if (column) {
         const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
