@@ -1,5 +1,9 @@
 name: Update README with Supported Databases
 
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   push:
     branches:

@@ -1,5 +1,8 @@
 name: Delete Draft Releases
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
 

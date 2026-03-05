@@ -12,8 +12,8 @@
     <common-server-inputs v-show="showServerInputs" :config="config" :show-password-form="showPasswordForm" />
 
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
-    <common-advanced :config="config" />
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
+    <common-advanced :config="config" />
   </div>
 </template>
 
@@ -33,6 +33,9 @@ export default {
   props: ['config'],
   mounted() {
     this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+    if (this.authType !== 'default') {
+      this.showPasswordForm = false;
+    }
   },
   data() {
     return {
@@ -40,7 +43,6 @@ export default {
       iamAuthenticationEnabled: !!this.config.iamAuthOptions?.iamAuthenticationEnabled,
       authType: this.config.iamAuthOptions?.authType || this.config.azureAuthOptions?.azureAuthType || 'default',
       authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes, ...AzureAuthTypes.filter(auth => auth.value === AzureAuthType.CLI)],
-      accountName: null,
       signingOut: false,
       errorSigningOut: null,
       showPasswordForm: true
@@ -67,20 +69,16 @@ export default {
           this.showPasswordForm = false;
           if (typeof this.authType === 'string' && this.authType.includes('iam')) {
             this.iamAuthenticationEnabled = true;
+            this.azureAuthEnabled = false;
             this.config.iamAuthOptions.authType = this.authType;
           } else if (this.authType === AzureAuthType.CLI) {
             this.azureAuthEnabled = true;
+            this.iamAuthenticationEnabled = false;
             this.config.azureAuthOptions.azureAuthType = this.authType;
           }
         }
       }
 
-      const authId = this.config.azureAuthOptions?.authId || this.config?.authId
-      if (this.authType === AzureAuthType.CLI && !_.isNil(authId)) {
-        this.accountName = await this.connection.azureGetAccountName(authId);
-      } else {
-        this.accountName = null
-      }
     },
     config() {
       if (this.config.azureAuthOptions.azureAuthEnabled) {
