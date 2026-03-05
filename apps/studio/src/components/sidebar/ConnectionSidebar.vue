@@ -304,7 +304,7 @@
         class="vue-dialog beekeeper-modal"
         name="connection-folder-modal"
         @closed="folderModalName = ''; folderModalItem = null"
-        @opened="$refs.folderNameInput && $refs.folderNameInput.focus()"
+        @opened="$nextTick(() => $refs.folderNameInput && $refs.folderNameInput.focus())"
         height="auto"
         :scrollable="true"
       >
@@ -573,8 +573,8 @@ export default {
         })
       }
       options.push(
-        { name: 'Rename Folder', handler: ({ item }) => this.renameFolder(item) },
-        { name: 'Delete Folder', handler: ({ item }) => this.deleteFolder(item) }
+        { name: 'Rename', handler: ({ item }) => this.renameFolder(item) },
+        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
       )
       this.$bks.openMenu({ event, item: folder, options })
     },

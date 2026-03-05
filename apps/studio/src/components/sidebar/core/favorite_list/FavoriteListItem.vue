@@ -32,10 +32,7 @@ export default Vue.extend({
   }),
   computed: {
     ...mapGetters(['isCloud']),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersUnsupported': 'unsupported'}),
-    foldersSupported() {
-      return !this.foldersUnsupported
-    },
+    ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
       return _.truncate(this.item.excerpt, { length: 100});
     },
@@ -120,7 +117,7 @@ export default Vue.extend({
           handler: ({ item }) => this.$emit('export', item)
         },
       ]
-      if (this.foldersSupported || this.folders.length > 0) {
+      if (this.folders.length > 0) {
         options.push({ type: 'divider' })
         if (!this.isCloud && this.item.queryFolderId) {
           options.push({ name: 'Move to top level', handler: ({ item }) => this.moveToRoot(item) })

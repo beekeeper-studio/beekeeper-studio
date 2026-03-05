@@ -93,9 +93,6 @@ export default {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
-    foldersSupported() {
-      return !this.$store.state['data/connectionFolders']?.unsupported
-    },
     moveToOptions() {
       const rootById = {}
       this.folders.forEach(f => { if (!f.parentId) rootById[f.id] = f.name })
@@ -201,7 +198,7 @@ export default {
         },
       ].filter(v => v)
 
-      if (this.isCloud || this.foldersSupported) {
+      if (this.isCloud || this.folders.length > 0) {
         options.push({ type: 'divider' })
         if (!this.isCloud && this.config.connectionFolderId) {
           options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
