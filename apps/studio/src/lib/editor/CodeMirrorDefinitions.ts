@@ -13,6 +13,18 @@ CodeMirror.defineMIME("text/x-pgsql", {
   },
 });
 
+CodeMirror.defineMIME("text/x-ggsql", {
+  // eslint-disable-next-line
+  // @ts-ignore
+  ...CodeMirror.resolveMode("text/x-pgsql"),
+  identifierQuote: '"',
+  hooks: {
+    // eslint-disable-next-line
+    // @ts-ignore
+    '"': CodeMirror.resolveMode("text/x-sqlite")?.hooks['"'],
+  },
+});
+
 declare module "codemirror" {
   interface Editor {
     lastCompletionState?: {
