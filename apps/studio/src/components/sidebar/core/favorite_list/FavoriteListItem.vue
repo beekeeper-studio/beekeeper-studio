@@ -22,7 +22,7 @@
 import _ from 'lodash'
 import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
 
 export default Vue.extend({
@@ -31,6 +31,7 @@ export default Vue.extend({
     timeAgo: new TimeAgo('en-US')
   }),
   computed: {
+    ...mapGetters(['isCloud']),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersUnsupported': 'unsupported'}),
     foldersSupported() {
       return !this.foldersUnsupported
@@ -121,7 +122,7 @@ export default Vue.extend({
       ]
       if (this.foldersSupported || this.folders.length > 0) {
         options.push({ type: 'divider' })
-        if (this.item.queryFolderId) {
+        if (!this.isCloud && this.item.queryFolderId) {
           options.push({ name: 'Move to top level', handler: ({ item }) => this.moveToRoot(item) })
         }
         options.push(...this.moveToOptions)

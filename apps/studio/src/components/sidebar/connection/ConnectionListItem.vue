@@ -203,7 +203,7 @@ export default {
 
       if (this.isCloud || this.foldersSupported) {
         options.push({ type: 'divider' })
-        if (this.config.connectionFolderId) {
+        if (!this.isCloud && this.config.connectionFolderId) {
           options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
         }
         options.push(...this.moveToOptions)
