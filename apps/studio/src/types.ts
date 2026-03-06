@@ -84,3 +84,12 @@ export type ConfigMetadata = {
   sections: ConfigMetadataSection[];
 };
 
+export type KeybindingValue = string | TaggedKeybinding;
+
+export type TaggedKeybinding = {
+  default?: string;
+  mac?: string;
+  win?: string;
+  linux?: string;
+};
+

@@ -1,7 +1,8 @@
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { IPlatformInfo } from "../IPlatformInfo";
-import type { KeybindingTarget, Platform } from "@/types";
+import type { KeybindingTarget, KeybindingValue, Platform } from "@/types";
+import { isKeybindingValue } from "./utils";
 
 export interface BksConfigSource {
   defaultConfig: IBksConfig;
@@ -23,7 +24,16 @@ export interface ConfigEntryDetailWarning {
   path: string;
 }
 
-type IniValue = string | number | boolean | IniArray | undefined;
+/** @see `tags.ts` */
+export type TaggedString = {
+  $$type: "taggedString";
+  default?: string;
+  [key: string]: string;
+};
+
+type IniPrimitive = string | number | boolean | TaggedString;
+
+export type IniValue = IniPrimitive | IniPrimitive[] | undefined;
 
 export type ConfigValue = IniValue | Record<string, IniValue>;
 
@@ -60,7 +70,8 @@ const codeMirrorModifierMap = {
   META: "Meta",
   WINDOWS: "Meta",
   ENTER: "Enter",
-  F5: "F5"
+  F5: "F5",
+  ESC: "Escape",
 } as const;
 
 const electronModifierMap = {
@@ -134,20 +145,27 @@ const uiModifierMap: ModifierMap = {
   META: (isMac) => (isMac ? "^" : "Meta"),
   PAGEUP: "PageUp",
   PAGEDOWN: "PageDown",
+  NUMADD: "Numpad+",
+  NUMSUB: "Numpad-",
 };
 
-export function convertKeybinding(
-  target: KeybindingTarget,
-  keybinding: string,
-  platform: Platform
-): string;
 export function convertKeybinding(
   target: "ui",
   keybinding: string,
   platform: Platform
 ): string[];
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror" | "ui",
+  target: Exclude<KeybindingTarget, "ui">,
+  keybinding: string,
+  platform: Platform
+): string;
+export function convertKeybinding(
+  target: KeybindingTarget,
+  keybinding: string,
+  platform: Platform
+): string[] | string;
+export function convertKeybinding(
+  target: KeybindingTarget,
   keybinding: string,
   platform: Platform
 ): string[] | string {
@@ -201,7 +219,7 @@ export function convertKeybinding(
     if (target === "tabulator" && !modifierMap[key]) {
       mod = mod.toLowerCase();
     }
-    
+
     if (target === "ui" && !modifierMap[key]) {
       mod = _.upperFirst(mod.toLowerCase());
     }
@@ -326,25 +344,69 @@ export class BksConfigProvider {
     return getDebugAll(this.mergedConfig);
   }
 
-  getKeybindings(target: KeybindingTarget, path: KeybindingPath) {
-    const keybindings = this.get(`keybindings.${path}`);
+  getKeybindings(target: "ui", path: KeybindingPath): string[][];
+  getKeybindings(
+    target: Exclude<KeybindingTarget, "ui">,
+    path: KeybindingPath
+  ): string[];
+  getKeybindings(
+    target: KeybindingTarget,
+    path: KeybindingPath
+  ): string[] | string[][] {
+    return this.resolveKeybindings(path).map((value) =>
+      convertKeybinding(target, value, this.platformInfo.platform)
+    );
+  }
 
-    if (isIniArray(keybindings)) {
-      return Object.keys(keybindings).map((idx) =>
-        convertKeybinding(target, keybindings[idx], this.platformInfo.platform)
-      );
-    }
-
-    if (typeof keybindings !== "string") {
-      log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
-      return [];
-    }
-
-    return convertKeybinding(target, keybindings, this.platformInfo.platform);
+  getFirstKeybinding(target: "ui", path: KeybindingPath): string[];
+  getFirstKeybinding(
+    target: Exclude<KeybindingTarget, "ui">,
+    path: KeybindingPath
+  ): string | undefined;
+  getFirstKeybinding(
+    target: KeybindingTarget,
+    path: KeybindingPath
+  ): string[] | string | undefined {
+    return this.getKeybindings(target, path)[0];
   }
 
   get warnings() {
     return this.source.warnings;
+  }
+
+  private resolveKeybindings(path: KeybindingPath): string[] {
+    let values = this.get(`keybindings.${path}`);
+
+    if (!_.isArray(values)) {
+      values = [values];
+    }
+
+    const keybindings: string[] = [];
+
+    for (const value of values) {
+      if (!isKeybindingValue(value)) {
+        log.warn(`Invalid keybindings: ${value} at ${path}`);
+        continue;
+      }
+
+      if (typeof value === "string") {
+        keybindings.push(value);
+        continue;
+      }
+
+      const platform =
+        this.platformInfo.platform === "windows"
+          ? "win"
+          : this.platformInfo.platform;
+
+      const val = value[platform] ?? value.default;
+
+      if (val) {
+        keybindings.push(val);
+      }
+    }
+
+    return keybindings;
   }
 
   private resolvePath(path: string) {

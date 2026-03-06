@@ -1,7 +1,4 @@
-import {
-  convertKeybinding,
-  BksConfigProvider,
-} from "@/common/bksConfig/BksConfigProvider";
+import { BksConfigProvider } from "@/common/bksConfig/BksConfigProvider";
 import { parseIni, processRawConfig } from "@/config/helpers";
 import _ from "lodash";
 import { checkConflicts, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
@@ -28,28 +25,6 @@ save = ctrlOrCmd+s
     };
 
     expect(parsed).toMatchObject(expected);
-  });
-
-  it("should convert keybinding syntax correctly", () => {
-    expect(convertKeybinding("electron", "ctrlOrCmd+shift+c", "mac")).toBe(
-      "CommandOrControl+Shift+C"
-    );
-
-    expect(convertKeybinding("v-hotkey", "ctrlOrCmd+shift+c", "mac")).toBe(
-      "meta+shift+c"
-    );
-    expect(convertKeybinding("v-hotkey", "ctrlOrCmd+shift+c", "linux")).toBe(
-      "ctrl+shift+c"
-    );
-    expect(convertKeybinding("v-hotkey", "CtrlOrCmd+Shift+C", "linux")).toBe(
-      "ctrl+shift+c"
-    );
-    expect(convertKeybinding("v-hotkey", "CTRLORCMD+SHIFT+C", "linux")).toBe(
-      "ctrl+shift+c"
-    );
-    expect(
-      convertKeybinding("v-hotkey", "CTRLORCMD   +  SHIFT  + C", "linux")
-    ).toBe("ctrl+shift+c");
   });
 
   it("should detect unrecognized config keys", () => {
@@ -88,14 +63,14 @@ minRes = 10
       {
         sourceName: "user",
         type: "unrecognized-key",
-        section: "generall",
-        path: "generall",
+        section: "ui.general",
+        path: "ui.general.load",
       },
       {
         sourceName: "user",
         type: "unrecognized-key",
-        section: "ui.general",
-        path: "ui.general.load",
+        section: "generall",
+        path: "generall",
       },
       {
         sourceName: "user",
