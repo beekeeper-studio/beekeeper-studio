@@ -1,11 +1,16 @@
+const capturedQueries: string[] = []
+
 jest.mock('trino-client', () => {
-  const mockQuery = jest.fn().mockResolvedValue({
-    [Symbol.asyncIterator]: async function* () {
-      yield {
-        data: [['1.0.0']],
-        columns: [{ name: '_col0', type: 'varchar' }]
+  const mockQuery = jest.fn().mockImplementation((sql: string) => {
+    capturedQueries.push(sql)
+    return Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        yield {
+          data: [['1.0.0']],
+          columns: [{ name: '_col0', type: 'varchar' }]
+        }
       }
-    }
+    })
   })
 
   return {
@@ -137,5 +142,46 @@ describe('TrinoClient SSL configuration (bug #3695)', () => {
 
     const createCall = (TrinoNodeClient.create as jest.Mock).mock.calls[0][0]
     expect(createCall.ssl).toBeUndefined()
+  })
+})
+
+describe('TrinoClient SQL escaping', () => {
+  let client: TrinoClient
+
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    capturedQueries.length = 0
+    client = new TrinoClient(makeServer(), makeDatabase())
+    await client.connect()
+    capturedQueries.length = 0
+  })
+
+  it('should wrap catalog name with identifier quoting in listSchemas', async () => {
+    const maliciousDb = "cat; DROP TABLE users --"
+    ;(client as any).db = maliciousDb
+    await client.listSchemas(null)
+
+    const sql = capturedQueries[0]
+    // Catalog name must be inside double-quote identifiers
+    expect(sql).toContain('"cat; DROP TABLE users --"')
+  })
+
+  it('should wrap catalog name with identifier quoting in listTables', async () => {
+    const maliciousDb = "cat; DROP TABLE users --"
+    ;(client as any).db = maliciousDb
+    await client.listTables(null)
+
+    const sql = capturedQueries[0]
+    // Catalog name must be inside double-quote identifiers
+    expect(sql).toContain('"cat; DROP TABLE users --".information_schema')
+  })
+
+  it('should escape schema and table names in listTableColumns', async () => {
+    await client.listTableColumns("test'; DROP TABLE users --", "public'; DROP TABLE users --")
+
+    const sql = capturedQueries[0]
+    // Single quotes in values must be doubled to stay inside SQL string literals
+    expect(sql).toContain("public''; DROP TABLE users --")
+    expect(sql).toContain("test''; DROP TABLE users --")
   })
 })
