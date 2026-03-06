@@ -3,6 +3,11 @@ import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
+import platformInfo from "@/common/platform_info"
+
+type ServerFactoryOptions = {
+  sshAuthSock?: string;
+};
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
@@ -15,6 +20,7 @@ export default {
       privateKey: config.sshKeyfile,
       passphrase: config.sshKeyfilePassword,
       bastionHost: config.sshBastionHost,
+      bastionPort: config.sshBastionPort,
       useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
@@ -57,8 +63,11 @@ export default {
     }
   },
 
-  for(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionPublicServer {
+  for(config: IConnection, osUsername: string, settings: IGroupedUserSettings, options?: ServerFactoryOptions): IDbConnectionPublicServer {
     const convertedConfig = this.convertConfig(config, osUsername, settings)
+    if (platformInfo.testMode && options?.sshAuthSock && convertedConfig.ssh) {
+      convertedConfig.ssh.test_sshAuthSock = options.sshAuthSock
+    }
     const server = createServer(convertedConfig)
     return server
   }

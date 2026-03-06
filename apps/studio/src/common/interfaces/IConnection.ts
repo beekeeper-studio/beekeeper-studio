@@ -38,6 +38,7 @@ export interface ISimpleConnection extends Transport {
   sshKeyfile: Nullable<string>
   sshUsername: Nullable<string>
   sshBastionHost: Nullable<string>
+  sshBastionPort: Nullable<number>
   sshKeepaliveInterval: Nullable<number>
   ssl: boolean
   sslCaFile: Nullable<string>

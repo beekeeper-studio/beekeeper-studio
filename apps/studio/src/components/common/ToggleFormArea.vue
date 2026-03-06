@@ -44,7 +44,13 @@ import Vue from 'vue'
       expanded() {
         this.toggleContent = this.expanded
         this.$emit('expanded', this.expanded)
-      }
+      },
+      toggleContent: {
+        handler() {
+          this.$emit('toggleContent', this.toggleContent)
+        },
+        immediate: true,
+      },
     },
     computed: {
       toggleIcon() {
