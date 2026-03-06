@@ -151,8 +151,9 @@ class SSHConnection {
         if (err) {
           return reject(err)
         }
-        const connection = await this.connect(this.options.endHost, stream)
-        return resolve(connection)
+        this.connect(this.options.endHost, this.options.endPort, stream)
+          .catch(reject)
+          .then(resolve);
       })
     })
   }
