@@ -33,6 +33,11 @@ export const TabModule: Module<State, RootState> = {
         name: "Shell",
         menuItem: { label: 'Add Shell' },
       },
+      {
+        type: 'server-status',
+        name: "Server Status",
+        menuItem: { label: 'View Server Status' },
+      },
     ],
   }),
   getters: {
@@ -43,6 +48,9 @@ export const TabModule: Module<State, RootState> = {
         }
         if (tab.type === "plugin-shell" || tab.type === "plugin-base") {
           return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
+        }
+        if (tab.type === 'server-status') {
+          return rootState.connectionType === 'mysql' || rootState.connectionType === 'mariadb';
         }
         return true;
       })

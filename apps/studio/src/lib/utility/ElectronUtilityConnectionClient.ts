@@ -1,6 +1,6 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
 
@@ -264,6 +264,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async syncDatabase(): Promise<void> {
     return await Vue.prototype.$util.send('conn/syncDatabase');
+  }
+
+  async getServerStatistics(): Promise<ServerStatistics | null> {
+    return await Vue.prototype.$util.send('conn/getServerStatistics');
   }
 
   async azureCancelAuth(): Promise<void> {
