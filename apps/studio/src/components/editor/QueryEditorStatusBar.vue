@@ -26,7 +26,7 @@
               @mouseover="showSwitch = editing"
               @mouseleave="showSwitch = false"
               :disabled="editing"
-              v-tooltip="{ content: 'Discard or apply your changes to switch result sets', trigger: 'manual', show: showSwitch, classes: ['tooltip-info']}"
+              v-tooltip="{ content: 'Discard or apply your changes to switch result sets', trigger: 'manual', show: showSwitch }"
             >
               <option
                 v-for="(resultOption, index) in results"
