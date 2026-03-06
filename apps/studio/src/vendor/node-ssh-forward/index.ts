@@ -152,8 +152,9 @@ class SSHConnection {
         if (err) {
           return reject(err)
         }
-        const connection = await this.connect(this.options.endHost, undefined, stream)
-        return resolve(connection)
+        this.connect(this.options.endHost, this.options.endPort, stream)
+          .catch(reject)
+          .then(resolve);
       })
     })
   }
@@ -165,7 +166,7 @@ class SSHConnection {
 
       const options = {
         host,
-        port,
+        port: port || 22,
         username: this.options.username,
         password: this.options.password,
         privateKey: this.options.privateKey,
