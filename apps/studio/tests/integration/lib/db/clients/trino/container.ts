@@ -4,9 +4,10 @@ import { GenericContainer, Wait, StartedTestContainer } from "testcontainers";
 import path from 'path'
 import os from 'os'
 import fs from 'fs'
+import { execSync } from 'child_process'
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 
-export const PostgresTestDriver = {
+export const TrinoBackingPostgresDriver = {
   container: null,
   utilOptions: null,
   config: null,
@@ -87,7 +88,7 @@ export const PostgresTestDriver = {
   }
 }
 
-export const TrinoTestDriver = {
+export const TrinoHttpDriver = {
   container: null as StartedTestContainer | null,
   pgContainer: null as StartedTestContainer | null,
   utilOptions: null as Options | null,
@@ -145,4 +146,117 @@ connection-password=example`;
   async stop() {
     await this.container?.stop()
   }
+}
+
+function generateTrinoSslFiles(tempDir: string) {
+  const certDir = path.join(tempDir, 'certs')
+  fs.mkdirSync(certDir, { recursive: true })
+
+  const keyFile = path.join(certDir, 'trino.key')
+  const certFile = path.join(certDir, 'trino.crt')
+  const p12File = path.join(certDir, 'trino.p12')
+  const keystorePassword = 'trinopass'
+
+  // Generate self-signed cert and private key
+  execSync(
+    `openssl req -x509 -newkey rsa:2048 -keyout ${keyFile} -out ${certFile} ` +
+    `-days 1 -nodes -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"`,
+    { stdio: 'pipe' }
+  )
+
+  // Convert to PKCS12 keystore for Trino's Java TLS
+  execSync(
+    `openssl pkcs12 -export -in ${certFile} -inkey ${keyFile} ` +
+    `-out ${p12File} -passout pass:${keystorePassword}`,
+    { stdio: 'pipe' }
+  )
+
+  return { keyFile, certFile, p12File, keystorePassword, certDir }
+}
+
+export const TrinoHttpsDriver = {
+  container: null as StartedTestContainer | null,
+  config: null as IDbConnectionServerConfig | null,
+  certFile: null as string | null,
+
+  async start(dockerTag: string, readonly: boolean, network) {
+    const startupTimeout = dbtimeout * 2
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'trino-ssl-'))
+
+    // Generate SSL certs and keystore
+    const ssl = generateTrinoSslFiles(tempDir)
+    this.certFile = ssl.certFile
+
+    // Create catalog config for postgresql connector
+    const catalogDir = path.join(tempDir, 'catalog')
+    fs.mkdirSync(catalogDir)
+    fs.writeFileSync(
+      path.join(catalogDir, 'postgresql.properties'),
+      `connector.name=postgresql
+connection-url=jdbc:postgresql://postgres:5432/banana
+connection-user=postgres
+connection-password=example`
+    )
+
+    // Generate a shared secret for internal communication
+    const sharedSecret = require('crypto').randomBytes(64).toString('base64')
+
+    // Shell script to merge SSL settings into the existing config.properties,
+    // then start Trino. This preserves default properties like catalog.management.
+    const entrypointScript = path.join(tempDir, 'entrypoint.sh')
+    fs.writeFileSync(entrypointScript, [
+      '#!/bin/bash',
+      'set -e',
+      "sed -i '/^http-server.http.port=/d' /etc/trino/config.properties",
+      "sed -i '/^discovery.uri=/d' /etc/trino/config.properties",
+      `cat >> /etc/trino/config.properties << 'SSLEOF'`,
+      'http-server.http.enabled=false',
+      'http-server.https.enabled=true',
+      'http-server.https.port=8443',
+      `http-server.https.keystore.path=/etc/trino/certs/trino.p12`,
+      `http-server.https.keystore.key=${ssl.keystorePassword}`,
+      'discovery.uri=https://localhost:8443',
+      'internal-communication.https.required=true',
+      `internal-communication.shared-secret=${sharedSecret}`,
+      'SSLEOF',
+      'exec /usr/lib/trino/bin/run-trino',
+    ].join('\n'))
+    fs.chmodSync(entrypointScript, '755')
+
+    this.container = await new GenericContainer(`trinodb/trino:${dockerTag}`)
+      .withNetwork(network)
+      .withExposedPorts(8443)
+      .withBindMounts([
+        { source: catalogDir, target: '/etc/trino/catalog', mode: 'ro' },
+        { source: ssl.certDir, target: '/etc/trino/certs', mode: 'ro' },
+        { source: entrypointScript, target: '/etc/trino/entrypoint.sh', mode: 'ro' },
+      ])
+      .withCommand(['/etc/trino/entrypoint.sh'])
+      .withWaitStrategy(Wait.forLogMessage("SERVER STARTED"))
+      .withStartupTimeout(startupTimeout)
+      .start()
+
+    this.config = {
+      client: 'trino',
+      host: this.container.getHost(),
+      port: this.container.getMappedPort(8443),
+      user: 'test',
+      password: null,
+      osUser: 'foo',
+      ssh: null,
+      sslCaFile: ssl.certFile,
+      sslCertFile: null,
+      sslKeyFile: null,
+      sslRejectUnauthorized: false,
+      ssl: true,
+      domain: null,
+      socketPath: null,
+      socketPathEnabled: false,
+      readOnlyMode: readonly,
+    }
+  },
+
+  async stop() {
+    await this.container?.stop()
+  },
 }

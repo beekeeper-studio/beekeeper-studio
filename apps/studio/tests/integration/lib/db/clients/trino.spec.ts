@@ -1,6 +1,6 @@
 import { Network} from "testcontainers"
 import { DBTestUtil, dbtimeout } from "../../../../lib/db"
-import { PostgresTestDriver, TrinoTestDriver } from './trino/container'
+import { TrinoBackingPostgresDriver, TrinoHttpDriver, TrinoHttpsDriver } from './trino/container'
 import { TableOrView } from "@/lib/db/models"
 // import { runCommonTests, runReadOnlyTests } from "./all"
 
@@ -20,30 +20,30 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     beforeAll(async () => {
       const network = await new Network().start()
 
-      await PostgresTestDriver.start(dockerTag, socket, readonly, network)
+      await TrinoBackingPostgresDriver.start(dockerTag, socket, readonly, network)
 
-      dbfeeder = new DBTestUtil(PostgresTestDriver.config, "banana", PostgresTestDriver.utilOptions)
+      dbfeeder = new DBTestUtil(TrinoBackingPostgresDriver.config, "banana", TrinoBackingPostgresDriver.utilOptions)
       await dbfeeder.setupdb()
 
       // now set up the trino container
-      await TrinoTestDriver.start(dockerTag, readonly, network)
+      await TrinoHttpDriver.start(dockerTag, readonly, network)
 
-      util = new DBTestUtil(TrinoTestDriver.config, 'postgresql', { dialect: 'trino' })
+      util = new DBTestUtil(TrinoHttpDriver.config, 'postgresql', { dialect: 'trino' })
       await util.connection.connect()
 
       // Trino uses catalogs instead of databases, access PostgreSQL through 'postgresql' catalog
-      // util = new DBTestUtil(TrinoTestDriver.config, "postgresql", TrinoTestDriver.utilOptions)
+      // util = new DBTestUtil(TrinoHttpDriver.config, "postgresql", TrinoHttpDriver.utilOptions)
 
       // await util.setupdb()
     })
 
     afterAll(async () => {
-      // await util.disconnect()
-      await TrinoTestDriver.stop()
-      await dbfeeder.disconnect()
       if (util.connection) {
         await util.connection.disconnect()
       }
+      await TrinoHttpDriver.stop()
+      await dbfeeder.disconnect()
+      await TrinoBackingPostgresDriver.stop()
     })
 
     describe("Read Operations", () => {
@@ -57,9 +57,14 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           expect(tableNames).toContain('jobs')
         })
 
-        it("List tables should return empty array when filter is undefined", async () => {
-          const tables: TableOrView[] = await util.connection.listTables()
-          expect(tables).toEqual([])
+        it("List tables should return tables when filter is null (bug #3947)", async () => {
+          const tables: TableOrView[] = await util.connection.listTables(null)
+          expect(tables.length).toBeGreaterThanOrEqual(3)
+        })
+
+        it("List tables should only return tables matching the schema filter", async () => {
+          const tables: TableOrView[] = await util.connection.listTables({ schema: 'public' })
+          tables.forEach(t => expect(t.schema).toBe('public'))
         })
 
         it("List table columns should work", async () => {
@@ -256,6 +261,62 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+
+describe('Trino SSL connection (bug #3695)', () => {
+  jest.setTimeout(dbtimeout)
+
+  // Separate instance to avoid mutating the shared TrinoBackingPostgresDriver singleton
+  const sslPgDriver = Object.create(TrinoBackingPostgresDriver, {
+    container: { value: null, writable: true },
+    config: { value: null, writable: true },
+    utilOptions: { value: null, writable: true },
+  })
+  let dbfeeder: DBTestUtil
+  let util: DBTestUtil
+
+  beforeAll(async () => {
+    const network = await new Network().start()
+
+    await sslPgDriver.start('latest', false, false, network)
+
+    dbfeeder = new DBTestUtil(sslPgDriver.config, "banana", sslPgDriver.utilOptions)
+    await dbfeeder.setupdb()
+
+    await TrinoHttpsDriver.start('latest', false, network)
+
+    util = new DBTestUtil(TrinoHttpsDriver.config, 'postgresql', { dialect: 'trino' })
+    await util.connection.connect()
+  })
+
+  afterAll(async () => {
+    if (util?.connection) {
+      await util.connection.disconnect()
+    }
+    await TrinoHttpsDriver.stop()
+    await dbfeeder.disconnect()
+    await sslPgDriver.container?.stop()
+  })
+
+  it("Should connect to Trino over HTTPS with ssl=true and CA cert", async () => {
+    const version = await util.connection.versionString()
+    expect(version).toBeDefined()
+    expect(typeof version).toBe('string')
+    expect(version.length).toBeGreaterThan(0)
+  })
+
+  it("Should be able to list tables over SSL", async () => {
+    const tables: TableOrView[] = await util.connection.listTables({ schema: 'public' })
+    const tableNames = tables.map(t => t.name)
+    expect(tables.length).toBeGreaterThanOrEqual(3)
+    expect(tableNames).toContain('people')
+  })
+
+  it("Should be able to query data over SSL", async () => {
+    const result = await util.connection.selectTop('people', 0, 10, [], [], 'public', [])
+    expect(result.result).toBeDefined()
+    expect(Array.isArray(result.result)).toBe(true)
+  })
+})
 
 // Additional util.connection tests
 describe('Trino util.Connection Edge Cases', () => {
