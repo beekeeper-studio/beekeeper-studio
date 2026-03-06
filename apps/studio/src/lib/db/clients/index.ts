@@ -75,6 +75,15 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'greengage',
+    name: 'GreengageDB',
+    defaultDatabase: 'postgres',
+    defaultPort: 5432,
+    disabledFeatures: [
+      'server:domain',
+    ],
+  },
+  {
     key: 'redshift',
     name: 'Amazon Redshift',
     defaultDatabase: 'postgres',
