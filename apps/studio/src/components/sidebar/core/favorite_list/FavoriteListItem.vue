@@ -31,21 +31,28 @@ export default Vue.extend({
     timeAgo: new TimeAgo('en-US')
   }),
   computed: {
+    ...mapGetters(['isCloud']),
     ...mapState('data/queryFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
     truncatedText() {
       return _.truncate(this.item.excerpt, { length: 100});
     },
     moveToOptions() {
+      const rootById: Record<number, string> = {}
+      this.folders.forEach((f: IQueryFolder) => { if (!f.parentId) rootById[f.id] = f.name })
       return this.folders
-        .filter((folder) => folder.id !== this.item.queryFolderId)
+        .filter((folder: IQueryFolder) => folder.id !== this.item.queryFolderId)
         .map((folder: IQueryFolder) => {
-        return {
-          name: `Move to ${folder.name}`,
-          handler: this.moveItem,
-          folder
-        }
-      })
+          let name: string
+          if (!folder.parentId) {
+            const hasSubs = this.folders.some((f: IQueryFolder) => f.parentId === folder.id)
+            name = hasSubs ? `Move to ${folder.name} (top level)` : `Move to ${folder.name}`
+          } else {
+            const parentName = rootById[folder.parentId] || ''
+            name = `Move to ${parentName} \u2192 ${folder.name}`
+          }
+          return { name, handler: this.moveItem, folder }
+        })
     },
     shareQueryLink() {
       if (this.isCloud) {
@@ -71,6 +78,16 @@ export default Vue.extend({
     }
   },
   methods: {
+    async moveToRoot(item) {
+      try {
+        const updated = _.clone(item)
+        updated.queryFolderId = null
+        await this.$store.dispatch('data/queries/save', updated)
+      } catch (ex) {
+        this.$noty.error(`Move Error: ${ex.message}`)
+        console.error(ex)
+      }
+    },
     async moveItem({ item, option }) {
       try {
         const folder = option.folder
@@ -94,7 +111,10 @@ export default Vue.extend({
         {
           name: "Rename",
           handler: ({ item }) => this.$emit('rename', item)
-          
+        },
+        {
+          name: "Duplicate",
+          handler: ({ item }) => this.$emit('duplicate', item)
         },
         {
           name: "Delete",
@@ -119,7 +139,14 @@ export default Vue.extend({
             handler: ({ item }) => this.$emit('getQueryLink', item)
           })
       }
-      
+
+      if (this.folders.length > 0) {
+        options.push({ type: 'divider' })
+        if (!this.isCloud && this.item.queryFolderId) {
+          options.push({ name: 'Move to top level', handler: ({ item }) => this.moveToRoot(item) })
+        }
+        options.push(...this.moveToOptions)
+      }
       this.$bks.openMenu({
         item, event,
         options
