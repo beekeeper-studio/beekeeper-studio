@@ -48,17 +48,17 @@ export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   const { schema, only, ignore } = filter
 
   if (schema) {
-    return `${schemaField} = '${schema}'`;
+    return `${schemaField} = '${escapeString(schema)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${schemaField} IN (${only.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${schemaField} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${schemaField} NOT IN (${ignore.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${schemaField} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');
