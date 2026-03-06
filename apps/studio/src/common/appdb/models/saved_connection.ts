@@ -384,6 +384,10 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         this.ssl = true
       }
 
+      if (cleanedUrl.startsWith('https://')) {
+        this.ssl = true
+      }
+
       if (parsed.params?.TrustServerCertificate && parsed.params.TrustServerCertificate === 'true') {
         this.trustServerCertificate = true
       }

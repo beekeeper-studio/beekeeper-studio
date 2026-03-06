@@ -215,7 +215,6 @@ export const CLIENTS: ClientConfig[] = [
     topLevelEntity: 'Catalog',
     defaultPort: 8080,
     disabledFeatures: [
-      'server:ssl',
       'server:socketPath',
       'cancelQuery', // TODO how to do this?
     ],

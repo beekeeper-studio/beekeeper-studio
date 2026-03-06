@@ -1,10 +1,12 @@
 import rawLog from "@bksLogger"
+import { readFileSync } from "fs"
 import { IDbConnectionDatabase } from "@/lib/db/types"
 import {
   Trino as TrinoNodeClient,
   BasicAuth,
   QueryResult,
-  ConnectionOptions as TrinoConnectionOptions
+  ConnectionOptions as TrinoConnectionOptions,
+  SecureContextOptions
 } from 'trino-client'
 import {
   BaseQueryResult,
@@ -41,6 +43,7 @@ import {
   createCancelablePromise,
   joinFilters
 } from "@/common/utils"
+import { buildSchemaFilter } from "@/lib/db/clients/utils"
 import {
   AlterTableSpec,
   TableKey
@@ -109,8 +112,30 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       catalog: this.database.database
     }
     
-    // TODO: Add ssl using SecureContextOptions (https://trinodb.github.io/trino-js-client/types/ConnectionOptions.html)
-    
+    if (this.server.config.ssl) {
+      const sslOptions: SecureContextOptions = {}
+
+      if (this.server.config.sslCaFile) {
+        sslOptions.ca = readFileSync(this.server.config.sslCaFile)
+      }
+
+      if (this.server.config.sslCertFile) {
+        sslOptions.cert = readFileSync(this.server.config.sslCertFile)
+      }
+
+      if (this.server.config.sslKeyFile) {
+        sslOptions.key = readFileSync(this.server.config.sslKeyFile)
+      }
+
+      if (!sslOptions.key && !sslOptions.ca && !sslOptions.cert) {
+        sslOptions.rejectUnauthorized = false
+      } else {
+        sslOptions.rejectUnauthorized = this.server.config.sslRejectUnauthorized
+      }
+
+      connectionObj.ssl = sslOptions
+    }
+
     if ((this.server.config.user != null && this.server.config.user !== '') || (this.server.config.password != null && this.server.config.password !== '')) {
       connectionObj.auth = new BasicAuth(this.server.config.user, this.server.config.password)
     }
@@ -279,8 +304,9 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
-    if (!filter) return []
-    const sql = `select * from ${this.db}.information_schema.tables`
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema')
+    const whereClause = schemaFilter ? `WHERE ${schemaFilter}` : ''
+    const sql = `select * from ${this.db}.information_schema.tables ${whereClause}`
     const result = await this.driverExecuteSingle(sql)
 
     return result.rows.map((row) => ({
