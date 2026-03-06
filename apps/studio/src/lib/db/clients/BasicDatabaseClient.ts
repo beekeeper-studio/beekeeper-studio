@@ -209,14 +209,14 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return Promise.resolve([]);
   }
 
-
-
   async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
     const commands = identify(queryText, { identifyTables: true, identifyColumns: true });
     if (commands.length !== 1) return [];
+
     const command = commands[0];
     if (command?.executionType !== 'LISTING') return [];
 
+    // Actually query the database for table information (pks, columns)
     const tableData = await this.fetchTableMetadata(command);
 
     const instanceCounter = new Map<string, number>(fields.map((f) => [f.name, 0]));
@@ -247,6 +247,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         }
       }
 
+      // Couldn't match output field to column referenced in the query
       if (!fieldColumn) {
         editData.readOnlyReason = FieldReadOnlyReason.ImproperMapping;
         return editData;
@@ -297,6 +298,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       return editData;
     })
   }
+
   abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;

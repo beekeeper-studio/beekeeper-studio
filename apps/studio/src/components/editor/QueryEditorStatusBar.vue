@@ -21,8 +21,12 @@
             <select
               name="resultSelector"
               id="resultSelector"
-              @change="selectResult(parseInt($event.target.value))"
+              @change="selectedResult = parseInt($event.target.value)"
               class="form-control"
+              @mouseover="showSwitch = editing"
+              @mouseleave="showSwitch = false"
+              :disabled="editing"
+              v-tooltip="{ content: 'Discard or apply your changes to switch result sets', trigger: 'manual', show: showSwitch, classes: ['tooltip-info']}"
             >
               <option
                 v-for="(resultOption, index) in results"
@@ -223,6 +227,7 @@ export default {
   data() {
     return {
       showHint: false,
+      showSwitch: false,
       selectedResult: 0
     }
   },
@@ -338,13 +343,6 @@ export default {
         d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
         e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
       return e;
-    },
-    selectResult(result) {
-      if (!this.editing) {
-        this.selectedResult = result
-      } else {
-        this.$emit('confirmSwitchResult', { oldValue: this.selectedResult, newValue: result })
-      }
     },
     editResults() {
       this.$emit('editResults');
