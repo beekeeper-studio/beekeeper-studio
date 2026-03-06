@@ -165,6 +165,7 @@
               @open="open"
               @rename="rename"
               @export="exportTo"
+              @getQueryLink="queryLink"
               @duplicate="duplicate"
             />
           </Draggable>
@@ -188,6 +189,46 @@
       </div>
     </div>
     <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal"
+        :name="shareModal"
+        @closed="querySelected={}"
+        height="auto"
+        :scrollable="true"
+      >
+        <div
+          class="dialog-content"
+          v-kbd-trap="true"
+        >
+          <div class="dialog-c-title">
+            Shareable Query Link
+            <button
+              class="close-btn btn btn-flat btn-fab"
+              @click="closeShareModal"
+            >
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <div v-if="querySelected.isPersonal">
+            In order to share this query, it must be a Team level query. Please move the query to the "Team" folder.
+          </div>
+          <div v-else>
+            <span>
+              {{ queryURL }}
+            </span>
+            <button
+              class="btn btn-flat copy-button"
+              @click="copyURL()"
+            >
+              Copy URL
+              <i class="material-icons">content_copy</i>
+            </button>
+            <p class="text-sm fst-italic">
+              The link is only viewable to members of the same workspace.
+            </p>
+          </div>
+        </div>
+      </modal>
       <modal
         class="vue-dialog beekeeper-modal"
         name="query-folder-modal"
@@ -270,6 +311,8 @@ export default {
       checkedFavorites: [],
       selected: null,
       renameMe: null,
+      querySelected: {},
+      shareModal: 'share-modal',
       folderModalName: '',
       folderModalItem: null,
       folderModalParentId: null,
@@ -290,6 +333,9 @@ export default {
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+    queryURL() {
+      return `${this.$config.cloudUrl}/query/${this.querySelected.slug}`
+    },
     filterQuery: {
       get() {
         return this.savedQueryFilter;
@@ -321,6 +367,17 @@ export default {
     }
   },
   methods: {
+    queryLink(item) {
+      console.log(item)
+      this.querySelected = { ...item }
+      this.$modal.show(this.shareModal)
+    },
+    closeShareModal() {
+      this.$modal.hide(this.shareModal)
+    },
+    copyURL(url) {
+      this.$native.clipboard.writeText(this.queryURL)
+    },
     getFolderExpanded(folderId) {
       const stored = this.folderExpandedState[folderId]
       return stored !== undefined ? stored : true
@@ -515,6 +572,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.copy-button {
+  margin-left: 1rem;
+}
 .drag-ghost {
   opacity: 0.4;
 }

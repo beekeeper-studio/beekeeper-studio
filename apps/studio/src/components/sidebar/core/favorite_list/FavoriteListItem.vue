@@ -33,6 +33,7 @@ export default Vue.extend({
   computed: {
     ...mapGetters(['isCloud']),
     ...mapState('data/queryFolders', {'folders': 'items'}),
+    ...mapGetters(['isCloud']),
     truncatedText() {
       return _.truncate(this.item.excerpt, { length: 100});
     },
@@ -52,6 +53,16 @@ export default Vue.extend({
           }
           return { name, handler: this.moveItem, folder }
         })
+    },
+    shareQueryLink() {
+      if (this.isCloud) {
+        return {
+            name: 'Share Link to Query',
+            handler: ({ item }) => this.$emit('rename', item)
+          }
+      }
+      
+      return null
     },
     subtitle() {
       const result = []
@@ -116,7 +127,19 @@ export default Vue.extend({
           name: "Export",
           handler: ({ item }) => this.$emit('export', item)
         },
+        {
+          type: 'divider'
+        },
+        ...this.moveToOptions
       ]
+
+      if (this.isCloud) {
+        options.push({
+            name: 'Get Query Link',
+            handler: ({ item }) => this.$emit('getQueryLink', item)
+          })
+      }
+
       if (this.folders.length > 0) {
         options.push({ type: 'divider' })
         if (!this.isCloud && this.item.queryFolderId) {

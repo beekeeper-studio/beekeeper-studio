@@ -27,6 +27,8 @@
               <ImportButton :config="config">
                 Import from URL
               </ImportButton>
+              <!-- DEV ONLY: remove once share-query flow is verified -->
+              <ShareQueryTestButton />
             </div>
             <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
@@ -252,6 +254,7 @@ import SurrealDbForm from './connection/SurrealDBForm.vue'
 import RedisForm from './connection/RedisForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
+import ShareQueryTestButton from './connection/ShareQueryTestButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
@@ -272,7 +275,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
+  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ShareQueryTestButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
     ContentPlaceholderHeading, SurrealDbForm
   },
 
