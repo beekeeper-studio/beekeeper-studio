@@ -407,6 +407,44 @@ export function runCommonTests(getUtil, opts = {}) {
     })
   })
 
+  describe("Primary Key Editing", () => {
+    beforeEach(async () => {
+      await prepareTestTableForPKEditing(getUtil())
+    })
+
+    test("should allow editing VARCHAR primary key", async () => {
+      if (dbReadOnlyMode) return
+      // Skip for databases that don't support PK editing
+      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+
+      await itShouldAllowEditingVarcharPrimaryKey(getUtil())
+    })
+
+    test("should allow editing composite primary key", async () => {
+      if (dbReadOnlyMode) return
+      // Skip for databases that don't support PK editing
+      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+
+      await itShouldAllowEditingCompositePrimaryKey(getUtil())
+    })
+
+    test("should update with correct WHERE clause using old PK value", async () => {
+      if (dbReadOnlyMode) return
+      // Skip for databases that don't support PK editing
+      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+
+      await itShouldUpdateWithOldPKInWhereClause(getUtil())
+    })
+
+    test("should handle duplicate PK constraint violations", async () => {
+      if (dbReadOnlyMode) return
+      // Skip for databases that don't support PK editing
+      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+
+      await itShouldHandleDuplicatePKError(getUtil())
+    })
+  })
+
   describe("Get data modification SQL", () => {
     beforeEach(async () => {
       await prepareTestTable(getUtil())
@@ -1565,4 +1603,176 @@ export const itShouldSupportConcurrentTransactions = async function(util) {
   // Clean up
   await util.connection.releaseConnection(tabId1)
   await util.connection.releaseConnection(tabId2)
+}
+
+// Helper function to prepare test table with VARCHAR primary key
+const prepareTestTableForPKEditing = async function(util) {
+  await util.knex.schema.dropTableIfExists("test_pk_editing")
+  await util.knex.schema.createTable("test_pk_editing", (table) => {
+    table.specificType("user_id", "varchar(50)").primary().notNullable()
+    table.specificType("username", "varchar(255)")
+    table.specificType("email", "varchar(255)")
+  })
+}
+
+// Test: Allow editing VARCHAR primary key
+export const itShouldAllowEditingVarcharPrimaryKey = async function(util) {
+  // Insert initial data
+  const inserts = [{
+    table: 'test_pk_editing',
+    schema: util.options.defaultSchema,
+    data: [{
+      user_id: 'user001',
+      username: 'john_doe',
+      email: 'john@example.com'
+    }]
+  }]
+  await util.connection.applyChanges({ inserts })
+
+  // Update the primary key value
+  const updates = [{
+    table: 'test_pk_editing',
+    schema: util.options.defaultSchema,
+    primaryKeys: [{ column: 'user_id', value: 'user001' }],
+    column: 'user_id',
+    value: 'user002'
+  }]
+  await util.connection.applyChanges({ updates })
+
+  // Verify the primary key was updated
+  const results = await util.knex.select().table('test_pk_editing')
+  expect(results.length).toBe(1)
+  expect(results[0].user_id).toBe('user002')
+  expect(results[0].username).toBe('john_doe')
+}
+
+// Test: Allow editing composite primary key
+export const itShouldAllowEditingCompositePrimaryKey = async function(util) {
+  // Use the existing composite PK table
+  await prepareTestTableCompositePK(util)
+
+  // Insert initial data
+  const inserts = [{
+    table: 'test_inserts_composite_pk',
+    schema: util.options.defaultSchema,
+    data: [{
+      id1: 1,
+      id2: 1,
+      first_name: 'John',
+      last_name: 'Doe'
+    }]
+  }]
+  await util.connection.applyChanges({ inserts })
+
+  // Update one part of the composite primary key
+  const updates = [{
+    table: 'test_inserts_composite_pk',
+    schema: util.options.defaultSchema,
+    primaryKeys: [
+      { column: 'id1', value: 1 },
+      { column: 'id2', value: 1 }
+    ],
+    column: 'id1',
+    value: 2
+  }]
+  await util.connection.applyChanges({ updates })
+
+  // Verify the primary key was updated
+  const results = await util.knex.select().table('test_inserts_composite_pk')
+  expect(results.length).toBe(1)
+
+  const result = { ...results[0] }
+  // Handle numeric type conversion (CockroachDB returns BigInt)
+  result.id1 = Number(result.id1)
+  result.id2 = Number(result.id2)
+
+  expect(result.id1).toBe(2)
+  expect(result.id2).toBe(1)
+  expect(result.first_name).toBe('John')
+}
+
+// Test: Verify UPDATE uses old PK value in WHERE clause
+export const itShouldUpdateWithOldPKInWhereClause = async function(util) {
+  // Insert two rows
+  const inserts = [
+    {
+      table: 'test_pk_editing',
+      schema: util.options.defaultSchema,
+      data: [{
+        user_id: 'user001',
+        username: 'john_doe',
+        email: 'john@example.com'
+      }]
+    },
+    {
+      table: 'test_pk_editing',
+      schema: util.options.defaultSchema,
+      data: [{
+        user_id: 'user002',
+        username: 'jane_doe',
+        email: 'jane@example.com'
+      }]
+    }
+  ]
+  await util.connection.applyChanges({ inserts })
+
+  // Update first row's PK to 'user003'
+  const updates = [{
+    table: 'test_pk_editing',
+    schema: util.options.defaultSchema,
+    primaryKeys: [{ column: 'user_id', value: 'user001' }],
+    column: 'user_id',
+    value: 'user003'
+  }]
+  await util.connection.applyChanges({ updates })
+
+  // Verify both rows exist with correct PKs
+  const results = await util.knex.select().table('test_pk_editing').orderBy('user_id')
+  expect(results.length).toBe(2)
+  expect(results[0].user_id).toBe('user002') // unchanged
+  expect(results[1].user_id).toBe('user003') // updated from user001
+}
+
+// Test: Handle duplicate PK constraint violations gracefully
+export const itShouldHandleDuplicatePKError = async function(util) {
+  // Insert two rows with different PKs
+  const inserts = [
+    {
+      table: 'test_pk_editing',
+      schema: util.options.defaultSchema,
+      data: [{
+        user_id: 'user001',
+        username: 'john_doe',
+        email: 'john@example.com'
+      }]
+    },
+    {
+      table: 'test_pk_editing',
+      schema: util.options.defaultSchema,
+      data: [{
+        user_id: 'user002',
+        username: 'jane_doe',
+        email: 'jane@example.com'
+      }]
+    }
+  ]
+  await util.connection.applyChanges({ inserts })
+
+  // Try to update first row's PK to match the second row (should fail)
+  const updates = [{
+    table: 'test_pk_editing',
+    schema: util.options.defaultSchema,
+    primaryKeys: [{ column: 'user_id', value: 'user001' }],
+    column: 'user_id',
+    value: 'user002' // This already exists!
+  }]
+
+  // Expect the update to throw an error due to constraint violation
+  await expect(util.connection.applyChanges({ updates })).rejects.toThrow()
+
+  // Verify both rows still exist unchanged
+  const results = await util.knex.select().table('test_pk_editing').orderBy('user_id')
+  expect(results.length).toBe(2)
+  expect(results[0].user_id).toBe('user001')
+  expect(results[1].user_id).toBe('user002')
 }
