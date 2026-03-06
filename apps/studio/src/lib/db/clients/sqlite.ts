@@ -5,7 +5,7 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { DatabaseElement, IDbConnectionDatabase } from "../types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "../types";
 import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery } from './utils';
 import { identify } from "sql-query-identifier";
@@ -540,7 +540,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return `ALTER TABLE ${this.wrapIdentifier(elementName)} RENAME TO ${this.wrapIdentifier(newElementName)};`
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string, _options?: DropElementOptions): Promise<void> {
     const sql = `DROP ${SD.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`
 
     await this.driverExecuteSingle(sql);

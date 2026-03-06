@@ -1,7 +1,7 @@
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "@/lib/db/models";
-import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "@/lib/db/types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -395,7 +395,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return ''
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string, _options?: DropElementOptions): Promise<void> {
     const sql = `DROP ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
 
     await this.driverExecuteSingle(sql);
