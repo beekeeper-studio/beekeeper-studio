@@ -42,15 +42,9 @@ test.describe("JSON Sidebar Verifications", () => {
         await electronApp.close();
     });
 
-    test.skip("accessing the JSON sidebar", async () => {
-        
-    await userAttemptsTo.toggleLeftSideBar();
-    
-    // need to deal with the free trial modal
-    // await window.getByText('Start Free Trial').click();
-    // await window.getByRole('button', { name: 'more_vert' }).click();
-    // need to create the JSON SideBar files, but since we won't be activating this test now...
-    const jsonSideBar = await window.locator('[contenteditable="true"][role="textbox"]');
-    await expect(jsonSideBar).toBeVisible();
+    test("accessing the JSON sidebar", async () => {
+        await userAttemptsTo.clickFirstResultRow();
+        await userAttemptsTo.toggleLeftSideBar();
+        await userAttemptsTo.verifyJsonViewerVisible();
     });
 });
