@@ -89,10 +89,18 @@ jobs:
           node-version-file: '.nvmrc'
           cache: yarn
 
-      - name: Clean cache
-        run: yarn cache clean
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+          key: node-modules-${{ matrix.os }}-${{ hashFiles('yarn.lock') }}
 
-      - name: Check dependencies
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: "yarn install --frozen-lockfile --network-timeout 100000"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}

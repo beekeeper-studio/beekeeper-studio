@@ -220,14 +220,22 @@ jobs:
         uses: samuelmeuli/action-snapcraft@v3
         if: matrix.os.type == 'linux'
 
-      - name: Clean cache
-        run: yarn cache clean --all
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+          key: node-modules-${{ matrix.os.name }}-${{ hashFiles('yarn.lock') }}
 
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.
       # But only sometimes. I cannot figure out why.
       # Someone should at some point.
       - name: yarn install (with retry)
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 20
