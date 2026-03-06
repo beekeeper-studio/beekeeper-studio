@@ -56,6 +56,9 @@ export interface PluginMenuItem {
   /** User-facing label shown in the UI for this menu item. */
   name: string;
 
+  /** Short explanation of what this command does. */
+  description?: string;
+
   /** The ID of a view defined in `capabilities.views`; the host opens a
    * new tab of that view. */
   view: string;
@@ -81,6 +84,7 @@ export type NativePluginMenuItem = {
   pluginId: string;
   label: string;
   command: string;
+  accelerator?: string;
 };
 
 /** Used by earlier versions of AI Shell. */
@@ -200,6 +204,7 @@ export type WebPluginContext = {
     info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
+  createNewTab(viewId: string, command: string, params?: JsonValue): void;
 }
 
 export type PluginContext = {
@@ -213,6 +218,12 @@ export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
   context: any;
 }
+
+export type Keybinding = {
+  placement: PluginMenuItemPlacement;
+  path: string;
+  handler: Function;
+};
 
 export type CreatePluginTabOptions = {
   manifest: Manifest;

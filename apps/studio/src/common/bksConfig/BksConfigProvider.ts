@@ -99,6 +99,24 @@ const vHotkeyModifierMap: ModifierMap = {
   WINDOWS: "windows",
 } as const;
 
+const xelModifierMap = {
+  CTRL: "Control",
+  CMD: "Meta",
+  CTRLORCMD: "Control",
+  CMDORCTRL: "Control",
+  CONTROL: "Control",
+  COMMAND: "Command",
+  CONTROLORCOMMAND: "Control",
+  COMMANDORCONTROL: "Control",
+  SHIFT: "Shift",
+  ALT: "Alt",
+  OPTION: "Alt",
+  ALTGR: "AltGraph",
+  SUPER: "Super",
+  META: "Meta",
+  WINDOWS: "Meta",
+} as const;
+
 export const tabulatorModifierMap = {
   CTRL: "ctrl",
   CMD: "ctrl",
@@ -137,7 +155,7 @@ const uiModifierMap: ModifierMap = {
 };
 
 export function convertKeybinding(
-  target: KeybindingTarget,
+  target: Omit<KeybindingTarget, "ui">,
   keybinding: string,
   platform: Platform
 ): string;
@@ -147,7 +165,7 @@ export function convertKeybinding(
   platform: Platform
 ): string[];
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror" | "ui",
+  target: KeybindingTarget,
   keybinding: string,
   platform: Platform
 ): string[] | string {
@@ -165,6 +183,9 @@ export function convertKeybinding(
     case "codemirror":
       modifierMap = codeMirrorModifierMap;
       joinChar = '-'
+      break;
+    case "xel":
+      modifierMap = xelModifierMap;
       break;
     case "tabulator":
       modifierMap = tabulatorModifierMap;
@@ -201,7 +222,7 @@ export function convertKeybinding(
     if (target === "tabulator" && !modifierMap[key]) {
       mod = mod.toLowerCase();
     }
-    
+
     if (target === "ui" && !modifierMap[key]) {
       mod = _.upperFirst(mod.toLowerCase());
     }
@@ -217,10 +238,9 @@ export function convertKeybinding(
 }
 
 /**
- * Array that is parsed by ini.parse is not exactly an array because
- * it doesn't have `length` property. Testing it with `Array.isArray` or
- * `_.isArray` will fail. Use this to test it.
- */
+ * `ini.parse` encodes arrays as objects without a `.length` property.
+ * This checks whether a value matches that structure.
+ **/
 export function isIniArray(value: any): value is IniArray {
   return (
     _.isObject(value) &&
@@ -281,12 +301,11 @@ export class BksConfigProvider {
   }
 
   has(path: string): boolean {
-    return this.userConfig.has(path);
+    return !_.isNil(_.get(this.mergedConfig, path));
   }
 
   get(path: string): ConfigValue {
-    const { value } = this.resolvePath(path);
-    return value;
+    return this.resolvePath(path).value;
   }
 
   getAll(): IBksConfig {
