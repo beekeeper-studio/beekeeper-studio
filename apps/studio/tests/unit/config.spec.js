@@ -119,6 +119,37 @@ enabled = true
     expect(warnings).toEqual([]);
   })
 
+  it("should not flag array properties as unrecognized", () => {
+    const defaultConfig = parseIni(`
+[pluginSystem]
+allow[] =
+    `);
+
+    const userConfig = parseIni(`
+[pluginSystem]
+allow[] = "bks-er-diagram"
+    `);
+
+    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    expect(warnings).toEqual([]);
+  });
+
+  it("should not flag array properties with multiple values as unrecognized", () => {
+    const defaultConfig = parseIni(`
+[pluginSystem]
+allow[] =
+    `);
+
+    const userConfig = parseIni(`
+[pluginSystem]
+allow[] = "bks-er-diagram"
+allow[] = "bks-ai-shell"
+    `);
+
+    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    expect(warnings).toEqual([]);
+  });
+
   it("should detect conflicts between user and system keys", () => {
     const systemConfig = parseIni(`
 [general]
@@ -157,6 +188,28 @@ submitAllQuery = ctrlOrCmd+shift+enter
         path: "keybindings.queryEditor.submitAllQuery",
       },
     ];
+  });
+
+  it("should detect conflicts for array properties between user and system keys", () => {
+    const systemConfig = parseIni(`
+[pluginSystem]
+allow[] = "bks-er-diagram"
+    `);
+
+    const userConfig = parseIni(`
+[pluginSystem]
+allow[] = "bks-ai-shell"
+    `);
+
+    const warnings = checkConflicts(userConfig, systemConfig, "user");
+    expect(warnings).toEqual([
+      {
+        type: "system-user-conflict",
+        sourceName: "user",
+        section: "pluginSystem",
+        path: "pluginSystem.allow",
+      },
+    ]);
   });
 
   it("Should create defaults for [db.default] for all connection types", () => {
