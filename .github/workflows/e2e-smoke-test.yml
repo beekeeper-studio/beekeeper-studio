@@ -48,7 +48,8 @@ jobs:
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
-      - name: Build application
+      - name: Build application (Linux)
+        if: runner.os == 'Linux'
         run: yarn bks:build
 
       - name: Run E2E smoke test (Linux)
@@ -58,9 +59,14 @@ jobs:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
 
-      - name: Run E2E smoke test (macOS/Windows)
+      - name: Serve + Run Tests (macOS/Windows)
         if: runner.os != 'Linux'
-        run: yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
+        shell: bash
+        run: |
+          yarn run electron:serve > server.log 2>&1 &
+          sleep 15
+          cat server.log
+          yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
         env:
           ELECTRON_ENABLE_LOGGING: 1
 
