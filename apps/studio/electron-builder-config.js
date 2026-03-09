@@ -35,11 +35,11 @@ module.exports = {
   ],
   extraResources: [
     {
-      from: "node_modules/@beekeeperstudio/bks-ai-shell",
+      from: "../../node_modules/@beekeeperstudio/bks-ai-shell",
       to: "bundled_plugins/@beekeeperstudio/bks-ai-shell"
     },
     {
-      from: "node_modules/@beekeeperstudio/bks-er-diagram",
+      from: "../../node_modules/@beekeeperstudio/bks-er-diagram",
       to: "bundled_plugins/@beekeeperstudio/bks-er-diagram"
     },
     {
