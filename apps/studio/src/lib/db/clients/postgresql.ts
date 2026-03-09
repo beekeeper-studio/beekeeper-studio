@@ -86,10 +86,10 @@ const postgresContext = {
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
+  pool: PsqlConnectionPool;
   _defaultSchema: string;
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
-  pool: PsqlConnectionPool;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);

@@ -11,7 +11,7 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import globals from '@/common/globals';
 import { HasPool } from "@/lib/db/clients/postgresql/types";
 
-const log = logRaw.scope("postgresql");
+const log = logRaw.scope("PsqlCnnectionPool");
 
 export class PsqlConnectionPool extends GenericConnectionPool<PoolClient> {
   private interval: NodeJS.Timeout | null = null;

@@ -2,9 +2,15 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { IDbConnectionDatabase } from "@/lib/db/types";
 import connectTunnel from '@/lib/db/tunnel';
 import rawLog from "@bksLogger";
+import { ConnectionPool } from "@aws-sdk/types";
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
+
+export type ConnectionPoolOptions = {
+  server: IDbConnectionServer;
+  database: IDbConnectionDatabase;
+};
 
 /**
  * A class that uniforms connection pool logic including the ssh tunnel.
@@ -19,17 +25,14 @@ const logger = () => log;
  * const client = await pool.connect(); // connect to the database. no need to call `.start()`.
  * await pool.end(); // close it manually when needed
  *
- * */
+ **/
 export abstract class GenericConnectionPool<ClientType> {
   private started: boolean = false;
 
   protected readonly server: IDbConnectionServer;
   protected readonly database: IDbConnectionDatabase;
 
-  constructor(options: {
-    server: IDbConnectionServer,
-    database: IDbConnectionDatabase,
-  }) {
+  constructor(options: ConnectionPoolOptions) {
     this.server = options.server;
     this.database = options.database;
   }
@@ -79,6 +82,5 @@ export abstract class GenericConnectionPool<ClientType> {
 
   protected async onConnectionTerminatedUnexpectedly() {
     await this.end();
-    this.started = false;
   }
 }
