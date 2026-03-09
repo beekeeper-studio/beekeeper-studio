@@ -81,6 +81,7 @@ export abstract class GenericConnectionPool<ClientType> {
   }
 
   protected async onConnectionTerminatedUnexpectedly() {
+    log.info('Connection lost, rebuilding pool and SSH tunnel for reconnection');
     await this.end();
   }
 }

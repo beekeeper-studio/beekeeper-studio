@@ -16,11 +16,14 @@ const log = rawLog.scope("MySqlConnectionPool");
 const logger = () => log;
 
 export class MySqlConnectionPool extends GenericConnectionPool<mysql.PoolConnection> {
-  conn: {
+  private static readonly MAX_CONNECT_RETRIES = 1;
+
+  private connectRetries = 0;
+  private conn: {
     pool: mysql.Pool;
   };
-  interval: NodeJS.Timeout
-  clientId: string
+  private interval: NodeJS.Timeout
+  private clientId: string
 
   constructor(options: ConnectionPoolOptions) {
     super(options);
@@ -57,6 +60,10 @@ export class MySqlConnectionPool extends GenericConnectionPool<mysql.PoolConnect
     this.conn.pool.on('release', (connection) => {
       log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
     });
+
+    this.conn.pool.on('error', (err) => {
+      log.error("Pool event: connection error:", err.name, err.message)
+    })
   }
 
   async doEnd(): Promise<void> {
@@ -66,15 +73,41 @@ export class MySqlConnectionPool extends GenericConnectionPool<mysql.PoolConnect
     this.conn?.pool.end();
   }
 
-  doConnect(): Promise<mysql.PoolConnection> {
+  private getConnection(): Promise<mysql.PoolConnection> {
     return new Promise((resolve, reject) => {
       this.conn.pool.getConnection((err, connection) => {
         if (err) {
           reject(err);
+        } else {
+          resolve(connection);
         }
-        resolve(connection);
       });
     });
+  }
+
+  async doConnect(): Promise<mysql.PoolConnection> {
+    try {
+      const conn = await this.getConnection();
+      this.connectRetries = 0;
+      return conn;
+    } catch (err) {
+      const isConnectionError =
+        err.message?.includes("Connection lost") ||
+        err.message?.includes("Not connected") ||
+        err.code === "ECONNREFUSED" ||
+        err.code === "ECONNRESET" ||
+        err.code === "PROTOCOL_CONNECTION_LOST";
+      if (
+        isConnectionError &&
+        this.connectRetries < MySqlConnectionPool.MAX_CONNECT_RETRIES
+      ) {
+        this.connectRetries++;
+        await this.onConnectionTerminatedUnexpectedly();
+        return await this.connect();
+      }
+      this.connectRetries = 0;
+      throw err;
+    }
   }
 
   protected async configDatabase(

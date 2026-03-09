@@ -6,11 +6,31 @@ services:
     image: postgres:13
     container_name: test_ssh_postgres
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: bks
       POSTGRES_PASSWORD: example
-      POSTGRES_DB: integration_test
+      POSTGRES_DB: test
     ports:
       - 5432
+  mysql:
+    image: mysql:8
+    container_name: test_ssh_mysql
+    environment:
+      MYSQL_USER: bks
+      MYSQL_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    ports:
+      - 3306
+  mariadb:
+    image: mariadb
+    container_name: test_ssh_mariadb
+    environment:
+      MYSQL_USER: bks
+      MYSQL_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    ports:
+      - 3306
   ssh:
     build:
       context: ./
