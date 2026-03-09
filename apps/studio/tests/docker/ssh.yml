@@ -25,4 +25,4 @@ services:
       - USER_NAME=beekeeper #optional
       - SUDO_ACCESS=true
     ports:
-      - 2222
+      - "7222:2222"

@@ -1,4 +1,6 @@
-import { DockerComposeEnvironment, Wait } from 'testcontainers'
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient';
+import { IDbConnectionPublicServer } from '@/lib/db/serverTypes';
+import { SshEnvironment } from '@tests/integration/lib/db/clients/ssh/SshEnvironment';
 import ConnectionProvider from '@commercial/backend/lib/connection-provider';
 import { dbtimeout } from '../../../../lib/db'
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection';
@@ -8,29 +10,22 @@ import { TestOrmConnection } from '@tests/lib/TestOrmConnection';
 describe("SSH Tunnel Tests", () => {
   jest.setTimeout(dbtimeout)
 
-  let container;
-  let connection
-  let database
-  let environment
+  let environment: SshEnvironment;
+  let connection: IDbConnectionPublicServer;
+  let database: BasicDatabaseClient<any>;
 
   beforeAll(async () => {
     await TestOrmConnection.connect()
 
     const timeoutDefault = 5000
-    environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
-      .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
-      .withWaitStrategy('test_ssh', Wait.forListeningPorts())
-      .up()
-
-    container = environment.getContainer('test_ssh')
-
-    const db = environment.getContainer('test_ssh_postgres')
+    environment = new SshEnvironment();
+    await environment.start();
 
     jest.setTimeout(timeoutDefault)
 
     const quickConfig = {
-      host: db.getHost(),
-      port: db.getMappedPort(5432),
+      host: environment.getDbHost(),
+      port: environment.getDbPort(),
       username: 'postgres',
       password: 'example',
       connectionType: 'postgresql'
@@ -38,7 +33,6 @@ describe("SSH Tunnel Tests", () => {
 
     // NB: If this fails it's due to ipv4 vs ipv6 mixup.
     // as of Node 17+ DNS defaults to v6 instead of v4.
-    let host = container.getHost()
     const config = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -46,8 +40,8 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
-      sshHost: container.getHost(),
-      sshPort: container.getMappedPort(2222),
+      sshHost: environment.getSshHost(),
+      sshPort: environment.getSshPort(),
       sshUsername: 'beekeeper',
       sshPassword: 'password'
     }
@@ -59,7 +53,6 @@ describe("SSH Tunnel Tests", () => {
     await query.execute()
     await qdb.disconnect();
 
-    console.log("Starting SSH test with config", config)
     connection = ConnectionProvider.for(config)
     database = connection.createConnection('integration_test')
     await database.connect()
@@ -67,17 +60,18 @@ describe("SSH Tunnel Tests", () => {
 
   describe("Can SSH and run a query", () => {
     it("should work", async () => {
-      const query = await database.query('select 1');
-      await query.execute()
-    } )
+      await database.executeQuery('select 1');
+    })
+
+    it("should re-estabilish lost connection", async () => {
+      await environment.restart();
+      await database.executeQuery('select 1');
+    });
   })
 
   afterAll(async () => {
     if (database) {
       await database.disconnect()
-    }
-    if (container) {
-      await container.stop()
     }
     if (environment) {
       await environment.stop()

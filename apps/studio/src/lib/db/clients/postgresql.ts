@@ -13,9 +13,7 @@ import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Ro
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
-// FIXME (azmi): use BksConfig
-import globals from '../../../common/globals';
-import { HasPool, VersionInfo } from './postgresql/types'
+import { VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
 import { AlterPartitionsSpec, IndexColumn, TableKey } from '@shared/lib/dialects/models';
@@ -27,6 +25,7 @@ import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { PsqlConnectionPool } from './postgresql/PsqlConnectionPool';
 
 const PD = PostgresData
 
@@ -87,16 +86,16 @@ const postgresContext = {
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
-  conn: HasPool;
   _defaultSchema: string;
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
-  interval: NodeJS.Timeout;
+  pool: PsqlConnectionPool;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
     this.dialect = 'psql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
+    this.pool = new PsqlConnectionPool({ server, database });
   }
 
   async versionString(): Promise<string> {
@@ -134,72 +133,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       return;
     }
     await super.connect();
-
-    const dbConfig = await this.configDatabase(this.server, this.database);
-
-    log.info("CONFIG: ", dbConfig)
-
-    this.conn = {
-      pool: new pg.Pool(dbConfig)
-    };
-
-    const test = await this.conn.pool.connect()
-
-    if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
-      this.interval = setInterval(async () => {
-        try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 5432);
-
-          const newPool = new pg.Pool({
-            ...dbConfig,
-            password: newPassword,
-          });
-
-          const test = await newPool.connect();
-          test.release();
-
-          if (this.conn?.pool) {
-            await this.conn.pool.end();
-          }
-          this.conn = { pool: newPool };
-
-          log.info('Token refreshed successfully and connection pool updated.');
-        } catch (err) {
-          log.error('Could not refresh token or update connection pool!', err);
-        }
-        // FIXME (azmi): use BksConfig
-      }, globals.iamRefreshTime);
-    }
-
-    test.release();
-
-    this.conn.pool.on('acquire', (_client) => {
-      log.debug('Pool event: connection acquired')
-    })
-
-    this.conn.pool.on('error', (err, _client) => {
-      log.error("Pool event: connection error:", err.name, err.message)
-    })
-
-    // @ts-ignore
-    this.conn.pool.on('release', (err, client) => {
-      log.debug('Pool event: connection released')
-    })
-
-
-    log.debug('connected');
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
     this.database.connected = true;
-  }
-
-  async disconnect(): Promise<void> {
-    if(this.interval){
-      clearInterval(this.interval);
-    }
-    await super.disconnect();
-    this.conn.pool.end();
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -1100,7 +1037,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: qs.query,
       params: qs.params,
-      conn: this.conn,
+      pool: this.pool,
       chunkSize
     }
 
@@ -1115,7 +1052,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: query,
       params: [],
-      conn: this.conn,
+      pool: this.pool,
       chunkSize
     }
 
@@ -1291,7 +1228,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.conn.pool.connect();
+    const conn = await this.pool.connect();
     this.pushConnection(tabId, conn);
   }
 
@@ -1338,7 +1275,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
   async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
-    const connection = await this.conn.pool.connect()
+    const connection = await this.pool.connect()
     try {
       return await child(connection)
     } finally {

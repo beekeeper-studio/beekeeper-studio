@@ -2,14 +2,14 @@ import { PoolClient } from "pg"
 import Cursor from "pg-cursor"
 import { BeeCursor } from "../../models"
 import rawlog from '@bksLogger'
-import { HasPool } from './types'
+import { PsqlConnectionPool } from "./PsqlConnectionPool"
 const log = rawlog.scope('postgresql/cursor')
 
 
 interface CursorOptions {
   query: string,
   params: (string | string[])[],
-  conn: HasPool,
+  pool: PsqlConnectionPool,
   chunkSize: number
 }
 
@@ -32,7 +32,7 @@ export class PsqlCursor extends BeeCursor {
 
 
   async start() {
-    this.client = await this.options.conn.pool.connect()
+    this.client = await this.options.pool.connect()
     this.client.on('error', this.handleError.bind(this))
     const { query, params } = this.options
     this.cursor = this.client.query(new Cursor(query, params, {rowMode: 'array'}))
