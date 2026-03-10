@@ -48,16 +48,19 @@ jobs:
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
-      - name: Build application (Linux)
+      - name: Serve + Run Tests (Linux)
         if: runner.os == 'Linux'
-        run: yarn bks:build
-
-      - name: Run E2E smoke test (Linux)
-        if: runner.os == 'Linux'
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
+        run: |
+          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
+          yarn run electron:serve > server.log 2>&1 &
+            sleep 15
+            cat server.log
+            yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
+          '
         env:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
+          ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
 
       - name: Serve + Run Tests (macOS/Windows)
         if: runner.os != 'Linux'
