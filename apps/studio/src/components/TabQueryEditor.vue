@@ -320,6 +320,7 @@
         @confirmSwitchResult="confirmSwitchResult"
         @editResults="editResults"
         @saveChanges="saveChanges"
+        @copyToSql="copyToSql"
         @discardChanges="discardChanges"
         @download="download"
         @clipboard="clipboard"
@@ -1130,13 +1131,15 @@
 
       },
       async editResults() {
-        const resultEditData = await this.connection.getResultEditData(this.result?.text, this.result.fields);
+        if (!this.resultsEditData[this.selectedResult]) {
+          const resultEditData = await this.connection.getResultEditData(this.result?.text, this.result.fields);
 
-        const mapped = new Map(resultEditData.map((e) => [e.id, e]));
-        this.$set(this.resultsEditData, this.selectedResult, mapped)
+          const mapped = new Map(resultEditData.map((e) => [e.id, e]));
+          this.$set(this.resultsEditData, this.selectedResult, mapped)
+          await this.$nextTick();
+          this.$refs.table.rebuildColumns()
+        }
         this.editingResult = true;
-        await this.$nextTick();
-        this.$refs.table.rebuildColumns()
       },
       saveChanges() {
         this.$refs.table.saveChanges();

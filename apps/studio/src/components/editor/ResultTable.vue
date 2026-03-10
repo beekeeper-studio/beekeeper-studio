@@ -54,7 +54,7 @@
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml } from '@shared/lib/tabulator'
-  import { dialectFor } from '@shared/lib/dialects/models'
+  import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import Papa from 'papaparse'
@@ -73,8 +73,11 @@
   import { FieldDescriptor, FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
+import { format } from 'sql-formatter'
 
   const log = rawLog.scope('ResultTable');
+
+  type TableUpdatePayload = TableUpdate & { key: string, oldValue: any, cell: CellComponent };
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -90,6 +93,7 @@
           updates: [],
           deletes: []
         },
+        propogatedChanges: new Map<string, CellComponent[]>(),
         saveError: null
       }
     },
@@ -131,8 +135,11 @@
     },
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
-      ...mapGetters(['isUltimate']),
+      ...mapGetters(['isUltimate', 'dialectData', 'dialect']),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      queryDialect() {
+        return this.dialectData?.queryDialectOverride ?? this.dialect;
+      },
       allPks() {
         return this.editData.entries().filter(([_id, editData]) => editData?.isPk).map(([id]) => id);
       },
@@ -399,7 +406,7 @@
         } else if (currentEdit?.oldValue == cell.getValue()) {
           this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit));
           cell.getElement().classList.remove('edited');
-          this.propogateChanges(pkCells, cell, true);
+          this.propogateChanges(pkCells, cell, key, true);
           return;
         }
 
@@ -415,7 +422,7 @@
         if (currentEdit) {
           currentEdit.value = cell.getValue();
         } else {
-          const payload: TableUpdate & { key: string, oldValue: any, cell: any } = {
+          const payload: TableUpdatePayload = {
             key: key,
             table: fieldEditData?.linkedTable,
             schema: fieldEditData?.linkedSchema,
@@ -436,26 +443,34 @@
           this.$set(this.pendingChanges, 'updates', pendingUpdates);
         }
 
-        this.propogateChanges(pkCells, cell);
+        this.propogateChanges(pkCells, cell, key);
       },
-      propogateChanges(pkCells: CellComponent[], cell: CellComponent, removeEdited: boolean = false) {
+      propogateChanges(pkCells: CellComponent[], cell: CellComponent, key: string, removeEdited: boolean = false) {
         this.tabulator.blockRedraw();
-        const filters = pkCells.map((cell) => {
-          return {
-            field: cell.getField(),
-            type: "=",
-            value: cell.getValue()
-          };
-        });
-        const rows: RowComponent[] = this.tabulator.searchRows(filters);
-        rows.forEach((row) => {
-          const rowCell = row.getCell(cell.getField());
+
+        if (!this.propogatedChanges.has(key)) {
+          const filters = pkCells.map((cell) => {
+            return {
+              field: cell.getField(),
+              type: "=",
+              value: cell.getValue()
+            };
+          });
+          const rows: RowComponent[] = this.tabulator.searchRows(filters);
+          const cells = rows.map((row) => row.getCell(cell.getField()))
+          this.propogatedChanges.set(key, cells)
+        }
+
+        const cells: CellComponent[] = this.propogatedChanges.get(key)
+
+        cells.forEach((rowCell) => {
           if (removeEdited) {
             rowCell.getElement().classList.remove('edited');
           } else {
             rowCell.getElement().classList.add('edited');
           }
-          row.update({ [cell.getField()]: cell.getValue() });
+          // unfortunately we can't just call cell.setValue here, as it triggers the cellEdited function
+          rowCell.getRow().update({ [cell.getField()]: cell.getValue() })
         })
         this.tabulator.restoreRedraw();
         this.$nextTick(() => {
@@ -482,6 +497,22 @@
       },
       discardChanges() {
         this.saveError = null;
+
+        this.pendingChanges.updates.forEach((edit: TableUpdatePayload) => this.discardUpdate(edit));
+
+        this.resetPendingChanges();
+      },
+      discardUpdate(pendingUpdate: TableUpdatePayload) {
+        this.discardCellUpdate(pendingUpdate.cell, pendingUpdate.oldValue)
+        const cells = this.propogatedChanges.get(pendingUpdate.key)
+        cells?.forEach((cell) => {
+          this.discardCellUpdate(cell, pendingUpdate.oldValue)
+        });
+      },
+      discardCellUpdate(cell: CellComponent, oldValue: any) {
+        cell.setValue(oldValue)
+        cell.getElement().classList.remove('edited')
+        cell.getElement().classList.remove('edit-error')
       },
       focusOnFilterInput() {
         this.hiddenFilter = false
@@ -528,13 +559,47 @@
       },
       rebuildColumns() {
         const newColumns = this.tableColumns;
-        console.log('EDIT DATA: ', this.editData)
         this.tabulator.setColumns(newColumns);
       },
       resetPendingChanges() {
         this.pendingChanges = {
           updates: [],
           deletes: []
+        }
+      },
+      async copyToSql() {
+        this.saveError = null;
+
+        try {
+          const changes = {
+            inserts: [],
+            updates: this.buildPendingUpdates(),
+            deletes: [],
+          };
+
+          const sql = await this.connection.applyChangesSql(changes);
+          const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
+          this.$root.$emit(AppEvent.newTab, formatted);
+        } catch (ex) {
+          log.error(ex)
+
+          this.pendingChanges.updates.forEach((edit: TableUpdatePayload) => {
+            edit.cell.getElement().classList.add('edit-error')
+
+            const cells = this.propogatedChanges.get(edit.key)
+            cells.forEach((cell: CellComponent) => {
+              cell.getElement().classList.add('edit-error')
+            })
+          });
+
+          this.saveError = {
+            titile: ex.message,
+            message: ex.message,
+            ex
+          }
+
+          this.$noty.error(ex.message)
+          return
         }
       },
       async saveChanges() {
@@ -544,7 +609,7 @@
           const payload = {
             inserts: [],
             updates: this.buildPendingUpdates(),
-            deletes: [], // TODO (@day): deletes
+            deletes: [], // TODO (@day): deletes?
           };
 
           // @ts-ignore
@@ -564,13 +629,18 @@
             })
           }
 
-          // maybe replace data? idk
+          // TODO (@day): we probably need to just make this "Apply & Rerun", or make it readonly after this and have a banner saying it's stale data
 
           this.resetPendingChanges();
 
         } catch (err) {
-          this.pendingChanges.updates.forEach(edit => {
-            edit.cell.getElement().classList.add('edit-error');
+          this.pendingChanges.updates.forEach((edit: TableUpdatePayload) => {
+            edit.cell.getElement().classList.add('edit-error')
+
+            const cells = this.propogatedChanges.get(edit.key)
+            cells.forEach((cell: CellComponent) => {
+              cell.getElement().classList.add('edit-error')
+            })
           });
 
           this.saveError = {

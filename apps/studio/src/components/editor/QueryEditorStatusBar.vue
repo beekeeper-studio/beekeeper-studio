@@ -107,6 +107,15 @@
         menu
       >
         <i class="material-icons">arrow_drop_down</i>
+        <x-menu>
+          <x-menuitem @click.prevent="saveChanges">
+            <x-label>Apply</x-label>
+            <!-- TODO (@day): Keyboard shortcut?? -->
+          </x-menuitem>
+          <x-menuitem @click.prevent="copyToSql">
+            <x-label>Copy to SQL</x-label>
+          </x-menuitem>
+        </x-menu>
       </x-button>
     </x-buttons>
     <x-button
@@ -349,6 +358,9 @@ export default {
     },
     saveChanges() {
       this.$emit('saveChanges');
+    },
+    copyToSql() {
+      this.$emit('copyToSql');
     },
     discardChanges() {
       this.$emit('discardChanges');
