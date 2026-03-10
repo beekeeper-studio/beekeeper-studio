@@ -506,6 +506,7 @@
   import { identify } from 'sql-query-identifier'
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery } from '../lib/db/sql_tools'
+  import { sortParameters, ParameterSortMode } from '../lib/db/parameter-sorting'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -742,7 +743,11 @@
           })
         }
 
-        return _.uniq(params)
+        // Sort/deduplicate parameters based on user preference
+        // 'insertion' (default): preserves query order, fixes issue #3651 (:1, :2, :10)
+        // 'alphanumeric': smart sorting that handles numeric suffixes correctly
+        const sortMode = this.$store.getters['settings/parameterSortMode'] as ParameterSortMode
+        return sortParameters(params, sortMode)
       },
       deparameterizedQuery() {
         let query = this.queryForExecution

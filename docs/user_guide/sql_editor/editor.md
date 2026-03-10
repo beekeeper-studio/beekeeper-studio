@@ -76,6 +76,61 @@ quoted[] = '@'
 quoted[] = '$'
 ```
 
+### Parameter Sorting
+
+When you run a parameterized query, Beekeeper displays an input modal where you can enter values for each parameter. You can control how parameters are sorted in this modal.
+
+**Two sorting modes are available:**
+
+1. **Insertion Order (Default)** - Parameters appear in the order they're written in your query
+2. **Alphanumeric** - Parameters are sorted with smart numeric handling
+
+#### Insertion Order (Default)
+
+This is the default mode. Parameters appear in the exact order you wrote them in your query, which is useful when the order matters for understanding your query.
+
+**Example:**
+```sql
+SELECT * FROM users
+WHERE id = :1
+  AND age > :10
+  AND status = :2
+```
+
+The parameters will display as: `:1`, `:10`, `:2` (in the order they appear)
+
+#### Alphanumeric Sorting
+
+When enabled, this mode sorts parameters intelligently. Numeric parameters are sorted numerically (not alphabetically), so `:1` comes before `:2` which comes before `:10` (not `:1`, `:10`, `:2`).
+
+**Same query with alphanumeric sorting:**
+```sql
+SELECT * FROM users
+WHERE id = :1
+  AND age > :10
+  AND status = :2
+```
+
+The parameters will display as: `:1`, `:2`, `:10` (sorted numerically)
+
+Named parameters are sorted alphabetically:
+```sql
+SELECT * FROM users
+WHERE name = :userName
+  AND email = :userEmail
+  AND age > :minAge
+```
+
+Displays as: `:minAge`, `:userEmail`, `:userName` (alphabetical order)
+
+#### Configuring Parameter Sort Mode
+
+{% include-markdown '../../includes/parameter_sort_mode_config.md'%}
+
+!!! tip "When to use each mode"
+    - **Insertion order**: Best when you fill in parameters in the order you wrote them, or when parameter order is meaningful
+    - **Alphanumeric**: Best when you have many parameters and want to find specific ones more easily
+
 
 ## Downloading Results
 
