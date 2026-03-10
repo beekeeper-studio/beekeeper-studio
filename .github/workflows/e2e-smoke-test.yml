@@ -67,8 +67,13 @@ jobs:
         shell: bash
         run: |
           yarn run electron:serve > server.log 2>&1 &
+          SERVER_PID=$!
+          echo "Electron serve started with PID: $SERVER_PID"
           sleep 15
+          echo "=== Server log after 15s wait ==="
           cat server.log
+          echo "=== Checking if process is running ==="
+          ps aux | grep electron || true
           yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
         env:
           ELECTRON_ENABLE_LOGGING: 1
