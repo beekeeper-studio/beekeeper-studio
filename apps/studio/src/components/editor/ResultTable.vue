@@ -131,7 +131,7 @@ import { format } from 'sql-formatter'
         if (!this.focus) return
         this.triggerFocus()
         this.scrollToRangeIfOutOfView()
-      },
+      }
     },
     computed: {
       ...mapState(['usedConfig', 'defaultSchema', 'connectionType', 'connection']),
@@ -159,6 +159,15 @@ import { format } from 'sql-formatter'
       },
       tableTruncated() {
           return this.result.truncated
+      },
+      pendingChangesCount() {
+        return this.pendingChanges.updates.length;
+      },
+      hasPendingChanges() {
+        return this.pendingChangesCount > 0
+      },
+      hasPendingUpdates() {
+        return this.pendingChanges.updates.length > 0
       },
       tableColumns() {
         const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
@@ -298,26 +307,6 @@ import { format } from 'sql-formatter'
           { event: AppEvent.switchedTab, handler: this.handleSwitchedTab },
         ]
       },
-    },
-    beforeDestroy() {
-      if (this.tabulator) {
-        this.tabulator.destroy()
-      }
-      this.unregisterHandlers(this.rootBindings)
-    },
-    async mounted() {
-      this.initializeTabulator()
-      if (this.focus) {
-        const onTableBuilt = () => {
-          this.triggerFocus()
-          this.tabulator.off('tableBuilt', onTableBuilt)
-        }
-        this.tabulator.on('tableBuilt', onTableBuilt)
-      }
-      if (this.active) {
-        this.handleTabActive()
-      }
-      this.registerHandlers(this.rootBindings)
     },
     methods: {
       initializeTabulator() {
@@ -481,19 +470,6 @@ import { format } from 'sql-formatter'
         return this.pendingChanges.updates.map((update) => {
           return _.omit(update, ['key', 'oldValue', 'cell']);
         });
-      },
-      pendingChangesCount() {
-        return this.pendingChanges.updates.length
-               + this.pendingChanges.deletes.length
-      },
-      hasPendingChanges() {
-        return this.pendingChangesCount > 0
-      },
-      hasPendingUpdates() {
-        return this.pendingChanges.updates.length > 0
-      },
-      hasPendingDeletes() {
-        return this.pendingChanges.deletes.length > 0
       },
       discardChanges() {
         this.saveError = null;
@@ -817,16 +793,26 @@ import { format } from 'sql-formatter'
           this.handleTabActive()
         }
       },
-      buildPendingDeletes() {
-        return this.pendingChanges.deletes.map((update) => {
-          return _.omit(update, ['row'])
-        });
-      },
-      buildPendingUpdates() {
-        return this.pendingChanges.updates.map((update) => {
-          return _.omit(update, ['key', 'oldValue', 'cell', 'rowIndex'])
-        });
-      },
+    },
+    beforeDestroy() {
+      if (this.tabulator) {
+        this.tabulator.destroy()
+      }
+      this.unregisterHandlers(this.rootBindings)
+    },
+    async mounted() {
+      this.initializeTabulator()
+      if (this.focus) {
+        const onTableBuilt = () => {
+          this.triggerFocus()
+          this.tabulator.off('tableBuilt', onTableBuilt)
+        }
+        this.tabulator.on('tableBuilt', onTableBuilt)
+      }
+      if (this.active) {
+        this.handleTabActive()
+      }
+      this.registerHandlers(this.rootBindings)
     },
 	}
 </script>

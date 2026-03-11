@@ -317,6 +317,7 @@
         :results="results"
         :running="running"
         :editing="editingResult"
+        :changesCount="$refs.table?.pendingChangesCount"
         @confirmSwitchResult="confirmSwitchResult"
         @editResults="editResults"
         @saveChanges="saveChanges"

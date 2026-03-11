@@ -95,11 +95,16 @@
     >
       Reset
     </x-button>
-    <x-buttons v-if="canEdit && editing" class="pending-changes">
+    <x-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
       <x-button
         class="btn btn-primary btn-badge btn-icon"
         @click.prevent="saveChanges"
       >
+      <span
+        class="badge"
+      >
+        <small>{{ changesCount }}</small>
+      </span>
       <span>Apply</span>
       </x-button>
       <x-button
@@ -231,7 +236,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount'],
   components: { Statusbar },
   data() {
     return {
