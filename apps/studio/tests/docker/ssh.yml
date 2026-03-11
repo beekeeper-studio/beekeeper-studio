@@ -58,6 +58,18 @@ services:
     networks:
       - internal
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.2
+    container_name: test_ssh_clickhouse
+    environment:
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ports:
+      - 8123
+    networks:
+      - internal
+
   ssh:
     build:
       context: ./
