@@ -33,7 +33,7 @@ export class MysqlCursor extends BeeCursor {
   start(): Promise<void> {
     log.debug("start")
     const promise = new Promise<void>((resolve, reject) => {
-      this.connection.connect().then((connection) => {
+      this.connection.getClient().then((connection) => {
         connection.release
         const q = connection.query({ sql: this.query, values: this.params, rowsAsArray: true })
         q.on('result', this.handleRow.bind(this) )

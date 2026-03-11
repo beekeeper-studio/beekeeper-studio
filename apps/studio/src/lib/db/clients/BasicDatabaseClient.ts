@@ -13,7 +13,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
-import { DatabaseConnection } from './DatabaseConnection';
+import { DatabaseConnection, NoopConnection } from './DatabaseConnection';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -76,7 +76,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   connErrHandler: (msg: string) => void = null;
   reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
-  abstract connection: DatabaseConnection<Conn>;
+  connection: DatabaseConnection<Conn>;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -85,6 +85,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
+    this.connection = new NoopConnection({ server, database });
   }
 
   async checkAllowReadOnly() {

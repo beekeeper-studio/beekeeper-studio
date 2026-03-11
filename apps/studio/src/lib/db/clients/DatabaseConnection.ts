@@ -132,3 +132,14 @@ export abstract class DatabaseConnection<CLIENT> extends events.EventEmitter<{
     throw err;
   }
 }
+
+export class NoopConnection extends DatabaseConnection<null> {
+  protected async doConnect(): Promise<void> { }
+  protected async doDisconnect(): Promise<void> { }
+  protected async doGetClient(): Promise<null> {
+    return null;
+  }
+  protected isConnectionLostError(): boolean {
+    return false;
+  }
+}

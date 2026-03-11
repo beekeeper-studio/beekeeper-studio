@@ -38,6 +38,9 @@ export class SqlServerConnection extends DatabaseConnection<Request | Transactio
   }
 
   protected async doDisconnect(): Promise<void> {
+    if (!this.pool.connected) {
+      return;
+    }
     await this.pool.close();
   }
 

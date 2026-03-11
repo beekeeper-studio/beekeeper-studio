@@ -7,24 +7,30 @@ import { ConnectionType } from '@/lib/db/types';
 describe("SSH Tunnel Tests", () => {
   jest.setTimeout(dbtimeout)
 
-  let environment: SshEnvironment;
-
   beforeAll(async () => {
     await TestOrmConnection.connect()
+  })
 
-    const timeoutDefault = 5000
-    environment = new SshEnvironment();
-    await environment.start();
-
-    jest.setTimeout(timeoutDefault)
+  afterAll(async () => {
+    await TestOrmConnection.disconnect()
   })
 
   for (const type of Object.keys(DB_CONFIGS) as ConnectionType[]) {
     describe(type, () => {
+      let environment: SshEnvironment;
       let database: BasicDatabaseClient<any>;
 
+      beforeAll(async () => {
+        environment = new SshEnvironment(type);
+        await environment.start();
+      });
+
+      afterAll(async () => {
+        await environment?.stop();
+      });
+
       beforeEach(async () => {
-        database = await environment.connect(type);
+        database = await environment.connect();
       });
 
       afterEach(async () => {
@@ -62,18 +68,13 @@ describe("SSH Tunnel Tests", () => {
         // Run a query to trigger the connection-lost event
         await expect(database.listTables()).rejects.toThrow();
 
-        await isConnectionLost;
+        // Connection-lost is triggered after running a query
+        await expect(isConnectionLost).resolvesWithin(1000);
+
         await database.connection.connect();
         expect(database.connection.isConnected).toBe(true);
         await expect(database.executeQuery("select 1")).resolves.toBeDefined();
       })
     });
   }
-
-  afterAll(async () => {
-    if (environment) {
-      await environment.stop()
-    }
-    await TestOrmConnection.disconnect()
-  })
 })
