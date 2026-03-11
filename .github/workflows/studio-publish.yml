@@ -214,28 +214,32 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
-
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v3
-        if: matrix.os.type == 'linux'
 
       - name: Cache node_modules
-        id: cache-node-modules
+        id: cache-nm
         uses: actions/cache@v4
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-          key: node-modules-${{ matrix.os.name }}-${{ hashFiles('yarn.lock') }}
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v3
+        if: matrix.os.type == 'linux'
+
+      - name: Clean cache
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: yarn cache clean --all
 
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.
       # But only sometimes. I cannot figure out why.
       # Someone should at some point.
       - name: yarn install (with retry)
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        if: steps.cache-nm.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 20
@@ -351,8 +355,8 @@ jobs:
 
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
-        continue-on-error: true
+        shell: powershell
+        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.yml' } | Remove-Item -Force
 
 
   finalize_mac_yml:
@@ -435,7 +439,7 @@ jobs:
       - name: Move release snap from edge to stable
         continue-on-error: true
         run: |
-          snapcraft promote beekeeper-studio --from-channel "edge" --to-channel "stable" --yes
+          snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]
