@@ -70,6 +70,15 @@ services:
     networks:
       - internal
 
+  cassandra:
+    image: cassandra:latest
+    platform: linux/amd64
+    container_name: test_ssh_cassandra
+    ports:
+      - 9042
+    networks:
+      - internal
+
   ssh:
     build:
       context: ./

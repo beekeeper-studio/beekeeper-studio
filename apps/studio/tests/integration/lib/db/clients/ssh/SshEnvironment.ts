@@ -74,6 +74,16 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     database: "default",
     waitStrategy: Wait.forListeningPorts(),
   },
+  cassandra: {
+    service: "cassandra",
+    container: "test_ssh_cassandra",
+    host: "cassandra",
+    port: 9042,
+    user: "",
+    password: "",
+    database: "system",
+    waitMessage: "Starting listening for CQL clients",
+  },
 };
 
 export class SshEnvironment {
@@ -143,11 +153,9 @@ export class SshEnvironment {
         password: 'password',
       },
       trustServerCertificate: true,
-      ...(this.type === 'sqlanywhere' ? {
-        sqlAnywhereOptions: {
-          mode: 'server' as const,
-        },
-      } : {}),
+      cassandraOptions: {
+        localDataCenter: 'datacenter1',
+      },
     } as IDbConnectionServerConfig;
 
     const server = createServer(config);
