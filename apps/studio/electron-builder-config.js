@@ -139,6 +139,11 @@ module.exports = {
       name: "SQL Server URL scheme",
       schemes: ["sqlserver", "microsoftsqlserver", "mssql"],
       role: "Editor"
+    },
+    {
+      "name": "Redis URL scheme",
+      "schemes": ["redis", "rediss"],
+      "role": "Editor"
     }
   ],
   mac: {
