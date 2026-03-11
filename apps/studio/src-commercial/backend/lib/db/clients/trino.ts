@@ -108,9 +108,9 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       server: url,
       catalog: this.database.database
     }
-    
+
     // TODO: Add ssl using SecureContextOptions (https://trinodb.github.io/trino-js-client/types/ConnectionOptions.html)
-    
+
     if ((this.server.config.user != null && this.server.config.user !== '') || (this.server.config.password != null && this.server.config.password !== '')) {
       connectionObj.auth = new BasicAuth(this.server.config.user, this.server.config.password)
     }
@@ -410,14 +410,14 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     try {
       // The trino query parser doesn't particularly like semicolons. Who can blame it?
       const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql.trim().replace(/;$/, ''))
-      
+
       let columns: ResultColumn[] = []
       const rows: any[] = []
-      
+
       for await (const r of result) {
         const { data: resultData, columns: resultColumns } = r
         columns = resultColumns
-  
+
         if (resultData) rows.push(...resultData)
       }
 
@@ -429,7 +429,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
           queryId: ''
         }
       }
-  
+
       return {
         columns,
         rows: this.rowsToObject(columns, rows),
@@ -673,7 +673,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
     const paginatedSQL = this.buildPaginatedQuery(wrappedTable, filterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
     const fullSql = this.buildPaginatedQuery(TrinoData.wrapIdentifier(table), fullFilterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
-    
+
     return {
       query: paginatedSQL,
       fullQuery: fullSql,
@@ -685,7 +685,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   buildPaginatedQuery(tableRef: string, filter: string, wrappedSelects: string, rowNumberOrderClause: string, usePagination: boolean, safeOffset: number, safeLimit: number): string {
     return `
       WITH ranked AS (
-        SELECT 
+        SELECT
           ${wrappedSelects},
           ROW_NUMBER() OVER (${rowNumberOrderClause}) AS rownum
         FROM ${this.db}.${tableRef}
@@ -695,7 +695,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       FROM ranked
       ${usePagination ? `WHERE rownum > ${safeOffset} AND rownum <= ${safeOffset + safeLimit}` : ""}
     `
-  } 
+  }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
     return (

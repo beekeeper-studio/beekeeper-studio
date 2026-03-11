@@ -81,7 +81,7 @@
     </template>
     <span class="expand" />
     <x-button
-      v-if="!editing"
+      v-if="canEdit && !editing"
       :disabled="results?.length === 0"
       class="btn btn-flat"
       @click.prevent="editResults"
@@ -89,13 +89,13 @@
       Edit Results
     </x-button>
     <x-button
-      v-if="editing"
+      v-if="canEdit && editing"
       class="btn btn-flat"
       @click.prevent="discardChanges"
     >
       Reset
     </x-button>
-    <x-buttons v-if="editing" class="pending-changes">
+    <x-buttons v-if="canEdit && editing" class="pending-changes">
       <x-button
         class="btn btn-primary btn-badge btn-icon"
         @click.prevent="saveChanges"
@@ -263,7 +263,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['dialect']),
+    ...mapGetters(['dialect', 'dialectData']),
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
@@ -327,6 +327,9 @@ export default {
         'queryEditor.selectNextResult': this.changeSelectedResult.bind(this, 1),
         'queryEditor.selectPreviousResult': this.changeSelectedResult.bind(this, -1),
       })
+    },
+    canEdit() {
+      return !this.dialectData?.disabledFeatures?.resultEditing;
     }
   },
   methods: {

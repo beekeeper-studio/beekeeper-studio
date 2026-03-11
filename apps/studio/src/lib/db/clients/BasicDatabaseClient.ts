@@ -210,6 +210,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
+    if (!queryText) throw new Error('No query text to identify for this result')
+
     const commands = identify(queryText, { identifyTables: true, identifyColumns: true });
     if (commands.length !== 1) return [];
 

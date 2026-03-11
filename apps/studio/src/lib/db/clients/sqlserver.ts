@@ -35,6 +35,7 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/l
 import { AuthOptions, AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
+import { IdentifyResult } from 'sql-query-identifier/defines';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -199,7 +200,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     // NOTE (@day): we were apparently not even setting multiple on the request, so this is gonna be single for now
     const { data, rowsAffected } = await this.driverExecuteSingle(queryText, options);
 
-    const commands = this.identifyCommands(queryText).map((item) => item.type)
+    const commands = this.identifyCommands(queryText)
 
     // Executing only non select queries will not return results.
     // So we "fake" there is at least one result.
@@ -1209,18 +1210,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  private parseRowQueryResult(data: any[], rowsAffected: number, command: StatementType, columns: IColumnMetadata, arrayRowMode = false) {
+  private parseRowQueryResult(data: any[], rowsAffected: number, command: IdentifyResult, columns: IColumnMetadata, arrayRowMode = false) {
     // Fallback in case the identifier could not reconize the command
     // eslint-disable-next-line
     const isSelect = !!(data.length || rowsAffected === 0)
     const fields = this.parseFields(data, columns)
     const fieldIds = fields.map(f => f.id)
     return {
-      command: command || (isSelect && 'SELECT'),
+      command: command?.type || (isSelect && 'SELECT'),
       rows: arrayRowMode ? data.map(r => _.zipObject(fieldIds, r)) : data,
       fields: fields,
       rowCount: data.length,
       affectedRows: rowsAffected,
+      text: command?.text
     }
   }
 

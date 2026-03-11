@@ -13,7 +13,6 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
-import { identify } from "sql-query-identifier";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
