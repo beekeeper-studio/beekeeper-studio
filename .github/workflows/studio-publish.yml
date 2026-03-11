@@ -366,8 +366,8 @@ jobs:
 
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
-        continue-on-error: true
+        shell: powershell
+        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.yml' } | Remove-Item -Force
 
 
   finalize_mac_yml:
