@@ -450,7 +450,7 @@ jobs:
       - name: Move release snap from edge to stable
         continue-on-error: true
         run: |
-          snapcraft promote beekeeper-studio --from-channel "edge" --to-channel "stable" --yes
+          snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]
