@@ -63,7 +63,7 @@ import BksConfig from "@/common/bksConfig";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
-import { MySqlConnectionPool } from "./mysql/MySqlConnectionPool";
+import { MySqlConnection } from "./mysql/MySqlConnection";
 
 type ResultType = {
   tableName?: string
@@ -209,7 +209,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     versionString: string;
     version: number;
   };
-  pool: MySqlConnectionPool;
+  connection: MySqlConnection;
   transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -217,7 +217,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.pool = new MySqlConnectionPool({ server, database });
+    this.connection = new MySqlConnection({ server, database });
   }
 
   async connect() {
@@ -553,7 +553,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return {
       totalRows: Number(rowCount.rows[0].total),
       columns,
-      cursor: new MysqlCursor(this.pool, query, params, chunkSize),
+      cursor: new MysqlCursor(this.connection, query, params, chunkSize),
     };
   }
 
@@ -1115,7 +1115,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     if (hasReserved) {
       conn = this.reservedConnections.get(tabId);
     } else {
-      conn = await this.pool.connect();
+      conn = await this.connection.getClient();
     }
 
     conn.on("error", (error) => {
@@ -1296,7 +1296,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     query: string,
     chunkSize: number
   ): Promise<StreamResults> {
-    const theCursor = new MysqlCursor(this.pool, query, [], chunkSize);
+    const theCursor = new MysqlCursor(this.connection, query, [], chunkSize);
     log.debug("results", theCursor);
 
     const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
@@ -1396,7 +1396,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    this.pushConnection(tabId, await this.pool.connect());
+    this.pushConnection(tabId, await this.connection.getClient());
   }
 
   async releaseConnection(tabId: number): Promise<void> {

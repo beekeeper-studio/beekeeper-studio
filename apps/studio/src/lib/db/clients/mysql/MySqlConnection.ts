@@ -10,15 +10,12 @@ import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../../backendTypes";
 import globals from "../../../../common/globals";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
-import { ConnectionPoolOptions, GenericConnectionPool } from "@/lib/db/clients/GenericConnectionPool";
+import { ConnectionPoolOptions, DatabaseConnection } from "@/lib/db/clients/DatabaseConnection";
 
-const log = rawLog.scope("MySqlConnectionPool");
+const log = rawLog.scope("MySqlConnection");
 const logger = () => log;
 
-export class MySqlConnectionPool extends GenericConnectionPool<mysql.PoolConnection> {
-  private static readonly MAX_CONNECT_RETRIES = 1;
-
-  private connectRetries = 0;
+export class MySqlConnection extends DatabaseConnection<mysql.PoolConnection> {
   private conn: {
     pool: mysql.Pool;
   };
@@ -30,7 +27,7 @@ export class MySqlConnectionPool extends GenericConnectionPool<mysql.PoolConnect
     this.clientId = uuidv4();
   }
 
-  async doStart(): Promise<void> {
+  protected async doConnect(): Promise<void> {
     const dbConfig = await this.configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
@@ -66,14 +63,14 @@ export class MySqlConnectionPool extends GenericConnectionPool<mysql.PoolConnect
     })
   }
 
-  async doEnd(): Promise<void> {
+  protected async doDisconnect(): Promise<void> {
     if(this.interval){
       clearInterval(this.interval);
     }
     this.conn?.pool.end();
   }
 
-  private getConnection(): Promise<mysql.PoolConnection> {
+  protected doGetClient(): Promise<mysql.PoolConnection> {
     return new Promise((resolve, reject) => {
       this.conn.pool.getConnection((err, connection) => {
         if (err) {
@@ -85,29 +82,12 @@ export class MySqlConnectionPool extends GenericConnectionPool<mysql.PoolConnect
     });
   }
 
-  async doConnect(): Promise<mysql.PoolConnection> {
-    try {
-      const conn = await this.getConnection();
-      this.connectRetries = 0;
-      return conn;
-    } catch (err) {
-      const isConnectionError =
-        err.message?.includes("Connection lost") ||
-        err.message?.includes("Not connected") ||
-        err.code === "ECONNREFUSED" ||
-        err.code === "ECONNRESET" ||
-        err.code === "PROTOCOL_CONNECTION_LOST";
-      if (
-        isConnectionError &&
-        this.connectRetries < MySqlConnectionPool.MAX_CONNECT_RETRIES
-      ) {
-        this.connectRetries++;
-        await this.onConnectionTerminatedUnexpectedly();
-        return await this.connect();
-      }
-      this.connectRetries = 0;
-      throw err;
-    }
+  protected isConnectionLostError(err: any): boolean {
+    return (
+      err instanceof Error &&
+      "code" in err &&
+      err.code === "PROTOCOL_CONNECTION_LOST"
+    );
   }
 
   protected async configDatabase(

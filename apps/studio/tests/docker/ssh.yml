@@ -1,6 +1,12 @@
 version: '3'
-volumes:
-  psql:
+
+networks:
+  public:
+    driver: bridge
+  internal:
+    driver: bridge
+    internal: true
+
 services:
   postgres:
     image: postgres:13
@@ -11,6 +17,9 @@ services:
       POSTGRES_DB: test
     ports:
       - 5432
+    networks:
+      - internal
+
   mysql:
     image: mysql:8
     container_name: test_ssh_mysql
@@ -21,6 +30,9 @@ services:
       MYSQL_DATABASE: test
     ports:
       - 3306
+    networks:
+      - internal
+
   mariadb:
     image: mariadb
     container_name: test_ssh_mariadb
@@ -31,6 +43,21 @@ services:
       MYSQL_DATABASE: test
     ports:
       - 3306
+    networks:
+      - internal
+
+  sqlserver:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    container_name: test_ssh_sqlserver
+    environment:
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: Example1!
+      ACCEPT_EULA: Y
+    ports:
+      - 1433
+    networks:
+      - internal
+
   ssh:
     build:
       context: ./
@@ -46,3 +73,6 @@ services:
       - SUDO_ACCESS=true
     ports:
       - "7222:2222"
+    networks:
+      - internal
+      - public

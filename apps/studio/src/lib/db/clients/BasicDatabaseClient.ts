@@ -13,7 +13,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
-import { GenericConnectionPool } from './GenericConnectionPool';
+import { DatabaseConnection } from './DatabaseConnection';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -76,7 +76,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   connErrHandler: (msg: string) => void = null;
   reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
-  abstract pool: GenericConnectionPool<Conn>;
+  abstract connection: DatabaseConnection<Conn>;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -117,7 +117,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   // ****************************************************************************
 
   // Connection *****************************************************************
-  async connect(_signal?: AbortSignal): Promise<void> {
+  async connect(signal?: AbortSignal): Promise<void> {
     /* eslint no-param-reassign: 0 */
     if (this.database.connecting) {
       throw new Error('There is already a connection in progress for this database. Aborting this new request.');
@@ -131,7 +131,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         await this.disconnect();
       }
 
-      await this.pool.start();
+      await this.connection.connect({ signal });
     } catch (err) {
       logger().error('Connection error %j', err);
       // this.disconnect(this.server, this.database);
@@ -146,7 +146,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       // delete this.server.db[this.database.database]
     }
     await this.knex?.destroy();
-    await this.pool.end();
+    await this.connection.disconnect();
   }
   // ****************************************************************************
 

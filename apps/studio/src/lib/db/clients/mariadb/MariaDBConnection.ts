@@ -3,9 +3,9 @@ import _ from "lodash";
 import { IDbConnectionDatabase } from "../../types";
 import BksConfig from "@/common/bksConfig";
 import { IDbConnectionServer } from "../../backendTypes";
-import { MySqlConnectionPool } from "../mysql/MySqlConnectionPool";
+import { MySqlConnection } from "../mysql/MySqlConnection";
 
-export class MariaDBConnectionPool extends MySqlConnectionPool {
+export class MariaDBConnection extends MySqlConnection {
   protected async configDatabase(
     server: IDbConnectionServer,
     database: IDbConnectionDatabase

@@ -25,7 +25,7 @@ import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
-import { PsqlConnectionPool } from './postgresql/PsqlConnectionPool';
+import { PsqlConnection } from './postgresql/PsqlConnection';
 
 const PD = PostgresData
 
@@ -86,7 +86,7 @@ const postgresContext = {
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
-  pool: PsqlConnectionPool;
+  connection: PsqlConnection;
   _defaultSchema: string;
   dataTypes: any;
   transcoders = [GenericBinaryTranscoder];
@@ -95,7 +95,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     super(knex, postgresContext, server, database);
     this.dialect = 'psql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.pool = new PsqlConnectionPool({ server, database });
+    this.connection = new PsqlConnection({ server, database });
   }
 
   async versionString(): Promise<string> {
@@ -1037,7 +1037,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: qs.query,
       params: qs.params,
-      pool: this.pool,
+      connection: this.connection,
       chunkSize
     }
 
@@ -1052,7 +1052,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: query,
       params: [],
-      pool: this.pool,
+      connection: this.connection,
       chunkSize
     }
 
@@ -1228,7 +1228,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.pool.connect();
+    const conn = await this.connection.getClient();
     this.pushConnection(tabId, conn);
   }
 
@@ -1275,7 +1275,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
   async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
-    const connection = await this.pool.connect()
+    const connection = await this.connection.getClient()
     try {
       return await child(connection)
     } finally {

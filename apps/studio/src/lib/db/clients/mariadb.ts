@@ -1,14 +1,14 @@
 import { MysqlClient } from "./mysql";
 import { IDbConnectionDatabase } from '@/lib/db/types';
 import { IDbConnectionServer } from "../backendTypes";
-import { MariaDBConnectionPool } from "./mariadb/MariaDBConnectionPool";
+import { MariaDBConnection } from "./mariadb/MariaDBConnection";
 
 export class MariaDBClient extends MysqlClient {
-  pool: MariaDBConnectionPool;
+  connection: MariaDBConnection;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);
-    this.pool = new MariaDBConnectionPool({ server, database });
+    this.connection = new MariaDBConnection({ server, database });
   }
 
   resolveDefault(defaultValue: string) {

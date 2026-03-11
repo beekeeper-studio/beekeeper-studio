@@ -1,20 +1,49 @@
-import { ConnectionType } from "@/lib/db/types";
+import { ConnectionType, IDbConnectionServerConfig } from "@/lib/db/types";
 import {
   DockerComposeEnvironment,
   StartedDockerComposeEnvironment,
   Wait,
 } from "testcontainers";
+import { createServer } from '@commercial/backend/lib/db/server';
 
 export const DB_CONFIGS: Partial<
-  Record<ConnectionType, { container: string; service: string; port: number }>
+  Record<
+    ConnectionType,
+    { container: string; host: string; port: number; user: string; password: string; database: string }
+  >
 > = {
   postgresql: {
     container: "test_ssh_postgres",
-    service: "postgres",
+    host: "postgres",
     port: 5432,
+    user: "bks",
+    password: "example",
+    database: "test",
   },
-  mysql: { container: "test_ssh_mysql", service: "mysql", port: 3306 },
-  mariadb: { container: "test_ssh_mariadb", service: "mariadb", port: 3306 },
+  mysql: {
+    container: "test_ssh_mysql",
+    host: "mysql",
+    port: 3306,
+    user: "bks",
+    password: "example",
+    database: "test",
+  },
+  mariadb: {
+    container: "test_ssh_mariadb",
+    host: "mariadb",
+    port: 3306,
+    user: "bks",
+    password: "example",
+    database: "test",
+  },
+  sqlserver: {
+    container: "test_ssh_sqlserver",
+    host: "sqlserver",
+    port: 1433,
+    user: "sa",
+    password: "Example1!",
+    database: "master",
+  },
 };
 
 export class SshEnvironment {
@@ -37,6 +66,10 @@ export class SshEnvironment {
         "test_ssh_mariadb",
         Wait.forLogMessage("ready for connections", 2)
       )
+      // .withWaitStrategy(
+      //   "test_ssh_sqlserver",
+      //   Wait.forLogMessage("SQL Server is now ready for client connections.")
+      // )
       .withWaitStrategy("test_ssh", Wait.forListeningPorts())
       .up();
   }
@@ -44,9 +77,11 @@ export class SshEnvironment {
   async restart() {
     const container = this.environment.getContainer("test_ssh");
     if (container) {
+      console.log('restarting')
       await container.restart();
       // wait until it's fully restarted
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log('restarted')
     }
   }
 
@@ -70,5 +105,25 @@ export class SshEnvironment {
 
   getSshPort() {
     return 7222;
+  }
+
+  async connect(type: ConnectionType) {
+    const server = createServer({
+      client: type,
+      host: DB_CONFIGS[type].host,
+      port: DB_CONFIGS[type].port,
+      user: DB_CONFIGS[type].user,
+      password: DB_CONFIGS[type].password,
+      ssh: {
+        host: this.getSshHost(),
+        port: this.getSshPort(),
+        user: 'beekeeper',
+        password: 'password',
+      },
+      trustServerCertificate: true,
+    } as IDbConnectionServerConfig);
+    const database = server.createConnection(DB_CONFIGS[type].database);
+    await database.connect();
+    return database;
   }
 }

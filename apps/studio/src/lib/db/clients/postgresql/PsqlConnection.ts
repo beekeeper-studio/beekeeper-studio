@@ -2,7 +2,7 @@ import _ from "lodash";
 import { readFileSync } from "fs";
 import pg, { PoolClient, PoolConfig } from "pg";
 import logRaw from "@bksLogger";
-import { GenericConnectionPool } from "@/lib/db/clients/GenericConnectionPool";
+import { DatabaseConnection } from "@/lib/db/clients/DatabaseConnection";
 import type { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { refreshTokenIfNeeded } from "@/lib/db/clients/utils";
 import BksConfig from "@/common/bksConfig";
@@ -11,13 +11,13 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import globals from '@/common/globals';
 import { HasPool } from "@/lib/db/clients/postgresql/types";
 
-const log = logRaw.scope("PsqlCnnectionPool");
+const log = logRaw.scope("PsqlCnnection");
 
-export class PsqlConnectionPool extends GenericConnectionPool<PoolClient> {
+export class PsqlConnection extends DatabaseConnection<PoolClient> {
   private interval: NodeJS.Timeout | null = null;
   private conn: HasPool;
 
-  async doStart(): Promise<void> {
+  protected async doConnect(): Promise<void> {
     const dbConfig = await this.configDatabase(this.server, this.database);
 
     log.info("CONFIG: ", dbConfig)
@@ -62,9 +62,6 @@ export class PsqlConnectionPool extends GenericConnectionPool<PoolClient> {
 
     this.conn.pool.on('error', (err, _client) => {
       log.error("Pool event: connection error:", err.name, err.message)
-      if (err.message === "Connection terminated unexpectedly") {
-        this.onConnectionTerminatedUnexpectedly();
-      }
     })
 
     // @ts-ignore
@@ -75,7 +72,7 @@ export class PsqlConnectionPool extends GenericConnectionPool<PoolClient> {
     log.debug('connected');
   }
 
-  async doEnd(): Promise<void> {
+  protected async doDisconnect(): Promise<void> {
     if (this.interval){
       clearInterval(this.interval);
     }
@@ -85,8 +82,15 @@ export class PsqlConnectionPool extends GenericConnectionPool<PoolClient> {
     await this.conn.pool.end();
   }
 
-  async doConnect(): Promise<PoolClient> {
+  protected async doGetClient(): Promise<PoolClient> {
     return await this.conn.pool.connect();
+  }
+
+  protected isConnectionLostError(err: any): boolean {
+    return (
+      err instanceof Error &&
+      err.message === "Connection terminated unexpectedly"
+    );
   }
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {

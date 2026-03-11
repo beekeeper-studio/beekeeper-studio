@@ -4,7 +4,7 @@ import Query from "mysql2/typings/mysql/lib/protocol/sequences/Query";
 import { BeeCursor } from "../../models";
 import { waitFor } from "../base/wait";
 import rawLog from '@bksLogger'
-import { MySqlConnectionPool } from "./MySqlConnectionPool";
+import { MySqlConnection } from "./MySqlConnection";
 
 const log = rawLog.scope('mysqlcursor');
 
@@ -21,7 +21,7 @@ export class MysqlCursor extends BeeCursor {
   private end = false
   private error?: Error
   constructor(
-    private pool: MySqlConnectionPool,
+    private connection: MySqlConnection,
     private query: string,
     private params: string[],
     chunkSize: number
@@ -33,7 +33,7 @@ export class MysqlCursor extends BeeCursor {
   start(): Promise<void> {
     log.debug("start")
     const promise = new Promise<void>((resolve, reject) => {
-      this.pool.connect().then((connection) => {
+      this.connection.connect().then((connection) => {
         connection.release
         const q = connection.query({ sql: this.query, values: this.params, rowsAsArray: true })
         q.on('result', this.handleRow.bind(this) )
