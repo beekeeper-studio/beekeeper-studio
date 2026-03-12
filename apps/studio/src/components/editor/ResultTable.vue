@@ -451,9 +451,9 @@ import { format } from 'sql-formatter'
 
         cells.forEach((rowCell) => {
           if (removeEdited) {
-            rowCell.getElement().classList.remove('edited');
+            rowCell.getElement().classList?.remove('edited');
           } else {
-            rowCell.getElement().classList.add('edited');
+            rowCell.getElement().classList?.add('edited');
           }
           // unfortunately we can't just call cell.setValue here, as it triggers the cellEdited function
           rowCell.getRow().update({ [cell.getField()]: cell.getValue() })
