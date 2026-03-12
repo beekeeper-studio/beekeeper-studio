@@ -155,11 +155,6 @@ import _ from 'lodash'
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
 
-        const devOptions = []
-        if (this.tab.tabType === "plugin-shell" || this.tab.tabType === "plugin-base") {
-          devOptions.push({ name: "[DEV] Reload plugin view", slug: 'dev-reload-plugin-view', handler: ({item}) => this.$emit('reloadPluginView', item) })
-        }
-
         return [
           { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
           { name: "Close Others", slug: 'close-others', handler: ({item}) => this.$emit('closeOther', item)},
@@ -167,7 +162,6 @@ import _ from 'lodash'
           { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
           { name: "Copy Entity Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
-          ...(window.platformInfo.isDevelopment ? devOptions : []),
         ];
       },
       modalName() {

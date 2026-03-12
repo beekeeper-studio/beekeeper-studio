@@ -1,5 +1,9 @@
 name: Studio - Build & Publish
 
+permissions:
+  contents: read
+  actions: write
+
 on:
   push:
     tags:
@@ -105,8 +109,12 @@ jobs:
         # Why does it fill up zfs? I don't understand what it does at all
       - name: Free Up ZFS Space
         run: |
-          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
-          sudo zfs list -H -o name | grep "snapcraft" | xargs -I{} sudo zfs destroy {}
+          # Force unmount any snapcraft-related ZFS datasets that are busy
+          sudo zfs list -H -o name | grep "snapcraft" | sort -r | xargs -I{} sudo zfs unmount -f {} 2>/dev/null || true
+          # Destroy datasets (clones) first, deepest children first
+          sudo zfs list -H -o name | grep "snapcraft" | sort -r | xargs -I{} sudo zfs destroy -rR {} 2>/dev/null || true
+          # Then destroy any remaining snapshots
+          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy -rR {} 2>/dev/null || true
         if: matrix.os.clean_zfs
 
       - name: Install flatpak tools
@@ -217,13 +225,24 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
         if: matrix.os.type == 'linux' && matrix.os.arch != 'arm64'
 
       - name: Clean cache
+        if: steps.cache-nm.outputs.cache-hit != 'true'
         run: yarn cache clean --all
 
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
@@ -231,6 +250,7 @@ jobs:
       # But only sometimes. I cannot figure out why.
       # Someone should at some point.
       - name: yarn install (with retry)
+        if: steps.cache-nm.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 20
@@ -346,8 +366,8 @@ jobs:
 
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.yml)"
-        continue-on-error: true
+        shell: powershell
+        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.yml' } | Remove-Item -Force
 
 
   finalize_mac_yml:
@@ -430,7 +450,7 @@ jobs:
       - name: Move release snap from edge to stable
         continue-on-error: true
         run: |
-          snapcraft promote beekeeper-studio --from-channel "edge" --to-channel "stable" --yes
+          snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
 
   publish_repositories:
     needs: [release, create_draft_release, identify_channel]

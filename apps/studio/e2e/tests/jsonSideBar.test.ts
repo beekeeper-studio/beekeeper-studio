@@ -39,7 +39,9 @@ test.describe("JSON Sidebar Verifications", () => {
     });
 
     afterEach(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test.skip("accessing the JSON sidebar", async () => {

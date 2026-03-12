@@ -1,5 +1,8 @@
 name: Create A Tag (and thus a release) of Beekeeper Studio
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:

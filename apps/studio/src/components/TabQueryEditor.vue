@@ -414,6 +414,13 @@
                   autofocus
                 >
               </div>
+              <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
+                <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+                <select v-model="query.queryFolderId" :disabled="!isUltimate && !isCloud">
+                  <option :value="null">No folder</option>
+                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="vue-dialog-buttons">
@@ -612,13 +619,14 @@
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
       }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('data/queryFolders', { queryFolders: 'items' }),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
