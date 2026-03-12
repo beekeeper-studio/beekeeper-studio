@@ -19,6 +19,8 @@ volumes:
   mongodb:
   anywhere:
   redis:
+  greengage:
+  greengage7:
 
 services:
   anywhere:
@@ -140,6 +142,33 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
+
+  # Greengage DB 6. https://hub.docker.com/r/greengagedb/ggdb6_ubuntu/tags . Demo listens on 6000.
+  greengage:
+    image: greengagedb/ggdb6_ubuntu:6.29.2
+    platform: linux/amd64
+    sysctls:
+      kernel.sem: "500 1024000 200 4096"
+    ports:
+      - 5438:6000
+    volumes:
+      - greengage:/tmp/greengage_data
+      - ./dev/docker_greengage/init-and-run.sh:/init-and-run.sh:ro
+    command: ["bash", "/init-and-run.sh"]
+
+  # Greengage DB 7. https://hub.docker.com/r/greengagedb/ggdb7_ubuntu/tags . Demo listens on 7000.
+  greengage7:
+    image: greengagedb/ggdb7_ubuntu:7.4.1
+    platform: linux/amd64
+    sysctls:
+      kernel.sem: "500 1024000 200 4096"
+    ports:
+      - 5439:7000
+    volumes:
+      - greengage7:/tmp/greengage_data
+      - ./dev/docker_greengage/init-and-run.sh:/init-and-run.sh:ro
+    command: ["bash", "/init-and-run.sh"]
+
   mariadb:
     image: mariadb
     platform: linux/amd64
