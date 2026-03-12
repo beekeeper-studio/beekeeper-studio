@@ -1,17 +1,16 @@
 import {Knex} from 'knex'
 import knex from 'knex'
-import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '../../src/lib/db/types'
+import { ConnectionType, DatabaseElement, IDbConnectionServerConfig } from '@/lib/db/types'
 import log from '@bksLogger'
 import platformInfo from '../../src/common/platform_info'
 import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange, TableKey } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
 import _ from 'lodash'
-import { TableIndex, TableOrView } from '../../src/lib/db/models'
+import { TableIndex, TableOrView } from '@/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
-import { safeSqlFormat } from '../../src/common/utils'
+import { safeSqlFormat } from '@/common/utils'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
-import BksConfig from '@/common/bksConfig'
 import { SqlGenerator } from '@shared/lib/sql/SqlGenerator'
 import { Client_DuckDB } from '@shared/lib/knex-duckdb'
 import { IDbConnectionPublicServer } from './db/serverTypes'
@@ -76,6 +75,7 @@ function normalizeTableKeys(
 
 const KnexTypes: any = {
   postgresql: 'pg',
+  greengage: 'pg',
   'mysql': 'mysql2',
   "mariadb": "mysql2",
   "tidb": "mysql2",
@@ -508,7 +508,7 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns(null, this.defaultSchema)
     const mixedCaseColumns = await this.connection.listTableColumns('MixedCase', this.defaultSchema)
     const defaultValues = mixedCaseColumns.map(r => r.hasDefault)
-    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql', 'duckdb']
+    const trueFalseDBs = ['mariadb', 'mysql', 'tidb', 'cockroachdb', 'postgresql', 'duckdb', 'greengage']
 
     if (trueFalseDBs.indexOf(this.dbType) !== -1) expect(defaultValues).toEqual([true,  false])
     else expect(defaultValues).toEqual([false, false])
@@ -1122,6 +1122,7 @@ export class DBTestUtil {
     }
     const expectedMultipleUpsertQueries = {
       postgresql: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
+      greengage: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, ${initialID}, 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`,
       cockroachdb: `insert into "public"."jobs" ("hourly_rate", "id", "job_name") values (41, '${initialID}', 'Programmer'), (40, ${secondID}, 'Blerk'), (39, ${thirdID}, 'blarns') on conflict ("id") do update set "hourly_rate" = excluded."hourly_rate", "id" = excluded."id", "job_name" = excluded."job_name"`, // pg based
       mysql: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID +", 'Programmer'), (40, "+ secondID +", 'Blerk'), (39, "+ thirdID +", 'blarns') on duplicate key update `hourly_rate` = values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)",
       tidb: "insert into `jobs` (`hourly_rate`, `id`, `job_name`) values (41, "+ initialID +", 'Programmer'), (40, "+ secondID +", 'Blerk'), (39, "+ thirdID +", 'blarns') on duplicate key update `hourly_rate` = values (`hourly_rate`), `id` = values (`id`), `job_name` = values (`job_name`)", // mysql based
