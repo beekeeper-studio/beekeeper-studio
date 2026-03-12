@@ -1142,8 +1142,8 @@
         }
         this.editingResult = true;
       },
-      saveChanges() {
-        this.$refs.table.saveChanges();
+      async saveChanges() {
+        await this.$refs.table.saveChanges();
         this.editingResult = false;
       },
       copyToSql() {
@@ -1333,7 +1333,6 @@
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
-        this.resultsEditable = []
         this.resultsEditData = []
         this.selectedResult = 0
         let identification = []
@@ -1404,7 +1403,6 @@
             }
           })
           this.results = Object.freeze(results);
-          this.resultsEditable = this.results.map(() => false)
           this.resultsEditData = this.results.map(() => null)
 
           // const defaultResult = Math.max(results.length - 1, 0)

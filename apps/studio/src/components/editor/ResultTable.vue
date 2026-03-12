@@ -140,9 +140,6 @@ import { format } from 'sql-formatter'
       queryDialect() {
         return this.dialectData?.queryDialectOverride ?? this.dialect;
       },
-      allPks() {
-        return this.editData.entries().filter(([_id, editData]) => editData?.isPk).map(([id]) => id);
-      },
       keymap() {
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
@@ -357,7 +354,7 @@ import { format } from 'sql-formatter'
       cellEdited(cell: CellComponent) {
         // Should this be id?
         const field: FieldDescriptor = this.result.fields.find((f) => f.id === cell.getField());
-        const fieldEditData: FieldEditData = this.editData?.get(field.id);
+        const fieldEditData: FieldEditData = this.editData?.get(cell.getField());
         if (!field) {
           log.warn('Could not find matching field for', cell.getField());
           return;
@@ -480,8 +477,8 @@ import { format } from 'sql-formatter'
       },
       discardUpdate(pendingUpdate: TableUpdatePayload) {
         this.discardCellUpdate(pendingUpdate.cell, pendingUpdate.oldValue)
-        const cells = this.propogatedChanges.get(pendingUpdate.key)
-        cells?.forEach((cell) => {
+        const cells = this.propogatedChanges?.get(pendingUpdate.key)
+        cells?.forEach((cell: CellComponent) => {
           this.discardCellUpdate(cell, pendingUpdate.oldValue)
         });
       },
@@ -562,8 +559,8 @@ import { format } from 'sql-formatter'
           this.pendingChanges.updates.forEach((edit: TableUpdatePayload) => {
             edit.cell.getElement().classList.add('edit-error')
 
-            const cells = this.propogatedChanges.get(edit.key)
-            cells.forEach((cell: CellComponent) => {
+            const cells = this.propogatedChanges?.get(edit.key)
+            cells?.forEach((cell: CellComponent) => {
               cell.getElement().classList.add('edit-error')
             })
           });
@@ -613,8 +610,8 @@ import { format } from 'sql-formatter'
           this.pendingChanges.updates.forEach((edit: TableUpdatePayload) => {
             edit.cell.getElement().classList.add('edit-error')
 
-            const cells = this.propogatedChanges.get(edit.key)
-            cells.forEach((cell: CellComponent) => {
+            const cells = this.propogatedChanges?.get(edit.key)
+            cells?.forEach((cell: CellComponent) => {
               cell.getElement().classList.add('edit-error')
             })
           });

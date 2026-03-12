@@ -864,14 +864,16 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
           });
         } else {
           const table = tableData.find((t) => this.matchesTable(c, t));
-          table.columns.forEach((col) => {
-            columns.push({
-              name: col.columnName,
-              table: c.table,
-              schema: c.schema,
-              isWildcard: false
+          if (table && table.columns) {
+            table.columns.forEach((col) => {
+              columns.push({
+                name: col.columnName,
+                table: c.table,
+                schema: c.schema,
+                isWildcard: false
+              });
             });
-          });
+          }
         }
       } else {
         columns.push(c);
