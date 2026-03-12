@@ -33,7 +33,6 @@ export default Vue.extend({
   computed: {
     ...mapGetters(['isCloud']),
     ...mapState('data/queryFolders', {'folders': 'items'}),
-    ...mapGetters(['isCloud']),
     truncatedText() {
       return _.truncate(this.item.excerpt, { length: 100});
     },

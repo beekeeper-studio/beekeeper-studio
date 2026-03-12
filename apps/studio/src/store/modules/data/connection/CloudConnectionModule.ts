@@ -123,6 +123,9 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
         .value();
 
       return _.concat(startsWithFilter, containsFilter);
+    },
+    getConfigForDb: (state) => ({workspaceId, databaseId}) => {
+      return state.items.find( el => el.workspaceId === Number(workspaceId) && el.id === Number(databaseId))
     }
   }
 }

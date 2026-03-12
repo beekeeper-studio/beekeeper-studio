@@ -51,6 +51,12 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
 }
 
 
+export interface SharedQueryLink {
+  databaseId: Nullable<string|number>,
+  queryId: Nullable<string|number>,
+  workspaceId: Nullable<string|number>
+}
+
 export interface State {
   connection: ElectronUtilityConnectionClient,
   usedConfig: Nullable<IConnection>,
@@ -83,6 +89,7 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+  sharedQueryLink: Nullable<SharedQueryLink>
 }
 
 Vue.use(Vuex)
@@ -143,6 +150,7 @@ const store = new Vuex.Store<State>({
     namespace: null,
     namespaceList: [],
     pluginManagerStatus: "initializing",
+    sharedQueryLink: null
   },
 
   getters: {
@@ -350,6 +358,9 @@ const store = new Vuex.Store<State>({
       state.tables = []
       state.tablesInitialLoaded = false
     },
+    sharedQueryLink(state, queryLink: SharedQueryLink|null) {
+      state.sharedQueryLink = queryLink
+    },
     tables(state, tables: TableOrView[]) {
       if(state.tables.length === 0) {
         state.tables = tables
@@ -433,9 +444,14 @@ const store = new Vuex.Store<State>({
     },
 
     async openSharedQuery(context, { db, query }: { db: string, query: string }) {
-      const response = await Vue.prototype.$util.send('appdb/share-query', { db, query });
+      try {
+        const { databaseId, queryId, workspaceId } = await Vue.prototype.$util.send('appdb/share-query', { db, query });
+        context.commit('sharedQueryLink', { databaseId, queryId, workspaceId })
 
-      console.log(response)
+        return 'Im dying, Pappy'
+      } catch (err) {
+        console.error(err)
+      }
     },
 
     updateWindowTitle(context) {

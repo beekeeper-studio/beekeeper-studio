@@ -298,8 +298,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['workspaceId', 'connection']),
-    ...mapState(['username']),
+    ...mapState(['workspaceId', 'connection', 'sharedQueryLink', 'username']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
     ...mapGetters(['isUltimate', 'isCloud']),
