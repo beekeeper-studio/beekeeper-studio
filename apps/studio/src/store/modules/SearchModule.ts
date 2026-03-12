@@ -74,7 +74,7 @@ export const SearchModule: Module<never, RootState> = {
       })
       const connectionFolders = root['data/connectionFolders']['items']
       const connections: IndexItem[] = root['data/connections']['items'].map((f) => {
-        const folder = connectionFolders.find((folder) => folder.id === f.queryFolderId)
+        const folder = connectionFolders.find((folder) => folder.id === f.connectionFolderId)
         const title = folder ? `${folder.name} > ${f.name}` : f.name
         return { item: f, type: 'connection', title: `connection: ${title}`, id: `connection-${f.id}`}
       })
