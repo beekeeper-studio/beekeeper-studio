@@ -50,7 +50,7 @@ Below is an example config in Beekeeper Studio once IAM permissions are setup, y
 - [AWS IAM User](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html)
 - [AWS IAM Roles](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html)
 
-### 1. AWS CLI Authentication (PostgreSQL, MS SQL)
+### 1. AWS CLI Authentication (PostgreSQL, MySQL)
 
 Uses your local AWS CLI session to retrieve an access token.
 
