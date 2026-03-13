@@ -91,6 +91,22 @@ If you run a query that generates a result set of more than 50,000 records Beeke
 
 In the commercial edition of Beekeeper Studio, you can also select `Run To File`, this will run your SQL query and send the full results directly to a CSV file.
 
+## Keyboard Shortcuts
+
+Beekeeper Studio has a built-in keyboard shortcuts reference. Open it from the `Help` menu to see all available shortcuts organized by category.
+
+![Keyboard Shortcuts modal](../../assets/images/keyboard-shortcuts-modal.png)
+
+## Editor Font Size
+
+You can adjust the font size of the SQL editor from the `View` menu:
+
+- **Increase Editor Font Size** - `Ctrl+Shift+.`
+- **Decrease Editor Font Size** - `Ctrl+Shift+,`
+- **Reset Editor Font Size** - restores the default size
+
+![Adjusting editor font size](../../assets/images/adjust-editor-font-size.png)
+
 ## Vim Mode
 Along with the default query editor, Beekeeper supports Vim mode, which allows you to write queries in a Vim-like text editor.
 
