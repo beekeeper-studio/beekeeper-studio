@@ -1,4 +1,4 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
@@ -249,6 +249,7 @@ export interface IBasicDatabaseClient {
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
   executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>,
+  getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]>
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,

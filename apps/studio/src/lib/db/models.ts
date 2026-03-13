@@ -254,6 +254,24 @@ export interface SupportedFeatures {
   filterTypes: IncludedFilterTypes[];
 }
 
+export enum FieldReadOnlyReason {
+  NoLinkedTable,
+  MissingPK,
+  ImproperMapping,
+  IsGenerated
+}
+
+export interface FieldEditData {
+  editable: boolean;
+  id?: string; // this is what the field is referred to as in the object
+  columnName?: string;
+  linkedTable?: string;
+  linkedSchema?: string;
+  isPK?: boolean;
+  generated?: boolean;
+  readOnlyReason?: FieldReadOnlyReason;
+}
+
 export interface FieldDescriptor {
   name: string;
   id: string;
@@ -269,6 +287,7 @@ export interface NgQueryResult {
   totalRowCount?: number;
   affectedRows?: number;
   command?: any;
+  text?: string;
 }
 
 export type QueryResult = NgQueryResult[];

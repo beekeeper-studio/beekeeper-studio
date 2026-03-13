@@ -68,6 +68,7 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { IdentifyResult } from "sql-query-identifier/defines";
 
 type ResultType = {
   tableName?: string
@@ -247,7 +248,7 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
 function parseRowQueryResult(
   data: any,
   rawFields: any[],
-  command: string,
+  command: IdentifyResult,
   rowsAsArray = false
 ) {
   // Fallback in case the identifier could not reconize the command
@@ -255,13 +256,14 @@ function parseRowQueryResult(
   const fieldIds = fields.map((f) => f.id);
   const isSelect = Array.isArray(data);
   return {
-    command: command || (isSelect && "SELECT"),
+    command: command?.type || (isSelect && "SELECT"),
     rows: isSelect
       ? data.map((r: any) => (rowsAsArray ? _.zipObject(fieldIds, r) : r))
       : [],
     fields: fields,
     rowCount: isSelect ? (data || []).length : undefined,
     affectedRows: !isSelect ? data.affectedRows : undefined,
+    text: command?.text
   };
 }
 
@@ -1184,7 +1186,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       return [];
     }
 
-    const commands = identifyCommands(queryText).map((item) => item.type);
+    const commands = identifyCommands(queryText);
 
     if (!isMultipleQuery(fields)) {
       return [
