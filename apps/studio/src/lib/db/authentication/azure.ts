@@ -232,11 +232,11 @@ export class AzureAuthService {
     const res = await axios.post(globals.azureCloudTokenUrl) as Response;
 
     const beekeeperCloudToken = res.data?.cloud_token;
-    const authCodeUrlParams = {
+    const authCodeUrlParams: msal.AuthorizationUrlRequest = {
       scopes: globals.azureCloudScopes,
       redirectUri: beekeeperCloudToken.fulfillment_url,
       state: beekeeperCloudToken.id,
-      prompt: 'consent'
+      prompt: BksConfig.azure.ssoPrompt
     };
     const authUrl = await this.pca.getAuthCodeUrl(authCodeUrlParams);
 
