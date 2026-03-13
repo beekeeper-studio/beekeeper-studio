@@ -391,9 +391,10 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['selectedSidebarItem']),
+    ...mapState(['selectedSidebarItem', 'sharedQueryLink']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
     ...mapState(['connection', 'connectionType', 'usedConfig']),
+    ...mapState('data/queries', { queryItems: 'items' }),
     ...mapGetters({
        'dialect': 'dialect',
        'dialectData': 'dialectData',
@@ -1196,6 +1197,12 @@ export default Vue.extend({
 
   async mounted() {
     this.registerHandlers(this.rootBindings)
+    if (this.sharedQueryLink != null) {
+      const { queryId, workspaceId } = this.sharedQueryLink
+      const queryItem = this.queryItems.find(q => q.workspaceId === workspaceId && q.id === queryId)
+      
+      if (queryItem) this.$emit('open', queryItem)
+    }
   }
 })
 </script>

@@ -1,11 +1,13 @@
-<!-- DEV ONLY: remove once share-query flow is verified -->
+<!-- DEV ONLY: This is for quickly testing the ability to share a query link without needing to totally bundle up the app -->
 <template>
   <div class="share-query-test-button">
-    <a
+    <button
       class="btn btn-link btn-small"
-      href="#"
+      type="button"
       @click.prevent="open"
-    >Test Share Query</a>
+    >
+      Test Share Query
+    </button>
 
     <portal to="modals">
       <modal
@@ -76,6 +78,7 @@ export default {
       this.error = null
       try {
         this.result = await this.$store.dispatch('openSharedQuery', { db: this.db, query: this.query })
+        this.close()
       } catch (e) {
         this.error = e?.message || String(e)
       }

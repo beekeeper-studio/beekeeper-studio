@@ -392,7 +392,7 @@ export default {
   watch: {
     connectionsItems: {
       handler(cList){
-        if (this.connected) {
+        if (this.connected || this.sharedQueryLink == null) {
           return
         }
         const { workspaceId, databaseId } = this.sharedQueryLink
@@ -405,6 +405,7 @@ export default {
       deep: true
     },
     sharedQueryLink(newValue) {
+      if (newValue == null) return
       const { workspaceId } = newValue
       this.$store.commit('workspaceId', workspaceId)
     },

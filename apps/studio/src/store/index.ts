@@ -447,10 +447,8 @@ const store = new Vuex.Store<State>({
       try {
         const { databaseId, queryId, workspaceId } = await Vue.prototype.$util.send('appdb/share-query', { db, query });
         context.commit('sharedQueryLink', { databaseId, queryId, workspaceId })
-
-        return 'Im dying, Pappy'
-      } catch (err) {
-        console.error(err)
+      } catch (e){
+        log.error(e)
       }
     },
 
