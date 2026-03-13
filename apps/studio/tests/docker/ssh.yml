@@ -1,16 +1,84 @@
 version: '3'
-volumes:
-  psql:
+
+networks:
+  public:
+    driver: bridge
+  internal:
+    driver: bridge
+    internal: true
+
 services:
   postgres:
     image: postgres:13
     container_name: test_ssh_postgres
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: bks
       POSTGRES_PASSWORD: example
-      POSTGRES_DB: integration_test
+      POSTGRES_DB: test
     ports:
       - 5432
+    networks:
+      - internal
+
+  mysql:
+    image: mysql:8
+    container_name: test_ssh_mysql
+    environment:
+      MYSQL_USER: bks
+      MYSQL_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    ports:
+      - 3306
+    networks:
+      - internal
+
+  mariadb:
+    image: mariadb
+    container_name: test_ssh_mariadb
+    environment:
+      MYSQL_USER: bks
+      MYSQL_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: test
+    ports:
+      - 3306
+    networks:
+      - internal
+
+  sqlserver:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    container_name: test_ssh_sqlserver
+    environment:
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: Example1!
+      ACCEPT_EULA: Y
+    ports:
+      - 1433
+    networks:
+      - internal
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.2
+    container_name: test_ssh_clickhouse
+    environment:
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ports:
+      - 8123
+    networks:
+      - internal
+
+  cassandra:
+    image: cassandra:latest
+    platform: linux/amd64
+    container_name: test_ssh_cassandra
+    ports:
+      - 9042
+    networks:
+      - internal
+
   ssh:
     build:
       context: ./
@@ -25,4 +93,7 @@ services:
       - USER_NAME=beekeeper #optional
       - SUDO_ACCESS=true
     ports:
-      - 2222
+      - "7222:2222"
+    networks:
+      - internal
+      - public

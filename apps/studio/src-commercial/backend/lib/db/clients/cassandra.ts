@@ -67,7 +67,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   async connect(): Promise<void> {
-    super.connect();
+    await super.connect();
 
     const dbConfig = this.configDatabase(this.server, this.database);
 
