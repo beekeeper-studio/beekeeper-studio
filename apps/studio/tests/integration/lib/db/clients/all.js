@@ -1250,7 +1250,7 @@ export const itShouldHaveCorrectFilterTypes = async function(util) {
   expect(features.filterTypes.length).toBeGreaterThan(0)
 
   // PostgreSQL-based databases should have 'ilike'
-  const ilikeSupported = ['postgresql', 'psql', 'cockroachdb', 'redshift']
+  const ilikeSupported = ['postgresql', 'psql', 'cockroachdb', 'redshift', 'greengage']
   if (ilikeSupported.includes(util.dbType) || ilikeSupported.includes(util.dialect)) {
     expect(features.filterTypes).toContain('ilike')
     expect(features.filterTypes).toEqual(['standard', 'ilike'])
