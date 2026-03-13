@@ -803,7 +803,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const commands = this.identifyCommands(queryText);
     log.info("COMMANDS: ", commands)
 
-    return await Promise.all(data.map(async (result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode)));
+    return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
@@ -1378,9 +1378,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     })
   }
 
-  async parseRowQueryResult(data: QueryResult, command: IdentifyResult, rowResults: boolean): Promise<NgQueryResult> {
+  parseRowQueryResult(data: QueryResult, command: IdentifyResult, rowResults: boolean): NgQueryResult {
     const fields = this.parseFields(data.columns, rowResults)
-    // fields = await this.maybeGetEditData(command, fields);
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
@@ -1789,7 +1788,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   private identifyCommands(queryText: string) {
     try {
-      return identify(queryText, { identifyColumns: true, identifyTables: true });
+      return identify(queryText);
     } catch (err) {
       return [];
     }
