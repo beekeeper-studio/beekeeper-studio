@@ -84,7 +84,6 @@
 <script>
 import _ from 'lodash'
 import ClientMenuActionHandler from '../../lib/menu/ClientMenuActionHandler'
-import MenuBuilder from '../../common/menus/MenuBuilder'
 import { mapGetters, mapState } from 'vuex'
 
 
@@ -93,7 +92,6 @@ export default {
   props: [],
   data() {
     return {
-      menuBuilder: null,
       actionHandler: new ClientMenuActionHandler(),
       menuActive: false,
       selected: null,

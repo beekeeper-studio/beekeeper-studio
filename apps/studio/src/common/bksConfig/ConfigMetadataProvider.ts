@@ -1,9 +1,9 @@
 import type { IPlatformInfo } from "../IPlatformInfo";
 import type { ConfigMetadata, KeybindingSection } from "@/types";
-import type { BksConfig } from "./BksConfigProvider";
-import { convertKeybinding, ConfigValue } from "./BksConfigProvider";
+import type { BksConfig, KeybindingPath } from "./BksConfigProvider";
 import { InvalidConfigMetadata } from "./errors";
 import defaultMetadata from "../../../config-metadata.json";
+import { recurse } from "@/config/helpers";
 
 /**
  * Provides UI-specific config functionality that requires metadata.
@@ -31,106 +31,58 @@ export class ConfigMetadataProvider {
    * for use in UI (e.g., keyboard shortcuts modal, settings).
    */
   getKeybindingSections(): KeybindingSection[] {
-    const keybindings = this.options.bksConfig.keybindings as Record<
-      string,
-      ConfigValue
-    >;
-    const { missingLabels, sections } = this.parseKeybindingSections(
-      keybindings,
-      ""
-    );
+    const { missingLabels, sections } = this.parseKeybindingSections();
     if (missingLabels.length > 0 && !this.options.platformInfo.env.production) {
       throw new InvalidConfigMetadata(missingLabels);
     }
     return sections;
   }
 
-  private parseKeybindingSections(
-    obj: Record<string, ConfigValue>,
-    parent: string
-  ): { sections: KeybindingSection[]; missingLabels: string[] } {
-    const sections: KeybindingSection[] = [];
+  private parseKeybindingSections(): {
+    sections: KeybindingSection[];
+    missingLabels: string[];
+  } {
     const missingLabels: string[] = [];
+    const sectionsMap = new Map<string, KeybindingSection['actions']>();
 
-    for (const [sectionName, sectionValue] of Object.entries(obj)) {
-      if (typeof sectionValue !== "object" || sectionValue == null) {
+    for (let { key: actionKey, path } of recurse(
+      this.options.bksConfig.keybindings
+    )) {
+      const sectionKey = path.slice(0, -1).join(".");
+      const fullKey = path.join(".") as KeybindingPath;
+      const { label, missing } = this.getActionLabel(sectionKey, actionKey);
+
+      if (missing) {
+        missingLabels.push(`keybindings.${sectionKey}.${actionKey}`);
+      }
+
+      const keybindings = this.options.bksConfig.getKeybindings("ui", fullKey);
+
+      if (keybindings.length === 0) {
         continue;
       }
 
-      const fullSection = parent ? `${parent}.${sectionName}` : sectionName;
-
-      // Group keybindings by action key
-      const actionsMap = new Map<
-        string,
-        { label: string; keybindings: string[][] }
-      >();
-
-      for (const [key, value] of Object.entries(sectionValue)) {
-        if (typeof value === "string") {
-          const { label, missing } = this.getActionLabel(fullSection, key);
-          if (missing) {
-            missingLabels.push(`keybindings.${fullSection}.${key}`);
-          }
-          const existing = actionsMap.get(key);
-          if (existing) {
-            existing.keybindings.push(
-              convertKeybinding("ui", value, this.options.platformInfo.platform)
-            );
-          } else {
-            actionsMap.set(key, {
-              label,
-              keybindings: [
-                convertKeybinding(
-                  "ui",
-                  value,
-                  this.options.platformInfo.platform
-                ),
-              ],
-            });
-          }
-        } else if (Array.isArray(value)) {
-          const { label, missing } = this.getActionLabel(fullSection, key);
-          if (missing) {
-            missingLabels.push(`keybindings.${fullSection}.${key}`);
-          }
-          const keybindings = value.map((v) =>
-            convertKeybinding("ui", v, this.options.platformInfo.platform)
-          );
-          const existing = actionsMap.get(key);
-          if (existing) {
-            existing.keybindings.push(...keybindings);
-          } else {
-            actionsMap.set(key, { label, keybindings });
-          }
-        } else if (typeof value === "object" && value !== null) {
-          // Recurse into nested subsection
-          const result = this.parseKeybindingSections(
-            { [key]: value },
-            fullSection
-          );
-          sections.push(...result.sections);
-          missingLabels.push(...result.missingLabels);
-        }
+      if (!sectionsMap.has(sectionKey)) {
+        sectionsMap.set(sectionKey, []);
       }
 
-      if (actionsMap.size > 0) {
-        const { label: sectionLabel, missing } =
-          this.getSectionLabel(fullSection);
-        if (missing) {
-          missingLabels.push(`keybindings.${fullSection}`);
-        }
+      sectionsMap.get(sectionKey).push({ key: actionKey, label, keybindings });
+    }
 
-        const actions: KeybindingSection["actions"] = [];
-        for (const [key, { label, keybindings }] of actionsMap) {
-          actions.push({ key, label, keybindings });
-        }
+    const sections: KeybindingSection[] = [];
 
-        sections.push({
-          sectionKey: `keybindings.${fullSection}`,
-          label: sectionLabel,
-          actions,
-        });
+    for (const [sectionKey, actions] of sectionsMap.entries()) {
+      const { label, missing } = this.getSectionLabel(sectionKey);
+
+      if (missing) {
+        missingLabels.push(`keybindings.${sectionKey}`);
       }
+
+      sections.push({
+        sectionKey: `keybindings.${sectionKey}`,
+        label,
+        actions,
+      });
     }
 
     return { sections, missingLabels };

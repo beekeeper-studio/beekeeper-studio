@@ -14,13 +14,36 @@
         { "key": "cloneSelection", "label": "Clone Selection" },
         { "key": "deleteSelection", "label": "Delete Selection" },
         { "key": "undo", "label": "Undo" },
-        { "key": "redo", "label": "Redo" }
+        { "key": "redo", "label": "Redo" },
+        { "key": "cut", "label": "Cut" },
+        { "key": "copy", "label": "Copy" },
+        { "key": "paste", "label": "Paste" },
+        { "key": "selectAll", "label": "Select All" },
+        { "key": "quit", "label": "Quit" },
+        { "key": "toggleFullScreen", "label": "Toggle Fullscreen" },
+        { "key": "zoomIn", "label": "Zoom In" },
+        { "key": "zoomInAlt", "label": "Zoom In (Alternate)" },
+        { "key": "zoomOut", "label": "Zoom Out" },
+        { "key": "zoomOutAlt", "label": "Zoom Out (Alternate)" },
+        { "key": "resetZoom", "label": "Reset Zoom" },
+        { "key": "newWindow", "label": "New Window" },
+        { "key": "reloadWindow", "label": "Reload Window" },
+        { "key": "importSqlFiles", "label": "Import SQL Files" },
+        { "key": "disconnect", "label": "Disconnect" }
+      ]
+    },
+    {
+      "key": "keybindings.primarySidebar",
+      "label": "Primary Sidebar",
+      "properties": [
+        { "key": "toggleOpen", "label": "Toggle Sidebar" }
       ]
     },
     {
       "key": "keybindings.tab",
       "label": "Tabs",
       "properties": [
+        { "key": "newTab", "label": "New Tab" },
         { "key": "closeTab", "label": "Close Tab" },
         { "key": "forceCloseTab", "label": "Force Close Tab" },
         { "key": "nextTab", "label": "Next Tab" },
@@ -60,6 +83,9 @@
         { "key": "submitCurrentQuery", "label": "Run Current Query" },
         { "key": "submitQueryToFile", "label": "Run All Queries to File" },
         { "key": "submitCurrentQueryToFile", "label": "Run Current Query to File" },
+        { "key": "cancelQuery", "label": "Cancel Query" },
+        { "key": "increaseFontSize", "label": "Increase Font Size" },
+        { "key": "decreaseFontSize", "label": "Decrease Font Size" },
         { "key": "selectNextResult", "label": "Select Next Result" },
         { "key": "selectPreviousResult", "label": "Select Previous Result" },
         { "key": "copyResultSelection", "label": "Copy Result Selection" },
