@@ -108,6 +108,7 @@
                 @rename="rename"
                 @export="exportTo"
                 @duplicate="duplicate"
+                @getQueryLink="queryLink"
               />
             </Draggable>
             <sidebar-folder
@@ -140,6 +141,7 @@
                   @rename="rename"
                   @export="exportTo"
                   @duplicate="duplicate"
+                  @getQueryLink="queryLink"
                 />
               </Draggable>
             </sidebar-folder>
@@ -368,6 +370,7 @@ export default {
   },
   methods: {
     queryLink(item) {
+      console.log('~~~')
       console.log(item)
       this.querySelected = { ...item }
       this.$modal.show(this.shareModal)

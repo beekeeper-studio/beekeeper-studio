@@ -53,16 +53,6 @@ export default Vue.extend({
           return { name, handler: this.moveItem, folder }
         })
     },
-    shareQueryLink() {
-      if (this.isCloud) {
-        return {
-            name: 'Share Link to Query',
-            handler: ({ item }) => this.$emit('rename', item)
-          }
-      }
-      
-      return null
-    },
     subtitle() {
       const result = []
       if (this.item.user?.name) result.push(`${this.item.user.name}`)
@@ -128,8 +118,7 @@ export default Vue.extend({
         },
         {
           type: 'divider'
-        },
-        ...this.moveToOptions
+        }
       ]
 
       if (this.isCloud) {
