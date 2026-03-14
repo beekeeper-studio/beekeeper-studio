@@ -104,6 +104,11 @@ module.exports = {
   ],
   protocols: [
     {
+      name: "Beekeeper Studio deep link scheme",
+      schemes: ["beekeeperstudio-dev", "beekeeperstudio"],
+      role: "Editor"
+    },
+    {
       name: "Amazon Redshift URL scheme",
       schemes: ["redshift"],
       role: "Editor"
