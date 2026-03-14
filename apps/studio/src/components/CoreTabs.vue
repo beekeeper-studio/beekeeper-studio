@@ -85,7 +85,7 @@
           :tab="tab"
           :tab-id="tab.id"
           @update-tab="updateTab"
-         />
+        />
         <Shell
           v-if="tab.tabType === 'shell'"
           :active="activeTab?.id === tab.id"
@@ -371,7 +371,7 @@ export default Vue.extend({
       dbDuplicateTableParams: null,
       duplicateTableName: null,
       closingTab: null,
-      confirmModalId: 'core-tabs-close-confirmation',
+      confirmModalId: 'core-tabs-close-confirmation'
     }
   },
   watch: {
@@ -1199,9 +1199,8 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
     if (this.sharedQueryLink != null) {
       const { queryId, workspaceId } = this.sharedQueryLink
-      const queryItem = this.queryItems.find(q => q.workspaceId === workspaceId && q.id === queryId)
-      
-      if (queryItem) this.$emit('open', queryItem)
+      this.favoriteClick(this.queryItems.find(q => q.workspaceId === workspaceId && q.id === queryId))
+      this.$store.commit('sharedQueryLink', null)
     }
   }
 })

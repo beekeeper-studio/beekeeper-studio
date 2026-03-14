@@ -370,8 +370,6 @@ export default {
   },
   methods: {
     queryLink(item) {
-      console.log('~~~')
-      console.log(item)
       this.querySelected = { ...item }
       this.$modal.show(this.shareModal)
     },
