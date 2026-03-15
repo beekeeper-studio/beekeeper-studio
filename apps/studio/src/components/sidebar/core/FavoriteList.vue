@@ -226,7 +226,7 @@
               <i class="material-icons">content_copy</i>
             </button>
             <p class="text-sm fst-italic">
-              The link is only viewable to members of the same workspace.
+              The link is only viewable to members of the same workspace. The link is <strong>case sensitive</strong>.
             </p>
           </div>
         </div>
@@ -575,6 +575,9 @@ export default {
 <style lang="scss" scoped>
 .copy-button {
   margin-left: 1rem;
+  .material-icons {
+    margin-left: .5rem;
+  }
 }
 .drag-ghost {
   opacity: 0.4;
