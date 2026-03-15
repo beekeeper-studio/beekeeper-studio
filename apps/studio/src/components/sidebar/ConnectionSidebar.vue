@@ -405,9 +405,18 @@ export default {
       deep: true
     },
     sharedQueryLink(newValue) {
-      if (newValue == null) return
-      const { workspaceId } = newValue
-      this.$store.commit('workspaceId', workspaceId)
+      try {
+        if (newValue == null) return
+        const { workspaceId } = newValue
+
+        if (this.availableWorkspaces.find(w => w.workspace?.id === workspaceId)) {
+          this.$store.commit('workspaceId', workspaceId)
+        } else {
+          throw new Error ('Workspace is not available for shared link.')
+        }
+      } catch (err) {      
+        this.$noty.error(err.message)
+      }
     },
     async sort(newSort) {
       await this.$settings.set('connectionsSortOrder', newSort.order)
@@ -430,6 +439,7 @@ export default {
       foldersError: 'error',
     }),
     ...mapState(['workspaceId', 'sharedQueryLink', 'connected']),
+    ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'}),
     ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
