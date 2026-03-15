@@ -491,6 +491,12 @@ export default Vue.extend({
     this.$root.$refs.CoreTabs = this;
   },
   methods: {
+    openSharedQuery(item) {
+      if (item == null) return
+
+      this.$store.commit('sharedQueryLink', null)
+      setTimeout(() => this.favoriteClick(item), 500)
+    },
     async updateTab(tab: TransportOpenTab) {
       const newTab = Object.assign({}, tab);
       await this.$store.commit('tabs/replaceTab', newTab);
@@ -1199,8 +1205,7 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
     if (this.sharedQueryLink != null) {
       const { queryId, workspaceId } = this.sharedQueryLink
-      this.favoriteClick(this.queryItems.find(q => q.workspaceId === workspaceId && q.id === queryId))
-      this.$store.commit('sharedQueryLink', null)
+      this.openSharedQuery(this.queryItems.find(q => q.workspaceId === workspaceId && q.id === queryId))
     }
   }
 })
