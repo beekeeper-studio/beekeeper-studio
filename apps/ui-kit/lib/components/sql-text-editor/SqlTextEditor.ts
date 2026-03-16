@@ -10,7 +10,7 @@ import {
 } from "./extensions";
 import { ExtensionConfiguration } from "@/components";
 import { Cassandra, MySQL, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
-import { GreengageSQL } from "@/components/sql-text-editor/customDialects";
+import { GreengageSQL } from "./customDialects";
 
 export interface CompletionSource {
   defaultSchema?: string;
