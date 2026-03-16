@@ -11,7 +11,7 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import globals from "@/common/globals";
 import { HasPool } from "@/lib/db/clients/postgresql/types";
 
-const log = logRaw.scope("PsqlCnnection");
+const log = logRaw.scope("PsqlConnection");
 
 export class PsqlConnection extends DatabaseConnection<PoolClient> {
   private interval: NodeJS.Timeout | null = null;
@@ -60,8 +60,9 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
 
     test.release();
 
-    this.conn.pool.on("acquire", (_client) => {
+    this.conn.pool.on("acquire", (client) => {
       log.debug("Pool event: connection acquired");
+      client.on("error", this.handleError);
     });
 
     this.conn.pool.on("error", (err, _client) => {
@@ -71,6 +72,7 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
     // @ts-ignore
     this.conn.pool.on("release", (err, client) => {
       log.debug("Pool event: connection released");
+      client.off("error", this.handleError);
     });
 
     log.debug("connected");
@@ -91,9 +93,11 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
   }
 
   protected isConnectionLostError(err: any): boolean {
+    const stringifiedErr = String(err);
     return (
       ("code" in err && err.code === "ECONNRESET") ||
-      String(err).includes("Connection terminated unexpectedly")
+      stringifiedErr.includes("Connection terminated unexpectedly") ||
+      stringifiedErr.includes("Database connection lost")
     );
   }
 

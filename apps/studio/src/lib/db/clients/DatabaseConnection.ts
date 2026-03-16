@@ -2,7 +2,6 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { IDbConnectionDatabase } from "@/lib/db/types";
 import connectTunnel from "@/lib/db/tunnel";
 import rawLog from "@bksLogger";
-import events from "events";
 
 const log = rawLog.scope("BasicDatabaseClient");
 const logger = () => log;
@@ -15,6 +14,15 @@ export type ConnectionPoolOptions = {
 export type ConnectOptions = {
   signal?: AbortSignal;
 };
+
+export class DatabaseConnectionLostError extends Error {
+  declare cause: Error;
+
+  constructor(cause: Error) {
+    super("Database connection lost", { cause });
+    this.name = "DatabaseConnectionLostError";
+  }
+}
 
 /**
  * A class that uniforms connection pool logic including the ssh tunnel.
@@ -36,37 +44,28 @@ export type ConnectOptions = {
  * // Disconnect if not used
  * await connection.disconnect();
  *
- * // Listen for connection lost
- * connection.on("connection-lost", async () => {
- *   // do something when connection is lost
- *   // e.g. prompt user to reconnect, and then call `connection.connect()`
- *   await connection.connect();
- * })
+ * // Connection lost is indicated by DatabaseConnectionLostError being thrown
+ * // e.g. from getClient() when a query fails due to a lost connection.
+ * // Catch it to prompt the user to reconnect, then call `connection.connect()`.
  *
  **/
-export abstract class DatabaseConnection<
-  Client,
-  GetClientOptions = any
-> extends events.EventEmitter<{
-  "connection-lost": [];
-  connected: [];
-}> {
+export abstract class DatabaseConnection<Client, GetClientOptions = any> {
   private connected: boolean = false;
 
   protected readonly server: IDbConnectionServer;
   protected readonly database: IDbConnectionDatabase;
 
   constructor(options: ConnectionPoolOptions) {
-    super();
     this.server = options.server;
     this.database = options.database;
+    this.handleError = this.handleError.bind(this);
   }
 
   protected abstract doConnect(options: ConnectOptions): Promise<void>;
 
   protected abstract doDisconnect(): Promise<void>;
 
-  protected abstract doGetClient(options: GetClientOptions): Promise<Client>;
+  protected abstract doGetClient(options?: GetClientOptions): Promise<Client>;
 
   protected abstract isConnectionLostError(err: any): boolean;
 
@@ -92,7 +91,6 @@ export abstract class DatabaseConnection<
     await this.doConnect(options);
 
     this.connected = true;
-    this.emit("connected");
   }
 
   async disconnect() {
@@ -114,14 +112,21 @@ export abstract class DatabaseConnection<
     try {
       return await this.doGetClient(options);
     } catch (err) {
-      await this.handleError(err);
+      await this.processError(err);
     }
   }
 
   protected async handleError(err: any) {
     if (this.isConnectionLostError(err)) {
       await this.disconnect();
-      this.emit("connection-lost");
+    }
+  }
+
+  private async processError(err: any) {
+    await this.handleError(err);
+
+    if (this.isConnectionLostError(err)) {
+      throw new DatabaseConnectionLostError(err);
     }
 
     throw err;

@@ -1,4 +1,5 @@
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient';
+import { DatabaseConnectionLostError } from '@/lib/db/clients/DatabaseConnection';
 import { DB_CONFIGS, SshEnvironment } from '@tests/integration/lib/db/clients/ssh/SshEnvironment';
 import { dbtimeout } from '../../../../lib/db'
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection';
@@ -42,38 +43,22 @@ describe("SSH Tunnel Tests", () => {
       })
 
       it("should detect connection lost", async () => {
-        const fn = jest.fn();
-
-        database.connection.on("connection-lost", fn);
-
         await environment.restart();
 
-        // Must run a query to trigger the connection-lost event
-        await expect(database.listTables()).rejects.toThrow();
+        // Must run a query to trigger the connection-lost error
+        await expect(database.listTables()).rejects.toThrow(DatabaseConnectionLostError);
 
-        // Yield to the event loop to allow the "connection-lost" event to fire
-        await new Promise((resolve) => setTimeout(resolve));
-
-        expect(fn).toBeCalled();
         expect(database.connection.isConnected).toBe(false);
       });
 
       it("should be able to re-establish connection after losing connection", async () => {
-        const isConnectionLost = new Promise<void>((resolve) => {
-          database.connection.once("connection-lost", resolve);
-        });
-
         await environment.restart();
 
-        // Run a query to trigger the connection-lost event
-        await expect(database.listTables()).rejects.toThrow();
+        // Run a query to trigger the connection-lost error
+        await expect(database.listTables()).rejects.toThrow(DatabaseConnectionLostError);
 
-        // Connection-lost is triggered after running a query
-        await expect(isConnectionLost).resolvesWithin(1000);
-
-        await database.connection.connect();
-        expect(database.connection.isConnected).toBe(true);
-        await expect(database.executeQuery("select 1")).resolves.toBeDefined();
+        // Run again to re-establish connection (or run database.connection.connect())
+        await expect(database.listTables()).resolves.toBeDefined();
       })
     });
   }
