@@ -67,21 +67,33 @@ jobs:
         shell: bash
         run: |
           yarn run electron:serve > server.log 2>&1 &
-          SERVER_PID=$!
-          echo "Electron serve started with PID: $SERVER_PID"
-          sleep 15
-          echo "=== Server log after 15s wait ==="
-          cat server.log
-          echo "=== Checking if process is running ==="
-          ps aux | grep electron || true
-          yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
+          sleep 20
+          echo "=== Server log after 20s wait ==="
+          cat server.log || echo "No server log found"
+          echo "=== Checking running processes ==="
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            tasklist | findstr electron || echo "No electron processes found"
+          else
+            ps aux | grep -i electron || echo "No electron processes found"
+          fi
+          yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts || true
         env:
           ELECTRON_ENABLE_LOGGING: 1
 
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs-${{ matrix.os }}
+          path: server.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload test results
-        if: ${{ !cancelled() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}
           path: apps/studio/test-results
+          if-no-files-found: ignore
           retention-days: 7
