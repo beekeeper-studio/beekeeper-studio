@@ -88,8 +88,8 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
 
   protected isConnectionLostError(err: any): boolean {
     return (
-      err instanceof Error &&
-      err.message === "Connection terminated unexpectedly"
+      "code" in err &&
+      err.code === "ECONNRESET"
     );
   }
 

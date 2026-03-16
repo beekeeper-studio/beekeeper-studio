@@ -74,16 +74,6 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     database: "default",
     waitStrategy: Wait.forListeningPorts(),
   },
-  cassandra: {
-    service: "cassandra",
-    container: "test_ssh_cassandra",
-    host: "cassandra",
-    port: 9042,
-    user: "",
-    password: "",
-    database: "system",
-    waitMessage: "Starting listening for CQL clients",
-  },
 };
 
 export class SshEnvironment {

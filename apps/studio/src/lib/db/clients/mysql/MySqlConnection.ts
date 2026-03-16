@@ -84,7 +84,6 @@ export class MySqlConnection extends DatabaseConnection<mysql.PoolConnection> {
 
   protected isConnectionLostError(err: any): boolean {
     return (
-      err instanceof Error &&
       "code" in err &&
       err.code === "PROTOCOL_CONNECTION_LOST"
     );

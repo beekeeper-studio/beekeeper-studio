@@ -44,7 +44,10 @@ export type ConnectOptions = {
  * })
  *
  **/
-export abstract class DatabaseConnection<CLIENT> extends events.EventEmitter<{
+export abstract class DatabaseConnection<
+  Client,
+  GetClientOptions = void
+> extends events.EventEmitter<{
   "connection-lost": [];
   connected: [];
 }> {
@@ -63,7 +66,7 @@ export abstract class DatabaseConnection<CLIENT> extends events.EventEmitter<{
 
   protected abstract doDisconnect(): Promise<void>;
 
-  protected abstract doGetClient(): Promise<CLIENT>;
+  protected abstract doGetClient(options: GetClientOptions): Promise<Client>;
 
   protected abstract isConnectionLostError(err: any): boolean;
 
@@ -103,31 +106,23 @@ export abstract class DatabaseConnection<CLIENT> extends events.EventEmitter<{
     this.connected = false;
   }
 
-  async getClient(): Promise<CLIENT> {
+  async getClient(options: GetClientOptions): Promise<Client> {
     if (!this.connected) {
       await this.connect();
     }
 
     try {
-      return await this.doGetClient();
+      return await this.doGetClient(options);
     } catch (err) {
       await this.handleError(err);
     }
   }
 
   protected async handleError(err: any) {
-    console.log("handleError", {
-      isConnectionLostError: this.isConnectionLostError(err),
-    });
     if (this.isConnectionLostError(err)) {
-      console.log(1);
       await this.disconnect();
-      console.log(2);
       this.emit("connection-lost");
-      console.log(3);
-      return;
     }
-    console.log(4);
 
     throw err;
   }

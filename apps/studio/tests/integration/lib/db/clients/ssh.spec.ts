@@ -44,11 +44,6 @@ describe("SSH Tunnel Tests", () => {
         await expect(database.executeQuery(query)).resolves.toBeDefined();
       })
 
-      if (type === "cassandra") {
-        // Skip the next tests for Cassandra
-        return;
-      }
-
       it("should detect connection lost", async () => {
         const fn = jest.fn();
 

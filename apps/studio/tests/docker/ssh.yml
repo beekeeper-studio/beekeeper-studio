@@ -15,8 +15,6 @@ services:
       POSTGRES_USER: bks
       POSTGRES_PASSWORD: example
       POSTGRES_DB: test
-    ports:
-      - 5432
     networks:
       - internal
 
@@ -28,8 +26,6 @@ services:
       MYSQL_PASSWORD: example
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
-    ports:
-      - 3306
     networks:
       - internal
 
@@ -41,8 +37,6 @@ services:
       MYSQL_PASSWORD: example
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
-    ports:
-      - 3306
     networks:
       - internal
 
@@ -53,8 +47,6 @@ services:
       MSSQL_PID: Express
       MSSQL_SA_PASSWORD: Example1!
       ACCEPT_EULA: Y
-    ports:
-      - 1433
     networks:
       - internal
 
@@ -65,17 +57,6 @@ services:
       - CLICKHOUSE_USER=username
       - CLICKHOUSE_PASSWORD=password
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
-    ports:
-      - 8123
-    networks:
-      - internal
-
-  cassandra:
-    image: cassandra:latest
-    platform: linux/amd64
-    container_name: test_ssh_cassandra
-    ports:
-      - 9042
     networks:
       - internal
 

@@ -211,7 +211,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
 
   async query(queryText: string, tabId: number) {
     const hasReserved = this.reservedConnections.has(tabId);
-    const queryRequest: Request = hasReserved ? (this.reservedConnections.get(tabId) as Transaction).request() : this.connection.request();
+    const queryRequest: Request = hasReserved ? (this.reservedConnections.get(tabId) as Transaction).request() : await this.connection.request();
     log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
     return {
       execute: async(): Promise<NgQueryResult[]> => {
@@ -567,7 +567,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(this.connection.request(), query, chunkSize)
+      cursor: new SqlServerCursor(await this.connection.request(), query, chunkSize)
     }
   }
 
@@ -671,7 +671,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
       return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
-    return runQuery(options.connection ? options.connection : this.connection.request());
+    return runQuery(options.connection ? options.connection : await this.connection.request());
   }
 
   async truncateAllTables() {
@@ -889,7 +889,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
     return {
       totalRows,
       columns,
-      cursor: new SqlServerCursor(this.connection.request(), query, chunkSize),
+      cursor: new SqlServerCursor(await this.connection.request(), query, chunkSize),
     }
   }
 
@@ -1031,7 +1031,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   }
 
   async importStepZero(table: TableOrView): Promise<any> {
-    const transaction = this.connection.transaction();
+    const transaction = await this.connection.transaction();
 
     return {
       transaction,
@@ -1135,7 +1135,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = this.connection.transaction();
+    const conn = await this.connection.transaction();
     this.pushConnection(tabId, conn);
   }
 
