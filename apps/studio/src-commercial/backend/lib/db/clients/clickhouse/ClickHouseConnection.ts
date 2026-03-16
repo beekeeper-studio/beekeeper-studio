@@ -52,9 +52,11 @@ export class ClickHouseConnection extends DatabaseConnection<NodeClickHouseClien
   }
 
   protected isConnectionLostError(err: any): boolean {
-    if ("code" in err && err.code === "ECONNRESET") {
-      return true;
-    }
-    return false;
+    const stringifiedErr = String(err);
+    return (
+      ("code" in err && err.code === "ECONNRESET") ||
+      stringifiedErr.includes("Connection terminated unexpectedly") ||
+      stringifiedErr.includes("Database connection lost")
+    );
   }
 }
