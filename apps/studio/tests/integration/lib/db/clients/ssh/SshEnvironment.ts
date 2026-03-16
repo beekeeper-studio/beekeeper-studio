@@ -74,6 +74,16 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     database: "default",
     waitStrategy: Wait.forListeningPorts(),
   },
+  cockroachdb: {
+    service: "cockroachdb",
+    container: "test_ssh_cockroachdb",
+    host: "cockroachdb",
+    port: 26257,
+    user: "root",
+    password: "",
+    database: "defaultdb",
+    waitMessage: "CockroachDB node starting at",
+  },
 };
 
 export class SshEnvironment {
@@ -143,9 +153,6 @@ export class SshEnvironment {
         password: 'password',
       },
       trustServerCertificate: true,
-      cassandraOptions: {
-        localDataCenter: 'datacenter1',
-      },
     } as IDbConnectionServerConfig;
 
     const server = createServer(config);

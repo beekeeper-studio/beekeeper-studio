@@ -60,6 +60,13 @@ services:
     networks:
       - internal
 
+  cockroachdb:
+    image: cockroachdb/cockroach:v22.1.1
+    container_name: test_ssh_cockroachdb
+    command: start-single-node --insecure
+    networks:
+      - internal
+
   ssh:
     build:
       context: ./

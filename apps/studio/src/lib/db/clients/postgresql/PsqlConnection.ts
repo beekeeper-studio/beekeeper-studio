@@ -8,7 +8,7 @@ import { refreshTokenIfNeeded } from "@/lib/db/clients/utils";
 import BksConfig from "@/common/bksConfig";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
 // FIXME (azmi): use BksConfig
-import globals from '@/common/globals';
+import globals from "@/common/globals";
 import { HasPool } from "@/lib/db/clients/postgresql/types";
 
 const log = logRaw.scope("PsqlCnnection");
@@ -20,18 +20,22 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
   protected async doConnect(): Promise<void> {
     const dbConfig = await this.configDatabase(this.server, this.database);
 
-    log.info("CONFIG: ", dbConfig)
+    log.info("CONFIG: ", dbConfig);
 
     this.conn = {
-      pool: new pg.Pool(dbConfig)
+      pool: new pg.Pool(dbConfig),
     };
 
-    const test = await this.conn.pool.connect()
+    const test = await this.conn.pool.connect();
 
     if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
       this.interval = setInterval(async () => {
         try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 5432);
+          const newPassword = await refreshTokenIfNeeded(
+            this.server.config.iamAuthOptions,
+            this.server,
+            this.server.config.port || 5432
+          );
 
           const newPool = new pg.Pool({
             ...dbConfig,
@@ -46,9 +50,9 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
           }
           this.conn = { pool: newPool };
 
-          log.info('Token refreshed successfully and connection pool updated.');
+          log.info("Token refreshed successfully and connection pool updated.");
         } catch (err) {
-          log.error('Could not refresh token or update connection pool!', err);
+          log.error("Could not refresh token or update connection pool!", err);
         }
         // FIXME (azmi): use BksConfig
       }, globals.iamRefreshTime);
@@ -56,24 +60,24 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
 
     test.release();
 
-    this.conn.pool.on('acquire', (_client) => {
-      log.debug('Pool event: connection acquired')
-    })
+    this.conn.pool.on("acquire", (_client) => {
+      log.debug("Pool event: connection acquired");
+    });
 
-    this.conn.pool.on('error', (err, _client) => {
-      log.error("Pool event: connection error:", err.name, err.message)
-    })
+    this.conn.pool.on("error", (err, _client) => {
+      log.error("Pool event: connection error:", err.name, err.message);
+    });
 
     // @ts-ignore
-    this.conn.pool.on('release', (err, client) => {
-      log.debug('Pool event: connection released')
-    })
+    this.conn.pool.on("release", (err, client) => {
+      log.debug("Pool event: connection released");
+    });
 
-    log.debug('connected');
+    log.debug("connected");
   }
 
   protected async doDisconnect(): Promise<void> {
-    if (this.interval){
+    if (this.interval) {
       clearInterval(this.interval);
     }
     if (this.conn.pool.ended) {
@@ -88,16 +92,22 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
 
   protected isConnectionLostError(err: any): boolean {
     return (
-      "code" in err &&
-      err.code === "ECONNRESET"
+      ("code" in err && err.code === "ECONNRESET") ||
+      String(err).includes("Connection terminated unexpectedly")
     );
   }
 
-  protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
-
+  protected async configDatabase(
+    server: IDbConnectionServer,
+    database: { database: string }
+  ) {
     let iamToken = undefined;
-    if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+    if (server.config.iamAuthOptions?.iamAuthenticationEnabled) {
+      iamToken = await refreshTokenIfNeeded(
+        server.config?.iamAuthOptions,
+        server,
+        server.config.port || 5432
+      );
     }
 
     const config: PoolConfig = {
@@ -112,8 +122,8 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
 
     if (server.config.azureAuthOptions?.azureAuthEnabled) {
       const authService = new AzureAuthService();
-      config.user = server.config.user
-      return authService.configDB(server, config)
+      config.user = server.config.user;
+      return authService.configDB(server, config);
     }
 
     if (
@@ -121,20 +131,24 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
       // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
       // we only need SSL for iam authentication
       server.config?.iamAuthOptions?.iamAuthenticationEnabled
-    ){
+    ) {
       server.config.ssl = true;
     }
 
     return this.configurePool(config, server, null);
   }
 
-  protected configurePool(config: PoolConfig, server: IDbConnectionServer, tempUser: string) {
+  protected configurePool(
+    config: PoolConfig,
+    server: IDbConnectionServer,
+    tempUser: string
+  ) {
     if (tempUser) {
-      config.user = tempUser
+      config.user = tempUser;
     } else if (server.config.user) {
-      config.user = server.config.user
+      config.user = server.config.user;
     } else if (server.config.osUser) {
-      config.user = server.config.osUser
+      config.user = server.config.osUser;
     }
 
     if (server.config.socketPathEnabled) {
@@ -149,8 +163,7 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
     }
 
     if (server.config.ssl) {
-
-      config.ssl = {}
+      config.ssl = {};
 
       if (server.config.sslCaFile) {
         config.ssl.ca = readFileSync(server.config.sslCaFile);
@@ -171,9 +184,9 @@ export class PsqlConnection extends DatabaseConnection<PoolClient> {
         // if true, has to be from a public CA
         // Heroku certs are self-signed.
         // if you provide ca/cert/key files, it overrides this
-        config.ssl.rejectUnauthorized = false
+        config.ssl.rejectUnauthorized = false;
       } else {
-        config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
+        config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
       }
     }
     return config;

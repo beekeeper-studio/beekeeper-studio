@@ -46,7 +46,7 @@ export type ConnectOptions = {
  **/
 export abstract class DatabaseConnection<
   Client,
-  GetClientOptions = void
+  GetClientOptions = any
 > extends events.EventEmitter<{
   "connection-lost": [];
   connected: [];
@@ -106,7 +106,7 @@ export abstract class DatabaseConnection<
     this.connected = false;
   }
 
-  async getClient(options: GetClientOptions): Promise<Client> {
+  async getClient(options?: GetClientOptions): Promise<Client> {
     if (!this.connected) {
       await this.connect();
     }
@@ -128,7 +128,7 @@ export abstract class DatabaseConnection<
   }
 }
 
-export class NoopConnection extends DatabaseConnection<null> {
+export class NoopConnection extends DatabaseConnection<null, void> {
   protected async doConnect(): Promise<void> { }
   protected async doDisconnect(): Promise<void> { }
   protected async doGetClient(): Promise<null> {

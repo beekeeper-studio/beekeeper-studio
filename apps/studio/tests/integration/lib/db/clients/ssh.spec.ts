@@ -38,10 +38,7 @@ describe("SSH Tunnel Tests", () => {
       });
 
       it("should work", async () => {
-        const query = type === "cassandra"
-          ? "SELECT release_version FROM system.local"
-          : "SELECT 1";
-        await expect(database.executeQuery(query)).resolves.toBeDefined();
+        await expect(database.executeQuery("SELECT 1")).resolves.toBeDefined();
       })
 
       it("should detect connection lost", async () => {
