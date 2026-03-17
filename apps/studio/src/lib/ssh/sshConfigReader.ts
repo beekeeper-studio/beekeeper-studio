@@ -25,7 +25,6 @@ export function readSshConfig(host: string): SshConfigResult {
     const raw = fs.readFileSync(configPath, "utf-8");
     const config = SSHConfig.parse(raw);
     const result = config.compute(host, { ignoreCase: true });
-    console.log(result);
 
     if (result.hostname) {
       endResult.host = result.hostname as string;
