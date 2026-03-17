@@ -14319,6 +14319,11 @@ sqlstring@^2.3.2:
   resolved "https://registry.yarnpkg.com/sqlstring/-/sqlstring-2.3.3.tgz#2ddc21f03bce2c387ed60680e739922c65751d0c"
   integrity sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg==
 
+ssh-config@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-5.1.0.tgz#e77d8b769eeb0448e0bdeaf2d5e50e61b147fd3f"
+  integrity sha512-z4fFE4MgCja706ajwYOg6uptS3BIu0TWSUj08UWLuwNB/awVktEA5LyOgIAmgazyDjyTULhlL2GaBv37k4zoxQ==
+
 ssh-remote-port-forward@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/ssh-remote-port-forward/-/ssh-remote-port-forward-1.0.4.tgz#72b0c5df8ec27ca300c75805cc6b266dee07e298"

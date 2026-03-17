@@ -3,6 +3,7 @@ import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
+import { readSshConfig } from '@/lib/ssh/sshConfigReader'
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
@@ -18,6 +19,19 @@ export default {
       useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
+
+    if (ssh && config.sshMode === 'agent' && config.sshHost) {
+      const fileConfig = readSshConfig(config.sshHost.trim())
+      if (fileConfig.port && !config.sshPort) {
+        ssh.port = fileConfig.port
+      }
+      if (fileConfig.identityFile) {
+        ssh.privateKey = fileConfig.identityFile
+      }
+      if (fileConfig.host) {
+        ssh.host = fileConfig.host
+      }
+    }
 
     return {
       // @ts-ignore
