@@ -167,7 +167,7 @@ export class DbConnectionBase extends ApplicationEntity {
   sshHost: Nullable<string> = null
 
   @Column({ type: "int", nullable: true })
-  sshPort = 22
+  sshPort: Nullable<number> = null
 
   @Column({ type: "varchar", nullable: true })
   sshKeyfile: Nullable<string> = null
