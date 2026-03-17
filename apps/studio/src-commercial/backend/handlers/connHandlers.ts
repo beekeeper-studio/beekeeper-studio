@@ -187,7 +187,11 @@ export const ConnHandlers: IConnectionHandlers = {
       dbConfig: connection.server.config,
       dbName: connection.database.database
     });
-    state(sId).connectionAbortController = null
+    state(sId).connectionAbortController = null;
+
+    connection.connection.once('connection-lost', () => {
+      state(sId)?.port.postMessage({ type: 'conn/connection-lost' });
+    });
   },
 
   'conn/test': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) {

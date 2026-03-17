@@ -95,15 +95,6 @@ const mysqlErrors = {
 
 const knex = knexlib({ client: "mysql2" });
 
-function getRealError(conn, err) {
-  /* eslint no-underscore-dangle:0 */
-  if (conn && conn._protocol && conn._protocol._fatalError) {
-    logger().warn("Query error", err, conn._protocol._fatalError);
-    return conn._protocol._fatalError;
-  }
-  return err;
-}
-
 const binaryTypes = [
   mysql.Types.STRING, // aka CHAR or BINARY
   mysql.Types.VAR_STRING, // aka VARCHAR or VARBINARY
@@ -1076,37 +1067,19 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       params?: any;
     }
   ): Promise<ResultType | ResultType[]> {
-    const runQuery = (connection: mysql.PoolConnection) =>
-      new Promise<ResultType>((resolve, reject) => {
-        const params =
-          !options.params || _.isEmpty(options.params)
-            ? undefined
-            : options.params;
-        logger().info(`Running Query`, query, params);
-        connection.query(
-          {
-            sql: query,
-            values: params,
-            rowsAsArray: options.rowsAsArray,
-          },
-          (err, data, fields) => {
-            if (err && err.code === mysqlErrors.EMPTY_QUERY) {
-              return resolve({ rows: [], columns: [], arrayMode: undefined });
-            }
-
-            if (err) {
-              return reject(getRealError(connection, err));
-            }
-
-            logger().info(`Running Query Finished`);
-            resolve({ rows: data as any[], columns: fields, arrayMode: options.rowsAsArray });
-          }
-        );
+    if (options.connection) {
+      return await this.connection.runQuery(query, {
+        ...options,
+        connection: options.connection,
       });
-
-    return options.connection
-      ? runQuery(options.connection)
-      : this.runWithConnection(runQuery);
+    }
+    return await this.runWithConnection(
+      async (connection) =>
+        await this.connection.runQuery(query, {
+          ...options,
+          connection,
+        })
+    );
   }
 
   async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>, tabId?: number): Promise<T> {
@@ -1118,9 +1091,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       conn = await this.connection.getClient();
     }
 
-    conn.on("error", (error) => {
+    function handleError(error: any) {
       logger().error("Connection fatal error %j", error);
-    });
+    }
+
+    conn.on("error", handleError);
 
     try {
       return await run(conn);
@@ -1128,6 +1103,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       if (!hasReserved) {
         conn.release();
       }
+      conn.off("error", handleError);
     }
   }
 

@@ -2,6 +2,7 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { IDbConnectionDatabase } from "@/lib/db/types";
 import connectTunnel from "@/lib/db/tunnel";
 import rawLog from "@bksLogger";
+import events from "events";
 
 const log = rawLog.scope("BasicDatabaseClient");
 const logger = () => log;
@@ -44,18 +45,25 @@ export class DatabaseConnectionLostError extends Error {
  * // Disconnect if not used
  * await connection.disconnect();
  *
- * // Connection lost is indicated by DatabaseConnectionLostError being thrown
- * // e.g. from getClient() when a query fails due to a lost connection.
- * // Catch it to prompt the user to reconnect, then call `connection.connect()`.
+ * // Listen for connection lost
+ * connection.on("connection-lost", async () => {
+ *   // do something when connection is lost
+ *   // e.g. prompt user to reconnect, and then call `connection.connect()`
+ *   await connection.connect();
+ * })
  *
  **/
-export abstract class DatabaseConnection<Client, GetClientOptions = any> {
+export abstract class DatabaseConnection<
+  Client,
+  GetClientOptions = any
+> extends events.EventEmitter<{ "connection-lost": [] }> {
   private connected: boolean = false;
 
   protected readonly server: IDbConnectionServer;
   protected readonly database: IDbConnectionDatabase;
 
   constructor(options: ConnectionPoolOptions) {
+    super();
     this.server = options.server;
     this.database = options.database;
     this.handleError = this.handleError.bind(this);
@@ -116,12 +124,15 @@ export abstract class DatabaseConnection<Client, GetClientOptions = any> {
     }
   }
 
+  /** Process the error without rethrowing it */
   protected async handleError(err: any) {
     if (this.isConnectionLostError(err)) {
       await this.disconnect();
+      this.emit("connection-lost");
     }
   }
 
+  /** Process the error and rethrows it */
   private async processError(err: any) {
     await this.handleError(err);
 

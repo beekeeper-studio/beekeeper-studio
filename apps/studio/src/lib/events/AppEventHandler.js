@@ -33,6 +33,7 @@ export default class {
     this.forward(AppEvent.openPluginManager)
     this.forward(AppEvent.openKeyboardShortcuts)
     this.forward(AppEvent.pluginMenuClicked)
+    this.vueApp.$util.addListener('conn/connection-lost', this.connectionLost.bind(this))
   }
 
   forward(event) {
@@ -63,6 +64,11 @@ export default class {
 
   disconnect() {
     this.vueApp.$store.dispatch('disconnect')
+  }
+
+  connectionLost() {
+    this.vueApp.$emit(AppEvent.connectionLost)
+    this.vueApp.$noty.error('Database connection lost. Please try again.', { timeout: false })
   }
 
   settingsChanged() {
