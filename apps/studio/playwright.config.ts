@@ -8,6 +8,7 @@ export default defineConfig({
   },
   fullyParallel: true,
   workers: 3,
+  reporter: [['html', { outputFolder: 'test-results/html-report' }]],
   use: {
     actionTimeout: 10000,
     trace: 'on-first-retry',

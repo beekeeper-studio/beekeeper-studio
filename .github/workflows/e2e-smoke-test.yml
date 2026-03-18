@@ -48,52 +48,42 @@ jobs:
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
-      - name: Serve + Run Tests (Linux)
-        if: runner.os == 'Linux'
+      - name: Serve + Run Tests (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
-          yarn run electron:serve > server.log 2>&1 &
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
+            yarn run electron:serve > server.log 2>&1 &
+              sleep 15
+              cat server.log
+              yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
+            '
+          else
+            yarn run electron:serve > server.log 2>&1 &
             sleep 15
             cat server.log
             yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
-          '
+          fi
         env:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
           ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
 
-      - name: Serve + Run Tests (macOS/Windows)
-        if: runner.os != 'Linux'
+      - name: Build + Run Tests (Windows)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
-          yarn run electron:serve > server.log 2>&1 &
-          sleep 20
-          echo "=== Server log after 20s wait ==="
-          cat server.log || echo "No server log found"
-          echo "=== Checking running processes ==="
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            tasklist | findstr electron || echo "No electron processes found"
-          else
-            ps aux | grep -i electron || echo "No electron processes found"
-          fi
-          yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts || true
+          yarn lib:build
+          yarn workspace beekeeper-studio build
+          yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
         env:
           ELECTRON_ENABLE_LOGGING: 1
 
-      - name: Upload server logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-logs-${{ matrix.os }}
-          path: server.log
-          if-no-files-found: ignore
-          retention-days: 7
-
       - name: Upload test results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}
           path: apps/studio/test-results
-          if-no-files-found: ignore
           retention-days: 7
