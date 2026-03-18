@@ -46,6 +46,7 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
+      sshMode: 'userpass',
       sshHost: container.getHost(),
       sshPort: container.getMappedPort(2222),
       sshUsername: 'beekeeper',
