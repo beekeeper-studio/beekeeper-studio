@@ -121,7 +121,7 @@
                   </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
-                    v-model="sort
+                    v-model="sort"
                     :sort-options="sortables"
                   />
                 </div>
