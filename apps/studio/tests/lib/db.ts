@@ -32,6 +32,7 @@ import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_t
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
 type Queries = ConnectionTypeQueries & DialectQueries
+type ExpectedQueries = Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb' | 'sqlanywhere' | 'surrealdb' | 'redis' | 'trino'>
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -734,7 +735,7 @@ export class DBTestUtil {
       if (s === null) return null
       if (this.dbType === 'cockroachdb' && _.isNumber(s)) return `'${s.toString().replaceAll("'", "''")}':::STRING`
       if (this.dbType === 'cockroachdb') return `e'${s.replaceAll("'", "\\'")}':::STRING`
-      if (this.dialect === 'postgresql') return `'${s.toString().replaceAll("'", "''")}'::character varying`
+      if (['postgresql', 'greengage'].includes(this.dialect)) return `'${s.toString().replaceAll("'", "''")}'::character varying`
       if (this.dialect === 'sqlserver') return `('${s.toString().replaceAll("'", "''")}')`
       if (this.dialect === 'clickhouse') return `'${s.toString().replaceAll("'", "\\'")}'`
       if (/oracle|firebird|duckdb/.test(this.dialect)) return `'${s.toString().replaceAll("'", "''")}'`
@@ -1186,8 +1187,9 @@ export class DBTestUtil {
       }],
     }
     const query = generator.buildSql(schema)
-    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+    const expectedQueries: ExpectedQueries = {
       postgresql: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
+      greengage: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
       mysql: "create table `test_table` (`id` int unsigned not null, primary key (`id`)); alter table `test_table` modify column `id` int unsigned not null auto_increment",
       sqlite: "create table `test_table` (`id` integer not null primary key autoincrement, unique (`id`))",
       sqlserver: "CREATE TABLE [test_table] ([id] int identity(1,1) not null, CONSTRAINT [test_table_pkey] PRIMARY KEY ([id]))",
@@ -1211,8 +1213,9 @@ export class DBTestUtil {
       'public',
       ['*']
     )
-    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+    const expectedQueries: ExpectedQueries= {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
+      greengage: `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon\\'s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
       sqlite: "SELECT * FROM `jobs` WHERE `job_name` IN ('Programmer','Surgeon''s Assistant') ORDER BY `hourly_rate` ASC LIMIT 100 OFFSET 0",
       sqlserver: "SELECT * FROM [public].[jobs] WHERE [job_name] IN ('Programmer','Surgeon''s Assistant') ORDER BY [hourly_rate] ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
@@ -1238,8 +1241,15 @@ export class DBTestUtil {
       'public',
       ['*']
     )
-    const expectedFiltersQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+    const expectedFiltersQueries: ExpectedQueries = {
       postgresql: `
+        SELECT * FROM "public"."jobs"
+          WHERE "job_name" IN ('Programmer','Surgeon''s Assistant')
+          AND "hourly_rate" >= '41'
+          OR "hourly_rate" >= '31'
+        ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0
+      `,
+      greengage: `
         SELECT * FROM "public"."jobs"
           WHERE "job_name" IN ('Programmer','Surgeon''s Assistant')
           AND "hourly_rate" >= '41'
@@ -1321,8 +1331,9 @@ export class DBTestUtil {
       ['*']
     );
 
-    const expectedQueriesIsNull: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+    const expectedQueriesIsNull: ExpectedQueries = {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
+      greengage: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NULL LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
       sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NULL LIMIT 100 OFFSET 0",
       sqlserver: "SELECT * FROM [dbo].[jobs] WHERE [hourly_rate] IS NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
@@ -1347,8 +1358,9 @@ export class DBTestUtil {
       ['*']
     );
 
-    const expectedQueriesIsNotNull: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery'> = {
+    const expectedQueriesIsNotNull: ExpectedQueries = {
       postgresql: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
+      greengage: `SELECT * FROM "public"."jobs" WHERE "hourly_rate" IS NOT NULL LIMIT 100 OFFSET 0`,
       mysql: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
       sqlite: "SELECT * FROM `jobs` WHERE `hourly_rate` IS NOT NULL LIMIT 100 OFFSET 0",
       sqlserver: "SELECT * FROM [dbo].[jobs] WHERE [hourly_rate] IS NOT NULL ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY",
@@ -1450,7 +1462,7 @@ export class DBTestUtil {
       await this.knex.schema.raw(`INSERT INTO organizations FORMAT CSVWithNames\n${csvData}`)
       return
     }
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>( (resolve, reject) => {
       const fileStream = fs.createReadStream(fileLocation)
       const promises = []
       const useStep = !!this.dbType.match(/firebird|sqlserver/i)
@@ -1585,7 +1597,7 @@ export class DBTestUtil {
     // cassandra and big query don't allow import so no need to test!
     // oracle doesn't want to find the table, so it doesn't get to have nice things
     // clickhouse and duckdb have its own import command we don't support yet
-    if (['cassandra', 'bigquery', 'oracle', 'clickhouse', 'duckdb'].includes(this.dialect)) {
+    if (['cassandra', 'bigquery', 'oracle', 'clickhouse', 'duckdb', 'greengage'].includes(this.dialect)) {
       return expect.anything()
     }
 
@@ -1614,7 +1626,7 @@ export class DBTestUtil {
     // mysql was added to the list because a timeout was required to get the rollback number ot show
     // and that was causing connections to break in the tests which is a bad day ¯\_(ツ)_/¯
     let expectedLength = 0
-    if (['cassandra','bigquery', 'mysql', 'oracle', 'clickhouse', 'duckdb'].includes(this.dialect)) {
+    if (['cassandra','bigquery', 'mysql', 'oracle', 'clickhouse', 'duckdb', 'greengage'].includes(this.dialect)) {
       return expect.anything()
     }
 
@@ -1664,7 +1676,7 @@ export class DBTestUtil {
     ])
 
     result = await this.connection.selectTop('contains_binary', 3, 1, [{ field: ID, dir: 'ASC'}], [], this.defaultSchema)
-    let data = result.result[0][BIN]
+    const data = result.result[0][BIN]
     expect(ArrayBuffer.isView(data)).toBe(true)
     expect(Buffer.from(data)).toEqual(b`deadbeef`)
     expect(result.fields).toEqual([
@@ -1711,10 +1723,11 @@ export class DBTestUtil {
   }
 
   async getQueryForFilterTest() {
-    const expectedQueries: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb'> = {
+    const expectedQueries: ExpectedQueries = {
       sqlite: "`bananas` = 'pears'",
       mysql: "`bananas` = 'pears'",
       postgresql: `"bananas" = 'pears'`,
+      greengage: `"bananas" = 'pears'`,
       sqlserver: "[bananas] = 'pears'",
       oracle: `"bananas" = 'pears'`,
       firebird: `bananas = 'pears'`,
@@ -1840,7 +1853,7 @@ export class DBTestUtil {
     })
 
     if (!this.data.disabledFeatures.generatedColumns && !this.options.skipGeneratedColumns) {
-      const generatedDefs: Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'firebird' | 'clickhouse' | 'mongodb' | 'sqlanywhere'> = {
+      const generatedDefs: Omit<ExpectedQueries, 'firebird' | 'clickhouse'> = {
         sqlite: "TEXT GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         mysql: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
         tidb: "VARCHAR(255) AS (CONCAT(first_name, ' ', last_name)) STORED",
@@ -1848,6 +1861,7 @@ export class DBTestUtil {
         sqlserver: "AS (first_name + ' ' + last_name) PERSISTED",
         oracle: `VARCHAR2(511) GENERATED ALWAYS AS ("first_name" || ' ' || "last_name")`,
         postgresql: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
+        greengage: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         cockroachdb: "VARCHAR(511) GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED",
         duckdb: "AS (first_name || ' ' || last_name)"
       }
@@ -1974,6 +1988,16 @@ export class DBTestUtil {
           CONSTRAINT WITH_UNIQUE_CONSTRAINT_EMAIL_UQ UNIQUE (EMAIL)
         )
       `)
+    } else if (this.dbType === 'greengage') {
+      // Greenplum: PK and DISTRIBUTED BY must match; UNIQUE must include dist key.
+      // Use DISTRIBUTED REPLICATED so both PK and UNIQUE work.
+      await this.knex.schema.raw(`
+        CREATE TABLE with_unique_constraint (
+          id INTEGER PRIMARY KEY,
+          email VARCHAR(255) UNIQUE,
+          username VARCHAR(255) NOT NULL
+        ) DISTRIBUTED REPLICATED
+      `)
     } else {
       await this.knex.schema.createTable('with_unique_constraint', (table) => {
         table.integer('id').primary()
@@ -1992,6 +2016,16 @@ export class DBTestUtil {
             LAST_NAME VARCHAR(255),
             CONSTRAINT WITH_COMPOSITE_UNIQUE_NAME_UQ UNIQUE (FIRST_NAME, LAST_NAME)
           )
+        `)
+      } else if (this.dbType === 'greengage') {
+        // Greenplum: use REPLICATED so PK and composite UNIQUE both work
+        await this.knex.schema.raw(`
+          CREATE TABLE with_composite_unique (
+            id INTEGER PRIMARY KEY,
+            first_name VARCHAR(255),
+            last_name VARCHAR(255),
+            UNIQUE (first_name, last_name)
+          ) DISTRIBUTED REPLICATED
         `)
       } else {
         await this.knex.schema.createTable('with_composite_unique', (table) => {
