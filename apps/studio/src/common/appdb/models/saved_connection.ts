@@ -1,4 +1,4 @@
-import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToMany, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
@@ -9,6 +9,7 @@ import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, Co
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
+import { SshJumpHost } from './SshJumpHost'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
@@ -296,6 +297,11 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @ManyToOne(() => ConnectionFolder, (folder) => folder.connections, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'connectionFolderId' })
   connectionFolder?: ConnectionFolder
+
+  // Do NOT initialize this to [] - TypeORM does not allow array initializers on relations.
+  // See ConnectionFolder.ts for the same pattern.
+  @OneToMany(() => SshJumpHost, (jh) => jh.connection, { cascade: true, eager: false })
+  sshJumpHosts?: SshJumpHost[]
 
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null

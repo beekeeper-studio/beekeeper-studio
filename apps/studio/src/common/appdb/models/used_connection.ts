@@ -16,7 +16,6 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.host = other.host
       this.sshHost = other.sshHost
       this.sshPort = other.sshPort
-      this.sshBastionHost = other.sshBastionHost
       this.sshKeepaliveInterval = other.sshKeepaliveInterval
       this.ssl = other.ssl
       this.sslCaFile = other.sslCaFile

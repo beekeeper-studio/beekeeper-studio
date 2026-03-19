@@ -1,6 +1,8 @@
 version: '3'
-volumes:
-  psql:
+networks:
+  public:
+  private:
+    internal: true
 services:
   postgres:
     image: postgres:13
@@ -9,8 +11,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: integration_test
-    ports:
-      - 5432
+    networks:
+      - private
   ssh:
     build:
       context: ./
@@ -20,9 +22,30 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/London
-      - PASSWORD_ACCESS=true #optional
-      - USER_PASSWORD=password #optional
-      - USER_NAME=beekeeper #optional
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=beekeeper
       - SUDO_ACCESS=true
+    networks:
+      - public
+      - private
+    ports:
+      - 2222
+  jump1:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_jump1
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
+    networks:
+      - public
+      - private
     ports:
       - 2222

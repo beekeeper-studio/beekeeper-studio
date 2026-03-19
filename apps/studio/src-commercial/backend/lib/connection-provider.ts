@@ -1,12 +1,27 @@
 import { IGroupedUserSettings } from '@/common/appdb/models/user_setting'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
-import { IDbConnectionServerConfig } from '@/lib/db/types'
+import { IDbConnectionServerConfig, IDbConnectionServerSSHJumpHostConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
+
+    // Build jump hosts from the sshJumpHosts relation (ordered by position)
+    const jumpHosts: IDbConnectionServerSSHJumpHostConfig[] = (config.sshJumpHosts ?? [])
+      .slice()
+      .sort((a, b) => a.position - b.position)
+      .map((jh) => ({
+        host: jh.host,
+        port: jh.port,
+        username: jh.username,
+        password: jh.password,
+        privateKey: jh.keyfile,
+        passphrase: jh.keyfilePassword,
+        sshMode: jh.mode,
+      }))
+
     const ssh = config.sshEnabled ? {
       host: config.sshHost ? config.sshHost.trim() : null,
       port: config.sshPort,
@@ -14,9 +29,10 @@ export default {
       password: config.sshPassword,
       privateKey: config.sshKeyfile,
       passphrase: config.sshKeyfilePassword,
-      bastionHost: config.sshBastionHost,
-      useAgent: config.sshMode == 'agent',
+      bastionHost: null,
+      sshMode: config.sshMode,
       keepaliveInterval: config.sshKeepaliveInterval,
+      jumpHosts,
     } : null
 
     return {

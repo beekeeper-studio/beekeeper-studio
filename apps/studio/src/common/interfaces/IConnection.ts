@@ -1,5 +1,6 @@
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
+import { TransportSshJumpHost } from "../transport/TransportSshJumpHost"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
@@ -37,6 +38,7 @@ export interface ISimpleConnection extends Transport {
   sshPort: Nullable<number>
   sshKeyfile: Nullable<string>
   sshUsername: Nullable<string>
+  /** @deprecated Use sshJumpHosts instead */
   sshBastionHost: Nullable<string>
   sshKeepaliveInterval: Nullable<number>
   ssl: boolean
@@ -69,6 +71,8 @@ export interface IConnection extends ISimpleConnection {
   password: Nullable<string>
   sshPassword: Nullable<string>
   sshKeyfilePassword: Nullable<string>
+  /** Ordered list of SSH jump hosts (hop chain) */
+  sshJumpHosts?: TransportSshJumpHost[]
 }
 
 export interface ICloudSavedConnection extends IConnection {

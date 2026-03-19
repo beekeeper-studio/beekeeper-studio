@@ -83,6 +83,7 @@ import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_opti
 import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
+import createSshJumpHosts from './20260318_create_ssh_jump_hosts'
 
 import ultimate from './ultimate/index'
 
@@ -128,6 +129,7 @@ const realMigrations = [
   addIamAuthOptions, migrateRedshiftToIamOptions, addEditorFontSize,
   createConnectionFolders, createQueryFolders,
   addPositionToItems,
+  createSshJumpHosts,
 ]
 
 // fixtures require the models

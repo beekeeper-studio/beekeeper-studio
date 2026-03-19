@@ -5,6 +5,7 @@ import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
+import pluralize from 'pluralize'
 
 export interface ContextOption {
   name: string,
@@ -80,7 +81,10 @@ export const BeekeeperPlugin = {
 
       if (config.sshHost) {
         result += ` via ${config.sshUsername}@${config.sshHost}`
-        if (config.sshBastionHost) result += ` jump(${config.sshBastionHost})`
+        const jumpCount = config.sshJumpHosts?.length
+        if (jumpCount > 0) {
+          result += ` (${jumpCount} ${pluralize('jump', jumpCount)})`
+        }
       }
       return result
     }

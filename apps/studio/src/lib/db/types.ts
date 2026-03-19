@@ -1,5 +1,6 @@
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { SshMode } from '@/common/interfaces/IConnection';
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
@@ -174,6 +175,16 @@ export interface IDbConnectionDatabase {
   namespace: string
 }
 
+export interface IDbConnectionServerSSHJumpHostConfig {
+  host: string
+  port: number
+  username: Nullable<string>
+  password: Nullable<string>
+  privateKey: Nullable<string>
+  passphrase: Nullable<string>
+  sshMode: SshMode
+}
+
 export interface IDbConnectionServerSSHConfig {
   host: Nullable<string>
   port: number
@@ -181,9 +192,11 @@ export interface IDbConnectionServerSSHConfig {
   password: Nullable<string>
   privateKey: Nullable<string>
   passphrase: Nullable<string>
+  /** @deprecated Use jumpHosts instead */
   bastionHost: Nullable<string>
-  keepaliveInterval: number
-  useAgent: boolean
+  keepaliveInterval: Nullable<number>
+  sshMode: SshMode
+  jumpHosts: IDbConnectionServerSSHJumpHostConfig[]
 }
 
 export interface IDbConnectionServerConfig {

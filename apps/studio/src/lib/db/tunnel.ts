@@ -2,7 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 import rawLog from "@bksLogger";
-import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
+import { SshOptions, Options, SSHConnection, BaseSshOptions } from '../../vendor/node-ssh-forward/index'
 import appConfig from '@/common/platform_info'
 import pf from 'portfinder'
 
@@ -27,11 +27,39 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         // So we need to make sure we're consistent with what hostname we return
         // localhost can be 127.0.0.1:port (ipv4), or :::port (ipv6) by default, depending.
 
+        // Build jump host options, reading private key files for keyfile-auth hops
+        const jumpHosts: SshOptions[] = (config.ssh.jumpHosts ?? []).map((jh) => {
+          const baseOptions: BaseSshOptions = {
+            host: jh.host,
+            port: jh.port,
+            username: jh.username,
+          };
+
+          if (jh.sshMode === 'keyfile') {
+            return {
+              ...baseOptions,
+              sshMode: jh.sshMode,
+              privateKey: jh.privateKey ? fs.readFileSync(path.resolve(resolveHomePathToAbsolute(jh.privateKey))) : undefined,
+              passphrase: jh.passphrase,
+            }
+          } else if (jh.sshMode === 'userpass') {
+            return {
+              ...baseOptions,
+              sshMode: jh.sshMode,
+              password: jh.password,
+            };
+          }
+          return {
+            ...baseOptions,
+            sshMode: jh.sshMode,
+            agentSocket: appConfig.sshAuthSock,
+          };
+        })
+
         const sshConfig: Options = {
           endHost: config.ssh.host || '',
           endPort: config.ssh.port,
-          bastionHost: config.ssh.bastionHost || '',
-          agentForward: config.ssh.useAgent,
+          sshMode: config.ssh.sshMode,
           passphrase: config.ssh.passphrase || undefined,
           username: config.ssh.user || undefined,
           password: config.ssh.password || undefined,
@@ -39,14 +67,15 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           noReadline: true,
           keepaliveInterval: config.ssh.keepaliveInterval,
           // TODO: Move this to configuration defaults in the ini file
-          bindHost: '127.0.0.1'
+          bindHost: '127.0.0.1',
+          jumpHosts,
         }
 
-        if (config.ssh.useAgent && appConfig.sshAuthSock) {
+        if (config.ssh.sshMode === 'agent' && appConfig.sshAuthSock) {
           sshConfig.agentSocket = appConfig.sshAuthSock
         }
 
-        if (config.ssh.privateKey && !config.ssh.useAgent) {
+        if (config.ssh.sshMode === 'keyfile' && config.ssh.privateKey) {
           sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
         } else {
           sshConfig.privateKey = undefined

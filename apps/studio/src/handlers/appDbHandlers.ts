@@ -13,6 +13,8 @@ import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
 import { QueryFolder } from "@/common/appdb/models/QueryFolder";
 import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
+import { SshJumpHost } from "@/common/appdb/models/SshJumpHost";
+import { TransportSshJumpHost } from "@/common/transport/TransportSshJumpHost";
 import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
@@ -174,6 +176,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
+  ...handlersFor<TransportSshJumpHost>('jumpHost', SshJumpHost),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

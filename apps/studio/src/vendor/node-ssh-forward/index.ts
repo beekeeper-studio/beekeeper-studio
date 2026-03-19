@@ -16,19 +16,46 @@
  */
 
 import * as path from 'path'
-import { Client } from 'ssh2'
+import { Client, ConnectConfig } from 'ssh2'
 import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
 import rawLog from '@bksLogger'
 
 import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
+import { SshMode } from '@/common/interfaces/IConnection'
+import { SshMode } from '@/lib/db/types'
+
+export type BaseSshOptions = {
+  host: string;
+  port?: number;
+  username?: string;
+};
+
+export type PasswordAuthSshOptions = BaseSshOptions & {
+  sshMode: 'userpass';
+  password?: string;
+};
+
+export type KeyFileAuthSshOptions = BaseSshOptions & {
+  sshMode: 'keyfile';
+  privateKey?: string | Buffer;
+  passphrase?: string;
+};
+
+export type AgentAuthSshOptions = BaseSshOptions & {
+  sshMode: 'agent';
+  agentSocket?: string;
+}
+
+export type SshOptions = PasswordAuthSshOptions | KeyFileAuthSshOptions | AgentAuthSshOptions;
 
 interface Options {
   username?: string
   password?: string
   privateKey?: string | Buffer
-  agentForward?: boolean
+  sshMode?: SshMode
+  /** @deprecated Use jumpHosts instead */
   bastionHost?: string
   passphrase?: string
   endPort?: number
@@ -38,6 +65,7 @@ interface Options {
   noReadline?: boolean
   keepaliveInterval?: number
   bindHost?: string
+  jumpHosts?: SshOptions[]
 }
 
 interface ForwardingOptions {
@@ -65,7 +93,7 @@ class SSHConnection {
     if (!options.endPort) {
       this.options.endPort = 22
     }
-    if (!options.privateKey && !options.agentForward && !options.skipAutoPrivateKey) {
+    if (!options.privateKey && options.sshMode !== 'agent' && !options.skipAutoPrivateKey) {
       const defaultFilePath = path.join(os.homedir(), '.ssh', 'id_rsa')
       if (fs.existsSync(defaultFilePath)) {
         this.options.privateKey = fs.readFileSync(defaultFilePath)
@@ -135,26 +163,113 @@ class SSHConnection {
   private async establish() {
     let connection: Client
     this.debug("establish with options", this.options)
-    if (this.options.bastionHost) {
-      connection = await this.connectViaBastion(this.options.bastionHost)
+
+    // Collect the ordered list of jump hosts.
+    // Support both the new jumpHosts array and the legacy bastionHost string.
+    const jumpHosts: SshOptions[] = this.options.jumpHosts && this.options.jumpHosts.length > 0
+      ? this.options.jumpHosts
+      : (this.options.bastionHost ? [{ host: this.options.bastionHost }] : [])
+
+    if (jumpHosts.length > 0) {
+      connection = await this.connectViaBastion(jumpHosts)
     } else {
       connection = await this.connect(this.options.endHost)
     }
     return connection
   }
 
-  private async connectViaBastion(bastionHost: string) {
-    this.debug('Connecting to bastion host "%s"', bastionHost)
-    const connectionToBastion = await this.connect(bastionHost)
-    return new Promise<Client>((resolve, reject) => {
-      connectionToBastion.forwardOut('127.0.0.1', 22, this.options.endHost, this.options.endPort || 22, async (err, stream) => {
-        if (err) {
-          return reject(err)
-        }
-        this.connect(this.options.endHost, this.options.endPort, stream)
-          .catch(reject)
-          .then(resolve);
+  /**
+   * Chain through jump hosts:
+   *   jumpHosts[0] → jumpHosts[1] → ... → endHost
+   *
+   * Each hop opens a TCP-forward stream through the previous connection, which
+   * becomes the `sock` for the next ssh2 Client.
+   */
+  private async connectViaBastion(jumpHosts: SshOptions[]): Promise<Client> {
+    let stream: NodeJS.ReadableStream | undefined = undefined
+    let prevConnection: Client | undefined = undefined
+
+    for (let i = 0; i < jumpHosts.length; i++) {
+      const hop = jumpHosts[i]
+      const nextHost = i + 1 < jumpHosts.length ? jumpHosts[i + 1].host : this.options.endHost
+      const nextPort = i + 1 < jumpHosts.length ? (jumpHosts[i + 1].port ?? 22) : (this.options.endPort ?? 22)
+
+      this.debug('Connecting to jump host [%d] "%s"', i, hop.host)
+      const conn = await this.connectWithHopOptions(hop, stream)
+      prevConnection = conn
+
+      // Open a TCP forward to the next hop through this connection
+      stream = await this.openForwardStream(conn, nextHost, nextPort)
+    }
+
+    // Final connection to the real endHost, through the stream from the last jump
+    this.debug('Connecting to final endHost "%s" through jump chain', this.options.endHost)
+    return await this.connect(this.options.endHost, stream)
+  }
+
+  /**
+   * Open a forwardOut stream from the given connection to (host, port).
+   * Returns the duplex stream that will be used as the `sock` for the next hop.
+   */
+  private openForwardStream(connection: Client, toHost: string, toPort: number): Promise<NodeJS.ReadableStream> {
+    return new Promise((resolve, reject) => {
+      connection.forwardOut('127.0.0.1', 0, toHost, toPort, (err, stream) => {
+        if (err) return reject(err)
+        resolve(stream)
       })
+    })
+  }
+
+  /**
+   * Connect to a single jump host using that hop's own credentials.
+   * Falls back to the global options fields when hop-specific values are absent.
+   */
+  private async connectWithHopOptions(hop: SshOptions, sock?: NodeJS.ReadableStream): Promise<Client> {
+    const connection = new Client()
+    return new Promise<Client>((resolve, reject) => {
+      const options: ConnectConfig = {
+        host: hop.host,
+        port: hop.port ?? 22,
+        username: hop.username,
+      }
+
+      if (this.options.keepaliveInterval) {
+        options.keepaliveInterval = this.options.keepaliveInterval * 1000
+      }
+
+      if (hop.sshMode === 'userpass') {
+        options.password = hop.password
+      } else if (hop.sshMode === 'keyfile') {
+        options.privateKey = hop.privateKey
+        options.passphrase = hop.passphrase
+      } else {
+        // agent
+        options.agentForward = true
+        let agentDefault: any = process.env['SSH_AUTH_SOCK']
+        if (this.isWindows && agentDefault == null) {
+          agentDefault = ElectronFriendlyPageantAgent
+        }
+        const agentSock = hop.agentSocket ? hop.agentSocket : agentDefault
+        if (agentSock == null) {
+          return reject(new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable'))
+        }
+        options.agent = agentSock
+      }
+
+      if (sock) {
+        options.sock = sock as any
+      }
+
+      connection.on('ready', () => {
+        this.connections.push(connection)
+        resolve(connection)
+      })
+      connection.on('error', reject)
+      try {
+        connection.connect(options)
+      } catch (err) {
+        reject(err)
+      }
     })
   }
 
@@ -163,7 +278,7 @@ class SSHConnection {
     const connection = new Client()
     return new Promise<Client>((resolve, reject) => {
 
-      const options = {
+      const options: ConnectConfig = {
         host,
         port: this.options.endPort,
         username: this.options.username,
@@ -181,7 +296,7 @@ class SSHConnection {
         this.debug('(localized) options.keepaliveInterval: ' + options.keepaliveInterval + 'milliseconds')
       }
 
-      if (this.options.agentForward) {
+      if (this.options.sshMode === 'agent') {
         options['agentForward'] = true
 
         // see https://github.com/mscdex/ssh2#client for agents on Windows

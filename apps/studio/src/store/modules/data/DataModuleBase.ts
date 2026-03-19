@@ -133,12 +133,20 @@ export function mutationsFor<T extends HasId>(obj: any = {}, sortBy?: SortSpec) 
   }
 }
 
-export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}, findOneSelects: any = {}) {
+/**
+ * @param extraOptions.relations - TypeORM relation names to eagerly load alongside
+ *   the entity in all read operations (load, reload, findOne). For example,
+ *   `['sshJumpHosts']` will include the sshJumpHosts relation on every fetched item.
+ */
+export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}, findOneSelects: any = {}, extraOptions: { relations?: string[] } = {}) {
+  const relations = extraOptions.relations ?? []
   return {
     async load(context) {
       context.commit("error", null);
       await safely(context, async () => {
-        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
+        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, {
+          options: { ...loadOptions, relations },
+        });
         if (context.rootState.workspaceId === LocalWorkspace.id) {
           context.commit('upsert', items);
         }
@@ -181,7 +189,9 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
     },
 
     async reload(context, id: number) {
-      const item = await Vue.prototype.$util.send(`appdb/${type}/findOneBy`, { options: { id } })
+      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, {
+        options: { where: { id }, relations }
+      })
       if (item) {
         context.commit('upsert', item)
         return item.id
@@ -196,7 +206,8 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
           where: {
             id
           },
-          select: findOneSelects
+          select: findOneSelects,
+          relations,
         }
       });
       return item;

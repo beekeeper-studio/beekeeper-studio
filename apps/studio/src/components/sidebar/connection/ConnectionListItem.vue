@@ -19,9 +19,9 @@
         <div class="subtitle">
           <span
             class="bastion"
-            v-if="this.config.sshBastionHost && !privacyMode"
+            v-if="this.config.sshJumpHosts?.length > 0 && !privacyMode"
           >
-            <span class="truncate">{{ this.config.sshBastionHost }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.sshJumpHosts.length }} {{ pluralize('jump', this.config.sshJumpHosts.length) }}</span>&nbsp;>&nbsp;
           </span>
           <span
             class="ssh"
@@ -163,6 +163,9 @@ export default {
     },
   },
   methods: {
+    pluralize(word, amount, flag) {
+      return window.main.pluralize(word, amount, flag)
+    },
     showContextMenu(event) {
       const ultimateCheck = this.$store.getters.isUltimate
         ? true
