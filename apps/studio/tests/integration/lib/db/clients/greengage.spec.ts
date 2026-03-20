@@ -1,73 +1,91 @@
-import fs from 'fs'
-import path from 'path'
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
 import { DBTestUtil } from '@tests/lib/db'
 import { runCommonTests } from './all'
 
 const greengageTimeout = 600_000
-const composeDir = path.resolve(__dirname, '../../../../docker')
 
-describe('Greengage client (PostgreSQL-compatible)', () => {
-  jest.setTimeout(greengageTimeout)
+const GREENGAGE_VERSIONS = ['6', '7'] as const
+type GreengageVersion = typeof GREENGAGE_VERSIONS[number]
 
-  let environment: Awaited<ReturnType<DockerComposeEnvironment['up']>>
-  let util: DBTestUtil
+const VERSION_CONFIG: Record<GreengageVersion, { composeFile: string; serviceName: string; port: number }> = {
+  '6': { composeFile: 'greengage6.yml', serviceName: 'test_greengage6', port: 6000 },
+  '7': { composeFile: 'greengage7.yml', serviceName: 'test_greengage7', port: 7000 },
+}
 
-  beforeAll(async () => {
-    const composeFile = path.join(composeDir, 'greengage7.yml')
-    if (!fs.existsSync(composeFile)) {
-      throw new Error(`Greengage compose not found at ${composeFile} (resolved from __dirname: ${__dirname})`)
-    }
-    // Wait for gpstop -u (reload after pg_hba) last step before cluster is ready.
-    // Init (install, make_cluster) takes 5–10 min; default wait timeout is 60s.
-    environment = await new DockerComposeEnvironment(composeDir, 'greengage7.yml')
-      .withWaitStrategy(
-        'test_greengage7',
-        Wait.forLogMessage(/Signalling all postmaster processes to reload/, 1)
-      )
-      .withStartupTimeout(greengageTimeout)
-      .up()
+const pgHbaCmd = [
+  'bash', '-c',
+  "TRUST='host all all 0.0.0.0/0 trust'; " +
+  "for hba in $(find / -path '*/gpdemo/datadirs/*' -name pg_hba.conf 2>/dev/null); do " +
+  '[ -f "$hba" ] && { echo "$TRUST"; cat "$hba"; } > "${hba}.new" && mv "${hba}.new" "$hba" && chown gpadmin:gpadmin "$hba"; ' +
+  "done; " +
+  "su - gpadmin -c 'source /usr/local/greengage-db-devel/greengage_path.sh 2>/dev/null; cd /gpdb_src/gpAux/gpdemo 2>/dev/null && source gpdemo-env.sh 2>/dev/null && gpstop -u'",
+]
 
-    const container = environment.getContainer('test_greengage7')
-    const host = container.getHost()
-    const port = container.getMappedPort(7000)
+function testWith(version: GreengageVersion) {
+  const { composeFile, serviceName, port } = VERSION_CONFIG[version]
 
-    // Config shaped like PostgresTestDriver for compatibility with createServer/knex
-    const config = {
-      client: 'greengage' as const,
-      host,
-      port,
-      user: 'gpadmin',
-      password: '', // gpdemo uses trust auth
-      osUser: 'foo',
-      ssh: null,
-      sslCaFile: null,
-      sslCertFile: null,
-      sslKeyFile: null,
-      sslRejectUnauthorized: false,
-      ssl: false,
-      domain: null,
-      socketPath: null,
-      socketPathEnabled: false,
-      readOnlyMode: false,
-    }
+  describe(`Greengage client v${version} (PostgreSQL-compatible)`, () => {
+    jest.setTimeout(greengageTimeout)
 
-    util = new DBTestUtil(config, 'postgres', {
-      dialect: 'greengage',
-      defaultSchema: 'public',
-      knexConnectionOptions: { host, port },
+    let environment: Awaited<ReturnType<DockerComposeEnvironment['up']>>
+    let util: DBTestUtil
+
+    beforeAll(async () => {
+      environment = await new DockerComposeEnvironment('tests/docker', composeFile)
+        .withWaitStrategy(
+          serviceName,
+          Wait.forLogMessage(/Signalling all postmaster processes to reload/, 1)
+        )
+        .withStartupTimeout(greengageTimeout)
+        .up()
+
+      const container = environment.getContainer(serviceName)
+      // Apply pg_hba.conf trust rule for external connections (Docker host IP)
+      await container.exec(pgHbaCmd)
+
+      const host = container.getHost()
+      const mappedPort = container.getMappedPort(port)
+
+      const config = {
+        client: 'greengage' as const,
+        host,
+        port: mappedPort,
+        user: 'gpadmin',
+        password: '',
+        osUser: 'foo',
+        ssh: null,
+        sslCaFile: null,
+        sslCertFile: null,
+        sslKeyFile: null,
+        sslRejectUnauthorized: false,
+        ssl: false,
+        domain: null,
+        socketPath: null,
+        socketPathEnabled: false,
+        readOnlyMode: false,
+      }
+
+      util = new DBTestUtil(config, 'postgres', {
+        dialect: 'greengage',
+        defaultSchema: 'public',
+        knexConnectionOptions: { host, port: mappedPort },
+        // Greengage v6 (Greenplum 6 / PostgreSQL 9.4) does not support GENERATED columns (added in PG 12)
+        ...(version === '6' && { skipGeneratedColumns: true }),
+      })
+      await util.setupdb()
     })
-    await util.setupdb()
-  })
 
-  afterAll(async () => {
-    await util.disconnect()
-    if (environment) {
-      await environment.stop()
-    }
-  })
+    afterAll(async () => {
+      await util.disconnect()
+      if (environment) {
+        await environment.stop()
+      }
+    })
 
-  describe('Common tests (postgres syntax)', () => {
-    runCommonTests(() => util)
+    describe('Common tests (postgres syntax)', () => {
+      runCommonTests(() => util)
+    })
   })
-})
+}
+
+GREENGAGE_VERSIONS.forEach((v) => testWith(v))
