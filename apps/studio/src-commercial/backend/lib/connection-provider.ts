@@ -22,7 +22,7 @@ export default {
 
     if (ssh && config.sshMode === 'agent' && config.sshHost) {
       const fileConfig = readSshConfig(config.sshHost.trim())
-      if (fileConfig.port && !config.sshPort) {
+      if (fileConfig.port && !ssh.port) {
         ssh.port = fileConfig.port
       }
       if (fileConfig.identityFile) {
@@ -30,6 +30,9 @@ export default {
       }
       if (fileConfig.host) {
         ssh.host = fileConfig.host
+      }
+      if (fileConfig.user && !ssh.user) {
+        ssh.user = fileConfig.user
       }
     }
 
