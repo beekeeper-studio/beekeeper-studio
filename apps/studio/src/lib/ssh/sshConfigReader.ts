@@ -12,6 +12,7 @@ export interface SshConfigResult {
   host: string;
   port?: number;
   identityFile?: string;
+  user?: string;
 }
 
 export function readSshConfig(host: string): SshConfigResult {
@@ -32,11 +33,12 @@ export function readSshConfig(host: string): SshConfigResult {
     if (result.port) {
       endResult.port = Number(result.port);
     }
-    if (result.identityFile?.[0]) {
+    if (result.identityfile?.[0]) {
       endResult.identityFile = resolveHomePathToAbsolute(
-        result.identityFile[0]
+        result.identityfile[0]
       );
     }
+    endResult.user = result.user as string | undefined;
   } catch (err) {
     log.error("Failed to read or parse ~/.ssh/config:", err);
   }
