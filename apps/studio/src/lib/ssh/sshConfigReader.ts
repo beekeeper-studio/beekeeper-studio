@@ -15,9 +15,9 @@ export interface SshConfigResult {
   user?: string;
 }
 
-export function readSshConfig(host: string): SshConfigResult {
+export function readSshConfig(host: string, configPath?: string): SshConfigResult {
   const endResult: SshConfigResult = { host };
-  const configPath = path.join(os.homedir(), ".ssh", "config");
+  configPath = configPath ?? path.join(os.homedir(), ".ssh", "config");
   if (!fs.existsSync(configPath)) {
     return endResult;
   }
