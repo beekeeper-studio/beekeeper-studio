@@ -182,9 +182,11 @@ export default Vue.extend({
 
         const match = this.url.match(/open-query\/([^/]+)\/([^/]+)/)
         if (match) {
+          log.info('open shared query', this.url)
           const [, db, query] = match
           await this.$store.dispatch('openSharedQuery', { db, query })
         } else {
+          log.info('open url', this.url)
           await this.$store.dispatch('openUrl', { url: this.url, auth })
         }
       } catch (error) {
