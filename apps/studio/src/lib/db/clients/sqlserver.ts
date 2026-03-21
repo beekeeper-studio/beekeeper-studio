@@ -1258,6 +1258,26 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       return config;
     }
 
+    if (server.config.windowsAuthEnabled) {
+      config.port = Number(server.config.port);
+
+      if (server.config.domain) {
+        config.domain = server.config.domain;
+      }
+
+      if (server.sshTunnel) {
+        config.server = server.config.localHost;
+        config.port = server.config.localPort;
+      }
+
+      config.options = {
+        trustServerCertificate: server.config.trustServerCertificate,
+        trustedConnection: true
+      };
+
+      return config;
+    }
+
     config.user = server.config.user;
     config.password = server.config.password;
     config.port = Number(server.config.port);
