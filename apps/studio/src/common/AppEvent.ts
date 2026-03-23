@@ -11,6 +11,7 @@ export enum AppEvent {
   newCustomTab = 'nct',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
+  reconnect = 'rc',
   disconnect = 'dc',
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',

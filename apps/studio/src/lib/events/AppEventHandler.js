@@ -14,6 +14,7 @@ export default class {
 
   registerCallbacks() {
     window.main.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
+    window.main.on(AppEvent.reconnect, this.reconnect.bind(this))
     window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
@@ -61,6 +62,10 @@ export default class {
     }
     this.vueApp.$noty.success("Beekeeper's Database has been added to your Saved Connections")
     this.vueApp.$store.dispatch('data/connections/load')
+  }
+
+  reconnect() {
+    this.vueApp.$store.dispatch('reconnect')
   }
 
   disconnect() {
