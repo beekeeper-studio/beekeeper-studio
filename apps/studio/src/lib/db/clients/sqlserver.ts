@@ -1072,7 +1072,50 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     await super.connect();
 
     this.dbConfig = await this.configDatabase(this.server, this.database, signal)
-    this.pool = await new ConnectionPool(this.dbConfig).connect();
+
+    if (this.server.config.windowsAuthEnabled) {
+      if (process.platform !== 'win32') {
+        throw new Error('Windows Authentication is only supported on Windows.')
+      }
+      // msnodesqlv8 is a Windows-only optional native module that supports
+      // SSPI passthrough (true Windows Integrated Authentication).
+      // The default mssql/tedious driver cannot do this.
+      let sqlWindows: any
+      try {
+        sqlWindows = require('mssql/msnodesqlv8')
+      } catch {
+        // msnodesqlv8 is bundled with Beekeeper Studio on Windows. This error means
+        // the native binary failed to load. Try reinstalling the application.
+        throw new Error('Windows Authentication is not available: the msnodesqlv8 native module could not be loaded. Try reinstalling Beekeeper Studio.')
+      }
+
+      // Probe for a working ODBC driver with msnodesqlv8 directly.
+      const { driver, legacy } = await this.findWindowsAuthDriver()
+
+      if (legacy) {
+        log.warn('Windows Authentication is using the legacy "{SQL Server}" ODBC driver, ' +
+          'which does not support TLS 1.2. For improved security, install ' +
+          '"ODBC Driver 17 for SQL Server" or "ODBC Driver 18 for SQL Server" from Microsoft.')
+      }
+
+      // Use beforeConnect to patch mssql v11's connection string before msnodesqlv8
+      // uses it. mssql v11's buildConnectionString ignores driver config property
+      // defaulting to "SQL Server Native Client 11.0"), passes
+      // Trusted_Connection as a boolean (should be yes/no), and doesn't include TrustServerCertificate.
+      // beforeConnect also preserves mssql's instance name and SSH tunnel server handling.
+      const trustCert = this.dbConfig.options?.trustServerCertificate
+      this.pool = await new sqlWindows.ConnectionPool({
+        ...this.dbConfig,
+        beforeConnect: (cfg: any) => {
+          cfg.conn_str = cfg.conn_str
+            .replace(/Driver=[^;]*/i, `Driver={${driver}}`)
+            .replace(/Trusted_Connection=[^;]*/i, 'Trusted_Connection=yes')
+          if (trustCert) cfg.conn_str += ';TrustServerCertificate=yes'
+        }
+      }).connect()
+    } else {
+      this.pool = await new ConnectionPool(this.dbConfig).connect()
+    }
 
     this.pool.on('error', (err) => {
       if (err instanceof ConnectionError) {
@@ -1232,6 +1275,54 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
+  // I couldn't get mssql to surface real error messages when Windows Auth connections
+  // fail. It wraps native msnodesqlv8 errors into '[object Object]' strings. So we
+  // probe directly via msnodesqlv8 first, which gives actionable errors (wrong server,
+  // auth failure, etc.) and also tells us which ODBC driver is installed.
+  private async findWindowsAuthDriver(): Promise<{ driver: string, legacy: boolean }> {
+    const rawSql = require('msnodesqlv8')
+    const server = this.dbConfig.server
+    const port = this.dbConfig.port || 1433
+    const database = this.dbConfig.database || 'master'
+    const trustCert = this.dbConfig.options?.trustServerCertificate ? 'yes' : 'no'
+
+    // Prefer modern ODBC drivers (TLS 1.2 support). Fall back to the legacy
+    // built-in Windows driver ({SQL Server} / sqlsrv32.dll) as a last resort.
+    // It works for basic connectivity but does not support TLS 1.2.
+    const candidates = [
+      { driver: 'ODBC Driver 17 for SQL Server', legacy: false },
+      { driver: 'ODBC Driver 18 for SQL Server', legacy: false },
+      { driver: 'SQL Server', legacy: true },
+    ]
+
+    for (const candidate of candidates) {
+      const connStr = `Driver={${candidate.driver}};Server=${server},${port};Database=${database};Trusted_Connection=yes;TrustServerCertificate=${trustCert};`
+      const result: { ok: boolean, error?: string } = await new Promise((resolve) => {
+        rawSql.open(connStr, (err: any, conn: any) => {
+          if (err) {
+            const msgs = (Array.isArray(err) ? err : [err])
+              .map((e: any) => (typeof e?.message === 'string' ? e.message : String(e)))
+              .filter(Boolean).join('; ')
+            resolve({ ok: false, error: msgs })
+          } else {
+            conn.close(() => resolve({ ok: true }))
+          }
+        })
+      })
+
+      if (result.ok) return candidate
+
+      const isDriverMissing = result.error?.includes('Data source name not found') || result.error?.includes('IM002')
+      if (!isDriverMissing) {
+        // Real error (auth failure, server unreachable, etc.) - surface it directly
+        throw new Error(result.error)
+      }
+    }
+
+    throw new Error('Windows Authentication requires an ODBC Driver for SQL Server to be installed. ' +
+      'Download "ODBC Driver 17 for SQL Server" or "ODBC Driver 18 for SQL Server" from Microsoft.')
+  }
+
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
     const config: any = {
       server: server.config.host,
@@ -1261,18 +1352,15 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     if (server.config.windowsAuthEnabled) {
       config.port = Number(server.config.port);
 
-      if (server.config.domain) {
-        config.domain = server.config.domain;
-      }
-
       if (server.sshTunnel) {
         config.server = server.config.localHost;
         config.port = server.config.localPort;
       }
 
+      // trustedConnection delegates authentication to Windows SSPI via msnodesqlv8
       config.options = {
+        trustedConnection: true,
         trustServerCertificate: server.config.trustServerCertificate,
-        trustedConnection: true
       };
 
       return config;
