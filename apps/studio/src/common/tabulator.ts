@@ -41,6 +41,7 @@ export function tabulatorForTableData(
     nestedFieldSeparator: false,
     selectableRange: true,
     selectableRangeColumns: true,
+    selectableRangeMode: "ctrl",
     selectableRangeAutoFocus: false,
     selectableRangeRows: true,
     resizableColumnGuide: true,

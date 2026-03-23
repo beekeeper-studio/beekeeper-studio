@@ -5,7 +5,10 @@ const fpmOptions = [
 ]
 
 const rpmFpmOptions = [
-  "--after-install=build/rpm-postinstall"
+  "--after-install=build/rpm-postinstall",
+  // Workaround for weird electron build issues conflicting with other elcetron apps on fedora
+  // https://github.com/electron/forge/issues/3594
+  "--rpm-rpmbuild-define=_build_id_links none"
 ]
 
 // FIXME: Get a new certificate with a subject line that is a valid AppX publisher
