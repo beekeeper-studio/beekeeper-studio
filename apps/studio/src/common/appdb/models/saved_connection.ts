@@ -79,6 +79,7 @@ export class DbConnectionBase extends ApplicationEntity {
         port = 4000
         break
       case 'postgresql':
+      case 'greengage':
         port = 5432
         break
       case 'sqlserver':
@@ -135,7 +136,7 @@ export class DbConnectionBase extends ApplicationEntity {
   public get defaultSocketPath(): Nullable<string> {
     if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
       return '/var/run/mysqld/mysqld.sock'
-    } else if (this.connectionType === 'postgresql') {
+    } else if (['postgresql', 'greengage'].includes(this.connectionType || '')) {
       return '/var/run/postgresql'
     } else if (this.connectionType === 'tidb') {
       return '/tmp/tidb.sock'
