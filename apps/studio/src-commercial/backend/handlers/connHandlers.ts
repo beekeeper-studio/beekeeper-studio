@@ -189,8 +189,8 @@ export const ConnHandlers: IConnectionHandlers = {
     });
     state(sId).connectionAbortController = null;
 
-    connection.connection.once('connection-lost', () => {
-      state(sId)?.port.postMessage({ type: 'conn/connection-lost' });
+    connection.connection.on('connection-lost', () => {
+      state(sId).port.postMessage({ type: 'conn/connection-lost' });
     });
   },
 
@@ -239,6 +239,9 @@ export const ConnHandlers: IConnectionHandlers = {
       connection = state(sId).server.createConnection(newDatabase);
       try {
         await connection.connect();
+        connection.connection.on("connection-lost", () => {
+          state(sId).port.postMessage({ type: 'conn/connection-lost' });
+        })
       } catch (e) {
         state(sId).server.destroyConnection(newDatabase);
         throw new Error(`Could not connect to database: ${e.message}`);
@@ -250,6 +253,7 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/clearConnection': async function({ sId }: { sId: string}) {
+    state(sId).connection.connection.removeAllListeners();
     state(sId).connection = null;
     state(sId).server = null;
     state(sId).usedConfig = null;

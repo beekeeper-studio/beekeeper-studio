@@ -1,6 +1,7 @@
 import { AppEvent } from "../../common/AppEvent"
 import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import Noty from "noty";
 
 const log = rawLog.scope("AppEventHandler")
 
@@ -68,7 +69,19 @@ export default class {
 
   connectionLost() {
     this.vueApp.$emit(AppEvent.connectionLost)
-    this.vueApp.$noty.error('Database connection lost. Please try again.', { timeout: false })
+    this.vueApp.$noty.error('Connection lost. Would you like to reconnect?', {
+      timeout: false,
+      closeWith: ['button'],
+      killer: 'connection-lost',
+      queue: 'connection-lost',
+      buttons: [
+        Noty.button('Close', 'btn btn-flat', (noty) => noty.close()),
+        Noty.button('Reconnect', 'btn btn-primary', (noty) => {
+          noty.close()
+          this.vueApp.$store.dispatch('reconnect')
+        }),
+      ],
+    })
   }
 
   settingsChanged() {

@@ -90,7 +90,7 @@ export abstract class DatabaseConnection<
     // reuse existing tunnel
     if (this.server.config.ssh && !this.server.sshTunnel) {
       logger().debug("creating ssh tunnel");
-      this.server.sshTunnel = await connectTunnel(this.server.config);
+      this.server.sshTunnel = await connectTunnel(this.server.config, options.signal);
 
       this.server.config.localHost = this.server.sshTunnel.localHost;
       this.server.config.localPort = this.server.sshTunnel.localPort;
@@ -120,20 +120,17 @@ export abstract class DatabaseConnection<
     try {
       return await this.doGetClient(options);
     } catch (err) {
-      await this.processError(err);
+      await this.handleErrorAndRethrow(err);
     }
   }
 
-  /** Process the error without rethrowing it */
   protected async handleError(err: any) {
     if (this.isConnectionLostError(err)) {
-      await this.disconnect();
       this.emit("connection-lost");
     }
   }
 
-  /** Process the error and rethrows it */
-  private async processError(err: any) {
+  private async handleErrorAndRethrow(err: any) {
     await this.handleError(err);
 
     if (this.isConnectionLostError(err)) {
