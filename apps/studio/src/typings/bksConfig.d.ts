@@ -2,6 +2,7 @@
 declare interface IBksConfig {
     azure: {
         azSQLLoginScope: string;
+        ssoPrompt: string;
     };
     db: {
         bigquery: {
