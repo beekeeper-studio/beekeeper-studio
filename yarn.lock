@@ -11934,6 +11934,15 @@ ms@^2.0.0, ms@^2.1.1, ms@^2.1.3:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
+msnodesqlv8@^5.1.5:
+  version "5.1.5"
+  resolved "https://registry.yarnpkg.com/msnodesqlv8/-/msnodesqlv8-5.1.5.tgz#9320b480b0599f290fd7424477bce2c4c917aa38"
+  integrity sha512-19PJY7FT/i5Do+b7A3K6uOSh6lgUbEPxOrWdVauNrnKpKdNyzX2lf4vN5aba+5y7eE/ERsMUelK6royuiL5MVg==
+  dependencies:
+    node-abi "^4.24.0"
+    node-addon-api "^8.5.0"
+    prebuild-install "^7.1.3"
+
 mssql@^11.0.1:
   version "11.0.1"
   resolved "https://registry.yarnpkg.com/mssql/-/mssql-11.0.1.tgz#a32ab7763bfbb3f5d970e47563df3911fc04e21d"
@@ -12059,6 +12068,13 @@ node-abi@^4.2.0:
   version "4.24.0"
   resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-4.24.0.tgz#fcc1b4c645ffb4c0f39e2dbfb9c41698ba7e782e"
   integrity sha512-u2EC1CeNe25uVtX3EZbdQ275c74zdZmmpzrHEQh2aIYqoVjlglfUpOX9YY85x1nlBydEKDVaSmMNhR7N82Qj8A==
+  dependencies:
+    semver "^7.6.3"
+
+node-abi@^4.24.0:
+  version "4.28.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-4.28.0.tgz#2c93b89b6bc2208155b3c3ed5620211da8eb62a5"
+  integrity sha512-Qfp5XZL1cJDOabOT8H5gnqMTmM4NjvYzHp4I/Kt/Sl76OVkOBBHRFlPspGV0hYvMoqQsypFjT/Yp7Km0beXW9g==
   dependencies:
     semver "^7.6.3"
 
