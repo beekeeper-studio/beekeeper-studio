@@ -822,7 +822,8 @@
         if (this.dialect === 'redis') {
           return {};
         }
-        return this.$bksConfig.db[this.connectionType]?.paramTypes
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        return this.$bksConfig.db[dbType]?.paramTypes
       },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
