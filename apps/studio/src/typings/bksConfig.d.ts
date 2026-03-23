@@ -71,7 +71,6 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
-        default_parsed: any;
         duckdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;

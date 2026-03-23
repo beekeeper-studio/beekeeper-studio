@@ -749,7 +749,7 @@
           }
           const values = Object.values(this.queryParameterValues) as string[];
           const convertedParams = convertParamsForReplacement(placeholders, values);
-          query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect]?.paramTypes);
+          query = deparameterizeQuery(query, this.dialect, convertedParams, this.paramTypes);
         } catch (ex) {
           log.error("Unable to deparameterize query", ex)
         }
@@ -822,7 +822,8 @@
         if (this.dialect === 'redis') {
           return {};
         }
-        return this.$bksConfig.db[this.dialect]?.paramTypes
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        return this.$bksConfig.db[dbType]?.paramTypes
       },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
@@ -1289,9 +1290,6 @@
 
         this.showKeepAlive = false
         this.maybeCloseWarningNoty();
-        this.tab.isRunning = true
-        this.updateTab();
-        this.running = true
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
@@ -1328,6 +1326,10 @@
               return;
             }
           }
+
+          this.tab.isRunning = true
+          this.updateTab();
+          this.running = true
 
           const query = this.deparameterizedQuery
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
