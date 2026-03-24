@@ -37,7 +37,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Run</div>
+      <div>Run All/Selection</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
