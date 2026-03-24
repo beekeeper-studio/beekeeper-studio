@@ -67,7 +67,7 @@
                   :testing="testing"
                 />
                 <postgres-form
-                  v-else-if="config.connectionType === 'postgresql'"
+                  v-else-if="['postgresql', 'greengage'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                 />
