@@ -2,39 +2,145 @@ import crypto from 'crypto'
 import Encryptor from 'simple-encryptor'
 import fs from 'fs'
 import path from 'path'
-import platformInfo from './platform_info'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('encryption-key')
+
+// Only import safeStorage in the main process (not utility process)
+function getSafeStorage() {
+  try {
+    const { safeStorage } = require('electron')
+    return safeStorage
+  } catch {
+    return null
+  }
+}
+
+function getUserDirectory(): string {
+  const platformInfo = require('./platform_info').default
+  return platformInfo.userDirectory
+}
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
   }
 }
-const userDirectory = platformInfo.userDirectory
 
 const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
-const keyFile = path.join(userDirectory, '.key')
 
 let _encryptionKey: Nullable<string> = null
+let _insecure = false
 
 export function loadEncryptionKey(): string {
   if (_encryptionKey) {
     return _encryptionKey
   }
-  const encryptor = Encryptor(defaultEncryptionKey)
 
-  initUserDirectory(userDirectory)
-
-  if (!fs.existsSync(keyFile)) {
-    const generatedKey = crypto.randomBytes(32)
-    const newKey = generatedKey.toString('hex')
-    const result = {
-      'encryptionKey': newKey
-    }
-    fs.writeFileSync(keyFile, encryptor.encrypt(result), 'UTF8')
+  // Utility process: key is passed via env var
+  if (process.env.BKS_ENCRYPTION_KEY) {
+    _encryptionKey = process.env.BKS_ENCRYPTION_KEY
+    _insecure = process.env.BKS_ENCRYPTION_INSECURE === 'true'
+    return _encryptionKey
   }
 
-  const encryptedData = fs.readFileSync(keyFile, 'UTF8')
-  const data = encryptor.decrypt(encryptedData)
-  _encryptionKey = data['encryptionKey'] as string
+  // Main process
+  const userDirectory = getUserDirectory()
+  initUserDirectory(userDirectory)
+
+  const safeStorage = getSafeStorage()
+  const keychainFile = path.join(userDirectory, '.encryption-key')
+  const legacyKeyFile = path.join(userDirectory, '.key')
+
+  if (safeStorage && safeStorage.isEncryptionAvailable()) {
+    _encryptionKey = loadWithSafeStorage(safeStorage, keychainFile, legacyKeyFile)
+    _insecure = false
+  } else {
+    log.warn('safeStorage is not available — falling back to file-based encryption key. Credentials are less secure.')
+    _encryptionKey = loadWithLegacyFile(legacyKeyFile)
+    _insecure = true
+  }
+
   return _encryptionKey
+}
+
+export function isEncryptionKeyInsecure(): boolean {
+  return _insecure
+}
+
+function loadWithSafeStorage(
+  safeStorage: Electron.SafeStorage,
+  keychainFile: string,
+  legacyKeyFile: string
+): string {
+  // Case 1: .encryption-key already exists (normal startup)
+  if (fs.existsSync(keychainFile)) {
+    log.info('Loading encryption key from keychain-protected file')
+    const encryptedBuffer = fs.readFileSync(keychainFile)
+    try {
+      return safeStorage.decryptString(encryptedBuffer)
+    } catch (err) {
+      log.error('Failed to decrypt .encryption-key file. The OS keychain may have been reset or data moved from another machine.')
+      throw new Error(
+        'Could not decrypt saved credentials. The OS keychain may have been reset or data was moved from another machine. ' +
+        `To start fresh, delete the file: ${keychainFile}. ` +
+        'Please report this at https://github.com/beekeeper-studio/beekeeper-studio/issues'
+      )
+    }
+  }
+
+  // Case 2: Legacy .key file exists (migration)
+  if (fs.existsSync(legacyKeyFile)) {
+    log.info('Migrating encryption key from legacy .key file to keychain-protected storage')
+    const encryptor = Encryptor(defaultEncryptionKey)
+    const encryptedData = fs.readFileSync(legacyKeyFile, 'UTF8')
+    const data = encryptor.decrypt(encryptedData)
+    const key = data['encryptionKey'] as string
+
+    // Write new keychain-protected file
+    const encryptedBuffer = safeStorage.encryptString(key)
+    fs.writeFileSync(keychainFile, encryptedBuffer)
+    if (process.platform !== 'win32') {
+      fs.chmodSync(keychainFile, 0o600)
+    }
+
+    // Verify the new file works before deleting the old one
+    const verifyBuffer = fs.readFileSync(keychainFile)
+    const verifiedKey = safeStorage.decryptString(verifyBuffer)
+    if (verifiedKey !== key) {
+      throw new Error('Migration verification failed: decrypted key does not match original')
+    }
+
+    // Delete legacy file
+    fs.unlinkSync(legacyKeyFile)
+    log.info('Migration complete — legacy .key file removed')
+
+    return key
+  }
+
+  // Case 3: Fresh install
+  log.info('Generating new encryption key (fresh install)')
+  const key = crypto.randomBytes(32).toString('hex')
+  const encryptedBuffer = safeStorage.encryptString(key)
+  fs.writeFileSync(keychainFile, encryptedBuffer)
+  if (process.platform !== 'win32') {
+    fs.chmodSync(keychainFile, 0o600)
+  }
+
+  return key
+}
+
+function loadWithLegacyFile(legacyKeyFile: string): string {
+  const encryptor = Encryptor(defaultEncryptionKey)
+
+  if (!fs.existsSync(legacyKeyFile)) {
+    const generatedKey = crypto.randomBytes(32)
+    const newKey = generatedKey.toString('hex')
+    const result = { encryptionKey: newKey }
+    fs.writeFileSync(legacyKeyFile, encryptor.encrypt(result), 'UTF8')
+  }
+
+  const encryptedData = fs.readFileSync(legacyKeyFile, 'UTF8')
+  const data = encryptor.decrypt(encryptedData)
+  return data['encryptionKey'] as string
 }
