@@ -1,7 +1,6 @@
 <template>
   <toggle-form-area
     title="SSH Tunnel"
-    hide-toggle="true"
     :expanded="config.sshEnabled"
   >
     <template v-slot:header>
@@ -17,6 +16,9 @@
           <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
         </div>
       </div>
+
+      <!-- Target Host -->
+
       <div class="row gutter">
         <div class="col s9 form-group">
           <label for="sshHost">SSH Hostname</label>
@@ -33,31 +35,6 @@
             :privacyMode="privacyMode"
             @input="val => config.sshPort = val"
           />
-        </div>
-      </div>
-      <div class="row gutter">
-        <div class="col s8 form-group">
-          <label for="bastionHost">Bastion Host (Jump Host)</label>
-          <masked-input
-            :value="config.sshBastionHost"
-            :privacyMode="privacyMode"
-            @input="val => config.sshBastionHost = val"
-          />
-        </div>
-        <div class="col s4 form-group">
-          <label for="sshKeepaliveInterval">
-            Keepalive Interval <i
-              class="material-icons"
-              style="padding-left: 0.25rem"
-              v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
-            >help_outlined</i>
-          </label>
-          <input
-            type="number"
-            v-model.number="config.sshKeepaliveInterval"
-            name="sshKeepaliveInterval"
-            placeholder="(in seconds)"
-          >
         </div>
       </div>
       <div class="form-group">
@@ -197,6 +174,141 @@
           </div>
         </div>
       </div>
+
+      <div class="separator" />
+
+      <!-- Bastion Host -->
+
+      <div class="row gutter">
+        <div class="col s9 form-group">
+          <label for="bastionHost">Bastion Host (Jump Host)</label>
+          <masked-input
+            :value="config.sshBastionHost"
+            :privacyMode="privacyMode"
+            @input="val => config.sshBastionHost = val"
+          />
+        </div>
+        <div class="col s3 form-group">
+          <label for="sshBastionHostPort">Port</label>
+          <masked-input
+            :value="config.sshBastionHostPort"
+            :privacyMode="privacyMode"
+            @input="val => config.sshBastionHostPort = val"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Bastion Host Authentication</label>
+        <select
+          class="form-control"
+          v-model="config.sshBastionMode"
+        >
+          <option
+            v-for="option in sshModeOptions"
+            :key="option.mode"
+            :value="option.mode"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div
+        v-if="config.sshBastionMode === 'agent'"
+        class="agent flex-col"
+      >
+        <div class="form-group">
+          <label>Bastion Username</label>
+          <masked-input
+            :value="config.sshBastionUsername"
+            :privacyMode="privacyMode"
+            @input="val => config.sshBastionUsername = val"
+          />
+        </div>
+      </div>
+
+      <div
+        v-if="config.sshBastionMode === 'keyfile'"
+        class="private-key gutter"
+      >
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label>Bastion Username</label>
+              <masked-input
+                :value="config.sshBastionUsername"
+                :privacyMode="privacyMode"
+                @input="val => config.sshBastionUsername = val"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="row gutter">
+          <div class="col s6 form-group">
+            <label>Private Key File</label>
+            <file-picker
+              v-model="config.sshBastionKeyfile"
+              :show-hidden-files="true"
+              :default-path="filePickerDefaultPath"
+            />
+          </div>
+          <div class="col s6 form-group">
+            <label>Key File PassPhrase <span class="hint">(Optional)</span></label>
+            <input
+              type="password"
+              class="form-control"
+              v-model="config.sshBastionKeyfilePassword"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="config.sshBastionMode === 'userpass'"
+        class="row gutter"
+      >
+        <div class="col s6">
+          <div class="form-group">
+            <label>Bastion Username</label>
+            <masked-input
+              :value="config.sshBastionUsername"
+              :privacyMode="privacyMode"
+              @input="val => config.sshBastionUsername = val"
+            />
+          </div>
+        </div>
+        <div class="col s6">
+          <div class="form-group">
+            <label>Bastion Password</label>
+            <input
+              class="form-control"
+              type="password"
+              v-model="config.sshBastionPassword"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="separator" />
+
+      <div class="row gutter">
+        <div class="col form-group">
+          <label for="sshKeepaliveInterval">
+            Keepalive Interval <i
+              class="material-icons"
+              style="padding-left: 0.25rem"
+              v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
+            >help_outlined</i>
+          </label>
+          <input
+            type="number"
+            v-model.number="config.sshKeepaliveInterval"
+            name="sshKeepaliveInterval"
+            placeholder="(in seconds)"
+          >
+        </div>
+      </div>
     </template>
   </toggle-form-area>
 </template>
@@ -234,3 +346,11 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.separator {
+  margin-top: 1rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+</style>
