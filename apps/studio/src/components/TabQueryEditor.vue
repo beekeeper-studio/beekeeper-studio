@@ -200,10 +200,10 @@
             <x-button
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
-              @click.prevent="submitTabQuery"
+              @click.prevent="submitCurrentQuery"
               :disabled="this.tab.isRunning || running"
             >
-              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+              <x-label>Run Current</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
@@ -212,27 +212,15 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
-                  <x-shortcut value="Control+Enter" />
-                </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
+                  <x-shortcut value="Control+Enter" />
+                </x-menuitem>
+                <x-menuitem @click.prevent="submitTabQuery">
+                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <hr>
-                <x-menuitem
-                  @click.prevent="submitQueryToFile"
-                  :disabled="disableRunToFile"
-                >
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
-                  <i
-                    v-if="isCommunity"
-                    class="material-icons menu-icon"
-                  >
-                    stars
-                  </i>
-                </x-menuitem>
                 <x-menuitem
                   @click.prevent="submitCurrentQueryToFile"
                   :disabled="disableRunToFile"
@@ -241,6 +229,18 @@
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
+                  >
+                    stars
+                  </i>
+                </x-menuitem>
+                <x-menuitem
+                  @click.prevent="submitQueryToFile"
+                  :disabled="disableRunToFile"
+                >
+                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run All to File' }}</x-label>
+                  <i
+                    v-if="isCommunity"
+                    class="material-icons menu-icon"
                   >
                     stars
                   </i>
@@ -530,6 +530,7 @@
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
+  import { identify } from 'sql-query-identifier'
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
   const log = rawlog.scope('query-editor')
@@ -549,7 +550,7 @@
         results: [],
         running: false,
         runningCount: 1,
-        runningType: 'all queries',
+        runningType: 'current',
         selectedResult: 0,
         unsavedText: editorDefault,
         editor: {
@@ -1091,7 +1092,7 @@
           this.updateEditorHeight()
         })
       },
-      handleEditorInitialized(detail) {
+      handleEditorInitialized() {
         this.editor.initialized = true
 
         // Setup query magic data providers
@@ -1418,6 +1419,12 @@
         }
         const originalText = this.query?.text || this.tab.unsavedQueryText
         if (originalText) {
+          const queries = identify(originalText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          if (queries.length > 0) {
+            this.individualQueries = queries
+            this.currentlySelectedQuery = queries[0]
+          }
+
           this.originalText = originalText
           this.unsavedText = originalText
         }
