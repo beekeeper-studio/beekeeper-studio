@@ -37,7 +37,8 @@ module.exports = {
   ],
   afterPack: "./build/afterPack.js",
   asarUnpack: [
-    'package.json'
+    'package.json',
+    '**/msnodesqlv8/build/Release/*.node'
   ],
   extraResources: [
     {

@@ -209,6 +209,7 @@ export interface IDbConnectionServerConfig {
   localHost?: string,
   localPort?: number,
   trustServerCertificate?: boolean
+  windowsAuthEnabled?: boolean
   instantClientLocation?: string
   oracleConfigLocation?: string
   options?: any
