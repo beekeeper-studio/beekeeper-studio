@@ -2,6 +2,7 @@ import { IFileHandlers } from "@/handlers/fileHandlers";
 import { IGeneratorHandlers } from "@/handlers/generatorHandlers";
 import { IQueryHandlers } from "@/handlers/queryHandlers";
 import { ITempHandlers } from "@/handlers/tempHandlers";
+import { IDBeaverImportHandlers } from "@/handlers/dbeaverImportHandlers";
 
 // commercial
 import { IConnectionHandlers } from "./connHandlers";
@@ -21,4 +22,5 @@ export interface Handlers
     IFileHandlers,
     IEnumHandlers,
     ITempHandlers,
-    IAwsHandlers {}
+    IAwsHandlers,
+    IDBeaverImportHandlers {}

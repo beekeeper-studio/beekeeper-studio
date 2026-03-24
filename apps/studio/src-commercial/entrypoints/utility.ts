@@ -20,6 +20,7 @@ import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
+import { DBeaverImportHandlers } from '@/handlers/dbeaverImportHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
@@ -60,6 +61,7 @@ export const handlers: Handlers = {
   ...ExportHandlers,
   ...ImportHandlers,
   ...AppDbHandlers,
+  ...DBeaverImportHandlers,
   ...BackupHandlers,
   ...AwsHandlers,
   ...FileHandlers,
