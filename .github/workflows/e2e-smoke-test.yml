@@ -70,12 +70,13 @@ jobs:
           ELECTRON_DISABLE_SANDBOX: 1
           ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
 
-      - name: Build + Run Tests (Windows)
+      - name: Serve + Run Tests (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          yarn lib:build
-          yarn workspace beekeeper-studio build
+          yarn run electron:serve > server.log 2>&1 &
+          sleep 30
+          cat server.log
           yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
         env:
           ELECTRON_ENABLE_LOGGING: 1
