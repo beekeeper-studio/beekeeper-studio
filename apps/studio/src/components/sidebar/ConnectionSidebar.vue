@@ -111,6 +111,12 @@
                     <i class="material-icons">save_alt</i>
                   </a>
                   <a
+                    @click.prevent="openDBeaverImport"
+                    title="Import from DBeaver"
+                  >
+                    <i class="material-icons">downloading</i>
+                  </a>
+                  <a
                     @click.prevent="createFolder"
                     title="New Folder"
                   >
@@ -340,6 +346,7 @@
         </form>
       </modal>
     </portal>
+    <d-beaver-import-wizard />
   </div>
 </template>
 
@@ -358,6 +365,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'
 import Noty from 'noty'
+import DBeaverImportWizard from '@/components/dbeaver/DBeaverImportWizard.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -369,7 +377,8 @@ export default {
     SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
-    Draggable
+    Draggable,
+    DBeaverImportWizard,
   },
   props: ['selectedConfig'],
   data: () => ({
@@ -523,6 +532,9 @@ export default {
         direction: 'vertical',
         sizes: this.sizes
       })
+    },
+    openDBeaverImport() {
+      this.$modal.show('dbeaver-import')
     },
     importFromLocal() {
       console.log("triggering import")
