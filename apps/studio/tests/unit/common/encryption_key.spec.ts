@@ -174,6 +174,13 @@ describe('encryption_key', () => {
   })
 
   describe('error handling', () => {
+    it('isEncryptionKeyInsecure() throws if called before loadEncryptionKey()', () => {
+      const mod = loadModule()
+      expect(() => mod.isEncryptionKeyInsecure()).toThrow(
+        'isEncryptionKeyInsecure() called before loadEncryptionKey()'
+      )
+    })
+
     it('corrupted .encryption-key throws error', () => {
       fs.writeFileSync(path.join(mockTmpDir, '.encryption-key'), Buffer.from('corrupted-data'))
 

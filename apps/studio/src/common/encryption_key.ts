@@ -65,6 +65,9 @@ export function loadEncryptionKey(): string {
 }
 
 export function isEncryptionKeyInsecure(): boolean {
+  if (_encryptionKey === null) {
+    throw new Error('isEncryptionKeyInsecure() called before loadEncryptionKey()')
+  }
   return _insecure
 }
 
@@ -95,6 +98,11 @@ function loadWithSafeStorage(
     const encryptor = Encryptor(defaultEncryptionKey)
     const encryptedData = fs.readFileSync(legacyKeyFile, 'UTF8')
     const data = encryptor.decrypt(encryptedData)
+    if (!data || typeof data['encryptionKey'] !== 'string') {
+      throw new Error(
+        `Could not read the legacy encryption key file. The file at ${legacyKeyFile} may be corrupted.`
+      )
+    }
     const key = data['encryptionKey'] as string
 
     // Write new keychain-protected file
@@ -138,9 +146,17 @@ function loadWithLegacyFile(legacyKeyFile: string): string {
     const newKey = generatedKey.toString('hex')
     const result = { encryptionKey: newKey }
     fs.writeFileSync(legacyKeyFile, encryptor.encrypt(result), 'UTF8')
+    if (process.platform !== 'win32') {
+      fs.chmodSync(legacyKeyFile, 0o600)
+    }
   }
 
   const encryptedData = fs.readFileSync(legacyKeyFile, 'UTF8')
   const data = encryptor.decrypt(encryptedData)
+  if (!data || typeof data['encryptionKey'] !== 'string') {
+    throw new Error(
+      `Could not read the encryption key file. The file at ${legacyKeyFile} may be corrupted.`
+    )
+  }
   return data['encryptionKey'] as string
 }
