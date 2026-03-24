@@ -10,9 +10,9 @@ import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
 
-const encrypt = new EncryptTransformer(loadEncryptionKey())
-const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
-const surrealEncrypt = new SurrealDbEncryptTransformer(loadEncryptionKey())
+const encrypt = new EncryptTransformer(() => loadEncryptionKey())
+const azureEncrypt = new AzureCredsEncryptTransformer(() => loadEncryptionKey())
+const surrealEncrypt = new SurrealDbEncryptTransformer(() => loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
