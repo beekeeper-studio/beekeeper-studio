@@ -98,6 +98,21 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        greengage: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            connectionTimeout: number;
+            idleTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         libsql: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
