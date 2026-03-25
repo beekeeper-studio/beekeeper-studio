@@ -127,7 +127,7 @@
     "source-map-support": "^0.5.21",
     "split.js": "^1.6.5",
     "sql-formatter": "15.6.10",
-    "sql-query-identifier": "/home/notnight/dev/sql-query-identifier/lib",
+    "sql-query-identifier": "^2.10.0",
     "sqlanywhere": "beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d",
     "ssh2": "^1.14.0",
     "surrealdb": "^1.3.2",

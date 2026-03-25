@@ -14046,11 +14046,10 @@ sql-highlight@^6.1.0:
   resolved "https://registry.yarnpkg.com/sql-highlight/-/sql-highlight-6.1.0.tgz#e34024b4c6eac2744648771edfe3c1f894153743"
   integrity sha512-ed7OK4e9ywpE7pgRMkMQmZDPKSVdm0oX5IEtZiKnFucSF0zu6c80GZBe38UqHuVhTWJ9xsKgSMjCG2bml86KvA==
 
-"sql-query-identifier@file:../sql-query-identifier":
-  version "2.9.0"
-
-"sql-query-identifier@file:../sql-query-identifier/lib":
-  version "0.0.0"
+sql-query-identifier@^2.10.0:
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.10.0.tgz#ee46e7ffb941a5f03a4f1b297d47d438dc6c14e1"
+  integrity sha512-SBYnk1PPIDJ4M1+O3YXKfc4L++RyntcJAGhEWqBv0xrOzzp2k7lTeM7Ow//IfmDsfyh7dVas03UJWoL2P+nPEQ==
 
 sqlanywhere@beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d:
   version "2.0.4"

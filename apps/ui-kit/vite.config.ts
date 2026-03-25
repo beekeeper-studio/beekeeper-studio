@@ -36,8 +36,6 @@ export default defineConfig({
         "@replit/codemirror-emacs",
         "@replit/codemirror-vim",
         "@marimo-team/codemirror-languageserver",
-        "sql-query-identifier",
-        "sql-query-identifier/lib/defines",
       ],
       input: {
         style: resolve(__dirname, "lib/style.scss"),
