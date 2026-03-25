@@ -100,13 +100,14 @@
             </external-link>
           </div>
         </div>
-        <div
-          v-else-if="$config.sshAuthSock"
-          class="alert alert-success"
-        >
-          <i class="material-icons">check</i>
-          <div>We found your SSH Agent. You're good to go!</div>
-        </div>
+        <!-- <div -->
+        <!--   v-else-if="$config.sshAuthSock" -->
+        <!--   class="alert alert-success" -->
+        <!-- > -->
+        <!--   <i class="material-icons">check</i> -->
+        <!--   <div>We found your SSH Agent. You're good to go!</div> -->
+        <!-- </div> -->
+        <template v-else-if="$config.sshAuthSock" />
         <div
           v-else-if="$config.isWindows"
           class="alert alert-info"
