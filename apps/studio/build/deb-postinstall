@@ -11,5 +11,5 @@ fi
 
 # ideally this would use a links file https://github.com/jordansissel/fpm/issues/960
 if [ ! -e /usr/bin/beekeeper-studio ]; then
-  ln -s /opt/Beekeeper\ Studio/beekeeper-studio /usr/bin/beekeeper-studio
+  ln -sf /opt/Beekeeper\ Studio/beekeeper-studio /usr/bin/beekeeper-studio
 fi
