@@ -32,7 +32,7 @@ export class PsqlCursor extends BeeCursor {
 
 
   async start() {
-    this.client = await this.options.connection.connect()
+    this.client = await this.options.connection.getClient()
     this.client.on('error', this.handleError.bind(this))
     const { query, params } = this.options
     this.cursor = this.client.query(new Cursor(query, params, {rowMode: 'array'}))
