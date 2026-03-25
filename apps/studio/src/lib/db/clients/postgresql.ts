@@ -1385,7 +1385,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const rowCount = data.rowCount || data.rows?.length || 0
     return {
       command: command?.type || data.command,
-      text: command.text,
+      text: command?.text,
       rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
       fields: fields,
       rowCount: rowCount,
