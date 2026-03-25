@@ -5272,10 +5272,31 @@
     "@surrealdb/lezer" ""
     compare-versions "^6.1.1"
 
+"@surrealdb/codemirror@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@surrealdb/codemirror/-/codemirror-1.0.4.tgz#22446e3b85d598d86f19a6328bd784972b6f139b"
+  integrity sha512-DclWrBcHIhchij5vRGbqybT1kBLrZ3pU/YSnA0kG5mO+urWg1fSch8g7jZnwjrntGesH7j91XsPw3pV8OSc72w==
+  dependencies:
+    "@codemirror/language" "^6.10.3"
+    "@codemirror/lint" "^6.8.2"
+    "@lezer/common" "^1.2.3"
+    "@lezer/javascript" "^1.4.19"
+    "@surrealdb/lezer" "1.0.4"
+    compare-versions "^6.1.1"
+
 "@surrealdb/lezer@":
   version "1.0.0-beta.21"
   resolved "https://registry.yarnpkg.com/@surrealdb/lezer/-/lezer-1.0.0-beta.21.tgz#65cab4eb7535657d3efeb40c911c432bdeaa94bb"
   integrity sha512-8laD/9nCgIGqFFj3p1R2JZaEAzTAkjpyW6+zO4ZplIeC3DwbI9/JZQbaLzKZ2tFOd8wNZsniMxdAajWkenCSgQ==
+  dependencies:
+    "@lezer/common" "^1.2.3"
+    "@lezer/highlight" "^1.2.1"
+    "@lezer/lr" "^1.4.2"
+
+"@surrealdb/lezer@1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@surrealdb/lezer/-/lezer-1.0.4.tgz#a5d839d9f998f24608c5aa615529748d74a0df72"
+  integrity sha512-y735U11M3BZvX+Beva2UL5R7yrJbpjZBLF+zz26S3XMgeJVk4CR1TzM1IgoHC6kGVkY6uXo1FwL2Wj5GeY/9Mw==
   dependencies:
     "@lezer/common" "^1.2.3"
     "@lezer/highlight" "^1.2.1"
