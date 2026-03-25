@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, ServerStatistics } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -13,6 +13,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
+import { ColumnReference, TableReference } from 'sql-query-identifier/defines';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -30,6 +31,21 @@ export interface QueryLogOptions {
     options: any // just whatever options the database driver provides.
     status: 'completed' | 'failed'
     error?: string
+}
+
+// TODO (@day): not sure if I really want this
+export interface QueryResultEditData {
+
+}
+
+interface TableMetadata {
+  name: string,
+  alias?: string,
+  schema?: string,
+  database?: string,
+  isEditable?: boolean,
+  columns: ExtendedTableColumn[],
+  pks: PrimaryKeyColumn[]
 }
 
 interface ColumnsAndTotalRows {
@@ -191,6 +207,98 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
   executeCommand(_commandText: string): Promise<NgQueryResult[]> {
     return Promise.resolve([]);
+  }
+
+  async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
+    if (!queryText) throw new Error('No query text to identify for this result')
+
+    const commands = identify(queryText, { identifyTables: true, identifyColumns: true });
+    if (commands.length !== 1) return [];
+
+    const command = commands[0];
+    if (command?.executionType !== 'LISTING') return [];
+
+    // Actually query the database for table information (pks, columns)
+    const tableData = await this.fetchTableMetadata(command);
+
+    const instanceCounter = new Map<string, number>(fields.map((f) => [f.name, 0]));
+
+    const columns: ColumnReference[] = this.expandWildcards(command.columns, tableData);
+
+    return fields.map((field) => {
+      const maybeColumns = columns.filter((c) =>
+        (!c.alias && c.name === field.name) ||
+        (!!c.alias && c.alias === field.name)
+      );
+      let fieldColumn: ColumnReference = null;
+      let editData: FieldEditData = {
+        id: field.id,
+        editable: false
+      };
+
+      // I know this looks annoying, but this handles duplication in the result set
+      // For instance if someone joins two tables and both have a last_updated column that
+      // ends up in the data, we will go off of position in the query (ie first grab the
+      // first instance of last_updated, then grab the second, etc)
+      if (maybeColumns && maybeColumns.length > 0) {
+        try {
+          fieldColumn = maybeColumns[instanceCounter.get(field.name)];
+          instanceCounter.set(field.name, instanceCounter.get(field.name) + 1);
+        } catch {
+          log.warn('Something has gone wrong with the weird instance counting logic');
+        }
+      }
+
+      // Couldn't match output field to column referenced in the query
+      if (!fieldColumn) {
+        editData.readOnlyReason = FieldReadOnlyReason.ImproperMapping;
+        return editData;
+      }
+
+      let table: TableMetadata;
+
+      if (fieldColumn.table) {
+        table = tableData.find((t) => this.matchesTable(fieldColumn, t))
+      } else {
+        table = tableData.find((t) => t.columns.some((c) => c.columnName === fieldColumn.name ))
+      }
+
+      if (!table) {
+        editData.readOnlyReason = FieldReadOnlyReason.NoLinkedTable;
+        return editData;
+      }
+
+      const tableColumn = table.columns.find((c) => c.columnName === fieldColumn.name);
+
+      if (!tableColumn) {
+        editData.readOnlyReason = FieldReadOnlyReason.ImproperMapping;
+        return editData;
+      }
+
+      if (!table.isEditable) {
+        // In the future we could actually say what PK we are missing?
+        editData.readOnlyReason = FieldReadOnlyReason.MissingPK;
+        return editData;
+      }
+
+      editData = {
+        id: field.id,
+        editable: false,
+        columnName: fieldColumn.name,
+        linkedTable: table.name,
+        linkedSchema: table.schema,
+        isPK: false,
+        generated: tableColumn.generated
+      };
+
+      if (table?.isEditable) {
+        editData.isPK = table.pks.some((pk) => pk.columnName === fieldColumn.name);
+      }
+
+      editData.editable = !editData.isPK && !tableColumn.generated;
+
+      return editData;
+    })
   }
 
   abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
@@ -691,5 +799,87 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       throw new Error("Could not retrieve reserved connection, please report this issue on our GitHub.");
     }
     return this.reservedConnections.get(tabId);
+  }
+
+  private async fetchTableMetadata(command: IdentifyResult): Promise<TableMetadata[]> {
+    const hasTopLevelWildcard = command.columns.some((c) => c.isWildcard && !c.table && !c.schema);
+    const wildcards = command.columns.filter((c) => c.isWildcard && !!c.table);
+    return await Promise.all(command.tables.map(async (table) => {
+      const pks = await this.getPrimaryKeys(table.name, table.schema);
+      const columns = await this.listTableColumns(table.name, table.schema);
+      let isEditable = false;
+      if (!!pks?.length) {
+        const hasTableWildcard = wildcards.some((w) => this.matchesTable(w, table));
+        if (hasTopLevelWildcard || hasTableWildcard) {
+          isEditable = true;
+        } else {
+          const allPks = pks.every((pk) => {
+            return command.columns.some((col) => {
+              return col.name === pk.columnName &&
+                ((command.tables.length === 1 && !col.table) ||
+                  this.matchesTable(col, table))
+            })
+          });
+          isEditable = allPks;
+        }
+      }
+
+      return {
+        ...table,
+        pks,
+        columns,
+        isEditable
+      }
+    }))
+  }
+
+  private matchesTable(column: ColumnReference, table: TableReference) {
+    if ((!!table.alias && table.alias === column.table) ||
+        (!table.alias && table.name === column.table)) {
+      if (column.schema === table.schema || !column.schema || !table.schema) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private expandWildcards(commandColumns: ColumnReference[], tableData: TableMetadata[]): ColumnReference[] {
+    const columns: ColumnReference[] = [];
+
+    commandColumns.forEach((c) => {
+      // handle wildcard
+      if (c.isWildcard) {
+        // top level wildcard (SELECT * FROM table)
+        if (!c.table && !c.schema) {
+          tableData.forEach((t) => {
+            t.columns.forEach((col) => {
+              columns.push({
+                name: col.columnName,
+                table: col.tableName,
+                schema: col.schemaName,
+                isWildcard: false
+              });
+            });
+          });
+        } else {
+          const table = tableData.find((t) => this.matchesTable(c, t));
+          if (table && table.columns) {
+            table.columns.forEach((col) => {
+              columns.push({
+                name: col.columnName,
+                table: c.table,
+                schema: c.schema,
+                isWildcard: false
+              });
+            });
+          }
+        }
+      } else {
+        columns.push(c);
+      }
+    });
+
+    return columns;
   }
 }

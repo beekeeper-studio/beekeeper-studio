@@ -964,10 +964,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            await this.driverExecuteMultiple(text, { connection, tabId })
+            await this.executeQuery(text, { connection, tabId })
           ])
           if (!data) return []
-          return this.parseResults(data)
+          return data;
         } catch (err) {
           if (canceling) {
             console.warn('user cancelled query execution')
@@ -1010,8 +1010,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     }
   }
 
-  async executeQuery(query: string): Promise<NgQueryResult[]> {
-    const results = await this.driverExecuteMultiple(query)
+  async executeQuery(query: string, options?: any): Promise<NgQueryResult[]> {
+    const results = await this.driverExecuteMultiple(query, options)
     return this.parseResults(results)
   }
 
@@ -1027,7 +1027,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     const fields = this.metaToFields(result.result.metaData)
     const fieldIds = fields?.map((f) => f.id) || []
     return {
-      command: result.info.text,
+      command: result.info.type,
+      text: result.info.text,
       rowCount: result.result.rows?.length || 0,
       affectedRows: result.result.rowsAffected || 0,
       rows: result.result.rows?.map((r: any) => _.zipObject(fieldIds, r)) || [],

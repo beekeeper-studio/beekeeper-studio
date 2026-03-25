@@ -131,6 +131,7 @@ export interface DialectData {
   sqlLabel: "SQL" | "code";
   disabledFeatures?: {
     manualCommit?: boolean
+    resultEditing?: boolean
     rawFilters?: boolean
     builderFilters?: boolean
     shell?: boolean

@@ -1132,6 +1132,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
         rows,
         affectedRows: undefined, // TODO implement affectedRows
         command: statement.type,
+        text: statement.text,
         rowCount: rows.length,
       };
     });
