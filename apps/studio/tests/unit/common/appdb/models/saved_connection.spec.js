@@ -105,6 +105,21 @@ describe("Saved Connection", () => {
         port: 5439,
         defaultDatabase: "database"
       },
+      "postgresql://user:pass%20word@localhost:5432/mydb": {
+        connectionType: "postgresql",
+        username: "user",
+        password: "pass word",
+        host: "localhost",
+        port: 5432,
+        defaultDatabase: "mydb"
+      },
+      "mysql://user%40name:p%40ss%3Aword@localhost/db": {
+        connectionType: "mysql",
+        username: "user@name",
+        password: "p@ss:word",
+        host: "localhost",
+        defaultDatabase: "db"
+      },
     }
 
     Object.keys(testCases).forEach(url => {
