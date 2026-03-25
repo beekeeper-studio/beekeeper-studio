@@ -109,7 +109,7 @@ export function deepFilterObjectProps(
 
   if (!paths) paths = getPaths(obj);
   const filteredPaths = paths.filter((path) =>
-    regex ? regex.test(path) : path.toLowerCase().includes(filter)
+    regex ? regex.test(path) : path.toLowerCase().includes(filter.toLowerCase())
   );
   return _.pick(obj, filteredPaths);
 }
