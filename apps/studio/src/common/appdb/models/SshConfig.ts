@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, Column, OneToMany } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { EncryptTransformer } from '../transformers/Transformers'
@@ -13,15 +13,9 @@ export class SshConfig extends ApplicationEntity implements TransportSshConfig {
     return this
   }
 
-  @ManyToOne('SavedConnection', 'sshConfigs', { nullable: true, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'connectionId' })
-  connection?: any
-
-  @Column({ type: 'int', nullable: true, default: null })
-  connectionId: Nullable<number> = null
-
-  @Column({ type: 'int', nullable: false, default: 0 })
-  position = 0
+  // Back-reference to the join table; not used directly in app logic
+  @OneToMany('ConnectionSshConfig', 'sshConfig')
+  connectionSshConfigs?: any[]
 
   @Column({ type: 'varchar', nullable: false })
   host: string

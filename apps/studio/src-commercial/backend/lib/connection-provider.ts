@@ -9,35 +9,44 @@ export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
 
-    // Build jump hosts from sshConfigs (all hops except the last, which is the target host)
-    const jumpHosts: IDbConnectionServerSSHHopConfig[] = (config.sshConfigs ?? [])
-      .slice()
-      .sort((a, b) => a.position - b.position)
-      .map((jh) => ({
-        host: jh.host,
-        port: jh.port,
-        username: jh.username,
-        password: jh.password,
-        privateKey: jh.keyfile,
-        passphrase: jh.keyfilePassword,
-        authMethod: (jh.mode === 'userpass' ? 'password' : jh.mode) as 'agent' | 'keyfile' | 'password',
-      }))
+    // sshConfigs is an ordered list of ConnectionSshConfig join rows (each has a .sshConfig nested object)
+    const sorted = (config.sshConfigs ?? []).slice().sort((a, b) => a.position - b.position)
+    const targetJoin = sorted[sorted.length - 1]
+    const hopJoins = sorted.slice(0, -1)
 
-    const ssh = config.sshEnabled ? {
-      host: config.sshHost ? config.sshHost.trim() : null,
-      port: config.sshPort,
-      user: config.sshUsername ? config.sshUsername.trim() : null,
-      password: config.sshMode === 'userpass' ? config.sshPassword : null,
-      privateKey: config.sshMode === 'keyfile' ? config.sshKeyfile : null,
-      passphrase: config.sshMode === 'keyfile' ? config.sshKeyfilePassword : null,
-      bastionHost: null,
-      useAgent: config.sshMode == 'agent',
-      keepaliveInterval: config.sshKeepaliveInterval,
-      jumpHosts,
-    } : null
+    const toHopConfig = (join: typeof sorted[0]): IDbConnectionServerSSHHopConfig => {
+      const cfg = join.sshConfig
+      return {
+        host: cfg.host,
+        port: cfg.port,
+        username: cfg.username,
+        password: cfg.password,
+        privateKey: cfg.keyfile,
+        passphrase: cfg.keyfilePassword,
+        authMethod: (cfg.mode === 'userpass' ? 'password' : cfg.mode) as 'agent' | 'keyfile' | 'password',
+      }
+    }
 
-    if (ssh && config.sshMode === 'agent' && config.sshHost) {
-      const fileConfig = readSshConfig(config.sshHost.trim())
+    const jumpHosts: IDbConnectionServerSSHHopConfig[] = hopJoins.map(toHopConfig)
+
+    const ssh = config.sshEnabled && targetJoin ? (() => {
+      const cfg = targetJoin.sshConfig
+      return {
+        host: cfg.host ? cfg.host.trim() : null,
+        port: cfg.port,
+        user: cfg.username ? cfg.username.trim() : null,
+        password: cfg.password,
+        privateKey: cfg.keyfile,
+        passphrase: cfg.keyfilePassword,
+        bastionHost: null,
+        useAgent: cfg.mode === 'agent',
+        keepaliveInterval: config.sshKeepaliveInterval,
+        jumpHosts,
+      }
+    })() : null
+
+    if (ssh && targetJoin?.sshConfig?.mode === 'agent' && targetJoin?.sshConfig?.host) {
+      const fileConfig = readSshConfig(targetJoin.sshConfig.host.trim())
       if (fileConfig.port && !ssh.port) {
         ssh.port = fileConfig.port
       }

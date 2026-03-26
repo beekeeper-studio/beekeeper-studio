@@ -14,7 +14,8 @@ import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
 import { QueryFolder } from "@/common/appdb/models/QueryFolder";
 import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
 import { SshConfig } from "@/common/appdb/models/SshConfig";
-import { TransportSshConfig } from "@/common/transport/TransportSshConfig";
+import { ConnectionSshConfig } from "@/common/appdb/models/ConnectionSshConfig";
+import { TransportSshConfig, TransportConnectionSshConfig } from "@/common/transport/TransportSshConfig";
 import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
@@ -177,6 +178,7 @@ export const AppDbHandlers = {
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
   ...handlersFor<TransportSshConfig>('sshConfig', SshConfig),
+  ...handlersFor<TransportConnectionSshConfig>('connectionSshConfig', ConnectionSshConfig),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

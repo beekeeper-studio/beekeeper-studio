@@ -2,8 +2,6 @@ import { Transport } from "."
 import { SshMode } from "@/common/interfaces/IConnection"
 
 export interface TransportSshConfig extends Transport {
-  connectionId: Nullable<number>
-  position: number
   host: string
   port: number
   mode: SshMode
@@ -11,4 +9,11 @@ export interface TransportSshConfig extends Transport {
   password: Nullable<string>
   keyfile: Nullable<string>
   keyfilePassword: Nullable<string>
+}
+
+export interface TransportConnectionSshConfig extends Transport {
+  connectionId: number
+  sshConfigId: number
+  position: number
+  sshConfig: TransportSshConfig
 }

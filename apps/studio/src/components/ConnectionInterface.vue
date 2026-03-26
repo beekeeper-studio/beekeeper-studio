@@ -403,7 +403,6 @@ export default Vue.extend({
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
       const conn = await this.$util.send('appdb/saved/new')
-      conn.sshUsername = this.username
       this.config = conn;
     } catch (e) {
       log.error(e)
@@ -445,7 +444,7 @@ export default Vue.extend({
     },
     edit(config) {
       this.config = _.clone(config)
-      this.config.sshConfigs = (config.sshConfigs ?? []).map(cfg => ({ ...cfg }))
+      this.config.sshConfigs = (config.sshConfigs ?? []).map(join => ({ ...join, sshConfig: { ...join.sshConfig } }))
       this.errors = null
       this.connectionError = null
     },
@@ -547,10 +546,12 @@ export default Vue.extend({
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
 
-        // Persist ssh configs (jump hosts + target host chain)
+        // Persist ssh configs (ordered hop chain including target host)
         await this.$store.dispatch('data/sshConfigs/syncForConnection', {
           connectionId: id,
-          sshConfigs: this.config.sshConfigs ?? [],
+          sshConfigs: (this.config.sshConfigs ?? [])
+            .sort((a, b) => a.position - b.position)
+            .map(join => join.sshConfig),
         })
 
         // This feels wrong but it works. It's undefined on savedConnections
