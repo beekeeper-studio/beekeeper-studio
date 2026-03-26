@@ -23,8 +23,6 @@ import * as os from 'os'
 import rawLog from '@bksLogger'
 
 import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
-import { SshMode } from '@/common/interfaces/IConnection'
-import { SshMode } from '@/lib/db/types'
 
 export type BaseSshOptions = {
   host: string;
@@ -33,18 +31,18 @@ export type BaseSshOptions = {
 };
 
 export type PasswordAuthSshOptions = BaseSshOptions & {
-  sshMode: 'userpass';
+  authMethod: 'password';
   password?: string;
 };
 
 export type KeyFileAuthSshOptions = BaseSshOptions & {
-  sshMode: 'keyfile';
+  authMethod: 'keyfile';
   privateKey?: string | Buffer;
   passphrase?: string;
 };
 
 export type AgentAuthSshOptions = BaseSshOptions & {
-  sshMode: 'agent';
+  authMethod: 'agent';
   agentSocket?: string;
 }
 
@@ -54,7 +52,7 @@ interface Options {
   username?: string
   password?: string
   privateKey?: string | Buffer
-  sshMode?: SshMode
+  agentForward?: boolean
   /** @deprecated Use jumpHosts instead */
   bastionHost?: string
   passphrase?: string
@@ -93,7 +91,7 @@ class SSHConnection {
     if (!options.endPort) {
       this.options.endPort = 22
     }
-    if (!options.privateKey && options.sshMode !== 'agent' && !options.skipAutoPrivateKey) {
+    if (!options.privateKey && !options.agentForward && !options.skipAutoPrivateKey) {
       const defaultFilePath = path.join(os.homedir(), '.ssh', 'id_rsa')
       if (fs.existsSync(defaultFilePath)) {
         this.options.privateKey = fs.readFileSync(defaultFilePath)
@@ -168,7 +166,7 @@ class SSHConnection {
     // Support both the new jumpHosts array and the legacy bastionHost string.
     const jumpHosts: SshOptions[] = this.options.jumpHosts && this.options.jumpHosts.length > 0
       ? this.options.jumpHosts
-      : (this.options.bastionHost ? [{ host: this.options.bastionHost }] : [])
+      : (this.options.bastionHost ? [{ host: this.options.bastionHost, authMethod: 'agent' as const }] : [])
 
     if (jumpHosts.length > 0) {
       connection = await this.connectViaBastion(jumpHosts)
@@ -187,7 +185,6 @@ class SSHConnection {
    */
   private async connectViaBastion(jumpHosts: SshOptions[]): Promise<Client> {
     let stream: NodeJS.ReadableStream | undefined = undefined
-    let prevConnection: Client | undefined = undefined
 
     for (let i = 0; i < jumpHosts.length; i++) {
       const hop = jumpHosts[i]
@@ -196,7 +193,6 @@ class SSHConnection {
 
       this.debug('Connecting to jump host [%d] "%s"', i, hop.host)
       const conn = await this.connectWithHopOptions(hop, stream)
-      prevConnection = conn
 
       // Open a TCP forward to the next hop through this connection
       stream = await this.openForwardStream(conn, nextHost, nextPort)
@@ -237,11 +233,11 @@ class SSHConnection {
         options.keepaliveInterval = this.options.keepaliveInterval * 1000
       }
 
-      if (hop.sshMode === 'userpass') {
-        options.password = hop.password
-      } else if (hop.sshMode === 'keyfile') {
-        options.privateKey = hop.privateKey
-        options.passphrase = hop.passphrase
+      if (hop.authMethod === 'password') {
+        options.password = (hop as PasswordAuthSshOptions).password
+      } else if (hop.authMethod === 'keyfile') {
+        options.privateKey = (hop as KeyFileAuthSshOptions).privateKey
+        options.passphrase = (hop as KeyFileAuthSshOptions).passphrase
       } else {
         // agent
         options.agentForward = true
@@ -249,7 +245,7 @@ class SSHConnection {
         if (this.isWindows && agentDefault == null) {
           agentDefault = ElectronFriendlyPageantAgent
         }
-        const agentSock = hop.agentSocket ? hop.agentSocket : agentDefault
+        const agentSock = (hop as AgentAuthSshOptions).agentSocket ? (hop as AgentAuthSshOptions).agentSocket : agentDefault
         if (agentSock == null) {
           return reject(new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable'))
         }
@@ -296,7 +292,7 @@ class SSHConnection {
         this.debug('(localized) options.keepaliveInterval: ' + options.keepaliveInterval + 'milliseconds')
       }
 
-      if (this.options.sshMode === 'agent') {
+      if (this.options.agentForward) {
         options['agentForward'] = true
 
         // see https://github.com/mscdex/ssh2#client for agents on Windows

@@ -19,7 +19,7 @@ export default {
         password: jh.password,
         privateKey: jh.keyfile,
         passphrase: jh.keyfilePassword,
-        sshMode: jh.mode,
+        authMethod: (jh.mode === 'userpass' ? 'password' : jh.mode) as 'agent' | 'keyfile' | 'password',
       }))
 
     const ssh = config.sshEnabled ? {
@@ -30,7 +30,7 @@ export default {
       privateKey: config.sshKeyfile,
       passphrase: config.sshKeyfilePassword,
       bastionHost: null,
-      sshMode: config.sshMode,
+      useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
       jumpHosts,
     } : null

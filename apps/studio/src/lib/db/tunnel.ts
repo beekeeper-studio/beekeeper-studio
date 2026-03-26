@@ -32,34 +32,34 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           const baseOptions: BaseSshOptions = {
             host: jh.host,
             port: jh.port,
-            username: jh.username,
+            username: jh.username ?? undefined,
           };
 
-          if (jh.sshMode === 'keyfile') {
+          if (jh.authMethod === 'keyfile') {
             return {
               ...baseOptions,
-              sshMode: jh.sshMode,
+              authMethod: 'keyfile',
               privateKey: jh.privateKey ? fs.readFileSync(path.resolve(resolveHomePathToAbsolute(jh.privateKey))) : undefined,
-              passphrase: jh.passphrase,
+              passphrase: jh.passphrase ?? undefined,
             }
-          } else if (jh.sshMode === 'userpass') {
+          } else if (jh.authMethod === 'password') {
             return {
               ...baseOptions,
-              sshMode: jh.sshMode,
-              password: jh.password,
+              authMethod: 'password',
+              password: jh.password ?? undefined,
             };
           }
           return {
             ...baseOptions,
-            sshMode: jh.sshMode,
-            agentSocket: appConfig.sshAuthSock,
+            authMethod: 'agent',
+            agentSocket: appConfig.sshAuthSock ?? undefined,
           };
         })
 
         const sshConfig: Options = {
           endHost: config.ssh.host || '',
           endPort: config.ssh.port,
-          sshMode: config.ssh.sshMode,
+          agentForward: config.ssh.useAgent,
           passphrase: config.ssh.passphrase || undefined,
           username: config.ssh.user || undefined,
           password: config.ssh.password || undefined,
@@ -71,11 +71,11 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           jumpHosts,
         }
 
-        if (config.ssh.sshMode === 'agent' && appConfig.sshAuthSock) {
+        if (config.ssh.useAgent && appConfig.sshAuthSock) {
           sshConfig.agentSocket = appConfig.sshAuthSock
         }
 
-        if (config.ssh.sshMode === 'keyfile' && config.ssh.privateKey) {
+        if (!config.ssh.useAgent && config.ssh.privateKey) {
           sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
         } else {
           sshConfig.privateKey = undefined
