@@ -51,8 +51,8 @@ export function tabulatorForTableData(
     debugInvalidComponentFuncs: false,
     history: true,
     keybindings: {
-      undo: window.bksConfig.getKeybindings("tabulator", "general.undo"),
-      redo: window.bksConfig.getKeybindings("tabulator", "general.redo"),
+      undo: window.bksConfig.getFirstKeybinding("tabulator", "general.undo"),
+      redo: window.bksConfig.getFirstKeybinding("tabulator", "general.redo"),
     },
     rowHeader: {
       field: rowHeaderField,

@@ -2,10 +2,11 @@ import DefaultMenu from './BaseMenuBuilder'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import { IGroupedUserSettings } from '../transport/TransportUserSetting'
 import { IPlatformInfo } from '../IPlatformInfo'
+import { BksConfig } from '@/common/bksConfig/BksConfigProvider'
 
 export default class extends DefaultMenu {
-  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo, private bksConfig: IBksConfig) {
-    super(settings, handler, platformInfo)
+  constructor(settings: IGroupedUserSettings, handler: IMenuActionHandler, platformInfo: IPlatformInfo, bksConfig: BksConfig) {
+    super(settings, handler, platformInfo, bksConfig)
   }
 
   viewMenu(): Electron.MenuItemConstructorOptions {
@@ -14,9 +15,9 @@ export default class extends DefaultMenu {
       submenu: [
         this.menuItems.zoomreset,
         this.menuItems.zoomin,
-        this.menuItems.zoominNumpad,
+        this.menuItems.zoominAlt,
         this.menuItems.zoomout,
-        this.menuItems.zoomoutNumpad,
+        this.menuItems.zoomoutAlt,
         { type: 'separator' },
         this.menuItems.editorFontSizeReset,
         this.menuItems.editorFontSizeIncrease,

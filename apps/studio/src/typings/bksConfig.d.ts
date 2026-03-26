@@ -313,19 +313,40 @@ declare interface IBksConfig {
         general: {
             addRow: string;
             cloneSelection: string;
+            copy: string;
             copySelection: string;
+            cut: string;
             deleteSelection: string;
+            disconnect: string;
+            importSqlFiles: string;
+            newWindow: string;
             openInSqlEditor: string;
             openQuickSearch: string;
+            paste: string;
             pasteSelection: string;
-            redo: string[];
+            quit: string;
+            redo: string;
             refresh: string[];
+            reloadWindow: string;
+            resetZoom: string;
             save: string;
+            selectAll: string;
+            toggleFullScreen: string;
             undo: string;
+            zoomIn: string;
+            zoomInAlt: string;
+            zoomOut: string;
+            zoomOutAlt: string;
+        };
+        primarySidebar: {
+            toggleOpen: string;
         };
         queryEditor: {
+            cancelQuery: string;
             closeTableFilter: string;
             copyResultSelection: string;
+            decreaseFontSize: string;
+            increaseFontSize: string;
             manualCommit: string;
             manualRollback: string;
             openTableFilter: string;
@@ -351,6 +372,7 @@ declare interface IBksConfig {
         tab: {
             closeTab: string;
             forceCloseTab: string;
+            newTab: string;
             nextTab: string[];
             previousTab: string[];
             reopenLastClosedTab: string;

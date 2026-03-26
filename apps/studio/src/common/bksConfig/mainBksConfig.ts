@@ -3,7 +3,7 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
-import { parseIni, processRawConfig } from "@/config/helpers";
+import { parseIni, processRawConfig, recurse } from "@/config/helpers";
 import {
   BksConfigProvider,
   ConfigEntryDetailWarning,
@@ -29,34 +29,44 @@ export function checkUnrecognized(
   sourceName: "system" | "user"
 ): ConfigEntryDetailWarning[] {
   const results: ConfigEntryDetailWarning[] = [];
+  const sections = new Set<string>();
+  const keys = new Map<string, string>();
 
-  function traverse(obj: Record<string, any>, parentPath = "") {
-    for (const key of Object.keys(obj)) {
-      const path = parentPath ? `${parentPath}.${key}` : key;
+  for (const { path } of recurse(newConfig)) {
+    // Skip validation for plugins section
+    if (path[0] === 'plugins') {
+      continue;
+    }
 
-      // Skip validation for plugin configurations (plugins and plugins.[plugin-id])
-      if (path === 'plugins' || /^plugins\.[^.]+/.test(path)) {
-        continue;
-      }
+    const section = path.slice(0, -1);
+    if (!_.has(defaultConfig, section)) {
+      sections.add(section.join("."));
+      continue;
+    }
 
-      const unrecognized = !_.has(defaultConfig, path);
-      const value = obj[key];
-
-      if (unrecognized) {
-        const section = typeof value === "object" ? path : parentPath;
-        results.push({
-          type: "unrecognized-key",
-          sourceName,
-          section,
-          path,
-        });
-      } else if (typeof value === "object") {
-        traverse(value, path);
-      }
+    if (!_.has(defaultConfig, path)) {
+      keys.set(path.join("."), section.join("."));
+      continue;
     }
   }
 
-  traverse(newConfig);
+  for (const [path, section] of keys) {
+    results.push({
+      type: "unrecognized-key",
+      sourceName,
+      section,
+      path,
+    });
+  }
+
+  for (const section of sections) {
+    results.push({
+      type: "unrecognized-key",
+      sourceName,
+      section,
+      path: section,
+    });
+  }
 
   return results;
 }

@@ -4,7 +4,7 @@ import Noty from 'noty'
 import { RootBinding, AppEvent } from './common/AppEvent'
 import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
 import BksConfig from './common/bksConfig'
-import { createVHotkeyKeymap, createCodemirroKeymap } from './plugins/ConfigPlugin'
+import { createVHotkeyKeymap, createCodemirrorKeymap } from './plugins/ConfigPlugin'
 import { UtilityConnection } from './lib/utility/UtilityConnection'
 
 // 2. Specify a file with the types you want to augment
