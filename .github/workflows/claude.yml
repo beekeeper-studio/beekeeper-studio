@@ -29,11 +29,26 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile
+
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: Bash(yarn install),Bash(yarn electron:build --linux AppImage),Bash(yarn test:unit),Bash(yarn test:integration --run-in-band)
-
-
+          claude_args: |
+            --allowedTools Edit,Read,Write,Bash,Bash(yarn *)
+            --system-prompt "You can use yarn to install deps, run tests, or run builds if needed"
