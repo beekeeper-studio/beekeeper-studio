@@ -80,6 +80,7 @@ export class DbConnectionBase extends ApplicationEntity {
         port = 4000
         break
       case 'postgresql':
+      case 'greengage':
         port = 5432
         break
       case 'sqlserver':
@@ -136,7 +137,7 @@ export class DbConnectionBase extends ApplicationEntity {
   public get defaultSocketPath(): Nullable<string> {
     if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
       return '/var/run/mysqld/mysqld.sock'
-    } else if (this.connectionType === 'postgresql') {
+    } else if (['postgresql', 'greengage'].includes(this.connectionType || '')) {
       return '/var/run/postgresql'
     } else if (this.connectionType === 'tidb') {
       return '/tmp/tidb.sock'
@@ -169,7 +170,7 @@ export class DbConnectionBase extends ApplicationEntity {
   sshHost: Nullable<string> = null
 
   @Column({ type: "int", nullable: true })
-  sshPort = 22
+  sshPort: Nullable<number> = null
 
   @Column({ type: "varchar", nullable: true })
   sshKeyfile: Nullable<string> = null
@@ -375,8 +376,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         const credentials = url.substring(firstDoubleSlash, lastAtIndex)
 
         const [user, ...passwordParts] = credentials.split(':')
-        extractedUser = user
-        extractedPassword = passwordParts.join(':')
+        extractedUser = decodeURIComponent(user)
+        extractedPassword = decodeURIComponent(passwordParts.join(':'))
 
         cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
       }

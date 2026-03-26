@@ -1163,6 +1163,10 @@ export const itShouldGenerateSQLWithBinary = async function (util) {
       `insert into "main"."test_inserts" ("id", "name") values ('\\xDE\\xAD\\xBE\\xEF', 'beef');` +
       `update "main"."test_inserts" set "name" = 'beefy' where "id" = '\\xDE\\xAD\\xBE\\xEF';` +
       `delete from "main"."test_inserts" where "id" = '\\xDE\\xAD\\xBE\\xEF';`,
+    greengage:
+      `insert into "public"."test_inserts" ("id", "name") values ('\\xdeadbeef', 'beef');` +
+      `update "public"."test_inserts" set "name" = 'beefy' where "id" = '\\xdeadbeef';` +
+      `delete from "public"."test_inserts" where "id" = '\\xdeadbeef';`,
   }
 
   expect(util.fmt(sql)).toEqual(util.fmt(expectedQueries[util.dialect]))
@@ -1250,7 +1254,7 @@ export const itShouldHaveCorrectFilterTypes = async function(util) {
   expect(features.filterTypes.length).toBeGreaterThan(0)
 
   // PostgreSQL-based databases should have 'ilike'
-  const ilikeSupported = ['postgresql', 'psql', 'cockroachdb', 'redshift']
+  const ilikeSupported = ['postgresql', 'psql', 'cockroachdb', 'redshift', 'greengage']
   if (ilikeSupported.includes(util.dbType) || ilikeSupported.includes(util.dialect)) {
     expect(features.filterTypes).toContain('ilike')
     expect(features.filterTypes).toEqual(['standard', 'ilike'])
