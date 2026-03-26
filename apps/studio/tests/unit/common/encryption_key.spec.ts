@@ -2,9 +2,6 @@ import crypto from 'crypto'
 import Encryptor from 'simple-encryptor'
 import fs from 'fs'
 import path from 'path'
-import os from 'os'
-
-let mockTmpDir: string
 
 // Mock safeStorage
 const mockSafeStorage = {
@@ -32,25 +29,20 @@ jest.mock('electron', () => ({
   },
 }))
 
-jest.mock('@bksLogger', () => ({
-  scope: () => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
-  }),
-}))
+// The real platform_info returns './tmp' in test mode (TEST_MODE=1),
+// so we use that directory for all test files.
+const userDirectory = './tmp'
 
-jest.mock('@/common/platform_info', () => ({
-  default: {
-    get userDirectory() {
-      return mockTmpDir
-    },
-  },
-}))
+function loadMainModule() {
+  return require('@/backend/lib/encryption_key') as {
+    loadEncryptionKey: () => string
+    isEncryptionKeyInsecure: () => boolean
+  }
+}
 
-function loadModule() {
+function loadCommonModule() {
   return require('@/common/encryption_key') as {
+    setEncryptionKey: (key: string, insecure: boolean) => void
     loadEncryptionKey: () => string
     isEncryptionKeyInsecure: () => boolean
   }
@@ -58,11 +50,19 @@ function loadModule() {
 
 const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
 
+function cleanupTestFiles() {
+  const keychainFile = path.join(userDirectory, '.encryption-key')
+  const legacyFile = path.join(userDirectory, '.key')
+  if (fs.existsSync(keychainFile)) fs.unlinkSync(keychainFile)
+  if (fs.existsSync(legacyFile)) fs.unlinkSync(legacyFile)
+}
+
 beforeEach(() => {
-  mockTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bks-enc-test-'))
+  if (!fs.existsSync(userDirectory)) {
+    fs.mkdirSync(userDirectory, { recursive: true })
+  }
+  cleanupTestFiles()
   jest.resetModules()
-  delete process.env.BKS_ENCRYPTION_KEY
-  delete process.env.BKS_ENCRYPTION_INSECURE
   mockSafeStorageAvailable = true
   mockSafeStorage.isEncryptionAvailable.mockReturnValue(true)
   mockSafeStorage.encryptString.mockImplementation((str: string) => Buffer.from('SAFE:' + str))
@@ -76,48 +76,62 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  fs.rmSync(mockTmpDir, { recursive: true, force: true })
+  cleanupTestFiles()
 })
 
-describe('encryption_key', () => {
-  describe('utility process (env var)', () => {
-    it('returns key from BKS_ENCRYPTION_KEY env var', () => {
-      process.env.BKS_ENCRYPTION_KEY = 'abc123'
-      const mod = loadModule()
-      expect(mod.loadEncryptionKey()).toBe('abc123')
-    })
-
-    it('reports insecure when BKS_ENCRYPTION_INSECURE=true', () => {
-      process.env.BKS_ENCRYPTION_KEY = 'abc123'
-      process.env.BKS_ENCRYPTION_INSECURE = 'true'
-      const mod = loadModule()
-      mod.loadEncryptionKey()
-      expect(mod.isEncryptionKeyInsecure()).toBe(true)
-    })
-
-    it('reports secure when BKS_ENCRYPTION_INSECURE is not set', () => {
-      process.env.BKS_ENCRYPTION_KEY = 'abc123'
-      const mod = loadModule()
-      mod.loadEncryptionKey()
-      expect(mod.isEncryptionKeyInsecure()).toBe(false)
-    })
+describe('common/encryption_key (utility process cache)', () => {
+  it('throws if loadEncryptionKey is called before setEncryptionKey', () => {
+    const mod = loadCommonModule()
+    expect(() => mod.loadEncryptionKey()).toThrow(/not been received/)
   })
 
+  it('returns the key after setEncryptionKey is called', () => {
+    const mod = loadCommonModule()
+    mod.setEncryptionKey('test-key-123', false)
+    expect(mod.loadEncryptionKey()).toBe('test-key-123')
+  })
+
+  it('returns cached key on subsequent calls', () => {
+    const mod = loadCommonModule()
+    mod.setEncryptionKey('cached-key', false)
+    expect(mod.loadEncryptionKey()).toBe('cached-key')
+    expect(mod.loadEncryptionKey()).toBe('cached-key')
+  })
+
+  it('reports insecure=true when set', () => {
+    const mod = loadCommonModule()
+    mod.setEncryptionKey('key', true)
+    expect(mod.isEncryptionKeyInsecure()).toBe(true)
+  })
+
+  it('reports insecure=false when set', () => {
+    const mod = loadCommonModule()
+    mod.setEncryptionKey('key', false)
+    expect(mod.isEncryptionKeyInsecure()).toBe(false)
+  })
+
+  it('returns false for isEncryptionKeyInsecure before key is set', () => {
+    const mod = loadCommonModule()
+    expect(mod.isEncryptionKeyInsecure()).toBe(false)
+  })
+})
+
+describe('backend/lib/encryption_key (main process)', () => {
   describe('safeStorage available', () => {
     it('fresh install: generates 64-char hex key and creates .encryption-key file', () => {
-      const mod = loadModule()
+      const mod = loadMainModule()
       const key = mod.loadEncryptionKey()
       expect(key).toMatch(/^[0-9a-f]{64}$/)
-      expect(fs.existsSync(path.join(mockTmpDir, '.encryption-key'))).toBe(true)
-      expect(fs.existsSync(path.join(mockTmpDir, '.key'))).toBe(false)
+      expect(fs.existsSync(path.join(userDirectory, '.encryption-key'))).toBe(true)
+      expect(fs.existsSync(path.join(userDirectory, '.key'))).toBe(false)
     })
 
     it('existing .encryption-key: reads and decrypts correctly', () => {
       const expectedKey = crypto.randomBytes(32).toString('hex')
       const encrypted = Buffer.from('SAFE:' + expectedKey)
-      fs.writeFileSync(path.join(mockTmpDir, '.encryption-key'), encrypted)
+      fs.writeFileSync(path.join(userDirectory, '.encryption-key'), encrypted)
 
-      const mod = loadModule()
+      const mod = loadMainModule()
       const key = mod.loadEncryptionKey()
       expect(key).toBe(expectedKey)
     })
@@ -126,17 +140,38 @@ describe('encryption_key', () => {
       const legacyKey = crypto.randomBytes(32).toString('hex')
       const encryptor = Encryptor(defaultEncryptionKey)
       const encryptedLegacy = encryptor.encrypt({ encryptionKey: legacyKey })
-      fs.writeFileSync(path.join(mockTmpDir, '.key'), encryptedLegacy, 'UTF8')
+      fs.writeFileSync(path.join(userDirectory, '.key'), encryptedLegacy, 'UTF8')
 
-      const mod = loadModule()
+      const mod = loadMainModule()
       const key = mod.loadEncryptionKey()
       expect(key).toBe(legacyKey)
-      expect(fs.existsSync(path.join(mockTmpDir, '.encryption-key'))).toBe(true)
-      expect(fs.existsSync(path.join(mockTmpDir, '.key'))).toBe(false)
+      expect(fs.existsSync(path.join(userDirectory, '.encryption-key'))).toBe(true)
+      expect(fs.existsSync(path.join(userDirectory, '.key'))).toBe(false)
+    })
+
+    it('prefers .encryption-key when both .encryption-key and .key exist', () => {
+      const keychainKey = crypto.randomBytes(32).toString('hex')
+      const legacyKey = crypto.randomBytes(32).toString('hex')
+
+      fs.writeFileSync(path.join(userDirectory, '.encryption-key'), Buffer.from('SAFE:' + keychainKey))
+
+      const encryptor = Encryptor(defaultEncryptionKey)
+      fs.writeFileSync(path.join(userDirectory, '.key'), encryptor.encrypt({ encryptionKey: legacyKey }), 'UTF8')
+
+      const mod = loadMainModule()
+      const key = mod.loadEncryptionKey()
+      expect(key).toBe(keychainKey)
+    })
+
+    it('returns cached key on subsequent calls', () => {
+      const mod = loadMainModule()
+      const key1 = mod.loadEncryptionKey()
+      const key2 = mod.loadEncryptionKey()
+      expect(key1).toBe(key2)
     })
 
     it('reports secure (isEncryptionKeyInsecure = false)', () => {
-      const mod = loadModule()
+      const mod = loadMainModule()
       mod.loadEncryptionKey()
       expect(mod.isEncryptionKeyInsecure()).toBe(false)
     })
@@ -144,48 +179,71 @@ describe('encryption_key', () => {
 
   describe('safeStorage unavailable', () => {
     beforeEach(() => {
-      mockSafeStorage.isEncryptionAvailable.mockReturnValue(false)
+      mockSafeStorageAvailable = false
     })
 
     it('fresh install: creates .key file (fallback)', () => {
-      const mod = loadModule()
+      const mod = loadMainModule()
       const key = mod.loadEncryptionKey()
       expect(key).toMatch(/^[0-9a-f]{64}$/)
-      expect(fs.existsSync(path.join(mockTmpDir, '.key'))).toBe(true)
-      expect(fs.existsSync(path.join(mockTmpDir, '.encryption-key'))).toBe(false)
+      expect(fs.existsSync(path.join(userDirectory, '.key'))).toBe(true)
+      expect(fs.existsSync(path.join(userDirectory, '.encryption-key'))).toBe(false)
     })
 
     it('existing .key: reads correctly', () => {
       const legacyKey = crypto.randomBytes(32).toString('hex')
       const encryptor = Encryptor(defaultEncryptionKey)
       const encryptedLegacy = encryptor.encrypt({ encryptionKey: legacyKey })
-      fs.writeFileSync(path.join(mockTmpDir, '.key'), encryptedLegacy, 'UTF8')
+      fs.writeFileSync(path.join(userDirectory, '.key'), encryptedLegacy, 'UTF8')
 
-      const mod = loadModule()
+      const mod = loadMainModule()
       const key = mod.loadEncryptionKey()
       expect(key).toBe(legacyKey)
     })
 
     it('reports insecure (isEncryptionKeyInsecure = true)', () => {
-      const mod = loadModule()
+      const mod = loadMainModule()
       mod.loadEncryptionKey()
       expect(mod.isEncryptionKeyInsecure()).toBe(true)
     })
   })
 
   describe('error handling', () => {
-    it('isEncryptionKeyInsecure() throws if called before loadEncryptionKey()', () => {
-      const mod = loadModule()
-      expect(() => mod.isEncryptionKeyInsecure()).toThrow(
-        'isEncryptionKeyInsecure() called before loadEncryptionKey()'
-      )
+    it('returns false for isEncryptionKeyInsecure before loadEncryptionKey', () => {
+      const mod = loadMainModule()
+      expect(mod.isEncryptionKeyInsecure()).toBe(false)
     })
 
     it('corrupted .encryption-key throws error', () => {
-      fs.writeFileSync(path.join(mockTmpDir, '.encryption-key'), Buffer.from('corrupted-data'))
+      fs.writeFileSync(path.join(userDirectory, '.encryption-key'), Buffer.from('corrupted-data'))
 
-      const mod = loadModule()
+      const mod = loadMainModule()
       expect(() => mod.loadEncryptionKey()).toThrow(/Could not decrypt saved credentials/)
+    })
+
+    it('corrupted legacy .key file throws error', () => {
+      fs.writeFileSync(path.join(userDirectory, '.key'), 'not-valid-encrypted-data', 'UTF8')
+
+      const mod = loadMainModule()
+      expect(() => mod.loadEncryptionKey()).toThrow(/may be corrupted/)
+    })
+
+    it('migration continues if legacy file deletion fails', () => {
+      const legacyKey = crypto.randomBytes(32).toString('hex')
+      const encryptor = Encryptor(defaultEncryptionKey)
+      const encryptedLegacy = encryptor.encrypt({ encryptionKey: legacyKey })
+      fs.writeFileSync(path.join(userDirectory, '.key'), encryptedLegacy, 'UTF8')
+
+      jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {
+        throw new Error('Permission denied')
+      })
+
+      const mod = loadMainModule()
+      const key = mod.loadEncryptionKey()
+      expect(key).toBe(legacyKey)
+      expect(fs.existsSync(path.join(userDirectory, '.encryption-key'))).toBe(true)
+
+      jest.restoreAllMocks()
     })
   })
 })

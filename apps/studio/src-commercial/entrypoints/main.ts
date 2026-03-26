@@ -29,7 +29,7 @@ import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
-import { loadEncryptionKey, isEncryptionKeyInsecure } from '@/common/encryption_key'
+import { loadEncryptionKey, isEncryptionKeyInsecure } from '@/backend/lib/encryption_key'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -52,8 +52,6 @@ async function createUtilityProcess() {
   const args = {
     bksPlatformInfo: JSON.stringify(platformInfo),
     bksConfigSource: JSON.stringify(bksConfig.source),
-    BKS_ENCRYPTION_KEY: loadEncryptionKey(),
-    ...(isEncryptionKeyInsecure() ? { BKS_ENCRYPTION_INSECURE: 'true' } : {}),
   }
 
   utilityProcess = electron.utilityProcess.fork(
@@ -81,6 +79,12 @@ async function createUtilityProcess() {
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       electron.shell.openExternal(msg.url)
+    } else if (msg.type === 'requestEncryptionKey') {
+      utilityProcess.postMessage({
+        type: 'encryptionKey',
+        key: loadEncryptionKey(),
+        insecure: isEncryptionKeyInsecure(),
+      })
     }
   })
 

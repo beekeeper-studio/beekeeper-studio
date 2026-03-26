@@ -24,14 +24,16 @@
 
 <script lang="ts">
 import Vue from 'vue'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
 export default Vue.extend({
   name: 'KeychainWarning',
+  data() {
+    return {
+      dismissed: SmartLocalStorage.getBool('dismissedKeychainWarning', false),
+    }
+  },
   computed: {
-    dismissed(): boolean {
-      const setting = this.$store.state.settings?.settings?.dismissedKeychainWarning
-      return setting?.value === true || setting?.value === 'true'
-    },
     insecure(): boolean {
       return !!window.keychainInsecure
     },
@@ -40,11 +42,9 @@ export default Vue.extend({
     }
   },
   methods: {
-    async dismiss() {
-      await this.$store.dispatch('settings/save', {
-        key: 'dismissedKeychainWarning',
-        value: true,
-      })
+    dismiss() {
+      SmartLocalStorage.setBool('dismissedKeychainWarning', true)
+      this.dismissed = true
     },
     openLink() {
       window.main.openExternally('https://docs.beekeeperstudio.io/user_guide/encryption-key-security/')
