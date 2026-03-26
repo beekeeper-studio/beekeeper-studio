@@ -1,64 +1,17 @@
 import { IGroupedUserSettings } from '@/common/appdb/models/user_setting'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
-import { IDbConnectionServerConfig, IDbConnectionServerSSHHopConfig } from '@/lib/db/types'
+import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
 import { readSshConfig } from '@/lib/ssh/sshConfigReader'
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
-
-    // sshConfigs is an ordered list of ConnectionSshConfig join rows (each has a .sshConfig nested object)
-    const sorted = (config.sshConfigs ?? []).slice().sort((a, b) => a.position - b.position)
-    const targetJoin = sorted[sorted.length - 1]
-    const hopJoins = sorted.slice(0, -1)
-
-    const toHopConfig = (join: typeof sorted[0]): IDbConnectionServerSSHHopConfig => {
-      const cfg = join.sshConfig
-      return {
-        host: cfg.host,
-        port: cfg.port,
-        username: cfg.username,
-        password: cfg.password,
-        privateKey: cfg.keyfile,
-        passphrase: cfg.keyfilePassword,
-        authMethod: (cfg.mode === 'userpass' ? 'password' : cfg.mode) as 'agent' | 'keyfile' | 'password',
-      }
-    }
-
-    const jumpHosts: IDbConnectionServerSSHHopConfig[] = hopJoins.map(toHopConfig)
-
-    const ssh = config.sshEnabled && targetJoin ? (() => {
-      const cfg = targetJoin.sshConfig
-      return {
-        host: cfg.host ? cfg.host.trim() : null,
-        port: cfg.port,
-        user: cfg.username ? cfg.username.trim() : null,
-        password: cfg.password,
-        privateKey: cfg.keyfile,
-        passphrase: cfg.keyfilePassword,
-        bastionHost: null,
-        useAgent: cfg.mode === 'agent',
-        keepaliveInterval: config.sshKeepaliveInterval,
-        jumpHosts,
-      }
-    })() : null
-
-    if (ssh && targetJoin?.sshConfig?.mode === 'agent' && targetJoin?.sshConfig?.host) {
-      const fileConfig = readSshConfig(targetJoin.sshConfig.host.trim())
-      if (fileConfig.port && !ssh.port) {
-        ssh.port = fileConfig.port
-      }
-      if (fileConfig.identityFile) {
-        ssh.privateKey = fileConfig.identityFile
-      }
-      if (fileConfig.host) {
-        ssh.host = fileConfig.host
-      }
-      if (fileConfig.user && !ssh.user) {
-        ssh.user = fileConfig.user
-      }
+    const ssh: IDbConnectionServerSSHConfig = {
+      enabled: config.sshEnabled,
+      keepaliveInterval: config.sshKeepaliveInterval,
+      jumpHosts: config.sshConfigs || [],
     }
 
     return {

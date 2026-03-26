@@ -5,10 +5,11 @@ import rawLog from "@bksLogger";
 import { SshOptions, Options, SSHConnection, BaseSshOptions } from '../../vendor/node-ssh-forward/index'
 import appConfig from '@/common/platform_info'
 import pf from 'portfinder'
-
+import _ from 'lodash'
 import { IDbConnectionServerConfig } from './types';
 import { resolveHomePathToAbsolute } from '@/handlers/utils';
 import { IDbSshTunnel } from './backendTypes';
+import { readSshConfig, SshConfigResult } from '../ssh/sshConfigReader';
 
 const log = rawLog.scope('db:tunnel');
 const logger = () => log;
@@ -28,41 +29,70 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         // localhost can be 127.0.0.1:port (ipv4), or :::port (ipv6) by default, depending.
 
         // Build jump host options, reading private key files for keyfile-auth hops
-        const jumpHosts: SshOptions[] = (config.ssh.jumpHosts ?? []).map((jh) => {
+        const jumpHosts: SshOptions[] = _.sortBy(
+          config.ssh.jumpHosts,
+          "position"
+        ).map(({ sshConfig: ssh }) => {
+          if (!ssh.mode) {
+            throw new Error(`Invalid SSH mode ${ssh.mode}`);
+          }
+
+          let defaults: SshConfigResult = { host: ssh.host };
+
+          if (ssh.host && ssh.mode === "agent") {
+            try {
+              defaults = readSshConfig(ssh.host);
+            } catch (e) {
+              log.error(`Could not read ssh config for ${ssh.host}: ${e.message}`);
+            }
+          }
+
           const baseOptions: BaseSshOptions = {
-            host: jh.host,
-            port: jh.port,
-            username: jh.username ?? undefined,
+            host: defaults.host,
+            port: ssh.port ?? defaults.port,
+            username: ssh.username ?? defaults.user,
+            mode: ssh.mode === 'userpass' ? 'password' : ssh.mode,
           };
 
-          if (jh.authMethod === 'keyfile') {
+          if (ssh.mode === "keyfile") {
+            const keyfile = ssh.keyfile ?? defaults.identityFile;
+
+            const privateKeyContent = keyfile
+              ? fs.readFileSync(
+                path.resolve(resolveHomePathToAbsolute(keyfile))
+              )
+              : undefined;
+
             return {
               ...baseOptions,
-              authMethod: 'keyfile',
-              privateKey: jh.privateKey ? fs.readFileSync(path.resolve(resolveHomePathToAbsolute(jh.privateKey))) : undefined,
-              passphrase: jh.passphrase ?? undefined,
-            }
-          } else if (jh.authMethod === 'password') {
-            return {
-              ...baseOptions,
-              authMethod: 'password',
-              password: jh.password ?? undefined,
+              privateKey: privateKeyContent,
+              passphrase: ssh.keyfilePassword,
             };
           }
+
+          if (ssh.mode === "userpass") {
+            return {
+              ...baseOptions,
+              password: ssh.password,
+            };
+          }
+
           return {
             ...baseOptions,
-            authMethod: 'agent',
-            agentSocket: appConfig.sshAuthSock ?? undefined,
+            agentSocket: appConfig.sshAuthSock,
           };
         })
 
+        const useAgent = jumpHosts.some((ssh) => ssh.mode === 'agent');
+        const end = jumpHosts.pop();
         const sshConfig: Options = {
-          endHost: config.ssh.host || '',
-          endPort: config.ssh.port || 22,
-          agentForward: config.ssh.useAgent,
-          passphrase: config.ssh.passphrase || undefined,
-          username: config.ssh.user || undefined,
-          password: config.ssh.password || undefined,
+          endHost: end.host,
+          endPort: end.port,
+          privateKey: end.mode === 'keyfile' ? end.privateKey : undefined,
+          agentForward: end.mode === 'agent',
+          passphrase: end.mode === 'keyfile' ? end.passphrase : undefined,
+          username: end.username,
+          password: end.mode === 'password' ? end.password : undefined,
           skipAutoPrivateKey: true,
           noReadline: true,
           keepaliveInterval: config.ssh.keepaliveInterval,
@@ -71,15 +101,10 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           jumpHosts,
         }
 
-        if (config.ssh.useAgent && appConfig.sshAuthSock) {
+        if (useAgent && appConfig.sshAuthSock) {
           sshConfig.agentSocket = appConfig.sshAuthSock
         }
 
-        if (!config.ssh.useAgent && config.ssh.privateKey) {
-          sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
-        } else {
-          sshConfig.privateKey = undefined
-        }
         const connection = new SSHConnection(sshConfig)
         logger().debug("connection created!")
 

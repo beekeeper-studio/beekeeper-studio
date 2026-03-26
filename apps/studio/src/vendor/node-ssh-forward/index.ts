@@ -28,27 +28,28 @@ export type BaseSshOptions = {
   host: string;
   port?: number;
   username?: string;
+  mode: 'password' | 'keyfile' | 'agent';
 };
 
 export type PasswordAuthSshOptions = BaseSshOptions & {
-  authMethod: 'password';
+  mode: 'password';
   password?: string;
 };
 
 export type KeyFileAuthSshOptions = BaseSshOptions & {
-  authMethod: 'keyfile';
+  mode: 'keyfile';
   privateKey?: string | Buffer;
   passphrase?: string;
 };
 
 export type AgentAuthSshOptions = BaseSshOptions & {
-  authMethod: 'agent';
+  mode: 'agent';
   agentSocket?: string;
 }
 
 export type SshOptions = PasswordAuthSshOptions | KeyFileAuthSshOptions | AgentAuthSshOptions;
 
-interface Options {
+type Options = {
   username?: string
   password?: string
   privateKey?: string | Buffer
@@ -166,7 +167,7 @@ class SSHConnection {
     // Support both the new jumpHosts array and the legacy bastionHost string.
     const jumpHosts: SshOptions[] = this.options.jumpHosts && this.options.jumpHosts.length > 0
       ? this.options.jumpHosts
-      : (this.options.bastionHost ? [{ host: this.options.bastionHost, authMethod: 'agent' as const }] : [])
+      : (this.options.bastionHost ? [{ host: this.options.bastionHost, mode: 'agent' as const }] : [])
 
     if (jumpHosts.length > 0) {
       connection = await this.connectViaBastion(jumpHosts)
@@ -233,11 +234,11 @@ class SSHConnection {
         options.keepaliveInterval = this.options.keepaliveInterval * 1000
       }
 
-      if (hop.authMethod === 'password') {
+      if (hop.mode === 'password') {
         options.password = (hop as PasswordAuthSshOptions).password
-      } else if (hop.authMethod === 'keyfile') {
-        options.privateKey = (hop as KeyFileAuthSshOptions).privateKey
-        options.passphrase = (hop as KeyFileAuthSshOptions).passphrase
+      } else if (hop.mode === 'keyfile') {
+        options.privateKey = hop.privateKey
+        options.passphrase = hop.passphrase
       } else {
         // agent
         options.agentForward = true
@@ -245,7 +246,7 @@ class SSHConnection {
         if (this.isWindows && agentDefault == null) {
           agentDefault = ElectronFriendlyPageantAgent
         }
-        const agentSock = (hop as AgentAuthSshOptions).agentSocket ? (hop as AgentAuthSshOptions).agentSocket : agentDefault
+        const agentSock = hop.agentSocket || agentDefault
         if (agentSock == null) {
           return reject(new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable'))
         }
@@ -253,7 +254,7 @@ class SSHConnection {
       }
 
       if (sock) {
-        options.sock = sock as any
+        options.sock = sock
       }
 
       connection.on('ready', () => {

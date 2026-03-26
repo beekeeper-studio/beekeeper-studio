@@ -1,3 +1,4 @@
+import { TransportConnectionSshConfig } from '@/common/transport/TransportSshConfig';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 
@@ -175,28 +176,10 @@ export interface IDbConnectionDatabase {
   namespace: string
 }
 
-export interface IDbConnectionServerSSHHopConfig {
-  host: string
-  port: number
-  username: Nullable<string>
-  password: Nullable<string>
-  privateKey: Nullable<string>
-  passphrase: Nullable<string>
-  authMethod: 'agent' | 'keyfile' | 'password'
-}
-
 export interface IDbConnectionServerSSHConfig {
-  host: Nullable<string>
-  port: number
-  user: Nullable<string>
-  password: Nullable<string>
-  privateKey: Nullable<string>
-  passphrase: Nullable<string>
-  /** @deprecated Use jumpHosts instead */
-  bastionHost: Nullable<string>
+  enabled: boolean
   keepaliveInterval: Nullable<number>
-  useAgent: boolean
-  jumpHosts: IDbConnectionServerSSHHopConfig[]
+  jumpHosts: TransportConnectionSshConfig[]
 }
 
 export interface IDbConnectionServerConfig {

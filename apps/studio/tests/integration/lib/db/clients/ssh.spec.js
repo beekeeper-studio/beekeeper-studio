@@ -37,11 +37,17 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
-      sshMode: 'userpass',
-      sshHost: container.getHost(),
-      sshPort: container.getMappedPort(2222),
-      sshUsername: 'beekeeper',
-      sshPassword: 'password'
+      sshConfigs: [
+        {
+          sshConfig: {
+            host: container.getHost(),
+            port: container.getMappedPort(2222),
+            mode: 'userpass',
+            username: 'beekeeper',
+            password: 'password',
+          },
+        },
+      ],
     }
 
     console.log("Starting SSH test with config", config)
@@ -52,7 +58,6 @@ describe("SSH Tunnel Tests", () => {
     // Jump host chain: test host -> jump1 (public) -> ssh (private) -> postgres (private)
     // jump1 is the only container reachable from the test host.
     // ssh and postgres are on the private internal network only.
-    console.log("Starting jump host test")
     const jumpConfig = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -60,23 +65,26 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
-      sshHost: 'ssh',
-      sshPort: 2222,
-      sshUsername: 'beekeeper',
-      sshPassword: 'password',
-      sshMode: 'userpass',
-      sshJumpHosts: [
+      sshConfigs: [
         {
-          id: null,
-          connectionId: null,
           position: 0,
-          host: jump1.getHost(),
-          port: jump1.getMappedPort(2222),
-          mode: 'userpass',
-          username: 'beekeeper',
-          password: 'password',
-          keyfile: null,
-          keyfilePassword: null,
+          sshConfig: {
+            host: jump1.getHost(),
+            port: jump1.getMappedPort(2222),
+            mode: 'userpass',
+            username: 'beekeeper',
+            password: 'password',
+          },
+        },
+        {
+          position: 1,
+          sshConfig: {
+            host: 'ssh',
+            port: 2222,
+            mode: 'userpass',
+            username: 'beekeeper',
+            password: 'password',
+          },
         },
       ],
     }
