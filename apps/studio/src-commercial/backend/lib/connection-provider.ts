@@ -11,7 +11,7 @@ export default {
     const ssh: IDbConnectionServerSSHConfig = {
       enabled: config.sshEnabled,
       keepaliveInterval: config.sshKeepaliveInterval,
-      jumpHosts: config.sshConfigs || [],
+      configs: config.sshConfigs || [],
     }
 
     return {

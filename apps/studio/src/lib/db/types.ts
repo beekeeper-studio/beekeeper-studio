@@ -179,7 +179,7 @@ export interface IDbConnectionDatabase {
 export interface IDbConnectionServerSSHConfig {
   enabled: boolean
   keepaliveInterval: Nullable<number>
-  jumpHosts: TransportConnectionSshConfig[]
+  configs: TransportConnectionSshConfig[]
 }
 
 export interface IDbConnectionServerConfig {

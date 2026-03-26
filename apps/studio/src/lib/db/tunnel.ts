@@ -30,18 +30,21 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
 
         // Build jump host options, reading private key files for keyfile-auth hops
         const jumpHosts: SshOptions[] = _.sortBy(
-          config.ssh.jumpHosts,
+          config.ssh.configs,
           "position"
         ).map(({ sshConfig: ssh }) => {
           if (!ssh.mode) {
             throw new Error(`Invalid SSH mode ${ssh.mode}`);
           }
 
-          let defaults: SshConfigResult = { host: ssh.host };
+          let defaults: SshConfigResult = {
+            host: ssh.host,
+            identityFile: "~/.ssh/id_rsa",
+          };
 
           if (ssh.host && ssh.mode === "agent") {
             try {
-              defaults = readSshConfig(ssh.host);
+              defaults = Object.assign(defaults, readSshConfig(ssh.host));
             } catch (e) {
               log.error(`Could not read ssh config for ${ssh.host}: ${e.message}`);
             }
@@ -55,14 +58,10 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           };
 
           if (ssh.mode === "keyfile") {
-            const keyfile = ssh.keyfile ?? defaults.identityFile;
-
-            const privateKeyContent = keyfile
-              ? fs.readFileSync(
-                path.resolve(resolveHomePathToAbsolute(keyfile))
-              )
-              : undefined;
-
+            const keyfile = ssh.keyfile ?? defaults.identityFile!;
+            const privateKeyContent = fs.readFileSync(
+              path.resolve(resolveHomePathToAbsolute(keyfile))
+            );
             return {
               ...baseOptions,
               privateKey: privateKeyContent,

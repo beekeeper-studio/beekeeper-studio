@@ -167,7 +167,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
 
   @Column({ type: 'int', nullable: true })
-  sshKeepaliveInterval: Nullable<number> = null
+  sshKeepaliveInterval: Nullable<number> = 60
 
   @Column({ type: 'boolean', nullable: false, default: false })
   ssl = false
