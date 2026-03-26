@@ -2,18 +2,18 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { EncryptTransformer } from '../transformers/Transformers'
-import { TransportSshJumpHost } from '@/common/transport/TransportSshJumpHost'
+import { TransportSshConfig } from '@/common/transport/TransportSshConfig'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 
-@Entity({ name: 'ssh_jump_host' })
-export class SshJumpHost extends ApplicationEntity implements TransportSshJumpHost {
-  withProps(props?: Partial<TransportSshJumpHost>): SshJumpHost {
-    if (props) SshJumpHost.merge(this, props)
+@Entity({ name: 'ssh_config' })
+export class SshConfig extends ApplicationEntity implements TransportSshConfig {
+  withProps(props?: Partial<TransportSshConfig>): SshConfig {
+    if (props) SshConfig.merge(this, props)
     return this
   }
 
-  @ManyToOne('SavedConnection', 'sshJumpHosts', { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne('SavedConnection', 'sshConfigs', { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'connectionId' })
   connection?: any
 

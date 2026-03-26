@@ -9,7 +9,7 @@ import { CloudQueryFolderModule } from "./modules/data/query_folder/CloudQueryFo
 import { UtilUsedConnectionModule } from "./modules/data/used_connection/UtilityUsedConnectionModule";
 import { CloudUsedQueryModule } from "./modules/data/used_query/CloudUsedQueryModule";
 import { UtilUsedQueryModule } from "./modules/data/used_query/UtilityUsedQueryModule";
-import { UtilJumpHostModule } from "./modules/data/jump_host/UtilityJumpHostModule";
+import { UtilSshConfigModule } from "./modules/data/ssh_config/UtilitySshConfigModule";
 
 
 export const DataModules = [
@@ -44,9 +44,9 @@ export const DataModules = [
     local: UtilUsedConnectionModule
   },
   {
-    path: 'data/jumpHosts',
-    cloud: UtilJumpHostModule,
-    local: UtilJumpHostModule,
+    path: 'data/sshConfigs',
+    cloud: UtilSshConfigModule,
+    local: UtilSshConfigModule,
   }
 
 ]

@@ -1,15 +1,15 @@
 import { IGroupedUserSettings } from '@/common/appdb/models/user_setting'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
-import { IDbConnectionServerConfig, IDbConnectionServerSSHJumpHostConfig } from '@/lib/db/types'
+import { IDbConnectionServerConfig, IDbConnectionServerSSHHopConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
 
-    // Build jump hosts from the sshJumpHosts relation (ordered by position)
-    const jumpHosts: IDbConnectionServerSSHJumpHostConfig[] = (config.sshJumpHosts ?? [])
+    // Build jump hosts from sshConfigs (all hops except the last, which is the target host)
+    const jumpHosts: IDbConnectionServerSSHHopConfig[] = (config.sshConfigs ?? [])
       .slice()
       .sort((a, b) => a.position - b.position)
       .map((jh) => ({

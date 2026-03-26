@@ -19,7 +19,7 @@
         <button
           type="button"
           class="btn btn-flat add-host-btn"
-          @click="addJumpHost"
+          @click="addSshConfig"
         >
           Add Jump Host
         </button>
@@ -162,7 +162,7 @@
             <input
               type="text"
               class="form-control"
-              v-model="selectedJumpHost.host"
+              v-model="selectedSshConfig.host"
             />
           </div>
           <div class="col s3 form-group">
@@ -170,13 +170,13 @@
             <input
               type="number"
               class="form-control"
-              v-model.number="selectedJumpHost.port"
+              v-model.number="selectedSshConfig.port"
             />
           </div>
         </div>
         <div class="form-group">
           <label>Authentication</label>
-          <select class="form-control" v-model="selectedJumpHost.mode">
+          <select class="form-control" v-model="selectedSshConfig.mode">
             <option
               v-for="option in sshModeOptions"
               :key="option.mode"
@@ -191,17 +191,17 @@
           <input
             type="text"
             class="form-control"
-            v-model="selectedJumpHost.username"
+            v-model="selectedSshConfig.username"
           />
         </div>
         <div
-          v-if="selectedJumpHost.mode === 'keyfile'"
+          v-if="selectedSshConfig.mode === 'keyfile'"
           class="private-key gutter"
         >
           <div class="row form-group">
             <label>Private Key File</label>
             <file-picker
-              v-model="selectedJumpHost.keyfile"
+              v-model="selectedSshConfig.keyfile"
               editable
               :show-hidden-files="true"
               :default-path="filePickerDefaultPath"
@@ -212,16 +212,16 @@
             <input
               type="password"
               class="form-control"
-              v-model="selectedJumpHost.keyfilePassword"
+              v-model="selectedSshConfig.keyfilePassword"
             />
           </div>
         </div>
-        <div v-if="selectedJumpHost.mode === 'userpass'" class="form-group">
+        <div v-if="selectedSshConfig.mode === 'userpass'" class="form-group">
           <label>Password</label>
           <input
             type="password"
             class="form-control"
-            v-model="selectedJumpHost.password"
+            v-model="selectedSshConfig.password"
           />
         </div>
       </template>
@@ -236,7 +236,7 @@ import FilePicker from "@/components/common/form/FilePicker.vue";
 import ExternalLink from "@/components/common/ExternalLink.vue";
 import MaskedInput from "@/components/MaskedInput.vue";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { TransportSshJumpHost } from "@/common/transport/TransportSshJumpHost";
+import { TransportSshConfig } from "@/common/transport/TransportSshConfig";
 
 export default Vue.extend({
   components: { FilePicker, ExternalLink, MaskedInput },
@@ -270,12 +270,12 @@ export default Vue.extend({
   computed: {
     rows() {
       return [
-        ...this.config.sshJumpHosts.map((jh) => ({
-          host: jh.host,
-          port: jh.port,
-          username: jh.username,
-          mode: jh.mode,
-          ref: jh,
+        ...(this.config.sshConfigs ?? []).map((cfg) => ({
+          host: cfg.host,
+          port: cfg.port,
+          username: cfg.username,
+          mode: cfg.mode,
+          ref: cfg,
         })),
         {
           host: this.config.sshHost,
@@ -286,14 +286,14 @@ export default Vue.extend({
         },
       ];
     },
-    selectedJumpHost(): TransportSshJumpHost | null {
+    selectedSshConfig(): TransportSshConfig | null {
       if (
         this.selectedIndex === null ||
-        this.selectedIndex >= this.config.sshJumpHosts.length
+        this.selectedIndex >= (this.config.sshConfigs ?? []).length
       ) {
         return null;
       }
-      return this.config.sshJumpHosts[this.selectedIndex];
+      return this.config.sshConfigs[this.selectedIndex];
     },
     isSelectedTargetHost(): boolean {
       return this.selectedIndex === this.rows.length - 1;
@@ -301,7 +301,7 @@ export default Vue.extend({
     useSshAgent() {
       return (
         this.config.sshMode === "agent" ||
-        this.config.sshJumpHosts.some((jh) => jh.mode === "agent")
+        (this.config.sshConfigs ?? []).some((cfg) => cfg.mode === "agent")
       );
     },
   },
@@ -316,12 +316,12 @@ export default Vue.extend({
   },
 
   methods: {
-    addJumpHost() {
-      const jumpHosts = [...this.config.sshJumpHosts];
-      jumpHosts.push({
+    addSshConfig() {
+      const sshConfigs = [...(this.config.sshConfigs ?? [])];
+      sshConfigs.push({
         id: null,
         connectionId: this.config.id ?? null,
-        position: jumpHosts.length,
+        position: sshConfigs.length,
         host: "",
         port: 22,
         mode: "agent",
@@ -333,10 +333,10 @@ export default Vue.extend({
         updatedAt: null,
         version: null,
       });
-      this.$set(this.config, "sshJumpHosts", jumpHosts);
-      this.selectedIndex = jumpHosts.length - 1;
+      this.$set(this.config, "sshConfigs", sshConfigs);
+      this.selectedIndex = sshConfigs.length - 1;
     },
-    removeJumpHost(index: number) {
+    removeSshConfig(index: number) {
       const isLastRow = index === this.rows.length - 1;
 
       if (isLastRow) {
@@ -344,45 +344,44 @@ export default Vue.extend({
           throw new Error("There should be at least one host");
         }
 
-        // Replace the target host with the last jump host
-
-        const jumpHosts: TransportSshJumpHost[] = [
-          ...this.config.sshJumpHosts
+        // Replace the target host with the last ssh config (promoting it)
+        const sshConfigs: TransportSshConfig[] = [
+          ...(this.config.sshConfigs ?? [])
         ];
 
-        const lastJumpHost = jumpHosts.pop();
+        const lastConfig = sshConfigs.pop();
 
-        this.$set(this.config, "sshHost", lastJumpHost.host);
-        this.$set(this.config, "sshPort", lastJumpHost.port);
-        this.$set(this.config, "sshUsername", lastJumpHost.username);
-        this.$set(this.config, "sshMode", lastJumpHost.mode);
-        this.$set(this.config, "sshPassword", lastJumpHost.password);
-        this.$set(this.config, "sshKeyfile", lastJumpHost.keyfile);
-        this.$set(this.config, "sshKeyfilePassword", lastJumpHost.keyfilePassword);
-        this.$set(this.config, "sshJumpHosts", jumpHosts);
+        this.$set(this.config, "sshHost", lastConfig.host);
+        this.$set(this.config, "sshPort", lastConfig.port);
+        this.$set(this.config, "sshUsername", lastConfig.username);
+        this.$set(this.config, "sshMode", lastConfig.mode);
+        this.$set(this.config, "sshPassword", lastConfig.password);
+        this.$set(this.config, "sshKeyfile", lastConfig.keyfile);
+        this.$set(this.config, "sshKeyfilePassword", lastConfig.keyfilePassword);
+        this.$set(this.config, "sshConfigs", sshConfigs);
 
         this.selectedIndex = index - 1;
 
         return;
       }
 
-      const jumpHosts = [...this.config.sshJumpHosts];
-      jumpHosts.splice(index, 1);
-      jumpHosts.forEach((jh, i) => {
-        jh.position = i;
+      const sshConfigs = [...(this.config.sshConfigs ?? [])];
+      sshConfigs.splice(index, 1);
+      sshConfigs.forEach((cfg, i) => {
+        cfg.position = i;
       });
-      this.$set(this.config, "sshJumpHosts", jumpHosts);
+      this.$set(this.config, "sshConfigs", sshConfigs);
     },
-    reorderJumpHosts(newOrder: Array<TransportSshJumpHost | IConnection>) {
+    reorderSshConfigs(newOrder: Array<TransportSshConfig | IConnection>) {
       const lastRef = newOrder[newOrder.length - 1];
 
       // If the target host is no longer last, promote the new last row to
-      // target host and demote the old target host to a jump host.
+      // target host and demote the old target host to a ssh config entry.
       if (lastRef !== this.config) {
-        const newTargetHost = lastRef as TransportSshJumpHost;
+        const newTargetHost = lastRef as TransportSshConfig;
 
         // Capture current target host fields before overwriting
-        const oldTargetHost: TransportSshJumpHost = {
+        const oldTargetHost: TransportSshConfig = {
           id: null,
           connectionId: this.config.id ?? null,
           position: 0,
@@ -407,33 +406,33 @@ export default Vue.extend({
         this.$set(this.config, "sshKeyfile", newTargetHost.keyfile);
         this.$set(this.config, "sshKeyfilePassword", newTargetHost.keyfilePassword);
 
-        // Build the new jump hosts list: replace the promoted row with the
-        // old target host data, then reindex positions.
-        const jumpHosts = newOrder
+        // Build the new ssh configs list, replacing the promoted row with
+        // the old target host data, then reindex positions.
+        const sshConfigs = newOrder
           .slice(0, -1)
           .map((ref) =>
             ref === newTargetHost
               ? oldTargetHost
-              : ref as TransportSshJumpHost
+              : ref as TransportSshConfig
           );
 
-        jumpHosts.forEach((jh, i) => {
-          jh.position = i;
+        sshConfigs.forEach((cfg, i) => {
+          cfg.position = i;
         });
 
-        this.$set(this.config, "sshJumpHosts", jumpHosts);
+        this.$set(this.config, "sshConfigs", sshConfigs);
         return;
       }
 
-      // Target host is still last — just reorder the jump hosts.
-      const jumpHosts = newOrder
+      // Target host is still last — just reorder the ssh configs.
+      const sshConfigs = newOrder
         .slice(0, -1)
         .map((ref, i) => {
-          const jh = ref as TransportSshJumpHost;
-          jh.position = i;
-          return jh;
+          const cfg = ref as TransportSshConfig;
+          cfg.position = i;
+          return cfg;
         });
-      this.$set(this.config, "sshJumpHosts", jumpHosts);
+      this.$set(this.config, "sshConfigs", sshConfigs);
     },
     createTable() {
       this.destroyTable();
@@ -490,7 +489,7 @@ export default Vue.extend({
               button.onclick = () => {
                 const pos = cell.getRow().getPosition(true);
                 if (pos) {
-                  this.removeJumpHost(pos - 1);
+                  this.removeSshConfig(pos - 1);
                 }
               };
               return button;
@@ -519,7 +518,7 @@ export default Vue.extend({
       });
       sshTable.on("rowMoved", () => {
         const newOrder = sshTable.getRows().map((r) => r.getData().ref);
-        this.reorderJumpHosts(newOrder);
+        this.reorderSshConfigs(newOrder);
       })
     },
     destroyTable() {

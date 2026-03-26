@@ -95,7 +95,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
 
       return item.id
     }
-  }, {}, {}, { relations: ['sshJumpHosts'] }),
+  }, {}, {}, { relations: ['sshConfigs'] }),
   getters: {
     filteredConnections(state) {
       if (!state.filter) {

@@ -19,9 +19,9 @@
         <div class="subtitle">
           <span
             class="bastion"
-            v-if="this.config.sshJumpHosts?.length > 0 && !privacyMode"
+            v-if="this.config.sshConfigs?.length > 0 && !privacyMode"
           >
-            <span class="truncate">{{ this.config.sshJumpHosts.length }} {{ pluralize('jump', this.config.sshJumpHosts.length) }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ this.config.sshConfigs.length }} {{ pluralize('jump', this.config.sshConfigs.length) }}</span>&nbsp;>&nbsp;
           </span>
           <span
             class="ssh"

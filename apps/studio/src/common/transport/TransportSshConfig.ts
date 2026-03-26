@@ -1,7 +1,7 @@
 import { Transport } from "."
 import { SshMode } from "@/common/interfaces/IConnection"
 
-export interface TransportSshJumpHost extends Transport {
+export interface TransportSshConfig extends Transport {
   connectionId: Nullable<number>
   position: number
   host: string

@@ -445,6 +445,7 @@ export default Vue.extend({
     },
     edit(config) {
       this.config = _.clone(config)
+      this.config.sshConfigs = (config.sshConfigs ?? []).map(cfg => ({ ...cfg }))
       this.errors = null
       this.connectionError = null
     },
@@ -545,6 +546,12 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
+
+        // Persist ssh configs (jump hosts + target host chain)
+        await this.$store.dispatch('data/sshConfigs/syncForConnection', {
+          connectionId: id,
+          sshConfigs: this.config.sshConfigs ?? [],
+        })
 
         // This feels wrong but it works. It's undefined on savedConnections
         if (this.config.connectionId === null) {

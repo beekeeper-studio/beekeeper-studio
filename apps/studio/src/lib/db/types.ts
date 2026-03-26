@@ -174,7 +174,7 @@ export interface IDbConnectionDatabase {
   namespace: string
 }
 
-export interface IDbConnectionServerSSHJumpHostConfig {
+export interface IDbConnectionServerSSHHopConfig {
   host: string
   port: number
   username: Nullable<string>
@@ -195,7 +195,7 @@ export interface IDbConnectionServerSSHConfig {
   bastionHost: Nullable<string>
   keepaliveInterval: Nullable<number>
   useAgent: boolean
-  jumpHosts: IDbConnectionServerSSHJumpHostConfig[]
+  jumpHosts: IDbConnectionServerSSHHopConfig[]
 }
 
 export interface IDbConnectionServerConfig {

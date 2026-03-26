@@ -84,6 +84,7 @@ import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
 import createSshJumpHosts from './20260318_create_ssh_jump_hosts'
+import renameSshJumpHostToSshConfig from './20260326_rename_ssh_jump_host_to_ssh_config'
 
 import ultimate from './ultimate/index'
 
@@ -130,6 +131,7 @@ const realMigrations = [
   createConnectionFolders, createQueryFolders,
   addPositionToItems,
   createSshJumpHosts,
+  renameSshJumpHostToSshConfig,
 ]
 
 // fixtures require the models

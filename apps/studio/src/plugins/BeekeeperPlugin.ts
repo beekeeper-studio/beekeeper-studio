@@ -81,7 +81,7 @@ export const BeekeeperPlugin = {
 
       if (config.sshHost) {
         result += ` via ${config.sshUsername}@${config.sshHost}`
-        const jumpCount = config.sshJumpHosts?.length
+        const jumpCount = config.sshConfigs?.length
         if (jumpCount > 0) {
           result += ` (${jumpCount} ${pluralize('jump', jumpCount)})`
         }

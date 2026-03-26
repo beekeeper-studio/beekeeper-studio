@@ -9,7 +9,7 @@ import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, Co
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
-import { SshJumpHost } from './SshJumpHost'
+import { SshConfig } from './SshConfig'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
@@ -300,8 +300,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   // Do NOT initialize this to [] - TypeORM does not allow array initializers on relations.
   // See ConnectionFolder.ts for the same pattern.
-  @OneToMany(() => SshJumpHost, (jh) => jh.connection, { cascade: true, eager: false })
-  sshJumpHosts?: SshJumpHost[]
+  @OneToMany(() => SshConfig, (cfg) => cfg.connection, { cascade: true, eager: false })
+  sshConfigs?: SshConfig[]
 
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
