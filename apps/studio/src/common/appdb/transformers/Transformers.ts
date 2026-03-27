@@ -9,10 +9,18 @@ const log = rawLog.scope("Transformers")
 
 
 export class EncryptTransformer implements ValueTransformer {
-  private encryptor: SimpleEncryptor
+  private _encryptor: SimpleEncryptor | null = null
+  private keyProvider: () => string
 
-  constructor(key: string) {
-    this.encryptor = Encryptor(key)
+  constructor(keyProvider: () => string) {
+    this.keyProvider = keyProvider
+  }
+
+  private get encryptor(): SimpleEncryptor {
+    if (!this._encryptor) {
+      this._encryptor = Encryptor(this.keyProvider())
+    }
+    return this._encryptor
   }
 
   to(entityValue: Nullable<string>): Nullable<string> {
@@ -26,10 +34,18 @@ export class EncryptTransformer implements ValueTransformer {
 }
 
 export class SurrealDbEncryptTransformer implements ValueTransformer {
-  private encryptor: SimpleEncryptor;
+  private _encryptor: SimpleEncryptor | null = null
+  private keyProvider: () => string
 
-  constructor(key: string) {
-    this.encryptor = Encryptor(key);
+  constructor(keyProvider: () => string) {
+    this.keyProvider = keyProvider
+  }
+
+  private get encryptor(): SimpleEncryptor {
+    if (!this._encryptor) {
+      this._encryptor = Encryptor(this.keyProvider())
+    }
+    return this._encryptor
   }
 
   to(value: SurrealDBOptions): SurrealDBOptions {
@@ -52,10 +68,18 @@ export class SurrealDbEncryptTransformer implements ValueTransformer {
 }
 
 export class AzureCredsEncryptTransformer implements ValueTransformer {
-  private encryptor: SimpleEncryptor;
+  private _encryptor: SimpleEncryptor | null = null
+  private keyProvider: () => string
 
-  constructor(key: string) {
-    this.encryptor = Encryptor(key);
+  constructor(keyProvider: () => string) {
+    this.keyProvider = keyProvider
+  }
+
+  private get encryptor(): SimpleEncryptor {
+    if (!this._encryptor) {
+      this._encryptor = Encryptor(this.keyProvider())
+    }
+    return this._encryptor
   }
 
   to(value: AzureAuthOptions): AzureAuthOptions {

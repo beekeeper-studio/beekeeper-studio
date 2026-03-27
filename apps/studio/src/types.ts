@@ -11,9 +11,14 @@ interface UtilProcOpenExternalMessage {
   url: string;
 }
 
+interface UtilProcRequestEncryptionKeyMessage {
+  type: "requestEncryptionKey";
+}
+
 export type UtilProcMessage =
   | UtilProcReadyMessage
-  | UtilProcOpenExternalMessage;
+  | UtilProcOpenExternalMessage
+  | UtilProcRequestEncryptionKeyMessage;
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 

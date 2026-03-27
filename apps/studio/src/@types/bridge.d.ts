@@ -10,5 +10,6 @@ declare global {
     bksConfigSource: BksConfigSource
     bksConfig: BksConfig
     bksPlugin: WebPluginManager
+    keychainInsecure: boolean
   }
 }
