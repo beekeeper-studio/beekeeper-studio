@@ -181,6 +181,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.toggleSecondarySidebar)
   }
 
+  reconnect = (_1: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.reconnect)
+  }
+
   disconnect = (_1: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.disconnect)
   }
@@ -213,8 +217,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {
-    if (win) win.webContents.send(AppEvent.switchLicenseState, state)
+  switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow, actuallyState?: DevLicenseState) => {
+    if (win)  {
+      win.webContents.send(AppEvent.switchLicenseState, actuallyState || state)
+    }
   }
 
   toggleBeta = async (menuItem: Electron.MenuItem): Promise<void> => {

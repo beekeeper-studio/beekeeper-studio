@@ -67,7 +67,7 @@ export default Vue.extend({
     },
     async connect() {
       try {
-        await this.$store.dispatch('reconnect');
+        await this.$store.dispatch('reconnect', { silent: true });
         this.$modal.hide(this.modalName);
       } catch (e) {
         this.$noty.error(e.message ?? e);

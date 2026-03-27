@@ -4,6 +4,7 @@ import { runCommonTests, runReadOnlyTests } from './all'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 import fs from 'fs';
 import path from 'path';
+import { SshEnvironment } from './ssh/SshEnvironment';
 
 // SQL Server testing policy:
 // We test against SQL Server until it leaves mainstream support
@@ -291,3 +292,66 @@ function testWith(dockerTag: string, readonly: boolean) {
 }
 
 TEST_VERSIONS.forEach(({ version, readonly }) => testWith(version, readonly));
+
+describe("SQL Server SSH Tunnel Tests", () => {
+  jest.setTimeout(dbtimeout)
+
+  let sshEnvironment;
+  let sshDatabase;
+
+  beforeAll(async () => {
+    sshEnvironment = new SshEnvironment('sqlserver');
+    await sshEnvironment.start();
+  });
+
+  afterAll(async () => {
+    await sshEnvironment?.stop();
+  });
+
+  beforeEach(async () => {
+    sshDatabase = await sshEnvironment.connect();
+  });
+
+  afterEach(async () => {
+    await sshDatabase?.disconnect();
+  });
+
+  it("should work", async () => {
+    await expect(sshDatabase.executeQuery("SELECT 1")).resolves.toBeDefined();
+  });
+
+  it("should detect connection lost", async () => {
+    const fn = jest.fn();
+
+    sshDatabase.connection.on("connection-lost", fn);
+
+    await sshEnvironment.restart();
+
+    // Must run a query to trigger the connection-lost event
+    await expect(sshDatabase.listTables()).rejects.toThrow();
+
+    // Yield to the event loop to allow the "connection-lost" event to fire
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(fn).toBeCalled();
+    expect(sshDatabase.connection.isConnected).toBe(false);
+  });
+
+  it("should be able to re-establish connection after losing connection", async () => {
+    const isConnectionLost = new Promise((resolve) => {
+      sshDatabase.connection.once("connection-lost", resolve);
+    });
+
+    await sshEnvironment.restart();
+
+    // Run a query to trigger the connection-lost event
+    await expect(sshDatabase.listTables()).rejects.toThrow();
+
+    // Connection-lost is triggered after running a query
+    await expect(isConnectionLost).resolvesWithin(1000);
+
+    await sshDatabase.connection.connect();
+    expect(sshDatabase.connection.isConnected).toBe(true);
+    await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
+  });
+});

@@ -7,6 +7,7 @@ import data_mutators from '../../../../../src/mixins/data_mutators';
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { runCommonTests, runReadOnlyTests } from './all'
 import MySQL5_4KnexClient from '@/shared/lib/knex-mysql5_4'
+import { SshEnvironment } from './ssh/SshEnvironment'
 
 const TEST_VERSIONS = [
   { version: '5.1', image: 'vettadock/mysql-old', options: { knexClient: MySQL5_4KnexClient, skipTransactions: true } },
@@ -2340,4 +2341,67 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly, image, options }) => testWith(version, socket, readonly, image, options ))
+
+describe("MySQL SSH Tunnel Tests", () => {
+  jest.setTimeout(dbtimeout)
+
+  let sshEnvironment;
+  let sshDatabase;
+
+  beforeAll(async () => {
+    sshEnvironment = new SshEnvironment('mysql');
+    await sshEnvironment.start();
+  });
+
+  afterAll(async () => {
+    await sshEnvironment?.stop();
+  });
+
+  beforeEach(async () => {
+    sshDatabase = await sshEnvironment.connect();
+  });
+
+  afterEach(async () => {
+    await sshDatabase?.disconnect();
+  });
+
+  it("should work", async () => {
+    await expect(sshDatabase.executeQuery("SELECT 1")).resolves.toBeDefined();
+  });
+
+  it("should detect connection lost", async () => {
+    const fn = jest.fn();
+
+    sshDatabase.connection.on("connection-lost", fn);
+
+    await sshEnvironment.restart();
+
+    // Must run a query to trigger the connection-lost event
+    await expect(sshDatabase.listTables()).rejects.toThrow();
+
+    // Yield to the event loop to allow the "connection-lost" event to fire
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(fn).toBeCalled();
+    expect(sshDatabase.connection.isConnected).toBe(false);
+  });
+
+  it("should be able to re-establish connection after losing connection", async () => {
+    const isConnectionLost = new Promise((resolve) => {
+      sshDatabase.connection.once("connection-lost", resolve);
+    });
+
+    await sshEnvironment.restart();
+
+    // Run a query to trigger the connection-lost event
+    await expect(sshDatabase.listTables()).rejects.toThrow();
+
+    // Connection-lost is triggered after running a query
+    await expect(isConnectionLost).resolvesWithin(1000);
+
+    await sshDatabase.connection.connect();
+    expect(sshDatabase.connection.isConnected).toBe(true);
+    await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
+  });
+})
 
