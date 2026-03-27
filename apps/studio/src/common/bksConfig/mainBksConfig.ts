@@ -50,7 +50,7 @@ export function checkUnrecognized(
           section,
           path,
         });
-      } else if (typeof value === "object") {
+      } else if (typeof value === "object" && !_.isArray(value)) {
         traverse(value, path);
       }
     }
