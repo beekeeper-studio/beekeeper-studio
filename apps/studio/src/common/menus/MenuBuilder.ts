@@ -27,6 +27,7 @@ export default class extends DefaultMenu {
         this.menuItems.primarySidebarToggle,
         this.menuItems.secondarySidebarToggle,
         this.menuItems.reload,
+        this.menuItems.privacyModeToggle
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]

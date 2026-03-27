@@ -53,9 +53,6 @@
               </div>
               <span class="expand" />
               <div class="actions">
-                <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
-                  <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
-                </a>
                 <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
               </div>
             </div>
@@ -109,9 +106,6 @@
                     title="Import connections from local workspace"
                   >
                     <i class="material-icons">save_alt</i>
-                  </a>
-                  <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
-                    <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
                   </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
@@ -292,14 +286,14 @@ export default {
       foldersError: 'error',
       foldersUnsupported: 'unsupported'
     }),
-    ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
       isCloud: 'isCloud',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
-      filteredConnections: 'data/connections/filteredConnections'
+      filteredConnections: 'data/connections/filteredConnections',
+      privacyMode: 'settings/privacyMode'
     }),
     connFilter: {
       get() {
@@ -379,9 +373,6 @@ export default {
     this.sort.order = order
   },
   methods: {
-    ...mapActions({
-      togglePrivacyMode: 'settings/togglePrivacyMode',
-    }),
     clearFilter() {
       this.connFilter = null;
     },

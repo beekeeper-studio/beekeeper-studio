@@ -141,7 +141,7 @@ import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import MaskedInput from '@/components/MaskedInput.vue'
 import CommonSsl from './CommonSsl.vue'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import FilePicker from '@/components/common/form/FilePicker.vue'
 
 export default {
@@ -170,7 +170,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     ...mapState(['connection']),
     toggleClientSecretIcon() {
       return this.showClientSecret ? "visibility_off" : "visibility"
