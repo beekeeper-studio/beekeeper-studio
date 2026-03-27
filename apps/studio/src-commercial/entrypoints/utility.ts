@@ -27,6 +27,10 @@ import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
+import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
+import { DriverDepManager, DriverDepFileManager, createDefaultRegistry } from '@/services/driverDeps';
+import type { DepPlatform, DepArch } from '@/services/driverDeps';
+import BksConfig from '@/common/bksConfig';
 import _ from 'lodash';
 import { BundledPluginModule } from '@commercial/backend/plugin-system/modules/BundledPluginModule';
 
@@ -44,6 +48,16 @@ const pluginManager = new PluginManager({
   }),
 });
 pluginManager.registerModule(BundledPluginModule);
+
+const driverDepManager = new DriverDepManager({
+  fileManager: new DriverDepFileManager({
+    driverDepsDirectory: platformInfo.driverDepsDirectory,
+    userAgent: BksConfig.general.downloadUserAgent,
+  }),
+  registry: createDefaultRegistry(),
+  platform: platformInfo.platform as DepPlatform,
+  arch: (process.arch === 'x64' ? 'x64' : 'arm64') as DepArch,
+});
 
 interface Reply {
   id: string,
@@ -67,6 +81,7 @@ export const handlers: Handlers = {
   ...TempHandlers,
   ...LicenseHandlers,
   ...PluginHandlers(pluginManager),
+  ...DriverDepHandlers(driverDepManager),
   ...TabHistoryHandlers,
   ...LockHandlers,
   ...FormatterPresetHandlers,
@@ -173,6 +188,10 @@ async function init() {
 
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
+  });
+
+  driverDepManager.initialize().catch((e) => {
+    log.error("Error initializing driver dep manager", e);
   });
 
   process.parentPort.postMessage({ type: 'ready' });
