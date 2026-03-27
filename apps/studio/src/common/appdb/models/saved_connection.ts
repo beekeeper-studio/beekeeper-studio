@@ -407,6 +407,18 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         this.trustServerCertificate = true
       }
 
+      if (parsed.params?.SslCertFile || parsed.params?.sslcertfile) {
+        this.sslCertFile = decodeURIComponent(parsed.params.SslCertFile || parsed.params.sslcertfile);
+      }
+
+      if (parsed.params?.SslCaFile || parsed.params?.sslcafile) {
+        this.sslCaFile = decodeURIComponent(parsed.params.SslCaFile || parsed.params.sslcafile);
+      }
+
+      if (parsed.params?.SslKeyFile || parsed.params?.sslkeyfile) {
+        this.sslKeyFile = decodeURIComponent(parsed.params.SslKeyFile || parsed.params.sslkeyfile);
+      }
+
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port
       this.username = extractedUser ?? parsed.user
