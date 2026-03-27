@@ -47,6 +47,10 @@
     class="material-icons item-icon query"
   >terminal</i>
   <i
+    v-else-if="tab.tabType === 'server-status'"
+    class="material-icons item-icon"
+  >monitor_heart</i>
+  <i
     v-else
     class="material-icons item-icon"
   >{{ tabTypeConfig?.icon || 'new_releases' }}</i>
