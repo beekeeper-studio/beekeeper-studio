@@ -122,8 +122,9 @@ export default {
         properties: ['openFile']
       }
 
-      if (this.defaultPath.toString().length > 0) {
-        dialogConfig.defaultPath = this.defaultPath
+      const effectiveDefault = this.defaultPath || (typeof this.value === 'string' ? this.value : '')
+      if (effectiveDefault.toString().length > 0) {
+        dialogConfig.defaultPath = effectiveDefault
       }
 
       if (this.showHiddenFiles) {

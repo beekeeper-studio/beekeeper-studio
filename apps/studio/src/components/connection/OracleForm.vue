@@ -102,13 +102,10 @@ export default Vue.extend({
     },
     restartNotification() {
       return new Noty({
-        text: "You must restart Beekeeper Studio for this change to take effect",
+        text: "You must restart Beekeeper Studio for this change to take effect.",
         layout: 'bottomRight',
-        closeWith: ['button'],
-        buttons: [
-          Noty.button("Not now", 'btn btn-flat', () => this.restartNotification.close()),
-          Noty.button("Restart", 'btn btn-primary', () => this.$native.app.restart())
-        ]
+        timeout: false,
+        closeWith: ['click', 'button'],
       })
     }
   },
