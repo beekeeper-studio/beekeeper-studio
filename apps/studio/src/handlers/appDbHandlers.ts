@@ -26,6 +26,7 @@ import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
+import { CloudClient } from '@/lib/cloud/CloudClient';
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -180,6 +181,24 @@ export const AppDbHandlers = {
       throw `Unable to parse ${url}`;
     }
     return defaultTransform(conn, SavedConnection);
+  },
+  'appdb/share-query': async function({ db, query }: { db: string, query: string }) {
+    const credential = await CloudCredential.findOne({ where: {} });
+    if (!credential) throw new Error('No cloud credentials found. Please log in to Beekeeper Cloud.');
+    const client = new CloudClient({
+      token: credential.token,
+      email: credential.email,
+      app: credential.appId,
+      clientVersion: platformInfo.appVersion,
+      baseUrl: platformInfo.cloudUrl,
+    });
+    const response = await client.axios.get('/queries/open-from-share', {
+      params: { database: db, query },
+    });
+    if (response.status !== 200) {
+      throw new Error(`Cloud error (${response.status}): ${response.data?.message ?? 'Unknown error'}`);
+    }
+    return response.data;
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOneBy({ key });
