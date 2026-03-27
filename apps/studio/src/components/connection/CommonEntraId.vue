@@ -1,10 +1,5 @@
 <template>
   <div v-show="azureAuthEnabled" class="host-port-user-password">
-    <common-ssl
-      :config="config"
-      :ssl-help="sslHelp"
-      :support-complex-s-s-l="supportComplexSSL"
-    />
     <div class="alert alert-info">
       <i class="material-icons-outlined">info</i>
       <div v-if="showCli">
