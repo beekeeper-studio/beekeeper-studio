@@ -2428,10 +2428,10 @@
   resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.8.tgz#77a2142fe52f71be61eb91642934d043c44a1d49"
   integrity sha512-pz14TlCwbH8f3skcAT0bkqs5Ad3ZLhiqC94H1GDbe7J++C2wM6Qrrne5vOKlZyFiB+49Im+qLaB1gFLKEKUT2Q==
 
-"@beekeeperstudio/bks-er-diagram@^1.0.7":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.7.tgz#e453f982699a95f2ad7847e127d2d7f3a43b56bb"
-  integrity sha512-VjMrK3rxmSVmkBypbWp8TtPhGciwvDeqGmNuiJqaa7AQ6iKNlO7W1M3vjmklxWLjyQH6SSOtu/O78DTk9h3TZA==
+"@beekeeperstudio/bks-er-diagram@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.9.tgz#78730e8d841ddeab04193e22eff90f5804607703"
+  integrity sha512-cnSL+9gnmmUptD26gJ1IPHBEUWdXFGRnlSnuMtOfRPhtR83v2pXGPVv3CCNpg3QaGT/cDLl7EKqfjieyzyXL+w==
 
 "@beekeeperstudio/plugin@^1.6.0":
   version "1.6.0"
