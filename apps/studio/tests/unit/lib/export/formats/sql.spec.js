@@ -23,6 +23,40 @@ describe('sql exporter', () => {
     expect(result).toBe(`insert into "table" ("col_1") values ('a''\nb')`)
   })
 
+  it("Should convert boolean bit(1) true to 1", () => {
+    const columns = [{ dataType: 'int' }, { dataType: 'bit(1)' }]
+    const result = exporter.formatRow([1, true], columns)
+    expect(result).not.toContain('NaN')
+    expect(result).toContain('1')
+  })
+
+  it("Should convert boolean bit(1) false to 0", () => {
+    const columns = [{ dataType: 'int' }, { dataType: 'bit(1)' }]
+    const result = exporter.formatRow([2, false], columns)
+    expect(result).not.toContain('NaN')
+    expect(result).toContain('0')
+  })
+
+  it("Should handle null bit(1) values", () => {
+    const columns = [{ dataType: 'bit(1)' }]
+    const result = exporter.formatRow([null], columns)
+    expect(result).not.toContain('NaN')
+  })
+
+  it("Should handle Buffer bit(1) values", () => {
+    const columns = [{ dataType: 'bit(1)' }]
+    const result = exporter.formatRow([Buffer.from([1])], columns)
+    expect(result).not.toContain('NaN')
+    expect(result).toContain('1')
+  })
+
+  it("Should handle Buffer bit(1) value of 0", () => {
+    const columns = [{ dataType: 'bit(1)' }]
+    const result = exporter.formatRow([Buffer.from([0])], columns)
+    expect(result).not.toContain('NaN')
+    expect(result).toContain('0')
+  })
+
   it("Should set defaultPath correctly after refactor", () => {
     const safeFilename = "exported_data";
     let exporter = new SqlExporter(`${safeFilename}.sql`, {connectionType: 'postgresql'}, { name: 'table'}, '', '', [], {}, {})
