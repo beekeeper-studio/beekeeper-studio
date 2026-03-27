@@ -72,6 +72,42 @@ let schema2 = {
 }
 
 describe("SQL completion", () => {
+  it("blocks column completion immediately after FROM", async () => {
+    const list = get("select * from |", {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => ["apple", "banana"]
+    })
+    ist(await str(list), "products, users")
+  })
+
+  it("blocks column completion immediately after JOIN", async () => {
+    const list = get("select * from users join |", {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => ["apple", "banana"]
+    })
+    ist(await str(list), "products, users")
+  })
+
+  it("allows column completion inside SELECT list", async () => {
+    const list = get("select | from users", {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => ["apple", "banana"]
+    })
+    ist(await str(list), "apple, banana, products, users")
+  })
+
+  it("allows column completion inside WHERE clause", async () => {
+    const list = get("select * from users where |", {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => ["apple", "banana"]
+    })
+    ist(await str(list), "apple, banana, products, users")
+  })
+
   it("completes table names", () => {
     ist(str(get("select u|", {schema: schema1})), "products, users")
   })
