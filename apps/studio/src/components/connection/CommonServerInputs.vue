@@ -119,7 +119,7 @@
 import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
 import CommonSsl from './CommonSsl.vue'
-import { mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
   props: {
@@ -144,7 +144,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     togglePasswordIcon() {
       return this.showPassword ? "visibility_off" : "visibility"
     },
