@@ -11,6 +11,7 @@ export default class extends DefaultMenu {
   viewMenu(): Electron.MenuItemConstructorOptions {
     const result: Electron.MenuItemConstructorOptions = {
       label: 'View',
+      role: 'viewMenu',
       submenu: [
         this.menuItems.zoomreset,
         this.menuItems.zoomin,
@@ -46,9 +47,10 @@ export default class extends DefaultMenu {
   }
 
   helpMenu() {
-    const helpMenu = {
+    const helpMenu: Electron.MenuItemConstructorOptions = {
       id: "help",
       label: "Help",
+      role: "help",
       submenu: [
         this.menuItems.keyboardShortcuts,
         this.menuItems.enterLicense,
@@ -74,6 +76,7 @@ export default class extends DefaultMenu {
     if (this.platformInfo.isMac) {
       appMenu.push({
         label: "Beekeeper Studio",
+        role: "appMenu",
         submenu: [
           this.menuItems.about,
           { role: 'services' },
@@ -85,9 +88,10 @@ export default class extends DefaultMenu {
       })
     }
 
-    const fileMenu = {
+    const fileMenu: Electron.MenuItemConstructorOptions = {
       id: 'file',
       label: 'File',
+      role: 'fileMenu',
       submenu: [
         this.menuItems.newWindow,
         this.menuItems.newTab,
@@ -113,6 +117,7 @@ export default class extends DefaultMenu {
       {
         id: 'edit',
         label: 'Edit',
+        role: 'editMenu',
         submenu: [
           this.menuItems.undo,
           this.menuItems.redo,
@@ -121,7 +126,7 @@ export default class extends DefaultMenu {
           this.menuItems.paste,
           this.menuItems.selectAll,
         ]
-      },
+      } as Electron.MenuItemConstructorOptions,
       this.viewMenu(),
       {
         id: "tools",
