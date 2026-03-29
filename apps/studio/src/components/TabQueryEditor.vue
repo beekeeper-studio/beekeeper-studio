@@ -198,22 +198,70 @@
 
           <x-buttons class="">
             <x-button
+              v-if="isPrimaryRunCurrentQuery"
+              class="btn btn-primary btn-small"
+              v-tooltip="'Ctrl+Enter'"
+              @click.prevent="submitCurrentQuery"
+              :disabled="this.tab.isRunning || running"
+            >
+              <x-label>Run Current</x-label>
+            </x-button>
+            <x-button
+              v-else
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
               :disabled="this.tab.isRunning || running"
             >
-              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
             </x-button>
+
+
+            
             <x-button
               class="btn btn-primary btn-small"
               :disabled="this.tab.isRunning || running"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
+              <x-menu v-if="isPrimaryRunCurrentQuery">
+                <x-menuitem @click.prevent="submitCurrentQuery">
+                  <x-label>Run Current</x-label>
+                  <x-shortcut value="Control+Enter" />
+                </x-menuitem>
                 <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
+                  <x-shortcut value="Control+Shift+Enter" />
+                </x-menuitem>
+                <hr>
+                <x-menuitem
+                  @click.prevent="submitCurrentQueryToFile"
+                  :disabled="disableRunToFile"
+                >
+                  <x-label>Run Current to File</x-label>
+                  <i
+                    v-if="isCommunity"
+                    class="material-icons menu-icon "
+                  >
+                    stars
+                  </i>
+                </x-menuitem>
+                <x-menuitem
+                  @click.prevent="submitQueryToFile"
+                  :disabled="disableRunToFile"
+                >
+                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run All to File' }}</x-label>
+                  <i
+                    v-if="isCommunity"
+                    class="material-icons menu-icon"
+                  >
+                    stars
+                  </i>
+                </x-menuitem>
+              </x-menu>
+              <x-menu v-else>
+                <x-menuitem @click.prevent="submitTabQuery">
+                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
                   <x-shortcut value="Control+Enter" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
@@ -221,14 +269,15 @@
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <hr>
+
                 <x-menuitem
                   @click.prevent="submitQueryToFile"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
+                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run All to File' }}</x-label>
                   <i
                     v-if="isCommunity"
-                    class="material-icons menu-icon"
+                    class="material-icons menu-icon "
                   >
                     stars
                   </i>
@@ -240,7 +289,7 @@
                   <x-label>Run Current to File</x-label>
                   <i
                     v-if="isCommunity"
-                    class="material-icons menu-icon "
+                    class="material-icons menu-icon"
                   >
                     stars
                   </i>
@@ -530,6 +579,7 @@
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
+  import { identify } from 'sql-query-identifier'
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
   const log = rawlog.scope('query-editor')
@@ -549,7 +599,7 @@
         results: [],
         running: false,
         runningCount: 1,
-        runningType: 'all queries',
+        runningType: 'current',
         selectedResult: 0,
         unsavedText: editorDefault,
         editor: {
@@ -624,6 +674,8 @@
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title;
         }
+
+        return ''
       },
       canManageTransactions() {
         return !this.dialectData?.disabledFeatures?.manualCommit;
@@ -654,6 +706,10 @@
       },
       showDryRun() {
         return this.dialect == 'bigquery'
+      },
+      isPrimaryRunCurrentQuery() {
+        const { settings: configSettings } = this.$bksConfig
+        return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
       },
       identifyDialect() {
         // dialect for sql-query-identifier
@@ -716,12 +772,13 @@
         ]
       },
       keymap() {
+        const { primaryWriteFunction, secondaryWriteFunc }  = this.getQueryActions()
         if (!this.active) return {}
         return this.$vHotkeyKeymap({
           'queryEditor.switchPaneFocus': this.switchPaneFocus,
           'queryEditor.selectEditor': this.selectEditor,
-          'queryEditor.submitQueryToFile': this.submitQueryToFile,
-          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.primaryQueryToFileAction': primaryWriteFunction,
+          'queryEditor.secondaryQueryToFileAction': secondaryWriteFunc,
           'queryEditor.manualCommit': this.manualCommit,
           'queryEditor.manualRollback': this.manualRollback,
         })
@@ -771,10 +828,12 @@
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
       keybindings() {
+        const { primaryFunc, secondaryFunc}  = this.getQueryActions()
+        
         const keybindings = this.$CMKeymap({
           'general.save': this.triggerSave,
-          'queryEditor.submitCurrentQuery': this.submitCurrentQuery,
-          'queryEditor.submitTabQuery': this.submitTabQuery,
+          'queryEditor.primaryQueryAction': primaryFunc,
+          'queryEditor.secondaryQueryAction': secondaryFunc
         })
 
         if(this.userKeymap === "vim") {
@@ -939,6 +998,27 @@
           this.$modal.hide(this.superFormatterId)
         }
       },
+      getQueryActions() {
+        const { settings: configSettings } = this.$bksConfig
+        let primaryFunc = this.submitCurrentQuery
+        let secondaryFunc = this.submitTabQuery
+        let primaryWriteFunction = this.submitCurrentQueryToFile
+        let secondaryWriteFunc = this.submitQueryToFile
+
+        if (configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery') {
+          primaryFunc = this.submitTabQuery
+          secondaryFunc = this.submitCurrentQuery
+          primaryWriteFunction = this.submitQueryToFile
+          secondaryWriteFunc = this.submitCurrentQueryToFile
+        }
+
+        return {
+          primaryFunc,
+          secondaryFunc,
+          primaryWriteFunction,
+          secondaryWriteFunc
+        }
+      },
       getPresets(presetId) {
         this.$util.send('appdb/formatter/getAll')
           .then((presets) => {
@@ -1092,7 +1172,7 @@
           this.updateEditorHeight()
         })
       },
-      handleEditorInitialized(detail) {
+      handleEditorInitialized() {
         this.editor.initialized = true
 
         // Setup query magic data providers
@@ -1420,6 +1500,12 @@
         }
         const originalText = this.query?.text || this.tab.unsavedQueryText
         if (originalText) {
+          const queries = identify(originalText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          if (queries.length > 0) {
+            this.individualQueries = queries
+            this.currentlySelectedQuery = queries[0]
+          }
+
           this.originalText = originalText
           this.unsavedText = originalText
         }
