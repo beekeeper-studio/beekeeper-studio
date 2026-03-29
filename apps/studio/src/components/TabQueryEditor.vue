@@ -197,8 +197,8 @@
           </x-button>
 
           <x-buttons class="">
-            <!-- TODO: (Will) show the primary action here -->
             <x-button
+              v-if="isPrimaryRunCurrentQuery"
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitCurrentQuery"
@@ -207,13 +207,24 @@
               <x-label>Run Current</x-label>
             </x-button>
             <x-button
+              v-else
+              class="btn btn-primary btn-small"
+              v-tooltip="'Ctrl+Enter'"
+              @click.prevent="submitTabQuery"
+              :disabled="this.tab.isRunning || running"
+            >
+              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
+            </x-button>
+
+
+            
+            <x-button
               class="btn btn-primary btn-small"
               :disabled="this.tab.isRunning || running"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
-              <!-- TODO: (Will) make sure to switch out the primary and secondary as shown -->
-              <x-menu>
+              <x-menu v-if="isPrimaryRunCurrentQuery">
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
                   <x-shortcut value="Control+Enter" />
@@ -240,6 +251,42 @@
                   :disabled="disableRunToFile"
                 >
                   <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run All to File' }}</x-label>
+                  <i
+                    v-if="isCommunity"
+                    class="material-icons menu-icon"
+                  >
+                    stars
+                  </i>
+                </x-menuitem>
+              </x-menu>
+              <x-menu v-else>
+                <x-menuitem @click.prevent="submitTabQuery">
+                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
+                  <x-shortcut value="Control+Enter" />
+                </x-menuitem>
+                <x-menuitem @click.prevent="submitCurrentQuery">
+                  <x-label>Run Current</x-label>
+                  <x-shortcut value="Control+Shift+Enter" />
+                </x-menuitem>
+                <hr>
+
+                <x-menuitem
+                  @click.prevent="submitQueryToFile"
+                  :disabled="disableRunToFile"
+                >
+                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run All to File' }}</x-label>
+                  <i
+                    v-if="isCommunity"
+                    class="material-icons menu-icon "
+                  >
+                    stars
+                  </i>
+                </x-menuitem>
+                <x-menuitem
+                  @click.prevent="submitCurrentQueryToFile"
+                  :disabled="disableRunToFile"
+                >
+                  <x-label>Run Current to File</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
@@ -627,6 +674,8 @@
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title;
         }
+
+        return ''
       },
       canManageTransactions() {
         return !this.dialectData?.disabledFeatures?.manualCommit;
@@ -657,6 +706,10 @@
       },
       showDryRun() {
         return this.dialect == 'bigquery'
+      },
+      isPrimaryRunCurrentQuery() {
+        const { settings: configSettings } = this.$bksConfig
+        return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
       },
       identifyDialect() {
         // dialect for sql-query-identifier
