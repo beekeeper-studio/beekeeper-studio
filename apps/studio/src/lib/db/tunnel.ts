@@ -39,6 +39,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
 
           let defaults: SshConfigResult = {
             host: ssh.host,
+            port: ssh.port ?? 22,
             identityFile: "~/.ssh/id_rsa",
           };
 
@@ -52,7 +53,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
 
           const baseOptions: BaseSshOptions = {
             host: defaults.host,
-            port: ssh.port ?? defaults.port,
+            port: defaults.port,
             username: ssh.username ?? defaults.user,
             mode: ssh.mode === 'userpass' ? 'password' : ssh.mode,
           };

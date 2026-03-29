@@ -263,7 +263,7 @@ import { AzureAuthType } from '@/lib/db/types'
 import UpsellContent from '@/components/upsell/UpsellContent.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
-import { isUltimateType } from '@/common/interfaces/IConnection'
+import { IConnection, isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
@@ -544,15 +544,40 @@ export default Vue.extend({
           this.config.authId = cacheId;
         }
 
-        const id = await this.$store.dispatch('data/connections/save', this.config)
+        const id = await this.$store.dispatch('data/connections/save', _.omit(this.config, [
+          'sshConfigs',
+          'removedSshConfigs',
+        ]))
 
-        // Persist ssh configs (ordered hop chain including target host)
-        await this.$store.dispatch('data/sshConfigs/syncForConnection', {
-          connectionId: id,
-          sshConfigs: (this.config.sshConfigs ?? [])
-            .sort((a, b) => a.position - b.position)
-            .map(join => join.sshConfig),
-        })
+        this.config.id = id
+
+        // Remove deleted ssh configs
+        if (this.config.removedSshConfigs) {
+          for (const join of this.config.removedSshConfigs) {
+            await this.$util.send('appdb/connectionSshConfig/remove', {
+              obj: { id: join.id }
+            })
+            if (join.sshConfigId) {
+              await this.$util.send('appdb/sshConfig/remove', {
+                obj: { id: join.sshConfigId }
+              })
+            }
+          }
+          this.config.removedSshConfigs = undefined
+        }
+
+        if (this.config.sshEnabled && this.config.sshConfigs) {
+          const updatedJoins = []
+          for (const join of this.config.sshConfigs) {
+            const savedSshConfig = await this.$util.send('appdb/sshConfig/save', { obj: join.sshConfig })
+            const savedJoin = await this.$util.send('appdb/connectionSshConfig/save', {
+              obj: { ...join, connectionId: id, sshConfigId: savedSshConfig.id, sshConfig: savedSshConfig }
+            })
+            updatedJoins.push({ ...savedJoin, sshConfig: savedSshConfig })
+          }
+          this.config.sshConfigs = updatedJoins
+          await this.$store.dispatch('data/connections/save', this.config)
+        }
 
         // This feels wrong but it works. It's undefined on savedConnections
         if (this.config.connectionId === null) {

@@ -3,60 +3,94 @@
     <div class="ssh-table-container">
       <div class="ssh-orders">
         <div
-          v-for="(_row, idx) in rows"
-          :key="idx"
+          v-for="(join, idx) in sortedConfigs"
+          :key="join.position"
           class="host-bullet"
           :title="
-            idx === rows.length - 1 ? 'Target Host' : `Jump Host #${idx + 1}`
+            idx === sortedConfigs.length - 1
+              ? 'Target Host'
+              : `Jump Host #${idx + 1}`
           "
         />
         <div class="add-host-bullet">
           <i class="material-icons">add_circle</i>
         </div>
       </div>
-      <div class="ssh-table-rows">
-        <div class="ssh-table" :data-row-count="rows.length" ref="sshTable" />
+
+      <div class="ssh-list-wrap">
+        <div class="ssh-list-header">
+          <span class="col-host">Host</span>
+          <span class="col-username">Username</span>
+          <span class="col-auth">Auth</span>
+          <span class="col-action" />
+        </div>
+
+        <draggable
+          :value="sortedConfigs"
+          handle=".drag-handle"
+          @end="onDragEnd"
+        >
+          <div
+            v-for="row in rows"
+            :key="row.position"
+            class="ssh-row"
+            :class="{ selected: selectedPosition === row.position }"
+            @click="selectedPosition = row.position"
+          >
+            <span class="drag-handle" />
+            <span class="col-host">
+              <span class="host" v-text="row.host" />
+              <span class="port" v-text="`:${row.port}`" v-if="row.port" />
+            </span>
+            <span class="col-username" v-text="row.username" />
+            <span class="col-auth">
+              <span v-text="row.auth" />
+              <i
+                v-if="row.auth === 'Agent' && !agentStatus.ok"
+                class="material-icons warning-icon"
+                >error_outline</i
+              >
+            </span>
+            <span class="col-action">
+              <button
+                v-if="sortedConfigs.length > 1"
+                type="button"
+                class="btn btn-fab remove-btn"
+                @click.stop="$emit('remove', row.position)"
+              >
+                <i class="material-icons">clear</i>
+              </button>
+            </span>
+          </div>
+        </draggable>
+
         <button
           type="button"
           class="btn btn-flat add-host-btn"
-          @click="addSshConfig"
+          @click="$emit('add')"
         >
           Add Jump Host
         </button>
       </div>
     </div>
 
-    <div class="ssh-agent-indicator" v-if="useSshAgent">
-      <div class="error" v-if="$config.isSnap">
-        <i class="material-icons">error_outline</i>
-        <div>
-          SSH Agent Forwarding is not possible with the Snap version of
-          Beekeeper Studio due to the security model of Snap apps.
-          <external-link :href="enableSshLink">Read more</external-link>
-        </div>
-      </div>
-      <div v-else-if="$config.isWindows" class="info">
-        <i class="material-icons-outlined">info</i>
-        <div>
-          We didn't find a *nix ssh-agent running, so we'll attempt to use the
-          PuTTY agent, pageant.
-        </div>
-      </div>
-      <div v-else class="warning">
-        <i class="material-icons">error_outline</i>
-        <div>You don't seem to have an SSH agent running.</div>
-      </div>
-    </div>
-
     <!-- Edit form for the selected row -->
-    <template v-if="selectedIndex !== null && selectedSshConfig">
+    <template v-if="selectedConfig">
       <div class="row gutter">
         <div class="col s9 form-group">
           <label>Hostname</label>
           <input
             type="text"
             class="form-control"
-            v-model="selectedSshConfig.host"
+            :value="selectedConfig.host"
+            @input="
+              $emit(
+                'update-ssh-config',
+                selectedPosition,
+                'host',
+                $event.target.value
+              )
+            "
           />
         </div>
         <div class="col s3 form-group">
@@ -64,13 +98,32 @@
           <input
             type="number"
             class="form-control"
-            v-model.number="selectedSshConfig.port"
+            :value="selectedConfig.port"
+            @input="
+              $emit(
+                'update-ssh-config',
+                selectedPosition,
+                'port',
+                Number($event.target.value)
+              )
+            "
           />
         </div>
       </div>
       <div class="form-group">
         <label>Authentication</label>
-        <select class="form-control" v-model="selectedSshConfig.mode">
+        <select
+          class="form-control"
+          :value="selectedConfig.mode"
+          @change="
+            $emit(
+              'update-ssh-config',
+              selectedPosition,
+              'mode',
+              $event.target.value
+            )
+          "
+        >
           <option
             v-for="option in sshModeOptions"
             :key="option.mode"
@@ -79,33 +132,68 @@
             {{ option.label }}
           </option>
         </select>
+        <div class="ssh-agent-indicator" v-if="selectedConfig.mode === 'agent'">
+          <template v-if="agentStatus.ok && !agentStatus.warning" />
+          <div
+            v-else-if="agentStatus.warning === 'win-nix-agent-not-found'"
+            class="info"
+          >
+            <i class="material-icons-outlined">info</i>
+            <div>
+              We didn't find a *nix ssh-agent running, so we'll attempt to use
+              the PuTTY agent, pageant.
+            </div>
+          </div>
+          <div
+            v-else-if="agentStatus.warning === 'unsupported-snap'"
+            class="error"
+          >
+            <i class="material-icons">error_outline</i>
+            <div>
+              SSH Agent Forwarding is not possible with the Snap version of
+              Beekeeper Studio due to the security model of Snap apps.
+              <external-link :href="enableSshLink">Read more</external-link>
+            </div>
+          </div>
+          <div v-else class="warning">
+            <i class="material-icons">error_outline</i>
+            <div>You don't seem to have an SSH agent running.</div>
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label>Username</label>
         <masked-input
-          :value="selectedSshConfig.username"
+          :value="selectedConfig.username"
           :privacyMode="privacyMode"
-          @input="(val) => (selectedSshConfig.username = val)"
+          @input="
+            $emit('update-ssh-config', selectedPosition, 'username', $event)
+          "
         />
       </div>
-      <div v-if="selectedSshConfig.mode === 'keyfile'" class="private-key gutter">
+      <div v-if="selectedConfig.mode === 'keyfile'" class="private-key gutter">
         <div v-if="$config.isSnap && !$config.snapSshPlug" class="row">
           <div class="alert alert-warning">
             <i class="material-icons">error_outline</i>
             <div>
               Hey snap user! You need to
-              <external-link :href="enableSshLink">enable SSH access</external-link>,
-              then restart Beekeeper to provide access to your .ssh directory.
+              <external-link :href="enableSshLink"
+                >enable SSH access</external-link
+              >, then restart Beekeeper to provide access to your .ssh
+              directory.
             </div>
           </div>
         </div>
         <div class="row form-group">
           <label>Private Key File</label>
           <file-picker
-            v-model="selectedSshConfig.keyfile"
+            :value="selectedConfig.keyfile"
             editable
             :show-hidden-files="true"
             :default-path="filePickerDefaultPath"
+            @input="
+              $emit('update-ssh-config', selectedPosition, 'keyfile', $event)
+            "
           />
         </div>
         <div class="row form-group">
@@ -113,38 +201,32 @@
           <input
             type="password"
             class="form-control"
-            v-model="selectedSshConfig.keyfilePassword"
+            :value="selectedConfig.keyfilePassword"
+            @input="
+              $emit(
+                'update-ssh-config',
+                selectedPosition,
+                'keyfilePassword',
+                $event.target.value
+              )
+            "
           />
         </div>
       </div>
-      <div v-if="selectedSshConfig.mode === 'userpass'" class="form-group">
+      <div v-if="selectedConfig.mode === 'userpass'" class="form-group">
         <label>Password</label>
         <input
           type="password"
           class="form-control"
-          v-model="selectedSshConfig.password"
-        />
-      </div>
-
-      <!-- Keepalive shown only for the last (target) row -->
-      <div v-if="isSelectedTargetHost" class="col form-group">
-        <label for="sshKeepaliveInterval">
-          Keepalive Interval
-          <i
-            class="material-icons"
-            style="padding-left: 0.25rem"
-            v-tooltip="{
-              content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)',
-              html: true,
-            }"
-            >help_outlined</i
-          >
-        </label>
-        <input
-          type="number"
-          v-model.number="config.sshKeepaliveInterval"
-          name="sshKeepaliveInterval"
-          placeholder="(in seconds)"
+          :value="selectedConfig.password"
+          @input="
+            $emit(
+              'update-ssh-config',
+              selectedPosition,
+              'password',
+              $event.target.value
+            )
+          "
         />
       </div>
     </template>
@@ -153,235 +235,131 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { Tabulator } from "tabulator-tables";
+import Draggable from "vuedraggable";
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import ExternalLink from "@/components/common/ExternalLink.vue";
 import MaskedInput from "@/components/MaskedInput.vue";
-import { IConnection } from "@/common/interfaces/IConnection";
-import { TransportConnectionSshConfig, TransportSshConfig } from "@/common/transport/TransportSshConfig";
+import {
+  TransportConnectionSshConfig,
+  TransportSshConfig,
+} from "@/common/transport/TransportSshConfig";
+import _ from "lodash";
+import { mapState } from "vuex";
 
 export default Vue.extend({
-  components: { FilePicker, ExternalLink, MaskedInput },
+  components: { Draggable, FilePicker, ExternalLink, MaskedInput },
 
   props: {
-    config: {
-      type: Object as PropType<IConnection>,
+    sshConfigs: {
+      type: Array as PropType<TransportConnectionSshConfig[]>,
       required: true,
     },
-    privacyMode: Boolean,
   },
 
   data() {
     return {
-      sshTable: null as Tabulator | null,
-      selectedIndex: null as number | null,
-      enableSshLink:
-        "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap",
-      sshModeOptions: [
-        { label: "Key File", mode: "keyfile" },
-        { label: "Username & Password", mode: "userpass" },
-        { label: "SSH Agent", mode: "agent" },
-      ],
-      filePickerDefaultPath: window.main.join(
-        platformInfo.homeDirectory,
-        ".ssh"
-      ),
+      selectedPosition: null as number | null,
     };
   },
 
   computed: {
-    // Sorted list of join rows — the last entry is the target host
     sortedConfigs(): TransportConnectionSshConfig[] {
-      return (this.config.sshConfigs ?? []).slice().sort((a, b) => a.position - b.position);
+      return _.sortBy(this.sshConfigs || [], "position");
     },
     rows() {
-      return this.sortedConfigs.map((join) => ({
-        host: join.sshConfig?.host,
-        port: join.sshConfig?.port,
-        username: join.sshConfig?.username,
-        mode: join.sshConfig?.mode,
-        ref: join,
-      }));
+      const authLabels = {
+        keyfile: "Key File",
+        userpass: "Password",
+        agent: "Agent",
+      } as const;
+      const configs: TransportConnectionSshConfig[] = this.sortedConfigs;
+      return configs.map((config: TransportConnectionSshConfig) => {
+        const host = config.sshConfig.host || "";
+        const port = config.sshConfig.port;
+        const username = config.sshConfig.username || "";
+        const auth = authLabels[config.sshConfig.mode] || "";
+        return { position: config.position, host, port, username, auth };
+      });
     },
-    selectedJoin(): TransportConnectionSshConfig | null {
-      if (this.selectedIndex === null || this.selectedIndex >= this.sortedConfigs.length) {
+    selectedConfig(): TransportSshConfig | null {
+      if (this.selectedPosition === null) {
         return null;
       }
-      return this.sortedConfigs[this.selectedIndex];
+      const join = this.sortedConfigs.find(
+        (j) => j.position === this.selectedPosition
+      );
+      return join?.sshConfig ?? null;
     },
-    selectedSshConfig(): TransportSshConfig | null {
-      return this.selectedJoin?.sshConfig ?? null;
+    filePickerDefaultPath(): string {
+      return window.main.join(window.platformInfo.homeDirectory, ".ssh");
     },
-    isSelectedTargetHost(): boolean {
-      return this.selectedIndex === this.rows.length - 1;
+    enableSshLink(): string {
+      return "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap";
     },
-    useSshAgent() {
-      return this.sortedConfigs.some((join) => join.sshConfig?.mode === "agent");
+    sshModeOptions() {
+      return [
+        { label: "Key File", mode: "keyfile" },
+        { label: "Username & Password", mode: "userpass" },
+        { label: "SSH Agent", mode: "agent" },
+      ];
     },
+    agentStatus() {
+      if (this.$config.isSnap) {
+        return { ok: false, warning: "unsupported-snap" } as const;
+      }
+      if (this.$config.sshAuthSock) {
+        return { ok: true } as const;
+      }
+      if (this.$config.isWindows) {
+        return { ok: true, warning: "win-nix-agent-not-found" } as const;
+      }
+      return { ok: false, warning: "ssh-agent-not-running" } as const;
+    },
+    ...mapState("settings", ["privacyMode"]),
   },
 
   watch: {
-    async rows() {
-      if (!this.sshTable) return;
-      // Preserve the current Tabulator row position across data refreshes,
-      // clamped to the new row count.
-      const currentPos = this.sshTable.getSelectedRows()[0]?.getPosition() ?? 1;
-      await this.sshTable.setData(this.rows);
-      const newCount = this.sshTable.getRows().length;
-      const targetPos = Math.min(currentPos, newCount);
-      const row = this.sshTable.getRowFromPosition(targetPos);
-      if (row) row.select();
-    },
-  },
-
-  methods: {
-    addSshConfig() {
-      const sshConfigs = [...(this.config.sshConfigs ?? [])];
-      const newJoin: TransportConnectionSshConfig = {
-        id: null,
-        connectionId: this.config.id ?? null,
-        sshConfigId: null,
-        position: sshConfigs.length,
-        createdAt: null,
-        updatedAt: null,
-        version: null,
-        sshConfig: {
-          id: null,
-          host: "",
-          port: 22,
-          mode: "agent",
-          username: null,
-          password: null,
-          keyfile: null,
-          keyfilePassword: null,
-          createdAt: null,
-          updatedAt: null,
-          version: null,
-        },
-      };
-      sshConfigs.push(newJoin);
-      this.$set(this.config, "sshConfigs", sshConfigs);
-      this.selectedIndex = sshConfigs.length - 1;
-    },
-    removeSshConfig(index: number) {
-      if (this.rows.length === 1) {
-        throw new Error("There should be at least one host");
+    sortedConfigs(val: TransportConnectionSshConfig[]) {
+      if (this.selectedPosition !== null) {
+        return;
       }
-      const sshConfigs = [...(this.config.sshConfigs ?? [])].sort((a, b) => a.position - b.position);
-      sshConfigs.splice(index, 1);
-      sshConfigs.forEach((cfg, i) => { cfg.position = i; });
-      this.$set(this.config, "sshConfigs", sshConfigs);
-    },
-    reorderSshConfigs(newOrder: TransportConnectionSshConfig[]) {
-      const reindexed = newOrder.map((join, i) => ({ ...join, position: i }));
-      this.$set(this.config, "sshConfigs", reindexed);
-    },
-    createTable() {
-      this.destroyTable();
-      const sshTable = new Tabulator(this.$refs.sshTable as HTMLElement, {
-        layout: "fitColumns",
-        movableRows: true,
-        rowHeader: {
-          headerSort: false,
-          resizable: false,
-          minWidth: 30,
-          width: 30,
-          rowHandle: true,
-          formatter: "handle",
-        },
-        columnDefaults: {
-          headerSort: false,
-          resizable: false,
-        },
-        columns: [
-          {
-            title: "Host",
-            field: "host",
-            minWidth: 140,
-            formatter: (cell) => {
-              const host = cell.getValue() ?? "";
-              const port = cell.getRow().getCell("port").getValue() ?? "";
-              return port ? `${host}:${port}` : host;
-            },
-          },
-          { title: "", field: "port", visible: false },
-          { title: "Username", field: "username", minWidth: 72 },
-          {
-            title: "Auth",
-            field: "mode",
-            minWidth: 70,
-            formatter: "lookup",
-            formatterParams: {
-              agent: "Agent",
-              userpass: "Password",
-              keyfile: "Key File",
-            },
-          },
-          {
-            title: "",
-            cssClass: "action",
-            formatter: (cell) => {
-              const button = document.createElement("button");
-              button.type = "button";
-              button.classList.add("btn", "btn-fab", "remove-btn");
-              const icon = document.createElement("i");
-              icon.classList.add("material-icons");
-              icon.innerText = "clear";
-              button.appendChild(icon);
-              button.onclick = (e) => {
-                const pos = cell.getRow().getPosition(true);
-                if (pos) {
-                  e.stopPropagation();
-                  this.removeSshConfig(pos - 1);
-                }
-              };
-              return button;
-            },
-          },
-          // For storing a reference to the config / jumphost object
-          { title: "", field: "ref", visible: false },
-        ],
-      });
-      this.sshTable = sshTable;
-      sshTable.on("tableBuilt", async () => {
-        await sshTable.setData(this.rows);
-        sshTable.getRowFromPosition(1).select();
-      });
-      sshTable.on("rowClick", (_e, row) => {
-        if (row.isSelected()) {
-          return;
-        }
-        row
-          .getTable()
-          .getSelectedRows()
-          .forEach((r) => r.deselect());
-        row.select();
-      });
-      sshTable.on("rowSelected", (row) => {
-        const pos = row.getPosition();
-        if (pos) {
-          this.selectedIndex = pos - 1;
-        }
-      });
-      sshTable.on("rowMoved", () => {
-        const newOrder: TransportConnectionSshConfig[] = sshTable.getRows().map((r) => r.getData().ref);
-        this.reorderSshConfigs(newOrder);
-      })
-    },
-    destroyTable() {
-      if (this.sshTable) {
-        this.sshTable.destroy();
-        this.sshTable = null;
+      // If the selected position no longer exists, select the last one
+      if (!val.find((j) => j.position === this.selectedPosition)) {
+        this.selectedPosition = val.length
+          ? val[val.length - 1].position
+          : null;
       }
     },
   },
 
   mounted() {
-    this.createTable();
+    // Auto-select the first row
+    if (this.sortedConfigs.length) {
+      this.selectedPosition = this.sortedConfigs[0].position;
+    }
   },
 
-  beforeDestroy() {
-    this.destroyTable();
+  methods: {
+    authLabel(mode: string): string {
+      return (
+        { keyfile: "Key File", userpass: "Password", agent: "Agent" }[mode] ??
+        mode
+      );
+    },
+    onDragEnd(event: any) {
+      const { oldIndex, newIndex } = event;
+      if (oldIndex === newIndex) return;
+      const reordered = [...this.sortedConfigs];
+      const [moved] = reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, moved);
+      if (this.selectedPosition === moved.position) {
+        this.selectedPosition = newIndex;
+      }
+      this.$emit(
+        "reorder",
+        reordered.map((j) => j.position)
+      );
+    },
   },
 });
 </script>
@@ -389,18 +367,14 @@ export default Vue.extend({
 <style lang="scss" scoped>
 .ssh-table-container {
   display: flex;
-
-  .ssh-table-rows {
-    flex-grow: 1;
-  }
+  gap: 0.75rem;
 }
 
 .ssh-orders {
   display: flex;
   flex-direction: column;
-  padding-top: calc(2.28rem + 3px);
+  padding-top: calc(1.5rem + 3px);
   gap: 3px;
-  margin-right: 0.75rem;
   color: var(--text-lighter);
 
   > * {
@@ -418,12 +392,7 @@ export default Vue.extend({
     }
 
     &.add-host-bullet {
-      position: relative;
-
       .material-icons {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
         font-size: 1em;
       }
     }
@@ -440,6 +409,121 @@ export default Vue.extend({
       font-size: 1em;
       content: "more_vert";
     }
+  }
+}
+
+.ssh-list-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.ssh-list-header,
+.ssh-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.831rem;
+
+  .col-host {
+    flex: 2;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+
+    .host {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .port {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+  }
+
+  .col-username {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .col-auth {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+  }
+
+  .col-action {
+    width: 2rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.ssh-list-header {
+  color: var(--text-lighter);
+  padding: 0 0.4rem 0 1.8rem;
+  height: 1.5rem;
+}
+
+.ssh-row {
+  background-color: rgb(from var(--theme-base) r g b / 5%);
+  border-radius: 5px;
+  margin: 3px 0;
+  height: 2.14rem;
+  color: var(--text-dark);
+
+  &.selected {
+    outline: 1px solid var(--input-highlight);
+    outline-offset: -1px;
+  }
+
+  .drag-handle {
+    color: var(--text-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.2rem;
+    width: 1.5rem;
+    height: 100%;
+
+    &:hover {
+      background-color: rgb(from var(--theme-base) r g b / 5%);
+    }
+
+    &::before {
+      content: "";
+      height: 60%;
+      width: 20%;
+      display: block;
+      border-inline: 1px solid var(--border-color);
+    }
+  }
+
+  .col-auth .warning-icon {
+    color: var(--brand-warning);
+    font-size: 1.3em;
+  }
+}
+
+.remove-btn {
+  margin: 0;
+  background-color: transparent;
+
+  &:hover .material-icons {
+    color: var(--text-dark);
+  }
+
+  i.material-icons {
+    color: var(--text-lighter);
+    font-size: 1.3em;
   }
 }
 
@@ -460,96 +544,6 @@ export default Vue.extend({
   }
 }
 
-.ssh-table ::v-deep {
-  &[data-row-count="1"] .tabulator-cell .remove-btn {
-    visibility: hidden;
-  }
-
-  &.tabulator {
-    .tabulator-header {
-      box-shadow: none;
-
-      .tabulator-col {
-        .tabulator-col-content {
-          padding-inline: 0.4rem;
-        }
-        .tabulator-col-title {
-          color: var(--text-lighter);
-        }
-      }
-    }
-
-    .tabulator-row {
-      background-color: rgb(from var(--theme-base) r g b / 5%);
-    }
-  }
-
-  .tabulator-row {
-    margin: 3px 0;
-    color: var(--text-dark);
-    border-radius: 5px;
-    font-size: 0.831rem;
-
-    &.tabulator-selected {
-      outline-offset: -1px;
-      outline: 1px solid var(--input-highlight);
-    }
-
-    .tabulator-row-header {
-      background-color: transparent;
-    }
-
-    .tabulator-cell {
-      &,
-      &.tabulator-row-header {
-        padding-inline: 0.4rem;
-      }
-
-      &:hover {
-        background-color: transparent;
-      }
-
-      &.action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-end;
-        padding: 0;
-
-        button {
-          margin: 0;
-          background-color: transparent;
-
-          &:hover .material-icons {
-            color: var(--text-dark);
-          }
-          .material-icons {
-            color: var(--text-lighter);
-            font-size: 1.3em;
-          }
-        }
-      }
-
-      .tabulator-row-handle-box {
-        width: auto;
-        display: flex;
-        height: 60%;
-        gap: 2px;
-      }
-
-      .tabulator-row-handle-bar {
-        height: 100%;
-        margin: 0;
-        width: 1px;
-        background-color: var(--border-color);
-
-        &:last-child {
-          display: none;
-        }
-      }
-    }
-  }
-}
-
 .ssh-agent-indicator > div {
   display: flex;
   font-size: 0.76em;
@@ -565,9 +559,11 @@ export default Vue.extend({
   &.error {
     color: var(--brand-danger);
   }
+
   &.info {
     color: var(--brand-info);
   }
+
   &.warning {
     color: var(--brand-warning);
   }
