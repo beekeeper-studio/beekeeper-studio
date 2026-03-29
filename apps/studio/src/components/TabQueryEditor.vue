@@ -197,6 +197,7 @@
           </x-button>
 
           <x-buttons class="">
+            <!-- TODO: (Will) show the primary action here -->
             <x-button
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
@@ -211,6 +212,7 @@
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
+              <!-- TODO: (Will) make sure to switch out the primary and secondary as shown -->
               <x-menu>
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
@@ -717,12 +719,13 @@
         ]
       },
       keymap() {
+        const { primaryWriteFunction, secondaryWriteFunc }  = this.getQueryActions()
         if (!this.active) return {}
         return this.$vHotkeyKeymap({
           'queryEditor.switchPaneFocus': this.switchPaneFocus,
           'queryEditor.selectEditor': this.selectEditor,
-          'queryEditor.submitQueryToFile': this.submitQueryToFile,
-          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.primaryQueryToFileAction': primaryWriteFunction,
+          'queryEditor.secondaryQueryToFileAction': secondaryWriteFunc,
           'queryEditor.manualCommit': this.manualCommit,
           'queryEditor.manualRollback': this.manualRollback,
         })
@@ -772,10 +775,12 @@
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
       keybindings() {
+        const { primaryFunc, secondaryFunc}  = this.getQueryActions()
+        
         const keybindings = this.$CMKeymap({
           'general.save': this.triggerSave,
-          'queryEditor.submitCurrentQuery': this.submitCurrentQuery,
-          'queryEditor.submitTabQuery': this.submitTabQuery,
+          'queryEditor.primaryQueryAction': primaryFunc,
+          'queryEditor.secondaryQueryAction': secondaryFunc
         })
 
         if(this.userKeymap === "vim") {
@@ -937,6 +942,27 @@
           this.$modal.show(this.superFormatterId)
         } else {
           this.$modal.hide(this.superFormatterId)
+        }
+      },
+      getQueryActions() {
+        const { settings: configSettings } = this.$bksConfig
+        let primaryFunc = this.submitCurrentQuery
+        let secondaryFunc = this.submitTabQuery
+        let primaryWriteFunction = this.submitCurrentQueryToFile
+        let secondaryWriteFunc = this.submitQueryToFile
+
+        if (configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery') {
+          primaryFunc = this.submitTabQuery
+          secondaryFunc = this.submitCurrentQuery
+          primaryWriteFunction = this.submitQueryToFile
+          secondaryWriteFunc = this.submitCurrentQueryToFile
+        }
+
+        return {
+          primaryFunc,
+          secondaryFunc,
+          primaryWriteFunction,
+          secondaryWriteFunc
         }
       },
       getPresets(presetId) {
