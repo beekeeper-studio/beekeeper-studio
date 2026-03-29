@@ -22,11 +22,13 @@ export default class extends DefaultMenu {
         this.menuItems.editorFontSizeIncrease,
         this.menuItems.editorFontSizeDecrease,
         { type: 'separator' },
-        this.menuItems.fullscreen,
-        this.menuItems.themeToggle,
         this.menuItems.primarySidebarToggle,
         this.menuItems.secondarySidebarToggle,
+        { type: 'separator' },
+        this.menuItems.themeToggle,
         this.menuItems.reload,
+        // This is added automatically in Mac
+        ...(!this.platformInfo.isMac ? this.menuItems.fullscreen : []),
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]
@@ -51,14 +53,18 @@ export default class extends DefaultMenu {
       label: "Help",
       submenu: [
         this.menuItems.keyboardShortcuts,
-        this.menuItems.enterLicense,
-        this.menuItems.checkForUpdate,
         this.menuItems.opendocs,
         this.menuItems.support,
+        { type: 'separator' },
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
-        this.menuItems.about,
+        // Moved to Beekeeper Studio menu for mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.checkForUpdate] : []),
         this.menuItems.restart,
+        { type: 'separator' },
+        // Moved to Beekeeper Studio menu for mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.about] : []),
+        this.menuItems.enterLicense,
       ]
     };
 
@@ -76,10 +82,14 @@ export default class extends DefaultMenu {
         label: "Beekeeper Studio",
         submenu: [
           this.menuItems.about,
+          this.menuItems.checkForUpdate,
+          { type: 'separator' },
           { role: 'services' },
+          { type: 'separator' },
           { role: 'hide' },
           { role: 'hideOthers' },
           { role: 'unhide' },
+          { type: 'separator' },
           { role: 'quit' }
         ]
       })
@@ -92,10 +102,12 @@ export default class extends DefaultMenu {
         this.menuItems.newWindow,
         this.menuItems.newTab,
         this.menuItems.closeTab,
+        { type: 'separator' },
         this.menuItems.importSqlFiles,
         this.menuItems.quickSearch,
         this.menuItems.disconnect,
-        this.menuItems.quit
+        // Moved to Beekeeper Studio menu for mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.quit] : []),
       ]
     }
 
@@ -116,6 +128,7 @@ export default class extends DefaultMenu {
         submenu: [
           this.menuItems.undo,
           this.menuItems.redo,
+          { type: 'separator' },
           this.menuItems.cut,
           this.menuItems.copy,
           this.menuItems.paste,
@@ -130,8 +143,9 @@ export default class extends DefaultMenu {
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
           this.menuItems.exportTables,
+          ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : []),
+          { type: 'separator' },
           this.menuItems.managePlugins,
-          ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : [])
         ]
       },
       ...windowMenu,

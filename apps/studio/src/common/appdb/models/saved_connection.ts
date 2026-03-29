@@ -370,8 +370,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         const credentials = url.substring(firstDoubleSlash, lastAtIndex)
 
         const [user, ...passwordParts] = credentials.split(':')
-        extractedUser = user
-        extractedPassword = passwordParts.join(':')
+        extractedUser = decodeURIComponent(user)
+        extractedPassword = decodeURIComponent(passwordParts.join(':'))
 
         cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
       }

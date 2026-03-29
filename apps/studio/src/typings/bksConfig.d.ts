@@ -2,6 +2,7 @@
 declare interface IBksConfig {
     azure: {
         azSQLLoginScope: string;
+        ssoPrompt: string;
     };
     db: {
         bigquery: {
@@ -71,7 +72,6 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
-        default_parsed: any;
         duckdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
