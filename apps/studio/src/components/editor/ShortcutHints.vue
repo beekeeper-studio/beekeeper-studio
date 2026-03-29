@@ -22,7 +22,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Run Current</div>
+      <div>{{ queryActionText(true) }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -37,7 +37,7 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Run All/Selection</div>
+      <div>{{ queryActionText(false) }}</div>
       <div
         class="shortcut"
         v-if="$config.isMac"
@@ -151,5 +151,18 @@
 
       }
     },
+    methods : {
+      isPrimaryRunCurrentQuery() {
+        const { settings: configSettings } = this.$bksConfig
+        return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
+      },
+      queryActionText(getPrimaryText) {
+        if (getPrimaryText) {
+          return this.isPrimaryRunCurrentQuery() ? 'Run Current' : 'Run All/Selection'
+        }
+
+        return this.isPrimaryRunCurrentQuery() ? 'Run All/Selection' : 'Run Current'
+      }
+    }
   }
 </script>
