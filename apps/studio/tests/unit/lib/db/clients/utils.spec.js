@@ -113,18 +113,33 @@ describe('buildInsertQuery', () => {
 
   afterAll(() => knex.destroy());
 
-  it('should treat a JSON array value as a single value, not multiple rows', () => {
+  it('should treat a JSON array value as a single value when column metadata is provided', () => {
     const insert = {
       table: 'test_table',
       schema: null,
       data: [{ id: 1, metadata: [1, 2, 3] }],
     };
-    const query = buildInsertQuery(knex, insert);
+    const columns = [
+      { columnName: 'id', dataType: 'integer' },
+      { columnName: 'metadata', dataType: 'json' },
+    ];
+    const query = buildInsertQuery(knex, insert, { columns });
     // Should produce a single INSERT with the array as a JSON string value
     expect(query).toContain("'[1,2,3]'");
     // Should NOT produce multiple value sets (which would indicate array was expanded)
     const valueMatches = query.match(/\bvalues\b/gi);
     expect(valueMatches).toHaveLength(1);
+  });
+
+  it('should leave arrays alone when no column metadata is available', () => {
+    const insert = {
+      table: 'test_table',
+      schema: null,
+      data: [{ id: 1, tags: ['a', 'b'] }],
+    };
+    // No columns passed — driver handles array serialization
+    const query = buildInsertQuery(knex, insert);
+    expect(query).not.toContain('["a","b"]');
   });
 
   it('should treat a JSON object value as a single value', () => {
@@ -160,24 +175,33 @@ describe('buildInsertQuery', () => {
     expect(query).not.toContain("'null'");
   });
 
-  it('should handle empty arrays and objects', () => {
+  it('should handle empty arrays and objects with column metadata', () => {
     const insert = {
       table: 'test_table',
       schema: null,
       data: [{ id: 1, arr: [], obj: {} }],
     };
-    const query = buildInsertQuery(knex, insert);
+    const columns = [
+      { columnName: 'id', dataType: 'integer' },
+      { columnName: 'arr', dataType: 'jsonb' },
+      { columnName: 'obj', dataType: 'jsonb' },
+    ];
+    const query = buildInsertQuery(knex, insert, { columns });
     expect(query).toContain("'[]'");
     expect(query).toContain("'{}'");
   });
 
-  it('should handle nested JSON structures', () => {
+  it('should handle nested JSON structures with column metadata', () => {
     const insert = {
       table: 'test_table',
       schema: null,
       data: [{ id: 1, metadata: [{ name: 'a' }, { name: 'b' }] }],
     };
-    const query = buildInsertQuery(knex, insert);
+    const columns = [
+      { columnName: 'id', dataType: 'integer' },
+      { columnName: 'metadata', dataType: 'json' },
+    ];
+    const query = buildInsertQuery(knex, insert, { columns });
     expect(query).toContain('[{"name":"a"},{"name":"b"}]');
     const valueMatches = query.match(/\bvalues\b/gi);
     expect(valueMatches).toHaveLength(1);
@@ -193,14 +217,14 @@ describe('buildInsertQuery', () => {
         { id: 3, tags: [1, 2, 3] },
       ],
     };
-    const query = buildInsertQuery(knex, insert);
+    const columns = [
+      { columnName: 'id', dataType: 'integer' },
+      { columnName: 'tags', dataType: 'jsonb' },
+    ];
+    const query = buildInsertQuery(knex, insert, { columns });
     expect(query).toContain('["a","b"]');
     expect(query).toContain('["c","d"]');
     expect(query).toContain('[1,2,3]');
-    // Each row should have its own id — confirms arrays didn't explode into extra rows
-    expect(query).toContain('1');
-    expect(query).toContain('2');
-    expect(query).toContain('3');
   });
 
   it('should handle mixed JSON and scalar columns in the same row', () => {
@@ -209,7 +233,13 @@ describe('buildInsertQuery', () => {
       schema: null,
       data: [{ id: 1, name: 'test', tags: ['a', 'b'], config: { enabled: true } }],
     };
-    const query = buildInsertQuery(knex, insert);
+    const columns = [
+      { columnName: 'id', dataType: 'integer' },
+      { columnName: 'name', dataType: 'varchar' },
+      { columnName: 'tags', dataType: 'json' },
+      { columnName: 'config', dataType: 'jsonb' },
+    ];
+    const query = buildInsertQuery(knex, insert, { columns });
     expect(query).toContain("'test'");
     expect(query).toContain('["a","b"]');
     expect(query).toContain('{"enabled":true}');
