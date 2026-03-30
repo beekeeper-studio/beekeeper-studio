@@ -47,7 +47,7 @@ export function deparameterizeQuery(queryText: string, dialect: Dialect, params:
   return result;
 }
 
-export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
+export function entityFilter(rawTables: any[], allFilters: EntityFilter, fieldSearchIndex?: Record<string, string[]>) {
   const tables = rawTables.filter((table) => {
     return (table.entityType === 'table' && allFilters.showTables &&
       ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
@@ -60,14 +60,40 @@ export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   if (!filterQuery) {
     return tables
   }
+
+  const isFieldPrefix = filterQuery.startsWith('.') && filterQuery.length > 1
+  const searchTerm = isFieldPrefix ? filterQuery.slice(1).toLowerCase() : filterQuery.toLowerCase()
+
+  if (!allFilters.showFields) {
+    // Fields checkbox is off — no field searching at all, even with . prefix
+  } else if (isFieldPrefix && fieldSearchIndex) {
+    return tables.filter((item) => {
+      const key = `${item.schema || ''}:${item.name}`
+      const columns = fieldSearchIndex[key]
+      return columns && columns.some((col) => col.includes(searchTerm))
+    })
+  }
+
   const startsWithFilter = _(tables)
-    .filter((item) => _.startsWith(item.name.toLowerCase(), filterQuery.toLowerCase()))
+    .filter((item) => _.startsWith(item.name.toLowerCase(), searchTerm))
     .value()
   const containsFilter = _(tables)
     .difference(startsWithFilter)
-    .filter((item) => item.name.toLowerCase().includes(filterQuery.toLowerCase()))
+    .filter((item) => item.name.toLowerCase().includes(searchTerm))
     .value()
-  return _.concat(startsWithFilter, containsFilter)
+
+  let nameMatches = _.concat(startsWithFilter, containsFilter)
+
+  if (allFilters.showFields && fieldSearchIndex) {
+    const fieldMatches = tables.filter((item) => {
+      const key = `${item.schema || ''}:${item.name}`
+      const columns = fieldSearchIndex[key]
+      return columns && columns.some((col) => col.includes(searchTerm))
+    })
+    nameMatches = _.uniqBy(_.concat(nameMatches, fieldMatches), (t) => `${t.schema || ''}:${t.name}`)
+  }
+
+  return nameMatches
 }
 
 // a function that takes in a string and a dialect,

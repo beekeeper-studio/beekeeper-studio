@@ -70,7 +70,7 @@
       <template v-else-if="table.columns && table.columns.length > 0">
         <span
           :key="c.columnName"
-          v-for="(c, i) in table.columns"
+          v-for="(c, i) in displayedColumns"
           class="sub-item"
         >
           <span
@@ -137,6 +137,7 @@ export default Vue.extend({
     "level",
     "expanded",
     "loadingColumns",
+    "fieldFilterTerm",
   ],
   components: { TableIcon },
   data() {
@@ -177,6 +178,14 @@ export default Vue.extend({
         this.activeTab.table.schema === this.table.schema;
 
       return tableSelected;
+    },
+    displayedColumns() {
+      if (!this.table.columns) return []
+      if (!this.fieldFilterTerm) return this.table.columns
+      const filtered = this.table.columns.filter(
+        (c) => c.columnName.toLowerCase().includes(this.fieldFilterTerm)
+      )
+      return filtered.length > 0 ? filtered : this.table.columns
     },
     ...mapGetters(["selectedSidebarItem"]),
     ...mapState(["activeTab"]),
