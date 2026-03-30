@@ -64,6 +64,9 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         )
           .withName(`libsql${options.readOnly ? "-readOnly" : ""}`)
           .withExposedPorts(8080)
+          .withEnvironment({
+            SQLD_CONNECTION_CREATION_TIMEOUT_SEC: "30",
+          })
           .withStartupTimeout(dbtimeout)
           .start();
         jest.setTimeout(timeoutDefault)
@@ -315,6 +318,9 @@ function testReplica(readOnly = false) {
     )
       .withName(`libsql-replica-target`)
       .withExposedPorts(8080)
+      .withEnvironment({
+        SQLD_CONNECTION_CREATION_TIMEOUT_SEC: "30",
+      })
       .withStartupTimeout(dbtimeout)
       .start();
     jest.setTimeout(timeoutDefault)
