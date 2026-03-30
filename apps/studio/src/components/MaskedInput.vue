@@ -1,5 +1,6 @@
 <template>
     <input
+      v-tooltip="privacyMode ? 'Privacy Mode is enabled, disable it in the View menu to see this data' : null"
       :type="computedType"
       :value="displayedValue"
       @input="handleInput"
@@ -7,7 +8,7 @@
       class="form-control"
     >
   </template>
-  
+
   <script>
   export default {
     name: 'MaskedInput',
