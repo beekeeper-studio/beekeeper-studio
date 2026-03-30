@@ -22,6 +22,19 @@ const errorMappings = {
       pattern: 'thin mode',
       help: "You likely need to enable 'thick mode' which supports all connection types. Please provide the path to the Oracle Instant client to Beekeeper Studio in the box above",
       link: "https://docs.beekeeperstudio.io/user_guide/connecting/oracle-database/"
+    },
+    {
+      pattern: 'please restart beekeeper studio',
+      help: "In thick mode, Oracle locks the configuration directory when the client first connects. To use a different configuration directory, restart the app.",
+    },
+    {
+      pattern: 'directory does not exist',
+      help: "Double-check the path in your Global Oracle Configuration settings above.",
+    },
+    {
+      pattern: 'failed to initialize oracle client',
+      help: "The Oracle Instant Client could not be loaded. Verify the Instant Client path is correct and the required libraries are present.",
+      link: "https://docs.beekeeperstudio.io/user_guide/connecting/oracle-database/"
     }
   ]
 }
