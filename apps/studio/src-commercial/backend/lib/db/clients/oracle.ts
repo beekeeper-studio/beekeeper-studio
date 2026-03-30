@@ -809,7 +809,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       if (user) poolConfig['user'] = user
       if (password) poolConfig['password'] = password
     } else {
-      const { host, port, serviceName, ssl } = this.server.config
+      const { serviceName, ssl } = this.server.config
+      const host = this.server.sshTunnel ? this.server.config.localHost : this.server.config.host
+      const port = this.server.sshTunnel ? this.server.config.localPort : this.server.config.port
       const scheme = ssl ? 'tcps://' : ''
       const str = `${scheme}${host}:${port}/${serviceName}`
       poolConfig = {
