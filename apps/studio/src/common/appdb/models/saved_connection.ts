@@ -4,8 +4,9 @@ import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
-import { IConnection } from '@/common/interfaces/IConnection'
+import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
+import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
 import { ConnectionSshConfig } from './ConnectionSshConfig'
@@ -165,6 +166,25 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false, default: false })
   sshEnabled = false
 
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ type: "varchar", nullable: true })
+  sshHost: Nullable<string> = null
+
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ type: "int", nullable: true })
+  sshPort: Nullable<number> = null
+
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ type: "varchar", nullable: true })
+  sshKeyfile: Nullable<string> = null
+
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ type: 'varchar', nullable: true })
+  sshUsername: Nullable<string> = null
+
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ type: 'varchar', nullable: true })
+  sshBastionHost: Nullable<string> = null
 
   @Column({ type: 'int', nullable: true })
   sshKeepaliveInterval: Nullable<number> = 60
@@ -292,7 +312,44 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
+  sshKeyfilePassword: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
+  sshPassword: Nullable<string> = null
+
+  /** @deprecated use `sshConfigs` instead */
+  _sshMode: SshMode = "agent"
+
+  /** @deprecated use `sshConfigs` instead */
+  @Column({ name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent" })
+  set sshMode(value: SshMode) {
+    this._sshMode = value
+    if (this._sshMode !== 'userpass') {
+      this.sshPassword = null
+    }
+
+    if (this._sshMode !== 'keyfile') {
+      this.sshKeyfile = null
+      this.sshKeyfilePassword = null
+    }
+
+    if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
+      this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
+    }
+
+    if (!this.sshKeepaliveInterval || this.sshKeepaliveInterval < 0) {
+      // store null if zero, empty or negative
+      this.sshKeepaliveInterval = null
+    }
+  }
+
+  /** @deprecated use `sshConfigs` instead */
+  get sshMode(): SshMode {
+    return this._sshMode
+  }
 
   private smellsLikeUrl(url: string): boolean {
     return url.includes("://")
@@ -391,6 +448,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   maybeClearPasswords(): void {
     if (!this.rememberPassword) {
       this.password = null
+      this.sshPassword = null
+      this.sshKeyfilePassword = null
     }
   }
 
