@@ -120,15 +120,27 @@ select 'string' as my_column from foo
 
 
 
-### I get 'permission denied' when trying to access a database on an external drive
+### I get 'permission denied' or 'unable to open database file' when trying to access a SQLite database
 
-If you're on Linux and using the `snap` version of Beekeeper you need to give the app an extra permission.
+This is usually caused by the sandboxed packaging format (Snap or Flatpak) not having permission to access the file's location.
+
+**Flatpak users:**
+
+Flatpak restricts file access by default. The file picker may show a sandboxed path (e.g. `/run/user/1000/...`) instead of the real path. To grant Beekeeper Studio access to your files:
+
+```bash
+sudo flatpak override io.beekeeperstudio.Studio --filesystem=host
+```
+
+**Snap users:**
+
+If the database is on an external or removable drive, you need to grant extra permissions:
 
 ```bash
 sudo snap connect beekeeper-studio:removable-media :removable-media
 ```
 
-If you're on another platform, please [open a ticket][bug] and we'll try to help you debug the problem.
+If neither of these applies, please [open a ticket][bug] and we'll try to help you debug the problem.
 
 [bug]: https://github.com/beekeeper-studio/beekeeper-studio/issues/new?template=bug_report.md&title=BUG:
 
