@@ -17,7 +17,7 @@ jest.mock('oracledb', () => {
 });
 
 import fs from 'fs';
-import { OracleClient } from '@commercial/backend/lib/db/clients/oracle';
+import { OracleClient, _resetOracleStateForTesting } from '@commercial/backend/lib/db/clients/oracle';
 
 function buildServer(overrides: Record<string, any> = {}) {
   return {
@@ -40,21 +40,16 @@ function buildDatabase() {
   return { database: 'testdb', connecting: false, connected: false } as any;
 }
 
-// IMPORTANT: oracleInitialized is a module-level flag that persists across
-// tests and can only transition false→true. Tests are ordered deliberately
-// to work with this constraint.
 describe('OracleClient connection error handling', () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    // Default: all paths exist
+    _resetOracleStateForTesting();
     jest.spyOn(fs, 'existsSync').mockReturnValue(true);
   });
 
-  afterAll(() => {
+  afterEach(() => {
     jest.restoreAllMocks();
   });
-
-  // === Path validation tests (run first while oracleInitialized is false) ===
 
   it('should reject with a clear error when instantClientLocation does not exist', async () => {
     jest.spyOn(fs, 'existsSync').mockReturnValue(false);
@@ -74,8 +69,6 @@ describe('OracleClient connection error handling', () => {
     expect(mockInitOracleClient).not.toHaveBeenCalled();
   });
 
-  // === initOracleClient error handling (oracleInitialized is still false) ===
-
   it('should return the real error when initOracleClient throws', async () => {
     mockInitOracleClient.mockImplementation(() => {
       throw new Error('DPI-1047: Cannot locate a 64-bit Oracle Client library');
@@ -90,17 +83,27 @@ describe('OracleClient connection error handling', () => {
     });
   });
 
-  // === Post-init tests (oracleInitialized is now true) ===
-
   it('should not call initOracleClient again after a failed first attempt', async () => {
+    // First connect: initOracleClient throws
+    mockInitOracleClient.mockImplementation(() => {
+      throw new Error('ORA-28759: failure to open file');
+    });
+
+    const client1 = new OracleClient(buildServer(), buildDatabase());
+    await expect(client1.connect()).rejects.toThrow('ORA-28759');
+    expect(mockInitOracleClient).toHaveBeenCalledTimes(1);
+
+    // Second connect: same process, oracleInitialized is now true
+    mockInitOracleClient.mockClear();
     mockCreatePool.mockRejectedValue(new Error('ORA-28759: failure to open file'));
 
-    const client = new OracleClient(buildServer(), buildDatabase());
-    await expect(client.connect()).rejects.toThrow('ORA-28759');
+    const client2 = new OracleClient(buildServer(), buildDatabase());
+    await expect(client2.connect()).rejects.toThrow('ORA-28759');
     expect(mockInitOracleClient).not.toHaveBeenCalled();
   });
 
   it('should return the real error when createPool throws', async () => {
+    mockInitOracleClient.mockImplementation(() => {});
     mockCreatePool.mockRejectedValue(new Error('ORA-12154: TNS:could not resolve the connect identifier specified'));
 
     const client = new OracleClient(buildServer(), buildDatabase());
@@ -108,17 +111,21 @@ describe('OracleClient connection error handling', () => {
   });
 
   it('should tell user to restart when config directory changes after init', async () => {
-    mockCreatePool.mockRejectedValue(new Error('pool error'));
+    // First connect succeeds
+    mockInitOracleClient.mockImplementation(() => {});
+    mockCreatePool.mockResolvedValue({});
 
-    const client = new OracleClient(
+    const client1 = new OracleClient(buildServer(), buildDatabase());
+    client1.driverExecuteSimple = jest.fn().mockResolvedValue([{ BANNER: 'Oracle 19c' }]);
+    await client1.connect();
+
+    // Second connect with different config dir
+    const client2 = new OracleClient(
       buildServer({ oracleConfigLocation: '/different/config/path' }),
       buildDatabase()
     );
-    await expect(client.connect()).rejects.toThrow('Please restart Beekeeper Studio');
-    expect(mockCreatePool).not.toHaveBeenCalled();
+    await expect(client2.connect()).rejects.toThrow('Please restart Beekeeper Studio');
   });
-
-  // === Thin mode (no instantClientLocation) ===
 
   it('should return the real error when createPool rejects in thin mode', async () => {
     mockCreatePool.mockRejectedValue(new Error('NJS-510: connections to this database server version are not supported'));

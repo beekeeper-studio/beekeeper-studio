@@ -62,6 +62,11 @@ oracle.fetchAsBuffer = [oracle.BLOB]
 let oracleInitialized = false
 let oracleInitConfigDir: string | null = null
 
+export function _resetOracleStateForTesting() {
+  oracleInitialized = false
+  oracleInitConfigDir = null
+}
+
 export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
   pool: oracle.Pool;
   server: IDbConnectionServer
