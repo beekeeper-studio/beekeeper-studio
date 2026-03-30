@@ -439,6 +439,16 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     tableInsert.data.forEach((row) => {
       Object.keys(row).forEach((key) => {
         row[key] = this.deserializeValue(row[key]);
+        // JSON objects/arrays must be stringified so knex treats them as
+        // single values. Skip native DB array columns (e.g. PostgreSQL
+        // text[]) which knex handles natively.
+        if (_.isPlainObject(row[key]) || Array.isArray(row[key])) {
+          const col = columns.find((c) => c.columnName === key);
+          const isNativeArray = col?.dataType && (col.dataType.endsWith('[]') || col.dataType.toUpperCase() === 'ARRAY');
+          if (!isNativeArray) {
+            row[key] = JSON.stringify(row[key]);
+          }
+        }
       })
     })
     const primaryKeysPromise = await this.getPrimaryKeys(tableInsert.table, tableInsert.schema)

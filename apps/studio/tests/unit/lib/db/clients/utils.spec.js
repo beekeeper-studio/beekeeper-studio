@@ -113,45 +113,6 @@ describe('buildInsertQuery', () => {
 
   afterAll(() => knex.destroy());
 
-  it('should treat a JSON array value as a single value when column metadata is provided', () => {
-    const insert = {
-      table: 'test_table',
-      schema: null,
-      data: [{ id: 1, metadata: [1, 2, 3] }],
-    };
-    const columns = [
-      { columnName: 'id', dataType: 'integer' },
-      { columnName: 'metadata', dataType: 'json' },
-    ];
-    const query = buildInsertQuery(knex, insert, { columns });
-    // Should produce a single INSERT with the array as a JSON string value
-    expect(query).toContain("'[1,2,3]'");
-    // Should NOT produce multiple value sets (which would indicate array was expanded)
-    const valueMatches = query.match(/\bvalues\b/gi);
-    expect(valueMatches).toHaveLength(1);
-  });
-
-  it('should leave arrays alone when no column metadata is available', () => {
-    const insert = {
-      table: 'test_table',
-      schema: null,
-      data: [{ id: 1, tags: ['a', 'b'] }],
-    };
-    // No columns passed — driver handles array serialization
-    const query = buildInsertQuery(knex, insert);
-    expect(query).not.toContain('["a","b"]');
-  });
-
-  it('should treat a JSON object value as a single value', () => {
-    const insert = {
-      table: 'test_table',
-      schema: null,
-      data: [{ id: 1, metadata: { key: 'value' } }],
-    };
-    const query = buildInsertQuery(knex, insert);
-    expect(query).toContain('{"key":"value"}');
-  });
-
   it('should not alter regular scalar values', () => {
     const insert = {
       table: 'test_table',
@@ -161,7 +122,6 @@ describe('buildInsertQuery', () => {
     const query = buildInsertQuery(knex, insert);
     expect(query).toContain("'hello'");
     expect(query).toContain('42');
-    expect(query).not.toContain('JSON');
   });
 
   it('should preserve null values as-is', () => {
@@ -175,91 +135,19 @@ describe('buildInsertQuery', () => {
     expect(query).not.toContain("'null'");
   });
 
-  it('should handle empty arrays and objects with column metadata', () => {
+  it('should produce valid SQL when data is pre-stringified JSON', () => {
+    // getInsertQuery stringifies JSON before calling buildInsertQuery,
+    // so buildInsertQuery receives strings, not raw objects/arrays.
     const insert = {
       table: 'test_table',
       schema: null,
-      data: [{ id: 1, arr: [], obj: {} }],
+      data: [{ id: 1, metadata: '[1,2,3]', config: '{"key":"value"}' }],
     };
-    const columns = [
-      { columnName: 'id', dataType: 'integer' },
-      { columnName: 'arr', dataType: 'jsonb' },
-      { columnName: 'obj', dataType: 'jsonb' },
-    ];
-    const query = buildInsertQuery(knex, insert, { columns });
-    expect(query).toContain("'[]'");
-    expect(query).toContain("'{}'");
-  });
-
-  it('should handle nested JSON structures with column metadata', () => {
-    const insert = {
-      table: 'test_table',
-      schema: null,
-      data: [{ id: 1, metadata: [{ name: 'a' }, { name: 'b' }] }],
-    };
-    const columns = [
-      { columnName: 'id', dataType: 'integer' },
-      { columnName: 'metadata', dataType: 'json' },
-    ];
-    const query = buildInsertQuery(knex, insert, { columns });
-    expect(query).toContain('[{"name":"a"},{"name":"b"}]');
+    const query = buildInsertQuery(knex, insert);
+    expect(query).toContain("'[1,2,3]'");
+    expect(query).toContain("'{\"key\":\"value\"}'");
     const valueMatches = query.match(/\bvalues\b/gi);
     expect(valueMatches).toHaveLength(1);
-  });
-
-  it('should handle multiple rows each with JSON array values', () => {
-    const insert = {
-      table: 'test_table',
-      schema: null,
-      data: [
-        { id: 1, tags: ['a', 'b'] },
-        { id: 2, tags: ['c', 'd'] },
-        { id: 3, tags: [1, 2, 3] },
-      ],
-    };
-    const columns = [
-      { columnName: 'id', dataType: 'integer' },
-      { columnName: 'tags', dataType: 'jsonb' },
-    ];
-    const query = buildInsertQuery(knex, insert, { columns });
-    expect(query).toContain('["a","b"]');
-    expect(query).toContain('["c","d"]');
-    expect(query).toContain('[1,2,3]');
-  });
-
-  it('should handle mixed JSON and scalar columns in the same row', () => {
-    const insert = {
-      table: 'test_table',
-      schema: null,
-      data: [{ id: 1, name: 'test', tags: ['a', 'b'], config: { enabled: true } }],
-    };
-    const columns = [
-      { columnName: 'id', dataType: 'integer' },
-      { columnName: 'name', dataType: 'varchar' },
-      { columnName: 'tags', dataType: 'json' },
-      { columnName: 'config', dataType: 'jsonb' },
-    ];
-    const query = buildInsertQuery(knex, insert, { columns });
-    expect(query).toContain("'test'");
-    expect(query).toContain('["a","b"]');
-    expect(query).toContain('{"enabled":true}');
-    const valueMatches = query.match(/\bvalues\b/gi);
-    expect(valueMatches).toHaveLength(1);
-  });
-
-  it('should NOT stringify arrays when column is a native PostgreSQL array type', () => {
-    const insert = {
-      table: 'test_table',
-      schema: null,
-      data: [{ id: 1, names: ['alice', 'bob'] }],
-    };
-    const columns = [
-      { columnName: 'id', dataType: 'integer' },
-      { columnName: 'names', dataType: 'text[]' },
-    ];
-    const query = buildInsertQuery(knex, insert, { columns });
-    // knex-pg keeps native arrays as-is; they should NOT be JSON-stringified
-    expect(query).not.toContain('["alice","bob"]');
   });
 });
 
