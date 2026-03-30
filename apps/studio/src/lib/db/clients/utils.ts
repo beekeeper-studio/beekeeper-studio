@@ -219,8 +219,14 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
       } else if (matching && matching.dataType && matching.dataType.startsWith('bit') && _.isBoolean(item[ic])) {
         item[ic] = item[ic] ? 1 : 0;
       }
+      // JSON-stringify objects and arrays so knex treats them as single
+      // values, but skip PostgreSQL native array columns (e.g. text[],
+      // int[]) which knex-pg handles natively.
       if (Array.isArray(item[ic]) || _.isPlainObject(item[ic])) {
-        item[ic] = JSON.stringify(item[ic]);
+        const isNativeArray = matching?.dataType && (matching.dataType.endsWith('[]') || matching.dataType.toUpperCase() === 'ARRAY')
+        if (!isNativeArray) {
+          item[ic] = JSON.stringify(item[ic]);
+        }
       }
       // HACK (@day): fixes #1734. Knex reads any '?' in identifiers as a parameter, so we need to escape any that appear.
       if (ic.includes('?')) {

@@ -216,6 +216,21 @@ describe('buildInsertQuery', () => {
     const valueMatches = query.match(/\bvalues\b/gi);
     expect(valueMatches).toHaveLength(1);
   });
+
+  it('should NOT stringify arrays when column is a native PostgreSQL array type', () => {
+    const insert = {
+      table: 'test_table',
+      schema: null,
+      data: [{ id: 1, names: ['alice', 'bob'] }],
+    };
+    const columns = [
+      { columnName: 'id', dataType: 'integer' },
+      { columnName: 'names', dataType: 'text[]' },
+    ];
+    const query = buildInsertQuery(knex, insert, { columns });
+    // knex-pg keeps native arrays as-is; they should NOT be JSON-stringified
+    expect(query).not.toContain('["alice","bob"]');
+  });
 });
 
 describe('isAllowedReadOnly', () => {
