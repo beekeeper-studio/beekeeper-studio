@@ -2428,10 +2428,10 @@
   resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.8.tgz#77a2142fe52f71be61eb91642934d043c44a1d49"
   integrity sha512-pz14TlCwbH8f3skcAT0bkqs5Ad3ZLhiqC94H1GDbe7J++C2wM6Qrrne5vOKlZyFiB+49Im+qLaB1gFLKEKUT2Q==
 
-"@beekeeperstudio/bks-er-diagram@^1.0.7":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.7.tgz#e453f982699a95f2ad7847e127d2d7f3a43b56bb"
-  integrity sha512-VjMrK3rxmSVmkBypbWp8TtPhGciwvDeqGmNuiJqaa7AQ6iKNlO7W1M3vjmklxWLjyQH6SSOtu/O78DTk9h3TZA==
+"@beekeeperstudio/bks-er-diagram@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.9.tgz#78730e8d841ddeab04193e22eff90f5804607703"
+  integrity sha512-cnSL+9gnmmUptD26gJ1IPHBEUWdXFGRnlSnuMtOfRPhtR83v2pXGPVv3CCNpg3QaGT/cDLl7EKqfjieyzyXL+w==
 
 "@beekeeperstudio/plugin@^1.6.0":
   version "1.6.0"
@@ -3568,6 +3568,11 @@
   version "5.6.4"
   resolved "https://registry.yarnpkg.com/@js-joda/core/-/core-5.6.4.tgz#abafce9b30302639bfe4a71bad5120fe39654f10"
   integrity sha512-ChdLDTYMEoYoiKZMT90wZMEdGvZ2/QZMnhvjvEqeO5oLoxUfSiLzfe6Lhf3g88+MhZ+utbAu7PAxX1sZkLo5pA==
+
+"@js-joda/core@^5.6.5":
+  version "5.7.0"
+  resolved "https://registry.yarnpkg.com/@js-joda/core/-/core-5.7.0.tgz#526d437b07cbb41e28df34d487cbfccbe730185b"
+  integrity sha512-WBu4ULVVxySLLzK1Ppq+OdfP+adRS4ntmDQT915rzDJ++i95gc2jZkM5B6LWEAwN3lGXpfie3yPABozdD3K3Vg==
 
 "@js-sdsl/ordered-map@^4.4.2":
   version "4.4.2"
@@ -5288,10 +5293,10 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@tediousjs/connection-string@^0.5.0":
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/@tediousjs/connection-string/-/connection-string-0.5.0.tgz#9b3d858c040aac6bdf5584bf45370cef5b6522b4"
-  integrity sha512-7qSgZbincDDDFyRweCIEvZULFAw5iz/DeunhvuxpL31nfntX3P4Yd4HkHBRg9H8CdqY1e5WFN1PZIz/REL9MVQ==
+"@tediousjs/connection-string@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@tediousjs/connection-string/-/connection-string-0.6.0.tgz#491730399076ca52f29d5dc41a3da6f53a6fe0c2"
+  integrity sha512-GxlsW354Vi6QqbUgdPyQVcQjI7cZBdGV5vOYVYuCVDTylx2wl3WHR2HlhcxxHTrMigbelpXsdcZso+66uxPfow==
 
 "@tootallnate/once@1":
   version "1.1.2"
@@ -6874,6 +6879,16 @@ bl@^6.0.11:
     inherits "^2.0.4"
     readable-stream "^4.2.0"
 
+bl@^6.1.4:
+  version "6.1.6"
+  resolved "https://registry.yarnpkg.com/bl/-/bl-6.1.6.tgz#b40f3aea6963c6742616a957efb742c4fb87ecbb"
+  integrity sha512-jLsPgN/YSvPUg9UX0Kd73CXpm2Psg9FxMeCSXnk3WBO3CMT10JMwijubhGfHCnFu6TPn1ei3b975dxv7K2pWVg==
+  dependencies:
+    "@types/readable-stream" "^4.0.0"
+    buffer "^6.0.3"
+    inherits "^2.0.4"
+    readable-stream "^4.2.0"
+
 bluebird@^3.1.1, bluebird@^3.5.1, bluebird@^3.7.2:
   version "3.7.2"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.7.2.tgz#9f229c15be272454ffa973ace0dbee79a1b0c36f"
@@ -6905,17 +6920,17 @@ bowser@^2.11.0:
   integrity sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==
 
 brace-expansion@^1.1.7:
-  version "1.1.12"
-  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.12.tgz#ab9b454466e5a8cc3a187beaad580412a9c5b843"
-  integrity sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==
+  version "1.1.13"
+  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.13.tgz#d37875c01dc9eff988dd49d112a57cb67b54efe6"
+  integrity sha512-9ZLprWS6EENmhEOpjCYW2c8VkmOvckIJZfkr7rBW6dObmfgJ/L1GpSYW5Hpo9lDz4D1+n0Ckz8rU7FwHDQiG/w==
   dependencies:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
 
 brace-expansion@^2.0.1:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-2.0.2.tgz#54fc53237a613d854c7bd37463aad17df87214e7"
-  integrity sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-2.0.3.tgz#0493338bdd58e319b1039c67cf7ee439892c01d9"
+  integrity sha512-MCV/fYJEbqx68aE58kv2cA/kiky1G8vux3OR6/jbS+jIMe/6fJWa0DTzJU7dqijOWYwHi1t29FlfYI9uytqlpA==
   dependencies:
     balanced-match "^1.0.0"
 
@@ -9606,10 +9621,10 @@ gtoken@^6.1.0:
     google-p12-pem "^4.0.0"
     jws "^4.0.0"
 
-happy-dom@^20.8.8:
-  version "20.8.8"
-  resolved "https://registry.yarnpkg.com/happy-dom/-/happy-dom-20.8.8.tgz#ad87a83340161943d7f7425dae9ca237b6cd4bc7"
-  integrity sha512-5/F8wxkNxYtsN0bXfMwIyNLZ9WYsoOYPbmoluqVJqv8KBUbcyKZawJ7uYK4WTX8IHBLYv+VXIwfeNDPy1oKMwQ==
+happy-dom@^20.8.9:
+  version "20.8.9"
+  resolved "https://registry.yarnpkg.com/happy-dom/-/happy-dom-20.8.9.tgz#aeacc9ab9aacada379bce0ba37b2f02dabbba286"
+  integrity sha512-Tz23LR9T9jOGVZm2x1EPdXqwA37G/owYMxRwU0E4miurAtFsPMQ1d2Jc2okUaSjZqAFz2oEn3FLXC5a0a+siyA==
   dependencies:
     "@types/node" ">=20.0.0"
     "@types/whatwg-mimetype" "^3.0.2"
@@ -11921,17 +11936,16 @@ ms@^2.0.0, ms@^2.1.1, ms@^2.1.3:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-mssql@^11.0.1:
-  version "11.0.1"
-  resolved "https://registry.yarnpkg.com/mssql/-/mssql-11.0.1.tgz#a32ab7763bfbb3f5d970e47563df3911fc04e21d"
-  integrity sha512-KlGNsugoT90enKlR8/G36H0kTxPthDhmtNUCwEHvgRza5Cjpjoj+P2X6eMpFUDN7pFrJZsKadL4x990G8RBE1w==
+mssql@^12.2.1:
+  version "12.2.1"
+  resolved "https://registry.yarnpkg.com/mssql/-/mssql-12.2.1.tgz#5c36af0b83ea34c35cee0424a88e6cdb7153ec79"
+  integrity sha512-TU89g82WatOVcinw3etO/crKbd67ugC3Wm6TJDklHjp7211brVENWIs++UoPC2H+TWvyi0OSlzMou8GY15onOA==
   dependencies:
-    "@tediousjs/connection-string" "^0.5.0"
+    "@tediousjs/connection-string" "^0.6.0"
     commander "^11.0.0"
     debug "^4.3.3"
-    rfdc "^1.3.0"
     tarn "^3.0.2"
-    tedious "^18.2.1"
+    tedious "^19.0.0"
 
 muggle-string@^0.4.1:
   version "0.4.1"
@@ -12118,9 +12132,9 @@ node-firebird@^1.1.9:
     long "^5.2.3"
 
 node-forge@^1.3.1:
-  version "1.3.3"
-  resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-1.3.3.tgz#0ad80f6333b3a0045e827ac20b7f735f93716751"
-  integrity sha512-rLvcdSyRCyouf6jcOIPe/BgwG/d7hKjzMKOas33/pHEr6gbq18IK9zV7DiPvzsz0oBJPme6qr6H6kGZuI9/DZg==
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-1.4.0.tgz#1c7b7d8bdc2d078739f58287d589d903a11b2fc2"
+  integrity sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==
 
 node-gyp@8.x:
   version "8.4.1"
@@ -12632,9 +12646,9 @@ path-scurry@^2.0.0:
     minipass "^7.1.2"
 
 path-to-regexp@^8.0.0:
-  version "8.3.0"
-  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-8.3.0.tgz#aa818a6981f99321003a08987d3cec9c3474cd1f"
-  integrity sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA==
+  version "8.4.0"
+  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-8.4.0.tgz#8e98fcd94826aff01a90c544ef74ffbaca3a78ed"
+  integrity sha512-PuseHIvAnz3bjrM2rGJtSgo1zjgxapTLZ7x2pjhzWwlp4SJQgK3f3iZIQwkpEnBaKz6seKBADpM4B4ySkuYypg==
 
 path-type@^1.0.0:
   version "1.1.0"
@@ -13527,11 +13541,6 @@ reusify@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/reusify/-/reusify-1.0.4.tgz#90da382b1e126efc02146e90845a88db12925d76"
   integrity sha512-U9nH88a3fc/ekCF1l0/UP1IosiuIjyTh7hBvXVMHYgVcfGvt897Xguj2UOLDeI5BG2m7/uwyaLVT6fbtCwTyzw==
-
-rfdc@^1.3.0:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/rfdc/-/rfdc-1.4.1.tgz#778f76c4fb731d93414e8f925fbecf64cce7f6ca"
-  integrity sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==
 
 rimraf@2.6.3:
   version "2.6.3"
@@ -14840,7 +14849,7 @@ tarn@^3.0.1, tarn@^3.0.2:
   resolved "https://registry.yarnpkg.com/tarn/-/tarn-3.0.2.tgz#73b6140fbb881b71559c4f8bfde3d9a4b3d27693"
   integrity sha512-51LAVKUSZSVfI05vjPESNc5vwqqZpbXCsU+/+wxlOrUjk2SnFTt97v9ZgQrD4YmxYW1Px6w2KjaDitCfkvgxMQ==
 
-tedious@*, tedious@^18.2.1:
+tedious@*:
   version "18.6.1"
   resolved "https://registry.yarnpkg.com/tedious/-/tedious-18.6.1.tgz#1c4a3f06c891be67a032117e2e25193286d44496"
   integrity sha512-9AvErXXQTd6l7TDd5EmM+nxbOGyhnmdbp/8c3pw+tjaiSXW9usME90ET/CRG1LN1Y9tPMtz/p83z4Q97B4DDpw==
@@ -14852,6 +14861,22 @@ tedious@*, tedious@^18.2.1:
     "@types/node" ">=18"
     bl "^6.0.11"
     iconv-lite "^0.6.3"
+    js-md4 "^0.3.2"
+    native-duplexpair "^1.0.0"
+    sprintf-js "^1.1.3"
+
+tedious@^19.0.0:
+  version "19.2.1"
+  resolved "https://registry.yarnpkg.com/tedious/-/tedious-19.2.1.tgz#58edc3838ebacc34ff3856177905137bc8ba3b1f"
+  integrity sha512-pk1Q16Yl62iocuQB+RWbg6rFUFkIyzqOFQ6NfysCltRvQqKwfurgj8v/f2X+CKvDhSL4IJ0cCOfCHDg9PWEEYA==
+  dependencies:
+    "@azure/core-auth" "^1.7.2"
+    "@azure/identity" "^4.2.1"
+    "@azure/keyvault-keys" "^4.4.0"
+    "@js-joda/core" "^5.6.5"
+    "@types/node" ">=18"
+    bl "^6.1.4"
+    iconv-lite "^0.7.0"
     js-md4 "^0.3.2"
     native-duplexpair "^1.0.0"
     sprintf-js "^1.1.3"
