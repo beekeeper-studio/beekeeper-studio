@@ -4,8 +4,6 @@ export interface PlatformWarning {
   /** Optional $config key that must be falsy for the warning to show */
   unless?: string
   message: string
-  /** Optional shell command to display in a code block */
-  command?: string
   link?: string
   linkText?: string
 }
@@ -25,10 +23,9 @@ export const platformWarnings: Record<string, PlatformWarning[]> = {
     },
     {
       configKey: 'isFlatpak',
-      message: 'Hey Flatpak user! Beekeeper can only access files in your home directory by default. To access files elsewhere, run:',
-      command: 'flatpak override --user io.beekeeperstudio.Studio --filesystem=/path/to/dir',
-      link: 'https://docs.beekeeperstudio.io/support/troubleshooting/#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive',
-      linkText: 'Read more',
+      message: 'Hey Flatpak user! Beekeeper can only access files in your home directory by default.',
+      link: 'https://docs.beekeeperstudio.io/installation/linux/#flatpak',
+      linkText: 'Learn how to fix this',
     },
   ],
   'ssh-agent': [

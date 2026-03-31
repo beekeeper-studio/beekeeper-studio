@@ -8,11 +8,9 @@
       <i class="material-icons">error_outline</i>
       <div>
         {{ warning.message }}
-        <code v-if="warning.command">{{ warning.command }}</code>
         <a
           v-if="warning.link"
           :href="warning.link"
-          @click.prevent="$native.openLink(warning.link)"
         >
           {{ warning.linkText || 'Read more' }}
         </a>
