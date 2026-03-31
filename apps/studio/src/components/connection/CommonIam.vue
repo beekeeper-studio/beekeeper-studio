@@ -120,8 +120,8 @@
 
 <script>
 import MaskedInput from '@/components/MaskedInput.vue'
-  import FilePicker from '@/components/common/form/FilePicker.vue'
-import { mapState } from 'vuex'
+import FilePicker from '@/components/common/form/FilePicker.vue'
+import { mapGetters } from 'vuex'
 
 export default {
   props: ['config', 'authType'],
@@ -138,7 +138,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     isRedshift() {
       return this.config.connectionType === 'redshift';
     },

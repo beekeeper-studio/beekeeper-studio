@@ -193,14 +193,14 @@ export default {
       connection: state => state.connection,
       versionString: state => state.versionString
     }),
-    ...mapState('settings', ['privacyMode']),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapGetters({
       hasRunningExports: 'exports/hasRunningExports',
       workspace: 'workspace',
       connectionColor: 'connectionColor',
       savedConnections: 'data/connections/filteredConnections',
-      isUltimate: 'isUltimate'
+      isUltimate: 'isUltimate',
+      privacyMode: 'settings/privacyMode'
     }),
     connectionName() {
       return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
