@@ -318,8 +318,8 @@
         :running="running"
         :editing="editingResult"
         :changesCount="$refs.table?.pendingChangesCount"
-        @confirmSwitchResult="confirmSwitchResult"
         @editResults="editResults"
+        @stopEditing="stopEditing"
         @saveChanges="saveChanges"
         @copyToSql="copyToSql"
         @discardChanges="discardChanges"
@@ -872,6 +872,9 @@
       },
     },
     watch: {
+      selectedResult() {
+        this.editingResult = false
+      },
       error() {
         this.errorMarker = null
         if (this.dialect === 'postgresql' && this.error && this.error.position) {
@@ -1137,8 +1140,8 @@
           this.runningQuery = null;
         }
       },
-      confirmSwitchResult() {
-
+      stopEditing() {
+        this.editingResult = false;
       },
       async editResults() {
         if (!this.resultsEditData[this.selectedResult]) {
@@ -1160,7 +1163,6 @@
       },
       discardChanges() {
         this.$refs.table.discardChanges();
-        this.editingResult = false;
       },
       download(format) {
         this.$refs.table.download(format)

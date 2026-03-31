@@ -23,9 +23,9 @@
               id="resultSelector"
               @change="selectedResult = parseInt($event.target.value)"
               class="form-control"
-              @mouseover="showSwitch = editing"
+              @mouseover="showSwitch = editing && changesCount > 0"
               @mouseleave="showSwitch = false"
-              :disabled="editing"
+              :disabled="editing && changesCount > 0"
               v-tooltip="{ content: 'Discard or apply your changes to switch result sets', trigger: 'manual', show: showSwitch }"
             >
               <option
@@ -83,13 +83,14 @@
     <x-button
       v-if="canEdit && !editing"
       :disabled="results?.length === 0"
+      v-tooltip="'Edit table data directly from query results'"
       class="btn btn-flat"
       @click.prevent="editResults"
     >
-      Edit Results
+      Edit Data
     </x-button>
     <x-button
-      v-if="canEdit && editing"
+      v-if="canEdit && editing && changesCount > 0"
       class="btn btn-flat"
       @click.prevent="discardChanges"
     >
@@ -123,6 +124,13 @@
         </x-menu>
       </x-button>
     </x-buttons>
+    <x-button
+      v-if="canEdit && editing && changesCount <= 0"
+      class="btn btn-flat"
+      @click.prevent="stopEditing"
+    >
+      Stop Editing
+    </x-button>
     <x-button
       class="btn btn-flat btn-icon end"
       :disabled="results?.length === 0"
@@ -360,6 +368,9 @@ export default {
         d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
         e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
       return e;
+    },
+    stopEditing() {
+      this.$emit('stopEditing');
     },
     editResults() {
       this.$emit('editResults');
