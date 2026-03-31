@@ -9,12 +9,13 @@
       <div>
         {{ warning.message }}
         <code v-if="warning.command">{{ warning.command }}</code>
-        <external-link
+        <a
           v-if="warning.link"
           :href="warning.link"
+          @click.prevent="$native.openLink(warning.link)"
         >
           {{ warning.linkText || 'Read more' }}
-        </external-link>
+        </a>
       </div>
     </div>
   </div>
