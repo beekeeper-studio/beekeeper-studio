@@ -45,10 +45,14 @@ export class DatabaseConnectionLostError extends Error {
  * // Disconnect if not used
  * await connection.disconnect();
  *
- * // Listen for connection lost
+ * // Listen for connection lost event
  * connection.on("connection-lost", async () => {
- *   // do something when connection is lost
- *   // e.g. prompt user to reconnect, and then call `connection.connect()`
+ *   // If connection is lost, we need to initiate a new fresh connection.
+ *
+ *   // 1. Makes sure we shutdown the active connection and ssh tunnel properly
+ *   await connection.disconnect();
+ *
+ *   // 2. Makes a new connection and ssh tunnel (if enabled)
  *   await connection.connect();
  * })
  *
