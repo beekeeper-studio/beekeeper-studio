@@ -102,6 +102,19 @@ describe("Saved Connection", () => {
           jwtAuthEnabled: true
         }
       },
+      "postgresql://hector:jwt-token@crdb.example.test:26257/system?options=--crdb%3Ajwt_auth_enabled%3Dtrue": {
+        connectionType: "cockroachdb",
+        username: "hector",
+        password: "jwt-token",
+        host: "crdb.example.test",
+        port: 26257,
+        defaultDatabase: "system",
+        options: {
+          connectionMethod: "manual",
+          cluster: undefined,
+          jwtAuthEnabled: true
+        }
+      },
       "postgresql://user:p+ssword@default.cluster.redshift.amazonaws.com:5439/database": {
         connectionType: "redshift",
         username: "user",
