@@ -2,6 +2,7 @@ import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
 import { SshEnvironment } from './ssh/SshEnvironment'
+import { runCommonSshTests } from './ssh/commonSshTests'
 
 describe("MariaDB Tests", () => {
   jest.setTimeout(dbtimeout)
@@ -145,3 +146,5 @@ describe("MariaDB Tests", () => {
     });
   })
 })
+
+runCommonSshTests("mysql");

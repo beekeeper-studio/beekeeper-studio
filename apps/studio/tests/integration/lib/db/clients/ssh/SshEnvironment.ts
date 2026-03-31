@@ -15,8 +15,6 @@ interface DbConfig {
   user: string;
   password: string;
   database: string;
-  waitMessage?: string;
-  waitCount?: number;
   waitStrategy?: WaitStrategy;
 }
 
@@ -26,11 +24,10 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     container: "test_ssh_postgres",
     host: "postgres",
     port: 5432,
-    user: "bks",
+    user: "postgres",
     password: "example",
-    database: "test",
-    waitMessage: "database system is ready to accept connections",
-    waitCount: 2,
+    database: "integration_test",
+    waitStrategy: Wait.forHealthCheck(),
   },
   mysql: {
     service: "mysql",
@@ -40,8 +37,7 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     user: "bks",
     password: "example",
     database: "test",
-    waitMessage: "ready for connections",
-    waitCount: 2,
+    waitStrategy: Wait.forLogMessage("ready for connections", 2),
   },
   mariadb: {
     service: "mariadb",
@@ -51,8 +47,7 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     user: "bks",
     password: "example",
     database: "test",
-    waitMessage: "ready for connections",
-    waitCount: 2,
+    waitStrategy: Wait.forLogMessage("ready for connections", 2),
   },
   sqlserver: {
     service: "sqlserver",
@@ -62,7 +57,7 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     user: "sa",
     password: "Example1!",
     database: "master",
-    waitMessage: "SQL Server is now ready for client connections.",
+    waitStrategy: Wait.forLogMessage("SQL Server is now ready for client connections."),
   },
   clickhouse: {
     service: "clickhouse",
@@ -82,7 +77,7 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
     user: "root",
     password: "",
     database: "defaultdb",
-    waitMessage: "CockroachDB node starting at",
+    waitStrategy: Wait.forLogMessage("CockroachDB node starting at"),
   },
 };
 

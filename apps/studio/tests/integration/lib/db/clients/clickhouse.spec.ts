@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { identify } from 'sql-query-identifier';
 import { SshEnvironment } from './ssh/SshEnvironment';
+import { runCommonSshTests } from "./ssh/commonSshTests";
 
 const TEST_VERSIONS = [
   { tag: 'latest', readOnly: false, dropInformation: false },
@@ -227,65 +228,4 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
 
 TEST_VERSIONS.forEach(testWith);
 
-describe("ClickHouse SSH Tunnel Tests", () => {
-  jest.setTimeout(dbtimeout)
-
-  let sshEnvironment: SshEnvironment;
-  let sshDatabase: any;
-
-  beforeAll(async () => {
-    sshEnvironment = new SshEnvironment('clickhouse');
-    await sshEnvironment.start();
-  });
-
-  afterAll(async () => {
-    await sshEnvironment?.stop();
-  });
-
-  beforeEach(async () => {
-    sshDatabase = await sshEnvironment.connect();
-  });
-
-  afterEach(async () => {
-    await sshDatabase?.disconnect();
-  });
-
-  it("should work", async () => {
-    await expect(sshDatabase.executeQuery("SELECT 1")).resolves.toBeDefined();
-  });
-
-  it("should detect connection lost", async () => {
-    const fn = jest.fn();
-
-    sshDatabase.connection.on("connection-lost", fn);
-
-    await sshEnvironment.restart();
-
-    // Must run a query to trigger the connection-lost event
-    await expect(sshDatabase.listTables()).rejects.toThrow();
-
-    // Yield to the event loop to allow the "connection-lost" event to fire
-    await new Promise((resolve) => setTimeout(resolve));
-
-    expect(fn).toBeCalled();
-    expect(sshDatabase.connection.isConnected).toBe(false);
-  });
-
-  it("should be able to re-establish connection after losing connection", async () => {
-    const isConnectionLost = new Promise((resolve) => {
-      sshDatabase.connection.once("connection-lost", resolve);
-    });
-
-    await sshEnvironment.restart();
-
-    // Run a query to trigger the connection-lost event
-    await expect(sshDatabase.listTables()).rejects.toThrow();
-
-    // Connection-lost is triggered after running a query
-    await expect(isConnectionLost).resolvesWithin(1000);
-
-    await sshDatabase.connection.connect();
-    expect(sshDatabase.connection.isConnected).toBe(true);
-    await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
-  });
-});
+runCommonSshTests("clickhouse");
