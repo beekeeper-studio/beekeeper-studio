@@ -70,14 +70,16 @@
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
   import rawLog from '@bksLogger';
-  import { FieldDescriptor, FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
+  import { FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-import { format } from 'sql-formatter'
+  import { format } from 'sql-formatter'
 
   const log = rawLog.scope('ResultTable');
 
   type TableUpdatePayload = TableUpdate & { key: string, oldValue: any, cell: CellComponent };
+
+  type CellData = { cell: CellComponent, data: FieldEditData };
 
   export default {
     mixins: [Converter, Mutators, FkLinkMixin],
@@ -352,10 +354,8 @@ import { format } from 'sql-formatter'
         this.tabulator.on('cellEdited', this.cellEdited);
       },
       cellEdited(cell: CellComponent) {
-        // Should this be id?
-        const field: FieldDescriptor = this.result.fields.find((f) => f.id === cell.getField());
         const fieldEditData: FieldEditData = this.editData?.get(cell.getField());
-        if (!field) {
+        if (!fieldEditData) {
           log.warn('Could not find matching field for', cell.getField());
           return;
         }
@@ -363,7 +363,9 @@ import { format } from 'sql-formatter'
         const pkFields: Map<string, FieldEditData> = new Map(
           this.editData
             .entries()
-            .filter(([_id, editData]) => editData?.isPK && editData?.linkedTable === fieldEditData?.linkedTable && editData?.linkedSchema === fieldEditData?.linkedSchema)
+            .filter(([_id, editData]) => editData?.isPK &&
+              editData?.linkedTable === fieldEditData?.linkedTable &&
+              editData?.linkedSchema === fieldEditData?.linkedSchema)
         );
         const pkCells: CellComponent[] = cell.getRow().getCells().filter((c) => pkFields.has(c.getField()));
 
@@ -371,7 +373,6 @@ import { format } from 'sql-formatter'
           return;
         }
 
-        log.info('PK CELLS: ', pkCells)
         if (!pkCells || !pkCells.length || pkFields.size !== pkCells.length) {
           this.$noty.error("Can't edit column -- couldn't figure out primary key");
           cell.restoreOldValue();
@@ -380,21 +381,48 @@ import { format } from 'sql-formatter'
 
         // TODO (@day): if we're going to do inserts we'll have to check if edit is in a pending insert here
 
-        const pks = pkCells.map((cell) => ({ cell, data: pkFields.get(cell.getField())}));
         const pkValues = pkCells.map((cell) => cell.getValue()).join('-');
         const key = `${pkValues}-${cell.getField()}`;
 
+        const hasCurrent = _.some(this.pendingChanges.updates, { key: key });
+        const existingEdited = this.maybeUpdateExistingEdit(key, cell);
+
+        if (!existingEdited && !hasCurrent) {
+          const pks = pkCells.map((cell) => ({ cell, data: pkFields.get(cell.getField())}));
+          const cellData: CellData = {
+            cell,
+            data: fieldEditData
+          };
+          this.createNewEdit(key, cellData, pks);
+        }
+
+        this.propogateChanges(pkCells, cell, key, !existingEdited && hasCurrent);
+      },
+      maybeUpdateExistingEdit(key: string, cell: CellComponent): boolean {
+        // This function returns whether or not an existing edit was edited in place
+
         cell.getElement().classList.add('edited');
+
         const currentEdit = _.find(this.pendingChanges.updates, { key: key });
+
+        if (!currentEdit) {
+          return false
+        }
 
         if (typeof currentEdit?.oldValue === 'undefined' && cell.getValue() == null) {
           // don't do anything because of an issue found when trying to set to null, undefined == null so was getting rid of the need to make a change\
+          return true;
         } else if (currentEdit?.oldValue == cell.getValue()) {
           this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit));
           cell.getElement().classList.remove('edited');
-          this.propogateChanges(pkCells, cell, key, true);
-          return;
+          return false; // no change made
+        } else {
+          currentEdit.value = cell.getValue();
+          return true;
         }
+      },
+      createNewEdit(key: string, cellData: CellData, pks: CellData[]) {
+        const { cell, data: fieldEditData } = cellData;
 
         const primaryKeys = pks.map(({ cell: pkCell, data }) => {
           return {
@@ -405,31 +433,24 @@ import { format } from 'sql-formatter'
           }
         });
 
-        if (currentEdit) {
-          currentEdit.value = cell.getValue();
-        } else {
-          const payload: TableUpdatePayload = {
-            key: key,
-            table: fieldEditData?.linkedTable,
-            schema: fieldEditData?.linkedSchema,
-            dataset: null, // TODO (@day): figure this out
-            column: fieldEditData?.columnName,
-            columnType: undefined, // TODO (@day): return when getting editData
-            columnObject: undefined, // TODO (@day): possibly same as above
-            primaryKeys,
-            oldValue: cell.getOldValue(),
-            cell: cell,
-            value: cell.getValue(),
-          };
+        const payload: TableUpdatePayload = {
+          key: key,
+          table: fieldEditData?.linkedTable,
+          schema: fieldEditData?.linkedSchema,
+          dataset: null, // TODO (@day): figure this out
+          column: fieldEditData?.columnName,
+          columnType: undefined, // TODO (@day): return when getting editData
+          columnObject: undefined, // TODO (@day): possibly same as above
+          primaryKeys,
+          oldValue: cell.getOldValue(),
+          cell: cell,
+          value: cell.getValue(),
+        };
 
-          // remove existing pending updates with identical pKey-column combo
-          let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key });
-          pendingUpdates.push(payload);
-          log.info('PENDING UPDATES: ', pendingUpdates)
-          this.$set(this.pendingChanges, 'updates', pendingUpdates);
-        }
-
-        this.propogateChanges(pkCells, cell, key);
+        // remove existing pending updates with identical pKey-column combo
+        let pendingUpdates = _.reject(this.pendingChanges.updates, { 'key': payload.key });
+        pendingUpdates.push(payload);
+        this.$set(this.pendingChanges, 'updates', pendingUpdates);
       },
       propogateChanges(pkCells: CellComponent[], cell: CellComponent, key: string, removeEdited: boolean = false) {
         this.tabulator.blockRedraw();
