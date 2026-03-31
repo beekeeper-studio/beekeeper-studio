@@ -20,7 +20,7 @@ export class QueryTab {
 
   async tabRunQueryButton(tabNumber?: string) {
     const tab = tabNumber ? tabNumber : '0';
-    return this.page.locator(`#tab-${tab}`).getByRole('button', { name: 'Run Current' });
+    return await this.page.locator(`#tab-${tab}`).getByRole('button', { name: 'Run Current' });
   }
 
 
