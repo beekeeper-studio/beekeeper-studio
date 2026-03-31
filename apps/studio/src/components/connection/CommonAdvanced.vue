@@ -205,7 +205,7 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
   props: ['config'],
@@ -214,7 +214,7 @@ export default {
     ToggleFormArea, MaskedInput
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
   },
   data() {
     return {
