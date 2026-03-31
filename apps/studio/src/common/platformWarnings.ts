@@ -17,32 +17,32 @@ export const platformWarnings: Record<string, PlatformWarning[]> = {
   'database-file': [
     {
       configKey: 'isSnap',
-      message: 'Hey snap user! If you want to use a database on an external drive you\'ll need to give Beekeeper some extra permissions.',
+      message: 'Snap packages have limited file access. To use a database on an external drive you\'ll need to grant extra permissions.',
       link: 'https://docs.beekeeperstudio.io/support/troubleshooting/#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive',
-      linkText: 'Read more',
+      linkText: 'Learn more',
     },
     {
       configKey: 'isFlatpak',
-      message: 'Hey Flatpak user! Beekeeper can only access files in your home directory by default.',
+      message: 'Flatpak apps can only access files in your home directory by default.',
       link: 'https://docs.beekeeperstudio.io/installation/linux/#flatpak',
-      linkText: 'Learn how to fix this',
+      linkText: 'Learn more',
     },
   ],
   'ssh-agent': [
     {
       configKey: 'isSnap',
-      message: 'SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.',
+      message: 'SSH Agent Forwarding is not available in the Snap version of Beekeeper Studio due to the Snap security model.',
       link: 'https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap',
-      linkText: 'Read more',
+      linkText: 'Learn more',
     },
   ],
   'ssh-keyfile': [
     {
       configKey: 'isSnap',
       unless: 'snapSshPlug',
-      message: 'Hey snap user! You need to enable SSH access, then restart Beekeeper to provide access to your .ssh directory.',
+      message: 'Snap packages don\'t have access to your .ssh directory by default. You\'ll need to enable SSH access and restart Beekeeper.',
       link: 'https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap',
-      linkText: 'Enable SSH access',
+      linkText: 'Learn more',
     },
   ],
 }
