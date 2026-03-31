@@ -23,42 +23,47 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'undo',
       label: "Undo",
       accelerator: "CommandOrControl+Z",
-      click: actionHandler.undo
+      click: actionHandler.undo,
+      role: 'undo',
     },
     redo: {
       id: "redo",
       label: "Redo",
       accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
-      click: actionHandler.redo
+      click: actionHandler.redo,
+      role: 'redo',
     },
     cut: {
       id: 'cut',
       label: 'Cut',
       accelerator: 'CommandOrControl+X',
       click: actionHandler.cut,
-      registerAccelerator: false
-
+      registerAccelerator: false,
+      role: 'cut',
     },
     copy: {
       id: 'copy',
       label: 'Copy',
       accelerator: 'CommandOrControl+C',
       click: actionHandler.copy,
-      registerAccelerator: false
+      registerAccelerator: false,
+      role: 'copy',
     },
     paste: {
       id: 'paste',
       label: 'Paste',
       accelerator: 'CommandOrControl+V',
       click: actionHandler.paste,
-      registerAccelerator: false
+      registerAccelerator: false,
+      role: 'paste',
     },
 
     selectAll: {
       id: 'select-all',
       label: 'Select All',
       accelerator: 'CommandOrControl+A',
-      click: actionHandler.selectAll
+      click: actionHandler.selectAll,
+      role: 'selectAll',
     },
     // view
     zoomreset: {
@@ -120,7 +125,8 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     about: {
       id: 'about',
       label: 'About Beekeeper Studio',
-      click: actionHandler.about
+      click: actionHandler.about,
+      role: 'about',
     },
     devtools: {
       id: 'dev-tools',
