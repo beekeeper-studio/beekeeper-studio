@@ -43,6 +43,7 @@ export default class extends DefaultMenu {
       label: 'Dev',
       submenu: [
         this.menuItems.reload,
+        this.menuItems.simulatePlatform,
         this.menuItems.licenseState,
       ],
     }

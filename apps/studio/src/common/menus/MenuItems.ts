@@ -293,6 +293,28 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Toggle Minimal Mode",
       click: actionHandler.toggleMinimalMode,
     },
+    simulatePlatform: {
+      id: "simulate-platform",
+      label: "DEV Simulate Platform",
+      submenu: [
+        {
+          type: 'radio',
+          label: "None (use real platform)",
+          checked: true,
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'none'),
+        },
+        {
+          type: 'radio',
+          label: "Snap",
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'snap'),
+        },
+        {
+          type: 'radio',
+          label: "Flatpak",
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'flatpak'),
+        },
+      ],
+    },
     licenseState: {
       id: "license-state",
       label: "DEV Switch License State",
