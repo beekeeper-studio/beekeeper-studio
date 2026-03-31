@@ -9,7 +9,12 @@
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="showServerInputs" :config="config" :show-password-form="showPasswordForm" />
+    <common-server-inputs
+      v-show="showServerInputs"
+      :config="config"
+      :show-password-form="showPasswordForm"
+      :password-label="passwordLabel"
+    />
 
     <div class="form-group" v-if="isCockroach">
       <label for="Cluster ID">
@@ -19,6 +24,20 @@
         >help_outlined</i>
       </label>
       <input type="text" class="form-control" v-model="config.options.cluster">
+    </div>
+    <div class="form-group" v-if="isCockroach">
+      <label class="checkbox-group" for="cockroach-jwt-auth">
+        <input id="cockroach-jwt-auth" type="checkbox" v-model="jwtAuthEnabled">
+        <span>Use JWT token for auth</span>
+      </label>
+    </div>
+    <div class="row gutter" v-if="isCockroach && jwtAuthEnabled">
+      <div class="alert alert-info">
+        <i class="material-icons-outlined">info</i>
+        <div>
+          Paste a CockroachDB JWT into the JWT Token field. Beekeeper will send it as the password and add the required Cockroach JWT startup option for this connection. Save Passwords is turned off by default so you can paste a fresh token next time.
+        </div>
+      </div>
     </div>
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
@@ -111,6 +130,24 @@ export default {
     },
     showServerInputs() {
       return !this.azureAuthEnabled
+    },
+    jwtAuthEnabled: {
+      get() {
+        return !!this.config.options?.jwtAuthEnabled
+      },
+      set(value) {
+        this.config.options = {
+          ...(this.config.options || {}),
+          jwtAuthEnabled: value
+        }
+
+        if (value) {
+          this.config.rememberPassword = false
+        }
+      }
+    },
+    passwordLabel() {
+      return this.isCockroach && this.jwtAuthEnabled ? 'JWT Token' : 'Password'
     }
   }
 };
