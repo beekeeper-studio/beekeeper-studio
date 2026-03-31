@@ -88,18 +88,7 @@
             @input="val => config.sshUsername = val"
           />
         </div>
-        <div
-          class="alert alert-warning"
-          v-if="$config.isSnap"
-        >
-          <i class="material-icons">error_outline</i>
-          <div>
-            SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
-            <external-link :href="enableSshLink">
-              Read more
-            </external-link>
-          </div>
-        </div>
+        <platform-warning location="ssh-agent" />
         <!-- <div -->
         <!--   v-else-if="$config.sshAuthSock" -->
         <!--   class="alert alert-success" -->
@@ -140,19 +129,7 @@
             </div>
           </div>
         </div>
-        <div
-          v-if="$config.isSnap && !$config.snapSshPlug"
-          class="row"
-        >
-          <div class="alert alert-warning">
-            <i class="material-icons">error_outline</i>
-            <div>
-              Hey snap user! You need to <external-link :href="enableSshLink">
-                enable SSH access
-              </external-link>, then restart Beekeeper to provide access to your .ssh directory.
-            </div>
-          </div>
-        </div>
+        <platform-warning location="ssh-keyfile" />
         <div class="row gutter">
           <div class="col s6 form-group">
             <label for="sshKeyfile">Private Key File</label>
@@ -205,20 +182,21 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
+import PlatformWarning from './PlatformWarning.vue'
 import { mapGetters } from 'vuex'
 
 export default {
   props: ['config'],
   components: {
     FilePicker, ExternalLink,
-    ToggleFormArea, MaskedInput
+    ToggleFormArea, MaskedInput,
+    PlatformWarning
   },
   computed: {
     ...mapGetters('settings', ['privacyMode']),
   },
   data() {
     return {
-      enableSshLink: "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap",
       sshModeOptions: [
         { label: "Key File", mode: 'keyfile' },
         { label: "Username & Password", mode: "userpass" },
