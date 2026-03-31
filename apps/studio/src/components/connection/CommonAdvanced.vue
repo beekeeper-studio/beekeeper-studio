@@ -89,23 +89,15 @@
           />
         </div>
         <platform-warning location="ssh-agent" />
-        <!-- <div -->
-        <!--   v-else-if="$config.sshAuthSock" -->
-        <!--   class="alert alert-success" -->
-        <!-- > -->
-        <!--   <i class="material-icons">check</i> -->
-        <!--   <div>We found your SSH Agent. You're good to go!</div> -->
-        <!-- </div> -->
-        <template v-else-if="$config.sshAuthSock" />
         <div
-          v-else-if="$config.isWindows"
+          v-if="$config.isWindows && !$config.sshAuthSock"
           class="alert alert-info"
         >
           <i class="material-icons-outlined">info</i>
           <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
         </div>
         <div
-          v-else
+          v-else-if="!$config.sshAuthSock && !$config.isWindows"
           class="alert alert-warning"
         >
           <i class="material-icons">error_outline</i>
