@@ -28,7 +28,7 @@ export default class extends DefaultMenu {
         this.menuItems.themeToggle,
         this.menuItems.reload,
         // This is added automatically in Mac
-        ...(!this.platformInfo.isMac ? this.menuItems.fullscreen : []),
+        ...(!this.platformInfo.isMac ? [this.menuItems.fullscreen] : []),
         this.menuItems.privacyModeToggle
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
