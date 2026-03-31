@@ -157,6 +157,29 @@ CREATE table foo("myColumn" int);
 
 See [this StackOverflow answer](https://stackoverflow.com/a/20880247/18818) or [this section in the PostgreSQL manual](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS)
 
+## Cloud Databases (Google Cloud SQL, Amazon RDS)
+
+### Connections drop after IP allowlist expires
+
+If you use a time-limited IP allowlist to connect to your database (for example, `gcloud sql connect` which allowlists your IP for 5 minutes), you may find that queries fail after the allowlist window closes.
+
+Beekeeper Studio uses a connection pool that keeps connections alive while idle. By default, idle connections are dropped after 20 seconds. Once dropped, the pool creates new connections on demand — but if your IP is no longer allowlisted, those new connections will be rejected.
+
+To work around this, you can increase the idle timeout in your [user configuration file](../user_guide/configuration.md) so that connections stay alive longer:
+
+```ini
+; Keep idle connections alive for 5 minutes instead of the default 20 seconds.
+; Adjust this to match your IP allowlist window.
+
+[db.postgres]
+idleTimeout = 300000
+
+[db.mysql]
+idleTimeout = 300000
+```
+
+For a more permanent solution, consider using an [SSH tunnel](../user_guide/connecting/connecting.md#ssh) to connect to your database instead of relying on IP allowlisting.
+
 ## Linux (Wayland)
 
 ### Weird colors on Wayland (wrong saturation, contrast, or readability)

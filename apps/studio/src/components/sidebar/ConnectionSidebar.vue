@@ -53,9 +53,6 @@
               </div>
               <span class="expand" />
               <div class="actions">
-                <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
-                  <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
-                </a>
                 <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
               </div>
             </div>
@@ -115,9 +112,6 @@
                     title="New Folder"
                   >
                     <i class="material-icons-outlined">create_new_folder</i>
-                  </a>
-                  <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
-                    <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
                   </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
@@ -409,7 +403,6 @@ export default {
       foldersLoading: 'loading',
       foldersError: 'error',
     }),
-    ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
@@ -417,7 +410,8 @@ export default {
       isUltimate: 'isUltimate',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
-      filteredConnections: 'data/connections/filteredConnections'
+      filteredConnections: 'data/connections/filteredConnections',
+      privacyMode: 'settings/privacyMode'
     }),
     connFilter: {
       get() {
@@ -495,9 +489,6 @@ export default {
     this.$nextTick(() => { this.sortInitialized = true })
   },
   methods: {
-    ...mapActions({
-      togglePrivacyMode: 'settings/togglePrivacyMode',
-    }),
     getFolderExpanded(folderId) {
       const stored = this.folderExpandedState[folderId]
       return stored !== undefined ? stored : true

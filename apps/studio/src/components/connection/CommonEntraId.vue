@@ -1,10 +1,5 @@
 <template>
   <div v-show="azureAuthEnabled" class="host-port-user-password">
-    <common-ssl
-      :config="config"
-      :ssl-help="sslHelp"
-      :support-complex-s-s-l="supportComplexSSL"
-    />
     <div class="alert alert-info">
       <i class="material-icons-outlined">info</i>
       <div v-if="showCli">
@@ -141,7 +136,7 @@ import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import MaskedInput from '@/components/MaskedInput.vue'
 import CommonSsl from './CommonSsl.vue'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import FilePicker from '@/components/common/form/FilePicker.vue'
 
 export default {
@@ -170,7 +165,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     ...mapState(['connection']),
     toggleClientSecretIcon() {
       return this.showClientSecret ? "visibility_off" : "visibility"

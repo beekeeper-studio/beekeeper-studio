@@ -59,9 +59,10 @@
 
 <script>
 import ToggleFormArea from '../common/ToggleFormArea.vue'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import SshJumpHosts from '@/components/connection/SshJumpHosts.vue'
 import _ from 'lodash'
+import MaskedInput from '@/components/MaskedInput.vue'
 
 export default {
   props: ['config'],
@@ -73,7 +74,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
   },
   methods: {
     onAdd() {
