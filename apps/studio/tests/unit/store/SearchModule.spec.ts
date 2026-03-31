@@ -1,9 +1,10 @@
 import { searchItems, IndexItem } from "../../../src/store/modules/SearchModule"
 
-function makeItem(title: string, type: IndexItem['type'] = 'table', searchTitle?: string): IndexItem {
+function makeItem(title: string, type: IndexItem['type'] = 'table', opts?: { searchTitle?: string, columns?: string[] }): IndexItem {
   return {
     title,
-    searchTitle,
+    searchTitle: opts?.searchTitle,
+    columns: opts?.columns,
     item: title,
     type,
     id: title,
@@ -48,9 +49,9 @@ describe("searchItems", () => {
 
   describe("searchTitle field matching", () => {
     const items = [
-      makeItem("users", "table", "users (id, email, name)"),
-      makeItem("orders", "table", "orders (id, user_id, total)"),
-      makeItem("products", "table", "products (id, title, price)"),
+      makeItem("users", "table", { searchTitle: "users (id, email, name)", columns: ["id", "email", "name"] }),
+      makeItem("orders", "table", { searchTitle: "orders (id, user_id, total)", columns: ["id", "user_id", "total"] }),
+      makeItem("products", "table", { searchTitle: "products (id, title, price)", columns: ["id", "title", "price"] }),
     ]
 
     it("matches against searchTitle when provided", () => {
@@ -80,6 +81,54 @@ describe("searchItems", () => {
       expect(usersResult).toBeDefined()
       // When matching on title (not searchTitle), highlight is based on the title
       expect(usersResult.highlight).toContain("user")
+    })
+  })
+
+  describe("field context parenthetical", () => {
+    const items = [
+      makeItem("cheeses", "table", {
+        searchTitle: "cheeses (id, name, origin_country_id, cheese_type, description, first_seen)",
+        columns: ["id", "name", "origin_country_id", "cheese_type", "description", "first_seen"]
+      }),
+      makeItem("reviews", "table", {
+        searchTitle: "reviews (id, cheese_id, rating, review_text)",
+        columns: ["id", "cheese_id", "rating", "review_text"]
+      }),
+      makeItem("cheese_summary", "table", {
+        searchTitle: "cheese_summary (name, average_rating, number_of_reviews)",
+        columns: ["name", "average_rating", "number_of_reviews"]
+      }),
+      makeItem("stores", "table", {
+        searchTitle: "stores (id, name, location)",
+        columns: ["id", "name", "location"]
+      }),
+    ]
+
+    it("shows matching field names when 1-2 match", () => {
+      const results = searchItems(items, "rev")
+      const reviewsResult = results.find((r) => r.title === "reviews")
+      expect(reviewsResult).toBeDefined()
+      expect(reviewsResult.highlight).toContain("(review_text)")
+    })
+
+    it("shows field count when 3+ fields match", () => {
+      const results = searchItems(items, "s")
+      const cheesesResult = results.find((r) => r.title === "cheeses")
+      expect(cheesesResult).toBeDefined()
+      expect(cheesesResult.highlight).toMatch(/\(\d+ fields\)/)
+    })
+
+    it("shows no parenthetical when no fields match", () => {
+      const results = searchItems(items, "store")
+      const storesResult = results.find((r) => r.title === "stores")
+      expect(storesResult).toBeDefined()
+      expect(storesResult.highlight).not.toContain("(")
+    })
+
+    it("parenthetical is italicized", () => {
+      const results = searchItems(items, "rev")
+      const reviewsResult = results.find((r) => r.title === "reviews")
+      expect(reviewsResult.highlight).toContain("font-style: italic")
     })
   })
 

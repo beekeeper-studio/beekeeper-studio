@@ -227,8 +227,18 @@ export default Vue.extend({
       this.$nextTick(() => {
         this.$store.dispatch("updateTableColumns", item.entity).finally(() => {
           item.loadingColumns = false;
+          this.generateDisplayItems();
         });
       });
+    },
+    loadColumnsForFieldMatches() {
+      for (const item of this.items) {
+        if (item.type !== "table") continue;
+        if (!item.expanded) continue;
+        if (item.entity.columns?.length) continue;
+        if (item.loadingColumns) continue;
+        this.loadColumns(item as TableItem);
+      }
     },
     updateTableColumnsInRange(whenEmpty = false) {
       const range = this.$refs.vList.range;
@@ -336,6 +346,7 @@ export default Vue.extend({
     fieldFilterTerm() {
       this.generateItems();
       this.generateDisplayItems();
+      this.loadColumnsForFieldMatches();
     },
     minimalMode() {
       this.generateDisplayItems();

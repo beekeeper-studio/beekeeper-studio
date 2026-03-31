@@ -63,11 +63,11 @@
     >
       <span
         class="sub-item"
-        v-if="!loadingColumns && !(table.columns || table.columns?.length)"
+        v-if="loadingColumns"
       >
-        No Columns
+        Loading columns...
       </span>
-      <template v-else-if="table.columns && table.columns.length > 0">
+      <template v-else-if="displayedColumns.length > 0">
         <span
           :key="c.columnName"
           v-for="(c, i) in displayedColumns"
@@ -89,8 +89,9 @@
       <span
         class="sub-item"
         v-else
+        style="font-style: italic; opacity: 0.5"
       >
-        Loading columns...
+        No columns found
       </span>
     </div>
   </div>
@@ -182,10 +183,9 @@ export default Vue.extend({
     displayedColumns() {
       if (!this.table.columns) return []
       if (!this.fieldFilterTerm) return this.table.columns
-      const filtered = this.table.columns.filter(
+      return this.table.columns.filter(
         (c) => c.columnName.toLowerCase().includes(this.fieldFilterTerm)
       )
-      return filtered.length > 0 ? filtered : this.table.columns
     },
     ...mapGetters(["selectedSidebarItem"]),
     ...mapState(["activeTab"]),

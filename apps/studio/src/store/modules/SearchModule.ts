@@ -9,6 +9,7 @@ import { State as RootState } from '../index'
 export interface IndexItem {
   title: string
   searchTitle?: string
+  columns?: string[]
   item: TransportFavoriteQuery | TableOrView | IConnection | string
   type: 'query' | 'table' | 'connection' | 'database'
   id: string
@@ -59,6 +60,17 @@ export function searchItems(
       );
     }
 
+    if (item.columns?.length) {
+      const term = searchTerm.toLowerCase()
+      const matching = item.columns.filter((c) => c.includes(term))
+      if (matching.length > 0) {
+        const label = matching.length > 2
+          ? `${matching.length} fields`
+          : matching.join(', ')
+        highlight += ` <span style="font-style: italic; opacity: 0.5">(${escapeHtml(label)})</span>`
+      }
+    }
+
     results.push({
       ...item,
       highlight,
@@ -78,7 +90,7 @@ export const SearchModule: Module<never, RootState> = {
         const key = `${t.schema || ''}:${t.name}`
         const columns = fieldIndex[key]
         const searchTitle = columns?.length ? `${title} (${columns.join(', ')})` : title
-        return { item: t, type: 'table', title, searchTitle, id: title }
+        return { item: t, type: 'table', title, searchTitle, columns: columns || [], id: title }
       })
       const queryFolders = root['data/queryFolders']['items']
       const favorites: IndexItem[] = root['data/queries']['items'].map((f) => {
