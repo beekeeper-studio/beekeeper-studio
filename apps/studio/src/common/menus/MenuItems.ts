@@ -223,6 +223,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.toggleSecondarySidebar,
       enabled: false,
     },
+    privacyModeToggle: {
+      id: 'privacy-mode-toggle',
+      label: 'Toggle Privacy Mode',
+      click: actionHandler.togglePrivacyMode,
+      checked: settings?.privacyMode?.value
+    },
     themeToggle: {
       id: "theme-toggle-menu",
       label: "Theme",
