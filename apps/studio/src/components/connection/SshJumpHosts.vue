@@ -35,7 +35,7 @@
             :key="row.position"
             class="ssh-row"
             :class="{ selected: selectedPosition === row.position }"
-            @click="selectedPosition = row.position"
+            @click="$emit('select', row.position)"
           >
             <span class="drag-handle" />
             <span class="col-host">
@@ -254,12 +254,7 @@ export default Vue.extend({
       type: Array as PropType<TransportConnectionSshConfig[]>,
       required: true,
     },
-  },
-
-  data() {
-    return {
-      selectedPosition: null as number | null,
-    };
+    selectedPosition: Number,
   },
 
   computed: {
@@ -318,27 +313,6 @@ export default Vue.extend({
     ...mapState("settings", ["privacyMode"]),
   },
 
-  watch: {
-    sortedConfigs(val: TransportConnectionSshConfig[]) {
-      if (this.selectedPosition !== null) {
-        return;
-      }
-      // If the selected position no longer exists, select the last one
-      if (!val.find((j) => j.position === this.selectedPosition)) {
-        this.selectedPosition = val.length
-          ? val[val.length - 1].position
-          : null;
-      }
-    },
-  },
-
-  mounted() {
-    // Auto-select the first row
-    if (this.sortedConfigs.length) {
-      this.selectedPosition = this.sortedConfigs[0].position;
-    }
-  },
-
   methods: {
     authLabel(mode: string): string {
       return (
@@ -348,17 +322,10 @@ export default Vue.extend({
     },
     onDragEnd(event: any) {
       const { oldIndex, newIndex } = event;
-      if (oldIndex === newIndex) return;
-      const reordered = [...this.sortedConfigs];
-      const [moved] = reordered.splice(oldIndex, 1);
-      reordered.splice(newIndex, 0, moved);
-      if (this.selectedPosition === moved.position) {
-        this.selectedPosition = newIndex;
+      if (oldIndex === newIndex) {
+        return;
       }
-      this.$emit(
-        "reorder",
-        reordered.map((j) => j.position)
-      );
+      this.$emit("reorder", { oldIndex, newIndex });
     },
   },
 });
@@ -379,14 +346,15 @@ export default Vue.extend({
 
   > * {
     height: 2.14rem;
+    width: 0.75rem;
     display: flex;
     align-items: center;
     position: relative;
 
     &.host-bullet::before {
       content: "";
-      width: 0.75em;
-      height: 0.75em;
+      width: 0.75rem;
+      height: 0.75rem;
       background-color: currentColor;
       border-radius: 9999px;
     }
@@ -399,8 +367,8 @@ export default Vue.extend({
 
     &:not(:last-child)::after {
       position: absolute;
-      inset-inline: 0;
-      margin-inline: auto;
+      left: 50%;
+      transform: translateX(-50%);
       bottom: -0.65rem;
       display: flex;
       align-items: center;

@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery, TransportFormatterPreset } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
+import { EntityManager, FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
@@ -48,7 +48,11 @@ async function niceValidateOrReject(ent: any): Promise<void> {
   }
 }
 
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform) {
+type HandlersForOptions = {
+  preSave?: (obj: any, em: EntityManager) => Promise<void>
+}
+
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform, handlerOptions?: HandlersForOptions) {
 
   return {
     // this is so we can get defaults on objects
@@ -93,7 +97,14 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         }
         log.info(`Saving ${name}: `, dbObj);
         await niceValidateOrReject(dbObj);
-        await dbObj.save();
+        if (handlerOptions?.preSave) {
+          await cls.getRepository().manager.transaction(async (em: EntityManager) => {
+            await handlerOptions.preSave(dbObj, em);
+            await em.save(dbObj);
+          });
+        } else {
+          await dbObj.save();
+        }
         return await transform(dbObj, cls);
       }
     },
@@ -162,7 +173,40 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
 }
 
 export const AppDbHandlers = {
-  ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
+  ...handlersFor<IConnection>('saved', SavedConnection, transformConn, {
+    preSave: async (obj: Partial<IConnection>, em) => {
+      if (obj.sshConfigs) {
+        for (const ssh of obj.sshConfigs) {
+          if (ssh.sshConfig) {
+            const saved = await em.save(SshConfig, ssh.sshConfig);
+            ssh.sshConfigId = saved.id;
+          }
+        }
+      }
+
+      if (obj.id) {
+        const incomingIds = new Set(
+          (obj.sshConfigs || [])
+            .map((ssh) => ssh.sshConfigId)
+            .filter(Boolean)
+        );
+        const existing = await em.find(ConnectionSshConfig, {
+          where: { connectionId: obj.id }
+        });
+        for (const ssh of existing) {
+          if (!incomingIds.has(ssh.sshConfigId)) {
+            const refCount = await em.countBy(
+              ConnectionSshConfig,
+              { sshConfigId: ssh.sshConfigId }
+            );
+            if (refCount <= 1) {
+              await em.delete(SshConfig, ssh.sshConfigId);
+            }
+          }
+        }
+      }
+    }
+  }),
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),

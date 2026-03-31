@@ -21,11 +21,13 @@
 
       <ssh-jump-hosts
         v-if="toggleContent"
-        :ssh-configs="config.sshConfigs || []"
+        :ssh-configs="config.sshConfigs"
+        :selected-position="selectedPosition"
         @add="onAdd"
         @remove="onRemove"
         @reorder="onReorder"
         @update-ssh-config="onUpdateSshConfig"
+        @select="onSelect"
       />
 
       <div class="separator" />
@@ -67,35 +69,19 @@ export default {
   data() {
     return {
       toggleContent: false,
+      selectedPosition: this.config.sshConfigs[0]?.position ?? null,
     }
   },
   computed: {
     ...mapState('settings', ['privacyMode']),
   },
-  watch: {
-    'config.sshEnabled'(enabled) {
-      if (enabled && !(this.config.sshConfigs && this.config.sshConfigs.length)) {
-        this.$set(this.config, 'sshConfigs', [{
-          connectionId: this.config.id ?? null,
-          position: 0,
-          sshConfig: {
-            host: '',
-            port: 22,
-            mode: 'agent',
-            username: '',
-          },
-        }])
-      }
-    },
-  },
   methods: {
     onAdd() {
-      const sshConfigs = this.config.sshConfigs
-        ? [...this.config.sshConfigs]
-        : []
+      const sshConfigs = [...this.config.sshConfigs]
+      const position = sshConfigs.length
       sshConfigs.push({
         connectionId: this.config.id ?? null,
-        position: sshConfigs.length,
+        position,
         sshConfig: {
           host: '',
           port: 22,
@@ -104,13 +90,9 @@ export default {
         },
       })
       this.$set(this.config, 'sshConfigs', sshConfigs)
+      this.selectedPosition = position
     },
     onRemove(position) {
-      const join = this.config.sshConfigs.find((j) => j.position === position)
-      if (join?.id) {
-        const removedSshConfigs = this.config.removedSshConfigs || []
-        this.$set(this.config, 'removedSshConfigs', removedSshConfigs.concat(join))
-      }
       const filteredConfigs = this.config.sshConfigs.filter((j) =>
         j.position !== position
       )
@@ -123,14 +105,17 @@ export default {
       })
       this.$set(this.config, 'sshConfigs', sshConfigs)
     },
-    onReorder(positions) {
-      const reordered = []
-      for (let i = 0; i < positions.length; i++) {
-        reordered.push({
-          ...this.config.sshConfigs[positions[i]],
-          position: i,
-        })
+    onReorder({ oldIndex, newIndex }) {
+      const reordered = _.cloneDeep(this.config.sshConfigs)
+
+      const [moved] = reordered.splice(oldIndex, 1)
+
+      reordered.splice(newIndex, 0, moved)
+
+      for (let i = 0; i < reordered.length; i++) {
+        reordered[i].position = i;
       }
+
       this.$set(this.config, 'sshConfigs', reordered)
     },
     onUpdateSshConfig(position, field, value) {
@@ -140,6 +125,9 @@ export default {
         join.sshConfig[field] = value
       }
       this.$set(this.config, 'sshConfigs', sshConfigs)
+    },
+    onSelect(position) {
+      this.selectedPosition = position
     },
   },
 }
