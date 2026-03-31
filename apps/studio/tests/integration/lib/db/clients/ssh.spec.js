@@ -18,9 +18,9 @@ describe("SSH Tunnel Tests", () => {
 
     const timeoutDefault = 5000
     environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
-      .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
-      .withWaitStrategy('test_ssh', Wait.forListeningPorts())
-      .up()
+      .withWaitStrategy('test_ssh_postgres', Wait.forHealthCheck())
+      .withWaitStrategy('test_ssh', Wait.forHealthCheck())
+      .up(["postgres", "ssh"])
 
     container = environment.getContainer('test_ssh')
 
@@ -46,6 +46,7 @@ describe("SSH Tunnel Tests", () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
+      sshMode: 'userpass',
       sshHost: container.getHost(),
       sshPort: container.getMappedPort(2222),
       sshUsername: 'beekeeper',

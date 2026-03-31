@@ -83,7 +83,7 @@ export abstract class DatabaseConnection<
 
   async connect(options: ConnectOptions = {}) {
     if (this.connected) {
-      log.warn("already connected");
+      log.warn("already connected. please disconnect first to reconnect");
       return;
     }
 

@@ -9,14 +9,23 @@ networks:
 
 services:
   postgres:
-    image: postgres:13
+    image: postgres:16.4
     container_name: test_ssh_postgres
     environment:
-      POSTGRES_USER: bks
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
-      POSTGRES_DB: test
+      POSTGRES_DB: integration_test
+    ports:
+      - 5432
     networks:
       - internal
+      - public
+    healthcheck:
+      test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d integration_test > /dev/null"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
   mysql:
     image: mysql:8
@@ -49,6 +58,12 @@ services:
       ACCEPT_EULA: Y
     networks:
       - internal
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Example1! -C -Q 'SELECT 1' > /dev/null"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
   clickhouse:
     image: clickhouse/clickhouse-server:24.2
@@ -85,3 +100,9 @@ services:
     networks:
       - internal
       - public
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 2222 || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 5s

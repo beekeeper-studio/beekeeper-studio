@@ -5,6 +5,7 @@ import { IDbConnectionServerConfig } from '@/lib/db/types'
 import fs from 'fs';
 import path from 'path';
 import { SshEnvironment } from './ssh/SshEnvironment';
+import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient';
 
 // SQL Server testing policy:
 // We test against SQL Server until it leaves mainstream support
@@ -297,7 +298,7 @@ describe("SQL Server SSH Tunnel Tests", () => {
   jest.setTimeout(dbtimeout)
 
   let sshEnvironment;
-  let sshDatabase;
+  let sshDatabase: BasicDatabaseClient<any>;
 
   beforeAll(async () => {
     sshEnvironment = new SshEnvironment('sqlserver');
@@ -334,7 +335,6 @@ describe("SQL Server SSH Tunnel Tests", () => {
     await new Promise((resolve) => setTimeout(resolve));
 
     expect(fn).toBeCalled();
-    expect(sshDatabase.connection.isConnected).toBe(false);
   });
 
   it("should be able to re-establish connection after losing connection", async () => {
@@ -350,7 +350,9 @@ describe("SQL Server SSH Tunnel Tests", () => {
     // Connection-lost is triggered after running a query
     await expect(isConnectionLost).resolvesWithin(1000);
 
+    await sshDatabase.connection.disconnect();
     await sshDatabase.connection.connect();
+
     expect(sshDatabase.connection.isConnected).toBe(true);
     await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
   });

@@ -102,16 +102,16 @@ export class SshEnvironment {
   }
 
   async start() {
-    const { container, waitMessage, waitCount, waitStrategy } = this.config;
+    const { container, waitStrategy } = this.config;
 
-    const dbWaitStrategy = waitStrategy ?? Wait.forLogMessage(waitMessage, waitCount);
+    const dbWaitStrategy = waitStrategy ?? Wait.forHealthCheck();
 
     let compose = new DockerComposeEnvironment(
       "tests/docker",
       "ssh.yml"
     )
       .withWaitStrategy(container, dbWaitStrategy)
-      .withWaitStrategy("test_ssh", Wait.forListeningPorts());
+      .withWaitStrategy("test_ssh", Wait.forHealthCheck());
 
     this.environment = await compose.up([this.config.service, "ssh"]);
   }
@@ -120,8 +120,6 @@ export class SshEnvironment {
     const container = this.environment.getContainer("test_ssh");
     if (container) {
       await container.restart();
-      // wait until it's fully restarted
-      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
 
