@@ -318,6 +318,7 @@
         :running="running"
         :editing="editingResult"
         :changesCount="$refs.table?.pendingChangesCount"
+        :changesString="$refs.table?.pendingChangesString"
         :result-editable="resultEditable"
         @editResults="editResults"
         @stopEditing="stopEditing"
@@ -1150,7 +1151,7 @@
       },
       async editResults() {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to edit query result data.")
+          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to edit query result data")
           return;
         }
         if (!this.resultsEditData[this.selectedResult]) {

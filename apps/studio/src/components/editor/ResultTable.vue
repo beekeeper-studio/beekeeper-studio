@@ -162,6 +162,19 @@
       pendingChangesCount() {
         return this.pendingChanges.updates.length;
       },
+      pendingChangesString() {
+        const updateStrings = Object.entries(_.groupBy(this.pendingChanges.updates, (v: TableUpdatePayload) => {
+          const schema = v.schema ? `${v.schema}.` : "";
+          return `${schema}${v.table}`
+        })).map(([table, updates]) => {
+          return `${updates.length} updates to ${table}`;
+        });
+
+        const lastUpdate = updateStrings.pop();
+        return updateStrings.length > 0 ?
+          `${updateStrings.join(', ')}, and ${lastUpdate}` :
+          lastUpdate || '';
+      },
       hasPendingChanges() {
         return this.pendingChangesCount > 0
       },

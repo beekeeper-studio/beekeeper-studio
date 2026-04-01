@@ -105,13 +105,14 @@
       <x-button
         class="btn btn-primary btn-badge btn-icon"
         @click.prevent="saveChanges"
+        v-tooltip="`Apply ${changesString}`"
       >
-      <span
-        class="badge"
-      >
-        <small>{{ changesCount }}</small>
-      </span>
-      <span>Apply</span>
+        <span
+          class="badge"
+        >
+          <small>{{ changesCount }}</small>
+        </span>
+        <span>Apply</span>
       </x-button>
       <x-button
         class="btn btn-primary"
@@ -249,7 +250,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'resultEditable'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable'],
   components: { Statusbar },
   data() {
     return {
