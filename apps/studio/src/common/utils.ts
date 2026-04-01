@@ -393,12 +393,12 @@ export function resolveSshConfigs(config: IConnection): TransportConnectionSshCo
           updatedAt: null,
           version: null,
           host: config.sshBastionHost,
-          port: config.sshPort,
-          mode: config.sshMode,
-          username: config.sshUsername,
-          password: config.sshPassword,
-          keyfile: config.sshKeyfile,
-          keyfilePassword: config.sshKeyfilePassword,
+          port: config.sshBastionHostPort,
+          mode: config.sshBastionMode,
+          username: config.sshBastionUsername,
+          password: config.sshBastionPassword,
+          keyfile: config.sshBastionKeyfile,
+          keyfilePassword: config.sshBastionKeyfilePassword,
         },
       })
     }

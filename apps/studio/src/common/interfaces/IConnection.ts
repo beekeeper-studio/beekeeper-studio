@@ -44,9 +44,13 @@ export interface ISimpleConnection extends Transport {
   sshUsername: Nullable<string>
   /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshBastionHost: Nullable<string>
+  /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshBastionHostPort: Nullable<number>
+  /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshBastionMode: SshMode
+  /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshBastionUsername: Nullable<string>
+  /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshBastionKeyfile: Nullable<string>
   sshKeepaliveInterval: Nullable<number>
   ssl: boolean
@@ -82,8 +86,11 @@ export interface IConnection extends ISimpleConnection {
   sshPassword: Nullable<string>
   /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshKeyfilePassword: Nullable<string>
+  /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshBastionPassword: Nullable<string>
+  /** @deprecated use {@link IConnection.sshConfigs} instead */
   sshBastionKeyfilePassword: Nullable<string>
+
   /** Ordered list of SSH hop configs (jump hosts + target host), sorted by position ascending */
   sshConfigs?: TransportConnectionSshConfig[]
 }

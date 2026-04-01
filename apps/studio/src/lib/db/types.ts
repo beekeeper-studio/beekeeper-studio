@@ -179,22 +179,37 @@ export interface IDbConnectionDatabase {
 
 export interface IDbConnectionServerSSHConfig {
   enabled: boolean
-  host: Nullable<string>
-  port: number
-  user: Nullable<string>
-  password: Nullable<string>
-  privateKey: Nullable<string>
-  passphrase: Nullable<string>
-  bastionHost: Nullable<string>
-  bastionPort: Nullable<number>
-  bastionUser: Nullable<string>
-  bastionPassword: Nullable<string>
-  bastionPrivateKey: Nullable<string>
-  bastionPassphrase: Nullable<string>
-  bastionMode: Nullable<SshMode>
   keepaliveInterval: Nullable<number>
-  useAgent: boolean
   configs: TransportConnectionSshConfig[]
+
+  /** @deprecated Use {@link configs} instead. */
+  host: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  port: number
+  /** @deprecated Use {@link configs} instead. */
+  user: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  password: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  privateKey: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  passphrase: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  bastionHost: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  bastionPort: Nullable<number>
+  /** @deprecated Use {@link configs} instead. */
+  bastionUser: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  bastionPassword: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  bastionPrivateKey: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  bastionPassphrase: Nullable<string>
+  /** @deprecated Use {@link configs} instead. */
+  bastionMode: Nullable<SshMode>
+  /** @deprecated Use {@link configs} instead by passing `mode: "agent"`. */
+  useAgent: boolean
 }
 
 export interface IDbConnectionServerConfig {

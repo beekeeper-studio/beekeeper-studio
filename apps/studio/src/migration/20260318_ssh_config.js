@@ -34,7 +34,7 @@ export default {
     // Migrate sshBastionHost as position-0 entry
     await runner.query(`
       INSERT INTO ssh_config (host, port, mode, username, password, keyfile, keyfilePassword)
-      SELECT sshBastionHost, 22, COALESCE(sshMode, 'agent'), sshUsername, sshPassword, sshKeyfile, sshKeyfilePassword
+      SELECT sshBastionHost, COALESCE(sshBastionHostPort, 22), COALESCE(sshBastionMode, 'agent'), sshBastionUsername, sshBastionPassword, sshBastionKeyfile, sshBastionKeyfilePassword
       FROM saved_connection
       WHERE sshBastionHost IS NOT NULL AND sshBastionHost != ''
     `)

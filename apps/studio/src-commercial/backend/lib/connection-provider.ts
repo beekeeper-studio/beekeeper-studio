@@ -3,13 +3,16 @@ import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
 import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
-import { readSshConfig } from '@/lib/ssh/sshConfigReader'
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
     const ssh: IDbConnectionServerSSHConfig = {
       enabled: config.sshEnabled,
+      configs: config.sshConfigs || [],
+      keepaliveInterval: config.sshKeepaliveInterval,
+
+      // TODO remove these
       host: config.sshHost ? config.sshHost.trim() : null,
       port: config.sshPort,
       user: config.sshUsername ? config.sshUsername.trim() : null,
@@ -24,24 +27,6 @@ export default {
       bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
       bastionMode: config.sshBastionMode,
       useAgent: config.sshMode == 'agent',
-      keepaliveInterval: config.sshKeepaliveInterval,
-      configs: config.sshConfigs || [],
-    }
-
-    if (ssh && config.sshBastionMode === 'agent' && config.sshBastionHost) {
-      const fileConfig = readSshConfig(config.sshBastionHost.trim())
-      if (fileConfig.port && !ssh.bastionPort) {
-        ssh.bastionPort = fileConfig.port
-      }
-      if (fileConfig.identityFile) {
-        ssh.bastionPrivateKey = fileConfig.identityFile
-      }
-      if (fileConfig.host) {
-        ssh.bastionHost = fileConfig.host
-      }
-      if (fileConfig.user && !ssh.bastionUser) {
-        ssh.bastionUser = fileConfig.user
-      }
     }
 
     return {
