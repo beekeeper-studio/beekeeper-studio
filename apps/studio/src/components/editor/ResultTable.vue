@@ -74,6 +74,7 @@
   import { CellComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { format } from 'sql-formatter'
+  import pluralize from 'pluralize'
 
   const log = rawLog.scope('ResultTable');
 
@@ -167,7 +168,7 @@
           const schema = v.schema ? `${v.schema}.` : "";
           return `${schema}${v.table}`
         })).map(([table, updates]) => {
-          return `${updates.length} updates to ${table}`;
+          return `${pluralize('update', updates.length, true)} to ${table}`;
         });
 
         const lastUpdate = updateStrings.pop();

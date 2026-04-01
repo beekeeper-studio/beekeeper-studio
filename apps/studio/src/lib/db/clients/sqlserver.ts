@@ -730,7 +730,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   async executeApplyChanges(changes: TableChanges, tabId?: number) {
     const results = []
     let sql = []
-    let conn: Transaction;
+    let conn: Request;
 
     try {
       if (changes.inserts) {
@@ -748,7 +748,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         sql = sql.concat(buildDeleteQueries(this.knex, changes.deletes))
       }
       if (tabId) {
-        conn = this.peekConnection(tabId);
+        conn = this.peekConnection(tabId).request();
         await this.driverExecuteSingle(sql.join(';'), { connection: conn });
       } else {
         await this.executeWithTransaction(sql.join(';'));
