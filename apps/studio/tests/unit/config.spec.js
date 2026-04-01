@@ -120,6 +120,21 @@ enabled = true
     expect(warnings).toEqual([]);
   })
 
+  // Regression test, mariadb.paramTypes.named.0 is not a key we need to check
+  it("should not determine array elements to be unrecognized keys", () => {
+    const defaultConfig = parseIni(`
+[db.mariadb.paramTypes]
+named[] =
+    `);
+    const userConfig = parseIni(`
+[db.mariadb.paramTypes]
+named[] = ':'
+    `);
+
+    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    expect(warnings).toEqual([]);
+  })
+
   it("should detect conflicts between user and system keys", () => {
     const systemConfig = parseIni(`
 [general]
