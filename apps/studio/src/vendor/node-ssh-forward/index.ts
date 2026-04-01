@@ -16,11 +16,12 @@
  */
 
 import * as path from 'path'
-import { Client } from 'ssh2'
+import { Client, type ConnectConfig } from 'ssh2'
 import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
 import rawLog from '@bksLogger'
+import _ from 'lodash'
 
 import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
 
@@ -30,6 +31,12 @@ interface Options {
   privateKey?: string | Buffer
   agentForward?: boolean
   bastionHost?: string
+  bastionPort?: number
+  bastionUsername?: string
+  bastionPassword?: string
+  bastionPrivateKey?: string | Buffer
+  bastionPassphrase?: string
+  bastionAgentForward?: boolean
   passphrase?: string
   endPort?: number
   endHost: string
@@ -38,6 +45,10 @@ interface Options {
   noReadline?: boolean
   keepaliveInterval?: number
   bindHost?: string
+}
+
+type ConnectOptions = ConnectConfig & {
+  stream?: NodeJS.ReadableStream
 }
 
 interface ForwardingOptions {
@@ -136,54 +147,47 @@ class SSHConnection {
     let connection: Client
     this.debug("establish with options", this.options)
     if (this.options.bastionHost) {
-      connection = await this.connectViaBastion(this.options.bastionHost)
+      connection = await this.connectViaBastion()
     } else {
-      connection = await this.connect(this.options.endHost)
+      connection = await this.connect(this.getEndOptions())
     }
     return connection
   }
 
-  private async connectViaBastion(bastionHost: string) {
-    this.debug('Connecting to bastion host "%s"', bastionHost)
-    const connectionToBastion = await this.connect(bastionHost)
+  private async connectViaBastion() {
+    const bastionOptions = this.getBastionOptions()
+    this.debug('Connecting to bastion host "%s"', bastionOptions.host)
+    const connectionToBastion = await this.connect(bastionOptions)
     return new Promise<Client>((resolve, reject) => {
-      connectionToBastion.forwardOut('127.0.0.1', 22, this.options.endHost, this.options.endPort || 22, (err, stream) => {
+      const endOptions = this.getEndOptions()
+      connectionToBastion.forwardOut('127.0.0.1', 22, endOptions.host, endOptions.port || 22, async (err, stream) => {
         if (err) {
           return reject(err)
         }
-        this.connect(this.options.endHost, stream)
+        this.connect({ ...endOptions, stream })
           .then(resolve)
           .catch(reject)
       })
     })
   }
 
-  private async connect(host: string, stream?: NodeJS.ReadableStream): Promise<Client> {
-    this.debug('Connecting to "%s"', host)
+  private async connect(options: ConnectOptions): Promise<Client> {
+    this.debug('Connecting to "%s"', options.host)
     const connection = new Client()
     return new Promise<Client>((resolve, reject) => {
 
-      const options = {
-        host,
-        port: this.options.endPort,
-        username: this.options.username,
-        password: this.options.password,
-        privateKey: this.options.privateKey,
-        keepaliveInterval: this.options.keepaliveInterval
-      }
+      const config: ConnectConfig = _.clone(options);
 
       if (this.options.keepaliveInterval) {
         // this.options.keepaliveInterval (like ssh.config.keepaliveInterval) contains *seconds* because users
         // enter the value, and we store and display it, in seconds, like users do in their ~/ssh/config files
         this.debug('this.options.keepaliveInterval: ' + this.options.keepaliveInterval + ' seconds');
         // but the ssh2 cient connect() expects it in MILLIseconds, so we convert it to milliseconds internally
-        options['keepaliveInterval'] = this.options.keepaliveInterval * 1000
+        config['keepaliveInterval'] = this.options.keepaliveInterval * 1000
         this.debug('(localized) options.keepaliveInterval: ' + options.keepaliveInterval + 'milliseconds')
       }
 
-      if (this.options.agentForward) {
-        options['agentForward'] = true
-
+      if (options.agentForward) {
         // see https://github.com/mscdex/ssh2#client for agents on Windows
         // guaranteed to give the ssh agent sock if the agent is running (posix)
         let agentDefault: any = process.env['SSH_AUTH_SOCK']
@@ -198,15 +202,15 @@ class SSHConnection {
         if (agentSock == null) {
           throw new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable')
         }
-        options['agent'] = agentSock
+        config['agent'] = agentSock
       }
-      if (stream) {
-        options['sock'] = stream
+      if (options.stream) {
+        config['sock'] = options.stream
       }
       // PPK private keys can be encrypted, but won't contain the word 'encrypted'
       // in fact they always contain a `encryption` header, so we can't do a simple check
-      options['passphrase'] = this.options.passphrase
-      const looksEncrypted: boolean = this.options.privateKey ? this.options.privateKey.toString().toLowerCase().includes('encrypted') : false
+      // options['passphrase'] = options?.passphrase ?? this.options.passphrase
+      const looksEncrypted: boolean = options.privateKey ? options.privateKey.toString().toLowerCase().includes('encrypted') : false
       if (looksEncrypted && !options['passphrase'] && !this.options.noReadline) {
         // I disable this as not used in the terminal
         // options['passphrase'] = await this.getPassphrase()
@@ -220,13 +224,37 @@ class SSHConnection {
         reject(error)
       })
       try {
-        connection.connect(options)
+        connection.connect(config)
       } catch (error) {
         reject(error)
       }
 
 
     })
+  }
+
+  private getEndOptions(): ConnectOptions {
+    return {
+      host: this.options.endHost,
+      port: this.options.endPort,
+      username: this.options.username,
+      password: this.options.password,
+      privateKey: this.options.privateKey,
+      passphrase: this.options.passphrase,
+      agentForward: this.options.agentForward,
+    }
+  }
+
+  private getBastionOptions(): ConnectOptions {
+    return {
+      host: this.options.bastionHost,
+      port: this.options.bastionPort,
+      username: this.options.bastionUsername,
+      password: this.options.bastionPassword,
+      privateKey: this.options.bastionPrivateKey,
+      passphrase: this.options.bastionPassphrase,
+      agentForward: this.options.bastionAgentForward,
+    }
   }
 
   async forward(options: ForwardingOptions) {

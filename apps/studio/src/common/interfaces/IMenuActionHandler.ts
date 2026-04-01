@@ -48,6 +48,7 @@ export interface IMenuActionHandler {
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
+  simulatePlatform: (menuItem: Electron.MenuItem, win: ElectronWindow, platform: string) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void

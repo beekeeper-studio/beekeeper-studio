@@ -1,12 +1,11 @@
 version: '3'
-
+volumes:
+  psql:
 networks:
-  public:
-    driver: bridge
-  internal:
-    driver: bridge
-    internal: true
-
+  testrunner_ssh:
+  testrunner_bastion:
+  bastion_ssh:
+  ssh_postgres:
 services:
   postgres:
     image: postgres:16.4
@@ -15,11 +14,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: integration_test
-    ports:
-      - 5432
     networks:
-      - internal
-      - public
+      - ssh_postgres
     healthcheck:
       test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d integration_test > /dev/null"]
       interval: 2s
@@ -36,7 +32,7 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
     networks:
-      - internal
+      - ssh_postgres
 
   mariadb:
     image: mariadb
@@ -47,7 +43,7 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: test
     networks:
-      - internal
+      - ssh_postgres
 
   sqlserver:
     image: "mcr.microsoft.com/mssql/server:2022-latest"
@@ -57,7 +53,7 @@ services:
       MSSQL_SA_PASSWORD: Example1!
       ACCEPT_EULA: Y
     networks:
-      - internal
+      - ssh_postgres
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Example1! -C -Q 'SELECT 1' > /dev/null"]
       interval: 2s
@@ -73,14 +69,14 @@ services:
       - CLICKHOUSE_PASSWORD=password
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
     networks:
-      - internal
+      - ssh_postgres
 
   cockroachdb:
     image: cockroachdb/cockroach:v22.1.1
     container_name: test_ssh_cockroachdb
     command: start-single-node --insecure
     networks:
-      - internal
+      - ssh_postgres
 
   ssh:
     build:
@@ -96,13 +92,32 @@ services:
       - USER_NAME=beekeeper #optional
       - SUDO_ACCESS=true
     ports:
-      - "7222:2222"
+      - 2222
     networks:
-      - internal
-      - public
+      - testrunner_ssh
+      - bastion_ssh
+      - ssh_postgres
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 2222 || exit 1"]
       interval: 2s
       timeout: 3s
       retries: 10
       start_period: 5s
+  bastion:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_bastion
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
+    ports:
+      - 2222
+    networks:
+      - testrunner_bastion
+      - bastion_ssh
