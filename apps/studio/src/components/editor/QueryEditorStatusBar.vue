@@ -80,15 +80,20 @@
       </span>
     </template>
     <span class="expand" />
-    <x-button
-      v-if="canEdit && !editing"
-      :disabled="results?.length === 0"
-      v-tooltip="'Edit table data directly from query results'"
-      class="btn btn-flat"
-      @click.prevent="editResults"
+    <span
+      v-tooltip="resultEditable ?
+        'Edit table data directly from query results' :
+        'There is not enough information in the result set to generate an update query.'"
     >
-      Edit Data
-    </x-button>
+      <x-button
+        v-if="canEdit && !editing"
+        :disabled="results?.length === 0 || !resultEditable"
+        class="btn btn-flat"
+        @click.prevent="editResults"
+      >
+        Edit Data
+      </x-button>
+    </span>
     <x-button
       v-if="canEdit && editing && changesCount > 0"
       class="btn btn-flat"
@@ -244,7 +249,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'resultEditable'],
   components: { Statusbar },
   data() {
     return {

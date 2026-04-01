@@ -318,6 +318,7 @@
         :running="running"
         :editing="editingResult"
         :changesCount="$refs.table?.pendingChangesCount"
+        :result-editable="resultEditable"
         @editResults="editResults"
         @stopEditing="stopEditing"
         @saveChanges="saveChanges"
@@ -531,7 +532,7 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
-  import { TableOrView } from "@/lib/db/models";
+  import { FieldEditData, TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
@@ -615,7 +616,8 @@
         showTransactionActiveTooltip: false,
         enteredTransactionFromIdent: false,
         editingResult: false,
-        resultsEditData: []
+        resultsEditData: [],
+        resultEditableMap: []
       }
     },
     computed: {
@@ -709,6 +711,9 @@
       },
       resultEditData() {
         return this.resultsEditData[this.selectedResult]
+      },
+      resultEditable() {
+        return this.resultEditableMap[this.selectedResult]
       },
       result() {
         return this.results[this.selectedResult]
@@ -1144,13 +1149,25 @@
         this.editingResult = false;
       },
       async editResults() {
+        if (this.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to edit query result data.")
+          return;
+        }
         if (!this.resultsEditData[this.selectedResult]) {
-          const resultEditData = await this.connection.getResultEditData(this.result?.text, this.result.fields);
+          const resultEditData: FieldEditData[] = await this.connection.getResultEditData(this.result?.text, this.result.fields);
+
 
           const mapped = new Map(resultEditData.map((e) => [e.id, e]));
           this.$set(this.resultsEditData, this.selectedResult, mapped)
           await this.$nextTick();
           this.$refs.table.rebuildColumns()
+
+          if (!resultEditData.some((e) => e.editable)) {
+            this.$noty.warning("There is not enough information in the result set to generate an update query. Make sure all primary keys are present.")
+            this.$set(this.resultEditableMap, this.selectedResult, false)
+            await this.$nextTick();
+            return;
+          }
         }
         this.editingResult = true;
       },
@@ -1342,6 +1359,7 @@
         this.queryForExecution = rawQuery
         this.results = []
         this.resultsEditData = []
+        this.resultEditableMap = []
         this.selectedResult = 0
         let identification = []
         try {
@@ -1416,6 +1434,7 @@
           })
           this.results = Object.freeze(results);
           this.resultsEditData = this.results.map(() => null)
+          this.resultEditableMap = this.results.map(() => true)
 
           // const defaultResult = Math.max(results.length - 1, 0)
 
