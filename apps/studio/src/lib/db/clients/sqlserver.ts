@@ -32,10 +32,10 @@ import {
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import { AuthOptions, AzureAuthService } from '../authentication/azure';
+import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
-import { IdentifyResult } from 'sql-query-identifier/defines';
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -727,9 +727,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     await this.executeWithTransaction(sql)
   }
 
-  async executeApplyChanges(changes: TableChanges) {
+  async executeApplyChanges(changes: TableChanges, tabId?: number) {
     const results = []
-    let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
+    let sql = []
+    let conn: Transaction;
 
     try {
       if (changes.inserts) {
@@ -746,16 +747,18 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       if (changes.deletes) {
         sql = sql.concat(buildDeleteQueries(this.knex, changes.deletes))
       }
-
-      sql.push('COMMIT')
-
-      await this.driverExecuteSingle(sql.join(';'))
+      if (tabId) {
+        conn = this.peekConnection(tabId);
+        await this.driverExecuteSingle(sql.join(';'), { connection: conn });
+      } else {
+        await this.executeWithTransaction(sql.join(';'));
+      }
 
       if (changes.updates) {
         const selectQueries = buildSelectQueriesFromUpdates(this.knex, changes.updates)
         for (let index = 0; index < selectQueries.length; index++) {
           const element = selectQueries[index];
-          const r = await this.driverExecuteSingle(element)
+          const r = await this.driverExecuteSingle(element, { connection: conn })
           if (r.data[0]) results.push(r.data[0])
         }
       }

@@ -227,7 +227,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return this.version
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     const insertQueries = buildInsertQueries(this.knex, changes.inserts)
     const updateQueries = buildUpdateQueries(this.knex, changes.updates)
     const deleteQueries = buildDeleteQueries(this.knex, changes.deletes)
@@ -238,7 +238,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       const selectQueries = buildSelectQueriesFromUpdates(this.knex, changes.updates)
       queries.push(...selectQueries)
     }
-    const results = await this.driverExecuteMultiple(queries.join(";"))
+    const results = await this.driverExecuteMultiple(queries.join(";"), { tabId })
     const selectResults = changes.updates ? results.slice(results.length - changes.updates?.length, -1) : []
     return selectResults
   }

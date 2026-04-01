@@ -68,7 +68,7 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
-import { IdentifyResult } from "sql-query-identifier/defines";
+import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
 type ResultType = {
   tableName?: string
@@ -919,32 +919,28 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return databaseName;
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     let results = [];
 
-    await this.runWithConnection(async (connection) => {
-      await this.driverExecuteSingle("START TRANSACTION", { connection });
-
-      try {
-        if (changes.inserts) {
-          await this.insertRows(changes.inserts, connection);
-        }
-
-        if (changes.updates) {
-          results = await this.updateValues(changes.updates, connection);
-        }
-
-        if (changes.deletes) {
-          await this.deleteRows(changes.deletes, connection);
-        }
-
-        await this.driverExecuteSingle("COMMIT", { connection });
-      } catch (ex) {
-        logger().error("query exception: ", ex);
-        await this.driverExecuteSingle("ROLLBACK", { connection });
-        throw ex;
+    const run = async (connection: mysql.PoolConnection) => {
+      if (changes.inserts) {
+        await this.insertRows(changes.inserts, connection);
       }
-    });
+
+      if (changes.updates) {
+        results = await this.updateValues(changes.updates, connection);
+      }
+
+      if (changes.deletes) {
+        await this.deleteRows(changes.deletes, connection);
+      }
+    }
+
+    if (tabId) {
+      await this.runWithConnection(run, tabId);
+    } else {
+      await this.runWithTransaction(run);
+    }
 
     return results;
   }
@@ -1278,12 +1274,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
     return await this.runWithConnection(async (connection) => {
       try {
-        await this.driverExecuteSingle("START TRANSACTION");
+        await this.driverExecuteSingle("START TRANSACTION", { connection });
         const result = await func(connection);
-        await this.driverExecuteSingle("COMMIT");
+        await this.driverExecuteSingle("COMMIT", { connection });
         return result;
       } catch (ex) {
-        await this.driverExecuteSingle("ROLLBACK");
+        await this.driverExecuteSingle("ROLLBACK", { connection });
         log.error(ex)
         throw ex;
       }

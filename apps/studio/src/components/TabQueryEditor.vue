@@ -1173,6 +1173,11 @@
         this.editingResult = true;
       },
       async saveChanges() {
+        // This covers the instance where someone runs a query, toggles manual commit on, and then makes edits and tries to save them. This ensures it will then be inside a transaction
+        if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
+          await this.manualBegin();
+        }
+
         await this.$refs.table.saveChanges();
         this.editingResult = false;
       },

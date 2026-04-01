@@ -620,7 +620,7 @@
           };
 
           // @ts-ignore
-          const result = await this.connection.applyChanges(payload);
+          const result = await this.connection.applyChanges(payload, this.tab.id);
 
           if (this.hasPendingUpdates) {
             this.tabulator.clearCellEdited();

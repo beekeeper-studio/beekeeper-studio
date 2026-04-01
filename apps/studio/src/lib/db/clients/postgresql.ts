@@ -823,10 +823,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => row.datname);
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
-    await this.runWithTransaction(async (connection) => {
+    const run = async (connection: PoolClient) => {
       log.debug("Applying changes", changes)
       if (changes.inserts) {
         await this.insertRows(changes.inserts, connection);
@@ -839,7 +839,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       if (changes.deletes) {
         await this.deleteRows(changes.deletes, connection)
       }
-    })
+    }
+
+    if (tabId) {
+      const conn = this.peekConnection(tabId);
+      await run(conn);
+    } else {
+      await this.runWithTransaction(run)
+    }
+
     return results
   }
 
@@ -1320,8 +1328,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     await this.runQuery(conn, 'ROLLBACK', {});
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
-    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, tabId?: number }): Promise<QueryResult | QueryResult[]> {
     const hasReserved = this.reservedConnections.has(options?.tabId)
     if (options?.tabId && hasReserved) {
       const conn = this.peekConnection(options?.tabId);

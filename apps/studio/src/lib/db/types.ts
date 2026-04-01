@@ -286,7 +286,7 @@ export interface IBasicDatabaseClient {
   alterPartition(changes: AlterPartitionsSpec): Promise<void>,
 
   applyChangesSql(changes: TableChanges): Promise<string>,
-  applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
+  applyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]>,
   setTableDescription(table: string, description: string, schema?: string): Promise<string>
   setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,

@@ -86,7 +86,7 @@ export interface IConnectionHandlers {
   'conn/alterPartitionSql': ({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) => Promise<string | null>,
   'conn/alterPartition': ({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) => Promise<void>,
   'conn/applyChangesSql': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<string>,
-  'conn/applyChanges': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<TableUpdateResult[]>,
+  'conn/applyChanges': ({ changes, tabId, sId }: { changes: TableChanges, tabId?: number, sId: string }) => Promise<TableUpdateResult[]>,
   'conn/setTableDescription': ({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) => Promise<string>,
   'conn/setElementName': ({ elementName, newElementName, typeOfElement, schema, sId }: { elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
   'conn/dropElement': ({ elementName, typeOfElement, schema, sId }: { elementName: string, typeOfElement: DatabaseElement, schema?: string, sId: string }) => Promise<void>,
@@ -491,9 +491,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return state(sId).connection.applyChangesSql(changes);
   },
 
-  'conn/applyChanges': async function({ changes, sId }: { changes: TableChanges, sId: string }) {
+  'conn/applyChanges': async function({ changes, tabId, sId }: { changes: TableChanges, tabId?: number, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.applyChanges(changes);
+    return await state(sId).connection.applyChanges(changes, tabId);
   },
 
   'conn/setTableDescription': async function({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) {

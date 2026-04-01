@@ -13,7 +13,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
-import { ColumnReference, TableReference } from 'sql-query-identifier/defines';
+import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -397,12 +397,12 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return applyChangesSql(changes, this.knex);
   }
 
-  async applyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
+  async applyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]> {
     await this.deserializeTableChanges(changes);
-    return await this.executeApplyChanges(changes);
+    return await this.executeApplyChanges(changes, tabId);
   }
 
-  abstract executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]>;
+  abstract executeApplyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]>;
 
   abstract setTableDescription(table: string, description: string, schema?: string): Promise<string>;
 
@@ -795,7 +795,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   protected peekConnection(tabId: number): Conn {
-    if (!this.reservedConnections.get(tabId)) {
+    if (!this.reservedConnections.has(tabId)) {
       throw new Error("Could not retrieve reserved connection, please report this issue on our GitHub.");
     }
     return this.reservedConnections.get(tabId);
