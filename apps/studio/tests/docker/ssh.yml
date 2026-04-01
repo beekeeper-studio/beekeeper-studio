@@ -16,68 +16,6 @@ services:
       POSTGRES_DB: integration_test
     networks:
       - ssh_postgres
-    healthcheck:
-      test: ["CMD-SHELL", "psql -h localhost -U postgres -c \"select 1\" -d integration_test > /dev/null"]
-      interval: 2s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
-
-  mysql:
-    image: mysql:8
-    container_name: test_ssh_mysql
-    environment:
-      MYSQL_USER: bks
-      MYSQL_PASSWORD: example
-      MYSQL_ROOT_PASSWORD: example
-      MYSQL_DATABASE: test
-    networks:
-      - ssh_postgres
-
-  mariadb:
-    image: mariadb
-    container_name: test_ssh_mariadb
-    environment:
-      MYSQL_USER: bks
-      MYSQL_PASSWORD: example
-      MYSQL_ROOT_PASSWORD: example
-      MYSQL_DATABASE: test
-    networks:
-      - ssh_postgres
-
-  sqlserver:
-    image: "mcr.microsoft.com/mssql/server:2022-latest"
-    container_name: test_ssh_sqlserver
-    environment:
-      MSSQL_PID: Express
-      MSSQL_SA_PASSWORD: Example1!
-      ACCEPT_EULA: Y
-    networks:
-      - ssh_postgres
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Example1! -C -Q 'SELECT 1' > /dev/null"]
-      interval: 2s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
-
-  clickhouse:
-    image: clickhouse/clickhouse-server:24.2
-    container_name: test_ssh_clickhouse
-    environment:
-      - CLICKHOUSE_USER=username
-      - CLICKHOUSE_PASSWORD=password
-      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
-    networks:
-      - ssh_postgres
-
-  cockroachdb:
-    image: cockroachdb/cockroach:v22.1.1
-    container_name: test_ssh_cockroachdb
-    command: start-single-node --insecure
-    networks:
-      - ssh_postgres
-
   ssh:
     build:
       context: ./
@@ -97,12 +35,6 @@ services:
       - testrunner_ssh
       - bastion_ssh
       - ssh_postgres
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 2222 || exit 1"]
-      interval: 2s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
   bastion:
     build:
       context: ./
@@ -121,9 +53,3 @@ services:
     networks:
       - testrunner_bastion
       - bastion_ssh
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 2222 || exit 1"]
-      interval: 2s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
