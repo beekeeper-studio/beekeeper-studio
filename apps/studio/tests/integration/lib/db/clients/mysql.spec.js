@@ -7,7 +7,6 @@ import data_mutators from '../../../../../src/mixins/data_mutators';
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { runCommonTests, runReadOnlyTests } from './all'
 import MySQL5_4KnexClient from '@/shared/lib/knex-mysql5_4'
-import { SshEnvironment } from './ssh/SshEnvironment'
 import { runCommonSshTests } from './ssh/commonSshTests'
 
 const TEST_VERSIONS = [
