@@ -10,8 +10,38 @@ export default {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
     const ssh: IDbConnectionServerSSHConfig = {
       enabled: config.sshEnabled,
+      host: config.sshHost ? config.sshHost.trim() : null,
+      port: config.sshPort,
+      user: config.sshUsername ? config.sshUsername.trim() : null,
+      password: config.sshMode === 'userpass' ? config.sshPassword : null,
+      privateKey: config.sshMode === 'keyfile' ? config.sshKeyfile : null,
+      passphrase: config.sshMode === 'keyfile' ? config.sshKeyfilePassword : null,
+      bastionHost: config.sshBastionHost,
+      bastionPort: config.sshBastionHostPort,
+      bastionUser: config.sshBastionUsername,
+      bastionPassword: config.sshBastionMode === 'userpass' ? config.sshBastionPassword : null,
+      bastionPrivateKey: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfile : null,
+      bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
+      bastionMode: config.sshBastionMode,
+      useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
       configs: config.sshConfigs || [],
+    }
+
+    if (ssh && config.sshBastionMode === 'agent' && config.sshBastionHost) {
+      const fileConfig = readSshConfig(config.sshBastionHost.trim())
+      if (fileConfig.port && !ssh.bastionPort) {
+        ssh.bastionPort = fileConfig.port
+      }
+      if (fileConfig.identityFile) {
+        ssh.bastionPrivateKey = fileConfig.identityFile
+      }
+      if (fileConfig.host) {
+        ssh.bastionHost = fileConfig.host
+      }
+      if (fileConfig.user && !ssh.bastionUser) {
+        ssh.bastionUser = fileConfig.user
+      }
     }
 
     return {

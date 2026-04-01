@@ -1,10 +1,10 @@
 <template>
-  <div class="advanced-connection-settings">
+  <div class="advanced-connection-settings" :class="$attrs.class">
     <div class="flex flex-middle">
       <span
         v-if="!hideToggle"
         @click.prevent="toggleContent = !toggleContent"
-        class="btn btn-link btn-fab"
+        class="btn btn-link btn-fab btn-toggle"
       >
         <i class="material-icons">{{ toggleIcon }}</i>
       </span>

@@ -1,8 +1,12 @@
 version: '3'
+volumes:
+  psql:
 networks:
   public:
   private:
     internal: true
+  testrunner_bastion:
+  bastion_ssh:
 services:
   postgres:
     image: postgres:13
@@ -29,6 +33,7 @@ services:
     networks:
       - public
       - private
+      - bastion_ssh
     ports:
       - 2222
   jump1:
@@ -44,8 +49,26 @@ services:
       - USER_PASSWORD=password
       - USER_NAME=beekeeper
       - SUDO_ACCESS=true
+    ports:
+      - 2222
     networks:
       - public
       - private
+  bastion:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_bastion
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
     ports:
       - 2222
+    networks:
+      - testrunner_bastion
+      - bastion_ssh

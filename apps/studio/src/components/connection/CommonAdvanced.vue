@@ -12,7 +12,7 @@
       />
     </template>
     <template>
-      <div class="row gutter">
+      <div class="row gutter alert-row">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
@@ -53,6 +53,24 @@
           placeholder="(in seconds)"
         />
       </div>
+
+      <div class="row gutter">
+        <div class="col form-group">
+          <label for="sshKeepaliveInterval">
+            Keepalive Interval <i
+              class="material-icons"
+              style="padding-left: 0.25rem"
+              v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
+            >help_outlined</i>
+          </label>
+          <input
+            type="number"
+            v-model.number="config.sshKeepaliveInterval"
+            name="sshKeepaliveInterval"
+            placeholder="(in seconds)"
+          >
+        </div>
+      </div>
     </template>
   </toggle-form-area>
 </template>
@@ -63,6 +81,7 @@ import { mapState, mapGetters } from 'vuex'
 import SshJumpHosts from '@/components/connection/SshJumpHosts.vue'
 import _ from 'lodash'
 import MaskedInput from '@/components/MaskedInput.vue'
+
 
 export default {
   props: ['config'],
@@ -139,5 +158,8 @@ export default {
   border-top: 1px solid var(--border-color);
   margin-top: 1rem;
   margin-bottom: 0.25rem;
+}
+.alert-row {
+  margin-inline: 0;
 }
 </style>

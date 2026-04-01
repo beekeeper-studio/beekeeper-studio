@@ -9,6 +9,7 @@ describe("SSH Tunnel Tests", () => {
   jest.setTimeout(dbtimeout)
 
   let container;
+  let bastionContainer
   let connection
   let database
   let environment
@@ -21,17 +22,21 @@ describe("SSH Tunnel Tests", () => {
       .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
       .withWaitStrategy('test_ssh', Wait.forListeningPorts())
       .withWaitStrategy('test_ssh_jump1', Wait.forListeningPorts())
+      .withWaitStrategy('test_ssh_bastion', Wait.forListeningPorts())
       .up()
 
     container = environment.getContainer('test_ssh')
     const jump1 = environment.getContainer('test_ssh_jump1')
+    bastionContainer = environment.getContainer('test_ssh_bastion')
 
     // NB: postgres is on the private network only - no host port mapping.
     // It is only reachable via SSH tunnel through 'ssh' or through jump1 -> 'ssh'.
 
     // Direct SSH tunnel: test host -> ssh container -> postgres (private network)
+
     const config = {
       connectionType: 'postgresql',
+      // postgres is reachable from the ssh container via the ssh_postgres network
       host: 'postgres',
       port: 5432,
       username: 'postgres',
@@ -107,15 +112,55 @@ describe("SSH Tunnel Tests", () => {
     })
   })
 
+  describe("Can SSH via bastion host and run a query", () => {
+    let bastionDatabase
+
+    beforeAll(async () => {
+      const config = {
+        connectionType: 'postgresql',
+        // postgres is reachable from the ssh container via the ssh_postgres network
+        host: 'postgres',
+        port: 5432,
+        username: 'postgres',
+        password: 'example',
+        sshEnabled: true,
+        sshMode: 'userpass',
+        // ssh is reachable from the bastion container via the bastion_ssh network (by container name)
+        sshHost: 'test_ssh',
+        sshPort: 2222,
+        sshUsername: 'beekeeper',
+        sshPassword: 'password',
+        // bastion is the only container reachable from the test runner via its mapped port
+        sshBastionHost: bastionContainer.getHost(),
+        sshBastionHostPort: bastionContainer.getMappedPort(2222),
+        sshBastionMode: 'userpass',
+        sshBastionUsername: 'beekeeper',
+        sshBastionPassword: 'password',
+      }
+
+      const conn = ConnectionProvider.for(config)
+      bastionDatabase = conn.createConnection('integration_test')
+      await bastionDatabase.connect()
+    })
+
+    it("should work", async () => {
+      const query = await bastionDatabase.query('select 1')
+      await query.execute()
+    })
+
+    afterAll(async () => {
+      if (bastionDatabase) {
+        await bastionDatabase.disconnect()
+      }
+    })
+  })
+
   afterAll(async () => {
     if (jumpDatabase) {
       await jumpDatabase.disconnect()
     }
     if (database) {
       await database.disconnect()
-    }
-    if (container) {
-      await container.stop()
     }
     if (environment) {
       await environment.stop()

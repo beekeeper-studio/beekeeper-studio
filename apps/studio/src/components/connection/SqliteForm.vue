@@ -63,18 +63,7 @@
               </div>
             </template>
           </toggle-form-area>
-          <div
-            class="alert alert-warning"
-            v-if="$config.isSnap"
-          >
-            <i class="material-icons">error_outline</i>
-            <div>
-              Hey snap user! If you want to use a sqlite database on an external drive you'll need to give Beekeeper some extra permissions
-              <external-link :href="snap">
-                Read more
-              </external-link>
-            </div>
-          </div>
+          <platform-warning location="database-file" />
         </div>
       </div>
     </div>
@@ -87,16 +76,17 @@ import SettingsInput from '../common/SettingsInput.vue'
 import { mapGetters, mapState } from 'vuex'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import FilePicker from '../common/form/FilePicker.vue'
+import PlatformWarning from './PlatformWarning.vue'
 export default Vue.extend({
   props: ['config'],
   components: {
     SettingsInput,
     ToggleFormArea,
-    FilePicker
+    FilePicker,
+    PlatformWarning
   },
   data() {
     return {
-      snap: "https://docs.beekeeperstudio.io/support/troubleshooting/#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive",
       loadExtensionFileType: this.$config.isMac ? "dylib" : this.$config.isWindows ? "dll" : "so"
     }
   },

@@ -187,6 +187,18 @@ export class DbConnectionBase extends ApplicationEntity {
   sshBastionHost: Nullable<string> = null
 
   @Column({ type: 'int', nullable: true })
+  sshBastionHostPort: Nullable<number> = null
+
+  @Column({ type: 'varchar', length: 8, nullable: false, default: 'agent' })
+  sshBastionMode: SshMode = 'agent'
+
+  @Column({ type: 'varchar', nullable: true })
+  sshBastionUsername: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true })
+  sshBastionKeyfile: Nullable<string> = null
+
+  @Column({ type: 'int', nullable: true })
   sshKeepaliveInterval: Nullable<number> = 60
 
   @Column({ type: 'boolean', nullable: false, default: false })
@@ -320,6 +332,12 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
+  sshBastionPassword: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
+  sshBastionKeyfilePassword: Nullable<string> = null
+
   /** @deprecated use `sshConfigs` instead */
   _sshMode: SshMode = "agent"
 
@@ -450,6 +468,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       this.password = null
       this.sshPassword = null
       this.sshKeyfilePassword = null
+      this.sshBastionPassword = null
+      this.sshBastionKeyfilePassword = null
     }
   }
 
