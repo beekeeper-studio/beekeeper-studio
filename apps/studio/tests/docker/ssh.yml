@@ -121,3 +121,9 @@ services:
     networks:
       - testrunner_bastion
       - bastion_ssh
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 2222 || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
