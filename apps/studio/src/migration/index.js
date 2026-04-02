@@ -85,7 +85,6 @@ import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
 import addBastionAuth from './20260324_add_bastion_auth'
-import createPluginEntries from './20260402_create_plugin_entries'
 
 import ultimate from './ultimate/index'
 
@@ -132,7 +131,6 @@ const realMigrations = [
   createConnectionFolders, createQueryFolders,
   addPositionToItems,
   addBastionAuth,
-  createPluginEntries,
 ]
 
 // fixtures require the models
