@@ -8,6 +8,7 @@ export class WebPlugin {
   private requestIdCounter = 0;
 
   public readonly iframe: HTMLIFrameElement;
+  public readonly manifest: Manifest;
   public readonly context: {
     command: string;
     pluginId?: string;
@@ -15,7 +16,28 @@ export class WebPlugin {
     params?: any;
   };
 
-  constructor(public readonly manifest: Manifest) {
+  constructor() {
+    // Create default manifest
+    this.manifest = {
+      manifestVersion: 1,
+      id: "test-plugin",
+      name: "Test Plugin",
+      author: "Test Author",
+      description: "Test Description",
+      version: "1.0.0",
+      capabilities: {
+        views: [
+          {
+            id: "test-view",
+            name: "Test View",
+            type: "base-tab",
+            entry: "index.html",
+          },
+        ],
+        menu: [],
+      },
+    } as Manifest;
+
     // Create mock iframe with contentWindow
     this.iframe = document.createElement("iframe");
 
@@ -132,7 +154,7 @@ export class WebPlugin {
   /**
    * Clean up the plugin
    */
-  destroy(): void {
+  dispose(): void {
     if (this.iframe && this.iframe.parentNode) {
       document.body.removeChild(this.iframe);
     }

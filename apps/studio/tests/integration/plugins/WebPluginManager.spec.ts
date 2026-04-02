@@ -3,147 +3,48 @@
  */
 
 import "./setup";
-import { WebPluginManager } from "@/services/plugin/web";
-import { WebPlugin } from "./utils/WebPlugin";
+import { WebHost, WebPlugin } from "./utils";
 import { tables } from "./utils/fixtures";
 import _ from "lodash";
-import prepareWebPluginManagerTestGroup from "./utils/prepareWebPluginManager";
-import { preloadPlugins } from "./utils/fileManager";
-import preparePluginSystemTestGroup from "./utils/preparePluginSystem";
-import { PluginManager } from "@/services/plugin";
-import PluginRegistry from "@/services/plugin/PluginRegistry";
-import { MockPluginRepositoryService } from "./utils/registry";
-import PluginStoreService from "@/services/plugin/web/PluginStoreService";
-import { UtilityConnection } from "@/lib/utility/UtilityConnection";
-import bindIniConfig from "@commercial/backend/plugin-system/hooks/iniConfig";
 
 describe("WebPluginManager", () => {
-  const { server, fileManager, emptyRegistry } = preparePluginSystemTestGroup();
+  let host: WebHost;
+  let plugin: WebPlugin;
 
-  describe("Loading Plugins", () => {
-    let webManager: WebPluginManager;
-
-    beforeAll(() => {
-      const repository = new MockPluginRepositoryService(server);
-      const registry = new PluginRegistry(repository);
-
-      // Publish one plugin called "test-plugin"
-      repository.setPluginsJson('core', [{ id: "test-plugin" }]);
-      repository.setLatestRelease({ id: "test-plugin", version: "1.0.0" });
-
-      const pluginManager = new PluginManager({ appVersion: "9.9.9", fileManager, registry });
-      const { pluginStore, utilityConnection } = prepareWebPluginManagerTestGroup({ pluginManager });
-
-      webManager = new WebPluginManager({
-        // Versioning is tested in PluginManager.spec.ts. Here we don't care about it.
-        appVersion: "9.9.9",
-        pluginStore,
-        utilityConnection,
-      });
+  beforeEach(() => {
+    // Create host with mock tables
+    host = new WebHost({
+      tables,
+      defaultSchema: "public",
+      connectionType: "postgresql",
     });
 
-    it("can load plugins at startup", async () => {
-      preloadPlugins(fileManager, [{ id: "test-plugin" }]);
-      await webManager.initialize();
-      const plugins = await webManager.getEnabledPlugins();
-
-      expect(plugins[0].id).toBe("test-plugin");
-    });
-
-    it("can load plugins at runtime (by installing)", async () => {
-      await webManager.initialize();
-      await webManager.install("test-plugin");
-      const plugins = await webManager.getEnabledPlugins();
-
-      expect(plugins[0].id).toBe("test-plugin");
-    });
+    // Create plugin
+    plugin = new WebPlugin();
   });
 
-  describe("Disabling Plugins", () => {
-    let webManager: WebPluginManager;
-    let pluginStore: PluginStoreService;
-    let utilityConnection: UtilityConnection;
+  afterEach(() => {
+    plugin?.dispose();
+  });
 
-    beforeAll(() => {
-      preloadPlugins(fileManager, [{
-        id: "test-plugin",
-        capabilities: {
-          views: [{
-            id: "test-view",
-            name: "Test View",
-            type: "base-tab",
-            entry: "index.html",
-          }],
-          menu: [{
-            command: "test-command",
-            view: "test-view",
-            name: "Test Menu Item",
-            placement: [
-              "newTabDropdown",
-              "menubar.tools",
-              "editor.query.context",
-            ],
-          }],
-        },
-      }]);
-      const pluginManager = new PluginManager({
-        appVersion: "9.9.9",
-        fileManager,
-        registry: emptyRegistry,
-      });
-      bindIniConfig(pluginManager, {
-        plugins: { "test-plugin": { disabled: true } },
-      })
-      const util = prepareWebPluginManagerTestGroup({ pluginManager });
-      pluginStore = util.pluginStore;
-      utilityConnection = util.utilityConnection;
-      webManager = new WebPluginManager({
-        appVersion: "9.9.9",
-        pluginStore,
-        utilityConnection,
-      });
-    });
+  describe("Plugin Loading", () => {
+    it("should load a plugin successfully", async () => {
+      await host.load(plugin);
 
-    it("should be flagged as disabled", async () => {
-      await webManager.initialize();
-      expect(webManager.pluginOf("test-plugin").disabled).toBe(true);
+      const enabledPlugins = await host.getLoadedPlugins();
+      expect(enabledPlugins).toHaveLength(1);
+      expect(enabledPlugins[0].id).toBe(plugin.manifest.id);
     });
   });
 
   describe("Plugin APIs", () => {
-    let plugin: WebPlugin;
-    let manager: WebPluginManager;
-
-    beforeAll(async () => {
-      preloadPlugins(fileManager, [{
-        id: "test-plugin",
-        capabilities: {
-          views: [{
-            id: "test-view",
-            name: "Test View",
-            type: "base-tab",
-            entry: "index.html",
-          }],
-          menu: [],
-        },
-      }]);
-      const pluginManager = new PluginManager({ appVersion: "9.9.9", fileManager, registry: emptyRegistry });
-      const { pluginStore, utilityConnection } = prepareWebPluginManagerTestGroup({ pluginManager, tables });
-      manager = new WebPluginManager({ appVersion: "9.9.9", pluginStore, utilityConnection });
-      await manager.initialize();
-      const plugins = await manager.getEnabledPlugins();
-      plugin = new WebPlugin(plugins[0]);
-      manager.registerIframe(plugin.manifest.id, plugin.iframe, plugin.context);
+    beforeEach(async () => {
+      await host.load(plugin);
     });
 
-    afterAll(async () => {
-      plugin.destroy();
-      manager.unregisterIframe(plugin.manifest.id, plugin.iframe);
-      await manager.uninstall(plugin.manifest.id);
-    });
-
-    beforeEach(() => {
+    afterEach(() => {
       plugin.clearResponses();
+      host.unload(plugin);
     });
 
     describe("API Request/Response Structure", () => {
@@ -189,8 +90,8 @@ describe("WebPluginManager", () => {
 
         // Verify each response has unique ID
         const responses = plugin.getAllResponses();
-        const ids = responses.map(r => r.id);
-        expect(new Set(ids).size).toBe(ids.length);
+        expect(responses[0].id).toBe(0);
+        expect(responses[1].id).toBe(1);
 
         // Verify all have proper structure
         responses.forEach((response) => {

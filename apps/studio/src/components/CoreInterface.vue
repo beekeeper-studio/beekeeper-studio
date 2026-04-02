@@ -140,7 +140,6 @@
             snapOffset: [this.$bksConfig.ui.layout.primarySidebarMinWidth, 0, this.$bksConfig.ui.layout.secondarySidebarMinWidth],
             sizes: splitSizes,
             minSize: [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
-            maxSize: [this.$bksConfig.ui.layout.primarySidebarMaxWidth, Infinity, this.$bksConfig.ui.layout.secondarySidebarMaxWidth],
             gutterSize: 5,
             elementStyle: (_dimension, elementSize, _gutterSize, index) => {
               // Check if the element is the main content

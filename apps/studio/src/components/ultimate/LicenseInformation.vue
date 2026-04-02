@@ -78,7 +78,6 @@ export default {
   methods: {
     async destroy() {
       await this.$store.dispatch('licenses/remove', this.license)
-      await this.$plugin.updatePluginSnapshots();
     }
   }
 

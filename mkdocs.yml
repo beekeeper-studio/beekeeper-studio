@@ -111,8 +111,6 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
@@ -144,6 +142,7 @@ nav:
     - user_guide/connecting/google-bigquery.md
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
+    - user_guide/connecting/redis.md
     - SQLite: user_guide/connecting/sqlite.md
     - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md

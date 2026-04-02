@@ -5,19 +5,10 @@ import { State as RootState } from '../index'
 import { CloudError } from '@/lib/cloud/ClientHelpers';
 import { TransportLicenseKey } from '@/common/transport';
 import Vue from "vue"
-import { LicenseStatus, LicenseTier } from '@/lib/license';
+import { LicenseStatus } from '@/lib/license';
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import globals from '@/common/globals';
 import { CloudClient } from '@/lib/cloud/CloudClient';
-
-export type TierChange = {
-  hasChanged: false;
-} | {
-  hasChanged: true;
-  from: LicenseTier;
-  to: LicenseTier;
-  direction: "upgrade" | "downgrade";
-};
 
 interface State {
   initialized: boolean
@@ -25,7 +16,6 @@ interface State {
   error: CloudError | Error | null
   now: Date
   status: LicenseStatus,
-  tierChange: TierChange
   installationId: string | null
 }
 
@@ -39,13 +29,6 @@ Object.assign(defaultStatus, {
   condition: "initial",
 })
 
-/** Use this to compare licenses if it's upgraded/downgraded */
-const tierPoints: Record<LicenseTier, number> = {
-  "pro+": 9,
-  "indie": 1,
-  "free": 0,
-};
-
 export const LicenseModule: Module<State, RootState>  = {
   namespaced: true,
   state: () => ({
@@ -54,7 +37,6 @@ export const LicenseModule: Module<State, RootState>  = {
     error: null,
     now: new Date(),
     status: defaultStatus,
-    tierChange: { hasChanged: false },
     installationId: null
   }),
   getters: {
@@ -106,9 +88,6 @@ export const LicenseModule: Module<State, RootState>  = {
     setStatus(state, status: LicenseStatus) {
       state.status = status
     },
-    setTierChange(state, change: TierChange) {
-      state.tierChange = change
-    },
   },
   actions: {
     async init(context) {
@@ -131,8 +110,14 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     async add(context, { email, key, trial }) {
       if (trial) {
-        await Vue.prototype.$util.send('license/createTrialLicense')
-        await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
+        try {
+          await Vue.prototype.$util.send('license/createTrialLicense')
+          await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
+        } catch (error) {
+          log.error("Failed to create trial license", error)
+          await Vue.prototype.$noty.error("Unable to start trial: a license already exists")
+          return
+        }
       } else {
         // Get the installation ID from the backend
         const installationId = context.state.installationId
@@ -204,35 +189,9 @@ export const LicenseModule: Module<State, RootState>  = {
     async sync(context) {
       const status = await Vue.prototype.$util.send('license/getStatus')
       const licenses = await Vue.prototype.$util.send('license/get')
-      context.dispatch('checkTierChange', status.tier);
       context.commit('set', licenses)
       context.commit('setStatus', status)
       context.commit('setNow', new Date())
-    },
-    checkTierChange(context, currTier: LicenseTier) {
-      const prevTier: LicenseTier | "unset" =
-        SmartLocalStorage.getJSON("previousLicenseTier", "unset");
-
-      // Compare and detect changes (only if previous is set)
-      if (prevTier !== "unset") {
-        if (prevTier === currTier) {
-          const change: TierChange = { hasChanged: false };
-          context.commit("setTierChange", change);
-        } else {
-          const direction = tierPoints[prevTier] > tierPoints[currTier] ? "downgrade" : "upgrade";
-          const change: TierChange = {
-            hasChanged: true,
-            from: prevTier,
-            to: currTier,
-            direction,
-          };
-          log.info(`License tier changed: ${JSON.stringify(change)}`);
-          context.commit("setTierChange", change);
-        }
-      }
-
-      // Save current status as previous for next comparison
-      SmartLocalStorage.addItem('previousLicenseTier', currTier);
     },
   }
 }

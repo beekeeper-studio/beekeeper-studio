@@ -2,17 +2,14 @@
   <div class="plugin-page-container">
     <div class="header">
       <div class="title">
-        <span>{{ plugin.name }}</span>
-        <span v-if="plugin.installed" class="version">{{ plugin.installedVersion }}</span>
+        {{ plugin.name }} <span class="version">{{ plugin.version }}</span>
       </div>
-      <div class="author">
-        <span>By</span>
-        <a
-          v-if="typeof plugin.author !== 'string'"
-          :href="plugin.author.url"
-        >{{ plugin.author.name }}</a>
-        <span v-else>{{ plugin.author }}</span>
-        <i v-if="plugin.origin === 'core'" class="verified material-icons">verified_user</i>
+      <div>
+        By
+        <template v-if="plugin.author.name && plugin.author.url">
+          <a :href="plugin.author.url">{{ plugin.author.name }}</a>
+        </template>
+        <template v-else>{{ plugin.author }}</template>
       </div>
       <a v-if="plugin.repo" :href="`https://github.com/${plugin.repo}`">
         <span class="flex">
@@ -29,7 +26,6 @@
           <x-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
-            :disabled="plugin.disabled || plugin.checkingForUpdates"
             class="btn btn-primary"
           >
             <x-label>{{
@@ -40,7 +36,7 @@
             v-else
             @click.prevent="$emit('checkForUpdates')"
             class="btn btn-flat"
-            :disabled="plugin.disabled || plugin.checkingForUpdates"
+            :disabled="plugin.checkingForUpdates"
           >
             <x-label>Check for Updates</x-label>
           </x-button>
@@ -51,7 +47,6 @@
             <input
               type="checkbox"
               :checked="autoUpdateEnabled"
-              :disabled="plugin.disabled"
               @change="toggleAutoUpdate"
             />
             <span>Auto-update</span>
@@ -61,7 +56,7 @@
           v-else
           @click.prevent="$emit('install')"
           class="btn btn-primary"
-          :disabled="plugin.disabled || plugin.installing"
+          :disabled="plugin.installing"
         >
           <x-label>{{
             plugin.installing ? "Installing..." : "Install"
@@ -76,14 +71,11 @@
       >
         {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
-      <template v-if="plugin.disabled">
-        <DisabledPluginAlert
-          v-for="reason of plugin.disableReasons"
-          :plugin-name="plugin.name"
-          :reason="reason"
-        />
-      </template>
-      <div class="alert alert-danger" v-if="!plugin.compatible && plugin.installed">
+      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
+        <i class="material-icons">info_outline</i>
+        <div>This plugin has been disabled via configuration</div>
+      </div>
+      <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
         <i class="material-icons">error_outline</i>
         <div class="alert-body expand">
           <span>This plugin was not loaded because it requires Beekeeper Studio {{ plugin.minAppVersion }}+. Please upgrade the app or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install a compatible plugin version</a>.</span>
@@ -100,32 +92,24 @@
         </div>
       </div>
     </div>
-    <div class="divider" />
+    <div class="divider" v-if="rawHtmlContent" />
     <div class="markdown-content">
       <div v-if="loadingMarkdown" class="loading">Loading plugin readme</div>
-      <div v-if="rawHtmlContent" v-html="rawHtmlContent" />
-      <div class="not-available" v-else>
-        Readme is not available
-      </div>
+      <div v-html="rawHtmlContent" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import Vue, { PropType } from "vue";
+import Vue from "vue";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
-import { UIPlugin } from "@/services/plugin";
-import DisabledPluginAlert from "./DisabledPluginAlert.vue";
 
 export default Vue.extend({
   name: "PluginPage",
-  components: {
-    DisabledPluginAlert,
-  },
   props: {
     plugin: {
-      type: Object as PropType<UIPlugin>,
+      type: Object, // FIXME (azmi): forgot what type this is!!!
       required: true,
     },
     markdown: String,
@@ -170,44 +154,6 @@ export default Vue.extend({
 </script>
 
 <style scoped>
-.upgrade-required-icon {
-  color: var(--theme-primary);
-}
-
-.not-available {
-  margin-top: 0.5rem;
-  color: var(--text);
-  font-style: italic;
-}
-
-.title {
-  display: flex;
-  align-items: center;
-  gap: 0.5ch;
-
-  .version {
-    align-self: flex-end;
-  }
-}
-
-.author {
-  display: flex;
-  gap: 0.5ch;
-
-  .verified {
-    color: var(--theme-secondary);
-    font-size: 1em;
-  }
-}
-
-.checkbox-group:has(input:disabled) {
-  color: var(--text-light);
-
-  input {
-    background-color: var(--text-lighter);
-  }
-}
-
 .loading {
   margin-top: 0.5rem;
   color: var(--text);

@@ -1,12 +1,15 @@
 import { Module } from "vuex";
 import { State as RootState } from "@/store";
-import { PluginSnapshotsModule } from "./PluginSnapshotsModule";
-import { PluginEntriesModule } from "./PluginEntriesModule";
+import { PluginEntriesModule } from "@/store/modules/plugins/PluginEntriesModule";
 
 export const PluginsModule: Module<{}, RootState> = {
   namespaced: true,
   modules: {
-    snapshots: PluginSnapshotsModule,
     entries: PluginEntriesModule,
+  },
+  actions: {
+    async initialize(context) {
+      await context.dispatch("entries/load");
+    },
   },
 };

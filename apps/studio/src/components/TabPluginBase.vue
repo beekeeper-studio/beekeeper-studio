@@ -1,21 +1,17 @@
 <template>
-  <plugin-view-gate
-    :plugin-id="tab.context.pluginId"
-    :view-id="tab.context.pluginTabTypeId"
-    v-slot="{ data }"
-  >
-    <div class="plugin-base" ref="container">
-      <isolated-plugin-view
-        :visible="active"
-        :plugin-id="tab.context.pluginId"
-        :url="data.url"
-        :reload="reload"
-        :on-request="handleRequest"
-        :command="tab.context.command"
-        :params="tab.context.params"
-      />
-    </div>
-  </plugin-view-gate>
+  <div v-if="isCommunity && tab.context.pluginId.startsWith('bks-')" class="tab-upsell-wrapper">
+    <upsell-content />
+  </div>
+  <div v-else class="plugin-base" ref="container">
+    <isolated-plugin-view
+      :visible="active"
+      :plugin-id="tab.context.pluginId"
+      :view-id="tab.context.pluginTabTypeId"
+      :on-request="handleRequest"
+      :command="tab.context.command"
+      :params="tab.context.params"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -23,13 +19,17 @@ import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
+import { mapGetters } from "vuex";
+import UpsellContent from "@/components/upsell/UpsellContent.vue";
 import { OnViewRequestListenerParams } from "@/services/plugin/types";
-import PluginViewGate from "./plugins/PluginViewGate.vue";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("TabPluginBase");
 
 export default Vue.extend({
   components: {
     IsolatedPluginView,
-    PluginViewGate,
+    UpsellContent,
   },
 
   props: {
@@ -38,10 +38,13 @@ export default Vue.extend({
       required: true,
     },
     active: Boolean,
-    reload: null,
   },
 
-methods: {
+  computed: {
+    ...mapGetters(["isCommunity"]),
+  },
+
+  methods: {
     async handleRequest({
       request,
       modifyResult,

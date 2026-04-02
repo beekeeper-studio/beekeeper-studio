@@ -1,6 +1,7 @@
 import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
-import { Manifest, PluginRepository, RawPluginRegistryEntry, RawFetchRegistryResult, Release } from "./types";
+import { RequestError } from "@octokit/request-error";
+import { Manifest, PluginRepository, Release, PluginRegistryEntry } from "./types";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("PluginRepositoryService");
@@ -10,15 +11,16 @@ export default class PluginRepositoryService {
 
   constructor(options?: { octokitOptions?: OctokitOptions }) {
     this.octokit = new Octokit({
-      baseUrl: process.env.GITHUB_API_BASE_URL,
+      baseUrl: process.env.BKS_PLUGIN_GITHUB_API_BASE_URL,
       userAgent: "Beekeeper Studio",
-      auth: process.env.GITHUB_TOKEN,
+      auth: process.env.BKS_PLUGIN_GITHUB_TOKEN,
+      log,
       ...options?.octokitOptions,
     });
   }
 
   async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
-    const response = await this.octokit.request(
+    const response = await this.request(
       "GET /repos/{owner}/{repo}/releases/latest",
       {
         headers: {
@@ -35,7 +37,7 @@ export default class PluginRepositoryService {
       throw new Error(`No manifest.json found in the latest release`)
     }
 
-    const manifestResponse = await this.octokit.request(
+    const manifestResponse = await this.request(
       "GET /repos/{owner}/{repo}/releases/assets/{asset_id}",
       {
         headers: {
@@ -63,41 +65,20 @@ export default class PluginRepositoryService {
     };
   }
 
-  async fetchRegistry(): Promise<RawFetchRegistryResult> {
-    const registry: RawFetchRegistryResult = {
-      core: [] as RawPluginRegistryEntry[],
-      community: [] as RawPluginRegistryEntry[],
-      errors: {
-        core: null as Error | null,
-        community: null as Error | null,
-      },
-    };
+  async fetchOfficial(): Promise<PluginRegistryEntry[]> {
+    return await this.fetchJson(
+      "beekeeper-studio",
+      "beekeeper-studio-plugins",
+      "plugins.json"
+    );
+  }
 
-    try {
-      const core = await this.fetchJson(
-        "beekeeper-studio",
-        "beekeeper-studio-plugins",
-        "plugins.json"
-      );
-      registry.core = core;
-    } catch (e) {
-      log.error("Failed to fetch core plugins.json", e);
-      registry.errors.core = e as Error;
-    }
-
-    try {
-      const community = await this.fetchJson(
-        "beekeeper-studio",
-        "beekeeper-studio-plugins",
-        "community-plugins.json"
-      );
-      registry.community = community;
-    } catch (e) {
-      log.error("Failed to fetch community plugins.json", e);
-      registry.errors.community = e as Error;
-    }
-
-    return registry;
+  async fetchCommunity(): Promise<PluginRegistryEntry[]> {
+    return await this.fetchJson(
+      "beekeeper-studio",
+      "beekeeper-studio-plugins",
+      "community-plugins.json"
+    );
   }
 
   async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
@@ -107,7 +88,7 @@ export default class PluginRepositoryService {
   }
 
   protected async fetchReadme(owner: string, repo: string) {
-    const response = await this.octokit.request(
+    const response = await this.request(
       "GET /repos/{owner}/{repo}/readme",
       {
         headers: {
@@ -120,8 +101,8 @@ export default class PluginRepositoryService {
     return Buffer.from(response.data.content, "base64").toString("utf-8");
   }
 
-  private async fetchJson(owner: string, repo: string, path: string): Promise<RawPluginRegistryEntry[]> {
-    const response = await this.octokit.request(
+  protected async fetchJson(owner: string, repo: string, path: string) {
+    const response = await this.request(
       "GET /repos/{owner}/{repo}/contents/{path}",
       {
         headers: {
@@ -133,10 +114,27 @@ export default class PluginRepositoryService {
         path,
       }
     );
-    // @ts-expect-error not fully typed
     const content = Buffer.from(response.data.content, "base64").toString(
       "utf-8"
     );
     return JSON.parse(content);
+  }
+
+  /** Wraps octokit.request with rate limit error handling. */
+  private async request(...args: Parameters<Octokit["request"]>) {
+    try {
+      return await this.octokit.request(...args);
+    } catch (error) {
+      if (
+        error instanceof RequestError &&
+        (error.status === 403 || error.status === 429)
+      ) {
+        throw new Error(
+          "GitHub API rate limit exceeded. Set the BKS_PLUGIN_GITHUB_TOKEN environment variable with a GitHub personal access token to increase the limit.",
+          { cause: error }
+        );
+      }
+      throw error;
+    }
   }
 }

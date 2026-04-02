@@ -406,6 +406,13 @@
                   autofocus
                 >
               </div>
+              <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
+                <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+                <select v-model="query.queryFolderId" :disabled="!isUltimate && !isCloud">
+                  <option :value="null">No folder</option>
+                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="vue-dialog-buttons">
@@ -602,13 +609,14 @@
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
       }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('data/queryFolders', { queryFolders: 'items' }),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
@@ -749,7 +757,7 @@
           }
           const values = Object.values(this.queryParameterValues) as string[];
           const convertedParams = convertParamsForReplacement(placeholders, values);
-          query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect]?.paramTypes);
+          query = deparameterizeQuery(query, this.dialect, convertedParams, this.paramTypes);
         } catch (ex) {
           log.error("Unable to deparameterize query", ex)
         }
@@ -822,7 +830,8 @@
         if (this.dialect === 'redis') {
           return {};
         }
-        return this.$bksConfig.db[this.dialect]?.paramTypes
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        return this.$bksConfig.db[dbType]?.paramTypes
       },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
@@ -1289,9 +1298,6 @@
 
         this.showKeepAlive = false
         this.maybeCloseWarningNoty();
-        this.tab.isRunning = true
-        this.updateTab();
-        this.running = true
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
@@ -1329,6 +1335,10 @@
             }
           }
 
+          this.tab.isRunning = true
+          this.updateTab();
+          this.running = true
+
           const query = this.deparameterizedQuery
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
@@ -1352,14 +1362,7 @@
           results.forEach((result, idx) => {
             result.rowCount = result.rowCount || 0
 
-            // TODO (matthew): remove truncation logic somewhere sensible
-            totalRows += result.rowCount
-            if (result.rowCount > this.$bksConfig.ui.queryEditor.maxResults) {
-              result.rows = _.take(result.rows, this.$bksConfig.ui.queryEditor.maxResults)
-              result.truncated = true
-              result.totalRowCount = result.rowCount
-            }
-
+            totalRows += result.totalRowCount
             const identifiedTables = identification[idx]?.tables || []
             if (identifiedTables.length > 0) {
               result.tableName = identifiedTables[0]

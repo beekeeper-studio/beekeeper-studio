@@ -33,6 +33,10 @@ export function createFileManager(): PluginFileManager {
   });
 }
 
+/**
+ * Preload plugins into the file manager by stubbing scanPlugins.
+ * This simulates having plugins already installed on disk.
+ */
 export function preloadPlugins(
   fileManager: PluginFileManager,
   plugins: Partial<Manifest>[]
@@ -58,7 +62,6 @@ function createTestManifest(manifest?: Partial<Manifest>): Manifest {
   }
   return _.merge(defaultManifest, manifest);
 }
-
 
 /** Erase plugins data. */
 export function cleanFileManager(manager: PluginFileManager) {

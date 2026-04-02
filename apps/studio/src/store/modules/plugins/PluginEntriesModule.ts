@@ -7,34 +7,53 @@ import rawLog from "@bksLogger";
 const log = rawLog.scope("PluginEntriesModule");
 
 export interface PluginEntriesState {
-  all: PluginRegistryEntry[];
+  officialEntries: PluginRegistryEntry[];
+  communityEntries: PluginRegistryEntry[];
   loading: boolean;
+  error: string | null;
 }
 
 export const PluginEntriesModule: Module<PluginEntriesState, RootState> = {
   namespaced: true,
   state: {
-    all: [],
+    officialEntries: [],
+    communityEntries: [],
     loading: false,
+    error: null,
   },
   mutations: {
-    set(state, entries: PluginRegistryEntry[]) {
-      state.all = entries;
+    setOfficialEntries(state, entries: PluginRegistryEntry[]) {
+      state.officialEntries = entries;
+    },
+    setCommunityEntries(state, entries: PluginRegistryEntry[]) {
+      state.communityEntries = entries;
     },
     setLoading(state, loading: boolean) {
       state.loading = loading;
+    },
+    setError(state, error: string | null) {
+      state.error = error;
+    },
+  },
+  getters: {
+    all(state) {
+      return [...state.officialEntries, ...state.communityEntries];
     },
   },
   actions: {
     async load(context) {
       context.commit("setLoading", true);
+      context.commit("setError", null);
       try {
-        const entries = await Vue.prototype.$util.send("plugin/entries", {
-          refresh: true,
-        });
-        context.commit("set", entries);
+        const { official, community } = await Vue.prototype.$util.send(
+          "plugin/entries",
+          { clearCache: true }
+        );
+        context.commit("setOfficialEntries", official);
+        context.commit("setCommunityEntries", community);
       } catch (e) {
         log.error(e);
+        context.commit("setError", e.message ?? String(e));
       }
       context.commit("setLoading", false);
     },

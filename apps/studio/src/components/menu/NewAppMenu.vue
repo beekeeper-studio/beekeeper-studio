@@ -32,7 +32,9 @@
             v-for="(item, idx) in visibleSubmenuItems(menu)"
             :key="item.id || idx"
           >
+            <div v-if="item.type === 'separator'" class="separator" />
             <a
+              v-else
               @mousedown.prevent="noop()"
               @mouseup.prevent="handle(item)"
               @mouseover.prevent="setHover(item)"
@@ -54,7 +56,9 @@
                 v-for="subitem in (item.submenu || [])"
                 :key="subitem.label"
               >
+                <div v-if="item.type === 'separator'" class="separator" />
                 <a
+                  v-else
                   @mouseover.prevent="setHover(subitem, item)"
                   :class="hoverClass(subitem)"
                   @mousedown.prevent="noop()"
@@ -274,3 +278,12 @@ export default {
 
 }
 </script>
+
+<style scoped>
+.separator {
+  margin-block: 0.35em;
+  width: 100%;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+</style>

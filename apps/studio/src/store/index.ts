@@ -38,10 +38,8 @@ import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
-import { PluginsModule } from './modules/plugins'
 import { MenuBarModule } from './modules/MenuBarModule'
-import { PluginSnapshotsState } from './modules/plugins/PluginSnapshotsModule'
-import { PluginEntriesState } from './modules/plugins/PluginEntriesModule'
+import { PluginsModule } from './modules/plugins'
 
 
 const log = RawLog.scope('store/index')
@@ -85,12 +83,6 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
-
-  /** Set by VueX module */
-  plugins?: {
-    snapshots: PluginSnapshotsState;
-    entries: PluginEntriesState;
-  };
 }
 
 Vue.use(Vuex)
@@ -676,10 +668,10 @@ const store = new Vuex.Store<State>({
         () => context.dispatch('licenses/sync'),
         globals.licenseCheckInterval
       )
+      await context.dispatch('plugins/initialize')
     },
-    async licenseEntered(context) {
+    licenseEntered(context) {
       context.dispatch('updateWindowTitle')
-      await context.dispatch('plugins/snapshots/load')
     },
     toggleFlag(context, { flag, value }: { flag: string, value?: boolean }) {
       if (typeof value === 'undefined') {

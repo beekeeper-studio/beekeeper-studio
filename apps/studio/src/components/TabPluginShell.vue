@@ -1,21 +1,46 @@
 <template>
-  <div class="plugin-shell" ref="container" v-hotkey="keymap">
+  <div
+    v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
+    class="tab-upsell-wrapper"
+  >
+    <upsell-content />
+  </div>
+  <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
-<PluginViewGate
+      <div
+        v-if="pluginManagerStatus !== 'ready'"
+        class="plugin-status"
+        :class="pluginManagerStatus"
+      >
+        <template v-if="pluginManagerStatus === 'initializing'">
+          Initializing plugins ...
+        </template>
+        <template v-else-if="pluginManagerStatus === 'failed-to-initialize'">
+          Failed to initialize plugin manager.
+        </template>
+      </div>
+      <div v-else-if="plugin && !plugin.loadable" class="plugin-status">
+        <p>
+          Plugin "{{ plugin.manifest.name }}" isn’t compatible with this version of Beekeeper Studio.
+          It requires version {{ plugin.manifest.minAppVersion }} or newer.
+        </p>
+
+        <p>To fix this:</p>
+
+        <ol>
+          <li>Upgrade your Beekeeper Studio.</li>
+          <li>Or install an older plugin version manually (see <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">instructions</a>).</li>
+        </ol>
+      </div>
+      <isolated-plugin-view
+        v-else
+        :visible="active"
         :plugin-id="tab.context.pluginId"
         :view-id="tab.context.pluginTabTypeId"
-        v-slot="{ data }"
-      >
-        <isolated-plugin-view
-          :visible="active"
-          :plugin-id="tab.context.pluginId"
-          :url="data.url"
-          :reload="reload"
-          :on-request="handleRequest"
-          :command="tab.context.command"
-          :params="tab.context.params"
-        />
-      </PluginViewGate>
+        :on-request="handleRequest"
+        :command="tab.context.command"
+        :params="tab.context.params"
+      />
     </div>
     <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">
       <result-table
@@ -83,13 +108,18 @@ import ProgressBar from "@/components/editor/ProgressBar.vue";
 import ResultTable from "@/components/editor/ResultTable.vue";
 import ShortcutHints from "@/components/editor/ShortcutHints.vue";
 import QueryEditorStatusBar from "@/components/editor/QueryEditorStatusBar.vue";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
+import { mapState, mapGetters } from "vuex";
+import UpsellContent from "@/components/upsell/UpsellContent.vue";
+import type { OnViewRequestListenerParams, PluginContext } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
-import type { OnViewRequestListenerParams } from "@/services/plugin/types";
-import PluginViewGate from "./plugins/PluginViewGate.vue";
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('TabPluginShell')
 
 export default Vue.extend({
   components: {
@@ -97,8 +127,9 @@ export default Vue.extend({
     ProgressBar,
     ShortcutHints,
     QueryEditorStatusBar,
+    ErrorAlert,
     IsolatedPluginView,
-    PluginViewGate,
+    UpsellContent,
   },
   props: {
     tab: {
@@ -106,7 +137,6 @@ export default Vue.extend({
       required: true,
     },
     active: Boolean,
-    reload: null,
   },
   data() {
     return {
@@ -128,8 +158,18 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapState(["pluginManagerStatus"]),
+    ...mapGetters(["isCommunity"]),
+    plugin(): PluginContext {
+      try {
+        return this.$plugin.pluginOf(this.tab.context.pluginId);
+      } catch (e) {
+        log.error(e);
+        return null;
+      }
+    },
     shouldInitialize() {
-      return this.active && !this.initialized;
+      return !this.isCommunity && this.active && !this.initialized;
     },
     errors() {
       return this.error ? [this.error] : null;

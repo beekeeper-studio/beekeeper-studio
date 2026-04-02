@@ -1,20 +1,27 @@
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
-import { PluginRepository, PluginRegistryEntry, RawFetchRegistryResult } from "./types";
+import { PluginRepository, PluginRegistryEntry, PluginOrigin } from "./types";
 import { NotFoundPluginError } from "./errors";
 
 const log = rawLog.scope("PluginRegistry");
 
 export type PluginRegistryOptions = {
+  onFailedFetching?: (
+    source: "official" | "community",
+    error: Error,
+  ) => void | Promise<void>;
   onFetched?: (
+    source: "official" | "community",
     entries: PluginRegistryEntry[],
-    fetchResult: RawFetchRegistryResult
   ) => void | Promise<void>;
 };
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
-  entries: PluginRegistryEntry[] = [];
+  private officialEntries: PluginRegistryEntry[] = [];
+  private communityEntries: PluginRegistryEntry[] = [];
+  private officialEntriesCached = false;
+  private communityEntriesCached = false;
   private repositories: Record<string, PluginRepository> = {};
 
   constructor(
@@ -22,37 +29,69 @@ export default class PluginRegistry {
     private readonly options?: PluginRegistryOptions
   ) {}
 
-  findEntryById(id: string) {
-    return this.entries.find((entry) => entry.id === id);
-  }
-
-  async fetch() {
-    log.info("Fetching registry...");
-
-    const registry = await this.repositoryService.fetchRegistry();
-
-    const core = registry.core.map<PluginRegistryEntry>((entry) => ({
-      ...entry,
-      metadata: {
-        origin: "core",
-      },
-    }));
-
-    const community = registry.community.map<PluginRegistryEntry>((entry) => ({
-      ...entry,
-      metadata: {
-        origin: "community",
-      },
-    }));
-
-    this.entries = core.concat(community);
-
-    // Call onFetched callback if provided
-    if (this.options?.onFetched) {
-      await this.options.onFetched(this.entries, registry);
+  async getEntries() {
+    try {
+      await Promise.all([
+        this.loadOfficialEntries(),
+        this.loadCommunityEntries(),
+      ]);
+    } catch (e) {
+      log.error("Failed to fetch registry", e);
+      throw e;
     }
 
-    return { errors: registry.errors }
+    return {
+      official: this.officialEntries,
+      community: this.communityEntries,
+    };
+  }
+
+  async findEntry(id: string): Promise<{
+    origin: PluginOrigin;
+    entry: PluginRegistryEntry;
+  }> {
+    const entries = await this.getEntries();
+    const official = entries.official.find((e) => e.id === id);
+    if (official) {
+      return { origin: "official", entry: official };
+    }
+    const community = entries.community.find((e) => e.id === id);
+    if (community) {
+      return { origin: "community", entry: community };
+    }
+    throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
+  }
+
+  private async loadOfficialEntries() {
+    if (this.officialEntriesCached) {
+      return;
+    }
+    log.debug("Fetching official entries...");
+    try {
+      const result = await this.repositoryService.fetchOfficial();
+      this.officialEntries = result;
+      this.officialEntriesCached = true;
+    } catch (e) {
+      this.options?.onFailedFetching?.("official", e);
+      throw e;
+    }
+    this.options?.onFetched?.("official", this.officialEntries);
+  }
+
+  private async loadCommunityEntries() {
+    if (this.communityEntriesCached) {
+      return;
+    }
+    log.debug("Fetching community entries...");
+    try {
+      const result = await this.repositoryService.fetchCommunity();
+      this.communityEntries = result;
+      this.communityEntriesCached = true;
+    } catch (e) {
+      this.options?.onFailedFetching?.("community", e);
+      throw e;
+    }
+    this.options?.onFetched?.("community", this.communityEntries);
   }
 
   /** Get the info for a specific plugin. The data is always cached. To force
@@ -65,10 +104,7 @@ export default class PluginRegistry {
   }
 
   async reloadRepository(pluginId: string): Promise<PluginRepository> {
-    const entry = this.findEntryById(pluginId);
-    if (!entry) {
-      throw new NotFoundPluginError(`Plugin "${pluginId}" not found in registry.`);
-    }
+    const { entry } = await this.findEntry(pluginId);
 
     log.debug(
       `Fetching info for plugin "${pluginId}" (repo: ${entry.repo})...`
@@ -89,7 +125,8 @@ export default class PluginRegistry {
   }
 
   clearCache() {
-    this.entries = [];
+    this.communityEntriesCached = false;
+    this.officialEntriesCached = false;
     this.repositories = {};
   }
 }

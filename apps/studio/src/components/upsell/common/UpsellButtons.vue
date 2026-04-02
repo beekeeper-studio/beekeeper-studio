@@ -59,9 +59,9 @@ export default {
     trialEndDate() {
       return this.trialLicense?.validUntil?.toDateString()
     },
-    // if we've never started a trail, it's available!
+    // Trial is only available if no licenses exist at all
     trialAvailable() {
-      return !this.trialLicense
+      return this.$store.getters['licenses/noLicensesFound']
     },
     trialExpired() {
       if (!this.trialLicense) return false

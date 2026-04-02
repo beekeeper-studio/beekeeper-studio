@@ -1,5 +1,9 @@
 name: Studio Tests
 
+permissions:
+  contents: read
+  actions: write
+
 on:
   # Trigger the workflow on push or pull request,
   # but only for the main branch
@@ -14,10 +18,10 @@ on:
       - apps/sqltools/**
 
 jobs:
-  setup:
+  prep:
     runs-on: ubuntu-24.04
     outputs:
-      test-chunks: ${{ steps['set-test-chunks'].outputs['test-chunks'] }}
+      test-chunks: ${{ steps.set-test-chunks.outputs.test-chunks }}
     steps:
       - name: 'Setup jq'
         uses: dcarbone/install-jq-action@v2
@@ -25,27 +29,62 @@ jobs:
           version: "1.7"
           force: true
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
       - id: set-test-chunks
         name: Set Chunks
-        run: echo "::set-output name=test-chunks::$(./bin/get-db-files-as-json.sh)"
-  unit:
-    name: Unit tests
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v2
+        run: echo "test-chunks=$(./bin/get-db-files-as-json.sh)" >> $GITHUB_OUTPUT
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
         env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    needs: [prep]
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          fail-on-cache-miss: true
 
       - name: Lint
         run: yarn workspace beekeeper-studio run lint
@@ -76,35 +115,36 @@ jobs:
     name: 🥞 ${{ matrix.chunk[0] }}
     runs-on: ubuntu-24.04
     needs:
-      - setup
+      - prep
     strategy:
       fail-fast: false
       matrix:
-        chunk: ${{ fromJson(needs.setup.outputs['test-chunks']) }}
+        chunk: ${{ fromJson(needs.prep.outputs['test-chunks']) }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
         run: sudo apt install libaio-dev
 
       - name: Symlink libaio v1 (for oracle)
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
-
-      - name: yarn install (with retry)
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 20
-          max_attempts: 3
-          command: "yarn install --frozen-lockfile --network-timeout 100000"
-        env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Test
         uses: nick-fields/retry@v2
@@ -143,21 +183,27 @@ jobs:
 
   e2e:
     name: E2E tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    needs: [prep]
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-        env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          fail-on-cache-miss: true
 
       - name: Start postgres container
         run: docker compose up psql15 -d

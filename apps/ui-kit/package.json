@@ -7,7 +7,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "private": false,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
@@ -106,7 +106,7 @@
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
     "ist": "^1.1.7",
-    "happy-dom": "^20.0.2",
+    "happy-dom": "^20.8.9",
     "lodash": "^4.17.23",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",

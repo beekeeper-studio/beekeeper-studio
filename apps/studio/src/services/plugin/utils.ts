@@ -53,4 +53,3 @@ export function convertToManifestV1(manifest: Manifest): ManifestV1 {
     },
   };
 }
-

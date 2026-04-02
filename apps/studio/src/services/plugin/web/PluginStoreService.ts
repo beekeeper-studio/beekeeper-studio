@@ -13,16 +13,15 @@ import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
-  ManifestV1 as Manifest,
+  Manifest,
   PluginMenuItem,
-  PluginRegistryEntry,
-  PluginSnapshot,
   PluginView,
   TabType,
   CreatePluginTabOptions,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
 
@@ -60,7 +59,7 @@ export default class PluginStoreService {
   }
 
   getTheme()  {
-    const styles = getComputedStyle(document.body);
+    const styles = getComputedStyle(this.getAppEl());
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
@@ -353,18 +352,6 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
-async loadSnapshots() {
-    await this.store.dispatch("plugins/snapshots/load");
-  }
-
-  getSnapshots() {
-    return this.store.state.plugins?.snapshots?.all ?? [];
-  }
-
-  async loadEntries() {
-    await this.store.dispatch("plugins/entries/load");
-  }
-
   buildPluginTabInit(
     options: CreatePluginTabOptions
   ): TransportOpenTabInit<PluginTabContext> {
@@ -377,7 +364,10 @@ async loadSnapshots() {
       title = `${options.manifest.name} #${tNum}`;
     } while (tabItems.filter((t) => t.title === title).length > 0);
 
-    const view = options.manifest.capabilities.views.find((v) => v.id === options.viewId);
+    const views = isManifestV0(options.manifest)
+      ? mapViewsAndMenuFromV0ToV1(options.manifest).views
+      : options.manifest.capabilities.views;
+    const view = views.find((v) => v.id === options.viewId);
     const tabType: PluginTabType = view.type.includes("shell")
       ? "plugin-shell"
       : "plugin-base";
@@ -393,5 +383,9 @@ async loadSnapshots() {
         command: options.command,
       },
     };
+  }
+
+  private getAppEl() {
+    return document.body.querySelector('.beekeeper-studio-wrapper');
   }
 }
