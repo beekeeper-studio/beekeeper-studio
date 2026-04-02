@@ -15,6 +15,7 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
 
 const log = rawLog.scope("PluginManager");
@@ -35,10 +36,6 @@ export default class PluginManager extends Hookable {
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
-  /** This is a list of plugins that are preinstalled by default. When the
-   * application starts, these plugins will be installed automatically. The user
-   * should be able to uninstall them later. */
-  static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell", "bks-er-diagram"];
 
   constructor(readonly options: PluginManagerOptions) {
     super();
@@ -54,34 +51,30 @@ export default class PluginManager extends Hookable {
       return;
     }
 
+    // FIXME: Migrate to full ini file configuration
+    await this.loadPluginSettings();
+
+    await this.callHook("before-initialize");
+
     const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
+
     this.manifests = installedPlugins;
 
     log.debug("Installed plugins:", installedPlugins);
 
-    await this.loadPluginSettings();
-
     this.initialized = true;
 
-    for (const id of PluginManager.PREINSTALLED_PLUGINS) {
-      // have installed before?
-      if (this.pluginSettings[id]) {
+    for (const plugin of installedPlugins) {
+      if (!this.pluginSettings[plugin.id]?.autoUpdate) {
         continue;
       }
 
-      await this.installPlugin(id);
-    }
-
-
-    for (const plugin of installedPlugins) {
-      if (this.pluginSettings[plugin.id]?.autoUpdate) {
-        try {
-          if (await this.checkForUpdates(plugin.id)) {
-            await this.updatePlugin(plugin.id);
-          }
-        } catch (e) {
-          log.error(`Failed to update plugin ${plugin.id}`, e);
+      try {
+        if (await this.checkForUpdates(plugin.id)) {
+          await this.updatePlugin(plugin.id);
         }
+      } catch (e) {
+        log.error(`Failed to check for updates for plugin "${plugin.id}"`, e);
       }
     }
   }
@@ -309,7 +302,11 @@ export default class PluginManager extends Hookable {
    * Enable or disable automatic update checks for a specific plugin
    */
   async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
-    this.pluginSettings[id].autoUpdate = enabled;
+    if (!this.pluginSettings[id]) {
+      this.pluginSettings[id] = { autoUpdate: enabled };
+    } else {
+      this.pluginSettings[id].autoUpdate = enabled;
+    }
     // Persist the changes to the database
     await this.savePluginSettings();
   }

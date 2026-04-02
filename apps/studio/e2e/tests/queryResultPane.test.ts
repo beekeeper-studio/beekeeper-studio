@@ -25,7 +25,9 @@ test.describe("Result Pane Verifications", () => {
     });
 
     afterEach(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test("clicks on results columns", async () => {

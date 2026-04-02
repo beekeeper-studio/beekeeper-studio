@@ -2,6 +2,7 @@
 declare interface IBksConfig {
     azure: {
         azSQLLoginScope: string;
+        ssoPrompt: string;
     };
     db: {
         bigquery: {
@@ -71,7 +72,6 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
-        default_parsed: any;
         duckdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
@@ -94,6 +94,21 @@ declare interface IBksConfig {
             paramTypes: {
                 named: any[];
                 numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        greengage: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            connectionTimeout: number;
+            idleTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: string[];
                 positional: boolean;
                 quoted: any[];
             };
@@ -289,6 +304,7 @@ declare interface IBksConfig {
         };
     };
     general: {
+        checkForUpdatesDisabled: boolean;
         checkForUpdatesInterval: number;
         dataSyncInterval: number;
         workspaceSyncInterval: number;
@@ -302,8 +318,10 @@ declare interface IBksConfig {
             openInSqlEditor: string;
             openQuickSearch: string;
             pasteSelection: string;
+            redo: string[];
             refresh: string[];
             save: string;
+            undo: string;
         };
         queryEditor: {
             closeTableFilter: string;
@@ -332,6 +350,7 @@ declare interface IBksConfig {
         };
         tab: {
             closeTab: string;
+            forceCloseTab: string;
             nextTab: string[];
             previousTab: string[];
             reopenLastClosedTab: string;

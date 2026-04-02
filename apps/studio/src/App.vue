@@ -3,6 +3,7 @@
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
+      :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }"
     >
       <titlebar />
       <template v-if="storeInitialized">
@@ -32,10 +33,12 @@
     <workspace-sign-in-modal />
     <workspace-create-modal />
     <workspace-rename-modal />
+    <workspace-delete-modal />
     <import-queries-modal />
     <import-connections-modal />
-    <plugin-controller />
+    <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
+    <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <util-died-modal />
@@ -60,6 +63,7 @@ import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vu
 
 import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
 import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
+import WorkspaceDeleteModal from '@/components/data/WorkspaceDeleteModal.vue'
 import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
@@ -79,6 +83,7 @@ import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExp
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
+import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 
@@ -95,8 +100,8 @@ export default Vue.extend({
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
-    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager,
+    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
+    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
   },
   data() {
     return {
@@ -120,7 +125,10 @@ export default Vue.extend({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
       'themeValue': 'settings/themeValue',
-    })
+    }),
+    editorFontSize() {
+      return this.$store.state.settings?.settings?.editorFontSize?.value || 14
+    }
   },
   watch: {
     database() {

@@ -11,6 +11,9 @@ import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
+import { QueryFolder } from "@/common/appdb/models/QueryFolder";
+import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
+import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
@@ -169,6 +172,8 @@ export const AppDbHandlers = {
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
+  ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
+  ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

@@ -72,13 +72,27 @@ sudo yum install beekeeper-studio
 
 Pacman (installed as local packages using `pacman -U`) packages are provided for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
 
-Real AUR integration coming soon.
+There are also several options in the AUR. The Beekeeper Studio Team maintain the [beekeeper-studio-appimage](https://aur.archlinux.org/packages/beekeeper-studio-appimage) and [beekeeper-studio-bin](https://aur.archlinux.org/packages/beekeeper-studio-bin) packages.
+
+These can be installed with your favourite AUR helper like so:
+```bash
+paru -S beekeeper-studio-appimage
+# Or
+paru -S beekeeper-studio-bin
+```
 
 ## Flatpak
 
 Flatpak (.flatpak) files are provided separately for both x86_64 and ARM64 systems, you can download them from [the latest release](https://github.com/beekeeper-studio/beekeeper-studio).
 
 Flathub integration coming soon.
+
+!!! note "SQLite file access"
+    Flatpak sandboxes file access by default. If you need to open SQLite databases outside the sandbox, grant filesystem access with:
+    ```bash
+    sudo flatpak override io.beekeeperstudio.Studio --filesystem=host
+    ```
+    See [Troubleshooting](../support/troubleshooting.md#i-get-permission-denied-or-unable-to-open-database-file-when-trying-to-access-a-sqlite-database) for more details.
 
 ## Snap
 

@@ -50,8 +50,8 @@
         </div>
       </div>
     </common-server-inputs>
-    <common-advanced v-show="!azureAuthEnabled" :config="config" />
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
+    <common-advanced v-show="!azureAuthEnabled" :config="config" />
   </div>
 </template>
 
@@ -76,7 +76,6 @@
         azureAuthEnabled: false,
         authType: 'default',
         authTypes: AzureAuthTypes,
-        accountName: null
       }
     },
     watch: {

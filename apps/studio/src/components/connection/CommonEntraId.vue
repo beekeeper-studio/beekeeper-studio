@@ -23,12 +23,7 @@
           Azure CLI Path (az)
           </label
         >
-        <input
-          name="cliPath"
-          type="text"
-          class="form-control"
-          v-model="config.azureAuthOptions.cliPath"
-        />
+        <file-picker v-model="config.azureAuthOptions.cliPath"/>
         <div class="alert alert-danger" v-show="!cliFound">
           <i class="material-icons-outlined">warning</i>
           <div>
@@ -49,7 +44,7 @@
             style="padding-left: 0.25rem"
             v-tooltip="{
               content:
-                'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
+                'This is the <code>\'Server name\'</code> field on your database in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
               html: true,
             }"
             >help_outlined</i
@@ -84,6 +79,15 @@
             Sign out
           </button>
         </div>
+      </div>
+      <div class="form-group" v-show="showUser">
+        <label for="user">User</label>
+        <input
+          name="user"
+          type="text"
+          class="form-control"
+          v-model="config.username"
+        >
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="tenantId">
@@ -131,12 +135,24 @@ import { AzureAuthType } from "@/lib/db/types";
 import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import CommonSsl from './CommonSsl.vue'
+import { mapState, mapGetters } from 'vuex'
+import FilePicker from '@/components/common/form/FilePicker.vue'
 
 export default {
-  props: ["config", "authType"],
+  props: {
+    config: Object,
+    authType: [String, Number],
+    sslHelp: String,
+    supportComplexSSL: {
+      type: Boolean,
+      default: true
+    }
+  },
   components: {
     MaskedInput,
+    CommonSsl,
+    FilePicker
   },
   data() {
     return {
@@ -149,7 +165,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     ...mapState(['connection']),
     toggleClientSecretIcon() {
       return this.showClientSecret ? "visibility_off" : "visibility"
@@ -215,14 +231,14 @@ export default {
         try {
           const result = await this.$util.send('backup/whichDumpTool', {toolName: "az"});
           if (result) {
-            this.config.azureAuthOptions.cliPath = result;
+            this.$set(this.config.azureAuthOptions, 'cliPath', result);
             this.cliError = false;
           } else {
-            this.config.azureAuthOptions.cliPath = null;
+            this.$set(this.config.azureAuthOptions, 'cliPath', null);
             this.cliError = true;
           }
         } catch (e) {
-          this.config.azureAuthOptions.cliPath = null;
+          this.$set(this.config.azureAuthOptions, 'cliPath', null);
           this.cliError = true;
         }
       }

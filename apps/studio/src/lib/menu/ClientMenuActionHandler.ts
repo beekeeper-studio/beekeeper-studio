@@ -56,11 +56,17 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   checkForUpdates = () => send('checkForUpdates')
   importSqlFiles = () => send('importSqlFiles')
   toggleMinimalMode = () => send('toggleMinimalMode')
+  togglePrivacyMode = () => send('togglePrivacyMode')
   switchLicenseState = (_menuItem, _win, type) => send('switchLicenseState', type)
+  simulatePlatform = (_menuItem, _win, platform) => send('simulatePlatform', platform)
   toggleBeta = (menuItem) => {
     send('toggleBeta', menuItem);
   }
   updatePin = () => send('updatePin')
   managePlugins = () => send("managePlugins")
+  keyboardShortcuts = () => send("keyboardShortcuts")
   handleAction = (action: CustomMenuAction) => send('handleAction', action)
+  editorFontSizeReset = () => send('editorFontSizeReset')
+  editorFontSizeIncrease = () => send('editorFontSizeIncrease')
+  editorFontSizeDecrease = () => send('editorFontSizeDecrease')
 }

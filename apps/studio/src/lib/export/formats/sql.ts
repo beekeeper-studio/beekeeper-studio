@@ -68,6 +68,13 @@ export class SqlExporter extends Export {
 
   formatRow(rowArray: any[], columns: TableColumn[] = []): string {
     const sanitized = rowArray.map((val, idx) => {
+      // Handle bit columns - convert booleans and buffers to 0/1
+      // https://github.com/beekeeper-studio/beekeeper-studio/issues/3673
+      if (columns[idx]?.dataType?.match(/^bit\b/i)) {
+        if (val === null || val === undefined) return val
+        if (Buffer.isBuffer(val)) return val[0] ? 1 : 0
+        return val ? 1 : 0
+      }
       // error found when attemping to copy over an array into a JSON field https://github.com/beekeeper-studio/beekeeper-studio/issues/1647
       // which is an issue with Knex itself https://github.com/knex/knex/issues/5430
       if (columns[idx]?.dataType.startsWith('json') && Array.isArray(val)) {

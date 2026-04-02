@@ -39,7 +39,9 @@ test.describe("Copy Results Verifications", () => {
     });
 
     afterEach(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test("copy as TSV / Excel", async () => {

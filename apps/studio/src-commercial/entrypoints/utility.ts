@@ -29,6 +29,7 @@ import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
 import bksConfig from '@/common/bksConfig'
+import { BundledPluginModule } from '@commercial/backend/plugin-system/modules/BundledPluginModule';
 
 import * as sms from 'source-map-support'
 import bindLicenseConstraints from '@commercial/backend/plugin-system/hooks/licenseConstraints';
@@ -45,6 +46,7 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
+pluginManager.registerModule(BundledPluginModule);
 
 interface Reply {
   id: string,

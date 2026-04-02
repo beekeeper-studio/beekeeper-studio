@@ -2,6 +2,7 @@ import type PluginManager from "./PluginManager";
 import type { PluginSnapshot } from "./types";
 
 export interface ModuleHookMap {
+  "before-initialize": () => void | Promise<void>;
   "before-install-plugin": (pluginId: string) => void | Promise<void>;
   "plugin-snapshots": (snapshots: PluginSnapshot[]) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
 }

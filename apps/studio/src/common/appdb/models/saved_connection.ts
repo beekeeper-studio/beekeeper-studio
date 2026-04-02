@@ -1,4 +1,4 @@
-import { Entity, Column, BeforeInsert, BeforeUpdate } from "typeorm"
+import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
@@ -8,6 +8,7 @@ import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
+import { ConnectionFolder } from './ConnectionFolder'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
@@ -78,6 +79,7 @@ export class DbConnectionBase extends ApplicationEntity {
         port = 4000
         break
       case 'postgresql':
+      case 'greengage':
         port = 5432
         break
       case 'sqlserver':
@@ -134,7 +136,7 @@ export class DbConnectionBase extends ApplicationEntity {
   public get defaultSocketPath(): Nullable<string> {
     if (['mysql', 'mariadb'].includes(this.connectionType || '')) {
       return '/var/run/mysqld/mysqld.sock'
-    } else if (this.connectionType === 'postgresql') {
+    } else if (['postgresql', 'greengage'].includes(this.connectionType || '')) {
       return '/var/run/postgresql'
     } else if (this.connectionType === 'tidb') {
       return '/tmp/tidb.sock'
@@ -167,7 +169,7 @@ export class DbConnectionBase extends ApplicationEntity {
   sshHost: Nullable<string> = null
 
   @Column({ type: "int", nullable: true })
-  sshPort = 22
+  sshPort: Nullable<number> = null
 
   @Column({ type: "varchar", nullable: true })
   sshKeyfile: Nullable<string> = null
@@ -177,6 +179,18 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'varchar', nullable: true })
   sshBastionHost: Nullable<string> = null
+
+  @Column({ type: 'int', nullable: true })
+  sshBastionHostPort: Nullable<number> = null
+
+  @Column({ type: 'varchar', length: 8, nullable: false, default: 'agent' })
+  sshBastionMode: SshMode = 'agent'
+
+  @Column({ type: 'varchar', nullable: true })
+  sshBastionUsername: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true })
+  sshBastionKeyfile: Nullable<string> = null
 
   @Column({ type: 'int', nullable: true })
   sshKeepaliveInterval: Nullable<number> = 60
@@ -283,6 +297,19 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({type: 'boolean', default: false})
   readOnlyMode = false
 
+  @Column({ type: 'integer', nullable: true, default: null })
+  connectionFolderId: Nullable<number> = null
+
+  @Column({ type: 'float', nullable: false, default: 0 })
+  position = 0.0
+
+  // Do NOT initialize this to null. A null initializer becomes an own property
+  // that gets copied into transport objects by cls.merge(), and TypeORM treats an
+  // explicitly-null relation as "unset this FK", overriding the connectionFolderId column.
+  @ManyToOne(() => ConnectionFolder, (folder) => folder.connections, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'connectionFolderId' })
+  connectionFolder?: ConnectionFolder
+
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 
@@ -291,6 +318,12 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
 
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
+  sshBastionPassword: Nullable<string> = null
+
+  @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
+  sshBastionKeyfilePassword: Nullable<string> = null
 
   _sshMode: SshMode = "agent"
 
@@ -355,8 +388,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         const credentials = url.substring(firstDoubleSlash, lastAtIndex)
 
         const [user, ...passwordParts] = credentials.split(':')
-        extractedUser = user
-        extractedPassword = passwordParts.join(':')
+        extractedUser = decodeURIComponent(user)
+        extractedPassword = decodeURIComponent(passwordParts.join(':'))
 
         cleanedUrl = url.substring(0, firstDoubleSlash) + url.substring(lastAtIndex + 1)
       }
@@ -383,6 +416,15 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       if (parsed.params?.sslmode && parsed.params.sslmode !== 'disable') {
         this.ssl = true
       }
+
+      if (cleanedUrl.startsWith('https://')) {
+        this.ssl = true
+      }
+
+      if (parsed.params?.TrustServerCertificate && parsed.params.TrustServerCertificate === 'true') {
+        this.trustServerCertificate = true
+      }
+
       this.host = parsed.hostname || this.host
       this.port = parsed.port || this.port
       this.username = extractedUser ?? parsed.user
@@ -410,6 +452,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       this.password = null
       this.sshPassword = null
       this.sshKeyfilePassword = null
+      this.sshBastionPassword = null
+      this.sshBastionKeyfilePassword = null
     }
   }
 
