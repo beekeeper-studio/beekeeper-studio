@@ -7,11 +7,6 @@ import globals from "@/common/globals";
 /**
  * Enforces license-based limitations on plugin installation and activation.
  *
- * License tiers and limits:
- * - Pro+: Unlimited plugins
- * - Indie: Max 5 plugins (any type)
- * - Free: Max 2 community plugins, no core plugins
- *
  * @example
  *
  * ```ts

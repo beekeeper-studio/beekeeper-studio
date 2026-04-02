@@ -81,11 +81,11 @@ import fixMissingExcerpts from './20251222_fix_missing_excerpts'
 import addWindowMaximizedSetting from './20251021_add_window_maximized_setting'
 import addIamAuthOptions from './20250819_add_iamAuthOptions'
 import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_options'
-import createPluginEntries from './20251219_create_plugin_entries'
 import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
 import addBastionAuth from './20260324_add_bastion_auth'
+import createPluginEntries from './20260402_create_plugin_entries'
 
 import ultimate from './ultimate/index'
 

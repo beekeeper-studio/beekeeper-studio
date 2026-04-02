@@ -29,11 +29,13 @@ import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
 import bksConfig from '@/common/bksConfig'
-import { BundledPluginModule } from '@commercial/backend/plugin-system/modules/BundledPluginModule';
+import {
+  BundledPluginModule,
+  LicenseModule,
+  ConfigurationModule,
+} from '@commercial/backend/plugin-system/modules';
 
 import * as sms from 'source-map-support'
-import bindLicenseConstraints from '@commercial/backend/plugin-system/hooks/licenseConstraints';
-import bindIniConfig from '@commercial/backend/plugin-system/hooks/iniConfig';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -47,6 +49,8 @@ const pluginManager = new PluginManager({
   }),
 });
 pluginManager.registerModule(BundledPluginModule);
+pluginManager.registerModule(ConfigurationModule.with({ config: bksConfig }));
+pluginManager.registerModule(LicenseModule);
 
 interface Reply {
   id: string,
@@ -174,8 +178,6 @@ async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
 
-  bindIniConfig(pluginManager, bksConfig);
-  bindLicenseConstraints(pluginManager);
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
   });
