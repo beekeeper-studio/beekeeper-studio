@@ -2,7 +2,7 @@
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
 import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request, Transaction } from 'mssql'
-import { identify, StatementType } from 'sql-query-identifier'
+import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'

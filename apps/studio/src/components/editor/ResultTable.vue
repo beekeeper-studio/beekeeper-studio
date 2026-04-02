@@ -566,8 +566,19 @@
         return firstObjectOnly ? result[0] : result
       },
       rebuildColumns() {
+        const el = this.$el.querySelector('.tabulator-tableholder');
+        const scrollTop = el?.scrollTop;
+        const scrollLeft = el?.scrollLeft;
         const newColumns = this.tableColumns;
         this.tabulator.setColumns(newColumns);
+
+        this.$nextTick().then(() => {
+          // just in case
+          if (el) {
+            el.scrollTop = scrollTop
+            el.scrollLeft = scrollLeft
+          }
+        })
       },
       resetPendingChanges() {
         this.pendingChanges = {
