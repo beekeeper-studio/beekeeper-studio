@@ -434,7 +434,6 @@ export default {
     }),
     ...mapState(['workspaceId', 'sharedQueryLink', 'connected']),
     ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'}),
-    ...mapState('settings', ['privacyMode']),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
