@@ -1336,9 +1336,16 @@
       },
       async submitCurrentQuery() {
         if(this.running) return;
+        this.runningType = 'current'
         if (this.currentlySelectedQuery) {
-          this.runningType = 'current'
-          await this.submitQuery(this.currentlySelectedQuery.text)
+          return await this.submitQuery(this.currentlySelectedQuery.text)
+        }
+
+        const queries = identify(this.unsavedText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        if (queries.length > 0) {
+          this.individualQueries = queries
+          this.currentlySelectedQuery = queries[0]
+          return await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
