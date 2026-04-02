@@ -34,6 +34,7 @@ import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
+import { SharedQueryLink } from '@/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
@@ -48,13 +49,6 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
   return t2.name === t.name &&
     t2.schema === t.schema &&
     t2.entityType === t.entityType
-}
-
-
-export interface SharedQueryLink {
-  databaseId: Nullable<string|number>,
-  queryId: Nullable<string|number>,
-  workspaceId: Nullable<string|number>
 }
 
 export interface State {
@@ -445,7 +439,14 @@ const store = new Vuex.Store<State>({
 
     async openSharedQuery(context, { db, query }: { db: string, query: string }) {
       try {
-        const { databaseId, queryId, workspaceId } = await Vue.prototype.$util.send('appdb/share-query', { db, query });
+        const [cloudClient] = context.getters['credentials/clients']
+
+        const response = await cloudClient.axios.get('/queries/open-from-share', {
+          params: { database: db, query }
+        })
+
+        const { databaseId, queryId, workspaceId } = response.data
+
         context.commit('sharedQueryLink', { databaseId, queryId, workspaceId })
       } catch (e){
         log.error(e)
