@@ -196,18 +196,18 @@
             Save
           </x-button>
 
-          <x-buttons class="">
+          <x-buttons class="" v-tooltip="runButtonTooltip">
             <x-button
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
-              :disabled="this.tab.isRunning || running"
+              :disabled="runButtonDisabled"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
-              :disabled="this.tab.isRunning || running"
+              :disabled="runButtonDisabled"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -709,6 +709,26 @@
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
+      },
+      runButtonTooltip() {
+        if (this.tab.isRunning || this.running) {
+          return "Query is already running."
+        } else if (this.editingResult && this.changesCount > 0) {
+          return "Discard or apply your changes to run queries";
+        } else {
+          return null
+        }
+      },
+      runButtonDisabled() {
+        return this.tab.isRunning ||
+          this.running ||
+          (this.editingResult && this.changesCount > 0);
+      },
+      changesCount() {
+        return this.$refs.table?.pendingChangesCount;
+      },
+      pendingChangesString() {
+        return this.$refs.table?.pendingChangesString;
       },
       resultEditData() {
         return this.resultsEditData[this.selectedResult]
@@ -1299,6 +1319,8 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
+        if (this.runButtonDisabled) return;
+
         // run the currently hilighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
@@ -1311,6 +1333,8 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
+        if (this.runButtonDisabled) return;
+
         // run the currently selected query (if there are multiple) to a file, else all sql
         const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
@@ -1319,7 +1343,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if(this.running) return;
+        if (this.runButtonDisabled) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
           await this.submitQuery(this.currentlySelectedQuery.text)
@@ -1329,7 +1353,7 @@
         }
       },
       async submitTabQuery() {
-        if(this.running) return;
+        if (this.runButtonDisabled) return;
         const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
