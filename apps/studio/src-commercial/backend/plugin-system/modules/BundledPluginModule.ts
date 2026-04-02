@@ -5,7 +5,7 @@ import platformInfo from "@/common/platform_info";
 import globals from "@/common/globals";
 import { Module, type ModuleOptions } from "@/services/plugin/Module";
 
-const log = rawLog.scope("BundledPluginModule");
+const log = rawLog.scope("PluginSystem/BundledPluginModule");
 
 /**
  * A plugin system module that copies bundled plugins from node_modules (dev)

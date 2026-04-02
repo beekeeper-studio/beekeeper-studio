@@ -4,12 +4,7 @@ import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
 import fs from 'fs'
-
-// NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
-const ensureInstalled = [
-  "@beekeeperstudio/bks-ai-shell",
-  "@beekeeperstudio/bks-er-diagram",
-];
+import globals from "./src/common/globals.js"
 
 const isWatching = process.argv[2] === 'watch';
 
@@ -36,7 +31,7 @@ const externals = ['better-sqlite3', 'sqlite3',
         'pg-query-stream', 'electron', '@duckdb/node-api',
         '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
         'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos',
-        ...ensureInstalled,
+        ...globals.plugins.ensureInstalled,
       ]
 
 let electron = null

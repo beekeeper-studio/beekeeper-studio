@@ -11,6 +11,9 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { createLicense } from "@tests/utils";
 import { LicenseModule } from "@commercial/backend/plugin-system/modules";
+import { BundledPluginModule } from "@commercial/backend/plugin-system/modules/BundledPluginModule";
+import fs from "fs";
+import path from "path";
 
 describe("Plugin License Constraints", () => {
   const server = createPluginServer();
@@ -171,6 +174,87 @@ describe("Plugin License Constraints", () => {
       await manager.installPlugin("community-plugin-5");
 
       expect.anything();
+    });
+  });
+
+  describe("Offline Activation", () => {
+    // Simulate offline: empty registry so findEntry falls back to bundled detection
+    const offlineService = new MockPluginRepositoryService(createPluginServer());
+    const offlineRegistry = new PluginRegistry(offlineService);
+
+    beforeEach(async () => {
+      offlineService.plugins = [];
+      offlineRegistry.clearCache();
+
+      // Copy bundled plugins directly to disk (no registry/download needed)
+      fs.cpSync(
+        BundledPluginModule.resolve("@beekeeperstudio/bks-ai-shell"),
+        path.join(fileManager.options.pluginsDirectory, "bks-ai-shell"),
+        { recursive: true }
+      );
+      fs.cpSync(
+        BundledPluginModule.resolve("@beekeeperstudio/bks-er-diagram"),
+        path.join(fileManager.options.pluginsDirectory, "bks-er-diagram"),
+        { recursive: true }
+      );
+    });
+
+    it("free users - bundled official plugins are detected and disabled offline", async () => {
+      const manager = new PluginManager({
+        appVersion: "9.9.9",
+        registry: offlineRegistry,
+        fileManager,
+      });
+      manager.registerModule(LicenseModule);
+      await manager.initialize();
+
+      const snapshots = await manager.getPlugins();
+      const plugins = snapshots.map((p: any) => ({
+        id: p.manifest.id,
+        disableState: p.disableState,
+      }));
+
+      expect(plugins).toStrictEqual([
+        {
+          id: "bks-ai-shell",
+          disableState: {
+            disabled: true,
+            reason: "disabled-by-license",
+            detail: { cause: "valid-license-required" },
+          },
+        },
+        {
+          id: "bks-er-diagram",
+          disableState: {
+            disabled: true,
+            reason: "disabled-by-license",
+            detail: { cause: "valid-license-required" },
+          },
+        },
+      ]);
+    });
+
+    it("pro+ users - bundled official plugins are enabled offline", async () => {
+      await createLicense({ licenseType: "BusinessLicense" });
+
+      const manager = new PluginManager({
+        appVersion: "9.9.9",
+        registry: offlineRegistry,
+        fileManager,
+      });
+      manager.registerModule(LicenseModule);
+      await manager.initialize();
+
+      const snapshots = await manager.getPlugins();
+      const plugins = snapshots.map((p: any) => ({
+        id: p.manifest.id,
+        disableState: p.disableState,
+      }));
+
+      expect(plugins).toStrictEqual([
+        { id: "bks-ai-shell", disableState: { disabled: false } },
+        { id: "bks-er-diagram", disableState: { disabled: false } },
+      ]);
     });
   });
 

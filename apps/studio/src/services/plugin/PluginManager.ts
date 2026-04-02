@@ -16,6 +16,7 @@ import semver from "semver";
 import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
+import globals from "@/common/globals";
 
 const log = rawLog.scope("PluginManager");
 
@@ -23,14 +24,12 @@ export type PluginManagerOptions = {
   fileManager?: PluginFileManager;
   registry?: PluginRegistry;
   appVersion: string;
-  /** This is triggered when registry module fails to fetch during initialization, e.g. if the app runs in offline. */
-  initialRegistryFallback?: () => Promise<PluginRegistryEntry[]>;
 }
 
 export default class PluginManager extends Hookable {
   private initialized = false;
   public readonly registry: PluginRegistry;
-  private fileManager: PluginFileManager;
+  fileManager: PluginFileManager;
   private manifests: Manifest[] = [];
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
@@ -63,21 +62,6 @@ export default class PluginManager extends Hookable {
 
     log.debug("Installed plugins:", installedPlugins);
 
-<<<<<<< HEAD
-    await this.loadPluginSettings();
-
-    const { errors } = await this.registry.fetch();
-    if (errors.core || errors.community) {
-      // TODO show errors to user?
-      log.error("Failed to fetch plugin registry", errors);
-      if (this.options.initialRegistryFallback) {
-        const entries = await this.options.initialRegistryFallback();
-        this.registry.entries = entries;
-      }
-    }
-
-=======
->>>>>>> feat/plugin-system-limits
     this.initialized = true;
 
     for (const plugin of installedPlugins) {
@@ -139,8 +123,11 @@ export default class PluginManager extends Hookable {
         origin = found.origin;
       } catch (e) {
         if (e instanceof NotFoundPluginError) {
-          // There's nothing wrong if the plugin is not found in the registry.
-          // It may be a local plugin.
+          // Plugin not in registry — check if it's a bundled official plugin
+          // (e.g. when offline and the registry is unavailable).
+          if (this.isBundledPlugin(manifest.id)) {
+            origin = "official";
+          }
         } else {
           // Else, it might be a real error
           log.error(e);
@@ -156,6 +143,20 @@ export default class PluginManager extends Hookable {
     }
 
     return await this.applyHook("plugin-snapshots", snapshots);
+  }
+
+  private isBundledPlugin(id: string): boolean {
+    for (const pkg of globals.plugins.ensureInstalled) {
+      try {
+        const manifest = require(`${pkg}/manifest.json`);
+        if (manifest.id === id) {
+          return true;
+        }
+      } catch (e) {
+        log.debug(`Manifest for ${pkg} is not found`, e);
+      }
+    }
+    return false;
   }
 
   /** Plugin is not loadable if the **current app version** is lower than the
