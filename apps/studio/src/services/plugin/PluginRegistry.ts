@@ -13,7 +13,7 @@ export default class PluginRegistry {
   private communityEntriesCached = false;
   private repositories: Record<string, PluginRepository> = {};
 
-  constructor(private readonly repositoryService: PluginRepositoryService) { }
+  constructor(private readonly repositoryService: PluginRepositoryService) {}
 
   async getEntries() {
     try {
