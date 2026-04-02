@@ -272,6 +272,7 @@
         ref="table"
         v-else-if="showResultTable"
         :editData="resultEditData"
+        :editingData="editingResult"
         :focus="focusingElement === 'table'"
         :active="active"
         :table-height="tableHeight"

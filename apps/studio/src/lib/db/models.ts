@@ -270,6 +270,7 @@ export interface FieldEditData {
   isPK?: boolean;
   generated?: boolean;
   readOnlyReason?: FieldReadOnlyReason;
+  dataType?: string;
 }
 
 export interface FieldDescriptor {

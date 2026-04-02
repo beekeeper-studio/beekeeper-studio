@@ -288,7 +288,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         linkedTable: table.name,
         linkedSchema: table.schema,
         isPK: false,
-        generated: tableColumn.generated
+        generated: tableColumn.generated,
+        dataType: tableColumn.dataType,
       };
 
       if (table?.isEditable) {

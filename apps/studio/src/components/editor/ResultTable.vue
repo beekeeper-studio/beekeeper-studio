@@ -103,6 +103,7 @@
     props: {
       result: Object as PropType<NgQueryResult>,
       editData: Map as PropType<Map<string, FieldEditData>>,
+      editingData: Boolean,
       tableHeight: Number,
       query: Object,
       active: Boolean,
@@ -252,18 +253,20 @@
             },
           }
 
-          // TEMP (@day): we can possibly do better if we get datatypes
-          const ne = vueEditor(NullableInputEditorVue);
+          const editorType = this.editorType(editData?.dataType);
 
           const result = {
             ...defaults,
             title,
-            titleFormatter() {
-              return `<span class="title">${escapeHtml(title)}</span>`
+            titleFormatter: this.headerFormatter,
+            titleFormatterParams: {
+              columnName: title,
+              dataType: editData?.dataType,
+              generated: editData?.generated
             },
             field: column.id,
             titleDownload: escapeHtml(column.name),
-            dataType: column.dataType,
+            dataType: editData?.dataType,
             width: columnWidth,
             mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
             formatter: this.cellFormatter,
@@ -274,8 +277,8 @@
             headerMenu: columnMenu,
             resizable: 'header',
             cssClass,
-            editable: editData?.editable ?? false,
-            editor: ne,
+            editable: this.cellEditCheck,
+            editor: editorType,
             ...magicStuff
           }
 
@@ -366,6 +369,41 @@
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
+      },
+      headerFormatter(_cell, formatterParams) {
+        const { columnName, dataType } = formatterParams
+        const dataTypeStr = dataType ? `<span class="badge column-data-type">${escapeHtml(dataType)}</span>` : '';
+        return `
+          <span class="title">
+            ${escapeHtml(columnName)}
+            ${dataTypeStr}
+          </span>
+        `;
+      },
+      editorType(dataType: string) {
+        const ne = vueEditor(NullableInputEditorVue)
+
+        switch (dataType?.toLowerCase() ?? '') {
+          case 'text':
+          case 'json':
+          case 'jsonb':
+          case 'tsvector':
+            return 'textarea'
+          case 'bool':
+          case 'boolean':
+            return 'list'
+          default: return ne
+        }
+      },
+      cellEditCheck(cell: CellComponent): boolean {
+        if (!this.editingData) return false
+
+        const fieldEditData: FieldEditData = this.editData?.get(cell.getField());
+        if (!fieldEditData) {
+          return false;
+        }
+
+        return fieldEditData.editable;
       },
       cellEdited(cell: CellComponent) {
         const fieldEditData: FieldEditData = this.editData?.get(cell.getField());
