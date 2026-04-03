@@ -8303,10 +8303,10 @@ electron-util@^0.14.1:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@39.5.2:
-  version "39.5.2"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-39.5.2.tgz#d8d0ebfbcb7d85b1c98ded5ba8c17b23198396c2"
-  integrity sha512-EiGFKoTjCuJTsdNxSwOiKJvRbWOFHTmqnnVftpUUZf7rdMkvM6yn9i55uLNDKefvTE69M+vfMgGLa7HuY94WZg==
+electron@39.8.3:
+  version "39.8.3"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-39.8.3.tgz#60ed01d2281b9a4782e4498c54c4d86f19452eab"
+  integrity sha512-ZhetvWz2qbI2WbBHdK/utR8I5bi1pYWJdit9tP0sGzs42CpsAFyu/FirXE88NWSh+3U8X6Wuf9jjDEYvAyrxNw==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^22.7.7"
