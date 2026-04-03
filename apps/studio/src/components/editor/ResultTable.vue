@@ -303,10 +303,10 @@
         if (classTracker.edited && _.isSet(classTracker.edited)) {
           this.setClassForCells(row, classTracker.edited, 'edited', hasReset);
         }
-        if (classTracker.edited && _.isSet(classTracker.editError)) {
+        if (classTracker.editError && _.isSet(classTracker.editError)) {
           this.setClassForCells(row, classTracker.editError, 'edit-error', hasReset);
         }
-        if (classTracker.edited && _.isSet(classTracker.editSuccess)) {
+        if (classTracker.editSuccess && _.isSet(classTracker.editSuccess)) {
           this.setClassForCells(row, classTracker.editSuccess, 'edit-success', hasReset);
         }
       },

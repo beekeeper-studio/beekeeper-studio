@@ -31,6 +31,9 @@ interface MockRow {
   getCells: jest.Mock
   getCell: jest.Mock
   update: jest.Mock
+  reformat: jest.Mock
+  getData: jest.Mock
+  _data: Record<string, any>
 }
 
 interface MockCell {
@@ -51,6 +54,9 @@ interface MockTabulator {
   redraw: jest.Mock
 }
 
+// The class tracker structure used in the internalClassTrackerColumn:
+// { edited: Set<string>, editError: Set<string>, editSuccess: Set<string> }
+
 // ---------------------------------------------------------------------------
 // Mock Factories
 // ---------------------------------------------------------------------------
@@ -59,11 +65,17 @@ function createMockElement(): HTMLDivElement {
   return document.createElement('div')
 }
 
-function createMockRow(cells: MockCell[] = []): MockRow {
+function createMockRow(cells: MockCell[] = [], initialData: Record<string, any> = {}): MockRow {
+  const data = { ...initialData };
   const row: MockRow = {
     getCells: jest.fn(() => cells),
     getCell: jest.fn((field: string) => cells.find((c) => c.getField() === field)),
-    update: jest.fn(),
+    update: jest.fn((updateData: Record<string, any>) => {
+      Object.assign(data, updateData);
+    }),
+    reformat: jest.fn(),
+    getData: jest.fn(() => data),
+    _data: data,
   }
   return row
 }
@@ -141,7 +153,9 @@ function createContext(overrides: Record<string, any> = {}) {
       updates: [],
       deletes: [],
     },
-    propogatedChanges: new Map(),
+    propogatedChangesFilters: new Map<string, any>(),
+    fieldOriginalClassMap: new Map<string, string>(),
+    internalClassTrackerColumn: '__beekeeper_internal_class_tracker',
     tabulator: createMockTabulator(),
     $noty: { error: jest.fn(), success: jest.fn() },
     $set(obj: any, key: string, value: any) {
@@ -468,20 +482,92 @@ describe('ResultTable - Cell Editing Methods', () => {
       expect(ctx.pendingChanges.updates[0].primaryKeys).toEqual([{ column: 'id', value: 1 }])
       expect(ctx.pendingChanges.updates[0].key).toBe('1-field_user_name')
     })
+
+    it('should add the edited field to the class tracker on matching rows via propogateChanges', () => {
+      const { dataCell } = buildRowWithCells({
+        pkValue: 1,
+        dataField: 'field_name',
+        dataValue: 'Alice',
+        dataOldValue: 'Bob',
+      })
+
+      // Create a duplicate row that searchRows will return
+      const dupRow = createMockRow([])
+      const mockTabulator = createMockTabulator([dupRow])
+      const ctx = createContext({ tabulator: mockTabulator })
+
+      methods.cellEdited.call(ctx, dataCell)
+
+      // The pending update should be created
+      expect(ctx.pendingChanges.updates).toHaveLength(1)
+
+      // propogateChanges should have updated the duplicate row's class tracker
+      expect(dupRow.update).toHaveBeenCalled()
+      const updateArg = dupRow.update.mock.calls[0][0]
+      const tracker = updateArg.__beekeeper_internal_class_tracker
+      expect(tracker).toBeDefined()
+      expect(tracker.edited).toBeInstanceOf(Set)
+      expect(tracker.edited.has('field_name')).toBe(true)
+      expect(dupRow.reformat).toHaveBeenCalled()
+    })
+
+    it('should remove the edited field from the class tracker when an edit is reverted', () => {
+      const { dataCell } = buildRowWithCells({
+        pkValue: 1,
+        dataField: 'field_name',
+        dataValue: 'Original', // same as existing edit's oldValue, triggering revert
+        dataOldValue: 'Temp',
+      })
+
+      const existingEdit = {
+        key: '1-field_name',
+        table: 'users',
+        schema: 'public',
+        column: 'name',
+        primaryKeys: [{ column: 'id', value: 1 }],
+        oldValue: 'Original',
+        value: 'Temp',
+        cell: dataCell,
+      }
+
+      // Pre-populate a duplicate row with the field already in the edited set
+      const existingTracker = {
+        edited: new Set<string>(['field_name']),
+        editError: new Set<string>(),
+        editSuccess: new Set<string>(),
+      }
+      const dupRow = createMockRow([], {
+        __beekeeper_internal_class_tracker: existingTracker,
+      })
+
+      const mockTabulator = createMockTabulator([dupRow])
+      const ctx = createContext({ tabulator: mockTabulator })
+      ctx.pendingChanges.updates = [existingEdit]
+
+      methods.cellEdited.call(ctx, dataCell)
+
+      // The revert should have removed the edit from pending updates
+      expect(ctx.pendingChanges.updates).toHaveLength(0)
+
+      // propogateChanges should have been called with removeEdited=true,
+      // which removes the field from the tracker's edited set
+      expect(dupRow.update).toHaveBeenCalled()
+      const updateArg = dupRow.update.mock.calls[0][0]
+      expect(updateArg.__beekeeper_internal_class_tracker.edited.has('field_name')).toBe(false)
+    })
   })
 
   // -----------------------------------------------------------------------
   // maybeUpdateExistingEdit
   // -----------------------------------------------------------------------
   describe('maybeUpdateExistingEdit', () => {
-    it('should add edited class and return false when no current edit exists', () => {
+    it('should return false when no current edit exists', () => {
       const cell = createMockCell({ field: 'field_name', value: 'New', oldValue: 'Old' })
       const ctx = createContext()
 
       const result = methods.maybeUpdateExistingEdit.call(ctx, 'some-key', cell)
 
       expect(result).toBe(false)
-      expect(cell._element.classList.contains('edited')).toBe(true)
     })
 
     it('should return true when oldValue is undefined and new value is null', () => {
@@ -499,7 +585,7 @@ describe('ResultTable - Cell Editing Methods', () => {
       expect(ctx.pendingChanges.updates).toHaveLength(1)
     })
 
-    it('should remove edit and edited class when value reverts to original', () => {
+    it('should remove edit when value reverts to original', () => {
       const cell = createMockCell({ field: 'field_name', value: 'Original', oldValue: 'Temp' })
       const existingEdit = { key: 'the-key', oldValue: 'Original', value: 'Temp' }
       const ctx = createContext()
@@ -509,7 +595,6 @@ describe('ResultTable - Cell Editing Methods', () => {
 
       expect(result).toBe(false)
       expect(ctx.pendingChanges.updates).toHaveLength(0)
-      expect(cell._element.classList.contains('edited')).toBe(false)
     })
 
     it('should update existing edit value and return true when value differs', () => {
@@ -554,16 +639,18 @@ describe('ResultTable - Cell Editing Methods', () => {
       expect(ctx.pendingChanges.updates).toHaveLength(2)
     })
 
-    it('should always add the edited class even when it returns true for an unchanged undefined/null case', () => {
+    it('should return true and leave edit untouched for the undefined/null case', () => {
       const cell = createMockCell({ field: 'field_name', value: null, oldValue: 'x' })
       const existingEdit = { key: 'the-key', oldValue: undefined, value: 'y' }
       const ctx = createContext()
       ctx.pendingChanges.updates = [existingEdit]
 
-      methods.maybeUpdateExistingEdit.call(ctx, 'the-key', cell)
+      const result = methods.maybeUpdateExistingEdit.call(ctx, 'the-key', cell)
 
-      // The class is added at the top of the function, before any branch
-      expect(cell._element.classList.contains('edited')).toBe(true)
+      // undefined == null is true, so the guard returns true without modifying
+      expect(result).toBe(true)
+      expect(ctx.pendingChanges.updates).toHaveLength(1)
+      expect(existingEdit.value).toBe('y') // unchanged
     })
   })
 
@@ -758,7 +845,7 @@ describe('ResultTable - Cell Editing Methods', () => {
   // propogateChanges
   // -----------------------------------------------------------------------
   describe('propogateChanges', () => {
-    it('should search for matching rows and add edited class to all matching cells', () => {
+    it('should search for matching rows and track edited field in class tracker', () => {
       const { pkCell, dataCell } = buildRowWithCells({
         pkValue: 1,
         dataField: 'field_name',
@@ -766,12 +853,7 @@ describe('ResultTable - Cell Editing Methods', () => {
         dataOldValue: 'Bob',
       })
 
-      // Create duplicate row cells that searchRows would return
-      const dupCell = createMockCell({ field: 'field_name', value: 'Bob', oldValue: 'Bob' })
       const dupRow = createMockRow([])
-      dupRow.getCell.mockReturnValue(dupCell)
-      dupCell.getRow.mockReturnValue(dupRow)
-
       const mockTabulator = createMockTabulator([dupRow])
       const ctx = createContext({ tabulator: mockTabulator })
 
@@ -781,13 +863,18 @@ describe('ResultTable - Cell Editing Methods', () => {
       expect(mockTabulator.searchRows).toHaveBeenCalledWith([
         { field: 'field_id', type: '=', value: 1 },
       ])
-      expect(dupCell._element.classList.contains('edited')).toBe(true)
-      expect(dupRow.update).toHaveBeenCalledWith({ field_name: 'Alice' })
+      // The row should have been updated with the new value and a class tracker
+      expect(dupRow.update).toHaveBeenCalled()
+      const updateArg = dupRow.update.mock.calls[0][0]
+      expect(updateArg.field_name).toBe('Alice')
+      expect(updateArg.__beekeeper_internal_class_tracker.edited).toBeInstanceOf(Set)
+      expect(updateArg.__beekeeper_internal_class_tracker.edited.has('field_name')).toBe(true)
+      expect(dupRow.reformat).toHaveBeenCalled()
       expect(mockTabulator.restoreRedraw).toHaveBeenCalled()
       expect(mockTabulator.redraw).toHaveBeenCalled()
     })
 
-    it('should cache propogated cells and reuse on subsequent calls', () => {
+    it('should cache filters and reuse on subsequent calls', () => {
       const { pkCell, dataCell } = buildRowWithCells({
         pkValue: 1,
         dataField: 'field_name',
@@ -795,27 +882,28 @@ describe('ResultTable - Cell Editing Methods', () => {
         dataOldValue: 'Bob',
       })
 
-      const dupCell = createMockCell({ field: 'field_name', value: 'Bob', oldValue: 'Bob' })
       const dupRow = createMockRow([])
-      dupRow.getCell.mockReturnValue(dupCell)
-      dupCell.getRow.mockReturnValue(dupRow)
-
       const mockTabulator = createMockTabulator([dupRow])
       const ctx = createContext({ tabulator: mockTabulator })
 
-      // First call — should call searchRows
+      // First call — should build and cache filters
       methods.propogateChanges.call(ctx, [pkCell], dataCell, '1-field_name', false)
-      expect(mockTabulator.searchRows).toHaveBeenCalledTimes(1)
+      expect(ctx.propogatedChangesFilters.has('1-field_name')).toBe(true)
+      expect(ctx.propogatedChangesFilters.get('1-field_name')).toEqual([
+        { field: 'field_id', type: '=', value: 1 },
+      ])
 
-      // Second call with same key — should NOT call searchRows again
+      // Second call with same key — should reuse cached filters, still call searchRows (filters are cached, not results)
       methods.propogateChanges.call(ctx, [pkCell], dataCell, '1-field_name', false)
-      expect(mockTabulator.searchRows).toHaveBeenCalledTimes(1)
 
-      // Should still have updated the cells
+      // searchRows is called each time (only the filters are cached, not the search results)
+      expect(mockTabulator.searchRows).toHaveBeenCalledTimes(2)
+
+      // Should still have updated the rows
       expect(dupRow.update).toHaveBeenCalledTimes(2)
     })
 
-    it('should remove edited class when removeEdited is true', () => {
+    it('should remove field from edited set when removeEdited is true', () => {
       const { pkCell, dataCell } = buildRowWithCells({
         pkValue: 1,
         dataField: 'field_name',
@@ -823,23 +911,27 @@ describe('ResultTable - Cell Editing Methods', () => {
         dataOldValue: 'Bob',
       })
 
-      const dupCell = createMockCell({ field: 'field_name', value: 'Bob', oldValue: 'Bob' })
-      // Pre-add the 'edited' class so we can verify removal
-      dupCell._element.classList.add('edited')
-
-      const dupRow = createMockRow([])
-      dupRow.getCell.mockReturnValue(dupCell)
-      dupCell.getRow.mockReturnValue(dupRow)
+      // Pre-populate the row data with a class tracker that already has 'field_name' in the edited set
+      const existingTracker = {
+        edited: new Set<string>(['field_name']),
+        editError: new Set<string>(),
+        editSuccess: new Set<string>(),
+      }
+      const dupRow = createMockRow([], {
+        __beekeeper_internal_class_tracker: existingTracker,
+      })
 
       const mockTabulator = createMockTabulator([dupRow])
       const ctx = createContext({ tabulator: mockTabulator })
 
       methods.propogateChanges.call(ctx, [pkCell], dataCell, '1-field_name', true)
 
-      expect(dupCell._element.classList.contains('edited')).toBe(false)
+      // The update call should have removed 'field_name' from the edited set
+      const updateArg = dupRow.update.mock.calls[0][0]
+      expect(updateArg.__beekeeper_internal_class_tracker.edited.has('field_name')).toBe(false)
     })
 
-    it('should update row data via getRow().update() for each matching cell', () => {
+    it('should update all matching rows and reformat each', () => {
       const { pkCell, dataCell } = buildRowWithCells({
         pkValue: 1,
         dataField: 'field_name',
@@ -848,25 +940,23 @@ describe('ResultTable - Cell Editing Methods', () => {
       })
 
       // Multiple duplicate rows
-      const dupCell1 = createMockCell({ field: 'field_name', value: 'Bob', oldValue: 'Bob' })
       const dupRow1 = createMockRow([])
-      dupRow1.getCell.mockReturnValue(dupCell1)
-      dupCell1.getRow.mockReturnValue(dupRow1)
-
-      const dupCell2 = createMockCell({ field: 'field_name', value: 'Bob', oldValue: 'Bob' })
       const dupRow2 = createMockRow([])
-      dupRow2.getCell.mockReturnValue(dupCell2)
-      dupCell2.getRow.mockReturnValue(dupRow2)
 
       const mockTabulator = createMockTabulator([dupRow1, dupRow2])
       const ctx = createContext({ tabulator: mockTabulator })
 
       methods.propogateChanges.call(ctx, [pkCell], dataCell, '1-field_name', false)
 
-      expect(dupRow1.update).toHaveBeenCalledWith({ field_name: 'Alice' })
-      expect(dupRow2.update).toHaveBeenCalledWith({ field_name: 'Alice' })
-      expect(dupCell1._element.classList.contains('edited')).toBe(true)
-      expect(dupCell2._element.classList.contains('edited')).toBe(true)
+      // Both rows should have been updated and reformatted
+      expect(dupRow1.update).toHaveBeenCalled()
+      expect(dupRow2.update).toHaveBeenCalled()
+      expect(dupRow1.reformat).toHaveBeenCalled()
+      expect(dupRow2.reformat).toHaveBeenCalled()
+
+      // Both should contain the field value update
+      expect(dupRow1.update.mock.calls[0][0].field_name).toBe('Alice')
+      expect(dupRow2.update.mock.calls[0][0].field_name).toBe('Alice')
     })
 
     it('should handle no matching rows gracefully', () => {
@@ -884,9 +974,11 @@ describe('ResultTable - Cell Editing Methods', () => {
       methods.propogateChanges.call(ctx, [pkCell], dataCell, '1-field_name', false)
 
       expect(mockTabulator.searchRows).toHaveBeenCalled()
-      // Should still cache the empty result
-      expect(ctx.propogatedChanges.has('1-field_name')).toBe(true)
-      expect(ctx.propogatedChanges.get('1-field_name')).toEqual([])
+      // Should still cache the filters
+      expect(ctx.propogatedChangesFilters.has('1-field_name')).toBe(true)
+      expect(ctx.propogatedChangesFilters.get('1-field_name')).toEqual([
+        { field: 'field_id', type: '=', value: 1 },
+      ])
       // blockRedraw/restoreRedraw should still be called (redraw lifecycle is maintained)
       expect(mockTabulator.blockRedraw).toHaveBeenCalled()
       expect(mockTabulator.restoreRedraw).toHaveBeenCalled()
@@ -923,11 +1015,7 @@ describe('ResultTable - Cell Editing Methods', () => {
         dataOldValue: 'Bob',
       })
 
-      const dupCell = createMockCell({ field: 'field_name', value: 'Bob', oldValue: 'Bob' })
       const dupRow = createMockRow([])
-      dupRow.getCell.mockReturnValue(dupCell)
-      dupCell.getRow.mockReturnValue(dupRow)
-
       const mockTabulator = createMockTabulator([dupRow])
       const ctx = createContext({ tabulator: mockTabulator })
 
@@ -939,6 +1027,29 @@ describe('ResultTable - Cell Editing Methods', () => {
       const updateOrder = dupRow.update.mock.invocationCallOrder[0]
       expect(blockOrder).toBeLessThan(updateOrder)
       expect(updateOrder).toBeLessThan(restoreOrder)
+    })
+
+    it('should initialize class tracker on row data if not present', () => {
+      const { pkCell, dataCell } = buildRowWithCells({
+        pkValue: 1,
+        dataField: 'field_name',
+        dataValue: 'Alice',
+        dataOldValue: 'Bob',
+      })
+
+      // Row starts with no class tracker data
+      const dupRow = createMockRow([])
+      const mockTabulator = createMockTabulator([dupRow])
+      const ctx = createContext({ tabulator: mockTabulator })
+
+      methods.propogateChanges.call(ctx, [pkCell], dataCell, '1-field_name', false)
+
+      const updateArg = dupRow.update.mock.calls[0][0]
+      const tracker = updateArg.__beekeeper_internal_class_tracker
+      expect(tracker).toBeDefined()
+      expect(tracker.edited).toBeInstanceOf(Set)
+      expect(tracker.editError).toBeInstanceOf(Set)
+      expect(tracker.editSuccess).toBeInstanceOf(Set)
     })
   })
 })
