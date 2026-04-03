@@ -279,6 +279,7 @@
         :result="result"
         :query="query"
         :tab="tab"
+        :isManualCommit="isManualCommit"
         :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
