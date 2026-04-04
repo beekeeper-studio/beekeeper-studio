@@ -12,7 +12,7 @@
         class="shortcut"
         v-else
       >
-        <span>Ctrl</span><span>P</span>
+        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.general.openQuickSearch)" :key="sc">{{ sc }}</span>
       </div>
     </div>
     <div class="shortcut-item">
@@ -25,30 +25,16 @@
       <div>{{ queryActionText(true) }}</div>
       <div
         class="shortcut"
-        v-if="$config.isMac"
       >
-        <span>⌘</span><span>Enter</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>Enter</span>
+        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)" :key="sc">{{ sc }}</span>
       </div>
     </div>
     <div class="shortcut-item">
       <div>{{ queryActionText(false) }}</div>
       <div
         class="shortcut"
-        v-if="$config.isMac"
       >
-        <span>⌘</span><span>⇧</span><span>Enter</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>Shift</span><span>Enter</span>
+        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)" :key="sc">{{ sc }}</span>
       </div>
     </div>
     <div class="shortcut-item">
@@ -85,45 +71,24 @@
       <div>Reopen Closed Tabs</div>
       <div
         class="shortcut"
-        v-if="$config.isMac"
       >
-        <span>⌘</span><span>⇧</span><span>T</span>
-      </div>
-      <div 
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>⇧</span><span>T</span>
+        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.tab.reopenLastClosedTab)" :key="sc">{{ sc }}</span>
       </div>
     </div>
     <div class="shortcut-item">
       <div>Close Tab</div>
       <div
         class="shortcut"
-        v-if="$config.isMac"
       >
-        <span>⌘</span><span>W</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>W</span>
+        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.tab.closeTab)" :key="sc">{{ sc }}</span>
       </div>
     </div>
     <div class="shortcut-item">
       <div>Find</div>
       <div
         class="shortcut"
-        v-if="$config.isMac"
       >
         <span>⌘</span><span>F</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>F</span>
       </div>
     </div>
     <div v-if="!isMongo" class="shortcut-item">
@@ -144,6 +109,8 @@
   </div>
 </template>
 <script type="text/javascript">
+  import { convertKeybinding } from '@/common/bksConfig/BksConfigProvider'
+
   export default {
     props: ['isMongo'],
     data() {
@@ -152,6 +119,11 @@
       }
     },
     methods : {
+      getShortcut(shortcut) {
+        console.log('!!!')
+        console.log(shortcut)
+        return convertKeybinding('ui', Array.isArray(shortcut) ? shortcut[0] : shortcut, this.$bksConfig.platformInfo.platform)
+      },
       isPrimaryRunCurrentQuery() {
         const { settings: configSettings } = this.$bksConfig
         return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'

@@ -200,7 +200,7 @@
             <x-button
               v-if="isPrimaryRunCurrentQuery"
               class="btn btn-primary btn-small"
-              v-tooltip="'Ctrl+Enter'"
+              :v-tooltip="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)"
               @click.prevent="submitCurrentQuery"
               :disabled="this.tab.isRunning || running"
             >
@@ -209,7 +209,7 @@
             <x-button
               v-else
               class="btn btn-primary btn-small"
-              v-tooltip="'Ctrl+Enter'"
+              :v-tooltip="displayShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)"
               @click.prevent="submitTabQuery"
               :disabled="this.tab.isRunning || running"
             >
@@ -227,11 +227,11 @@
               <x-menu v-if="isPrimaryRunCurrentQuery">
                 <x-menuitem @click.prevent="submitCurrentQuery">
                   <x-label>Run Current</x-label>
-                  <x-shortcut value="Control+Enter" />
+                  <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitTabQuery">
                   <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
-                  <x-shortcut value="Control+Shift+Enter" />
+                  <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
@@ -580,6 +580,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+  import { convertKeybinding } from '@/common/bksConfig/BksConfigProvider'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -914,7 +915,7 @@
             this.queryMagic.extensions,
           ]
         }
-      },
+      }
     },
     watch: {
       error() {
@@ -1660,6 +1661,9 @@
       stopTimer() {
         clearInterval(this.timerInterval);
         this.timerInterval = null;
+      },
+      displayShortcut(shortcut: string|string[]) {
+        return convertKeybinding('ui', Array.isArray(shortcut) ? shortcut[0] : shortcut, this.$bksConfig.platformInfo.platform).join('')
       },
       editorContextMenu(_event, _context, items) {
         return [
