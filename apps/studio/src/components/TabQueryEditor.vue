@@ -204,7 +204,7 @@
               @click.prevent="submitCurrentQuery"
               :disabled="this.tab.isRunning || running"
             >
-              <x-label>Run Current</x-label>
+              <x-label>{{ runCurrentText }}</x-label>
             </x-button>
             <x-button
               v-else
@@ -213,7 +213,7 @@
               @click.prevent="submitTabQuery"
               :disabled="this.tab.isRunning || running"
             >
-              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
+              <x-label>Run All</x-label>
             </x-button>
 
 
@@ -226,11 +226,11 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu v-if="isPrimaryRunCurrentQuery">
                 <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>Run Current</x-label>
+                  <x-label>{{ runCurrentText }}</x-label>
                   <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
+                  <x-label>Run All</x-label>
                   <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)" />
                 </x-menuitem>
                 <hr>
@@ -238,7 +238,7 @@
                   @click.prevent="submitCurrentQueryToFile"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>Run Current to File</x-label>
+                  <x-label>{{ runCurrentText }} to File</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
@@ -250,7 +250,7 @@
                   @click.prevent="submitQueryToFile"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run All to File' }}</x-label>
+                  <x-label>Run All to File</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
@@ -261,11 +261,11 @@
               </x-menu>
               <x-menu v-else>
                 <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run All' }}</x-label>
+                  <x-label>Run All</x-label>
                   <x-shortcut value="Control+Enter" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>Run Current</x-label>
+                  <x-label>{{ runCurrentText }}</x-label>
                   <x-shortcut value="Control+Shift+Enter" />
                 </x-menuitem>
                 <hr>
@@ -274,7 +274,7 @@
                   @click.prevent="submitQueryToFile"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run All to File' }}</x-label>
+                  <x-label>Run All to File</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
@@ -286,7 +286,7 @@
                   @click.prevent="submitCurrentQueryToFile"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>Run Current to File</x-label>
+                  <x-label>{{ runCurrentText }} to File</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
@@ -752,6 +752,9 @@
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
+      },
+      runCurrentText() {
+        return this.hasSelectedText ? 'Run Selection' : 'Run Current'
       },
       result() {
         return this.results[this.selectedResult]
@@ -1316,8 +1319,7 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
-        // run the currently hilighted text (if any) to a file, else all sql
-        const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
+        const query_sql = this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -1328,8 +1330,17 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
-        // run the currently selected query (if there are multiple) to a file, else all sql
-        const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.unsavedText
+        // run the currently selected query or higlighted (if there are multiple) to a file, else all sql
+        let query_sql = ''
+
+        if ( this.hasSelectedText ) {
+          query_sql = this.editor.selection
+        } else if (this.currentlySelectedQuery) {
+          query_sql = this.currentlySelectedQuery.text
+        } else {
+          query_sql = this.unsavedText
+        }
+        
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -1338,6 +1349,12 @@
       async submitCurrentQuery() {
         if(this.running) return;
         this.runningType = 'current'
+
+        if (this.hasSelectedText) {
+          this.runningType = 'selection'
+          return await this.submitQuery(this.editor.selection)
+        }
+
         if (this.currentlySelectedQuery) {
           return await this.submitQuery(this.currentlySelectedQuery.text)
         }
@@ -1354,8 +1371,8 @@
       },
       async submitTabQuery() {
         if(this.running) return;
-        const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
-        this.runningType = this.hasSelectedText ? 'selection' : 'everything'
+        const text = this.unsavedText
+        this.runningType = 'everything'
         if (text.trim()) {
           this.submitQuery(text)
         } else {
