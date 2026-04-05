@@ -11,126 +11,126 @@
 ; Registered protocols (15 total): redshift, cockroachdb, cockroach, mariadb, tidb, mysql, postgresql, postgres, psql, sqlite, sqlserver, microsoftsqlserver, mssql, redis, rediss
 
 !macro customInstall
-  WriteRegStr HKCR "redshift" "" "URL:Redshift Connection"
-  WriteRegStr HKCR "redshift" "URL Protocol" ""
-  WriteRegStr HKCR "redshift\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "redshift" "" "URL:Redshift Connection"
+  WriteRegStr SHCTX "redshift" "URL Protocol" ""
+  WriteRegStr SHCTX "redshift\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "cockroachdb" "" "URL:Cockroachdb Connection"
-  WriteRegStr HKCR "cockroachdb" "URL Protocol" ""
-  WriteRegStr HKCR "cockroachdb\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "cockroachdb" "" "URL:Cockroachdb Connection"
+  WriteRegStr SHCTX "cockroachdb" "URL Protocol" ""
+  WriteRegStr SHCTX "cockroachdb\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "cockroach" "" "URL:Cockroach Connection"
-  WriteRegStr HKCR "cockroach" "URL Protocol" ""
-  WriteRegStr HKCR "cockroach\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "cockroach" "" "URL:Cockroach Connection"
+  WriteRegStr SHCTX "cockroach" "URL Protocol" ""
+  WriteRegStr SHCTX "cockroach\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "mariadb" "" "URL:Mariadb Connection"
-  WriteRegStr HKCR "mariadb" "URL Protocol" ""
-  WriteRegStr HKCR "mariadb\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "mariadb" "" "URL:Mariadb Connection"
+  WriteRegStr SHCTX "mariadb" "URL Protocol" ""
+  WriteRegStr SHCTX "mariadb\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "tidb" "" "URL:Tidb Connection"
-  WriteRegStr HKCR "tidb" "URL Protocol" ""
-  WriteRegStr HKCR "tidb\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "tidb" "" "URL:Tidb Connection"
+  WriteRegStr SHCTX "tidb" "URL Protocol" ""
+  WriteRegStr SHCTX "tidb\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "mysql" "" "URL:Mysql Connection"
-  WriteRegStr HKCR "mysql" "URL Protocol" ""
-  WriteRegStr HKCR "mysql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "mysql" "" "URL:Mysql Connection"
+  WriteRegStr SHCTX "mysql" "URL Protocol" ""
+  WriteRegStr SHCTX "mysql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "postgresql" "" "URL:Postgresql Connection"
-  WriteRegStr HKCR "postgresql" "URL Protocol" ""
-  WriteRegStr HKCR "postgresql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "postgresql" "" "URL:Postgresql Connection"
+  WriteRegStr SHCTX "postgresql" "URL Protocol" ""
+  WriteRegStr SHCTX "postgresql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "postgres" "" "URL:Postgres Connection"
-  WriteRegStr HKCR "postgres" "URL Protocol" ""
-  WriteRegStr HKCR "postgres\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "postgres" "" "URL:Postgres Connection"
+  WriteRegStr SHCTX "postgres" "URL Protocol" ""
+  WriteRegStr SHCTX "postgres\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "psql" "" "URL:Psql Connection"
-  WriteRegStr HKCR "psql" "URL Protocol" ""
-  WriteRegStr HKCR "psql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "psql" "" "URL:Psql Connection"
+  WriteRegStr SHCTX "psql" "URL Protocol" ""
+  WriteRegStr SHCTX "psql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "sqlite" "" "URL:Sqlite Connection"
-  WriteRegStr HKCR "sqlite" "URL Protocol" ""
-  WriteRegStr HKCR "sqlite\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "sqlite" "" "URL:Sqlite Connection"
+  WriteRegStr SHCTX "sqlite" "URL Protocol" ""
+  WriteRegStr SHCTX "sqlite\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "sqlserver" "" "URL:Sqlserver Connection"
-  WriteRegStr HKCR "sqlserver" "URL Protocol" ""
-  WriteRegStr HKCR "sqlserver\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "sqlserver" "" "URL:Sqlserver Connection"
+  WriteRegStr SHCTX "sqlserver" "URL Protocol" ""
+  WriteRegStr SHCTX "sqlserver\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "microsoftsqlserver" "" "URL:Microsoftsqlserver Connection"
-  WriteRegStr HKCR "microsoftsqlserver" "URL Protocol" ""
-  WriteRegStr HKCR "microsoftsqlserver\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "microsoftsqlserver" "" "URL:Microsoftsqlserver Connection"
+  WriteRegStr SHCTX "microsoftsqlserver" "URL Protocol" ""
+  WriteRegStr SHCTX "microsoftsqlserver\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "mssql" "" "URL:Mssql Connection"
-  WriteRegStr HKCR "mssql" "URL Protocol" ""
-  WriteRegStr HKCR "mssql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "mssql" "" "URL:Mssql Connection"
+  WriteRegStr SHCTX "mssql" "URL Protocol" ""
+  WriteRegStr SHCTX "mssql\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "redis" "" "URL:Redis Connection"
-  WriteRegStr HKCR "redis" "URL Protocol" ""
-  WriteRegStr HKCR "redis\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "redis" "" "URL:Redis Connection"
+  WriteRegStr SHCTX "redis" "URL Protocol" ""
+  WriteRegStr SHCTX "redis\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
-  WriteRegStr HKCR "rediss" "" "URL:Rediss Connection"
-  WriteRegStr HKCR "rediss" "URL Protocol" ""
-  WriteRegStr HKCR "rediss\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
+  WriteRegStr SHCTX "rediss" "" "URL:Rediss Connection"
+  WriteRegStr SHCTX "rediss" "URL Protocol" ""
+  WriteRegStr SHCTX "rediss\shell\open\command" "" '"$INSTDIR\Beekeeper Studio.exe" "%1"'
 
 !macroend
 !macro customUnInstall
-  ReadRegStr $0 HKCR "redshift\shell\open\command" ""
+  ReadRegStr $0 SHCTX "redshift\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "redshift"
+    DeleteRegKey SHCTX "redshift"
   ${EndIf}
-  ReadRegStr $0 HKCR "cockroachdb\shell\open\command" ""
+  ReadRegStr $0 SHCTX "cockroachdb\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "cockroachdb"
+    DeleteRegKey SHCTX "cockroachdb"
   ${EndIf}
-  ReadRegStr $0 HKCR "cockroach\shell\open\command" ""
+  ReadRegStr $0 SHCTX "cockroach\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "cockroach"
+    DeleteRegKey SHCTX "cockroach"
   ${EndIf}
-  ReadRegStr $0 HKCR "mariadb\shell\open\command" ""
+  ReadRegStr $0 SHCTX "mariadb\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "mariadb"
+    DeleteRegKey SHCTX "mariadb"
   ${EndIf}
-  ReadRegStr $0 HKCR "tidb\shell\open\command" ""
+  ReadRegStr $0 SHCTX "tidb\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "tidb"
+    DeleteRegKey SHCTX "tidb"
   ${EndIf}
-  ReadRegStr $0 HKCR "mysql\shell\open\command" ""
+  ReadRegStr $0 SHCTX "mysql\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "mysql"
+    DeleteRegKey SHCTX "mysql"
   ${EndIf}
-  ReadRegStr $0 HKCR "postgresql\shell\open\command" ""
+  ReadRegStr $0 SHCTX "postgresql\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "postgresql"
+    DeleteRegKey SHCTX "postgresql"
   ${EndIf}
-  ReadRegStr $0 HKCR "postgres\shell\open\command" ""
+  ReadRegStr $0 SHCTX "postgres\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "postgres"
+    DeleteRegKey SHCTX "postgres"
   ${EndIf}
-  ReadRegStr $0 HKCR "psql\shell\open\command" ""
+  ReadRegStr $0 SHCTX "psql\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "psql"
+    DeleteRegKey SHCTX "psql"
   ${EndIf}
-  ReadRegStr $0 HKCR "sqlite\shell\open\command" ""
+  ReadRegStr $0 SHCTX "sqlite\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "sqlite"
+    DeleteRegKey SHCTX "sqlite"
   ${EndIf}
-  ReadRegStr $0 HKCR "sqlserver\shell\open\command" ""
+  ReadRegStr $0 SHCTX "sqlserver\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "sqlserver"
+    DeleteRegKey SHCTX "sqlserver"
   ${EndIf}
-  ReadRegStr $0 HKCR "microsoftsqlserver\shell\open\command" ""
+  ReadRegStr $0 SHCTX "microsoftsqlserver\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "microsoftsqlserver"
+    DeleteRegKey SHCTX "microsoftsqlserver"
   ${EndIf}
-  ReadRegStr $0 HKCR "mssql\shell\open\command" ""
+  ReadRegStr $0 SHCTX "mssql\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "mssql"
+    DeleteRegKey SHCTX "mssql"
   ${EndIf}
-  ReadRegStr $0 HKCR "redis\shell\open\command" ""
+  ReadRegStr $0 SHCTX "redis\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "redis"
+    DeleteRegKey SHCTX "redis"
   ${EndIf}
-  ReadRegStr $0 HKCR "rediss\shell\open\command" ""
+  ReadRegStr $0 SHCTX "rediss\shell\open\command" ""
   ${If} $0 == '"$INSTDIR\Beekeeper Studio.exe" "%1"'
-    DeleteRegKey HKCR "rediss"
+    DeleteRegKey SHCTX "rediss"
   ${EndIf}
 !macroend
