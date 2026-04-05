@@ -31,18 +31,18 @@ const header = `; Auto-generated NSIS protocol handler registration
 let installSection = `!macro customInstall\n`;
 schemes.forEach(scheme => {
   const displayName = scheme.charAt(0).toUpperCase() + scheme.slice(1);
-  installSection += `  WriteRegStr HKCR "${scheme}" "" "URL:${displayName} Connection"\n`;
-  installSection += `  WriteRegStr HKCR "${scheme}" "URL Protocol" ""\n`;
-  installSection += `  WriteRegStr HKCR "${scheme}\\shell\\open\\command" "" '"$INSTDIR\\Beekeeper Studio.exe" "%1"'\n`;
+  installSection += `  WriteRegStr SHCTX "${scheme}" "" "URL:${displayName} Connection"\n`;
+  installSection += `  WriteRegStr SHCTX "${scheme}" "URL Protocol" ""\n`;
+  installSection += `  WriteRegStr SHCTX "${scheme}\\shell\\open\\command" "" '"$INSTDIR\\Beekeeper Studio.exe" "%1"'\n`;
   installSection += `\n`;
 });
 installSection += `!macroend\n`;
 
 let uninstallSection = `!macro customUnInstall\n`;
 schemes.forEach(scheme => {
-  uninstallSection += `  ReadRegStr $0 HKCR "${scheme}\\shell\\open\\command" ""\n`;
+  uninstallSection += `  ReadRegStr $0 SHCTX "${scheme}\\shell\\open\\command" ""\n`;
   uninstallSection += `  \${If} $0 == '"$INSTDIR\\Beekeeper Studio.exe" "%1"'\n`;
-  uninstallSection += `    DeleteRegKey HKCR "${scheme}"\n`;
+  uninstallSection += `    DeleteRegKey SHCTX "${scheme}"\n`;
   uninstallSection += `  \${EndIf}\n`;
 });
 uninstallSection += `!macroend\n`;
