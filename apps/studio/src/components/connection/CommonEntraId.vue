@@ -50,7 +50,7 @@
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.host" :privacy-mode="privacyMode" @input="val => config.host = val" />
+        <masked-input :value="config.host" @input="val => config.host = val" />
       </div>
       <div class="form-group">
         <label for="database">Database</label>
@@ -103,11 +103,11 @@
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.azureAuthOptions.tenantId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.tenantId = val" />
+        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientId">Client ID</label>
-        <masked-input :value="config.azureAuthOptions.clientId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientId = val" />
+        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" />
       </div>
       <div class="row gutter">
         <div class="col s12 form-group" v-show="isServicePrincipal">
@@ -125,7 +125,7 @@
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
-        <masked-input :value="config.azureAuthOptions.msiEndpoint" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.msiEndpoint = val" />
+        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" />
       </div>
     </div>
   </div>

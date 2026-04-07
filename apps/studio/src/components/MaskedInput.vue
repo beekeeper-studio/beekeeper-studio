@@ -10,16 +10,14 @@
   </template>
 
   <script>
+  import { mapGetters } from 'vuex'
+
   export default {
     name: 'MaskedInput',
     props: {
       value: {
         type: [String, Number],
         default: ''
-      },
-      privacyMode: {
-        type: Boolean,
-        default: false
       },
       type: {
         type: String,
@@ -31,6 +29,7 @@
       }
     },
     computed: {
+      ...mapGetters('settings', ['privacyMode']),
       computedType() {
         return this.privacyMode ? 'text' : this.type;
       },

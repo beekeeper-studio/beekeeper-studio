@@ -12,7 +12,6 @@
         <label for="serverName">Server Name</label>
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
-          :privacyMode="privacyMode"
           @input="val => config.sqlAnywhereOptions.serverName = val"
         />
       </div>
@@ -23,7 +22,6 @@
           <label for="user">User</label>
           <masked-input
             :value="config.username"
-            :privacyMode="privacyMode"
             @input="val => config.username = val"
           />
         </div>
@@ -44,7 +42,6 @@
         <label for="serverName">Server Name</label>
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
-          :privacyMode="privacyMode"
           @input="val => config.sqlAnywhereOptions.serverName = val"
         />
       </div>
@@ -70,7 +67,6 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import FilePicker from "@/components/common/form/FilePicker.vue"
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapGetters } from 'vuex'
 
 export default {
   components: { CommonServerInputs, FilePicker, MaskedInput },
@@ -81,7 +77,6 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('settings', ['privacyMode']),
     isServer() {
       return this.config.sqlAnywhereOptions.mode === 'server';
     },

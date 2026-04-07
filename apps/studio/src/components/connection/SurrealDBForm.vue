@@ -25,7 +25,6 @@
           </label>
           <masked-input
             :value="config.host"
-            :privacyMode="privacyMode"
             @input="val => config.host = val"
           />
         </div>
@@ -33,7 +32,6 @@
           <label for="port">Port</label>
           <masked-input
             :value="config.port"
-            :privacyMode="privacyMode"
             :type="'number'"
             @input="val => config.port = val"
           />
@@ -54,7 +52,6 @@
         <label for="user">User</label>
         <masked-input
           :value="config.username"
-          :privacyMode="privacyMode"
           @input="val => config.username = val"
         />
       </div>
@@ -115,7 +112,6 @@ import { SurrealAuthType, SurrealAuthTypes } from '../../lib/db/types';
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapGetters } from 'vuex';
 
 export default Vue.extend({
   components: { CommonServerInputs, MaskedInput, CommonAdvanced },
@@ -129,7 +125,6 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapGetters('settings', ['privacyMode']),
     togglePasswordIcon() {
       return this.showPassword ? "visibility_off" : "visibility";
     },

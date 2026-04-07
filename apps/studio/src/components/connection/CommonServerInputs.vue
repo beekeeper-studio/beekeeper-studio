@@ -39,7 +39,6 @@
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
         />
@@ -53,7 +52,6 @@
         <label for="Host">Host</label>
         <masked-input
           :value="config.host"
-          :privacy-mode="privacyMode"
           @input="val => config.host = val"
         />
       </div>
@@ -61,7 +59,6 @@
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
         />
@@ -79,7 +76,6 @@
         <label for="user">User</label>
         <masked-input
           :value="config.username"
-          :privacy-mode="privacyMode"
           @input="val => config.username = val"
         />
       </div>
@@ -119,7 +115,6 @@
 import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
 import CommonSsl from './CommonSsl.vue'
-import { mapGetters } from 'vuex'
 
 export default {
   props: {
@@ -144,7 +139,6 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('settings', ['privacyMode']),
     togglePasswordIcon() {
       return this.showPassword ? "visibility_off" : "visibility"
     },
