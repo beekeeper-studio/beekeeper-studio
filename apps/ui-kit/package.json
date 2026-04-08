@@ -119,7 +119,7 @@
     "tabulator-tables": "beekeeper-studio/tabulator#f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1",
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",
-    "vite": "~5.4.19",
+    "vite": "~6.4.2",
     "vite-plugin-vue2": "^2.0.3",
     "vitest": "~3.0.5",
     "vue": "^2.7.16",
