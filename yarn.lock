@@ -6804,9 +6804,9 @@ base64-url@^2.3.3:
   integrity sha512-dLMhIsK7OplcDauDH/tZLvK7JmUZK3A7KiQpjNzsBrM6Etw7hzNI1tLEywqJk9NnwkgWuFKSlx/IUO7vF6Mo8Q==
 
 basic-ftp@^5.0.2:
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-5.2.0.tgz#7c2dff63c918bde60e6bad1f2ff93dcf5137a40a"
-  integrity sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-5.2.1.tgz#818ba176e0e52a9e746e8576331f7e9474b94668"
+  integrity sha512-0yaL8JdxTknKDILitVpfYfV2Ob6yb3udX/hK97M7I3jOeznBNxQPtVvTUtnhUkyHlxFWyr5Lvknmgzoc7jf+1Q==
 
 bcrypt-pbkdf@^1.0.2:
   version "1.0.2"
