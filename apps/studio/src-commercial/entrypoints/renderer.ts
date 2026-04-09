@@ -46,6 +46,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
   await window.main.requestPlatformInfo();
   await window.main.requestBksConfigSource();
+  await window.main.requestKeychainInsecure();
   rawLog.transports.console.level = "info"
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
