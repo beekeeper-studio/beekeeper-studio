@@ -164,8 +164,9 @@ class SSHConnection {
         if (err) {
           return reject(err)
         }
-        const connection = await this.connect({ ...endOptions, stream })
-        return resolve(connection)
+        this.connect({ ...endOptions, stream })
+          .then(resolve)
+          .catch(reject)
       })
     })
   }
@@ -263,13 +264,29 @@ class SSHConnection {
     return new Promise<any>((resolve, reject) => {
       this.server = net.createServer((socket) => {
         this.debug('Forwarding connection from "localhost:%d" to "%s:%d"', options.fromPort, options.toHost, options.toPort)
-        connection.forwardOut(this.options.bindHost, options.fromPort, options.toHost || '127.0.0.1', options.toPort, (error, stream) => {
-          if (error) {
-            return reject(error)
-          }
-          socket.pipe(stream)
-          stream.pipe(socket)
+        socket.on('error', (err) => {
+          this.debug('socket error: %s', err.message)
         })
+        try {
+          connection.forwardOut(this.options.bindHost, options.fromPort, options.toHost || '127.0.0.1', options.toPort, (error, stream) => {
+            if (error) {
+              this.debug('forwardOut error: %s', error.message)
+              socket.destroy(error)
+              return
+            }
+            socket.pipe(stream)
+            stream.pipe(socket)
+            stream.on('error', (err) => {
+              this.debug('stream error: %s', err.message)
+              socket.destroy()
+            })
+          })
+        } catch (err) {
+          this.debug('forwardOut threw: %s', err.message)
+          socket.destroy(err)
+        }
+      }).on('error', (err) => {
+        reject(err)
       }).listen(options.fromPort, this.options.bindHost, () => {
         this.debug("Tunnel listening configured")
         resolve({})

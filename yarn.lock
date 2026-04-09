@@ -14363,7 +14363,7 @@ ssh-remote-port-forward@^1.0.4:
     "@types/ssh2" "^0.5.48"
     ssh2 "^1.4.0"
 
-ssh2@^1.14.0, ssh2@^1.15.0, ssh2@^1.4.0:
+ssh2@^1.15.0, ssh2@^1.4.0:
   version "1.16.0"
   resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.16.0.tgz#79221d40cbf4d03d07fe881149de0a9de928c9f0"
   integrity sha512-r1X4KsBGedJqo7h8F5c4Ybpcr5RjyP+aWIG007uBPRjmdQWfEiVLzSK71Zji1B9sKxwaCvD8y8cwSkYrlLiRRg==
