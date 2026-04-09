@@ -77,6 +77,9 @@ export interface State {
   versionString: string,
   connError: string
   expandFKDetailsByDefault: boolean,
+  fieldSearchIndex: Record<string, string[]>,
+  fieldSearchLoading: boolean,
+  fieldSearchLoaded: boolean,
 
   // SurrealDB only
   namespace: Nullable<string>,
@@ -124,8 +127,12 @@ const store = new Vuex.Store<State>({
       showTables: true,
       showRoutines: true,
       showViews: true,
-      showPartitions: false
+      showPartitions: false,
+      showFields: true
     },
+    fieldSearchIndex: {} as Record<string, string[]>,
+    fieldSearchLoading: false,
+    fieldSearchLoaded: false,
     tablesLoading: null,
     columnsLoading: null,
     tablesInitialLoaded: false,
@@ -196,7 +203,7 @@ const store = new Vuex.Store<State>({
       return state.selectedSidebarItem
     },
     filteredTables(state) {
-      return entityFilter(state.tables, state.entityFilter);
+      return entityFilter(state.tables, state.entityFilter, state.fieldSearchIndex);
     },
     filteredRoutines(state) {
       return entityFilter(state.routines, state.entityFilter)
@@ -303,6 +310,18 @@ const store = new Vuex.Store<State>({
     showPartitions(state) {
       state.entityFilter.showPartitions = !state.entityFilter.showPartitions
     },
+    showFields(state) {
+      state.entityFilter.showFields = !state.entityFilter.showFields
+    },
+    fieldSearchIndex(state, index: Record<string, string[]>) {
+      state.fieldSearchIndex = index
+    },
+    fieldSearchLoading(state, value: boolean) {
+      state.fieldSearchLoading = value
+    },
+    fieldSearchLoaded(state, value: boolean) {
+      state.fieldSearchLoaded = value
+    },
     tabActive(state, tab: CoreTab) {
       state.activeTab = tab
     },
@@ -334,8 +353,12 @@ const store = new Vuex.Store<State>({
         showTables: true,
         showViews: true,
         showRoutines: true,
-        showPartitions: false
+        showPartitions: false,
+        showFields: true
       }
+      state.fieldSearchIndex = {}
+      state.fieldSearchLoading = false
+      state.fieldSearchLoaded = false
     },
     database(state, database: string) {
       state.database = database
@@ -591,6 +614,7 @@ const store = new Vuex.Store<State>({
       //        then we should load new tables when a schema is expanded in the sidebar
       //        or for auto-complete in the editor.
       //        Currently: Loads all tables, regardless of schema
+      context.dispatch('clearFieldSearchIndex')
       try {
         const schema = null
         context.commit("tablesLoading", "Loading tables...")
@@ -622,6 +646,9 @@ const store = new Vuex.Store<State>({
         context.commit("tablesLoading", `Loading ${tables.length} tables`)
 
         context.commit('tables', tables)
+        if (context.state.entityFilter.showFields) {
+          context.dispatch('ensureFieldSearchLoaded')
+        }
       } finally {
         context.commit("tablesLoading", null)
       }
@@ -634,6 +661,30 @@ const store = new Vuex.Store<State>({
     setFilterQuery: _.debounce(function (context, filterQuery) {
       context.commit('filterQuery', filterQuery)
     }, 500),
+    async ensureFieldSearchLoaded(context) {
+      if (context.state.fieldSearchLoaded || context.state.fieldSearchLoading) return
+      context.commit('fieldSearchLoading', true)
+      try {
+        const columns = await context.state.connection.listTableColumns(null, null)
+        const index: Record<string, string[]> = {}
+        for (const col of columns) {
+          const key = `${col.schemaName || ''}:${col.tableName}`
+          if (!index[key]) index[key] = []
+          index[key].push(col.columnName.toLowerCase())
+        }
+        context.commit('fieldSearchIndex', index)
+        context.commit('fieldSearchLoaded', true)
+      } catch (e) {
+        log.warn('Failed to load field search index', e)
+      } finally {
+        context.commit('fieldSearchLoading', false)
+      }
+    },
+    clearFieldSearchIndex(context) {
+      context.commit('fieldSearchIndex', {})
+      context.commit('fieldSearchLoaded', false)
+      context.commit('fieldSearchLoading', false)
+    },
     async pinTable(context, table) {
       table.pinned = true
       context.commit('addPinned', table)
