@@ -1,8 +1,9 @@
 import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import { MaxLength } from 'class-validator';
-import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
+import { Entity, Column, Index, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 import { QueryLike } from './base'
+import { QueryFolder } from './QueryFolder'
 
 @Entity({ name: 'favorite_query' })
 export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISavedQuery {
@@ -27,6 +28,19 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   @Index()
   @Column({type: "varchar", nullable: false})
   connectionHash!: string
+
+  @Column({ type: 'integer', nullable: true, default: null })
+  queryFolderId: Nullable<number> = null
+
+  @Column({ type: 'float', nullable: false, default: 0 })
+  position = 0.0
+
+  // Do NOT initialize this to null. A null initializer becomes an own property
+  // that gets copied into transport objects by cls.merge(), and TypeORM treats an
+  // explicitly-null relation as "unset this FK", overriding the queryFolderId column.
+  @ManyToOne(() => QueryFolder, (folder) => folder.queries, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'queryFolderId' })
+  queryFolder?: QueryFolder
 
   @BeforeInsert()
   @BeforeUpdate()

@@ -50,6 +50,7 @@ save = ctrlOrCmd+s
     expect(
       convertKeybinding("v-hotkey", "CTRLORCMD   +  SHIFT  + C", "linux")
     ).toBe("ctrl+shift+c");
+    expect(convertKeybinding("v-hotkey", "delete", "mac")).toBe("backspace");
   });
 
   it("should detect unrecognized config keys", () => {
@@ -113,6 +114,21 @@ minRes = 10
     const userConfig = parseIni(`
 [plugins.bks-ai-shell]
 enabled = true
+    `);
+
+    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    expect(warnings).toEqual([]);
+  })
+
+  // Regression test, mariadb.paramTypes.named.0 is not a key we need to check
+  it("should not determine array elements to be unrecognized keys", () => {
+    const defaultConfig = parseIni(`
+[db.mariadb.paramTypes]
+named[] =
+    `);
+    const userConfig = parseIni(`
+[db.mariadb.paramTypes]
+named[] = ':'
     `);
 
     const warnings = checkUnrecognized(defaultConfig, userConfig, "user");

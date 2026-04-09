@@ -40,7 +40,9 @@ test.describe("Export Results Verifications", () => {
     });
 
     afterEach(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test("downloads as CSV", async () => {
