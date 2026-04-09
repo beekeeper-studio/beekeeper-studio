@@ -7,7 +7,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "private": false,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
@@ -69,7 +69,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "@marimo-team/codemirror-languageserver": "azmy60/codemirror-languageserver#b815a92e5f9120a845385ddfb89e85b0fa60fbde",
+    "@marimo-team/codemirror-languageserver": "^1.15.25",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21"
@@ -87,7 +87,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "@marimo-team/codemirror-languageserver": "^1.15.13",
+    "@marimo-team/codemirror-languageserver": "^1.15.25",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21",
@@ -106,8 +106,8 @@
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
     "ist": "^1.1.7",
-    "happy-dom": "^20.0.2",
-    "lodash": "^4.17.21",
+    "happy-dom": "^20.8.9",
+    "lodash": "^4.18.1",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
     "rimraf": "^6.0.1",

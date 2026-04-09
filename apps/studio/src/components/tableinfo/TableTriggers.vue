@@ -42,6 +42,7 @@ import data_mutators from '../../mixins/data_mutators'
 import StatusBar from '../common/StatusBar.vue'
 import { mapGetters, mapState } from 'vuex'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 
 export default {
@@ -67,17 +68,17 @@ export default {
     },
     sqliteTableColumns() {
       return [
-        { field: 'name', title: 'Name', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'sql', title: 'SQL', tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
+        { field: 'name', title: 'Name', tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'sql', title: 'SQL', tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     normalTableColumns() {
       return [
-        { field: 'name', title: "Name", tooltip: true, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'timing', title: "Timing", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'manipulation', title: "Manipulation", cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
-        { field: 'condition', title: "Condition", formatter: this.cellFormatter, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
+        { field: 'name', title: "Name", tooltip: true, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'timing', title: "Timing", contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'manipulation', title: "Manipulation", contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'action', title: "Action", tooltip: true, widthGrow: 2.5, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)},
+        { field: 'condition', title: "Condition", formatter: this.cellFormatter, contextMenu: copyCellMenu, cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)}
       ]
     },
     tableData() {

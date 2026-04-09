@@ -50,7 +50,7 @@ import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import type { PluginContext, PluginRegistryEntry } from "@/services/plugin";
-import { mapState } from "vuex";
+import { mapGetters, mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
 
@@ -79,6 +79,9 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["pluginManagerStatus"]),
+    ...mapGetters("plugins/entries", {
+      entries: "all",
+    }),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
     },
@@ -203,7 +206,7 @@ export default Vue.extend({
       this.loadingPluginReadme = false;
     },
     async buildPluginListData() {
-      const entries = await this.$util.send("plugin/entries");
+      const entries: PluginRegistryEntry[] = this.entries;
       const installedPlugins: PluginContext[] = await this.$plugin.plugins;
       const list: PluginRegistryEntry[] = [];
 

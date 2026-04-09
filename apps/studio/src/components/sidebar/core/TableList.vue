@@ -125,7 +125,7 @@
           </button>
 
           <x-button
-            v-if="!usedConfig.readOnlyMode"
+            v-if="!usedConfig?.readOnlyMode"
             class="settings-btn"
             menu
           >

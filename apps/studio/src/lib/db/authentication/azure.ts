@@ -6,7 +6,7 @@ import {TokenCache} from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
 import {AzureAuthOptions, AzureAuthType} from '../types';
 import {spawn} from 'child_process'
-import {getEntraOptions} from "@/lib/db/clients/utils";
+import {getEntraOptions, sanitizeCommandPath} from "@/lib/db/clients/utils";
 import {IDbConnectionServer} from "@/lib/db/backendTypes";
 import BksConfig from '@/common/bksConfig';
 
@@ -178,14 +178,14 @@ export class AzureAuthService {
     }
 
     return new Promise<AuthConfig>((resolve, reject) => {
-      const proc = spawn(options.cliPath, [
+      const proc = spawn(sanitizeCommandPath(options.cliPath), [
         'account',
         'get-access-token',
         '--resource',
         BksConfig.azure.azSQLLoginScope,
         '--output',
         'json'
-      ]);
+      ], { shell: true });
 
       let stdout = '';
       let stderr = '';
@@ -232,11 +232,11 @@ export class AzureAuthService {
     const res = await axios.post(globals.azureCloudTokenUrl) as Response;
 
     const beekeeperCloudToken = res.data?.cloud_token;
-    const authCodeUrlParams = {
+    const authCodeUrlParams: msal.AuthorizationUrlRequest = {
       scopes: globals.azureCloudScopes,
       redirectUri: beekeeperCloudToken.fulfillment_url,
       state: beekeeperCloudToken.id,
-      prompt: 'consent'
+      prompt: BksConfig.azure.ssoPrompt
     };
     const authUrl = await this.pca.getAuthCodeUrl(authCodeUrlParams);
 

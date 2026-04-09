@@ -63,7 +63,7 @@
                   :testing="testing"
                 />
                 <postgres-form
-                  v-else-if="config.connectionType === 'postgresql'"
+                  v-else-if="['postgresql', 'greengage'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                 />
@@ -195,6 +195,9 @@
                 <SaveConnectionForm
                   v-if="!shouldUpsell"
                   :config="config"
+                  :folders="connectionFolders"
+                  :is-ultimate="isUltimate"
+                  :is-cloud="isCloud"
                   @save="save"
                 />
               </div>
@@ -295,7 +298,8 @@ export default Vue.extend({
     ...mapState(['workspaceId', 'connection']),
     ...mapState(['username']),
     ...mapState('data/connections', { 'connections': 'items' }),
-    ...mapGetters(['isUltimate']),
+    ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
+    ...mapGetters(['isUltimate', 'isCloud']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
       'usedConfigs': 'data/usedconnections/orderedUsedConfigs',

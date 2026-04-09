@@ -115,7 +115,7 @@ import { SurrealAuthType, SurrealAuthTypes } from '../../lib/db/types';
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 
 export default Vue.extend({
   components: { CommonServerInputs, MaskedInput, CommonAdvanced },
@@ -129,7 +129,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     togglePasswordIcon() {
       return this.showPassword ? "visibility_off" : "visibility";
     },
