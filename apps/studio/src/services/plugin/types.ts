@@ -185,32 +185,57 @@ export type PluginSettings = {
   }
 }
 
-
 export type WebPluginContext = {
-  manifest: Manifest;
+  manifest: ManifestV1;
   store: PluginStoreService;
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
   fileHelpers: FileHelpers;
-  noty: {
+ noty: {
     success(text: string, options?: any): Noty;
     error(text: string, options?: any): Noty;
     warning(text: string, options?: any): Noty;
     info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
+  disabled: boolean;
 }
 
-export type PluginContext = {
-  manifest: Manifest;
+export type PluginSnapshot = {
+  manifest: ManifestV1;
+  /** Is this compatible with the current app version? */
   loadable: boolean;
-}
+  origin: PluginOrigin;
+  disableState: DisableState;
+};
+
+/**
+ * By default, `disabled` is `false`.
+ * This value may be modified by other modules (e.g. {@link ConfigurationModule}).
+ */
+export type DisableState =
+  | { disabled: false }
+  | {
+      disabled: true;
+      reason: "disabled-by-config";
+    }
+  | {
+      disabled: true;
+      reason: "disabled-by-license";
+      detail:
+        | { cause: "valid-license-required" }
+        | {
+            cause: "max-plugins-reached" | "max-community-plugins-reached";
+            limit: number;
+          };
+    };
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
 export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
+  /** For `getViewContext` API */
   context: any;
 }
 

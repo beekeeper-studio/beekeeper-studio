@@ -118,8 +118,10 @@ describe("Basic Plugin Management", () => {
         minAppVersion: "5.4.0",
         author: "test-plugin-author",
         description: "Test Plugin description",
+        manifestVersion: 1,
         capabilities: {
           views: [],
+          menu: [],
         },
       };
       await expect(manager.getRepository("test-plugin")).resolves.toStrictEqual(
@@ -138,7 +140,7 @@ describe("Basic Plugin Management", () => {
     it("can install the latest plugins if compatible", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      const plugins = manager.getPlugins();
+      const plugins = await manager.getPlugins();
       expect(plugins).toHaveLength(1);
       expect(plugins[0].manifest.version).toBe("1.0.0");
     });
@@ -162,10 +164,10 @@ describe("Basic Plugin Management", () => {
     it("can load compatible plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      expect(manager.getPlugins()[0]).toHaveProperty("loadable", true);
+      expect((await manager.getPlugins())[0]).toHaveProperty("loadable", true);
 
       await manager.installPlugin("watermelon-sticker");
-      expect(manager.getPlugins()[1]).toHaveProperty("loadable", true);
+      expect((await manager.getPlugins())[1]).toHaveProperty("loadable", true);
     });
 
     // Simulates a user who installed a plugin, then downgraded the app.
@@ -181,7 +183,7 @@ describe("Basic Plugin Management", () => {
       const oldManager = await initPluginManager(AppVer.INCOMPAT);
 
       // 4. The downgraded app should not load incompatible plugins
-      expect(oldManager.getPlugins()[0]).toHaveProperty("loadable", false);
+      expect((await oldManager.getPlugins())[0]).toHaveProperty("loadable", false);
     });
   });
 
@@ -216,15 +218,15 @@ describe("Basic Plugin Management", () => {
 
       // Simulate app restart
       const manager2 = await initPluginManager(AppVer.COMPAT);
-      expect(
+      expect((await
         manager2
-          .getPlugins()
+          .getPlugins())
           .find(({ manifest }) => manifest.id === "test-plugin").manifest
           .version
       ).toBe("1.2.0");
-      expect(
+      expect((await
         manager2
-          .getPlugins()
+          .getPlugins())
           .find(({ manifest }) => manifest.id === "frozen-banana").manifest
           .version
       ).toBe("1.3.0");
@@ -238,7 +240,7 @@ describe("Basic Plugin Management", () => {
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
 
       await manager.updatePlugin("test-plugin");
-      expect(manager.getPlugins()[0].manifest.version).toBe("1.2.0");
+      expect((await manager.getPlugins())[0].manifest.version).toBe("1.2.0");
     });
 
     it("can not update plugins if not compatible", async () => {
@@ -269,7 +271,7 @@ describe("Basic Plugin Management", () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
       await manager.uninstallPlugin("test-plugin");
-      expect(manager.getPlugins()).toHaveLength(0);
+      expect(manager.getPlugins()).resolves.toHaveLength(0);
     });
   });
 });
