@@ -22,7 +22,9 @@ test.describe('New Connection Tests', () => {
     });
 
     test.afterEach(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test('Test a Postgres connection', async () => {
