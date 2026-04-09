@@ -4,6 +4,8 @@ import { userActions as resultPaneActions } from './resultPanelActions';
 import { userActions as tableSideBarActions } from './tableSideBarActions';
 import { userActions as footerActions } from './footerActions';
 import { userActions as toggleSideBarActions } from './toggleSideBarActions';
+import { userActions as erdActions } from './erdActions';
+import { userActions as jsonSidebarActions } from './jsonSidebarActions';
 export const userActions = (page) => {
     return {
         ...newDatabaseConnectionActions(page),
@@ -11,6 +13,8 @@ export const userActions = (page) => {
         ...resultPaneActions(page),
         ...tableSideBarActions(page),
         ...footerActions(page),
-        ...toggleSideBarActions(page)
+        ...toggleSideBarActions(page),
+        ...erdActions(page),
+        ...jsonSidebarActions(page)
     };
 };
