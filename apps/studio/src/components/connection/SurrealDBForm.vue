@@ -113,7 +113,6 @@ export default Vue.extend({
       return this.config.surrealDbOptions.authType === SurrealAuthType.Token;
     }
   },
-  }
 })
 
 </script>

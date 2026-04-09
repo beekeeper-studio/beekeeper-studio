@@ -43,6 +43,13 @@ Use the `.form-group` class when an input has a label, hint, or both. It provide
   <input id="myInput" type="text" v-model="value">
   <div class="hint">Helper text goes here</div>
 </div>
+
+<!-- Component input with label and hint -->
+<div class="form-group">
+  <label>Host</label>
+  <masked-input v-model="hostname" />
+  <div class="hint">The hostname or IP address of your database</div>
+</div>
 ```
 
 Input components like `MaskedInput`, `FilePicker`, and `ColorPicker` work on their own. Wrap them in `.form-group` only if you need a label or helper text.
@@ -54,7 +61,9 @@ For inputs that should be masked in privacy mode, use the `MaskedInput` componen
 ```html
 <div class="form-group">
   <label>Host</label>
-  <masked-input :value="config.host" @input="val => config.host = val" />
+  <masked-input v-model="hostname" />
+  <!-- OR -->
+  <masked-input :value="hostname" @input="hostname = $event" />
 </div>
 ```
 

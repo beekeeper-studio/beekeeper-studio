@@ -1,11 +1,11 @@
 <template>
   <div class="password-input">
-    <input
+    <masked-input
       :type="showPassword ? 'text' : 'password'"
       :value="value"
-      class="password form-control"
-      @input="$emit('input', $event.target.value)"
-    >
+      class="password"
+      @input="$emit('input', $event)"
+    />
     <i
       @click.prevent="showPassword = !showPassword"
       class="material-icons password-icon"
@@ -14,8 +14,11 @@
 </template>
 
 <script>
+import MaskedInput from '@/components/MaskedInput.vue';
+
 export default {
   name: 'PasswordInput',
+  components: { MaskedInput },
   props: {
     value: {
       type: [String, Number],

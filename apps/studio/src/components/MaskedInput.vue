@@ -1,5 +1,6 @@
 <template>
     <input
+      v-bind="$attrs"
       v-tooltip="privacyMode ? 'Privacy Mode is enabled, disable it in the View menu to see this data' : null"
       :type="computedType"
       :value="displayedValue"
@@ -31,6 +32,10 @@
     computed: {
       ...mapGetters('settings', ['privacyMode']),
       computedType() {
+        // Keep password type as-is so we don't lose its semantics
+        if (this.type === 'password') {
+          return 'password';
+        }
         return this.privacyMode ? 'text' : this.type;
       },
       displayedValue() {
