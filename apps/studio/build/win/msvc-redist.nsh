@@ -2,6 +2,9 @@
 
 !include LogicLib.nsh
 
+; Register custom protocol handler for deep linking
+!include "${__FILEDIR__}\protocol-handler.nsi"
+
 !macro customInit
   Var /GLOBAL VCRedistDownload
   Var /GLOBAL isInstalled
