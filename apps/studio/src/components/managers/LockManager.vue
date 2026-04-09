@@ -1,6 +1,7 @@
 <template>
   <div>
     <input-pin-modal />
+    <input-jwt-modal />
     <create-pin-modal />
     <update-pin-modal />
   </div>
@@ -9,11 +10,12 @@
 import Vue from "vue";
 import { AppEvent } from "@/common/AppEvent";
 import InputPinModal from "@/components/common/modals/InputPinModal.vue";
+import InputJwtModal from "@/components/common/modals/InputJwtModal.vue";
 import CreatePinModal from "@/components/common/modals/CreatePinModal.vue";
 import UpdatePinModal from "@/components/common/modals/UpdatePinModal.vue";
 
 export default Vue.extend({
-  components: { InputPinModal, CreatePinModal, UpdatePinModal },
+  components: { InputPinModal, InputJwtModal, CreatePinModal, UpdatePinModal },
   computed: {
     rootBindings() {
       return [{ event: AppEvent.disconnect, handler: this.handleDisconnect }];
