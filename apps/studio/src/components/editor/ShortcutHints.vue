@@ -120,8 +120,6 @@
     },
     methods : {
       getShortcut(shortcut) {
-        console.log('!!!')
-        console.log(shortcut)
         return convertKeybinding('ui', Array.isArray(shortcut) ? shortcut[0] : shortcut, this.$bksConfig.platformInfo.platform)
       },
       isPrimaryRunCurrentQuery() {

@@ -160,7 +160,6 @@
               <x-label>Rollback</x-label>
             </x-button>
           </x-buttons>
-
         </div>
 
         <div class="editor-help expand" />
@@ -198,25 +197,13 @@
 
           <x-buttons class="">
             <x-button
-              v-if="isPrimaryRunCurrentQuery"
               class="btn btn-primary btn-small"
               :v-tooltip="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)"
-              @click.prevent="submitCurrentQuery"
+              @click.prevent="queryFunctions.primaryRead"
               :disabled="this.tab.isRunning || running"
             >
-              <x-label>{{ runCurrentText }}</x-label>
+              <x-label>{{ runQueryText(true, false) }}</x-label>
             </x-button>
-            <x-button
-              v-else
-              class="btn btn-primary btn-small"
-              :v-tooltip="displayShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)"
-              @click.prevent="submitTabQuery"
-              :disabled="this.tab.isRunning || running"
-            >
-              <x-label>Run All</x-label>
-            </x-button>
-
-
             
             <x-button
               class="btn btn-primary btn-small"
@@ -224,21 +211,21 @@
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu v-if="isPrimaryRunCurrentQuery">
-                <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>{{ runCurrentText }}</x-label>
+              <x-menu>
+                <x-menuitem @click.prevent="queryFunctions.primaryRead">
+                  <x-label>{{ runQueryText(true, false) }}</x-label>
                   <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>Run All</x-label>
+                <x-menuitem @click.prevent="queryFunctions.secondaryRead">
+                  <x-label>{{ runQueryText(false, false) }}</x-label>
                   <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
-                  @click.prevent="submitCurrentQueryToFile"
+                  @click.prevent="queryFunctions.primaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ runCurrentText }} to File</x-label>
+                  <x-label>{{ runQueryText(true, true) }}</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
@@ -247,46 +234,10 @@
                   </i>
                 </x-menuitem>
                 <x-menuitem
-                  @click.prevent="submitQueryToFile"
+                  @click.prevent="queryFunctions.secondaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>Run All to File</x-label>
-                  <i
-                    v-if="isCommunity"
-                    class="material-icons menu-icon"
-                  >
-                    stars
-                  </i>
-                </x-menuitem>
-              </x-menu>
-              <x-menu v-else>
-                <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>Run All</x-label>
-                  <x-shortcut value="Control+Enter" />
-                </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>{{ runCurrentText }}</x-label>
-                  <x-shortcut value="Control+Shift+Enter" />
-                </x-menuitem>
-                <hr>
-
-                <x-menuitem
-                  @click.prevent="submitQueryToFile"
-                  :disabled="disableRunToFile"
-                >
-                  <x-label>Run All to File</x-label>
-                  <i
-                    v-if="isCommunity"
-                    class="material-icons menu-icon "
-                  >
-                    stars
-                  </i>
-                </x-menuitem>
-                <x-menuitem
-                  @click.prevent="submitCurrentQueryToFile"
-                  :disabled="disableRunToFile"
-                >
-                  <x-label>{{ runCurrentText }} to File</x-label>
+                  <x-label>{{ runQueryText(false, true) }}</x-label>
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
@@ -656,6 +607,12 @@
         warningNoty: null,
         showTransactionActiveTooltip: false,
         enteredTransactionFromIdent: false,
+        queryFunctions: {} as {
+          primaryRead: () => Promise<void>,
+          secondaryRead: () => Promise<void>,
+          primaryWrite: () => Promise<void>,
+          secondaryWrite: () => Promise<void>,
+        }
       }
     },
     computed: {
@@ -753,9 +710,6 @@
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
       },
-      runCurrentText() {
-        return this.hasSelectedText ? 'Run Selection' : 'Run Current'
-      },
       result() {
         return this.results[this.selectedResult]
       },
@@ -775,13 +729,12 @@
         ]
       },
       keymap() {
-        const { primaryWriteFunction, secondaryWriteFunc }  = this.getQueryActions()
         if (!this.active) return {}
         return this.$vHotkeyKeymap({
           'queryEditor.switchPaneFocus': this.switchPaneFocus,
           'queryEditor.selectEditor': this.selectEditor,
-          'queryEditor.primaryQueryToFileAction': primaryWriteFunction,
-          'queryEditor.secondaryQueryToFileAction': secondaryWriteFunc,
+          'queryEditor.primaryQueryToFileAction': this.queryFunctions.primaryWrite,
+          'queryEditor.secondaryQueryToFileAction': this.queryFunctions.secondaryWrite,
           'queryEditor.manualCommit': this.manualCommit,
           'queryEditor.manualRollback': this.manualRollback,
         })
@@ -831,12 +784,10 @@
           _.trim(this.unsavedText) !== _.trim(this.originalText)
       },
       keybindings() {
-        const { primaryFunc, secondaryFunc}  = this.getQueryActions()
-        
         const keybindings = this.$CMKeymap({
           'general.save': this.triggerSave,
-          'queryEditor.primaryQueryAction': primaryFunc,
-          'queryEditor.secondaryQueryAction': secondaryFunc
+          'queryEditor.primaryQueryAction': this.queryFunctions.primaryRead,
+          'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
         })
 
         if(this.userKeymap === "vim") {
@@ -1000,6 +951,23 @@
         } else {
           this.$modal.hide(this.superFormatterId)
         }
+      },
+      runQueryText(isPrimary: boolean, isWrite: boolean): string{
+        const writeText = ' to File'
+        const { settings: configSettings } = this.$bksConfig
+        let runSelect = this.hasSelectedText ? 'Run Selection' : 'Run Current'
+        let runAll = 'Run All'
+
+        if (isWrite) {
+          runSelect += writeText
+          runAll += writeText
+        }
+
+        if (configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery') {
+          return isPrimary ? runAll : runSelect
+        }
+
+        return isPrimary ? runSelect : runAll
       },
       getQueryActions() {
         const { settings: configSettings } = this.$bksConfig
@@ -1740,6 +1708,20 @@
       }
     },
     async mounted() {
+      const {
+        primaryFunc,
+        secondaryFunc,
+        primaryWriteFunction,
+        secondaryWriteFunc
+      } = this.getQueryActions()
+
+      this.queryFunctions = {
+        primaryRead: primaryFunc,
+        secondaryRead: secondaryFunc,
+        primaryWrite: primaryWriteFunction,
+        secondaryWrite: secondaryWriteFunc
+      }
+
       if (this.tab.queryId) {
         this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
       } else if (this.tab.usedQueryId) {
