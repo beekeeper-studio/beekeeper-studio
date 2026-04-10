@@ -384,6 +384,34 @@ export default {
     draggingConnection: null
   }),
   watch: {
+    connectionsItems: {
+      handler(cList){
+        if (this.connected || this.sharedQueryLink == null) {
+          return
+        }
+        const { workspaceId, databaseId } = this.sharedQueryLink
+        const connectionConfig = cList.find(c => c.workspaceId === workspaceId && c.id === databaseId )
+
+        if (connectionConfig != null) {
+          this.connect(connectionConfig)
+        }
+      },
+      deep: true
+    },
+    sharedQueryLink(newValue) {
+      try {
+        if (newValue == null) return
+        const { workspaceId } = newValue
+
+        if (this.availableWorkspaces.find(w => w.workspace?.id === workspaceId)) {
+          this.$store.commit('workspaceId', workspaceId)
+        } else {
+          throw new Error ('Workspace is not available for shared link.')
+        }
+      } catch (err) {      
+        this.$noty.error(err.message)
+      }
+    },
     async sort(newSort) {
       await this.$settings.set('connectionsSortOrder', newSort.order)
       await this.$settings.set('connectionsSortBy', newSort.field)
@@ -393,6 +421,7 @@ export default {
   },
   computed: {
     ...mapState('data/connections', {
+      connectionsItems: 'items',
       connectionsLoading: 'loading',
       connectionsError: 'error',
       connectionFilter: 'filter',
@@ -403,6 +432,8 @@ export default {
       foldersLoading: 'loading',
       foldersError: 'error',
     }),
+    ...mapState(['workspaceId', 'sharedQueryLink', 'connected']),
+    ...mapGetters('credentials', { 'availableWorkspaces': 'workspaces'}),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
