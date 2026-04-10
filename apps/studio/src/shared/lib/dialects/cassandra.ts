@@ -72,6 +72,7 @@ export const CassandraData: DialectData = {
   requireDataset: false,
   textEditorMode: "text/x-cassandra",
   disabledFeatures: {
+    readOnlyPrimaryKeys: false, // Cassandra primary keys are immutable by design
     manualCommit: true,
     shell: true,
     defaultValue: true,
