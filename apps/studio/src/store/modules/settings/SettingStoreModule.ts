@@ -32,6 +32,9 @@ const SettingStoreModule: Module<State, any> = {
     },
     setInitialized(state) {
       state.initialized = true;
+    },
+    setPrivacyMode(state, value) {
+      state.settings.privacyMode = value 
     }
   },
   actions: {
@@ -55,6 +58,9 @@ const SettingStoreModule: Module<State, any> = {
       const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
       _.merge(setting, newSetting);
       context.commit(M.ADD, newSetting);
+    },
+    togglePrivacyMode(context) {
+      context.commit('setPrivacyMode', !context.state.settings.privacyMode.value)
     }
   },
   getters: {
