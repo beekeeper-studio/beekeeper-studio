@@ -45,6 +45,9 @@ jobs:
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
+      - name: Install xvfb-maybe
+        run: npm install -g xvfb-maybe
+
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 

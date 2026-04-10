@@ -205,6 +205,9 @@ jobs:
           key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
           fail-on-cache-miss: true
 
+      - name: Install xvfb-maybe
+        run: npm install -g xvfb-maybe
+
       - name: Start postgres container
         run: docker compose up psql15 -d
 
