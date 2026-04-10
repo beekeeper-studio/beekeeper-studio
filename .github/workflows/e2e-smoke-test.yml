@@ -52,19 +52,12 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
-            yarn run electron:serve > server.log 2>&1 &
-              sleep 15
-              cat server.log
-              yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
-            '
-          else
+          xvfb-maybe --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
             yarn run electron:serve > server.log 2>&1 &
             sleep 15
             cat server.log
-            yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
-          fi
+            yarn workspace beekeeper-studio test:e2e:ci e2e/tests/appLaunch.test.ts
+          '
         env:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
@@ -77,7 +70,7 @@ jobs:
           yarn run electron:serve > server.log 2>&1 &
           sleep 30
           cat server.log
-          yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
+          yarn workspace beekeeper-studio test:e2e:ci e2e/tests/appLaunch.test.ts
         env:
           ELECTRON_ENABLE_LOGGING: 1
 
