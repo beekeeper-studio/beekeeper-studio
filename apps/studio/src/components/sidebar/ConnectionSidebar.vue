@@ -35,9 +35,6 @@
           </div>
         </div>
       </div>
-
-      <privacy-banner :privacy-mode="privacyMode" />
-
       <div class="connection-wrap expand flex-col">
         <!-- Pinned Connections -->
         <!-- TODO (day): should probably make a class for pinned connections-->
@@ -353,7 +350,6 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
-import PrivacyBanner from '@/components/PrivacyBanner.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
@@ -370,8 +366,7 @@ export default {
     SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
-    Draggable,
-    PrivacyBanner
+    Draggable
   },
   props: ['selectedConfig'],
   data: () => ({

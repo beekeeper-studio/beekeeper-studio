@@ -58,8 +58,6 @@
       </div>
     </div>
 
-    <privacy-banner :privacy-mode="privacyMode" />
-
     <x-progressbar
       v-show="tablesLoading"
       style="margin-top: -5px;"
@@ -192,7 +190,6 @@
   import TableFilter from '../../../mixins/table_filter'
   import TableListContextMenus from '../../../mixins/TableListContextMenus'
   import PinnedTableList from '@/components/sidebar/core/PinnedTableList.vue'
-  import PrivacyBanner from '@/components/PrivacyBanner.vue'
   import { AppEvent } from '@/common/AppEvent'
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
@@ -200,7 +197,7 @@
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
-    components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList, PrivacyBanner },
+    components: { PinnedTableList, HiddenEntitiesModal, VirtualTableList },
     data() {
       return {
         isDev: window.platformInfo.isDevelopment,
@@ -224,8 +221,7 @@
           orderedPins: 'pins/orderedPins',
           totalHiddenEntities: 'hideEntities/totalEntities',
           hiddenEntities: 'hideEntities/databaseEntities',
-          hiddenSchemas: 'hideEntities/databaseSchemas',
-          privacyMode: 'settings/privacyMode'
+          hiddenSchemas: 'hideEntities/databaseSchemas'
       }),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
