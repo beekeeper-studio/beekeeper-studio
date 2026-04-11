@@ -41,6 +41,7 @@ import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
 import ProductTourPlugin from '@/plugins/ProductTourPlugin'
+import UiKeybindPlugin from '@/plugins/UiKeybind'
 
 (async () => {
 
@@ -176,6 +177,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     })
     Vue.use(VueKeyboardTrapDirectivePlugin)
     Vue.use(ProductTourPlugin, { store, utility })
+    Vue.use(UiKeybindPlugin)
 
     const app = new Vue({
       render: h => h(App),

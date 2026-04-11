@@ -531,7 +531,6 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
-  import { convertKeybinding } from '@/common/bksConfig/BksConfigProvider'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -1648,7 +1647,7 @@
         this.timerInterval = null;
       },
       displayShortcut(shortcut: string|string[]) {
-        return convertKeybinding('ui', Array.isArray(shortcut) ? shortcut[0] : shortcut, this.$bksConfig.platformInfo.platform).join('')
+        return this.$getUiKeybind(shortcut).join('')
       },
       editorContextMenu(_event, _context, items) {
         return [
