@@ -1,30 +1,36 @@
 <template>
-  <div>
+  <div class="ssh-jump-hosts">
+    <div class="ssh-table-header">
+      <h5>Connection Steps</h5>
+      <button
+        class="btn btn-primary btn-fab add-host-btn"
+        type="button"
+        @click="$emit('add')"
+      >
+        <i class="material-icons">add</i>
+      </button>
+    </div>
+
     <div class="ssh-table-container">
-      <div class="ssh-orders">
+      <div class="empty-text" v-if="sortedConfigs.length === 0">
+        No SSH hosts configured. Click the + button to add one.
+      </div>
+      <div class="ssh-steps">
         <div
           v-for="(join, idx) in sortedConfigs"
           :key="join.position"
           class="host-bullet"
-          :title="
-            idx === sortedConfigs.length - 1
-              ? 'Target Host'
-              : `Jump Host #${idx + 1}`
-          "
-        />
-        <div class="add-host-bullet">
-          <i class="material-icons">add_circle</i>
+          :title="`SSH Host #${idx + 1}`"
+        >
+          <div class="bullet" />
+          <i
+            class="material-icons-outlined arrow"
+            style="transform: rotate(180deg)"
+          >straight</i>
         </div>
       </div>
 
       <div class="ssh-list-wrap">
-        <div class="ssh-list-header">
-          <span class="col-host">Host</span>
-          <span class="col-username">Username</span>
-          <span class="col-auth">Auth</span>
-          <span class="col-action" />
-        </div>
-
         <draggable
           :value="sortedConfigs"
           handle=".drag-handle"
@@ -35,25 +41,19 @@
             :key="row.position"
             class="ssh-row"
             :class="{ selected: selectedPosition === row.position }"
-            @click="$emit('select', row.position)"
+            @click="$emit('update:selectedPosition', row.position)"
           >
             <span class="drag-handle" />
             <span class="col-host">
-              <span class="host" v-text="row.host" />
-              <span class="port" v-text="`:${row.port}`" v-if="row.port" />
-            </span>
-            <span class="col-username" v-text="row.username" />
-            <span class="col-auth">
-              <span v-text="row.auth" />
-              <i
-                v-if="row.auth === 'Agent' && !agentStatus.ok"
-                class="material-icons warning-icon"
-                >error_outline</i
-              >
+              <span
+                class="host"
+                :class="{ 'empty': !row.host }"
+                v-text="row.host || '<EMPTY>'"
+              />
+              <span class="port" v-text="`:${row.port}`" />
             </span>
             <span class="col-action">
               <button
-                v-if="sortedConfigs.length > 1"
                 type="button"
                 class="btn btn-fab remove-btn"
                 @click.stop="$emit('remove', row.position)"
@@ -63,173 +63,8 @@
             </span>
           </div>
         </draggable>
-
-        <button
-          type="button"
-          class="btn btn-flat add-host-btn"
-          @click="$emit('add')"
-        >
-          Add Jump Host
-        </button>
       </div>
     </div>
-
-    <!-- Edit form for the selected row -->
-    <template v-if="selectedConfig">
-      <div class="row gutter">
-        <div class="col s9 form-group">
-          <label>Hostname</label>
-          <input
-            type="text"
-            class="form-control"
-            :value="selectedConfig.host"
-            @input="
-              $emit(
-                'update-ssh-config',
-                selectedPosition,
-                'host',
-                $event.target.value
-              )
-            "
-          />
-        </div>
-        <div class="col s3 form-group">
-          <label>Port</label>
-          <input
-            type="number"
-            class="form-control"
-            :value="selectedConfig.port"
-            @input="
-              $emit(
-                'update-ssh-config',
-                selectedPosition,
-                'port',
-                Number($event.target.value)
-              )
-            "
-          />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Authentication</label>
-        <select
-          class="form-control"
-          :value="selectedConfig.mode"
-          @change="
-            $emit(
-              'update-ssh-config',
-              selectedPosition,
-              'mode',
-              $event.target.value
-            )
-          "
-        >
-          <option
-            v-for="option in sshModeOptions"
-            :key="option.mode"
-            :value="option.mode"
-          >
-            {{ option.label }}
-          </option>
-        </select>
-        <div class="ssh-agent-indicator" v-if="selectedConfig.mode === 'agent'">
-          <template v-if="agentStatus.ok && !agentStatus.warning" />
-          <div
-            v-else-if="agentStatus.warning === 'win-nix-agent-not-found'"
-            class="info"
-          >
-            <i class="material-icons-outlined">info</i>
-            <div>
-              We didn't find a *nix ssh-agent running, so we'll attempt to use
-              the PuTTY agent, pageant.
-            </div>
-          </div>
-          <div
-            v-else-if="agentStatus.warning === 'unsupported-snap'"
-            class="error"
-          >
-            <i class="material-icons">error_outline</i>
-            <div>
-              SSH Agent Forwarding is not possible with the Snap version of
-              Beekeeper Studio due to the security model of Snap apps.
-              <external-link :href="enableSshLink">Read more</external-link>
-            </div>
-          </div>
-          <div v-else class="warning">
-            <i class="material-icons">error_outline</i>
-            <div>You don't seem to have an SSH agent running.</div>
-          </div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Username</label>
-        <masked-input
-          :value="selectedConfig.username"
-          :privacyMode="privacyMode"
-          @input="
-            $emit('update-ssh-config', selectedPosition, 'username', $event)
-          "
-        />
-      </div>
-      <div v-if="selectedConfig.mode === 'keyfile'" class="private-key gutter">
-        <div v-if="$config.isSnap && !$config.snapSshPlug" class="row">
-          <div class="alert alert-warning">
-            <i class="material-icons">error_outline</i>
-            <div>
-              Hey snap user! You need to
-              <external-link :href="enableSshLink"
-                >enable SSH access</external-link
-              >, then restart Beekeeper to provide access to your .ssh
-              directory.
-            </div>
-          </div>
-        </div>
-        <div class="row form-group">
-          <label>Private Key File</label>
-          <file-picker
-            :value="selectedConfig.keyfile"
-            editable
-            :show-hidden-files="true"
-            :default-path="filePickerDefaultPath"
-            @input="
-              $emit('update-ssh-config', selectedPosition, 'keyfile', $event)
-            "
-          />
-        </div>
-        <div class="row form-group">
-          <label>Key Passphrase <span class="hint">(Optional)</span></label>
-          <input
-            type="password"
-            class="form-control"
-            :value="selectedConfig.keyfilePassword"
-            @input="
-              $emit(
-                'update-ssh-config',
-                selectedPosition,
-                'keyfilePassword',
-                $event.target.value
-              )
-            "
-          />
-        </div>
-      </div>
-      <div v-if="selectedConfig.mode === 'userpass'" class="form-group">
-        <label>Password</label>
-        <input
-          type="password"
-          class="form-control"
-          :value="selectedConfig.password"
-          @input="
-            $emit(
-              'update-ssh-config',
-              selectedPosition,
-              'password',
-              $event.target.value
-            )
-          "
-        />
-      </div>
-    </template>
   </div>
 </template>
 
@@ -239,12 +74,8 @@ import Draggable from "vuedraggable";
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import ExternalLink from "@/components/common/ExternalLink.vue";
 import MaskedInput from "@/components/MaskedInput.vue";
-import {
-  TransportConnectionSshConfig,
-  TransportSshConfig,
-} from "@/common/transport/TransportSshConfig";
+import { TransportConnectionSshConfig } from "@/common/transport/TransportSshConfig";
 import _ from "lodash";
-import { mapState } from "vuex";
 
 export default Vue.extend({
   components: { Draggable, FilePicker, ExternalLink, MaskedInput },
@@ -276,50 +107,9 @@ export default Vue.extend({
         return { position: config.position, host, port, username, auth };
       });
     },
-    selectedConfig(): TransportSshConfig | null {
-      if (this.selectedPosition === null) {
-        return null;
-      }
-      const join = this.sortedConfigs.find(
-        (j) => j.position === this.selectedPosition
-      );
-      return join?.sshConfig ?? null;
-    },
-    filePickerDefaultPath(): string {
-      return window.main.join(window.platformInfo.homeDirectory, ".ssh");
-    },
-    enableSshLink(): string {
-      return "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap";
-    },
-    sshModeOptions() {
-      return [
-        { label: "Key File", mode: "keyfile" },
-        { label: "Username & Password", mode: "userpass" },
-        { label: "SSH Agent", mode: "agent" },
-      ];
-    },
-    agentStatus() {
-      if (this.$config.isSnap) {
-        return { ok: false, warning: "unsupported-snap" } as const;
-      }
-      if (this.$config.sshAuthSock) {
-        return { ok: true } as const;
-      }
-      if (this.$config.isWindows) {
-        return { ok: true, warning: "win-nix-agent-not-found" } as const;
-      }
-      return { ok: false, warning: "ssh-agent-not-running" } as const;
-    },
-    ...mapState("settings", ["privacyMode"]),
   },
 
   methods: {
-    authLabel(mode: string): string {
-      return (
-        { keyfile: "Key File", userpass: "Password", agent: "Agent" }[mode] ??
-        mode
-      );
-    },
     onDragEnd(event: any) {
       const { oldIndex, newIndex } = event;
       if (oldIndex === newIndex) {
@@ -332,50 +122,80 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-.ssh-table-container {
-  display: flex;
-  gap: 0.75rem;
+.ssh-jump-hosts {
+  --row-height: 2.14rem;
 }
 
-.ssh-orders {
+.ssh-table-header {
+  margin-block: 0.5rem;
+  display: flex;
+  align-items: center;
+
+  h5 {
+    margin: 0;
+  }
+
+  .btn.btn-fab.add-host-btn {
+    margin: 0 0 0 auto;
+    width: 1.4rem;
+    height: 1.4rem;
+    min-width: 1.4rem;
+    min-height: 1.4rem;
+
+    .material-icons {
+      font-size: 1rem;
+    }
+  }
+}
+
+.ssh-table-container {
+  display: flex;
+
+  .empty-text {
+    font-size: 0.831rem;
+    color: var(--text-lighter);
+  }
+}
+
+.ssh-steps {
   display: flex;
   flex-direction: column;
-  padding-top: calc(1.5rem + 3px);
-  gap: 3px;
+  width: 1.5rem;
   color: var(--text-lighter);
+  margin-top: 3px;
 
   > * {
-    height: 2.14rem;
-    width: 0.75rem;
+    height: var(--row-height);
     display: flex;
     align-items: center;
     position: relative;
+    margin-bottom: 3px;
 
-    &.host-bullet::before {
-      content: "";
-      width: 0.75rem;
-      height: 0.75rem;
-      background-color: currentColor;
-      border-radius: 9999px;
-    }
+    &.host-bullet {
+      position: relative;
+      align-items: center;
 
-    &.add-host-bullet {
-      .material-icons {
-        font-size: 1em;
+      .bullet {
+        width: 0.65rem;
+        height: 0.65rem;
+        min-width: 0.65rem;
+        min-height: 0.65rem;
+        background-color: currentColor;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .arrow {
+        position: absolute;
+        left: -0.19em;
+        top: calc(var(--row-height) / 1.25);
       }
     }
 
-    &:not(:last-child)::after {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: -0.65rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Material Icons";
+    [class^=material-icons] {
       font-size: 1em;
-      content: "more_vert";
     }
   }
 }
@@ -385,12 +205,21 @@ export default Vue.extend({
   min-width: 0;
 }
 
-.ssh-list-header,
 .ssh-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.831rem;
+  background-color: rgb(from var(--theme-base) r g b / 5%);
+  border-radius: 5px;
+  margin: 3px 0;
+  height: var(--row-height);
+  color: var(--text-dark);
+
+  &.selected {
+    outline: 1px solid var(--input-highlight);
+    outline-offset: -1px;
+  }
 
   .col-host {
     flex: 2;
@@ -410,22 +239,10 @@ export default Vue.extend({
       flex-shrink: 0;
       white-space: nowrap;
     }
-  }
 
-  .col-username {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .col-auth {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.2em;
+    .empty {
+      color: var(--text-lighter);
+    }
   }
 
   .col-action {
@@ -433,27 +250,9 @@ export default Vue.extend({
     display: flex;
     justify-content: flex-end;
   }
-}
-
-.ssh-list-header {
-  color: var(--text-lighter);
-  padding: 0 0.4rem 0 1.8rem;
-  height: 1.5rem;
-}
-
-.ssh-row {
-  background-color: rgb(from var(--theme-base) r g b / 5%);
-  border-radius: 5px;
-  margin: 3px 0;
-  height: 2.14rem;
-  color: var(--text-dark);
-
-  &.selected {
-    outline: 1px solid var(--input-highlight);
-    outline-offset: -1px;
-  }
 
   .drag-handle {
+    cursor: move;
     color: var(--text-lighter);
     display: flex;
     align-items: center;
@@ -474,12 +273,8 @@ export default Vue.extend({
       border-inline: 1px solid var(--border-color);
     }
   }
-
-  .col-auth .warning-icon {
-    color: var(--brand-warning);
-    font-size: 1.3em;
-  }
 }
+
 
 .remove-btn {
   margin: 0;
@@ -492,48 +287,6 @@ export default Vue.extend({
   i.material-icons {
     color: var(--text-lighter);
     font-size: 1.3em;
-  }
-}
-
-.btn.add-host-btn {
-  width: 100%;
-  padding-left: 2.5rem;
-  color: var(--text-dark);
-  font-size: 0.831rem;
-  font-weight: normal;
-  justify-content: flex-start;
-  border-radius: 5px;
-  border: none;
-  background-color: rgb(from var(--theme-base) r g b / 4%);
-
-  &:hover,
-  &:focus {
-    font-weight: normal;
-  }
-}
-
-.ssh-agent-indicator > div {
-  display: flex;
-  font-size: 0.76em;
-  gap: 0.4em;
-  padding-top: 0.5em;
-
-  .material-icons,
-  .material-icons-outlined {
-    font-size: 1.17em;
-    line-height: 0.9;
-  }
-
-  &.error {
-    color: var(--brand-danger);
-  }
-
-  &.info {
-    color: var(--brand-info);
-  }
-
-  &.warning {
-    color: var(--brand-warning);
   }
 }
 </style>
