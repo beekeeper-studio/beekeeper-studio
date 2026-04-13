@@ -39,8 +39,6 @@ Are there any errors here? Take a screenshot and attach them to a new issue!
 
 ### Enable Debug Mode and Collect Logs
 
-## Enable Debug Mode and Collect Logs
-
 You can find logs for Beekeeper in these directories:
 
 - **Linux:** `~/.config/beekeeper-studio/logs/{process type}.log`
