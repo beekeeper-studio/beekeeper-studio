@@ -11,6 +11,7 @@ export default class extends DefaultMenu {
   viewMenu(): Electron.MenuItemConstructorOptions {
     const result: Electron.MenuItemConstructorOptions = {
       label: 'View',
+      role: 'viewMenu',
       submenu: [
         this.menuItems.zoomreset,
         this.menuItems.zoomin,
@@ -28,7 +29,7 @@ export default class extends DefaultMenu {
         this.menuItems.themeToggle,
         this.menuItems.reload,
         // This is added automatically in Mac
-        ...(!this.platformInfo.isMac ? this.menuItems.fullscreen : []),
+        ...(!this.platformInfo.isMac ? [this.menuItems.fullscreen] : []),
         this.menuItems.privacyModeToggle
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
@@ -43,19 +44,22 @@ export default class extends DefaultMenu {
       label: 'Dev',
       submenu: [
         this.menuItems.reload,
+        this.menuItems.simulatePlatform,
         this.menuItems.licenseState,
       ],
     }
   }
 
   helpMenu() {
-    const helpMenu = {
+    const helpMenu: Electron.MenuItemConstructorOptions = {
       id: "help",
       label: "Help",
+      role: "help",
       submenu: [
         this.menuItems.keyboardShortcuts,
         this.menuItems.opendocs,
         this.menuItems.support,
+        this.menuItems.gettingStartedGuide,
         { type: 'separator' },
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
@@ -81,6 +85,7 @@ export default class extends DefaultMenu {
     if (this.platformInfo.isMac) {
       appMenu.push({
         label: "Beekeeper Studio",
+        role: "appMenu",
         submenu: [
           this.menuItems.about,
           this.menuItems.checkForUpdate,
@@ -96,9 +101,10 @@ export default class extends DefaultMenu {
       })
     }
 
-    const fileMenu = {
+    const fileMenu: Electron.MenuItemConstructorOptions = {
       id: 'file',
       label: 'File',
+      role: 'fileMenu',
       submenu: [
         this.menuItems.newWindow,
         this.menuItems.newTab,
@@ -126,6 +132,7 @@ export default class extends DefaultMenu {
       {
         id: 'edit',
         label: 'Edit',
+        role: 'editMenu',
         submenu: [
           this.menuItems.undo,
           this.menuItems.redo,
@@ -135,7 +142,7 @@ export default class extends DefaultMenu {
           this.menuItems.paste,
           this.menuItems.selectAll,
         ]
-      },
+      } as Electron.MenuItemConstructorOptions,
       this.viewMenu(),
       {
         id: "tools",

@@ -47,8 +47,21 @@ export abstract class BaseCommandClient {
   protected static connectionType?: ConnectionType;
 
   protected static _password?: string;
+
+  // This is actually only used for mysql because for some reason they
+  // deprecated their password env variable :(
   static get quotedPassword() {
-    return `"${(BaseCommandClient._password || '').replace(/"/g, window.platformInfo.isWindows ? `""` : `\\"`)}"`;
+    const password = BaseCommandClient._password || '';
+    if (window.platformInfo.isWindows) {
+      const escaped = password
+        .replace(/%/g, '%%')
+        .replace(/"/g, '""')
+        .replace(/([&|<>^])/g, '^$1');
+      return `"${escaped}"`;
+    } else {
+      const escaped = password.replace(/'/g, `'\\''`);
+      return `'${escaped}'`;
+    }
   }
 
   set connConfig(value: IConnection) {
@@ -140,7 +153,7 @@ export abstract class BaseCommandClient {
           },
           placeholder: 'Choose',
           valid: (config: BackupConfig): boolean => {
-            return this.allowedTools.some(value => config.dumpToolPath.endsWith(value)) || 
+            return this.allowedTools.some(value => config.dumpToolPath.endsWith(value)) ||
               this.allowedTools.some(value => config.dumpToolPath.endsWith(`${value}.exe`));
           },
           actions: [

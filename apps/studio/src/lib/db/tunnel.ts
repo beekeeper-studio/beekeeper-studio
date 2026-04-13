@@ -29,8 +29,13 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
 
         const sshConfig: Options = {
           endHost: config.ssh.host || '',
-          endPort: config.ssh.port || 22,
+          endPort: config.ssh.port || undefined,
           bastionHost: config.ssh.bastionHost || '',
+          bastionPort: config.ssh.bastionPort || undefined,
+          bastionUsername: config.ssh.bastionUser || undefined,
+          bastionPassword: config.ssh.bastionPassword || undefined,
+          bastionPassphrase: config.ssh.bastionPassphrase || undefined,
+          bastionAgentForward: config.ssh.bastionMode === 'agent',
           agentForward: config.ssh.useAgent,
           passphrase: config.ssh.passphrase || undefined,
           username: config.ssh.user || undefined,
@@ -46,11 +51,20 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           sshConfig.agentSocket = appConfig.sshAuthSock
         }
 
-        if (config.ssh.privateKey && !config.ssh.useAgent) {
+        if (config.ssh.privateKey) {
           sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
-        } else {
-          sshConfig.privateKey = undefined
         }
+
+        if (config.ssh.bastionPrivateKey) {
+          sshConfig.bastionPrivateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.bastionPrivateKey)))
+        }
+
+        // if (config.ssh.privateKey && !config.ssh.useAgent) {
+        //   sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
+        // } else {
+        //   sshConfig.privateKey = undefined
+        // }
+
         const connection = new SSHConnection(sshConfig)
         logger().debug("connection created!")
 

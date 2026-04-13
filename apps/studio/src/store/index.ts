@@ -288,6 +288,9 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
+    onboardingNotyShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["onboardingNotyShown"]?.value);
+    },
     aiShellHintShown(_state, getters) {
       return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
     },
@@ -722,6 +725,12 @@ const store = new Vuex.Store<State>({
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    setOnboardingNotyShown(context) {
+      context.dispatch('settings/save', {
+        key: 'onboardingNotyShown',
+        value: new Date(),
+      });
     },
     setAiShellHintShown(context) {
       context.dispatch("settings/save", {
