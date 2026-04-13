@@ -39,18 +39,27 @@ Are there any errors here? Take a screenshot and attach them to a new issue!
 
 ### Enable Debug Mode and Collect Logs
 
+## Enable Debug Mode and Collect Logs
+
 You can find logs for Beekeeper in these directories:
 
-Linux: ~/.config/beekeeper-studio/logs/{process type}.log
-MacOS: ~/Library/Logs/beekeeper-studio/{process type}.log
-Windows: %USERPROFILE%\AppData\Roaming\beekeeper-studio\logs\{process type}.log
+- **Linux:** `~/.config/beekeeper-studio/logs/{process type}.log`
+- **MacOS:** `~/Library/Logs/beekeeper-studio/{process type}.log`
+- **Windows:** `%USERPROFILE%\AppData\Roaming\beekeeper-studio\logs\{process type}.log`
 
 By default they will only contain uncaught errors.
 
 You can enable extended logging by starting Beekeeper Studio with the debug flag `DEBUG=*`.
 
-On linux, just run the app like this: `DEBUG=* beekeeper-studio`
+### Linux
+```bash
+DEBUG=* beekeeper-studio
+```
 
+### MacOS
+```bash
+DEBUG=* open -a "Beekeeper Studio"
+```
 
 ## MySQL
 
