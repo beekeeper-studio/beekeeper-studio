@@ -20,6 +20,8 @@ import { EncryptedPluginData } from "./models/EncryptedPluginData"
 import { FormatterPreset } from "./models/FormatterPreset"
 import { QueryFolder } from "./models/QueryFolder"
 import { ConnectionFolder } from "./models/ConnectionFolder"
+import { SshConfig } from "./models/SshConfig"
+import { ConnectionSshConfig } from "./models/ConnectionSshConfig"
 
 const models = [
   SavedConnection,
@@ -42,6 +44,8 @@ const models = [
   FormatterPreset,
   QueryFolder,
   ConnectionFolder,
+  SshConfig,
+  ConnectionSshConfig,
 ]
 
 interface IConnectionState {

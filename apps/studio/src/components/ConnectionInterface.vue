@@ -267,6 +267,7 @@ import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
+import { resolveSshConfigs } from '@/common/utils'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -445,6 +446,8 @@ export default Vue.extend({
     },
     edit(config) {
       this.config = _.clone(config)
+      /** NOTE: We need to resolve the ssh configs because we could the connection might still use the old format */
+      this.config.sshConfigs = resolveSshConfigs(config)
       this.errors = null
       this.connectionError = null
     },
@@ -508,6 +511,7 @@ export default Vue.extend({
     },
     async handleConnect(config) {
       this.config = config
+      this.config.sshConfigs = resolveSshConfigs(config)
       await this.submit()
     },
     async testConnection() {
