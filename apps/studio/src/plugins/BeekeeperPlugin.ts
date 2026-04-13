@@ -93,7 +93,7 @@ export const BeekeeperPlugin = {
       return result
     }
   },
-  simpleConnectionString(config: IConnection): string {
+  simpleConnectionString(config: Partial<IConnection>): string {
     if (config.socketPathEnabled) return config.socketPath;
 
     let connectionString = `${config.host}:${config.port}`;

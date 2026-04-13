@@ -1,7 +1,6 @@
 <template>
   <toggle-form-area
     title="SSH Tunnel"
-    :hide-toggle="!config.sshEnabled"
     :expanded="config.sshEnabled"
   >
     <template v-slot:header>
@@ -172,29 +171,30 @@
         </div>
       </template>
 
-      <div class="separator" />
-
-      <div class="row form-group">
-        <label for="sshKeepaliveInterval">
-          Keepalive Interval
-          <i
-            class="material-icons"
-            style="padding-left: 0.25rem"
-            v-tooltip="{
-              content:
-                'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)',
-              html: true,
-            }"
-            >help_outlined</i
-          >
-        </label>
-        <input
-          type="number"
-          v-model.number="config.sshKeepaliveInterval"
-          name="sshKeepaliveInterval"
-          placeholder="(in seconds)"
-        />
-      </div>
+      <details class="advanced-settings">
+        <summary><h5>Advanced settings</h5></summary>
+        <div class="row form-group">
+          <label for="sshKeepaliveInterval">
+            Keepalive Interval
+            <i
+              class="material-icons"
+              style="padding-left: 0.25rem"
+              v-tooltip="{
+                content:
+                  'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)',
+                html: true,
+              }"
+              >help_outlined</i
+            >
+          </label>
+          <input
+            type="number"
+            v-model.number="config.sshKeepaliveInterval"
+            name="sshKeepaliveInterval"
+            placeholder="(in seconds)"
+          />
+        </div>
+      </details>
     </template>
   </toggle-form-area>
 </template>
@@ -405,5 +405,11 @@ export default Vue.extend({
   &.warning {
     color: var(--brand-warning);
   }
+}
+
+summary h5 {
+  margin-bottom: 0.25rem;
+  padding-left: 0.5em;
+  display: inline-block;
 }
 </style>
