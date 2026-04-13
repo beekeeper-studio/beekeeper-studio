@@ -7,7 +7,7 @@ import { loadEncryptionKey } from "@/common/encryption_key";
 
 const log = rawLog.scope("PluginData");
 
-const encrypt = new EncryptTransformer(loadEncryptionKey());
+const encrypt = new EncryptTransformer(() => loadEncryptionKey());
 
 @Entity({ name: "encrypted_plugin_data" })
 export class EncryptedPluginData extends ApplicationEntity {

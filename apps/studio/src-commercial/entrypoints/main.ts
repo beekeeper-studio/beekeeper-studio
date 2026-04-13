@@ -29,6 +29,7 @@ import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
+import { loadEncryptionKey, isEncryptionKeyInsecure } from '@/backend/lib/encryption_key'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -78,6 +79,12 @@ async function createUtilityProcess() {
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       electron.shell.openExternal(msg.url)
+    } else if (msg.type === 'requestEncryptionKey') {
+      utilityProcess.postMessage({
+        type: 'encryptionKey',
+        key: loadEncryptionKey(),
+        insecure: isEncryptionKeyInsecure(),
+      })
     }
   })
 
@@ -120,6 +127,18 @@ protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: t
 let initialized = false
 
 async function initBasics() {
+  // Load encryption key early — safeStorage is available after app.whenReady()
+  try {
+    loadEncryptionKey()
+  } catch (err) {
+    electron.dialog.showErrorBox(
+      'Encryption Error',
+      err.message || 'Could not load encryption key. Please report this at https://github.com/beekeeper-studio/beekeeper-studio/issues'
+    )
+    app.quit()
+    return settings
+  }
+
   // this creates the app:// protocol we use for loading assets
   ProtocolBuilder.createAppProtocol()
   // this creates the plugin:// protocol we use for loading plugins
@@ -179,6 +198,10 @@ ipcMain.handle('platformInfo', () => {
 
 ipcMain.handle('bksConfigSource', () => {
   return bksConfig.source;
+})
+
+ipcMain.handle('keychainInsecure', () => {
+  return isEncryptionKeyInsecure()
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {
