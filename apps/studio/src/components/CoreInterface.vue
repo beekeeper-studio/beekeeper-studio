@@ -360,9 +360,3 @@
   })
 
 </script>
-
-<style scoped>
-  .privacyBanner{
-    flex: 1;
-  }
-</style>
