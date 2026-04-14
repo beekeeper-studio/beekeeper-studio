@@ -4,6 +4,9 @@ permissions:
   contents: read
 
 on:
+  push:
+    branches:
+      - master
   pull_request:
     paths:
       - 'apps/studio/src/vendor/node-ssh-forward/**'
@@ -12,8 +15,6 @@ on:
       - 'apps/studio/tests/integration/windows/**'
       - 'apps/studio/jest.integration.windows.config.js'
       - '.github/workflows/windows-tests.yml'
-  schedule:
-    - cron: '0 6 * * 1'
   workflow_dispatch:
 
 jobs:
