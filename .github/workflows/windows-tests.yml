@@ -122,18 +122,25 @@ jobs:
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
           $inKey = "$env:USERPROFILE\.ssh\pageant_test"
           $ppkPath = "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          $stdout = "$env:TEMP\puttygen.out"
+          $stderr = "$env:TEMP\puttygen.err"
 
           Write-Host "Input key present: $(Test-Path $inKey), size: $((Get-Item $inKey -ErrorAction SilentlyContinue).Length)"
 
-          # -O private is required to actually emit a PPK; without it puttygen
-          # may just load the key and print info instead of converting.
-          $out = & "$puttyDir\puttygen.exe" $inKey -O private -o $ppkPath 2>&1
-          $exit = $LASTEXITCODE
-          Write-Host "puttygen output: $out"
-          Write-Host "puttygen exit:   $exit"
+          # puttygen from putty.install is a GUI-subsystem exe; PS's & operator
+          # detaches from it and we get no exit code. Start-Process -Wait forces
+          # synchronous execution and -RedirectStandard* captures output.
+          $p = Start-Process -FilePath "$puttyDir\puttygen.exe" `
+            -ArgumentList @($inKey, "-O", "private", "-o", $ppkPath) `
+            -Wait -NoNewWindow -PassThru `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr
+          Write-Host "puttygen exit:   $($p.ExitCode)"
+          Write-Host "puttygen stdout: $(Get-Content $stdout -Raw)"
+          Write-Host "puttygen stderr: $(Get-Content $stderr -Raw)"
 
           if (-not (Test-Path $ppkPath)) {
-            throw "puttygen did not create $ppkPath (exit $exit)"
+            throw "puttygen did not create $ppkPath (exit $($p.ExitCode))"
           }
           $ppk = Get-Item $ppkPath
           Write-Host "PPK size: $($ppk.Length) bytes"
