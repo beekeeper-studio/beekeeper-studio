@@ -138,9 +138,18 @@ jobs:
           # Independent sanity check: plink uses Pageant natively. If this
           # succeeds, Pageant has the key loaded and sshd trusts it. If it
           # fails, the problem is the test harness, not our ssh2 integration.
+          # plink -batch refuses unknown hosts, so pin the fingerprints from
+          # known_hosts (populated earlier via ssh-keyscan).
           Write-Host "--- plink sanity check ---"
-          $plinkOut = & "$puttyDir\plink.exe" -agent -batch `
-            -hostkey "*" `
+          $hostkeyArgs = @()
+          foreach ($line in (ssh-keygen -l -f "$env:USERPROFILE\.ssh\known_hosts")) {
+            if ($line -match 'SHA256:(\S+)') {
+              $hostkeyArgs += "-hostkey"
+              $hostkeyArgs += "SHA256:$($matches[1])"
+            }
+          }
+          Write-Host "Pinned fingerprints: $hostkeyArgs"
+          $plinkOut = & "$puttyDir\plink.exe" -agent -batch @hostkeyArgs `
             "$env:USERNAME@127.0.0.1" "echo plink-ok" 2>&1
           Write-Host $plinkOut
           if ($LASTEXITCODE -ne 0) {
