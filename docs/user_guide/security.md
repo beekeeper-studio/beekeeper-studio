@@ -73,7 +73,7 @@ Beekeeper Studio provides a Privacy Mode that hides sensitive data when you're s
 
 Go to View in the app menu and select the option to "Toggle Privacy Mode".
 
-[image](../assets/images/privacy/privacy-mode-menu.png)
+![image](../assets/images/privacy/privacy-mode-menu.png)
 
 ### What Gets Hidden?
 
