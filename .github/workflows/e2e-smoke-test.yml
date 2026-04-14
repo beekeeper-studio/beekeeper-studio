@@ -9,6 +9,10 @@ on:
       - apps/sqltools/**
       - docs/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e-smoke:
     name: E2E Smoke - ${{ matrix.os }}
