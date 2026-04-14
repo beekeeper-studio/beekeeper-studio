@@ -115,40 +115,11 @@ jobs:
           Write-Host "Using PuTTY from: $puttyDir"
           "putty_dir=$puttyDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Convert key to PPK
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
-          $inKey = "$env:USERPROFILE\.ssh\pageant_test"
-          $ppkPath = "$env:USERPROFILE\.ssh\pageant_test.ppk"
-          $stdout = "$env:TEMP\puttygen.out"
-          $stderr = "$env:TEMP\puttygen.err"
-
-          Write-Host "Input key present: $(Test-Path $inKey), size: $((Get-Item $inKey -ErrorAction SilentlyContinue).Length)"
-
-          # puttygen from putty.install is a GUI-subsystem exe; PS's & operator
-          # detaches from it and we get no exit code. Start-Process -Wait forces
-          # synchronous execution and -RedirectStandard* captures output.
-          $p = Start-Process -FilePath "$puttyDir\puttygen.exe" `
-            -ArgumentList @($inKey, "-O", "private", "-o", $ppkPath) `
-            -Wait -NoNewWindow -PassThru `
-            -RedirectStandardOutput $stdout `
-            -RedirectStandardError $stderr
-          Write-Host "puttygen exit:   $($p.ExitCode)"
-          Write-Host "puttygen stdout: $(Get-Content $stdout -Raw)"
-          Write-Host "puttygen stderr: $(Get-Content $stderr -Raw)"
-
-          if (-not (Test-Path $ppkPath)) {
-            throw "puttygen did not create $ppkPath (exit $($p.ExitCode))"
-          }
-          $ppk = Get-Item $ppkPath
-          Write-Host "PPK size: $($ppk.Length) bytes"
-          if ($ppk.Length -lt 200) { throw "PPK looks empty or truncated" }
-
       - name: Launch Pageant, verify with plink, run test
         # Single step so Pageant, plink, and the jest test all share the same
         # Windows session - WM_COPYDATA (Pageant's IPC) is session-scoped.
+        # Pageant >=0.75 loads OpenSSH-format private keys directly, so we can
+        # skip puttygen PPK conversion entirely.
         shell: powershell
         env:
           PAGEANT_TEST: "1"
@@ -160,7 +131,7 @@ jobs:
           Remove-Item env:SSH_AUTH_SOCK -ErrorAction SilentlyContinue
 
           Start-Process -FilePath "$puttyDir\pageant.exe" `
-            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
+            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test"
           Start-Sleep -Seconds 3
           Get-Process pageant
 
