@@ -78,14 +78,24 @@ jobs:
       - name: Convert key to PPK and launch Pageant
         shell: powershell
         run: |
-          # Resolve via PATH shims - choco puts both variants (putty / putty.install
-          # / putty.portable) on PATH but installs to different directories.
-          $puttygen = (Get-Command puttygen).Source
-          $pageant = (Get-Command pageant).Source
-          Write-Host "puttygen: $puttygen"
-          Write-Host "pageant:  $pageant"
-          & $puttygen "$env:USERPROFILE\.ssh\pageant_test" -o "$env:USERPROFILE\.ssh\pageant_test.ppk"
-          Start-Process -FilePath $pageant -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          # PATH isn't reliably refreshed between steps after choco install,
+          # so probe known install locations directly.
+          $candidates = @(
+            "C:\Program Files\PuTTY",
+            "C:\Program Files (x86)\PuTTY",
+            "C:\ProgramData\chocolatey\lib\putty.install\tools",
+            "C:\ProgramData\chocolatey\lib\putty.portable\tools"
+          )
+          $puttyDir = $candidates | Where-Object { Test-Path "$_\puttygen.exe" } | Select-Object -First 1
+          if (-not $puttyDir) {
+            Write-Host "puttygen.exe not found in expected locations. Dumping state:"
+            $candidates | ForEach-Object { "  $_  exists=$((Test-Path $_))" }
+            Get-ChildItem -Path "C:\ProgramData\chocolatey\lib" -Recurse -Filter "puttygen.exe" -ErrorAction SilentlyContinue | Select-Object FullName
+            throw "puttygen.exe not found"
+          }
+          Write-Host "Using PuTTY from: $puttyDir"
+          & "$puttyDir\puttygen.exe" "$env:USERPROFILE\.ssh\pageant_test" -o "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          Start-Process -FilePath "$puttyDir\pageant.exe" -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
           Start-Sleep -Seconds 3
           Get-Process pageant
 
