@@ -70,7 +70,8 @@ jobs:
           # sshd ignores administrators_authorized_keys unless ACLs are strict.
           icacls $adminKeys /inheritance:r
           icacls $adminKeys /grant "Administrators:F" "SYSTEM:F"
-          ssh-keyscan -H 127.0.0.1 > "$env:USERPROFILE\.ssh\known_hosts"
+          # Grab all key types sshd might present so ssh doesn't warn/add at runtime.
+          ssh-keyscan -t rsa,ecdsa,ed25519 -H 127.0.0.1 > "$env:USERPROFILE\.ssh\known_hosts"
 
       - name: Verify sshd accepts the key (pre-Pageant sanity check)
         # Uses OpenSSH ssh.exe directly with the private key - no Pageant,
@@ -78,14 +79,19 @@ jobs:
         # / key generation, not any of the Pageant plumbing.
         shell: powershell
         run: |
-          $output = ssh -i "$env:USERPROFILE\.ssh\pageant_test" `
+          # GH Actions sets $ErrorActionPreference=stop by default, which treats
+          # any native-command stderr as a fatal error. Relax it so harmless ssh
+          # warnings don't halt the step.
+          $ErrorActionPreference = 'Continue'
+          $output = & ssh -i "$env:USERPROFILE\.ssh\pageant_test" `
             -o BatchMode=yes `
             -o StrictHostKeyChecking=no `
             -o UserKnownHostsFile="$env:USERPROFILE\.ssh\known_hosts" `
             "$env:USERNAME@127.0.0.1" "echo ssh-ok" 2>&1
+          $exit = $LASTEXITCODE
           Write-Host $output
-          if ($LASTEXITCODE -ne 0) {
-            throw "Direct ssh with private key failed (exit $LASTEXITCODE) - sshd/authorized_keys setup is broken"
+          if ($exit -ne 0) {
+            throw "Direct ssh with private key failed (exit $exit) - sshd/authorized_keys setup is broken"
           }
 
       - name: Install PuTTY (pageant.exe, puttygen.exe)
@@ -125,7 +131,9 @@ jobs:
         env:
           PAGEANT_TEST: "1"
         run: |
-          $ErrorActionPreference = "Stop"
+          # Relaxed so native-command stderr (warnings from plink, yarn, etc.)
+          # doesn't halt the script. We check $LASTEXITCODE explicitly instead.
+          $ErrorActionPreference = "Continue"
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
           Remove-Item env:SSH_AUTH_SOCK -ErrorAction SilentlyContinue
 
