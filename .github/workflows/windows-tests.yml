@@ -1,0 +1,79 @@
+name: Windows Tests
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'apps/studio/src/vendor/node-ssh-forward/**'
+      - 'apps/studio/src/vendor/ssh2/**'
+      - 'apps/studio/src/lib/db/tunnel.ts'
+      - 'apps/studio/tests/integration/windows/**'
+      - 'apps/studio/jest.integration.windows.config.js'
+      - '.github/workflows/windows-tests.yml'
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  windows-tests:
+    name: Windows integration tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+
+      - name: Enable OpenSSH Server
+        shell: powershell
+        run: |
+          Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+          Start-Service sshd
+          Set-Service -Name sshd -StartupType Automatic
+
+      - name: Generate SSH key and authorize
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
+          ssh-keygen -t rsa -b 2048 -N '""' -f "$env:USERPROFILE\.ssh\pageant_test"
+          $pub = Get-Content "$env:USERPROFILE\.ssh\pageant_test.pub"
+          # GH runner user is a local admin, so sshd looks at administrators_authorized_keys.
+          $adminKeys = "$env:ProgramData\ssh\administrators_authorized_keys"
+          Set-Content -Path $adminKeys -Value $pub -Encoding ascii
+          # sshd ignores administrators_authorized_keys unless ACLs are strict.
+          icacls $adminKeys /inheritance:r
+          icacls $adminKeys /grant "Administrators:F" "SYSTEM:F"
+          ssh-keyscan -H 127.0.0.1 > "$env:USERPROFILE\.ssh\known_hosts"
+
+      - name: Install PuTTY (pageant.exe, puttygen.exe)
+        run: choco install putty -y --no-progress
+
+      - name: Convert key to PPK and launch Pageant
+        shell: powershell
+        run: |
+          & "C:\Program Files\PuTTY\puttygen.exe" `
+            "$env:USERPROFILE\.ssh\pageant_test" `
+            -o "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          Start-Process -FilePath "C:\Program Files\PuTTY\pageant.exe" `
+            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          Start-Sleep -Seconds 3
+          Get-Process pageant
+
+      - name: Run Windows integration tests
+        shell: bash
+        run: |
+          unset SSH_AUTH_SOCK
+          cd apps/studio
+          yarn run test:integration:windows --runInBand --ci
+        env:
+          PAGEANT_TEST: "1"
