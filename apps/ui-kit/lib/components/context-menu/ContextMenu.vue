@@ -10,6 +10,7 @@
         v-for="(option, index) in options"
         :key="index"
         @click="optionClicked(option, index, $event)"
+        @mouseenter="onItemHover(option, index)"
         class="BksContextMenu-item"
         :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
         ref="item"
@@ -66,6 +67,7 @@ export default Vue.extend({
       menuOpen: false,
       showSubItemsIndex: -1,
       checkedOptions: {},
+      hoverTimeout: null,
     }
   },
 
@@ -153,6 +155,19 @@ export default Vue.extend({
         element.classList.remove('BksContextMenu-active');
       }
     },
+    onItemHover(option: BaseMenuItem, idx: number) {
+      if (this.hoverTimeout) {
+        clearTimeout(this.hoverTimeout)
+      }
+
+      this.hoverTimeout = setTimeout(() => {
+        if (option.items?.length > 0) {
+          this.showSubItemsIndex = idx
+        } else {
+          this.showSubItemsIndex = -1
+        }
+      }, 100)
+    },
     onClickOutside() {
       this.hideContextMenu()
     },
@@ -183,6 +198,11 @@ export default Vue.extend({
   },
   mounted() {
     this.showMenu(this.event, this.item)
+  },
+  beforeDestroy() {
+    if (this.hoverTimeout) {
+      clearTimeout(this.hoverTimeout)
+    }
   },
 })
 </script>

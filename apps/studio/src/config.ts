@@ -17,8 +17,19 @@ function hasSshKeysPlug() {
   }
 }
 
+function applyDevPlatformOverrides(config: IPlatformInfo): IPlatformInfo {
+  if (!config.isDevelopment) return config
+  const simulated = localStorage.getItem('dev.simulatePlatform')
+  if (!simulated) return config
+  return {
+    ...config,
+    isSnap: simulated === 'snap' ? 'true' : '',
+    isFlatpak: simulated === 'flatpak',
+  }
+}
+
 export function buildConfig(platInfo: IPlatformInfo) {
-  platformInfo = platInfo;
+  platformInfo = applyDevPlatformOverrides(platInfo);
   userDirectory = platformInfo.userDirectory
   snapSshPlug = hasSshKeysPlug();
 

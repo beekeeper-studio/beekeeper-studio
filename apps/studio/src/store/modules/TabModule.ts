@@ -47,6 +47,14 @@ export const TabModule: Module<State, RootState> = {
         return true;
       })
     },
+    newTabDropdownItems(_state, getters) {
+      const items = [];
+      for (const config of getters.tabTypeConfigs) {
+        if (!config.menuItem) continue;
+        items.push({ ...config.menuItem, config });
+      }
+      return items;
+    },
     sortedTabs(state) {
       return _.sortBy(state.tabs, 'position')
     },
@@ -137,6 +145,12 @@ export const TabModule: Module<State, RootState> = {
       }
       found.menuItem = undefined
     },
+    replaceTab(state, tab: TransportOpenTab) {
+      const index = state.tabs.findIndex((t) => t.id === tab.id);
+      if (index !== -1) {
+        Vue.set(state.tabs, index, tab);
+      }
+    }
   },
   actions: {
     async load(context) {

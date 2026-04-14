@@ -87,6 +87,11 @@ interface DuckDBResultArrayData extends DuckDBResultBase {
   rows: RowArray[];
 }
 
+interface ColumnsAndTotalRows {
+  columns: TableColumn[]
+  totalRows: number
+}
+
 type DuckDBResult<Mode = "object"> = Mode extends "array" ? DuckDBResultArrayData : DuckDBResultObjectData;
 
 function buildFilterString(
@@ -225,6 +230,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: false,
+      filterTypes: ['standard']
     };
   }
 
@@ -544,69 +550,125 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return rows.map((row) => row.table_name as string);
   }
 
-  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
-    return [];
+  async getOutgoingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    const defaultSchema = schema || await this.defaultSchema();
 
-    // FIXME this is broken because an internal error. see https://github.com/duckdb/duckdb/issues/15897
+    // Query to get outgoing foreign keys (from this table to other tables)
     const { rows } = await this.driverExecuteSingle(
       `
       SELECT
-        kcu.constraint_schema AS from_schema,
-        kcu.table_name AS from_table,
-        STRING_AGG(kcu.column_name, ',' ORDER BY kcu.ordinal_position) AS from_column,
-        rc.unique_constraint_schema AS to_schema,
-        tc.constraint_name,
+        kcu1.constraint_schema AS from_schema,
+        kcu1.table_name AS from_table,
+        kcu1.column_name AS from_column,
+        kcu1.constraint_name,
         rc.update_rule,
         rc.delete_rule,
-        (
-          SELECT STRING_AGG(kcu2.column_name, ',' ORDER BY kcu2.ordinal_position)
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name
-        ) AS to_column,
-        (
-          SELECT kcu2.table_name
-          FROM information_schema.key_column_usage AS kcu2
-          WHERE kcu2.constraint_name = rc.unique_constraint_name LIMIT 1
-        ) AS to_table
+        kcu2.constraint_schema AS to_schema,
+        kcu2.table_name AS to_table,
+        kcu2.column_name AS to_column
       FROM
-        information_schema.key_column_usage AS kcu
-      JOIN
-        information_schema.table_constraints AS tc
-      ON
-        tc.constraint_name = kcu.constraint_name
+        information_schema.key_column_usage AS kcu1
       JOIN
         information_schema.referential_constraints AS rc
       ON
-        rc.constraint_name = kcu.constraint_name
+        kcu1.constraint_name = rc.constraint_name
+        AND kcu1.constraint_schema = rc.constraint_schema
+      JOIN
+        information_schema.key_column_usage AS kcu2
+      ON
+        kcu2.constraint_name = rc.unique_constraint_name
+        AND kcu2.constraint_schema = rc.unique_constraint_schema
+        AND kcu2.ordinal_position = kcu1.ordinal_position
       WHERE
-        tc.constraint_type = 'FOREIGN KEY' AND
-        kcu.table_schema = ? AND
-        kcu.table_name = ? AND
-        (to_column IS NOT NULL OR to_table IS NOT NULL)
-      GROUP BY
-        kcu.constraint_schema,
-        kcu.table_name,
-        rc.unique_constraint_schema,
-        rc.unique_constraint_name,
-        tc.constraint_name,
-        rc.update_rule,
-        rc.delete_rule;
+        kcu1.table_schema = ?
+        AND kcu1.table_name = ?
+        AND rc.constraint_name = kcu1.constraint_name
+      ORDER BY from_schema, from_table, kcu1.constraint_name, from_column
     `,
-      { params: [schema || await this.defaultSchema(), table] }
+      { params: [defaultSchema, table] }
     );
 
-    return rows.map((row) => ({
-      toTable: row.to_table as string,
-      toSchema: row.to_schema as string,
-      toColumn: row.to_column as string,
-      fromTable: row.from_table as string,
-      fromSchema: row.from_schema as string,
-      fromColumn: row.from_column as string,
-      constraintName: row.constraint_name as string,
-      onUpdate: row.update_rule as string,
-      onDelete: row.delete_rule as string,
-      isComposite: false
-    }));
+    return this.groupTableKeys(rows);
+  }
+
+  async getIncomingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    const defaultSchema = schema || await this.defaultSchema();
+
+    // Query to get incoming foreign keys (from other tables to this table)
+    const { rows } = await this.driverExecuteSingle(
+      `
+      SELECT
+        kcu1.constraint_schema AS from_schema,
+        kcu1.table_name AS from_table,
+        kcu1.column_name AS from_column,
+        kcu1.constraint_name,
+        rc.update_rule,
+        rc.delete_rule,
+        kcu2.constraint_schema AS to_schema,
+        kcu2.table_name AS to_table,
+        kcu2.column_name AS to_column
+      FROM
+        information_schema.key_column_usage AS kcu1
+      JOIN
+        information_schema.referential_constraints AS rc
+      ON
+        kcu1.constraint_name = rc.constraint_name
+        AND kcu1.constraint_schema = rc.constraint_schema
+      JOIN
+        information_schema.key_column_usage AS kcu2
+      ON
+        kcu2.constraint_name = rc.unique_constraint_name
+        AND kcu2.constraint_schema = rc.unique_constraint_schema
+        AND kcu2.ordinal_position = kcu1.ordinal_position
+      WHERE
+        kcu2.table_schema = ?
+        AND kcu2.table_name = ?
+        AND rc.constraint_name = kcu1.constraint_name
+      ORDER BY from_schema, from_table, kcu1.constraint_name, from_column
+    `,
+      { params: [defaultSchema, table] }
+    );
+
+    return this.groupTableKeys(rows);
+  }
+
+  private groupTableKeys(rows: any[]): TableKey[] {
+    // Group by constraint_name to handle composite keys
+    const groupedKeys = new Map<string, TableKey>();
+
+    for (const row of rows) {
+      const key = row.constraint_name as string;
+
+      if (!groupedKeys.has(key)) {
+        groupedKeys.set(key, {
+          toTable: row.to_table as string,
+          toSchema: row.to_schema as string,
+          toColumn: row.to_column as string,
+          fromTable: row.from_table as string,
+          fromSchema: row.from_schema as string,
+          fromColumn: row.from_column as string,
+          constraintName: row.constraint_name as string,
+          onUpdate: row.update_rule as string,
+          onDelete: row.delete_rule as string,
+          isComposite: false,
+        });
+      } else {
+        // This is a composite key
+        const existing = groupedKeys.get(key);
+        existing.isComposite = true;
+
+        // Convert to arrays if not already
+        if (!Array.isArray(existing.fromColumn)) {
+          existing.fromColumn = [existing.fromColumn];
+          existing.toColumn = [existing.toColumn];
+        }
+
+        (existing.fromColumn as string[]).push(row.from_column as string);
+        (existing.toColumn as string[]).push(row.to_column as string);
+      }
+    }
+
+    return Array.from(groupedKeys.values());
   }
 
   async defaultSchema(): Promise<string> {
@@ -1021,18 +1083,40 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     chunkSize: number,
     schema: string
   ): Promise<StreamResults> {
+    const query = await this.selectTopSql(table, null, null, orderBy, filters, schema);
     const columns = await this.listTableColumns(table, schema);
     const totalRows = await this.getTableLength(table, schema);
-    const options = { schema, table, orderBy, filters, chunkSize };
-    const cursor = new DuckDBCursor(this, options);
+    const cursor = new DuckDBCursor(this.connectionInstance, query, chunkSize);
     return { totalRows, columns, cursor };
   }
 
   async queryStream(
-    _query: string,
-    _chunkSize: number
+    query: string,
+    chunkSize: number
   ): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+    const cursor = new DuckDBCursor(this.connectionInstance, query, chunkSize);
+
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+
+    return {
+      totalRows,
+      columns,
+      cursor
+    }
+  }
+
+  async getColumnsAndTotalRows(query: string): Promise<ColumnsAndTotalRows> {
+    const [result] = await this.executeQuery(query)
+    const {fields, rowCount: totalRows} = result
+    const columns = fields.map(f => ({
+      columnName: f.name,
+      dataType: f.dataType
+    }))
+
+    return {
+      columns,
+      totalRows
+    }
   }
 
   async getTableLength(table: string, schema: string): Promise<number> {

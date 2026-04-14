@@ -40,14 +40,18 @@ export interface TransportPinnedConn extends Transport {
 export interface TransportFavoriteQuery extends Transport {
   title: string;
   text: string;
+  excerpt: string;
   database: string | null;
   connectionHash: string;
+  queryFolderId?: number | null;
+  position?: number;
 }
 
 export function blankFavoriteQuery(): TransportFavoriteQuery {
   return {
     title: undefined,
     text: undefined,
+    excerpt: undefined,
     database: null,
     connectionHash: undefined,
     id: undefined,
@@ -59,6 +63,7 @@ export function blankFavoriteQuery(): TransportFavoriteQuery {
 
 export interface TransportUsedQuery extends Transport {
   text: string;
+  excerpt: string;
   database: string;
   connectionHash: string;
   status: string;
@@ -73,4 +78,24 @@ export interface TransportHiddenEntity extends Transport {
   entityType: 'table' | 'view' | 'routine' | 'materialized-view',
   connectionId: number,
   workspaceId: number
+}
+
+type CaseOption = "preserve" | "upper" | "lower";
+type LogicalOperatorNewlineOption = "before" | "after";
+export type FormatterPresetConfig = {
+  tabWidth: number;
+  useTabs: boolean;
+  keywordCase: CaseOption;
+  dataTypeCase: CaseOption;
+  functionCase: CaseOption;
+  logicalOperatorNewline: LogicalOperatorNewlineOption;
+  expressionWidth: number;
+  linesBetweenQueries: number;
+  denseOperators: boolean;
+  newlineBeforeSemicolon: boolean;
+}
+export interface TransportFormatterPreset extends Transport {
+  name: string,
+  config: FormatterPresetConfig,
+  systemDefault: boolean
 }

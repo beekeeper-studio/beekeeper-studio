@@ -39,7 +39,7 @@
       <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
     <global-status-bar
-      :connection-button-width="primarySidebarWidth"
+      :connection-button-width="globalPrimarySidebarWidth"
       :connection-button-icon-width="globalSidebarWidth"
     />
     <quick-search
@@ -79,7 +79,8 @@
         quickSearchShown: false,
         initializing: true,
         resizeObserver: null,
-        primarySidebarWidth: 0,
+        /** Sum of global sidebar width and primary sidebar width */
+        globalPrimarySidebarWidth: 0,
         globalSidebarWidth: 0,
       }
       /* eslint-enable */
@@ -89,9 +90,9 @@
       ...mapGetters(['minimalMode']),
       ...mapState("sidebar", [
         "primarySidebarOpen",
-        "primarySidebarSize",
+        "primarySidebarWidth",
         "secondarySidebarOpen",
-        "secondarySidebarSize",
+        "secondarySidebarWidth",
         "globalSidebarActiveItem",
       ]),
       keymap() {
@@ -122,8 +123,11 @@
       initializing() {
         if (this.initializing) return;
         this.$nextTick(() => {
-          const primarySidebarSize = this.primarySidebarOpen ? this.primarySidebarSize : 0
-          const secondarySidebarSize = this.secondarySidebarOpen ? this.secondarySidebarSize : 0
+          this.readjustWidths({
+            containerWidth: this.getSplitContainerWidth(),
+          })
+          const primarySidebarSize = this.primarySidebarOpen ? (this.primarySidebarWidth / this.getSplitContainerWidth()) * 100 : 0
+          const secondarySidebarSize = this.secondarySidebarOpen ? (this.secondarySidebarWidth / this.getSplitContainerWidth()) * 100 : 0
           const mainContentSize = 100 - (primarySidebarSize + secondarySidebarSize)
 
           const splitSizes = [
@@ -137,9 +141,17 @@
             sizes: splitSizes,
             minSize: [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
             gutterSize: 5,
-            elementStyle: (_dimension, elementSize) => ({
-              width: `${elementSize}%`,
-            }),
+            elementStyle: (_dimension, elementSize, _gutterSize, index) => {
+              // Check if the element is the main content
+              if (index === 1) {
+                return {};
+              }
+              const containerSize = this.$refs.splitContainer.offsetWidth;
+              const width = (elementSize / 100) * containerSize;
+              return {
+                width: `${width}px`,
+              };
+            },
             gutter: (_index, direction) => {
                 const gutter = document.createElement('div')
                 gutter.className = `gutter gutter-${direction}`
@@ -158,11 +170,13 @@
               this.setSecondarySidebarOpen(secondaryOpen)
 
               if (primaryOpen) {
-                this.setPrimarySidebarSize(primarySidebarSize)
+                const primarySidebarWidth = (primarySidebarSize / 100) * this.getSplitContainerWidth()
+                this.setPrimarySidebarWidth(primarySidebarWidth)
               }
 
               if (secondaryOpen) {
-                this.setSecondarySidebarSize(secondarySidebarSize)
+                const secondarySidebarWidth = (secondarySidebarSize / 100) * this.getSplitContainerWidth()
+                this.setSecondarySidebarWidth(secondarySidebarWidth)
               }
             },
           })
@@ -180,7 +194,7 @@
         // width on drag and click events.
         this.resizeObserver = new ResizeObserver((entries) => {
           const primarySidebar = entries[0]
-          this.primarySidebarWidth = this.globalSidebarWidth + primarySidebar.contentRect.width
+          this.globalPrimarySidebarWidth = this.globalSidebarWidth + primarySidebar.contentRect.width
         })
         this.$nextTick(() => {
           this.globalSidebarWidth = this.$refs.globalSidebar.$el.offsetWidth
@@ -204,10 +218,11 @@
     methods: {
       ...mapActions({
         setPrimarySidebarOpen: "sidebar/setPrimarySidebarOpen",
-        setPrimarySidebarSize: "sidebar/setPrimarySidebarSize",
+        setPrimarySidebarWidth: "sidebar/setPrimarySidebarWidth",
         setSecondarySidebarOpen: "sidebar/setSecondarySidebarOpen",
-        setSecondarySidebarSize: "sidebar/setSecondarySidebarSize",
+        setSecondarySidebarWidth: "sidebar/setSecondarySidebarWidth",
         setGlobalSidebarActiveItem: "sidebar/setGlobalSidebarActiveItem",
+        readjustWidths: "sidebar/readjustWidths",
       }),
       showQuickSearch() {
         this.quickSearchShown = true
@@ -223,10 +238,11 @@
         return sizes.map((size) => (size / sum) * 100)
       },
 
-      // Expands a pane to the specified size while respecting minimum widths
-      expandSplitPane(paneIndex: number, targetSize: number) {
+      // Expands a pane to the specified width while respecting minimum widths
+      expandSplitPane(paneIndex: number, targetWidth: number) {
         // size = in percent, width = in pixels
-        const containerSize = this.$refs.splitContainer.offsetWidth
+        const containerSize = this.getSplitContainerWidth()
+        const targetSize = (targetWidth / containerSize) * 100
         const mainContentMinSize = (this.$bksConfig.ui.layout.mainContentMinWidth / containerSize) * 100
         const primarySidebarMinSize = (this.$bksConfig.ui.layout.primarySidebarMinWidth / containerSize) * 100
         const secondarySidebarMinSize = (this.$bksConfig.ui.layout.secondarySidebarMinWidth / containerSize) * 100
@@ -273,10 +289,12 @@
         this.split.setSizes(normalizedSizes)
 
         if (this.primarySidebarOpen) {
-          this.setPrimarySidebarSize(normalizedSizes[0])
+          const primarySidebarWidth = (normalizedSizes[0] / 100) * containerSize
+          this.setPrimarySidebarWidth(primarySidebarWidth)
         }
         if (this.secondarySidebarOpen) {
-          this.setSecondarySidebarSize(normalizedSizes[2])
+          const secondarySidebarWidth = (normalizedSizes[2] / 100) * containerSize
+          this.setSecondarySidebarWidth(secondarySidebarWidth)
         }
       },
       toggleOpenPrimarySidebar(force?: boolean) {
@@ -285,7 +303,7 @@
           : force
 
         if (open) {
-          this.expandSplitPane(0, this.primarySidebarSize)
+          this.expandSplitPane(0, this.primarySidebarWidth)
         } else {
           this.split.collapse(0)
         }
@@ -301,7 +319,7 @@
           : force
 
         if (open) {
-          this.expandSplitPane(2, this.secondarySidebarSize)
+          this.expandSplitPane(2, this.secondarySidebarWidth)
         } else {
           this.split.collapse(2)
         }
@@ -315,6 +333,10 @@
           this.toggleOpenPrimarySidebar(true)
         }
         this.setGlobalSidebarActiveItem(item);
+      },
+
+      getSplitContainerWidth() {
+        return this.$refs.splitContainer.offsetWidth
       },
     }
   })

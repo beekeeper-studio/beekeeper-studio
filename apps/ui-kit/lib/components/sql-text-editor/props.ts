@@ -1,6 +1,6 @@
 import { Entity } from "../types";
 import { PropType } from "vue";
-import { FormatOptions } from "sql-formatter";
+import { FormatOptions, FormatOptionsWithLanguage } from "sql-formatter";
 import { Options } from "sql-query-identifier";
 import props from "../text-editor/props";
 
@@ -18,8 +18,24 @@ export default {
   },
   columnsGetter: Function,
   formatterDialect: {
-    type: String as PropType<FormatOptions["language"]>,
+    type: String as PropType<FormatOptionsWithLanguage["language"]>,
     default: "sql",
+  },
+  formatterConfig: {
+    type: Object as PropType<FormatOptions>,
+    default: () => ({
+      id: null,
+      tabWidth: 2,
+      useTabs: false,
+      keywordCase: 'preserve',
+      dataTypeCase: 'preserve',
+      functionCase: 'preserve',
+      logicalOperatorNewline: 'before',
+      expressionWidth: 50,
+      linesBetweenQueries: 1,
+      denseOperators: false,
+      newlineBeforeSemicolon: false
+    })
   },
   identifierDialect: {
     type: String as PropType<Options["dialect"]>,
@@ -32,6 +48,18 @@ export default {
     type: props.languageId.type,
     default: "sql",
   },
+  allowPresets: {
+    type: Boolean,
+    default: false
+  },
+  presets: {
+    type: Array,
+    default: () => []
+  },
+  formatterModalId: {
+    type: String,
+    default: ''
+  }
 
   // --- replaced with languageId
   // mode: {

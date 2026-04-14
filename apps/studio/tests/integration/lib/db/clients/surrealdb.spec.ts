@@ -5,7 +5,6 @@ import { createServer } from '@commercial/backend/lib/db/server'
 import { SurrealDBClient } from '../../../../../src-commercial/backend/lib/db/clients/surrealdb'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { TableOrView } from '@/lib/db/models'
-import { DatabaseElement } from '@/lib/db/types'
 
 describe('SurrealDB Integration Tests', () => {
   jest.setTimeout(dbtimeout)
@@ -16,7 +15,7 @@ describe('SurrealDB Integration Tests', () => {
 
   beforeAll(async () => {
     // Start SurrealDB container
-    container = await new GenericContainer('surrealdb/surrealdb:latest')
+    container = await new GenericContainer('surrealdb/surrealdb:v2')
       .withCommand(['start', '--log', 'trace', '--user', 'root', '--pass', 'root'])
       .withExposedPorts(8000)
       .withStartupTimeout(dbtimeout)
@@ -172,6 +171,64 @@ describe('SurrealDB Integration Tests', () => {
       expect(customerKey.toTable).toBe('person')
       expect(productKey).toBeDefined()
       expect(productKey.toTable).toBe('product')
+    })
+
+    it('should get table keys for schemaless tables with record references', async () => {
+      const testTable = `schemaless_orders_${Date.now()}`
+
+      try {
+        // Create a SCHEMALESS table (no DEFINE FIELD statements)
+        await connection.executeQuery(`
+          DEFINE TABLE ${testTable} SCHEMALESS;
+        `)
+
+        // Insert data with record references - this is how schemaless tables work
+        await connection.executeQuery(`
+          CREATE ${testTable}:order1 SET
+            customer = person:alice,
+            product = product:laptop,
+            quantity = 1;
+          CREATE ${testTable}:order2 SET
+            customer = person:bob,
+            product = product:phone,
+            quantity = 2;
+        `)
+
+        // Get the keys - should detect the record references even without schema
+        const keys = await connection.getTableKeys(testTable)
+
+        expect(keys.length).toBeGreaterThan(0)
+
+        const customerKey = keys.find(k => k.fromColumn === 'customer')
+        const productKey = keys.find(k => k.fromColumn === 'product')
+
+        expect(customerKey).toBeDefined()
+        expect(customerKey.toTable).toBe('person')
+        expect(customerKey.fromTable).toBe(testTable)
+
+        expect(productKey).toBeDefined()
+        expect(productKey.toTable).toBe('product')
+        expect(productKey.fromTable).toBe(testTable)
+      } finally {
+        // Clean up
+        try {
+          await connection.executeQuery(`REMOVE TABLE ${testTable}`)
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+    })
+
+    it('should get incoming keys for tables referenced by others', async () => {
+      const keys = await connection.getIncomingKeys('person')
+
+      expect(keys.length).toBeGreaterThan(0)
+
+      // person table is referenced by orders table
+      const incomingKey = keys.find(k => k.fromTable === 'orders' && k.fromColumn === 'customer')
+
+      expect(incomingKey).toBeDefined()
+      expect(incomingKey.toTable).toBe('person')
     })
 
     it('should get table properties', async () => {

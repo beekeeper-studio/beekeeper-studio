@@ -4,6 +4,29 @@ summary: Configuration and features to give you more control of your Beekeeper S
 icon: material/security
 ---
 
+## Our Security Approach
+
+Beekeeper Studio is a **desktop application** - the vast majority of your sensitive data never touches our servers.
+
+- **Database credentials** are stored locally on your device and are never sent to us.
+- **SQL queries** run directly from your machine to your database. We never see them.
+- **Query results** are fetched directly to your device. We never process or store them.
+- **Telemetry is opt-in only**. No query content, database data, or connection details are ever collected.
+
+### Cloud Services Are Optional
+
+Beekeeper Studio's cloud services (account management, billing, and workspace sync) are entirely optional. If you don't use cloud workspaces, no query or connection data ever reaches our infrastructure. When you do use cloud workspaces, sensitive fields like saved passwords are application-encrypted before being stored.
+
+All cloud features can be disabled for environments with strict security postures - Beekeeper Studio works fully offline, including offline license validation. See the [Configuration docs](./configuration.md) for details on disabling cloud features via administrator configuration.
+
+### Trust Center
+
+For a full overview of our security practices, policies, and compliance posture, visit our [Trust & Security Center](https://www.beekeeperstudio.io/trust/).
+
+---
+
+## Security Features
+
 Beekeeper offers several features designed to help you manage the privacy of your session, secure your environment, or enforce security settings for all users.
 
 

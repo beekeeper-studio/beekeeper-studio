@@ -1,5 +1,5 @@
 <template>
-  <loading-spinner v-if="tab.isRunning && !forceIcon" />
+  <loading-spinner v-if="isRunning && !forceIcon" />
   <table-icon
     v-else-if="tab.tabType === 'table'"
     :table="tab"
@@ -67,6 +67,19 @@ export default Vue.extend({
     forceIcon: {
       type: Boolean,
       default: false
+    }
+  },
+  data() {
+    return {
+      isRunning: false,
+    }
+  },
+  watch: {
+    tab: {
+      deep: true,
+      handler(value) {
+        this.isRunning = value.isRunning;
+      }
     }
   },
   computed: {

@@ -39,6 +39,7 @@ function escape(value) {
   throw new Error('Escape supports only primitive values.');
 }
 export const FirebirdData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
   wrapIdentifier,

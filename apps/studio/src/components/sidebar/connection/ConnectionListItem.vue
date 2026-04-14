@@ -70,7 +70,6 @@
   </div>
 </template>
 <script>
-import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
@@ -95,16 +94,21 @@ export default {
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
     moveToOptions() {
+      const rootById = {}
+      this.folders.forEach(f => { if (!f.parentId) rootById[f.id] = f.name })
       return this.folders
-        .filter((folder) => folder.id !== this.config.connectionFolderId)
-        .map((folder) => {
-        return {
-          name: `Move to ${folder.name}`,
-          slug: `move-${folder.id}`,
-          handler: this.moveItem,
-          folder
-        }
-      })
+        .filter(folder => folder.id !== this.config.connectionFolderId)
+        .map(folder => {
+          let name
+          if (!folder.parentId) {
+            const hasSubs = this.folders.some(f => f.parentId === folder.id)
+            name = hasSubs ? `Move to ${folder.name} (top level)` : `Move to ${folder.name}`
+          } else {
+            const parentName = rootById[folder.parentId] || ''
+            name = `Move to ${parentName} \u2192 ${folder.name}`
+          }
+          return { name, slug: `move-${folder.id}`, handler: this.moveItem, folder }
+        })
     },
     classList() {
       return {
@@ -140,8 +144,8 @@ export default {
       }
     },
     title() {
-      return this.privacyMode ? 
-        'Connection details hidden by Privacy Mode' : 
+      return this.privacyMode ?
+        'Connection details hidden by Privacy Mode' :
         this.$bks.buildConnectionString(this.config)
     },
     savedConnection() {
@@ -175,6 +179,10 @@ export default {
           slug: 'connect',
           handler: (blob) => this.doubleClick(blob.item)
         },
+        !this.isRecentList && {
+          name: this.pinned ? 'Unpin' : 'Pin',
+          handler: () => this.pinned ? this.unpin() : this.pin()
+        },
         {
           name: "Duplicate",
           slug: 'duplicate',
@@ -190,13 +198,12 @@ export default {
         },
       ].filter(v => v)
 
-      if (this.isCloud) {
-        options.push(...[
-          {
-            type: 'divider'
-          },
-          ...this.moveToOptions
-        ])
+      if (this.isCloud || this.folders.length > 0) {
+        options.push({ type: 'divider' })
+        if (!this.isCloud && this.config.connectionFolderId) {
+          options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
+        }
+        options.push(...this.moveToOptions)
       }
 
       this.$bks.openMenu({
@@ -205,13 +212,19 @@ export default {
         options
       })
     },
+    async moveToRoot() {
+      try {
+        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: this.config, folder: null })
+      } catch (ex) {
+        this.$noty.error(`Move Error: ${ex.message}`)
+        console.error(ex)
+      }
+    },
     async moveItem({ item, option }) {
       try {
         const folder = option.folder
         if (!folder || !folder.id) return
-        const updated = _.clone(item)
-        updated.connectionFolderId = folder.id
-        await this.$store.dispatch('data/connections/save', updated)
+        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: item, folder })
       } catch(ex) {
         this.$noty.error(`Move Error: ${ex.message}`)
         console.error(ex)

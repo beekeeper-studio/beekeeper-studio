@@ -1,15 +1,21 @@
+const path = require('path')
 
 const fpmOptions = [
   "--after-install=build/deb-postinstall"
 ]
 
 const rpmFpmOptions = [
-  "--after-install=build/rpm-postinstall"
+  "--after-install=build/rpm-postinstall",
+  // Workaround for weird electron build issues conflicting with other elcetron apps on fedora
+  // https://github.com/electron/forge/issues/3594
+  "--rpm-rpmbuild-define=_build_id_links none"
 ]
 
 // FIXME: Get a new certificate with a subject line that is a valid AppX publisher
 // support request open to digicert currently (Feb 2025)
 const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
+const bksAiShellPath = path.dirname(require.resolve('@beekeeperstudio/bks-ai-shell/package.json'));
+const bksErDiagramPath = path.dirname(require.resolve('@beekeeperstudio/bks-er-diagram/package.json'));
 
 
 
@@ -34,6 +40,14 @@ module.exports = {
     'package.json'
   ],
   extraResources: [
+    {
+      from: bksAiShellPath,
+      to: "bundled_plugins/@beekeeperstudio/bks-ai-shell"
+    },
+    {
+      from: bksErDiagramPath,
+      to: "bundled_plugins/@beekeeperstudio/bks-er-diagram"
+    },
     {
       from: './extra_resources/demo.db',
       to: 'demo.db'
@@ -131,6 +145,11 @@ module.exports = {
       name: "SQL Server URL scheme",
       schemes: ["sqlserver", "microsoftsqlserver", "mssql"],
       role: "Editor"
+    },
+    {
+      "name": "Redis URL scheme",
+      "schemes": ["redis", "rediss"],
+      "role": "Editor"
     }
   ],
   mac: {
@@ -155,10 +174,13 @@ module.exports = {
     ],
     desktop: {
       entry: {
-        'StartupWMClass': 'beekeeper-studio'
+        'StartupWMClass': 'beekeeper-studio',
       }
     },
     publish: ['github']
+  },
+  pacman: {
+    depends: ["c-ares", "ffmpeg", "gtk3", "llhttp", "libevent", "libvpx", "libxslt", "libxss", "minizip", "nss", "re2", "snappy", "libnotify", "libappindicator-gtk3"]
   },
   deb: {
     publish: [
@@ -206,13 +228,14 @@ module.exports = {
     publish: ['github'],
     signtoolOptions: {
       sign: "./build/win/sign.js",
-    }
+    },
   },
   portable: {
     "artifactName": "${productName}-${version}-portable.exe",
   },
   nsis: {
-    oneClick: false
+    oneClick: false,
+    include: './build/win/msvc-redist.nsh'
   },
   appx: {
     applicationId: "beekeeperstudio",

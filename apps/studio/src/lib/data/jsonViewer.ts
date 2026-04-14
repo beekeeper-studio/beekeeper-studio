@@ -109,7 +109,7 @@ export function deepFilterObjectProps(
 
   if (!paths) paths = getPaths(obj);
   const filteredPaths = paths.filter((path) =>
-    regex ? regex.test(path) : path.toLowerCase().includes(filter)
+    regex ? regex.test(path) : path.toLowerCase().includes(filter.toLowerCase())
   );
   return _.pick(obj, filteredPaths);
 }
@@ -180,7 +180,9 @@ export function parseRowDataForJsonViewer(data: Record<string, any>, tableColumn
 
     if (isJsonColumn) {
       try {
-        data[column.field] = JSON.parse(data[column.field])
+        if (_.isString(data[column.field])) {
+          data[column.field] = JSON.parse(data[column.field])
+        }
       } catch (e) {
         log.warn(`Failed to parse JSON for column ${column.field}:`, e)
       }

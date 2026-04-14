@@ -10,7 +10,7 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
@@ -26,6 +26,7 @@ import { defaultCreateScript, postgres10CreateScript } from './postgresql/script
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
+import {AzureAuthService} from "@/lib/db/authentication/azure";
 
 const PD = PostgresData
 
@@ -84,7 +85,7 @@ const postgresContext = {
   }
 };
 
-export class PostgresClient extends BasicDatabaseClient<QueryResult> {
+export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
@@ -122,7 +123,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
       backDirFormat: true,
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard', 'ilike']
     };
   }
 
@@ -135,16 +137,18 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
     const dbConfig = await this.configDatabase(this.server, this.database);
 
+    log.info("CONFIG: ", dbConfig)
+
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };
 
     const test = await this.conn.pool.connect()
 
-    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
+    if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
       this.interval = setInterval(async () => {
         try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
+          const newPassword = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 5432);
 
           const newPool = new pg.Pool({
             ...dbConfig,
@@ -547,7 +551,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return data.rows.map((row) => row.referenced_table_name);
   }
 
-  async getTableKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys FROM this table (referencing other tables)
     const sql = `
       SELECT
         c.conname AS constraint_name,
@@ -639,14 +644,103 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     });
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys TO this table (other tables referencing this table)
+    const incomingSQL = `
+      SELECT
+        c.conname AS constraint_name,
+        a.attname AS from_column,
+        n.nspname AS from_schema,
+        t.relname AS from_table,
+        af.attname AS to_column,
+        tf.relname AS to_table,
+        nf.nspname AS to_schema,
+        CASE c.confupdtype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confupdtype::text
+        END AS update_rule,
+        CASE c.confdeltype::text
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+          ELSE c.confdeltype::text
+        END AS delete_rule,
+        pos AS ordinal_position
+      FROM
+        pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        JOIN pg_namespace n ON t.relnamespace = n.oid
+        JOIN generate_subscripts(c.conkey, 1) pos ON true
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
+        JOIN pg_class tf ON c.confrelid = tf.oid
+        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
+        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
+      WHERE
+        c.contype = 'f'
+        AND nf.nspname = $1
+        AND tf.relname = $2
+      ORDER BY
+        c.conname,
+        pos;
+    `;
+
+    const params = [schema, table];
+    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'constraint_name');
+
+    return Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.constraint_name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.update_rule,
+          onDelete: row.delete_rule,
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.constraint_name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.from_column),
+        onUpdate: firstPart.update_rule,
+        onDelete: firstPart.delete_rule,
+        isComposite: true,
+      };
+    });
+  }
+
+  async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {
     let pid: any = null;
     let canceling = false;
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
 
     return {
       execute: async (): Promise<NgQueryResult[]> => {
-        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid');
+        const dataPid = await this.driverExecuteSingle('SELECT pg_backend_pid() AS pid', { tabId });
         const rows = dataPid.rows
 
         pid = rows[0].pid;
@@ -654,7 +748,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, { arrayMode: true }),
+            this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
 
           pid = null;
@@ -683,7 +777,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
         canceling = true;
         try {
-          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`);
+          const data = await this.driverExecuteSingle(`SELECT pg_cancel_backend(${pid});`, { tabId });
 
           const rows = data.rows
 
@@ -702,7 +796,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode });
+    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
     const commands = this.identifyCommands(queryText).map((item) => item.type);
 
@@ -1188,10 +1282,49 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
     return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient }): Promise<QueryResult | QueryResult[]> {
+  // Manual transaction management
+  async reserveConnection(tabId: number) {
+    this.throwIfHasConnection(tabId);
 
-    // This means connection.release will be called elsewhere
-    if (options.connection) {
+    const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+    if (this.reservedConnections.size >= BksConfig.db[connectionType].maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
+    const conn = await this.conn.pool.connect();
+    this.pushConnection(tabId, conn);
+  }
+
+  async releaseConnection(tabId: number) {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      conn.release();
+    }
+  }
+
+  async startTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'BEGIN', {});
+  }
+
+  async commitTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'COMMIT', {});
+  }
+
+  async rollbackTransaction(tabId: number) {
+    const conn = this.peekConnection(tabId);
+    await this.runQuery(conn, 'ROLLBACK', {});
+  }
+
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
+    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+    const hasReserved = this.reservedConnections.has(options?.tabId)
+    if (options?.tabId && hasReserved) {
+      const conn = this.peekConnection(options?.tabId);
+      return await this.runQuery(conn, q, options);
+    } else if (options.connection) {
+      // This means connection.release will be called elsewhere
       return await this.runQuery(options.connection, q, options)
     } else {
       log.info('Acquiring new connection for: ', q)
@@ -1204,7 +1337,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
-  private async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
+  async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
     const connection = await this.conn.pool.connect()
     try {
       return await child(connection)
@@ -1362,21 +1495,32 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult> {
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
+    let iamToken = undefined;
+    if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
+      password: iamToken || server.config.password || undefined,
       database: database.database,
-      max: 8, // max idle connections per time (30 secs)
+      max: BksConfig.db.postgres.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };
+
+    if (server.config.azureAuthOptions?.azureAuthEnabled) {
+      const authService = new AzureAuthService();
+      config.user = server.config.user
+      return authService.configDB(server, config)
+    }
 
     if (
       server.config.client === "postgresql" &&
       // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
       // we only need SSL for iam authentication
-      server.config?.redshiftOptions?.iamAuthenticationEnabled
+      server.config?.iamAuthOptions?.iamAuthenticationEnabled
     ){
       server.config.ssl = true;
     }

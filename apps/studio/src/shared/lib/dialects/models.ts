@@ -1,15 +1,16 @@
 import _ from 'lodash'
 import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
+import { ExtendedTableColumn } from '@/lib/db/models'
 
-const communityDialects = ['postgresql', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
+const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
 interface ImportDefaultDataTypes {
   stringType?: string
-  longStringType?: string 
+  longStringType?: string
   dateType?: string
   booleanType?: string
   integerType?: string
@@ -27,6 +28,8 @@ export function dialectFor(s: string): Dialect | null {
   switch (s) {
     case 'cockroachdb':
       return 'postgresql'
+    case 'greengage':
+      return 'greengage'
     case 'mariadb':
     case 'tidb':
       return 'mysql'
@@ -44,6 +47,7 @@ export function dialectFor(s: string): Dialect | null {
 
 export const DialectTitles: {[K in Dialect]: string} = {
   postgresql: "Postgres",
+  greengage: "GreengageDB",
   mysql: "MySQL",
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
@@ -71,6 +75,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'sqlite') return 'sqlite3'
   if (d === 'oracle') return 'oracledb'
   if (d === 'cassandra') return 'cassandra-knex'
+  if (d === 'greengage') return 'postgres'
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
@@ -81,6 +86,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'sqlite') return 'sqlite'
   if (d === 'oracle') return 'plsql'
   if (d === 'postgresql') return 'postgresql'
+  if (d === 'greengage') return 'postgresql'
   if (d === 'redshift') return 'redshift'
   if (d === 'cassandra') return 'sql'
   if (d === 'duckdb') return 'sql'
@@ -124,7 +130,10 @@ export interface DialectData {
   requireDataset?: boolean,
   disallowedSortColumns?: string[],
   rawFilterPlaceholder?: string,
+  /** Is it called "sql" or "code" in this dialect? */
+  sqlLabel: "SQL" | "code";
   disabledFeatures?: {
+    manualCommit?: boolean
     rawFilters?: boolean
     builderFilters?: boolean
     shell?: boolean
@@ -188,6 +197,7 @@ export interface DialectData {
     binaryColumn?: boolean
     initialSort?: boolean
     sqlCreate?: boolean
+    foreignKeys?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
     readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
@@ -276,7 +286,7 @@ export interface AlterTableSpec {
   alterations?: SchemaItemChange[]
   adds?: SchemaItem[]
   drops?: string[]
-  reorder? : { newOrder: SchemaItem[], oldOrder: SchemaItem[] } | null
+  reorder? : { newOrder: ExtendedTableColumn[], oldOrder: ExtendedTableColumn[] } | null
 }
 
 export interface PartitionExpressionChange {

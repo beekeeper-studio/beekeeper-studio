@@ -100,6 +100,9 @@ export interface ExtendedTableColumn extends SchemaItem {
   tableName: string
   hasDefault?: boolean
   generated?: boolean
+  generationExpression?: string
+  characterSet?: string
+  collation?: string
   array?: boolean
   bksField: BksField
 }
@@ -233,6 +236,8 @@ export interface Routine extends DatabaseEntity {
   type: RoutineType;
 }
 
+export type IncludedFilterTypes = 'standard' | 'ilike'
+
 // NOTE (day): note sure if this is really where we want to put edit partitions?
 export interface SupportedFeatures {
   customRoutines: boolean;
@@ -246,6 +251,7 @@ export interface SupportedFeatures {
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
   transactions: boolean;
+  filterTypes: IncludedFilterTypes[];
 }
 
 export interface FieldDescriptor {
@@ -258,7 +264,9 @@ export interface NgQueryResult {
   output?: any;
   fields?: FieldDescriptor[];
   rows?: any[];
+  truncated?: boolean;
   rowCount?: number;
+  totalRowCount?: number;
   affectedRows?: number;
   command?: any;
 }
@@ -372,4 +380,27 @@ export interface BuildInsertOptions {
   runAsUpsert?: boolean
   primaryKeys?: string[]
   createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
+}
+
+export interface ServerStatistics {
+  queryCache: {
+    size: string;
+    limit: string;
+    hits: number;
+    inserts: number;
+    lowMemoryPrunes: number;
+  };
+  performance: {
+    connections: number;
+    uptime: number;
+    threadsRunning: number;
+    threadsConnected: number;
+    slowQueries: number;
+    questionsPerSecond: number;
+  };
+  memory: {
+    keyBufferSize: string;
+    innodbBufferPoolSize: string;
+    innodbBufferPoolUsed: string;
+  };
 }

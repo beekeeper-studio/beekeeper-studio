@@ -1,5 +1,5 @@
 import { Extension } from "@codemirror/state";
-import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/plugin";
+import { FeatureOptions } from "@marimo-team/codemirror-languageserver/dist/lsp";
 import { WebSocketTransport } from "@open-rpc/client-js";
 import { VimOptions } from "./extensions/keymap";
 import { LanguageServerClient } from "./LanguageServerClient";
@@ -136,11 +136,17 @@ export type TextEditorLSPReadyEvent = CustomEvent<{
 }>;
 
 export interface TextEditorEventMap extends HTMLElementEventMap {
+  "bks-show-formatter-presets": boolean,
   "bks-value-change": TextEditorValueChangeEvent;
   "bks-selection-change": TextEditorSelectionChangeEvent;
   "bks-focus": TextEditorFocusEvent;
   "bks-blur": TextEditorFocusEvent;
   "bks-lsp-ready": TextEditorLSPReadyEvent;
   "bks-initialized": TextEditorInitializedEvent;
+}
+
+export type TextEditorMenuContext = {
+  text: string;
+  selectedText: string;
 }
 

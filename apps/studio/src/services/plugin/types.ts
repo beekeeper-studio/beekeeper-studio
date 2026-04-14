@@ -1,8 +1,9 @@
-import { JsonValue } from "@/types";
-import { PluginRequestData, PluginResponseData } from "@beekeeperstudio/plugin";
+import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/dist/internal";
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import { FileHelpers, JsonValue } from "@/types";
+import type Noty from "noty";
 
 /**
  * The kind of the tab. There is only one kind currently:
@@ -74,6 +75,14 @@ export interface PluginMenuItem {
   order?: number;
 }
 
+/** For NativeMenuBuilder.ts */
+export type NativePluginMenuItem = {
+  id: string;
+  pluginId: string;
+  label: string;
+  command: string;
+};
+
 /** Used by earlier versions of AI Shell. */
 type LegacyViews = {
   tabTypes?: {
@@ -134,6 +143,11 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
   }
 };
 
+/**
+ * The structure of a plugin entry.
+ *
+ * @see {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins}
+ */
 export type PluginRegistryEntry = Pick<
   Manifest,
   "id" | "name" | "author" | "description"
@@ -155,10 +169,14 @@ export type OnViewRequestListener = (params: OnViewRequestListenerParams) => voi
 
 export type OnViewRequestListenerParams = {
   source: HTMLIFrameElement;
-  request: PluginRequestData;
-  after: (callback: (response: PluginResponseData) => void) => void;
-  modifyResult: (callback: (result: PluginResponseData['result']) => PluginResponseData['result'] | Promise<PluginResponseData['result']>) => void;
+  request: RequestPayload;
+  after: (callback: AfterViewRequestCallback) => void;
+  modifyResult: (callback: ViewResultModifier) => void;
 }
+
+export type AfterViewRequestCallback = (response: ResponsePayload) => void;
+
+export type ViewResultModifier = (result: ResponsePayload['result']) => ResponsePayload['result'] | Promise<ResponsePayload['result']>;
 
 export type PluginSettings = {
   [pluginId: string]: {
@@ -174,6 +192,14 @@ export type WebPluginContext = {
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
+  fileHelpers: FileHelpers;
+  noty: {
+    success(text: string, options?: any): Noty;
+    error(text: string, options?: any): Noty;
+    warning(text: string, options?: any): Noty;
+    info(text: string, options?: any): Noty;
+  };
+  confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
 
 export type PluginContext = {
@@ -182,3 +208,23 @@ export type PluginContext = {
 }
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
+
+export type WebPluginViewInstance = {
+  iframe: HTMLIFrameElement;
+  context: any;
+}
+
+export type CreatePluginTabOptions = {
+  manifest: Manifest;
+  viewId: string;
+  params?: JsonValue;
+  command: string;
+};
+
+/**
+ * Indicates where a plugin originates from:
+ * - `official`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json}
+ * - `community`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json}
+ * - `unlisted`: Not listed in either repository
+ */
+export type PluginOrigin = "official" | "community" | "unlisted";

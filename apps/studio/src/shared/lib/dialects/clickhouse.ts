@@ -54,6 +54,7 @@ class ClickHouseColumnType extends ColumnType {
 }
 
 export const ClickHouseData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ClickHouseColumnType(t, false, defaultLength(t))),
   constraintActions: [],
   wrapIdentifier(value: string) {
@@ -92,9 +93,11 @@ export const ClickHouseData: DialectData = {
     }
   ],
   disabledFeatures: {
+    manualCommit: true,
     shell: true,
     triggers: true,
     compositeKeys: true,
+    foreignKeys: true,
     createIndex: true,
     generatedColumns: true,
     alter: {

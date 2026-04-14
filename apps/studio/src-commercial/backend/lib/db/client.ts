@@ -8,6 +8,7 @@ import { MariaDBClient } from '@/lib/db/clients/mariadb';
 import { TiDBClient } from '@/lib/db/clients/tidb';
 import { RedshiftClient } from '@/lib/db/clients/redshift';
 import { CockroachClient } from '@/lib/db/clients/cockroach';
+import { GreengageClient } from '@/lib/db/clients/greengage';
 import { BigQueryClient } from '@/lib/db/clients/bigquery';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { FirebirdClient } from "./clients/firebird";
@@ -32,6 +33,7 @@ const clients = new Map<ConnectionType, any>([
   ['mariadb', MariaDBClient],
   ['tidb', TiDBClient],
   ['cockroachdb', CockroachClient],
+  ['greengage', GreengageClient],
   ['bigquery', BigQueryClient],
   ['firebird', FirebirdClient],
   ['oracle', OracleClient],

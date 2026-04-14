@@ -9,7 +9,7 @@ export type PluginTabType = 'plugin-base' | 'plugin-shell';
 export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
 export type TabType = CoreTabType | PluginTabType
 
-const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName']
+const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'context']
 
 export interface TransportOpenTab<Context = {}> extends Transport {
   tabType: TabType,
@@ -20,6 +20,7 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   position: number,
   active: boolean,
   queryId?: number,
+  usedQueryId?: number,
   unsavedQueryText?: string,
   tableName?: string,
   schemaName?: string,
@@ -30,6 +31,7 @@ export interface TransportOpenTab<Context = {}> extends Transport {
   lastActive?: Date|null,
   deletedAt?: Date|null
   isRunning: boolean, // not on the actual model, but used in frontend
+  isTransaction: boolean, // not on the actual model, but used in frontend
   context: Context
 }
 
@@ -170,7 +172,8 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
       // at a time.
       return obj.tabType === 'import-export-database'
     case 'query':
-      return obj.queryId === other.queryId
+      return (obj.queryId === other.queryId && obj.queryId !== null && other.queryId !== null) ||
+        (obj.usedQueryId === other.usedQueryId && obj.usedQueryId !== null && other.queryId !== null)
     case 'backup':
       return obj.tabType === 'backup';
     case 'restore':

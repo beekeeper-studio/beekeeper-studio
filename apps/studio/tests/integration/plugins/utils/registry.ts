@@ -1,4 +1,4 @@
-import { Manifest, PluginRegistryEntry, Release } from "@/services/plugin";
+import { Manifest, PluginOrigin, PluginRegistryEntry, Release } from "@/services/plugin";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
 
@@ -7,6 +7,7 @@ export type Plugin = {
   name: string;
   latestRelease: Pick<Manifest, "version" | "minAppVersion">;
   readme: string;
+  origin: PluginOrigin;
 };
 
 /**
@@ -38,8 +39,13 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
     super();
   }
 
-  async fetchRegistry(): Promise<PluginRegistryEntry[]> {
-    return this.plugins.map((p) => ({
+  protected async fetchJson(_owner: string, _repo: string, path: string): Promise<PluginRegistryEntry[]> {
+    const plugins = this.plugins.filter((p) =>
+      path === "plugins.json"
+        ? p.origin === "official"
+        : p.origin === "community"
+    );
+    return plugins.map((p) => ({
       id: p.id,
       name: p.name,
       repo: this.repoStr(p),

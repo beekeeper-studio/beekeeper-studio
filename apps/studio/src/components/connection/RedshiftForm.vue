@@ -27,18 +27,20 @@ export default {
   components: {CommonIam, CommonServerInputs, CommonAdvanced },
   data() {
     return {
-      iamAuthenticationEnabled: this.config.redshiftOptions?.authType?.includes?.('iam'),
-      authType: this.config.redshiftOptions?.authType || 'default',
+      iamAuthenticationEnabled: this.config.iamAuthOptions?.authType?.includes?.('iam'),
+      authType: this.config.iamAuthOptions?.authType || 'default',
       authTypes: [{ name: 'Username / Password', value: 'default' }, ...IamAuthTypes]
     }
   },
   watch: {
     async authType() {
-      this.iamAuthenticationEnabled = this.authType.includes('iam');
-      this.config.redshiftOptions.authType = this.authType;
+      if (this.authType.includes('iam')) {
+        this.iamAuthenticationEnabled = true;
+        this.config.iamAuthOptions.authType = this.authType
+      }
     },
     iamAuthenticationEnabled() {
-      this.config.redshiftOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
+      this.config.iamAuthOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
     }
   },
   props: ['config'],

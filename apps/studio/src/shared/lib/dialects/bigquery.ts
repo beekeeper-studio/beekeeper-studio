@@ -8,6 +8,7 @@ const types = [
 const supportsLength = [];
 
 export const BigQueryData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
   importDataType: {
@@ -35,6 +36,7 @@ export const BigQueryData: DialectData = {
   unwrapIdentifier: (s) => s,
   textEditorMode: "text/x-sql",
   disabledFeatures: {
+    manualCommit: true,
     shell: true,
     truncateElement: true,
     duplicateTable: true,

@@ -1,1 +1,2 @@
 dev/**/*.sql linguist-language=SQL
+*.surql linguist-generated

@@ -12,5 +12,14 @@ export const UtilUsedQueryModule: DataStore<TransportUsedQuery, DataState<Transp
   mutations: mutationsFor<TransportUsedQuery>({
 
   }, { field: 'updatedAt', direction: 'desc'}),
-  actions: utilActionsFor<TransportUsedQuery>('usedQuery', {}, { take: 100, order: { updatedAt: 'DESC' } })
+  actions: utilActionsFor<TransportUsedQuery>('usedQuery', {},
+    { take: 100, order: { updatedAt: 'DESC' } },
+    {
+      text: true,
+      database: true,
+      status: true,
+      numberOfRecords: true,
+      workspaceId: true,
+      excerpt: true
+    })
 }

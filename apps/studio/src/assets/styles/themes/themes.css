@@ -1,0 +1,19 @@
+body {
+  --togglebutton-color: color-mix(
+    in srgb,
+    var(--theme-base) 60%,
+    var(--theme-bg));
+  --togglebutton-background: color-mix(
+    in srgb,
+    var(--theme-base) 6%,
+    var(--theme-bg));
+  --togglebutton-hover-color: color-mix(
+    in srgb,
+    var(--theme-base) 80%,
+    var(--theme-bg));
+  --togglebutton-content-checked-color: var(--theme-base);
+  --togglebutton-content-checked-background: color-mix(
+    in srgb,
+    var(--theme-base) 15%,
+    var(--theme-bg));
+}

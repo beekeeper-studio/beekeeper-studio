@@ -107,8 +107,7 @@
             :columns="columns"
             @changed="singleFilterChanged"
             @blur="updateMinimalModeByFilters"
-          >
-        </builder-filter>
+          />
         </div>
         <div class="right-section">
           <div class="ghost-add-apply">
@@ -195,6 +194,7 @@ import BuilderFilter from "./filter/BuilderFilter.vue";
 
 const BUILDER = "builder";
 const RAW = "raw";
+const isEmpty = (s) => _.isEmpty(_.trim(s))
 
 export default Vue.extend({
   components: { BuilderFilter },
@@ -288,7 +288,7 @@ export default Vue.extend({
     submit() {
       let filters: TableFilter[] | string | null
       if (this.filterMode === RAW) {
-        filters = this.filterRaw || null
+        filters = isEmpty(this.filterRaw) ? [] : this.filterRaw;
       } else {
         filters = normalizeFilters(this.filters)
         this.submittedWithEmptyValue = checkEmptyFilters(filters)

@@ -254,18 +254,10 @@ x-buttons {
         &.inserted,
         &.inserted:hover {
           background: $row-add!important;
-          --row-bg-color: #{$row-add};
           --row-hover-bg-color: rgba($theme-base, 0.05);
-        }
-        &.deleted,
-        &.deleted:hover {
-          background: $row-delete!important;
-          --row-bg-color: #{$row-delete};
-          --row-hover-bg-color: #{$row-delete};
         }
         &.edit-error {
           background: $row-error!important;
-          --row-bg-color: #{$row-error};
         }
       }
       &.edit-error {
@@ -279,7 +271,6 @@ x-buttons {
         }
         &.edited {
           background: $cell-edited;
-          --row-bg-color: #{$cell-edited};
           &:hover {
             background: color.adjust($cell-edited, $lightness: -5%);
             --row-hover-bg-color: color.adjust($cell-edited, $lightness: -5%);
@@ -342,13 +333,8 @@ x-buttons {
 .table-builder .table-builder-wrap,
 .table-properties .table-properties-wrap {
   .tabulator-row {
-    &.tabulator-row-even {
-      background: rgba($theme-base, 0.06);
-      --row-bg-color: #{rgba($theme-base, 0.06)};
-    }
     &.inserted {
       background: $row-add!important;
-      --row-bg-color: #{$row-add};
     }
   }
 }
@@ -389,9 +375,6 @@ x-buttons {
 
   // Field Rows
   .tabulator-row {
-    &.tabulator-row-even {
-      background: rgba($theme-base, 0.05);
-    }
     .tabulator-cell {
       color: $text-dark;
       &.tabulator-editing {

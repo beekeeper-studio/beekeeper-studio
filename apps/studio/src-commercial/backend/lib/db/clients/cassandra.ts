@@ -98,6 +98,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      filterTypes: ['standard']
     }
   }
 
@@ -189,7 +190,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]) // TODO (@will): Make sure this isn't a thing since you shouldn't be doing joins anyway?
   }
 
-  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `
       SELECT column_name
       FROM system_schema.columns
@@ -207,6 +208,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       referencedTable: null,
       keyType: 'PRIMARY KEY'
     } as any));
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return [];
   }
 
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {

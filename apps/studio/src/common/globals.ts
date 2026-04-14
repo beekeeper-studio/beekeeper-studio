@@ -25,9 +25,22 @@ export default {
   iamRefreshTime: 13 * 60 * 1000, // 13 minutes
   iamExpiryTime: 15 * 60 * 1000, // 15 minutes
   iamRefreshBeforeTime: 2 * 60 * 1000, // 2 minutes
+  azureCloudTokenUrl: 'https://app.beekeeperstudio.io/api/cloud_tokens',
+  azureCloudScopes: ['https://database.windows.net/.default', 'offline_access'],
   firebird: {
     poolSize: 5,
   },
+  plugins: {
+    /**
+     * Ensure these packages are bundled and installed for first time users.
+     *
+     * @see `BundledPluginModule` in src-commercial/backend/plugin-system/modules/BundledPluginModule.ts
+     **/
+    ensureInstalled: [
+      "@beekeeperstudio/bks-ai-shell",
+      "@beekeeperstudio/bks-er-diagram",
+    ],
+  }
 }
 
 

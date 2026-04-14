@@ -29,6 +29,7 @@ export interface DefaultConstraint {
 const UNWRAPPER = /^"(.*)"$/
 
 export const SqlServerData: DialectData = {
+  sqlLabel: "SQL",
   defaultSchema: 'dbo',
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],

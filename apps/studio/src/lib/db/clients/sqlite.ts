@@ -81,6 +81,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       backDirFormat: false,
       restore: true,
       indexNullsNotDistinct: false,
+      filterTypes: ['standard']
     };
   }
 
@@ -205,7 +206,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return rows.map((row, idx) => ({
       id: row.seq,
       name: row.name,
-      unique: row.unique === 1,
+      unique: !!row.unique && row.unique !== BigInt(0),
       primary: row.origin === 'pk',
       columns: indexColumns[idx],
       schema: '',
@@ -221,21 +222,63 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]); // TODO: not implemented yet
   }
 
-  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`
+  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    const sql = `
+      SELECT
+        '${SD.escapeString(table)}' AS from_table,
+        p."from" AS from_column,
+        p."table" AS to_table,
+        p."to" AS to_column,
+        p.on_update as on_update,
+        p.on_delete as on_delete,
+        p.id as id
+      FROM pragma_foreign_key_list('${SD.escapeString(table)}') p
+      ORDER BY id;
+    `
     const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
     return rows.map(row => ({
       constraintName: row.id,
       constraintType: 'FOREIGN',
-      toTable: row.table,
+      toTable: row.to_table,
       toSchema: '',
       fromSchema: '',
-      fromTable: table,
-      fromColumn: row.from,
-      toColumn: row.to,
+      fromTable: row.from_table,
+      fromColumn: row.from_column,
+      toColumn: row.to_column,
       onUpdate: row.on_update,
       onDelete: row.on_delete,
-      isComposite: false
+      isComposite: false,
+    }))
+  }
+
+  async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    const sql = `
+      SELECT
+        m.name AS from_table,
+        p."from" AS from_column,
+        p."table" AS to_table,
+        p."to" AS to_column,
+        p.on_update as on_update,
+        p.on_delete as on_delete,
+        p.id as id
+      FROM sqlite_master AS m
+      JOIN pragma_foreign_key_list(m.name) AS p
+      WHERE p."table" = '${SD.escapeString(table)}'
+      ORDER BY id, from_table;
+    `
+    const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
+    return rows.map(row => ({
+      constraintName: row.id,
+      constraintType: 'FOREIGN',
+      toTable: row.to_table,
+      toSchema: '',
+      fromSchema: '',
+      fromTable: row.from_table,
+      fromColumn: row.from_column,
+      toColumn: row.to_column,
+      onUpdate: row.on_update,
+      onDelete: row.on_delete,
+      isComposite: false,
     }))
   }
 
@@ -286,7 +329,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
       if (isSelect && arrayMode) {
         rows = data.map((row: any[]) =>
-          row.reduce((obj, val, idx) => {
+          Array.prototype.reduce.call(row, (obj, val, idx) => {
             obj[`c${idx}`] = val;
             return obj
           }, {})

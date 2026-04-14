@@ -26,6 +26,7 @@
         <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
       </a>
       <a
+        v-if="!usedConfig?.readOnlyMode"
         class="refresh"
         @click.prevent="$modal.show('config-add-database')"
         :title="'Add Database'"
@@ -147,7 +148,7 @@
         return _.without(this.dbs, this.selectedDatabase)
       },
       ...mapGetters(['dialect', 'dialectData']),
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType'}),
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType', usedConfig: 'usedConfig'}),
     },
     watch: {
       currentDatabase(newValue) {

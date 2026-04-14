@@ -1,9 +1,10 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
-import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, ISqlTypeFactory, Request } from 'mssql'
+import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request, Transaction } from 'mssql'
 import { identify, StatementType } from 'sql-query-identifier'
 import knexlib from 'knex'
+import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'
 
 import { DatabaseElement, IDbConnectionDatabase } from "../types"
@@ -15,7 +16,9 @@ import {
   buildUpdateQueries,
   escapeString,
   joinQueries,
-  buildInsertQuery
+  buildInsertQuery,
+  getEntraOptions,
+  errorMessages
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
@@ -83,7 +86,7 @@ knex.client._escapeBinding = function (value: any, context: any) {
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
-export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
+export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -205,8 +208,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, options.arrayRowMode))
   }
 
-  async query(queryText: string) {
-    const queryRequest: Request = this.pool.request();
+  async query(queryText: string, tabId: number) {
+    const hasReserved = this.reservedConnections.has(tabId);
+    const queryRequest: Request = hasReserved ? this.reservedConnections.get(tabId).request() : this.pool.request();
+    log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
     return {
       execute: async(): Promise<NgQueryResult[]> => {
         try {
@@ -379,7 +384,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
     }
   }
 
-  async getTableKeys(table: string, schema?: string) {
+  async getOutgoingKeys(table: string, schema?: string) {
     // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
     const sql = `
       SELECT
@@ -414,7 +419,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
                       i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
                 ) PT
           ON PT.TABLE_NAME = PK.TABLE_NAME
-      WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA =${this.wrapValue(schema)}
+      WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA = ${this.wrapValue(schema)}
       ORDER BY
         FK.CONSTRAINT_NAME,
         CU.ORDINAL_POSITION
@@ -445,7 +450,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
         };
       }
 
-      // If there are multiple parts, it's a composite mekey
+      // If there are multiple parts, it's a composite key
       const firstPart = keyParts[0];
       return {
         constraintName: firstPart.name,
@@ -461,7 +466,95 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       };
     });
 
-    this.logger().debug("tableKeys result", result);
+    this.logger().debug("outgoingKeys result", result);
+    return result;
+  }
+
+  async getIncomingKeys(table: string, schema?: string) {
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const sql = `
+      SELECT
+        name = FK.CONSTRAINT_NAME,
+        from_schema = FK.TABLE_SCHEMA,
+        from_table = FK.TABLE_NAME,
+        from_column = CU.COLUMN_NAME,
+        to_schema = PK.TABLE_SCHEMA,
+        to_table = PK.TABLE_NAME,
+        to_column = PT.COLUMN_NAME,
+        constraint_name = C.CONSTRAINT_NAME,
+        on_update = C.UPDATE_RULE,
+        on_delete = C.DELETE_RULE,
+        CU.ORDINAL_POSITION as ordinal_position
+      FROM
+          INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
+      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
+          ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
+      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
+          ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
+      INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
+          ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
+      INNER JOIN (
+                  SELECT
+                      i1.TABLE_NAME,
+                      i2.COLUMN_NAME,
+                      i2.ORDINAL_POSITION
+                  FROM
+                      INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
+                  INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
+                      ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
+                  WHERE
+                      i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                ) PT
+          ON PT.TABLE_NAME = PK.TABLE_NAME AND CU.ORDINAL_POSITION = PT.ORDINAL_POSITION
+      WHERE PK.TABLE_NAME = ${this.wrapValue(table)} AND PK.TABLE_SCHEMA = ${this.wrapValue(schema)}
+      ORDER BY
+        FK.CONSTRAINT_NAME,
+        CU.ORDINAL_POSITION
+    `;
+
+    const { data } = await this.driverExecuteSingle(sql);
+    const recordset = data.recordset || [];
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(recordset, 'name');
+
+    const result = Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (keyParts.length === 1) {
+        const row = keyParts[0];
+        return {
+          constraintName: row.name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.on_update,
+          onDelete: row.on_delete,
+          isComposite: false
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = keyParts[0];
+      return {
+        constraintName: firstPart.name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: keyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: keyParts.map(p => p.from_column),
+        onUpdate: firstPart.on_update,
+        onDelete: firstPart.on_delete,
+        isComposite: true
+      };
+    });
+
+    this.logger().debug("incomingKeys result", result);
     return result;
   }
 
@@ -565,7 +658,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
   }
 
   protected async rawExecuteQuery(q: string, options: any): Promise<SQLServerResult> {
-    this.logger().info('RUNNING', q, options);
+    log.info('RUNNING', q, options);
 
     const runQuery = async (connection: Request) => {
       connection.arrayRowMode = options.arrayRowMode || false;
@@ -1023,7 +1116,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     }
   }
 
@@ -1050,6 +1144,46 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
 
   getBuilder(table: string, schema?: string) {
     return new SqlServerChangeBuilder(table, schema, [], [])
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
+    if (this.reservedConnections.size >= BksConfig.db.sqlserver.maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
+    const conn = this.pool.transaction();
+    this.pushConnection(tabId, conn);
+  }
+
+  async releaseConnection(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    if (conn) {
+      try {
+        // This may throw if the connection hasn't been begun yet, so just to be safe we'll catch
+        await conn.rollback();
+      } catch {}
+    }
+  }
+
+  async startTransaction(tabId: number): Promise<void> {
+    const conn = this.peekConnection(tabId);
+    await conn.begin();
+  }
+
+  async commitTransaction(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    await conn.commit();
+    // commit releases the connection annoyingly so we have to re reserve one
+    await this.reserveConnection(tabId);
+  }
+
+  async rollbackTransaction(tabId: number): Promise<void> {
+    const conn = this.popConnection(tabId);
+    await conn.rollback();
+    // rollback also releases the connection so we have to re reserve the connection
+    await this.reserveConnection(tabId);
   }
 
   private async executeWithTransaction(q: string) {
@@ -1105,7 +1239,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       requestTimeout: Infinity,
       appName: 'beekeeperstudio',
       pool: {
-        max: 10
+        max: BksConfig.db.sqlserver.maxConnections
       }
     };
 
@@ -1113,14 +1247,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult> {
       this.authService = new AzureAuthService();
       await this.authService.init(server.config.authId)
 
-      const options: AuthOptions = {
-        password: server.config.password,
-        userName: server.config.user,
-        tenantId: server.config.azureAuthOptions.tenantId,
-        clientSecret: server.config.azureAuthOptions.clientSecret,
-        msiEndpoint: server.config.azureAuthOptions.msiEndpoint,
-        signal,
-      };
+      const options = getEntraOptions(server, { signal })
 
       config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
 

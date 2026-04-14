@@ -1,12 +1,12 @@
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
-import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn } from "../models";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn, TableIndex } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
 import BksConfig from "@/common/bksConfig";
-import { TableKey } from "@shared/lib/dialects/models";
+import { IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
 
@@ -22,7 +22,8 @@ export class RedshiftClient extends PostgresClient {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard', 'ilike']
     };
   }
 
@@ -82,6 +83,70 @@ export class RedshiftClient extends PostgresClient {
     }));
   }
 
+  async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
+    const sql = `
+      SELECT
+          ic.relname                     AS indexname,
+          s.ordinality                   AS index_order,
+          i.indexrelid                   AS id,
+          i.indisunique                  AS indisunique,
+          i.indisprimary                 AS indisprimary,
+          pg_get_indexdef(i.indexrelid, s.ordinality, true) AS index_column,
+          true                           AS ascending
+      FROM pg_class t
+      JOIN pg_namespace ns
+        ON ns.oid = t.relnamespace
+      JOIN pg_index i
+        ON i.indrelid = t.oid
+      JOIN pg_class ic
+        ON ic.oid = i.indexrelid
+      JOIN (
+          SELECT 1 AS ordinality
+          UNION ALL SELECT 2
+          UNION ALL SELECT 3
+          UNION ALL SELECT 4
+          UNION ALL SELECT 5
+      ) s
+        ON s.ordinality <= i.indnatts
+      WHERE ns.nspname = $1
+        AND t.relname  = $2
+      ORDER BY indexname, index_order;
+    `
+    const params = [
+      schema,
+      table,
+    ];
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    const grouped = _.groupBy(data.rows, 'indexname')
+
+    const result = Object.keys(grouped).map((indexName) => {
+      const blob = grouped[indexName]
+      const unique = blob[0].indisunique
+      const id = blob[0].id
+      const primary = blob[0].indisprimary
+      const columns: IndexColumn[] = _.sortBy(blob, 'index_order').map((b) => {
+        return {
+          name: b.index_column,
+          order: b.ascending ? 'ASC' : 'DESC'
+        }
+      })
+      const nullsNotDistinct = blob[0].indnullsnotdistinct
+      const item: TableIndex = {
+        table, schema,
+        id,
+        name: indexName,
+        unique,
+        primary,
+        columns,
+        nullsNotDistinct,
+      }
+      return item
+    })
+
+    return result
+  }
 
   async getTableProperties(_table: string, _schema?: string): Promise<TableProperties> {
     return null;
@@ -119,7 +184,8 @@ export class RedshiftClient extends PostgresClient {
     }
   }
 
-  async getTableKeys(_db: string, table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
     const sql = `
       SELECT
 
@@ -157,6 +223,63 @@ export class RedshiftClient extends PostgresClient {
         kcu.table_schema NOT LIKE 'pg_%' AND
         kcu.table_schema = $2 AND
         kcu.table_name = $1;
+    `;
+
+    const params = [
+      table,
+      schema,
+    ];
+
+    const data = await this.driverExecuteSingle(sql, { params });
+
+    // For now, treat all keys as non-composite until we can properly test with Redshift
+    // TODO: Implement proper composite key detection for Redshift
+    return data.rows.map((row) => ({
+      toTable: row.to_table,
+      toSchema: row.to_schema,
+      toColumn: row.to_column,
+      fromTable: row.from_table,
+      fromSchema: row.from_schema,
+      fromColumn: row.from_column,
+      constraintName: row.constraint_name,
+      onUpdate: row.update_rule,
+      onDelete: row.delete_rule,
+      isComposite: false
+    }));
+  }
+
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const sql = `
+      SELECT
+        kcu.constraint_schema AS from_schema,
+        kcu.table_name AS from_table,
+        kcu.column_name AS from_column,
+        rc.unique_constraint_schema AS to_schema,
+        tc.constraint_name,
+        rc.update_rule,
+        rc.delete_rule,
+        (SELECT kcu2.table_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
+        (SELECT kcu2.column_name
+         FROM information_schema.key_column_usage AS kcu2
+         WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column
+      FROM
+        information_schema.key_column_usage AS kcu
+          JOIN
+        information_schema.table_constraints AS tc
+        ON
+          tc.constraint_name = kcu.constraint_name
+          JOIN
+        information_schema.referential_constraints AS rc
+        ON
+          rc.constraint_name = kcu.constraint_name
+      WHERE
+        tc.constraint_type = 'FOREIGN KEY' AND
+        kcu.table_schema NOT LIKE 'pg_%' AND
+        rc.unique_constraint_schema = $2 AND
+        to_table = $1;
     `;
 
     const params = [
@@ -222,11 +345,12 @@ export class RedshiftClient extends PostgresClient {
     // that can be used to resolve the latest password.
     let passwordResolver: () => Promise<string>;
 
+    const iamOptions = server.config.iamAuthOptions;
     const redshiftOptions = server.config.redshiftOptions;
-    if (redshiftOptions?.iamAuthenticationEnabled) {
+    if (iamOptions?.iamAuthenticationEnabled) {
 
       const clusterConfig: ClusterCredentialConfiguration = {
-        awsRegion: redshiftOptions.awsRegion,
+        awsRegion: iamOptions.awsRegion,
         clusterIdentifier: redshiftOptions.clusterIdentifier,
         dbName: database.database,
         dbUser: server.config.user,
@@ -237,7 +361,7 @@ export class RedshiftClient extends PostgresClient {
 
       const credentialResolver = RedshiftCredentialResolver.getInstance();
 
-      const awsCreds = await resolveAWSCredentials(redshiftOptions);
+      const awsCreds = await resolveAWSCredentials(iamOptions);
 
       // We need resolve credentials once to get the temporary database user, which does not change
       // on each call to get credentials.
@@ -256,7 +380,7 @@ export class RedshiftClient extends PostgresClient {
       port: server.config.port || undefined,
       password: passwordResolver || server.config.password || undefined,
       database: database.database,
-      max: 5, // max idle connections per time (30 secs)
+      max: BksConfig.db.redshift.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.redshift.connectionTimeout,
     };

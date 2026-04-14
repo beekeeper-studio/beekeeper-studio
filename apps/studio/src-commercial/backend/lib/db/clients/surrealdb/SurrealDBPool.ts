@@ -1,8 +1,9 @@
-import Surreal, { ConnectionStatus, ConnectOptions } from "surrealdb";
+import Surreal, { AnyAuth, ConnectionStatus, ConnectOptions, Token } from "surrealdb";
 import rawLog from "@bksLogger";
 import { uuidv4 } from "@/lib/uuid";
 import ws from "ws";
 import BksConfig from "@/common/bksConfig";
+import _ from "lodash"
 
 // HACK (@day): this is so websockets can work in a node process (smh surreal)
 // @ts-ignore
@@ -28,6 +29,9 @@ export class SurrealConn extends Surreal {
 
 export class SurrealPool {
   config: ConnectOptions;
+  database: { namespace?: string | null, database?: string | null }
+  auth: AnyAuth;
+  token: Token;
   connectionString: string;
   maxSize: number;
   pool: SurrealConn[] = [];
@@ -35,6 +39,15 @@ export class SurrealPool {
 
   constructor(url: string, config: ConnectOptions, maxSize = 8) {
     this.connectionString = url;
+
+    this.database = _.pick(config, "namespace", "database");
+    config = _.omit(config, "namespace", "database")
+    if (typeof config.auth !== 'string') {
+      this.auth = config.auth;
+    } else {
+      this.token = config.auth
+    }
+    config = _.omit(config, "auth")
     this.config = config;
     this.maxSize = maxSize;
   }
@@ -51,7 +64,19 @@ export class SurrealPool {
     if (this.pool.length < this.maxSize) {
       const newConn = new SurrealConn(this);
       log.info('Acquiring new connection', newConn.id);
+      log.info('CONFIG: ', this.config)
       await newConn.connect(this.connectionString, this.config);
+      log.info("Connected")
+      newConn.info
+      await newConn.use(this.database);
+      log.info("Used", this.database)
+      if (this.auth) {
+        log.info("Signing in", this.auth)
+        await newConn.signin(this.auth);
+      } else {
+        log.info("Authenticating: ", this.token)
+        await newConn.authenticate(this.token)
+      }
       await newConn.ready;
 
       this.pool.push(newConn);

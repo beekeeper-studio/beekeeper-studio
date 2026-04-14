@@ -98,7 +98,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: false
+      transactions: false,
+      filterTypes: ['standard', 'ilike']
     }
   }
 
@@ -184,7 +185,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return [];
   }
 
-  async getTableKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return [];
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
     return [];
   }
 
@@ -1058,7 +1063,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       "=": "$eq",
       "!=": "$ne",
       "like": "$regex", // special case for regex
+      "ilike": "$regex", // special case for regex
       "not like": "$not", // special case for not regex
+      "not ilike": "$regex", // special case for regex
       "<": "$lt",
       "<=": "$lte",
       ">": "$gt",
@@ -1096,7 +1103,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         }
         const value = filter.value.map((v) => this.convertValueForFilter(v));
         condition = { [filter.field]: { [mongoOp]: value }};
-      } else if (filter.type === "like" && _.isString(filter.value)) {
+      } else if (filter.type === "ilike" && _.isString(filter.value)) {
         const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
         condition = {
           [filter.field]: {
@@ -1104,7 +1111,23 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
             $options: "i" // case-insensitive
           }
         };
+      } else if (filter.type === "like" && _.isString(filter.value)) {
+        const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
+        condition = {
+          [filter.field]: {
+            [mongoOp]: reg
+          }
+        };
       } else if (filter.type === "not like" && _.isString(filter.value)) {
+        const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
+        condition = {
+          [filter.field]: {
+            $not: {
+              $regex: reg
+            }
+          }
+        };
+      } else if (filter.type === "not ilike" && _.isString(filter.value)) {
         const reg = (filter.value as string).replace(/%/g, ".*").replace(/_/g, ".");
         condition = {
           [filter.field]: {

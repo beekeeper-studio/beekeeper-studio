@@ -49,7 +49,7 @@
         </option>
       </select>
     </div>
-    <div class="row gutter">
+    <div v-if="!this.isTokenAuth" class="row gutter">
       <div class="form-group col s6">
         <label for="user">User</label>
         <masked-input
@@ -67,7 +67,21 @@
         >
         <i
           @click.prevent="togglePassword"
-          class="material-icons password"
+          class="material-icons password-icon"
+        >{{ togglePasswordIcon }}</i>
+      </div>
+    </div>
+    <div v-else class="row gutter">
+      <div class="form-group col">
+        <label for="token">Token</label>
+        <input
+          :type="togglePasswordInputType"
+          v-model="config.surrealDbOptions.token"
+          class="password form-control"
+        >
+        <i
+          @click.prevent="togglePassword"
+          class="material-icons password-icon"
         >{{ togglePasswordIcon }}</i>
       </div>
     </div>
@@ -101,7 +115,7 @@ import { SurrealAuthType, SurrealAuthTypes } from '../../lib/db/types';
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 
 export default Vue.extend({
   components: { CommonServerInputs, MaskedInput, CommonAdvanced },
@@ -109,18 +123,21 @@ export default Vue.extend({
   data() {
     return {
       authTypes: SurrealAuthTypes,
-      authType: null, // maybe we should just default to null?
+      authType: null,
       protocols: ['http', 'https', 'ws', 'wss'],
       showPassword: false
     }
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     togglePasswordIcon() {
       return this.showPassword ? "visibility_off" : "visibility";
     },
     togglePasswordInputType() {
       return this.showPassword ? "text" : "password"
+    },
+    isTokenAuth() {
+      return this.config.surrealDbOptions.authType === SurrealAuthType.Token;
     }
   },
   methods: {

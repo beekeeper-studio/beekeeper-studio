@@ -113,7 +113,8 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
-      transactions: true
+      transactions: true,
+      filterTypes: ['standard']
     }
   }
 
@@ -452,8 +453,10 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     return rows.map(row => row.referenced_table);
   }
 
-  async getTableKeys(table: string, schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, schema?: string): Promise<TableKey[]> {
     schema = schema || 'dbo';
+
+    // Query for foreign keys FROM this table (outgoing - referencing other tables)
     const sql = `
       SELECT
         CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS name,
@@ -483,16 +486,16 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     `;
 
     const { rows } = await this.driverExecuteSingle(sql);
-    
+
     // Group by constraint name to identify composite keys
     const groupedKeys = _.groupBy(rows, 'name');
-    
+
     const result = Object.keys(groupedKeys).map(constraintName => {
       const keyParts = groupedKeys[constraintName];
-      
+
       // Sort key parts by sequence to ensure correct column order
       const sortedKeyParts = _.sortBy(keyParts, 'sequence');
-      
+
       // If there's only one part, return a simple key (backward compatibility)
       if (sortedKeyParts.length === 1) {
         const row = sortedKeyParts[0];
@@ -506,10 +509,10 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
           fromColumn: row.from_column,
           onUpdate: row.on_update,
           onDelete: row.on_delete,
-          isComposite: false
+          isComposite: false,
         };
-      } 
-      
+      }
+
       // If there are multiple parts, it's a composite key
       const firstPart = sortedKeyParts[0];
       return {
@@ -522,11 +525,91 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
         fromColumn: sortedKeyParts.map(p => p.from_column),
         onUpdate: firstPart.on_update,
         onDelete: firstPart.on_delete,
-        isComposite: true
+        isComposite: true,
       };
     });
-    
-    log.debug("tableKeys result", result);
+
+    log.debug("outgoing keys result", result);
+    return result;
+  }
+
+  async getIncomingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    schema = schema || 'dbo';
+
+    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+    const sql = `
+      SELECT
+        CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS name,
+        u_pri.user_name AS to_schema,
+        t_pri.table_name AS to_table,
+        c_pri.column_name AS to_column,
+        u_for.user_name AS from_schema,
+        t_for.table_name AS from_table,
+        c_for.column_name AS from_column,
+        CAST(fk.foreign_table_id AS VARCHAR) + '_' + CAST(fk.primary_table_id AS VARCHAR) AS constraint_name,
+        'NO ACTION' AS on_update,
+        'NO ACTION' AS on_delete,
+        ic_for.sequence AS sequence
+      FROM SYS.SYSFKEY fk
+      JOIN SYS.SYSIDXCOL ic_for ON fk.foreign_index_id = ic_for.index_id AND ic_for.table_id = fk.foreign_table_id
+      JOIN SYS.SYSCOLUMN c_for ON ic_for.table_id = c_for.table_id AND ic_for.column_id = c_for.column_id
+      JOIN SYS.SYSTABLE t_for ON fk.foreign_table_id = t_for.table_id
+      JOIN SYS.SYSUSER u_for ON t_for.creator = u_for.user_id
+      JOIN SYS.SYSIDXCOL ic_pri ON fk.primary_index_id = ic_pri.index_id AND ic_pri.table_id = fk.primary_table_id
+      JOIN SYS.SYSCOLUMN c_pri ON ic_pri.table_id = c_pri.table_id AND ic_pri.column_id = c_pri.column_id
+      JOIN SYS.SYSTABLE t_pri ON fk.primary_table_id = t_pri.table_id
+      JOIN SYS.SYSUSER u_pri ON t_pri.creator = u_pri.user_id
+      WHERE t_pri.table_name = ${D.escapeString(table, true)}
+      AND u_pri.user_name = ${D.escapeString(schema, true)}
+      AND ic_for.sequence = ic_pri.sequence
+      ORDER BY name, sequence
+    `;
+
+    const { rows } = await this.driverExecuteSingle(sql);
+
+    // Group by constraint name to identify composite keys
+    const groupedKeys = _.groupBy(rows, 'name');
+
+    const result = Object.keys(groupedKeys).map(constraintName => {
+      const keyParts = groupedKeys[constraintName];
+
+      // Sort key parts by sequence to ensure correct column order
+      const sortedKeyParts = _.sortBy(keyParts, 'sequence');
+
+      // If there's only one part, return a simple key (backward compatibility)
+      if (sortedKeyParts.length === 1) {
+        const row = sortedKeyParts[0];
+        return {
+          constraintName: row.name,
+          toTable: row.to_table,
+          toSchema: row.to_schema,
+          toColumn: row.to_column,
+          fromTable: row.from_table,
+          fromSchema: row.from_schema,
+          fromColumn: row.from_column,
+          onUpdate: row.on_update,
+          onDelete: row.on_delete,
+          isComposite: false,
+        };
+      }
+
+      // If there are multiple parts, it's a composite key
+      const firstPart = sortedKeyParts[0];
+      return {
+        constraintName: firstPart.name,
+        toTable: firstPart.to_table,
+        toSchema: firstPart.to_schema,
+        toColumn: sortedKeyParts.map(p => p.to_column),
+        fromTable: firstPart.from_table,
+        fromSchema: firstPart.from_schema,
+        fromColumn: sortedKeyParts.map(p => p.from_column),
+        onUpdate: firstPart.on_update,
+        onDelete: firstPart.on_delete,
+        isComposite: true,
+      };
+    });
+
+    log.debug("incoming keys result", result);
     return result;
   }
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {
