@@ -30,8 +30,24 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --network-timeout 100000
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
         env:
           HUSKY: "0"
 
