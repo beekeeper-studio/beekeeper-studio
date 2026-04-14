@@ -73,16 +73,19 @@ jobs:
           ssh-keyscan -H 127.0.0.1 > "$env:USERPROFILE\.ssh\known_hosts"
 
       - name: Install PuTTY (pageant.exe, puttygen.exe)
-        run: choco install putty -y --no-progress
+        run: choco install putty.install -y --no-progress
 
       - name: Convert key to PPK and launch Pageant
         shell: powershell
         run: |
-          & "C:\Program Files\PuTTY\puttygen.exe" `
-            "$env:USERPROFILE\.ssh\pageant_test" `
-            -o "$env:USERPROFILE\.ssh\pageant_test.ppk"
-          Start-Process -FilePath "C:\Program Files\PuTTY\pageant.exe" `
-            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          # Resolve via PATH shims - choco puts both variants (putty / putty.install
+          # / putty.portable) on PATH but installs to different directories.
+          $puttygen = (Get-Command puttygen).Source
+          $pageant = (Get-Command pageant).Source
+          Write-Host "puttygen: $puttygen"
+          Write-Host "pageant:  $pageant"
+          & $puttygen "$env:USERPROFILE\.ssh\pageant_test" -o "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          Start-Process -FilePath $pageant -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
           Start-Sleep -Seconds 3
           Get-Process pageant
 
