@@ -75,11 +75,10 @@ jobs:
       - name: Install PuTTY (pageant.exe, puttygen.exe)
         run: choco install putty.install -y --no-progress
 
-      - name: Convert key to PPK and launch Pageant
+      - name: Locate PuTTY install
+        id: putty
         shell: powershell
         run: |
-          # PATH isn't reliably refreshed between steps after choco install,
-          # so probe known install locations directly.
           $candidates = @(
             "C:\Program Files\PuTTY",
             "C:\Program Files (x86)\PuTTY",
@@ -88,22 +87,50 @@ jobs:
           )
           $puttyDir = $candidates | Where-Object { Test-Path "$_\puttygen.exe" } | Select-Object -First 1
           if (-not $puttyDir) {
-            Write-Host "puttygen.exe not found in expected locations. Dumping state:"
             $candidates | ForEach-Object { "  $_  exists=$((Test-Path $_))" }
-            Get-ChildItem -Path "C:\ProgramData\chocolatey\lib" -Recurse -Filter "puttygen.exe" -ErrorAction SilentlyContinue | Select-Object FullName
             throw "puttygen.exe not found"
           }
           Write-Host "Using PuTTY from: $puttyDir"
+          "putty_dir=$puttyDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Convert key to PPK
+        shell: powershell
+        run: |
+          $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
           & "$puttyDir\puttygen.exe" "$env:USERPROFILE\.ssh\pageant_test" -o "$env:USERPROFILE\.ssh\pageant_test.ppk"
-          Start-Process -FilePath "$puttyDir\pageant.exe" -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          $ppk = Get-Item "$env:USERPROFILE\.ssh\pageant_test.ppk"
+          Write-Host "PPK size: $($ppk.Length) bytes"
+          if ($ppk.Length -lt 200) { throw "PPK looks empty or truncated" }
+
+      - name: Launch Pageant, verify with plink, run test
+        # Single step so Pageant, plink, and the jest test all share the same
+        # Windows session - WM_COPYDATA (Pageant's IPC) is session-scoped.
+        shell: powershell
+        env:
+          PAGEANT_TEST: "1"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
+          Remove-Item env:SSH_AUTH_SOCK -ErrorAction SilentlyContinue
+
+          Start-Process -FilePath "$puttyDir\pageant.exe" `
+            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
           Start-Sleep -Seconds 3
           Get-Process pageant
 
-      - name: Run Windows integration tests
-        shell: bash
-        run: |
-          unset SSH_AUTH_SOCK
-          cd apps/studio
+          # Independent sanity check: plink uses Pageant natively. If this
+          # succeeds, Pageant has the key loaded and sshd trusts it. If it
+          # fails, the problem is the test harness, not our ssh2 integration.
+          Write-Host "--- plink sanity check ---"
+          $plinkOut = & "$puttyDir\plink.exe" -agent -batch `
+            -hostkey "*" `
+            "$env:USERNAME@127.0.0.1" "echo plink-ok" 2>&1
+          Write-Host $plinkOut
+          if ($LASTEXITCODE -ne 0) {
+            throw "plink failed (exit $LASTEXITCODE) - Pageant setup is bad, not the ssh2 code"
+          }
+
+          Write-Host "--- jest test ---"
+          Set-Location apps/studio
           yarn run test:integration:windows --runInBand --ci
-        env:
-          PAGEANT_TEST: "1"
+          if ($LASTEXITCODE -ne 0) { throw "jest failed with $LASTEXITCODE" }
