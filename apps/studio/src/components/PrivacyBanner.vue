@@ -3,23 +3,30 @@
     <span>
       In Privacy Mode
     </span>
-    <i
-      class="material-icons"
-      v-tooltip="'Privacy Mode is enabled, disable it in the View menu'"
+    <button
+      type="button"
+      @click.prevent="togglePrivacy"
+      class="btn btn-flat btn-small"
     >
-      visibility_off
-    </i>
+      <i
+        class="material-icons"
+        v-tooltip="'Privacy Mode is enabled, disable it in the View menu or clicking this button'"
+      >
+        visibility_off
+      </i>
+    </button>
   </div>
 </template>
 
 <script lang="ts">
+import { AppEvent } from "@/common/AppEvent";
 import Vue from "vue";
 
 export default Vue.extend({
   props: ['privacyMode'],
   methods: {
     togglePrivacy() {
-      this.$store.dispatch('settings/togglePrivacyMode')
+      window.main.send(AppEvent.menuClick, 'togglePrivacyMode')
     }
   }
 });
@@ -36,5 +43,9 @@ export default Vue.extend({
     gap: 1rem;
     padding-top: .5rem;
     padding-bottom: .5rem;
+
+    button {
+      color: inherit;
+    }
   }
 </style>
