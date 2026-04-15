@@ -10,6 +10,7 @@ jest.mock('@/common/platform_info', () => ({
 }))
 
 import { SSHConnection } from '@/vendor/node-ssh-forward'
+import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
 
 const enabled = process.platform === 'win32' && process.env.PAGEANT_TEST === '1'
 const describeFn = enabled ? describe : describe.skip
@@ -38,7 +39,12 @@ describeFn('Pageant SSH agent forwarding (Windows)', () => {
     await new Promise((resolve) => setTimeout(resolve, 200))
   })
 
-  it('authenticates via Pageant when SSH_AUTH_SOCK is unset', async () => {
+  it('completes an SSH handshake using Pageant as the only credential source', async () => {
+    // Unsetting SSH_AUTH_SOCK forces the Pageant branch - it's the only way
+    // the Windows path in SSHConnection picks up ElectronFriendlyPageantAgent.
+    // With skipAutoPrivateKey, no privateKey, and no password, the agent is
+    // the only credential source. If Pageant isn't serving our key, sshd
+    // rejects the handshake and forward() throws.
     delete process.env.SSH_AUTH_SOCK
     conn = new SSHConnection({
       endHost: '127.0.0.1',
@@ -49,5 +55,10 @@ describeFn('Pageant SSH agent forwarding (Windows)', () => {
       noReadline: true,
     })
     await conn.forward({ fromPort: 0, toPort: 22 })
+
+    // Belt-and-suspenders: confirm ssh2 was actually given the Pageant agent,
+    // not something else that happened to authenticate.
+    const client = conn.connections[0]
+    expect(client._agent).toBeInstanceOf(ElectronFriendlyPageantAgent)
   })
 })
