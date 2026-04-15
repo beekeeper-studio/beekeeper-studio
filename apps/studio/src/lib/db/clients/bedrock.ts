@@ -33,6 +33,14 @@ import rawLog from "@bksLogger";
 const log = rawLog.scope("bedrock");
 const SD = SqliteData;
 
+// Bedrock's MySQL plugin returns an OkPacket (not an array) for queries with
+// no result rows. Everything under `this.driverExecuteSingle` normally hands
+// us an array of row-objects, so normalise anywhere we iterate rows that may
+// legitimately be empty.
+function asRows<T = any>(rows: unknown): T[] {
+  return Array.isArray(rows) ? (rows as T[]) : [];
+}
+
 interface PragmaColumnRow {
   cid: number;
   name: string;
@@ -85,7 +93,7 @@ export class BedrockClient extends MysqlClient {
 
     const { rows } = await this.driverExecuteSingle(sql);
 
-    return rows as TableOrView[];
+    return asRows<TableOrView>(rows);
   }
 
   async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
@@ -97,7 +105,7 @@ export class BedrockClient extends MysqlClient {
 
     const { rows } = await this.driverExecuteSingle(sql);
 
-    return rows as TableOrView[];
+    return asRows<TableOrView>(rows);
   }
 
   listMaterializedViewColumns(
@@ -117,39 +125,24 @@ export class BedrockClient extends MysqlClient {
       const { rows } = await this.driverExecuteSingle(sql, {
         overrideReadonly: true,
       });
-      return this.dataToColumns(rows, table);
+      return this.dataToColumns(asRows<PragmaColumnRow>(rows), table);
     }
 
     const allTables = (await this.listTables()) || [];
     const allViews = (await this.listViews()) || [];
     const tables = allTables.concat(allViews);
 
-    const everything = tables.map((table) => {
-      return {
-        tableName: table.name,
-        sql: `PRAGMA table_xinfo(${SD.escapeString(table.name, true)})`,
-        results: null,
-      };
-    });
-
-    const query = everything.map((e) => e.sql).join(";");
-    const allResults = await this.driverExecuteMultiple(query, {
-      overrideReadonly: true,
-    });
-
-    // Handle case where driverExecuteMultiple returns null or undefined
-    const safeAllResults = allResults || [];
-    const results = safeAllResults.map((r, i) => {
-      return {
-        result: r,
-        ...everything[i],
-      };
-    });
-    const final = _.flatMap(results, (item, _idx) =>
-      this.dataToColumns(item?.result?.rows || [], item.tableName)
-    );
-
-    return final;
+    // Bedrock's MySQL plugin doesn't reliably return multiple result sets for
+    // `;`-joined batches, so fetch one table at a time.
+    const out: ExtendedTableColumn[] = [];
+    for (const t of tables) {
+      const { rows } = await this.driverExecuteSingle(
+        `PRAGMA table_xinfo(${SD.escapeString(t.name, true)})`,
+        { overrideReadonly: true }
+      );
+      out.push(...this.dataToColumns(asRows<PragmaColumnRow>(rows), t.name));
+    }
+    return out;
   }
 
   // sqlite does not have routines
@@ -162,7 +155,7 @@ export class BedrockClient extends MysqlClient {
       overrideReadonly: true,
     });
 
-    return result.rows.map((row) => row.file || ":memory:");
+    return asRows<{ file?: string }>(result.rows).map((row) => row.file || ":memory:");
   }
 
   async getPrimaryKey(table: string, schema?: string): Promise<string> {
@@ -178,8 +171,8 @@ export class BedrockClient extends MysqlClient {
     const { rows } = await this.driverExecuteSingle(sql, {
       overrideReadonly: true,
     });
-    const found = rows.filter((r) => r.pk > 0);
-    if (!found || found.length === 0) return [];
+    const found = asRows<PragmaColumnRow>(rows).filter((r) => r.pk > 0);
+    if (found.length === 0) return [];
     return found.map((r) => ({
       columnName: r.name,
       position: Number(r.pk),
@@ -278,7 +271,7 @@ export class BedrockClient extends MysqlClient {
     `;
 
     const { rows } = await this.driverExecuteSingle(sql);
-    return rows as TableTrigger[];
+    return asRows<TableTrigger>(rows);
   }
 
   // Override listTableIndexes to use SQLite PRAGMA instead of information_schema
@@ -292,32 +285,30 @@ export class BedrockClient extends MysqlClient {
       overrideReadonly: true,
     });
 
-    if (!rows || rows.length === 0) {
-      return [];
+    const indexes = asRows<{ name: string; unique: number; origin: string }>(rows);
+    if (indexes.length === 0) return [];
+
+    // Bedrock's MySQL plugin doesn't reliably return multiple result sets
+    // for a `;`-joined batch, so fetch columns per index individually.
+    const indexColumns: IndexColumn[][] = [];
+    for (const idx of indexes) {
+      const res = await this.driverExecuteSingle(
+        `PRAGMA index_xinfo('${SD.escapeString(idx.name)}')`,
+        { overrideReadonly: true }
+      );
+      indexColumns.push(
+        asRows<{ name: string | null; desc: number }>(res.rows)
+          .filter((r) => !!r.name)
+          .map((r) => ({ name: r.name as string, order: r.desc ? "DESC" : "ASC" }))
+      );
     }
 
-    const allSQL = rows
-      .map((row) => `PRAGMA index_xinfo('${SD.escapeString(row.name)}')`)
-      .join(";");
-    const { rows: infoRows } = (await this.driverExecuteSingle(allSQL, {
-      overrideReadonly: true,
-    })) as any;
-
-    // Handle case where driverExecuteMultiple returns null or undefined
-    const safeInfos = infoRows || [];
-
-    const indexColumns: IndexColumn[][] = safeInfos.map((result) => {
-      return (result?.rows || [])
-        .filter((r) => !!r.name)
-        .map((r) => ({ name: r.name, order: r.desc ? "DESC" : "ASC" }));
-    });
-
-    return rows.map((row, idx) => ({
+    return indexes.map((row, i) => ({
       id: `${table}.${row.name}`,
       table,
       schema: "",
       name: row.name,
-      columns: indexColumns[idx] || [],
+      columns: indexColumns[i] || [],
       unique: !!row.unique,
       primary: row.origin === "pk",
     }));
@@ -339,7 +330,7 @@ export class BedrockClient extends MysqlClient {
     const { rows } = await this.driverExecuteSingle(sql, {
       overrideReadonly: true,
     });
-    return rows.map((row) => ({
+    return asRows<any>(rows).map((row) => ({
       constraintName: row.id,
       constraintType: "FOREIGN",
       toTable: row.table,
