@@ -13,6 +13,7 @@ on:
       - 'apps/studio/src/vendor/ssh2/**'
       - 'apps/studio/src/lib/db/tunnel.ts'
       - 'apps/studio/tests/integration/windows/**'
+      - 'apps/studio/tests/resources/ssh/**'
       - 'apps/studio/jest.integration.windows.config.js'
       - '.github/workflows/windows-tests.yml'
   workflow_dispatch:
@@ -58,25 +59,29 @@ jobs:
           Start-Service sshd
           Set-Service -Name sshd -StartupType Automatic
 
-      - name: Generate SSH key and authorize
+      - name: Install test keys and authorize
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
-          ssh-keygen -t rsa -b 2048 -N '""' -f "$env:USERPROFILE\.ssh\pageant_test"
-          $pub = Get-Content "$env:USERPROFILE\.ssh\pageant_test.pub"
+          $fixtures = "$env:GITHUB_WORKSPACE\apps\studio\tests\resources\ssh"
+          Copy-Item "$fixtures\pageant_test"     "$env:USERPROFILE\.ssh\pageant_test"
+          Copy-Item "$fixtures\pageant_test.pub" "$env:USERPROFILE\.ssh\pageant_test.pub"
+          Copy-Item "$fixtures\pageant_test.ppk" "$env:USERPROFILE\.ssh\pageant_test.ppk"
+
           # GH runner user is a local admin, so sshd looks at administrators_authorized_keys.
           $adminKeys = "$env:ProgramData\ssh\administrators_authorized_keys"
-          Set-Content -Path $adminKeys -Value $pub -Encoding ascii
+          Copy-Item "$fixtures\pageant_test.pub" $adminKeys
           # sshd ignores administrators_authorized_keys unless ACLs are strict.
           icacls $adminKeys /inheritance:r
           icacls $adminKeys /grant "Administrators:F" "SYSTEM:F"
-          # Grab all key types sshd might present so ssh doesn't warn/add at runtime.
+
+          # Host keys regenerate per runner, so keyscan remains at CI time.
           ssh-keyscan -t rsa,ecdsa,ed25519 -H 127.0.0.1 > "$env:USERPROFILE\.ssh\known_hosts"
 
       - name: Verify sshd accepts the key (pre-Pageant sanity check)
         # Uses OpenSSH ssh.exe directly with the private key - no Pageant,
-        # no ssh2, no jest. If this fails, the problem is sshd / authorized_keys
-        # / key generation, not any of the Pageant plumbing.
+        # no ssh2, no jest. If this fails, the problem is sshd / authorized_keys,
+        # not any of the Pageant plumbing.
         shell: powershell
         run: |
           # GH Actions sets $ErrorActionPreference=stop by default, which treats
@@ -94,69 +99,39 @@ jobs:
             throw "Direct ssh with private key failed (exit $exit) - sshd/authorized_keys setup is broken"
           }
 
-      - name: Install PuTTY (pageant.exe, puttygen.exe)
+      - name: Install PuTTY (for pageant.exe)
         run: choco install putty.install -y --no-progress
 
-      - name: Locate PuTTY install
+      - name: Locate pageant.exe
         id: putty
         shell: powershell
         run: |
           $candidates = @(
             "C:\Program Files\PuTTY",
             "C:\Program Files (x86)\PuTTY",
-            "C:\ProgramData\chocolatey\lib\putty.install\tools",
-            "C:\ProgramData\chocolatey\lib\putty.portable\tools"
+            "C:\ProgramData\chocolatey\lib\putty.install\tools"
           )
-          $puttyDir = $candidates | Where-Object { Test-Path "$_\puttygen.exe" } | Select-Object -First 1
-          if (-not $puttyDir) {
-            $candidates | ForEach-Object { "  $_  exists=$((Test-Path $_))" }
-            throw "puttygen.exe not found"
-          }
+          $puttyDir = $candidates | Where-Object { Test-Path "$_\pageant.exe" } | Select-Object -First 1
+          if (-not $puttyDir) { throw "pageant.exe not found" }
           Write-Host "Using PuTTY from: $puttyDir"
           "putty_dir=$puttyDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Launch Pageant, verify with plink, run test
-        # Single step so Pageant, plink, and the jest test all share the same
-        # Windows session - WM_COPYDATA (Pageant's IPC) is session-scoped.
-        # Pageant >=0.75 loads OpenSSH-format private keys directly, so we can
-        # skip puttygen PPK conversion entirely.
+      - name: Launch Pageant and run test
+        # Same step so Pageant and the jest test share a Windows session -
+        # Pageant's IPC (WM_COPYDATA) is session-scoped.
         shell: powershell
         env:
           PAGEANT_TEST: "1"
         run: |
-          # Relaxed so native-command stderr (warnings from plink, yarn, etc.)
-          # doesn't halt the script. We check $LASTEXITCODE explicitly instead.
           $ErrorActionPreference = "Continue"
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
           Remove-Item env:SSH_AUTH_SOCK -ErrorAction SilentlyContinue
 
           Start-Process -FilePath "$puttyDir\pageant.exe" `
-            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test"
+            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
           Start-Sleep -Seconds 3
           Get-Process pageant
 
-          # Independent sanity check: plink uses Pageant natively. If this
-          # succeeds, Pageant has the key loaded and sshd trusts it. If it
-          # fails, the problem is the test harness, not our ssh2 integration.
-          # plink -batch refuses unknown hosts, so pin the fingerprints from
-          # known_hosts (populated earlier via ssh-keyscan).
-          Write-Host "--- plink sanity check ---"
-          $hostkeyArgs = @()
-          foreach ($line in (ssh-keygen -l -f "$env:USERPROFILE\.ssh\known_hosts")) {
-            if ($line -match 'SHA256:(\S+)') {
-              $hostkeyArgs += "-hostkey"
-              $hostkeyArgs += "SHA256:$($matches[1])"
-            }
-          }
-          Write-Host "Pinned fingerprints: $hostkeyArgs"
-          $plinkOut = & "$puttyDir\plink.exe" -agent -batch @hostkeyArgs `
-            "$env:USERNAME@127.0.0.1" "echo plink-ok" 2>&1
-          Write-Host $plinkOut
-          if ($LASTEXITCODE -ne 0) {
-            throw "plink failed (exit $LASTEXITCODE) - Pageant setup is bad, not the ssh2 code"
-          }
-
-          Write-Host "--- jest test ---"
           Set-Location apps/studio
           yarn run test:integration:windows --runInBand --ci
           if ($LASTEXITCODE -ne 0) { throw "jest failed with $LASTEXITCODE" }
