@@ -14,6 +14,16 @@ import { SSHConnection } from '@/vendor/node-ssh-forward'
 const enabled = process.platform === 'win32' && process.env.PAGEANT_TEST === '1'
 const describeFn = enabled ? describe : describe.skip
 
+// ssh2's Client can emit 'error' (usually ECONNRESET) asynchronously during
+// teardown, after SSHConnection.shutdown() has already called removeAllListeners
+// on the Client. With no handler, Node crashes the process. Swallow those
+// specific late errors but rethrow anything else.
+const swallowLateEconnreset = (err) => {
+  if (err && err.code === 'ECONNRESET') return
+  throw err
+}
+process.on('uncaughtException', swallowLateEconnreset)
+
 describeFn('Pageant SSH agent forwarding (Windows)', () => {
   jest.setTimeout(60000)
   let conn
@@ -23,6 +33,9 @@ describeFn('Pageant SSH agent forwarding (Windows)', () => {
       await conn.shutdown()
       conn = null
     }
+    // Give ssh2's socket a beat to emit any late 'error' so our handler
+    // absorbs it before jest tears down the worker.
+    await new Promise((resolve) => setTimeout(resolve, 200))
   })
 
   it('authenticates via Pageant when SSH_AUTH_SOCK is unset', async () => {
