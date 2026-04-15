@@ -136,6 +136,17 @@ jobs:
           $ErrorActionPreference = 'Continue'
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
 
+          # Diagnostic: confirm the committed key survived checkout without
+          # CRLF conversion. Pageant rejects keys with CRLF line endings.
+          $keyPath = "$env:USERPROFILE\.ssh\pageant_test"
+          $keyBytes = [System.IO.File]::ReadAllBytes($keyPath)
+          $hasCRLF = $false
+          for ($i = 0; $i -lt $keyBytes.Length - 1; $i++) {
+            if ($keyBytes[$i] -eq 13 -and $keyBytes[$i+1] -eq 10) { $hasCRLF = $true; break }
+          }
+          Write-Host "Key file: size=$($keyBytes.Length) bytes, CRLF=$hasCRLF"
+          Write-Host "Key first line: $([System.Text.Encoding]::ASCII.GetString($keyBytes[0..40]))"
+
           $hostkeyArgs = @()
           foreach ($line in (ssh-keygen -l -f "$env:USERPROFILE\.ssh\known_hosts")) {
             if ($line -match 'SHA256:(\S+)') {
@@ -149,24 +160,37 @@ jobs:
 
           $deadline = (Get-Date).AddSeconds(15)
           $ok = $false
+          $attempt = 0
           while ((Get-Date) -lt $deadline) {
-            $plinkArgs = @("-agent", "-batch") + $hostkeyArgs + `
+            $attempt++
+            $outFile = "$env:TEMP\plink.$attempt.out"
+            $errFile = "$env:TEMP\plink.$attempt.err"
+            # -v for verbose diagnostics in case plink silently does nothing.
+            $plinkArgs = @("-v", "-agent", "-batch") + $hostkeyArgs + `
               @("$env:USERNAME@127.0.0.1", "echo pageant-ready")
             $p = Start-Process -FilePath "$puttyDir\plink.exe" `
               -ArgumentList $plinkArgs -NoNewWindow -PassThru `
               -RedirectStandardInput $nullIn `
-              -RedirectStandardOutput "$env:TEMP\plink.out" `
-              -RedirectStandardError "$env:TEMP\plink.err"
-            if ($p.WaitForExit(5000) -and $p.ExitCode -eq 0) {
+              -RedirectStandardOutput $outFile `
+              -RedirectStandardError $errFile
+            $exited = $p.WaitForExit(5000)
+            if ($exited -and $p.ExitCode -eq 0) {
               $ok = $true
+              Write-Host "--- attempt ${attempt}: SUCCESS ---"
+              Write-Host "stdout:`n$(Get-Content $outFile -Raw)"
               break
             }
-            if (-not $p.HasExited) { $p.Kill() }
+            if (-not $p.HasExited) {
+              $p.Kill()
+              Write-Host "--- attempt ${attempt}: TIMEOUT (killed) ---"
+            } else {
+              Write-Host "--- attempt ${attempt}: exit=$($p.ExitCode) ---"
+            }
+            Write-Host "stdout:`n$(Get-Content $outFile -Raw)"
+            Write-Host "stderr:`n$(Get-Content $errFile -Raw)"
             Start-Sleep -Milliseconds 500
           }
           if (-not $ok) {
-            Write-Host "plink stdout:`n$(Get-Content $env:TEMP\plink.out -Raw)"
-            Write-Host "plink stderr:`n$(Get-Content $env:TEMP\plink.err -Raw)"
             throw "Pageant did not become ready within 15 seconds"
           }
           Write-Host "Pageant is ready."
