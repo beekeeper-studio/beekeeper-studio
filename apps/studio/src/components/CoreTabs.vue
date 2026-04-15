@@ -160,6 +160,12 @@
           :tab="tab"
           @close="close"
         />
+        <ServerMigration
+          v-if="tab.tabType === 'migration'"
+          :active="activeTab?.id === tab.id"
+          :tab="tab"
+          @close="close"
+        />
         <ImportTable
           v-if="tab.tabType === 'import-table'"
           :tab="tab"
@@ -304,6 +310,7 @@ import TableBuilder from './TabTableBuilder.vue'
 import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
 import ImportTable from './TabImportTable.vue'
 import DatabaseBackup from './TabDatabaseBackup.vue'
+import ServerMigration from './TabServerMigration.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
@@ -345,6 +352,7 @@ export default Vue.extend({
     TabWithTable,
     TabIcon,
     DatabaseBackup,
+    ServerMigration,
     PendingChangesButton,
     ConfirmationModal,
     SqlFilesImportModal,
@@ -451,6 +459,7 @@ export default Vue.extend({
         { event: AppEvent.backupDatabase, handler: this.backupDatabase },
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
+        { event: AppEvent.migrateServer, handler: this.migrateServer },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
       ]
     },
@@ -798,6 +807,14 @@ export default Vue.extend({
     restoreDatabase() {
       const t = { tabType: 'restore' };
       t.title = 'Restore';
+      t.unsavedChanges = false;
+      const existing = this.tabItems.find((tab) => matches(tab, t));
+      if (existing) return this.$store.dispatch('tabs/setActive', existing);
+      this.addTab(t);
+    },
+    migrateServer() {
+      const t = { tabType: 'migration' };
+      t.title = 'Server Migration';
       t.unsavedChanges = false;
       const existing = this.tabItems.find((tab) => matches(tab, t));
       if (existing) return this.$store.dispatch('tabs/setActive', existing);

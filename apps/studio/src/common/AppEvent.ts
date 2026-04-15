@@ -46,6 +46,7 @@ export enum AppEvent {
   duplicateDatabaseTable = 'duplicateDatabaseTable',
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',
+  migrateServer = 'migrateServer',
   upgradeModal = 'upgradeModal',
   toggleExpandTableList = 'toggleExpandTableList',
   togglePinTableList = 'togglePinTableList',

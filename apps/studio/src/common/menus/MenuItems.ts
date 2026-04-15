@@ -294,6 +294,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.exportTables,
       enabled: false,
     },
+    migrateServer: {
+      id: 'migrate-server',
+      label: 'Server to Server Migration',
+      click: actionHandler.migrateServer,
+      enabled: false,
+    },
     updatePin: {
       id: 'update-pin',
       label: 'Update Pin',
