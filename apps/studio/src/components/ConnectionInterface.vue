@@ -555,7 +555,8 @@ export default Vue.extend({
       try {
         this.testing = true
         this.connectionError = null
-        await this.$store.dispatch('test', this.config)
+        const connected = await this.$store.dispatch('test', this.config)
+        if (!connected) return false
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {

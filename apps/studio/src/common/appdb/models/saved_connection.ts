@@ -16,6 +16,7 @@ const surrealEncrypt = new SurrealDbEncryptTransformer(loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
+  jwtAuthEnabled?: boolean
   connectionMethod?: 'manual' | 'connectionString'
   connectionString?: string
 }
@@ -403,13 +404,23 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
         this.connectionType = 'redshift'
       }
 
-      if (parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) {
+      const cockroachOptions = parsedUncoded.params?.options || ''
+      const hasCockroachJwtOption =
+        /--crdb:jwt_auth_enabled=true/.test(cockroachOptions) ||
+        /--crdb(?::|%3A)jwt_auth_enabled(?:=|%3D)true/i.test(url)
+      const hasCockroachClusterOption =
+        /--cluster=([A-Za-z0-9\-_]+)/.test(cockroachOptions) ||
+        /--cluster(?:=|%3D)[A-Za-z0-9\-_]+/i.test(url)
+      const hasCockroachProtocol =
+        ['cockroach', 'cockroachdb'].includes(parsed.protocol as string)
+
+      if ((parsed.hostname && parsed.hostname.includes('cockroachlabs.cloud')) || hasCockroachJwtOption || hasCockroachClusterOption || hasCockroachProtocol) {
         this.connectionType = 'cockroachdb'
-        if (parsedUncoded.params?.options) {
-          // TODO: fix this
-          const regex = /--cluster=([A-Za-z0-9\-_]+)/
-          const clusters = parsedUncoded.params.options.match(regex)
-          this.options['cluster'] = clusters ? clusters[1] : undefined
+        const clusterMatch = cockroachOptions.match(/--cluster=([A-Za-z0-9\-_]+)/)
+        this.options = {
+          ...this.options,
+          cluster: clusterMatch ? clusterMatch[1] : undefined,
+          jwtAuthEnabled: hasCockroachJwtOption,
         }
       }
 
