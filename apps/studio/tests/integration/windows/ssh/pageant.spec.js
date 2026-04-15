@@ -61,4 +61,27 @@ describeFn('Pageant SSH agent forwarding (Windows)', () => {
     const client = conn.connections[0]
     expect(client._agent).toBeInstanceOf(ElectronFriendlyPageantAgent)
   })
+
+  it('fails the handshake when Pageant is bypassed via a bogus agentSocket', async () => {
+    // Same config as the positive test, but agentSocket forces SSHConnection's
+    // `this.options.agentSocket ? ... : agentDefault` ternary down the
+    // NON-Pageant branch - ssh2 gets a string agent pointing at a path that
+    // doesn't exist. If the handshake still succeeds, something other than
+    // Pageant (unexpected fallback, cached creds, etc.) must be authenticating,
+    // which would invalidate the positive test.
+    delete process.env.SSH_AUTH_SOCK
+    conn = new SSHConnection({
+      endHost: '127.0.0.1',
+      endPort: 22,
+      username: process.env.USERNAME,
+      agentForward: true,
+      agentSocket: 'C:\\definitely-not-an-agent-socket',
+      skipAutoPrivateKey: true,
+      noReadline: true,
+    })
+    await expect(conn.forward({ fromPort: 0, toPort: 22 })).rejects.toThrow()
+    // Nothing should have landed in connections since the handshake never
+    // reached 'ready'.
+    expect(conn.connections).toHaveLength(0)
+  })
 })
