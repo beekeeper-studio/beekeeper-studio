@@ -66,7 +66,6 @@ jobs:
           $fixtures = "$env:GITHUB_WORKSPACE\apps\studio\tests\resources\ssh"
           Copy-Item "$fixtures\pageant_test"     "$env:USERPROFILE\.ssh\pageant_test"
           Copy-Item "$fixtures\pageant_test.pub" "$env:USERPROFILE\.ssh\pageant_test.pub"
-          Copy-Item "$fixtures\pageant_test.ppk" "$env:USERPROFILE\.ssh\pageant_test.ppk"
 
           # GH runner user is a local admin, so sshd looks at administrators_authorized_keys.
           $adminKeys = "$env:ProgramData\ssh\administrators_authorized_keys"
@@ -127,8 +126,10 @@ jobs:
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
           Remove-Item env:SSH_AUTH_SOCK -ErrorAction SilentlyContinue
 
+          # Pageant in recent PuTTY (>=0.75) accepts OpenSSH-format keys on
+          # the command line, which sidesteps PPK format compatibility issues.
           Start-Process -FilePath "$puttyDir\pageant.exe" `
-            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test.ppk"
+            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test"
           Start-Sleep -Seconds 3
           Get-Process pageant
 
