@@ -169,35 +169,44 @@
 
 <script lang="ts">
 import Vue from 'vue';
+import _ from 'lodash';
 import { MigrationConfig, MigrationType } from '@/lib/migration';
 
 export default Vue.extend({
   props: {
-    config: {
-      type: Object as () => MigrationConfig,
-      required: true
-    },
-    availableConnections: {
-      type: Array,
-      default: () => []
+    stepperProps: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
     return {
-      localConfig: { ...this.config } as MigrationConfig
+      localConfig: { ...this.stepperProps.config } as MigrationConfig
     };
+  },
+  computed: {
+    config() {
+      return this.stepperProps.config || {};
+    },
+    availableConnections() {
+      return this.stepperProps.availableConnections || [];
+    }
   },
   watch: {
     localConfig: {
       deep: true,
       handler(newConfig) {
-        this.$emit('update:config', newConfig);
+        // Update the stepperProps directly so the parent can access it
+        Object.assign(this.stepperProps.config, newConfig);
+        this.$emit('change');
       }
     },
-    config: {
+    'stepperProps.config': {
       deep: true,
       handler(newConfig) {
-        this.localConfig = { ...newConfig };
+        if (!_.isEqual(newConfig, this.localConfig)) {
+          this.localConfig = { ...newConfig };
+        }
       }
     }
   }

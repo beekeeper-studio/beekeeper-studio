@@ -19,32 +19,31 @@
         @close="closeMigration"
       />
     </div>
-    <div class="expand" />
     <status-bar :active="active">
       <div class="statusbar-info col flex expand">
         <span
-          v-if="selectedTables.length > 0"
+          v-if="migrationState.selectedTables.length > 0"
           class="statusbar-item"
           title="Tables Selected"
         >
           <i class="material-icons">table_chart</i>
-          <span>{{ selectedTables.length }} table(s)</span>
+          <span>{{ migrationState.selectedTables.length }} table(s)</span>
         </span>
         <span
-          v-if="migrationConfig.sourceConnectionId"
+          v-if="migrationState.config.sourceConnectionId"
           class="statusbar-item"
           title="Source Connection"
         >
           <i class="material-icons">input</i>
-          <span>{{ getConnectionName(migrationConfig.sourceConnectionId) }}</span>
+          <span>{{ getConnectionName(migrationState.config.sourceConnectionId) }}</span>
         </span>
         <span
-          v-if="migrationConfig.targetConnectionId"
+          v-if="migrationState.config.targetConnectionId"
           class="statusbar-item"
           title="Target Connection"
         >
           <i class="material-icons">output</i>
-          <span>{{ getConnectionName(migrationConfig.targetConnectionId) }}</span>
+          <span>{{ getConnectionName(migrationState.config.targetConnectionId) }}</span>
         </span>
       </div>
       <portal-target
@@ -87,19 +86,21 @@ export default Vue.extend({
   },
   data() {
     return {
-      migrationConfig: {
-        sourceConnectionId: null,
-        targetConnectionId: null,
-        migrationType: MigrationType.SCHEMA_AND_DATA,
-        tables: [],
-        dropExisting: false,
-        disableForeignKeys: true,
-        batchSize: 1000
-      } as MigrationConfig,
-      selectedTables: [] as string[],
-      availableTables: [] as any[],
-      tablesLoading: false,
-      tablesError: null as string | null,
+      migrationState: {
+        config: {
+          sourceConnectionId: null,
+          targetConnectionId: null,
+          migrationType: MigrationType.SCHEMA_AND_DATA,
+          tables: [],
+          dropExisting: false,
+          disableForeignKeys: true,
+          batchSize: 1000
+        } as MigrationConfig,
+        selectedTables: [] as string[],
+        availableTables: [] as any[],
+        tablesLoading: false,
+        tablesError: null as string | null
+      },
       migrationRunning: false,
       migrationProgress: null as IMigrationProgress | null,
       sourceClient: null as IBasicDatabaseClient | null,
@@ -107,32 +108,29 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState({
-      savedConnections: (state: any) => state.data.connections || []
+    ...mapState('data/connections', {
+      savedConnections: 'items'
     }),
     steps(): Step[] {
       return [
         {
           key: 'configuration',
-          name: 'Configuration',
+          title: 'Configuration',
+          icon: 'settings',
           component: MigrationConfiguration,
-          props: {
-            config: this.migrationConfig,
+          completed: false,
+          stepperProps: {
+            config: this.migrationState.config,
             availableConnections: this.savedConnections
           },
-          on: {
-            'update:config': (config: MigrationConfig) => {
-              this.migrationConfig = { ...config };
-            }
-          },
           validate: () => {
-            if (!this.migrationConfig.sourceConnectionId) {
+            if (!this.migrationState.config.sourceConnectionId) {
               return 'Please select a source connection';
             }
-            if (!this.migrationConfig.targetConnectionId) {
+            if (!this.migrationState.config.targetConnectionId) {
               return 'Please select a target connection';
             }
-            if (this.migrationConfig.sourceConnectionId === this.migrationConfig.targetConnectionId) {
+            if (this.migrationState.config.sourceConnectionId === this.migrationState.config.targetConnectionId) {
               return 'Source and target connections must be different';
             }
             return null;
@@ -140,19 +138,11 @@ export default Vue.extend({
         },
         {
           key: 'tables',
-          name: 'Select Tables',
+          title: 'Select Tables',
+          icon: 'table_chart',
           component: MigrationTableSelection,
-          props: {
-            tables: this.availableTables,
-            loading: this.tablesLoading,
-            error: this.tablesError,
-            value: this.selectedTables
-          },
-          on: {
-            input: (tables: string[]) => {
-              this.selectedTables = tables;
-            }
-          },
+          completed: false,
+          stepperProps: this.migrationState,
           onEnter: async () => {
             await this.loadSourceTables();
           },
@@ -163,15 +153,17 @@ export default Vue.extend({
         },
         {
           key: 'review',
-          name: 'Review',
+          title: 'Review',
+          icon: 'check',
           component: MigrationReview,
-          props: {
+          completed: false,
+          stepperProps: {
             config: {
-              ...this.migrationConfig,
-              tables: this.selectedTables.length > 0 ? this.selectedTables : undefined
+              ...this.migrationState.config,
+              tables: this.migrationState.selectedTables.length > 0 ? this.migrationState.selectedTables : undefined
             },
-            sourceConnection: this.getConnection(this.migrationConfig.sourceConnectionId),
-            targetConnection: this.getConnection(this.migrationConfig.targetConnectionId)
+            sourceConnection: this.getConnection(this.migrationState.config.sourceConnectionId),
+            targetConnection: this.getConnection(this.migrationState.config.targetConnectionId)
           },
           validate: () => {
             return null;
@@ -195,16 +187,16 @@ export default Vue.extend({
       return conn?.name || 'Unknown';
     },
     async loadSourceTables() {
-      if (!this.migrationConfig.sourceConnectionId) {
+      if (!this.migrationState.config.sourceConnectionId) {
         return;
       }
 
-      this.tablesLoading = true;
-      this.tablesError = null;
+      this.migrationState.tablesLoading = true;
+      this.migrationState.tablesError = null;
 
       try {
         // Create a connection to the source database
-        const connection = this.getConnection(this.migrationConfig.sourceConnectionId);
+        const connection = this.getConnection(this.migrationState.config.sourceConnectionId);
         if (!connection) {
           throw new Error('Source connection not found');
         }
@@ -216,13 +208,13 @@ export default Vue.extend({
         
         // TODO: Implement actual table loading using the connection
         // This is a placeholder that would need to be connected to the actual database client
-        this.availableTables = [];
+        this.migrationState.availableTables = [];
         
       } catch (error) {
         log.error('Error loading source tables:', error);
-        this.tablesError = error.message;
+        this.migrationState.tablesError = error.message;
       } finally {
-        this.tablesLoading = false;
+        this.migrationState.tablesLoading = false;
       }
     },
     async startMigration() {
@@ -230,18 +222,18 @@ export default Vue.extend({
         this.migrationRunning = true;
 
         // Update config with selected tables
-        if (this.selectedTables.length > 0) {
-          this.migrationConfig.tables = this.selectedTables;
+        if (this.migrationState.selectedTables.length > 0) {
+          this.migrationState.config.tables = this.migrationState.selectedTables;
         }
 
-        log.info('Starting migration with config:', this.migrationConfig);
+        log.info('Starting migration with config:', this.migrationState.config);
 
         // Initialize migration in store
         // Note: This would need actual client instances
         await this.initializeMigration({
           sourceClient: this.sourceClient,
           targetClient: this.targetClient,
-          config: this.migrationConfig
+          config: this.migrationState.config
         });
 
         // Start migration
@@ -282,17 +274,26 @@ export default Vue.extend({
   height: 100%;
 
   .migration-stepper-wrapper {
-    flex: 1;
-    overflow: hidden;
-  }
-
-  .migration-progress-wrapper {
-    flex: 1;
+    height: 100%;
     overflow-y: auto;
   }
 
-  .expand {
-    flex: 1;
+  .migration-progress-wrapper {
+    height: 100%;
+    overflow-y: auto;
+  }
+}
+
+// Unscoped style for portal content
+::v-deep .portal-stepper-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  
+  .portal {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
   }
 }
 </style>

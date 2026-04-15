@@ -31,7 +31,6 @@ export const MenuBarModule: Module<State, RootState> = {
         "menu-secondary-sidebar",
         "backup-database",
         "restore-database",
-        "migrate-server",
         "export-tables",
       ];
 

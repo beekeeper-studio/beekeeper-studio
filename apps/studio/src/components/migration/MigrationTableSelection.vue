@@ -79,37 +79,43 @@
 
 <script lang="ts">
 import Vue from 'vue';
+import _ from 'lodash';
 
 export default Vue.extend({
   props: {
-    tables: {
-      type: Array,
-      default: () => []
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    },
-    error: {
-      type: String,
-      default: null
-    },
-    value: {
-      type: Array,
-      default: () => []
+    stepperProps: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
     return {
-      selectedTables: [...this.value] as string[]
+      selectedTables: [...(this.stepperProps.selectedTables || [])] as string[]
     };
+  },
+  computed: {
+    tables() {
+      return this.stepperProps.tables || [];
+    },
+    loading() {
+      return this.stepperProps.loading || false;
+    },
+    error() {
+      return this.stepperProps.error || null;
+    }
   },
   watch: {
     selectedTables(newValue) {
-      this.$emit('input', newValue);
+      // Update the stepperProps directly and emit change
+      if (this.stepperProps.selectedTables !== newValue) {
+        this.stepperProps.selectedTables = newValue;
+        this.$emit('change');
+      }
     },
-    value(newValue) {
-      this.selectedTables = [...newValue];
+    'stepperProps.selectedTables'(newValue) {
+      if (!_.isEqual(newValue, this.selectedTables)) {
+        this.selectedTables = [...newValue];
+      }
     }
   },
   methods: {

@@ -1098,6 +1098,10 @@ export default Vue.extend({
         await this.$store.dispatch('data/queries/reload', tab.queryId)
       }
 
+      if (tab.tabType === 'migration') {
+        this.$root.$emit(AppEvent.migrationTabClosed)
+      }
+
       const { schemaName, tabType, tableName } = tab;
       const closingSidebarItem = `${tabType}.${schemaName}.${tableName}`;
       if(closingSidebarItem === this.selectedSidebarItem){
@@ -1213,6 +1217,12 @@ export default Vue.extend({
 
   async mounted() {
     this.registerHandlers(this.rootBindings)
+
+    if (!this.$store.state.connected && this.tabItems.length === 0) {
+      this.$nextTick(() => {
+        this.migrateServer()
+      })
+    }
   }
 })
 </script>

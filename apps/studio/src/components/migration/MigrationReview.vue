@@ -98,17 +98,20 @@ import { MigrationConfig } from '@/lib/migration';
 
 export default Vue.extend({
   props: {
-    config: {
-      type: Object as () => MigrationConfig,
-      required: true
-    },
-    sourceConnection: {
+    stepperProps: {
       type: Object,
-      default: null
+      default: () => ({})
+    }
+  },
+  computed: {
+    config() {
+      return this.stepperProps.config || {};
     },
-    targetConnection: {
-      type: Object,
-      default: null
+    sourceConnection() {
+      return this.stepperProps.sourceConnection || null;
+    },
+    targetConnection() {
+      return this.stepperProps.targetConnection || null;
     }
   },
   methods: {

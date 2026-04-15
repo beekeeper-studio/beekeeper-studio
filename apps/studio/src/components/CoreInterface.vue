@@ -13,7 +13,7 @@
       ref="splitContainer"
     >
       <global-sidebar
-        v-if="!minimalMode"
+        v-if="!minimalMode && connected"
         @select="handleSelectGlobalSidebarItem"
         :active-item="globalSidebarActiveItem"
         ref="globalSidebar"
@@ -22,9 +22,20 @@
       <sidebar
         ref="sidebar"
         class="primary-sidebar"
+        :class="{ 'connection-sidebar': !connected }"
       >
         <core-sidebar
+          v-if="connected"
           @databaseSelected="databaseSelected"
+        />
+        <connection-sidebar
+          v-else
+          :selected-config="null"
+          @create="handleConnectionAction"
+          @edit="handleConnectionAction"
+          @remove="handleConnectionAction"
+          @duplicate="handleConnectionAction"
+          @connect="handleConnectionAction"
         />
       </sidebar>
 
@@ -36,9 +47,14 @@
         <core-tabs />
       </div>
 
-      <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
+      <secondary-sidebar
+        v-if="connected"
+        ref="secondarySidebar"
+        @close="handleToggleOpenSecondarySidebar(false)"
+      />
     </div>
     <global-status-bar
+      v-if="connected"
       :connection-button-width="globalPrimarySidebarWidth"
       :connection-button-icon-width="globalSidebarWidth"
     />
@@ -55,6 +71,7 @@
 <script lang="ts">
   import Sidebar from './common/Sidebar.vue'
   import CoreSidebar from './sidebar/CoreSidebar.vue'
+  import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
   import SecondarySidebar from './sidebar/SecondarySidebar.vue'
   import GlobalSidebar from './sidebar/GlobalSidebar.vue'
   import CoreTabs from './CoreTabs.vue'
@@ -71,7 +88,7 @@
   import _ from "lodash"
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalStatusBar, GlobalSidebar },
+    components: { CoreSidebar, ConnectionSidebar, CoreTabs, Sidebar, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalStatusBar, GlobalSidebar },
     data() {
       /* eslint-disable */
       return {
@@ -86,7 +103,7 @@
       /* eslint-enable */
     },
     computed: {
-      ...mapState(['usedConfig']),
+      ...mapState(['usedConfig', 'connected']),
       ...mapGetters(['minimalMode']),
       ...mapState("sidebar", [
         "primarySidebarOpen",
@@ -102,6 +119,13 @@
         return result;
       },
       splitElements() {
+        // When not connected (migration-only mode), show connection sidebar and content
+        if (!this.connected) {
+          return [
+            this.$refs.sidebar.$el,
+            this.$refs.content
+          ]
+        }
         return [
           this.$refs.sidebar.$el,
           this.$refs.content,
@@ -126,20 +150,34 @@
           this.readjustWidths({
             containerWidth: this.getSplitContainerWidth(),
           })
-          const primarySidebarSize = this.primarySidebarOpen ? (this.primarySidebarWidth / this.getSplitContainerWidth()) * 100 : 0
-          const secondarySidebarSize = this.secondarySidebarOpen ? (this.secondarySidebarWidth / this.getSplitContainerWidth()) * 100 : 0
-          const mainContentSize = 100 - (primarySidebarSize + secondarySidebarSize)
 
-          const splitSizes = [
-            primarySidebarSize,
-            mainContentSize,
-            secondarySidebarSize,
-          ]
+          const containerWidth = this.getSplitContainerWidth()
+          const primarySidebarSize = this.primarySidebarOpen ? (this.primarySidebarWidth / containerWidth) * 100 : 0
+
+          let splitSizes
+          let minSize
+          let maxSize
+
+          if (!this.connected) {
+            const mainContentSize = 100 - primarySidebarSize
+            splitSizes = [primarySidebarSize, mainContentSize]
+            minSize = [0, this.$bksConfig.ui.layout.mainContentMinWidth]
+            maxSize = [this.$bksConfig.ui.layout.primarySidebarMaxWidth, Infinity]
+          } else {
+            const secondarySidebarSize = this.secondarySidebarOpen ? (this.secondarySidebarWidth / containerWidth) * 100 : 0
+            const mainContentSize = 100 - (primarySidebarSize + secondarySidebarSize)
+            splitSizes = [primarySidebarSize, mainContentSize, secondarySidebarSize]
+            minSize = [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0]
+            maxSize = [this.$bksConfig.ui.layout.primarySidebarMaxWidth, Infinity, this.$bksConfig.ui.layout.secondarySidebarMaxWidth]
+          }
 
           this.split = Split(this.splitElements, {
-            snapOffset: [this.$bksConfig.ui.layout.primarySidebarMinWidth, 0, this.$bksConfig.ui.layout.secondarySidebarMinWidth],
+            snapOffset: !this.connected 
+              ? [this.$bksConfig.ui.layout.primarySidebarMinWidth, 0]
+              : [this.$bksConfig.ui.layout.primarySidebarMinWidth, 0, this.$bksConfig.ui.layout.secondarySidebarMinWidth],
             sizes: splitSizes,
-            minSize: [0, this.$bksConfig.ui.layout.mainContentMinWidth, 0],
+            minSize: minSize,
+            maxSize: maxSize,
             gutterSize: 5,
             elementStyle: (_dimension, elementSize, _gutterSize, index) => {
               // Check if the element is the main content
@@ -157,7 +195,11 @@
                 gutter.className = `gutter gutter-${direction}`
                 return gutter
             },
-            onDragEnd: ([primarySidebarSize, _mainContentSize, secondarySidebarSize]) => {
+            onDragEnd: (sizes) => {
+              // Handle both 2-element (migration mode) and 3-element (normal mode) cases
+              const primarySidebarSize = sizes[0]
+              const secondarySidebarSize = !this.connected ? 0 : sizes[2]
+              
               // Define a very small threshold to detect if sidebar has effectively zero width
               // Use a tiny value like 1% to account for any rounding errors
               const COLLAPSE_THRESHOLD = 1
@@ -186,8 +228,18 @@
     mounted() {
       this.$store.dispatch('hideEntities/load')
       this.registerHandlers(this.rootBindings)
+      
+      // In migration-only mode, ensure sidebar is open with reasonable width
+      if (!this.connected) {
+        this.setPrimarySidebarOpen(true)
+        if (!this.primarySidebarWidth || this.primarySidebarWidth < 200) {
+          this.setPrimarySidebarWidth(300)
+        }
+      }
+      
       this.$nextTick(() => {
         this.initializing = false
+
         // This is the easiest way to track the width of the primary sidebar
         // in real time because sidebar can be resized by dragging or clicking
         // the toggle button. An alternative to this would be assigning the
@@ -197,8 +249,13 @@
           this.globalPrimarySidebarWidth = this.globalSidebarWidth + primarySidebar.contentRect.width
         })
         this.$nextTick(() => {
-          this.globalSidebarWidth = this.$refs.globalSidebar.$el.offsetWidth
-          this.resizeObserver.observe(this.splitElements[0])
+          // Only track global sidebar width if it exists (when connected)
+          if (this.$refs.globalSidebar) {
+            this.globalSidebarWidth = this.$refs.globalSidebar.$el.offsetWidth
+          }
+          if (this.splitElements[0]) {
+            this.resizeObserver.observe(this.splitElements[0])
+          }
         })
       })
     },
@@ -229,6 +286,9 @@
       },
       databaseSelected(database) {
         this.$emit('databaseSelected', database)
+      },
+      handleConnectionAction() {
+        // No-op: In migration-only mode, connection actions are disabled
       },
       // Normalizes the sizes array to ensure they sum to exactly 100
       normalizeSizes(sizes: [number, number, number]) {

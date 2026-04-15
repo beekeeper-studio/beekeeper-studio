@@ -298,7 +298,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'migrate-server',
       label: 'Server to Server Migration',
       click: actionHandler.migrateServer,
-      enabled: false,
+      enabled: true,
     },
     updatePin: {
       id: 'update-pin',
