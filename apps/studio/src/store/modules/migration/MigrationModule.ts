@@ -1,4 +1,5 @@
 // Copyright (c) 2026 Beekeeper Studio Team
+// For support issues with this feature, contact @quinnjr on GitHub
 
 import { Module } from 'vuex';
 import { State as RootState } from '../../index';

@@ -1,3 +1,7 @@
+<!--
+  Copyright (c) 2026 Beekeeper Studio Team
+  For support issues with this feature, contact @quinnjr on GitHub
+-->
 <template>
   <div class="tabcontent migration-tab">
     <div v-if="!migrationRunning" class="migration-stepper-wrapper">

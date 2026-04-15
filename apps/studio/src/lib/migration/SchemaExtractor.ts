@@ -1,4 +1,5 @@
 // Copyright (c) 2026 Beekeeper Studio Team
+// For support issues with this feature, contact @quinnjr on GitHub
 
 import { IBasicDatabaseClient } from '../db/types';
 import { TableSchema, ColumnSchema, ForeignKeySchema, IndexSchema, SchemaInfo, TableDependency } from './types';
