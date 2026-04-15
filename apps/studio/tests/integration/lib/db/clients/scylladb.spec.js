@@ -1,4 +1,4 @@
-import { GenericContainer } from 'testcontainers'
+import { GenericContainer, Wait } from 'testcontainers'
 import { dbtimeout } from '../../../../lib/db'
 import { createServer } from '@commercial/backend/lib/db/server'
 
@@ -10,17 +10,13 @@ describe("ScyllaDB Tests", () => {
   let connection;
 
   beforeAll(async () => {
-    const timeoutDefault = 5000
-    container = await new GenericContainer("scylladb/scylla")
+    container = await new GenericContainer("scylladb/scylla:2025.1.4")
       .withName("scylladb_test")
       .withExposedPorts(9042)
-      .withCommand(["--reactor-backend", "epoll", "--smp", "1", "--memory", "512M", "--overprovisioned", "1", "--api-address", "0.0.0.0"])
+      .withCommand(["--reactor-backend", "epoll", "--smp", "1", "--memory", "1G", "--overprovisioned", "1", "--developer-mode", "1", "--api-address", "0.0.0.0"])
+      .withWaitStrategy(Wait.forLogMessage("Starting listening for CQL clients"))
       .withStartupTimeout(dbtimeout)
       .start()
-    jest.setTimeout(timeoutDefault)
-
-    // Wait for ScyllaDB to be ready
-    await new Promise(resolve => setTimeout(resolve, 15000))
 
     const config = {
       client: 'scylladb',
