@@ -17,8 +17,13 @@ workflow smaller and more deterministic).
 
 ## Files
 
-- `pageant_test` - OpenSSH private key (passphrase-less, 2048-bit RSA)
+- `pageant_test` - PEM-format RSA private key (passphrase-less, 2048-bit),
+  generated with `ssh-keygen -m PEM`. Starts with
+  `-----BEGIN RSA PRIVATE KEY-----`.
 - `pageant_test.pub` - OpenSSH public key
 
-Pageant (PuTTY >= 0.75) accepts the OpenSSH-format private key directly on
-its command line, so no PPK conversion is needed.
+PEM format is used instead of ssh-keygen's default OpenSSH-v1 envelope
+(`-----BEGIN OPENSSH PRIVATE KEY-----`) because Pageant's parser for the
+v1 format hangs its message loop on headless CI when it hits an edge case,
+blocking WM_COPYDATA replies forever. PEM is the older, simpler format
+every SSH tool parses reliably.
