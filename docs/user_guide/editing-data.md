@@ -128,6 +128,10 @@ Alternatively, right-click any cell to copy that row (or all selected cells) in 
 
 ![Image Alt Tag](../assets/images/creating-tables-95.png)
 
+### Create IN Statement From Selection
+
+You can quickly generate a SQL `IN` clause from selected data in the table view. Select one or more cells in a column, then right-click and choose **Create IN Statement**. Beekeeper Studio will generate an `IN (...)` clause containing all the selected values, ready to paste into your SQL editor.
+
 ### Exporting the whole table
 
 Click the ⚙ icon in the bottom right and select `export` to export a whole table, or the filtered table view.

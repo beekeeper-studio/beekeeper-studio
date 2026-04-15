@@ -3,7 +3,7 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
-import { parseIni, processRawConfig } from "../../../src/config/helpers.mjs";
+import { parseIni, processRawConfig } from "@/config/helpers";
 import {
   BksConfigProvider,
   ConfigEntryDetailWarning,
@@ -50,7 +50,7 @@ export function checkUnrecognized(
           section,
           path,
         });
-      } else if (typeof value === "object") {
+      } else if (typeof value === "object" && !_.isArray(value)) {
         traverse(value, path);
       }
     }
@@ -244,7 +244,9 @@ export function mainBksConfig(): BksConfig {
   };
 
   log.info(`Configs successfully loaded with ${warnings.length} warnings.`);
-  log.warn("Warnings:", warnings);
+  if (warnings.length > 0) {
+    log.warn("Warnings:", warnings);
+  }
   log.info(`Default config: ${JSON.stringify(defaultConfig, null, 2)}`);
   log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
   log.info(`User config: ${JSON.stringify(userConfig, null, 2)}`);

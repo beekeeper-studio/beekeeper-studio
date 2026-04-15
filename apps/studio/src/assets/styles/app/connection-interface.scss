@@ -164,6 +164,27 @@
     margin-top: -$gutter-h;
     margin-bottom: -$gutter-h;
   }
+  &.bastion-host {
+    padding: 0;
+
+    .advanced-heading {
+      font-size: 0.831rem;
+      font-weight: 500;
+    }
+
+    .btn-toggle {
+      margin-right: 0;
+      min-width: 1.7rem;
+      width: 1.7rem;
+      min-height: 1.7rem;
+      height: 1.7rem;
+
+      .material-icons {
+        font-size: 1.2rem;
+        color: var(--text);
+      }
+    }
+  }
 }
 .advanced-heading {
   display: flex;

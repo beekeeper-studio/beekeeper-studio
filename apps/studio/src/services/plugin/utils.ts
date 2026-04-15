@@ -1,4 +1,4 @@
-import { Manifest, ManifestV0, PluginMenuItem, PluginView } from "./types";
+import { Manifest, ManifestV0, ManifestV1, PluginMenuItem, PluginView } from "./types";
 import _ from "lodash";
 
 export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
@@ -31,3 +31,25 @@ export function isManifestV0(m: Manifest): m is ManifestV0 {
   return m.manifestVersion === undefined || m.manifestVersion === 0;
 }
 
+/**
+ * Converts a manifest (v0 or v1) to ManifestV1 format.
+ * If the manifest is already v1, returns it as-is.
+ * If the manifest is v0, converts the legacy views format to v1.
+ */
+export function convertToManifestV1(manifest: Manifest): ManifestV1 {
+  if (!isManifestV0(manifest)) {
+    return manifest;
+  }
+
+  const { views, menu } = mapViewsAndMenuFromV0ToV1(manifest);
+
+  return {
+    ...manifest,
+    manifestVersion: 1,
+    capabilities: {
+      ...manifest.capabilities,
+      views,
+      menu,
+    },
+  };
+}

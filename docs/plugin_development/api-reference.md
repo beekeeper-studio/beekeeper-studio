@@ -316,6 +316,117 @@ await setViewState({
 any
 ```
 
+### noty.info
+
+Display an informational notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.info('Query executed in 2.3 seconds');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
+### noty.success
+
+Display a success notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.success('Data imported successfully!');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
+### noty.error
+
+Display an error notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.error('Failed to connect to the database');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
+### noty.warning
+
+Display a warning notification toast message to the user.
+
+**Usage:**
+```javascript
+import { noty } from '@beekeeperstudio/plugin';
+
+await noty.warning('This operation may take a while');
+```
+
+**Arguments Schema:**
+```typescript
+{ message: string }
+```
+
+### confirm
+
+Display a confirmation dialog to the user and wait for their response.
+
+**Usage:**
+```javascript
+import { confirm } from '@beekeeperstudio/plugin';
+
+// Basic confirmation
+const result = await confirm();
+if (result) {
+  // User clicked confirm
+} else {
+  // User clicked cancel
+}
+
+// With title and message
+const result = await confirm('Delete Table', 'Are you sure you want to delete this table?');
+
+// With custom button labels
+const result = await confirm(
+  'Export Data',
+  'This will export all data to a CSV file. Continue?',
+  {
+    confirmLabel: 'Export',
+    cancelLabel: 'Cancel'
+  }
+);
+```
+
+**Arguments Schema:**
+```typescript
+{
+  title?: string;
+  message?: string;
+  options?: {
+    confirmLabel?: string;
+    cancelLabel?: string;
+  };
+}
+```
+
+**Response Schema:**
+```typescript
+boolean // true if confirmed, false if cancelled
+```
+
 ## Notifications
 
 ### themeChanged

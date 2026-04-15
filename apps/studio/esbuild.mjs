@@ -5,6 +5,12 @@ import path from 'path';
 import _ from 'lodash'
 import fs from 'fs'
 
+// NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
+const ensureInstalled = [
+  "@beekeeperstudio/bks-ai-shell",
+  "@beekeeperstudio/bks-er-diagram",
+];
+
 const isWatching = process.argv[2] === 'watch';
 
 function getElectronBinary() {
@@ -29,7 +35,8 @@ const externals = ['better-sqlite3', 'sqlite3',
         'oracledb', '@electron/remote', "@google-cloud/bigquery",
         'pg-query-stream', 'electron', '@duckdb/node-api',
         '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
-        'mongodb-client-encryption', 'sqlanywhere', 'ws'
+        'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos',
+        ...ensureInstalled,
       ]
 
 let electron = null

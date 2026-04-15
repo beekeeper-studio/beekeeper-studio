@@ -1,50 +1,40 @@
-import { BeeCursor, OrderBy, TableFilter } from "@/lib/db/models";
+import { BeeCursor } from "@/lib/db/models";
 import rawLog from "@bksLogger";
-import { DuckDBClient } from "../duckdb";
+import { DuckDBResult, DuckDBConnection } from "@duckdb/node-api";
 
 const log = rawLog.scope("DuckDBCursor");
 
-interface DuckDBCursorOptions {
-  schema: string;
-  table: string;
-  orderBy: OrderBy[];
-  filters: string | TableFilter[];
-  chunkSize: number;
-}
-
 export class DuckDBCursor extends BeeCursor {
-  private cursorPos: number;
+  private stream: DuckDBResult;
+  private rowBuffer: any[][] = [];
 
   constructor(
-    private client: DuckDBClient,
-    private options: DuckDBCursorOptions
+    private connection: DuckDBConnection,
+    private query: string,
+    chunkSize: number
   ) {
-    super(options.chunkSize);
+
+    super(chunkSize);
   }
 
   async start() {
     log.info("Starting cursor");
-    this.cursorPos = 0;
+    this.stream = await this.connection.stream(this.query);
   }
 
-  async read() {
-    const offset = this.cursorPos * this.chunkSize;
-    const limit = this.chunkSize;
-    const result = await this.client.selectTop(
-      this.options.table,
-      offset,
-      limit,
-      this.options.orderBy,
-      this.options.filters,
-      this.options.schema
-    );
-    this.cursorPos++;
+  async read(): Promise<any[][]> {
+    // We can't set the chunk size for duckdb, so we just buffer it
+    if (this.rowBuffer.length < this.chunkSize) {
+      const chunk = await this.stream.fetchChunk();
+      this.rowBuffer.push(...chunk.getRows());
+    }
 
-    return result.result.map((row) => Object.values(row));
+    return this.rowBuffer.splice(0, this.chunkSize);
   }
 
   async cancel() {
     log.info("canceling cursor");
     // do nothing
+    this.stream = null;
   }
 }

@@ -26,7 +26,6 @@
           @forceClose="forceClose"
           @duplicate="duplicate"
           @copyName="copyName"
-          @reloadPluginView="handleReloadPluginView"
         />
       </Draggable>
       <!-- </div> -->
@@ -97,14 +96,12 @@
           v-if="tab.tabType === 'plugin-base'"
           :tab="tab"
           :active="activeTab.id === tab.id"
-          :reload="reloader[tab.id]"
           @close="close"
         />
         <PluginShell
           v-if="tab.tabType === 'plugin-shell'"
           :tab="tab"
           :active="activeTab.id === tab.id"
-          :reload="reloader[tab.id]"
           @close="close"
         />
         <tab-with-table
@@ -375,7 +372,6 @@ export default Vue.extend({
       duplicateTableName: null,
       closingTab: null,
       confirmModalId: 'core-tabs-close-confirmation',
-      reloader: {},
     }
   },
   watch: {
@@ -1062,6 +1058,8 @@ export default Vue.extend({
       if(tab) this.setActiveTab(tab)
     },
     async close(tab: TransportOpenTab, options?: CloseTabOptions) {
+      if (this.closingTab) return; // prevent close modals queueing
+  
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
         const confirmed = await this.$confirmById(this.confirmModalId);
@@ -1089,13 +1087,15 @@ export default Vue.extend({
         this.$store.commit('selectSidebarItem', null);
       }
     },
-    async forceClose(tab: TransportOpenTab) {
+    async forceClose(tab: TransportOpenTab): Promise<void> {
       // ensure the tab is active
       this.$store.dispatch('tabs/setActive', tab);
       switch (tab.tabType) {
         case 'backup':
         case 'restore':
           break;
+        case 'query':
+          return this.close(tab, { ignoreUnsavedChanges: true });
         default:
           console.log('No force close behaviour defined for tab type')
       }
@@ -1188,12 +1188,6 @@ export default Vue.extend({
     copyName(item) {
       if (item.tabType !== 'table' && item.tabType !== "table-properties") return;
       this.$copyText(item.tableName)
-    },
-    handleReloadPluginView(tab) {
-      this.reloader = {
-        ...this.reloader,
-        [tab.id]: Date.now(),
-      }
     },
   },
   beforeDestroy() {

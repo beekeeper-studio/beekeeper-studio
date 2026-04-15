@@ -1,4 +1,4 @@
-import { buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
+import { buildSchemaFilter, buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
 
 describe('Escape String', () => {
   it("should escape single quotes", () => {
@@ -79,6 +79,31 @@ describe("buildSelectTopQuery", () => {
       expect(trimQuery(result.countQuery)).toEqual(expected.countQuery)
       expect(trimQuery(result.query)).toEqual(expected.query)
     })
+  })
+})
+
+describe('buildSchemaFilter SQL injection', () => {
+  it("should escape single quotes in schema name to prevent SQL injection", () => {
+    const malicious = "'; DROP TABLE users; --"
+    const result = buildSchemaFilter({ schema: malicious })
+    // The single quote must be doubled so the value stays inside the SQL string literal
+    // Safe:   schema_name = '''; DROP TABLE users; --'  (the '' is an escaped quote inside the literal)
+    // Unsafe: schema_name = ''; DROP TABLE users; --'   (the ' closes the literal, rest is executable)
+    // Result: schema_name = '''; DROP TABLE users; --'
+    // In SQL: opening ', then '' (escaped quote), then rest of string, closing '
+    // The whole value is treated as one string literal — safe.
+    expect(result).toBe("schema_name = '''; DROP TABLE users; --'")
+  })
+
+  it("should escape single quotes in 'only' filter values", () => {
+    const result = buildSchemaFilter({ only: ["public", "'; DROP TABLE users; --"] })
+    expect(result).toContain("'public'")
+    expect(result).toContain("'''; DROP TABLE users; --'")
+  })
+
+  it("should escape single quotes in 'ignore' filter values", () => {
+    const result = buildSchemaFilter({ ignore: ["'; DROP TABLE users; --"] })
+    expect(result).toContain("'''; DROP TABLE users; --'")
   })
 })
 

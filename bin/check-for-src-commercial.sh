@@ -1,6 +1,6 @@
 #! /bin/bash
 
-git grep -a --or \( -e \@commercial -e src-commercial \) apps/studio/src/
+git grep -aE '^\s*(import |export .+ from |.*require\(|.*import\().*(@commercial|src-commercial)' apps/studio/src/
 STATUS=$?
 
 if [[ $STATUS -eq 0 ]]

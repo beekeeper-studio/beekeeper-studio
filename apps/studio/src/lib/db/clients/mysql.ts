@@ -17,7 +17,6 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  getIAMPassword,
   ClientError, refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
@@ -44,6 +43,7 @@ import {
   QueryResult,
   Routine,
   SchemaFilterOptions,
+  ServerStatistics,
   StreamResults,
   SupportedFeatures,
   TableChanges,
@@ -67,6 +67,7 @@ import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
+import {AzureAuthService} from "@/lib/db/authentication/azure";
 
 type ResultType = {
   tableName?: string
@@ -135,6 +136,11 @@ async function configDatabase(
   database: IDbConnectionDatabase
 ): Promise<mysql.PoolOptions> {
 
+  let iamToken = undefined;
+  if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+  }
+
   const config: mysql.PoolOptions = {
     authPlugins: {
       'client_ed25519': ed25519AuthPlugin(),
@@ -142,7 +148,7 @@ async function configDatabase(
     host: server.config.host,
     port: server.config.port,
     user: server.config.user,
-    password: await refreshTokenIfNeeded(server.config.redshiftOptions, server, server.config.port || 3306) || server.config.password || undefined,
+    password: iamToken || server.config.password || undefined,
     database: database.database,
     multipleStatements: true,
     dateStrings: true,
@@ -151,6 +157,11 @@ async function configDatabase(
     connectionLimit: BksConfig.db.mysql.maxConnections,
     connectTimeout: BksConfig.db.mysql.connectTimeout,
   };
+
+  if (server.config.azureAuthOptions?.azureAuthEnabled) {
+    const authService = new AzureAuthService();
+    return authService.configDB(server, config)
+  }
 
   if (server.config.socketPathEnabled) {
     config.socketPath = server.config.socketPath;
@@ -165,7 +176,7 @@ async function configDatabase(
   }
 
   if (
-    server.config.redshiftOptions?.iamAuthenticationEnabled
+    server.config.iamAuthOptions?.iamAuthenticationEnabled
   ){
     server.config.ssl = true
   }
@@ -316,12 +327,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       pool: mysql.createPool(dbConfig),
     };
 
-    if(this.server.config.redshiftOptions?.iamAuthenticationEnabled){
+    if(this.server.config.iamAuthOptions?.iamAuthenticationEnabled){
       this.interval = setInterval(async () => {
         try {
           this.conn.pool.getConnection(async (err, connection) => {
             if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 3306)
+            connection.config.password = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 3306)
             connection.release();
             log.info('Token refreshed successfully.')
           });
@@ -1562,6 +1573,55 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   async rollbackTransaction(tabId: number): Promise<void> {
     const conn = this.peekConnection(tabId);
     await this.driverExecuteSingle('ROLLBACK', { connection: conn });
+  }
+
+  async getServerStatistics(): Promise<ServerStatistics> {
+    return this.runWithConnection(async (connection) => {
+      const { rows: statusRows } = await this.driverExecuteSingle(
+        "SHOW GLOBAL STATUS",
+        { connection }
+      );
+      const { rows: variableRows } = await this.driverExecuteSingle(
+        "SHOW GLOBAL VARIABLES",
+        { connection }
+      );
+
+      const statusMap: Record<string, string> = {};
+      for (const row of statusRows) {
+        statusMap[row.Variable_name] = row.Value;
+      }
+
+      const variableMap: Record<string, string> = {};
+      for (const row of variableRows) {
+        variableMap[row.Variable_name] = row.Value;
+      }
+
+      const uptime = parseInt(statusMap["Uptime"] || "1", 10);
+      const questions = parseInt(statusMap["Questions"] || "0", 10);
+
+      return {
+        queryCache: {
+          size: variableMap["query_cache_size"] || "0",
+          limit: variableMap["query_cache_limit"] || "0",
+          hits: parseInt(statusMap["Qcache_hits"] || "0", 10),
+          inserts: parseInt(statusMap["Qcache_inserts"] || "0", 10),
+          lowMemoryPrunes: parseInt(statusMap["Qcache_lowmem_prunes"] || "0", 10),
+        },
+        performance: {
+          connections: parseInt(statusMap["Connections"] || "0", 10),
+          uptime,
+          threadsRunning: parseInt(statusMap["Threads_running"] || "0", 10),
+          threadsConnected: parseInt(statusMap["Threads_connected"] || "0", 10),
+          slowQueries: parseInt(statusMap["Slow_queries"] || "0", 10),
+          questionsPerSecond: uptime > 0 ? Math.round((questions / uptime) * 100) / 100 : 0,
+        },
+        memory: {
+          keyBufferSize: variableMap["key_buffer_size"] || "0",
+          innodbBufferPoolSize: variableMap["innodb_buffer_pool_size"] || "0",
+          innodbBufferPoolUsed: statusMap["Innodb_buffer_pool_bytes_data"] || "0",
+        },
+      };
+    });
   }
 
   protected parseQueryResultColumns(qr: ResultType): BksField[] {

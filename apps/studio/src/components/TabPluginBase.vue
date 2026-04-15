@@ -6,8 +6,7 @@
     <isolated-plugin-view
       :visible="active"
       :plugin-id="tab.context.pluginId"
-      :url="url"
-      :reload="reload"
+      :view-id="tab.context.pluginTabTypeId"
       :on-request="handleRequest"
       :command="tab.context.command"
       :params="tab.context.params"
@@ -23,6 +22,9 @@ import Vue from "vue";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
 import { OnViewRequestListenerParams } from "@/services/plugin/types";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("TabPluginBase");
 
 export default Vue.extend({
   components: {
@@ -36,18 +38,10 @@ export default Vue.extend({
       required: true,
     },
     active: Boolean,
-    reload: null,
   },
 
   computed: {
     ...mapGetters(["isCommunity"]),
-    url() {
-      const plugin = this.$plugin.pluginOf(this.tab.context.pluginId);
-      const tabType = plugin.manifest.capabilities.views.find(
-        (v) => v.id === this.tab.context.pluginTabTypeId
-      );
-      return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
-    },
   },
 
   methods: {
