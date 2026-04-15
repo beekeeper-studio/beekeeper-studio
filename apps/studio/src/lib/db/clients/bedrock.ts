@@ -6,6 +6,7 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import {
+  BksField,
   ExtendedTableColumn,
   TableTrigger,
   TableIndex,
@@ -26,16 +27,31 @@ import {
 import _ from "lodash";
 import { parseVersion } from "@/common/version";
 import { buildSelectTopQuery } from "./utils";
-import logger from "@/lib/log/mainLogger";
+import { createSQLiteKnex } from "./sqlite/utils";
+import rawLog from "@bksLogger";
 
+const log = rawLog.scope("bedrock");
 const SD = SqliteData;
+
+interface PragmaColumnRow {
+  cid: number;
+  name: string;
+  type: string;
+  notnull: 0 | 1;
+  dflt_value: string | null;
+  pk: number;
+  hidden: number;
+}
 
 export class BedrockClient extends MysqlClient {
   dialectData = SqliteData;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);
-    // Override to use SQLite dialect for SQL syntax
+    // Bedrock speaks MySQL wire protocol but the SQL is SQLite. Swap the
+    // inherited mysql2 knex for a sqlite3 one so generated queries use
+    // SQLite syntax.
+    this.knex = createSQLiteKnex("sqlite3");
     this.dialect = "sqlite";
   }
 
@@ -49,7 +65,6 @@ export class BedrockClient extends MysqlClient {
       "SELECT sqlite_version() as version"
     );
     const version = rows[0]["version"];
-    console.log("version", version);
     const { major, minor, patch } = parseVersion(version);
     return {
       versionString: version,
@@ -225,7 +240,7 @@ export class BedrockClient extends MysqlClient {
           await this.deleteRows(changes.deletes, connection);
         }
       } catch (ex) {
-        logger().error("query exception: ", ex);
+        log.error("query exception: ", ex);
         throw ex;
       }
     });
@@ -233,7 +248,7 @@ export class BedrockClient extends MysqlClient {
     return results;
   }
 
-  private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {
+  private dataToColumns(data: PragmaColumnRow[], tableName: string): ExtendedTableColumn[] {
     return data.map((row) => {
       const defaultValue = row.dflt_value === "NULL" ? null : row.dflt_value;
       return {
@@ -339,13 +354,10 @@ export class BedrockClient extends MysqlClient {
     }));
   }
 
-  // We also need to override parseTableColumn - let's use a simplified version
-  parseTableColumn(row: any): any {
+  parseTableColumn(row: { name: string; type: string }): BksField {
     return {
       name: row.name,
-      type: row.type,
-      nullable: Number(row.notnull || 0) === 0,
-      defaultValue: row.dflt_value === "NULL" ? null : row.dflt_value,
+      bksType: row.type?.toUpperCase() === "BLOB" ? "BINARY" : "UNKNOWN",
     };
   }
 }

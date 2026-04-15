@@ -34,11 +34,6 @@ export function commandClientsFor(d: string): CommandClients {
           backup: new SqliteBackupClient(),
           restore: new SqliteRestoreClient()
         }
-      case 'bedrock':
-        return {
-          backup: new SqliteBackupClient(),
-          restore: new SqliteRestoreClient()
-        }
       case 'oracle':
       case 'cassandra':
       case 'bigquery':

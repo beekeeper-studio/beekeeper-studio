@@ -278,7 +278,7 @@ export const CLIENTS: ClientConfig[] = [
   {
     key: 'bedrock',
     name: 'Bedrock',
-    defaultPort: 3306,
+    defaultPort: 8888,
     disabledFeatures: [
       'server:schema',
       'server:domain',
