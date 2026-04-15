@@ -10,7 +10,9 @@
           <!-- Source Connection -->
           <div class="row">
             <div class="card-flat padding section expand">
-              <h3 class="card-title">Source Database</h3>
+              <h3 class="card-title">
+                Source Database
+              </h3>
               <div class="form-group">
                 <label for="sourceConnection">Select Source Connection *</label>
                 <select
@@ -43,7 +45,9 @@
           <!-- Target Connection -->
           <div class="row">
             <div class="card-flat padding section expand">
-              <h3 class="card-title">Target Database</h3>
+              <h3 class="card-title">
+                Target Database
+              </h3>
               <div class="form-group">
                 <label for="targetConnection">Select Target Connection *</label>
                 <select
@@ -77,7 +81,9 @@
           <!-- Migration Type -->
           <div class="row">
             <div class="card-flat padding section expand">
-              <h3 class="card-title">Migration Options</h3>
+              <h3 class="card-title">
+                Migration Options
+              </h3>
               
               <div class="form-group">
                 <label for="migrationType">Migration Type *</label>
@@ -87,9 +93,15 @@
                   class="form-control custom-select"
                   required
                 >
-                  <option value="schema_and_data">Schema and Data</option>
-                  <option value="schema_only">Schema Only</option>
-                  <option value="data_only">Data Only</option>
+                  <option value="schema_and_data">
+                    Schema and Data
+                  </option>
+                  <option value="schema_only">
+                    Schema Only
+                  </option>
+                  <option value="data_only">
+                    Data Only
+                  </option>
                 </select>
                 <small class="form-text text-muted">
                   Choose what to migrate from source to target

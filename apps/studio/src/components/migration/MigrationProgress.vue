@@ -14,16 +14,28 @@
 
       <div class="progress-stats">
         <div class="stat-card">
-          <div class="stat-value">{{ progress.tablesCompleted || 0 }}</div>
-          <div class="stat-label">Tables Completed</div>
+          <div class="stat-value">
+            {{ progress.tablesCompleted || 0 }}
+          </div>
+          <div class="stat-label">
+            Tables Completed
+          </div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ progress.totalTables || 0 }}</div>
-          <div class="stat-label">Total Tables</div>
+          <div class="stat-value">
+            {{ progress.totalTables || 0 }}
+          </div>
+          <div class="stat-label">
+            Total Tables
+          </div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ formatNumber(progress.rowsMigrated || 0) }}</div>
-          <div class="stat-label">Rows Migrated</div>
+          <div class="stat-value">
+            {{ formatNumber(progress.rowsMigrated || 0) }}
+          </div>
+          <div class="stat-label">
+            Rows Migrated
+          </div>
         </div>
       </div>
 
@@ -36,7 +48,9 @@
             :class="{ 'complete': isComplete, 'failed': isFailed }"
           />
         </div>
-        <div class="progress-text">{{ progressPercent.toFixed(1) }}%</div>
+        <div class="progress-text">
+          {{ progressPercent.toFixed(1) }}%
+        </div>
       </div>
 
       <!-- Current Step -->
@@ -91,7 +105,9 @@
               <strong>{{ error.table }}</strong>
               <span class="error-time">{{ formatTime(error.timestamp) }}</span>
             </div>
-            <div class="error-message">{{ error.error }}</div>
+            <div class="error-message">
+              {{ error.error }}
+            </div>
           </div>
         </div>
       </div>

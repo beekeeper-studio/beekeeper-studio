@@ -8,7 +8,9 @@
       <div class="page-content flex-col">
         <div class="row">
           <div class="card-flat padding section expand">
-            <h3 class="card-title">Review Migration Settings</h3>
+            <h3 class="card-title">
+              Review Migration Settings
+            </h3>
             
             <div class="review-section">
               <h4>Source Database</h4>

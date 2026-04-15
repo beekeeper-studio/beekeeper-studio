@@ -9,7 +9,9 @@
         <div class="row">
           <div class="card-flat padding section expand">
             <div class="flex flex-between">
-              <h3 class="card-title">Tables to Migrate</h3>
+              <h3 class="card-title">
+                Tables to Migrate
+              </h3>
               <div class="btn-group">
                 <button
                   class="btn btn-flat btn-small"
