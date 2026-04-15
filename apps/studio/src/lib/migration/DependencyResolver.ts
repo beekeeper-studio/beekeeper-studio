@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Beekeeper Studio Team
+// Copyright (c) 2026 Beekeeper Studio Team
 // Topological sort for table dependency resolution
 
 import { TableDependency } from './types';

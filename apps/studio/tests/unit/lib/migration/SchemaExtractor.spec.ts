@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Beekeeper Studio Team
+// Copyright (c) 2026 Beekeeper Studio Team
 
 import { SchemaExtractor } from '@/lib/migration/SchemaExtractor';
 import { IBasicDatabaseClient } from '@/lib/db/types';

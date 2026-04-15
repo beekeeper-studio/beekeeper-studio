@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Beekeeper Studio Team
+// Copyright (c) 2026 Beekeeper Studio Team
 
 import { DependencyResolver } from '@/lib/migration/DependencyResolver';
 import { TableDependency } from '@/lib/migration/types';

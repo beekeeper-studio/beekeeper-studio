@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Beekeeper Studio Team
+// Copyright (c) 2026 Beekeeper Studio Team
 
 export enum MigrationType {
   SCHEMA_ONLY = 'schema_only',
