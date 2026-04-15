@@ -115,24 +115,67 @@ jobs:
           Write-Host "Using PuTTY from: $puttyDir"
           "putty_dir=$puttyDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Launch Pageant and run test
-        # Same step so Pageant and the jest test share a Windows session -
-        # Pageant's IPC (WM_COPYDATA) is session-scoped.
+      - name: Launch Pageant with test key
+        # Pageant in recent PuTTY (>=0.75) accepts OpenSSH-format keys on
+        # the command line, so we skip PPK conversion.
         shell: powershell
+        run: |
+          $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
+          Start-Process -FilePath "$puttyDir\pageant.exe" `
+            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test"
+          # Let Pageant spawn before the readiness probe starts hammering it.
+          Start-Sleep -Seconds 1
+          Get-Process pageant | Out-Null
+
+      - name: Verify Pageant is serving the key
+        # Pageant process existence != Pageant readiness. Polling plink here
+        # catches the race where ssh2's 20s handshake timer would otherwise
+        # trip while Pageant is still initializing.
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
+
+          $hostkeyArgs = @()
+          foreach ($line in (ssh-keygen -l -f "$env:USERPROFILE\.ssh\known_hosts")) {
+            if ($line -match 'SHA256:(\S+)') {
+              $hostkeyArgs += "-hostkey"
+              $hostkeyArgs += "SHA256:$($matches[1])"
+            }
+          }
+
+          $nullIn = "$env:TEMP\plink.in"
+          Set-Content -Path $nullIn -Value "" -NoNewline
+
+          $deadline = (Get-Date).AddSeconds(15)
+          $ok = $false
+          while ((Get-Date) -lt $deadline) {
+            $plinkArgs = @("-agent", "-batch") + $hostkeyArgs + `
+              @("$env:USERNAME@127.0.0.1", "echo pageant-ready")
+            $p = Start-Process -FilePath "$puttyDir\plink.exe" `
+              -ArgumentList $plinkArgs -NoNewWindow -PassThru `
+              -RedirectStandardInput $nullIn `
+              -RedirectStandardOutput "$env:TEMP\plink.out" `
+              -RedirectStandardError "$env:TEMP\plink.err"
+            if ($p.WaitForExit(5000) -and $p.ExitCode -eq 0) {
+              $ok = $true
+              break
+            }
+            if (-not $p.HasExited) { $p.Kill() }
+            Start-Sleep -Milliseconds 500
+          }
+          if (-not $ok) {
+            Write-Host "plink stdout:`n$(Get-Content $env:TEMP\plink.out -Raw)"
+            Write-Host "plink stderr:`n$(Get-Content $env:TEMP\plink.err -Raw)"
+            throw "Pageant did not become ready within 15 seconds"
+          }
+          Write-Host "Pageant is ready."
+
+      - name: Run Windows integration tests
+        shell: bash
         env:
           PAGEANT_TEST: "1"
         run: |
-          $ErrorActionPreference = "Continue"
-          $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
-          Remove-Item env:SSH_AUTH_SOCK -ErrorAction SilentlyContinue
-
-          # Pageant in recent PuTTY (>=0.75) accepts OpenSSH-format keys on
-          # the command line, which sidesteps PPK format compatibility issues.
-          Start-Process -FilePath "$puttyDir\pageant.exe" `
-            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test"
-          Start-Sleep -Seconds 3
-          Get-Process pageant
-
-          Set-Location apps/studio
+          unset SSH_AUTH_SOCK
+          cd apps/studio
           yarn run test:integration:windows --runInBand --ci
-          if ($LASTEXITCODE -ne 0) { throw "jest failed with $LASTEXITCODE" }
