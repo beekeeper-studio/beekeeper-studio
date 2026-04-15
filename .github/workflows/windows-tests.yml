@@ -111,8 +111,31 @@ jobs:
             "C:\ProgramData\chocolatey\lib\putty.install\tools"
           )
           $puttyDir = $candidates | Where-Object { Test-Path "$_\pageant.exe" } | Select-Object -First 1
-          if (-not $puttyDir) { throw "pageant.exe not found" }
+          if (-not $puttyDir) {
+            Write-Host "=== candidate probe ==="
+            foreach ($c in $candidates) {
+              Write-Host "  $c exists=$(Test-Path $c) pageant=$(Test-Path "$c\pageant.exe")"
+            }
+            Write-Host "=== C:\Program Files\PuTTY contents ==="
+            if (Test-Path "C:\Program Files\PuTTY") { Get-ChildItem "C:\Program Files\PuTTY" | Format-Table Name,Length }
+            Write-Host "=== chocolatey lib ==="
+            if (Test-Path "C:\ProgramData\chocolatey\lib\putty.install") {
+              Get-ChildItem "C:\ProgramData\chocolatey\lib\putty.install" -Recurse | Format-Table FullName,Length
+            }
+            throw "pageant.exe not found"
+          }
           Write-Host "Using PuTTY from: $puttyDir"
+          Write-Host "=== PuTTY directory contents ==="
+          Get-ChildItem $puttyDir | Format-Table Name,Length,LastWriteTime
+          Write-Host "=== pageant.exe file info ==="
+          $pageantExe = "$puttyDir\pageant.exe"
+          $item = Get-Item $pageantExe
+          Write-Host "  Path:     $($item.FullName)"
+          Write-Host "  Size:     $($item.Length) bytes"
+          Write-Host "  Modified: $($item.LastWriteTime)"
+          Write-Host "  Version:  $($item.VersionInfo.FileVersion)"
+          Write-Host "  Product:  $($item.VersionInfo.ProductVersion)"
+          Write-Host "  Company:  $($item.VersionInfo.CompanyName)"
           "putty_dir=$puttyDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Launch Pageant with test key
@@ -120,12 +143,89 @@ jobs:
         # the command line, so we skip PPK conversion.
         shell: powershell
         run: |
+          $ErrorActionPreference = 'Continue'
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
-          Start-Process -FilePath "$puttyDir\pageant.exe" `
-            -ArgumentList "$env:USERPROFILE\.ssh\pageant_test"
+          $pageantExe = "$puttyDir\pageant.exe"
+          $keyFile = "$env:USERPROFILE\.ssh\pageant_test"
+
+          Write-Host "=== pre-launch environment ==="
+          Write-Host "  pageant.exe:  $pageantExe (exists=$(Test-Path $pageantExe))"
+          Write-Host "  key file:     $keyFile (exists=$(Test-Path $keyFile))"
+          if (Test-Path $keyFile) {
+            $ki = Get-Item $keyFile
+            Write-Host "  key size:     $($ki.Length) bytes"
+            Write-Host "  key first 40: $((Get-Content $keyFile -TotalCount 1))"
+          }
+          Write-Host "  USERNAME:     $env:USERNAME"
+          Write-Host "  USERPROFILE:  $env:USERPROFILE"
+          Write-Host "  SESSIONNAME:  $env:SESSIONNAME"
+          Write-Host "  interactive:  $([Environment]::UserInteractive)"
+
+          Write-Host "=== existing pageant processes (should be none) ==="
+          Get-Process pageant -ErrorAction SilentlyContinue | Format-Table Id,ProcessName,StartTime
+
+          # Redirect pageant's stdout/stderr so we can see any startup error it
+          # would otherwise print and drop on the floor.
+          $pageantOut = "$env:TEMP\pageant.out"
+          $pageantErr = "$env:TEMP\pageant.err"
+          Set-Content -Path $pageantOut -Value "" -NoNewline
+          Set-Content -Path $pageantErr -Value "" -NoNewline
+
+          Write-Host "=== launching pageant ==="
+          Write-Host "  cmd: $pageantExe $keyFile"
+          $proc = Start-Process -FilePath $pageantExe `
+            -ArgumentList $keyFile `
+            -PassThru `
+            -RedirectStandardOutput $pageantOut `
+            -RedirectStandardError $pageantErr
+          Write-Host "  Start-Process returned PID=$($proc.Id)"
+
           # Let Pageant spawn before the readiness probe starts hammering it.
-          Start-Sleep -Seconds 1
-          Get-Process pageant | Out-Null
+          Start-Sleep -Seconds 3
+
+          Write-Host "=== post-launch process state ==="
+          $proc.Refresh()
+          Write-Host "  HasExited: $($proc.HasExited)"
+          if ($proc.HasExited) {
+            Write-Host "  ExitCode:  $($proc.ExitCode)"
+            Write-Host "  ExitTime:  $($proc.ExitTime)"
+          } else {
+            Write-Host "  PID:          $($proc.Id)"
+            Write-Host "  StartTime:    $($proc.StartTime)"
+            Write-Host "  MainWindow:   $($proc.MainWindowHandle)"
+            Write-Host "  MainWindowTitle: $($proc.MainWindowTitle)"
+            Write-Host "  Responding:   $($proc.Responding)"
+            Write-Host "  Threads:      $($proc.Threads.Count)"
+          }
+
+          Write-Host "=== pageant stdout ==="
+          Get-Content $pageantOut -Raw
+          Write-Host "=== pageant stderr ==="
+          Get-Content $pageantErr -Raw
+
+          Write-Host "=== all pageant processes visible to Get-Process ==="
+          $all = Get-Process pageant -ErrorAction SilentlyContinue
+          if ($all) {
+            $all | Format-Table Id,ProcessName,StartTime,MainWindowHandle,MainWindowTitle,Responding
+          } else {
+            Write-Host "  (none)"
+          }
+
+          Write-Host "=== tasklist /v for pageant (catches processes in other sessions) ==="
+          tasklist /v /fi "IMAGENAME eq pageant.exe"
+
+          Write-Host "=== recent application event log entries (last 2 min) ==="
+          Get-WinEvent -LogName Application -MaxEvents 50 -ErrorAction SilentlyContinue |
+            Where-Object { $_.TimeCreated -gt (Get-Date).AddMinutes(-2) } |
+            Format-Table TimeCreated,ProviderName,Id,LevelDisplayName,Message -Wrap
+
+          if ($proc.HasExited) {
+            throw "Pageant exited immediately (exit=$($proc.ExitCode)) - see stdout/stderr/event-log above"
+          }
+          if (-not (Get-Process pageant -ErrorAction SilentlyContinue)) {
+            throw "No pageant process visible after launch"
+          }
+          Write-Host "Pageant appears to be running (PID=$($proc.Id))"
 
       - name: Verify Pageant is serving the key
         # Pageant process existence != Pageant readiness. Polling plink here
@@ -135,6 +235,16 @@ jobs:
         run: |
           $ErrorActionPreference = 'Continue'
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
+
+          Write-Host "=== pageant process state at start of verify step ==="
+          $pageantProcs = Get-Process pageant -ErrorAction SilentlyContinue
+          if ($pageantProcs) {
+            $pageantProcs | Format-Table Id,StartTime,MainWindowHandle,MainWindowTitle,Responding
+          } else {
+            Write-Host "  NO pageant process found - it must have exited between launch and now"
+          }
+          Write-Host "=== tasklist view ==="
+          tasklist /v /fi "IMAGENAME eq pageant.exe"
 
           # Diagnostic: confirm the committed key survived checkout without
           # CRLF conversion. Pageant rejects keys with CRLF line endings.
