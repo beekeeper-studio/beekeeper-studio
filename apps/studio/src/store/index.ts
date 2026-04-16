@@ -50,6 +50,31 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
+const shouldPromptForCockroachJwt = (config: Nullable<IConnection>) => {
+  return config?.connectionType === 'cockroachdb' &&
+    !!config?.options?.jwtAuthEnabled &&
+    !config?.password;
+}
+
+const resolveJwtConfig = async (config: IConnection): Promise<IConnection | null> => {
+  const nextConfig = _.cloneDeep(config);
+
+  if (!shouldPromptForCockroachJwt(nextConfig)) {
+    return nextConfig;
+  }
+
+  const { token, cancelled } = await BeekeeperPlugin.promptJwtToken(
+    BeekeeperPlugin.buildConnectionName(config)
+  );
+
+  if (cancelled) {
+    return null;
+  }
+
+  nextConfig.password = token;
+  return nextConfig;
+}
+
 
 export interface State {
   connection: ElectronUtilityConnectionClient,
@@ -422,7 +447,11 @@ const store = new Vuex.Store<State>({
   },
   actions: {
     async test(context, config: IConnection) {
-      await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
+      const resolvedConfig = await resolveJwtConfig(config);
+      if (!resolvedConfig) return false;
+
+      await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      return true;
     },
 
     async fetchUsername(context) {
@@ -458,15 +487,18 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
+      const resolvedConfig = await resolveJwtConfig(config);
+      if (!resolvedConfig) return false;
+
       if (context.state.username) {
-        await Vue.prototype.$util.send('conn/create', { config, auth, osUser: context.state.username })
+        await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
 
         if (supportedFeatures.backups) {
           const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+          context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
         }
 
         window.main.enableConnectionMenuItems();
@@ -476,7 +508,7 @@ const store = new Vuex.Store<State>({
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
-        config = await context.dispatch('data/usedconnections/recordUsed', config)
+        config = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
         context.commit('newConnection', config)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
@@ -491,6 +523,7 @@ const store = new Vuex.Store<State>({
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
+        return true;
       } else {
         throw "No username provided"
       }
@@ -510,8 +543,14 @@ const store = new Vuex.Store<State>({
     },
     async reconnect(context) {
       if (context.state.connection) {
+        if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
+          return await context.dispatch('connect', { config: context.state.usedConfig });
+        }
+
         await context.state.connection.connect();
+        return true;
       }
+      return false;
     },
     async disconnect(context) {
       if (context.state.connection) {
