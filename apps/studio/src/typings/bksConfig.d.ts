@@ -5,6 +5,19 @@ declare interface IBksConfig {
         ssoPrompt: string;
     };
     db: {
+        bedrock: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: string[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         bigquery: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;

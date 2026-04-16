@@ -2,7 +2,7 @@
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
 import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request, Transaction } from 'mssql'
-import { identify, StatementType } from 'sql-query-identifier'
+import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'
@@ -32,9 +32,10 @@ import {
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
-import { AuthOptions, AzureAuthService } from '../authentication/azure';
+import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -199,7 +200,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     // NOTE (@day): we were apparently not even setting multiple on the request, so this is gonna be single for now
     const { data, rowsAffected } = await this.driverExecuteSingle(queryText, options);
 
-    const commands = this.identifyCommands(queryText).map((item) => item.type)
+    const commands = this.identifyCommands(queryText)
 
     // Executing only non select queries will not return results.
     // So we "fake" there is at least one result.
@@ -726,9 +727,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     await this.executeWithTransaction(sql)
   }
 
-  async executeApplyChanges(changes: TableChanges) {
+  async executeApplyChanges(changes: TableChanges, tabId?: number) {
     const results = []
-    let sql = ['SET XACT_ABORT ON', 'BEGIN TRANSACTION']
+    let sql = []
+    let conn: Request;
 
     try {
       if (changes.inserts) {
@@ -745,16 +747,18 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       if (changes.deletes) {
         sql = sql.concat(buildDeleteQueries(this.knex, changes.deletes))
       }
-
-      sql.push('COMMIT')
-
-      await this.driverExecuteSingle(sql.join(';'))
+      if (tabId) {
+        conn = this.peekConnection(tabId).request();
+        await this.driverExecuteSingle(sql.join(';'), { connection: conn });
+      } else {
+        await this.executeWithTransaction(sql.join(';'));
+      }
 
       if (changes.updates) {
         const selectQueries = buildSelectQueriesFromUpdates(this.knex, changes.updates)
         for (let index = 0; index < selectQueries.length; index++) {
           const element = selectQueries[index];
-          const r = await this.driverExecuteSingle(element)
+          const r = await this.driverExecuteSingle(element, { connection: conn })
           if (r.data[0]) results.push(r.data[0])
         }
       }
@@ -1209,18 +1213,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  private parseRowQueryResult(data: any[], rowsAffected: number, command: StatementType, columns: IColumnMetadata, arrayRowMode = false) {
+  private parseRowQueryResult(data: any[], rowsAffected: number, command: IdentifyResult, columns: IColumnMetadata, arrayRowMode = false) {
     // Fallback in case the identifier could not reconize the command
     // eslint-disable-next-line
     const isSelect = !!(data.length || rowsAffected === 0)
     const fields = this.parseFields(data, columns)
     const fieldIds = fields.map(f => f.id)
     return {
-      command: command || (isSelect && 'SELECT'),
+      command: command?.type || (isSelect && 'SELECT'),
       rows: arrayRowMode ? data.map(r => _.zipObject(fieldIds, r)) : data,
       fields: fields,
       rowCount: data.length,
       affectedRows: rowsAffected,
+      text: command?.text
     }
   }
 

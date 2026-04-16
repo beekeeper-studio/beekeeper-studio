@@ -17,6 +17,7 @@ import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialec
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import _ from "lodash";
+import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
 const log = rawLog.scope("cassandra");
 const logger = () => log;
@@ -252,7 +253,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
-    const commands = this.identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText);
 
     const data = await this.driverExecuteSingle(queryText, options);
     return [this.parseRowQueryResult(data, commands[0])];
@@ -608,20 +609,21 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
 
-  private parseRowQueryResult(data, command) {
+  private parseRowQueryResult(data: CassandraResult, command: IdentifyResult) {
     // Fallback in case the identifier could not recognize the command
-    const isSelect = command ? command === 'SELECT' : Array.isArray(data.rows);
-    const { columns, rows, rowLength } = data
+    const isSelect = command ? command?.type === 'SELECT' : Array.isArray(data.rows);
+    const { columns, rows, length } = data
     const fields = isSelect ? this.parseFields(columns, rows[0]) : []
 
     return {
-      command: command || (isSelect && 'SELECT'),
+      command: command?.type || (isSelect && 'SELECT'),
+      text: command?.text,
       rows: this.parseRows(rows, columns)  || [],
       fields: fields,
       // FIXME not sure what this is, this causes the query to fail. .isPaged() is not defined.
       // isPaged: data.isPaged(),
-      rowCount: isSelect ? (rowLength || 0) : undefined,
-      affectedRows: !isSelect && !isNaN(rowLength) ? rowLength : undefined,
+      rowCount: isSelect ? (length || 0) : undefined,
+      affectedRows: !isSelect && !isNaN(length) ? length : undefined,
     };
   }
 
