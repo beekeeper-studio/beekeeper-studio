@@ -37,6 +37,8 @@ export function dialectFor(s: string): Dialect | null {
       return 'sqlite'
     case 'mssql':
       return 'sqlserver'
+    case 'scylladb':
+      return 'cassandra'
     case 'bedrock':
       return 'sqlite'
     default:

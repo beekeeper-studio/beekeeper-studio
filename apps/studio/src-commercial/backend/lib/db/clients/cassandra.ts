@@ -84,6 +84,16 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     });
   }
 
+  async disconnect(): Promise<void> {
+    await super.disconnect();
+    // cassandra-driver keeps control connections and reconnect timers alive
+    // until shutdown() is called, which prevents Node from exiting.
+    if (this.client) {
+      await this.client.shutdown();
+      this.client = null;
+    }
+  }
+
   getBuilder(table: string, _schema?: string): ChangeBuilderBase {
     return new CassandraChangeBuilder(table, [])
   }

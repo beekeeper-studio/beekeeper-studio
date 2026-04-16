@@ -103,7 +103,7 @@
                   :testing="testing"
                 />
                 <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && isUltimate"
+                  v-if="['cassandra', 'scylladb'].includes(config.connectionType) && isUltimate"
                   :config="config"
                   :testing="testing"
                 />

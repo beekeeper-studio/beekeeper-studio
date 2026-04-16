@@ -96,6 +96,7 @@ export class DbConnectionBase extends ApplicationEntity {
         port = 1521
         break
       case 'cassandra':
+      case 'scylladb':
         port = 9042
         break
       case 'bigquery':
