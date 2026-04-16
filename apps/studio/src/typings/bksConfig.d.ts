@@ -5,6 +5,15 @@ declare interface IBksConfig {
         ssoPrompt: string;
     };
     db: {
+        bedrock: {
+            allowSkipToLastPage: boolean;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         bigquery: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
@@ -72,6 +81,7 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        default_parsed: any;
         duckdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
