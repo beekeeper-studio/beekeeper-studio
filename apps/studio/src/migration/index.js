@@ -85,6 +85,7 @@ import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_opti
 import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
+import sshConfig from './20260318_ssh_config'
 import addBastionAuth from './20260324_add_bastion_auth'
 
 import ultimate from './ultimate/index'
@@ -131,6 +132,7 @@ const realMigrations = [
   addIamAuthOptions, migrateRedshiftToIamOptions, addEditorFontSize,
   createConnectionFolders, createQueryFolders,
   addPositionToItems,
+  sshConfig,
   addBastionAuth,
   addOnboardingNotyShown,
 ]

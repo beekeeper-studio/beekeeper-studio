@@ -130,7 +130,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       }
 
       // reuse existing tunnel
-      if (this.server.config.ssh && !this.server.sshTunnel) {
+      if (this.server.config.ssh?.enabled && !this.server.sshTunnel) {
         logger().debug('creating ssh tunnel');
         this.server.sshTunnel = await connectTunnel(this.server.config);
 

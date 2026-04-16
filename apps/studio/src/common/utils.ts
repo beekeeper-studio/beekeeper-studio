@@ -7,6 +7,8 @@ import { TableFilter, TableOrView, Routine, TableColumn } from '@/lib/db/models'
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
 import type { Stream } from 'stream';
+import { IConnection } from './interfaces/IConnection';
+import { TransportConnectionSshConfig } from './transport/TransportSshConfig';
 
 export function camelCaseObjectKeys(data) {
   if (_.isPlainObject(data)) {
@@ -366,4 +368,63 @@ export function isNumericDataType (dataType) {
   ]
 
   return numericStarts.some(t => base.startsWith(t))
+}
+
+/**
+ * Should we use the legacy ssh config format or use the {@link IConnection.sshConfigs}
+ *
+ * This makes sure we consume array all the time instead of `null`.
+ **/
+export function resolveSshConfigs(config: IConnection): TransportConnectionSshConfig[] {
+  if (config.sshConfigs == null) {
+    const sshConfigs: TransportConnectionSshConfig[] = []
+    if (config.sshBastionHost) {
+      sshConfigs.push({
+        id: null,
+        createdAt: null,
+        updatedAt: null,
+        version: null,
+        connectionId: null,
+        sshConfigId: null,
+        position: 0,
+        sshConfig: {
+          id: null,
+          createdAt: null,
+          updatedAt: null,
+          version: null,
+          host: config.sshBastionHost,
+          port: config.sshBastionHostPort,
+          mode: config.sshBastionMode,
+          username: config.sshBastionUsername,
+          password: config.sshBastionPassword,
+          keyfile: config.sshBastionKeyfile,
+          keyfilePassword: config.sshBastionKeyfilePassword,
+        },
+      })
+    }
+    sshConfigs.push({
+      id: null,
+      createdAt: null,
+      updatedAt: null,
+      version: null,
+      connectionId: null,
+      sshConfigId: null,
+      position: sshConfigs.length,
+      sshConfig: {
+        id: null,
+        createdAt: null,
+        updatedAt: null,
+        version: null,
+        host: config.sshHost,
+        port: config.sshPort,
+        mode: config.sshMode,
+        username: config.sshUsername,
+        password: config.sshPassword,
+        keyfile: config.sshKeyfile,
+        keyfilePassword: config.sshKeyfilePassword,
+      },
+    })
+    return sshConfigs
+  }
+  return config.sshConfigs
 }

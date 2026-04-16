@@ -52,6 +52,7 @@
       <div class="col s9 form-group">
         <label for="Host">Host</label>
         <masked-input
+          ref="hostInput"
           :value="config.host"
           :privacy-mode="privacyMode"
           @input="val => config.host = val"
@@ -120,6 +121,7 @@ import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
 import CommonSsl from './CommonSsl.vue'
 import { mapGetters } from 'vuex'
+import { AppEvent } from '@/common/AppEvent'
 
 export default {
   props: {
@@ -163,9 +165,37 @@ export default {
     },
     topLevelEntityName() {
       return findClient(this.config.connectionType).topLevelEntity || 'Database'
-    }
+    },
+    rootBindings() {
+      return [
+        {
+          event: AppEvent.focusConnectionHost,
+          handler: this.focusHost,
+        },
+      ];
+    },
+  },
+  mounted() {
+    this.registerHandlers(this.rootBindings)
+  },
+  beforeDestroy() {
+    this.unregisterHandlers(this.rootBindings)
   },
   methods: {
+    focusHost() {
+      const input = this.$refs.hostInput?.$el;
+      if (!input) {
+        return;
+      }
+      input.focus();
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      input.classList.add('glow');
+      input.addEventListener(
+        'animationend',
+        () => input.classList.remove('glow'),
+        { once: true }
+      );
+    },
     async onPaste(event) {
       const data = event.clipboardData.getData('text')
       try {
@@ -183,6 +213,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+::v-deep input.glow {
+  animation: glow-fade 1s ease-out;
+}
+
+@keyframes glow-fade {
+  0% {
+    box-shadow: 0 0 6px 2px var(--input-highlight);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
 .optional-text {
   font-style: italic;
   padding-left: .2rem;

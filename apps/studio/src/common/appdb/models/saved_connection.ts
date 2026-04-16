@@ -1,4 +1,4 @@
-import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToMany, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
@@ -9,6 +9,7 @@ import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, Co
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
+import { ConnectionSshConfig } from './ConnectionSshConfig'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
@@ -166,18 +167,23 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false, default: false })
   sshEnabled = false
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ type: "varchar", nullable: true })
   sshHost: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ type: "int", nullable: true })
   sshPort: Nullable<number> = null
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ type: "varchar", nullable: true })
   sshKeyfile: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ type: 'varchar', nullable: true })
   sshUsername: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ type: 'varchar', nullable: true })
   sshBastionHost: Nullable<string> = null
 
@@ -311,12 +317,19 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @JoinColumn({ name: 'connectionFolderId' })
   connectionFolder?: ConnectionFolder
 
+  // Do NOT initialize this to [] - TypeORM does not allow array initializers on relations.
+  // See ConnectionFolder.ts for the same pattern.
+  @OneToMany(() => ConnectionSshConfig, (csc) => csc.connection, { cascade: true, eager: false })
+  sshConfigs?: ConnectionSshConfig[]
+
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshKeyfilePassword: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
@@ -326,8 +339,10 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshBastionKeyfilePassword: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead */
   _sshMode: SshMode = "agent"
 
+  /** @deprecated use `sshConfigs` instead */
   @Column({ name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent" })
   set sshMode(value: SshMode) {
     this._sshMode = value
@@ -350,6 +365,7 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     }
   }
 
+  /** @deprecated use `sshConfigs` instead */
   get sshMode(): SshMode {
     return this._sshMode
   }

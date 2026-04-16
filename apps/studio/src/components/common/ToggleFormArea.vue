@@ -44,7 +44,7 @@ import Vue from 'vue'
       expanded() {
         this.toggleContent = this.expanded
         this.$emit('expanded', this.expanded)
-      }
+      },
     },
     computed: {
       toggleIcon() {
