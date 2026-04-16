@@ -221,6 +221,49 @@ jobs:
           Write-Host "=== tasklist /v for pageant (catches processes in other sessions) ==="
           tasklist /v /fi "IMAGENAME eq pageant.exe"
 
+          # Enumerate every top-level window owned by pageant (not just
+          # MainWindowHandle, which is 0 for its hidden IPC window). If
+          # pageant has opened a modal dialog - passphrase prompt, format
+          # warning, etc - we'll see it here. A modal dialog blocks
+          # pageant's message loop so WM_COPYDATA replies never arrive,
+          # even though FindWindow("Pageant","Pageant") still succeeds.
+          Write-Host "=== all top-level windows owned by pageant ==="
+          $cs = @(
+            'using System;',
+            'using System.Runtime.InteropServices;',
+            'using System.Text;',
+            'using System.Collections.Generic;',
+            'public class WinEnum {',
+            '  public delegate bool EnumProc(IntPtr h, IntPtr l);',
+            '  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc p, IntPtr l);',
+            '  [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);',
+            '  [DllImport("user32.dll")] public static extern int GetClassName(IntPtr h, StringBuilder s, int n);',
+            '  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);',
+            '  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);',
+            '  public static List<string> ForPid(uint pid) {',
+            '    var r = new List<string>();',
+            '    EnumWindows((h, l) => {',
+            '      uint wp; GetWindowThreadProcessId(h, out wp);',
+            '      if (wp == pid) {',
+            '        var t = new StringBuilder(256); GetWindowText(h, t, 256);',
+            '        var c = new StringBuilder(256); GetClassName(h, c, 256);',
+            '        r.Add(string.Format("hwnd=0x{0:X} visible={1} class=\"{2}\" title=\"{3}\"",',
+            '          h.ToInt64(), IsWindowVisible(h), c.ToString(), t.ToString()));',
+            '      }',
+            '      return true;',
+            '    }, IntPtr.Zero);',
+            '    return r;',
+            '  }',
+            '}'
+          ) -join "`n"
+          if (-not ('WinEnum' -as [type])) { Add-Type -TypeDefinition $cs }
+          $wins = [WinEnum]::ForPid([uint32]$proc.Id)
+          if ($wins.Count -eq 0) {
+            Write-Host "  (no top-level windows for pid $($proc.Id))"
+          } else {
+            foreach ($w in $wins) { Write-Host "  $w" }
+          }
+
           Write-Host "=== recent application event log entries (last 2 min) ==="
           Get-WinEvent -LogName Application -MaxEvents 50 -ErrorAction SilentlyContinue |
             Where-Object { $_.TimeCreated -gt (Get-Date).AddMinutes(-2) } |
@@ -262,7 +305,10 @@ jobs:
           $nullIn = "$env:TEMP\plink.in"
           Set-Content -Path $nullIn -Value "" -NoNewline
 
-          $deadline = (Get-Date).AddSeconds(15)
+          # plink's internal SendMessageTimeout is 10s; per-attempt wait must
+          # exceed that so we see plink's own "pageant didn't respond" error
+          # instead of killing it early and blaming the probe.
+          $deadline = (Get-Date).AddSeconds(60)
           $ok = $false
           $attempt = 0
           while ((Get-Date) -lt $deadline) {
@@ -277,7 +323,7 @@ jobs:
               -RedirectStandardInput $nullIn `
               -RedirectStandardOutput $outFile `
               -RedirectStandardError $errFile
-            $exited = $p.WaitForExit(5000)
+            $exited = $p.WaitForExit(15000)
             if ($exited -and $p.ExitCode -eq 0) {
               $ok = $true
               Write-Host "--- attempt ${attempt}: SUCCESS ---"
