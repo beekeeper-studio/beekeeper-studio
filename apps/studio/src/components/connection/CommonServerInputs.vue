@@ -84,7 +84,7 @@
         />
       </div>
       <div class="col s6 form-group" v-show="showPasswordForm">
-        <label for="password">Password</label>
+        <label for="password">{{ passwordLabel }}</label>
         <input
           :type="togglePasswordInputType"
           v-model="config.password"
@@ -132,6 +132,10 @@ export default {
     showPasswordForm: {
       type: Boolean,
       default: true
+    },
+    passwordLabel: {
+      type: String,
+      default: 'Password'
     }
   },
   components: {
