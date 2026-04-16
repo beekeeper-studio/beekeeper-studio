@@ -138,10 +138,17 @@ jobs:
           Write-Host "  Company:  $($item.VersionInfo.CompanyName)"
           "putty_dir=$puttyDir" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Launch Pageant with test key
+      - name: Launch Pageant, verify readiness, and run Windows integration tests
         # Pageant in recent PuTTY (>=0.75) accepts OpenSSH-format keys on
         # the command line, so we skip PPK conversion.
+        #
+        # Launch + verify + test MUST live in the same step: GitHub Actions
+        # wraps each Windows step's shell in a Job Object with
+        # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, so any pageant launched in a
+        # prior step is killed the instant that step's powershell.exe exits.
         shell: powershell
+        env:
+          PAGEANT_TEST: "1"
         run: |
           $ErrorActionPreference = 'Continue'
           $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
@@ -227,24 +234,11 @@ jobs:
           }
           Write-Host "Pageant appears to be running (PID=$($proc.Id))"
 
-      - name: Verify Pageant is serving the key
-        # Pageant process existence != Pageant readiness. Polling plink here
-        # catches the race where ssh2's 20s handshake timer would otherwise
-        # trip while Pageant is still initializing.
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $puttyDir = "${{ steps.putty.outputs.putty_dir }}"
-
-          Write-Host "=== pageant process state at start of verify step ==="
-          $pageantProcs = Get-Process pageant -ErrorAction SilentlyContinue
-          if ($pageantProcs) {
-            $pageantProcs | Format-Table Id,StartTime,MainWindowHandle,MainWindowTitle,Responding
-          } else {
-            Write-Host "  NO pageant process found - it must have exited between launch and now"
-          }
-          Write-Host "=== tasklist view ==="
-          tasklist /v /fi "IMAGENAME eq pageant.exe"
+          # ---- Readiness probe ----
+          # Pageant process existence != Pageant readiness. Poll plink here
+          # so ssh2's 20s handshake timer doesn't trip while Pageant is still
+          # initializing. Same step, so the job object still owns pageant.
+          Write-Host "=== verifying pageant readiness via plink ==="
 
           # Diagnostic: confirm the committed key survived checkout without
           # CRLF conversion. Pageant rejects keys with CRLF line endings.
@@ -305,11 +299,11 @@ jobs:
           }
           Write-Host "Pageant is ready."
 
-      - name: Run Windows integration tests
-        shell: bash
-        env:
-          PAGEANT_TEST: "1"
-        run: |
-          unset SSH_AUTH_SOCK
-          cd apps/studio
+          # ---- Run the integration tests ----
+          # powershell doesn't propagate native-command exit codes the way
+          # `set -e` does in bash, so we check $LASTEXITCODE explicitly.
+          Write-Host "=== running integration tests ==="
+          Remove-Item Env:SSH_AUTH_SOCK -ErrorAction SilentlyContinue
+          Set-Location "$env:GITHUB_WORKSPACE\apps\studio"
           yarn run test:integration:windows --runInBand --ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
