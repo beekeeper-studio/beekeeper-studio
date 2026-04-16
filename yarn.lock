@@ -7470,7 +7470,7 @@ esbuild-node-externals@^1.13.1:
   dependencies:
     find-up "^5.0.0"
 
-esbuild@^0.21.2, esbuild@^0.21.3:
+esbuild@^0.21.2:
   version "0.21.5"
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.21.5.tgz#9ca301b120922959b766360d8ac830da0d02997d"
   integrity sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==
@@ -11768,7 +11768,7 @@ postcss@^7.0.36:
     picocolors "^0.2.1"
     source-map "^0.6.1"
 
-postcss@^8.4.14, postcss@^8.4.43, postcss@^8.5.3, postcss@^8.5.6:
+postcss@^8.4.14, postcss@^8.5.3, postcss@^8.5.6:
   version "8.5.6"
   resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.6.tgz#2825006615a619b4f62a9e7426cc120b349a8f3c"
   integrity sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==
@@ -12420,7 +12420,7 @@ rollup@^2.70.2:
   optionalDependencies:
     fsevents "~2.3.2"
 
-rollup@^4.20.0, rollup@^4.34.9:
+rollup@^4.34.9:
   version "4.57.1"
   resolved "https://registry.yarnpkg.com/rollup/-/rollup-4.57.1.tgz#947f70baca32db2b9c594267fe9150aa316e5a88"
   integrity sha512-oQL6lgK3e2QZeQ7gcgIkS2YZPg5slw37hYufJ3edKlfQSGGm8ICoxswK15ntSzF/a8+h7ekRy7k7oWc3BQ7y8A==
@@ -14431,10 +14431,10 @@ vite-plugin-vue2@^2.0.3:
     source-map "^0.7.3"
     vue-template-babel-compiler "^1.2.0"
 
-"vite@^5.0.0 || ^6.0.0":
-  version "6.4.1"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-6.4.1.tgz#afbe14518cdd6887e240a4b0221ab6d0ce733f96"
-  integrity sha512-+Oxm7q9hDoLMyJOYfUYBuHQo+dkAloi33apOPP56pzj+vsdJDzr+j1NISE5pyaAuKL4A3UD34qd0lx5+kfKp2g==
+"vite@^5.0.0 || ^6.0.0", vite@~6.4.2:
+  version "6.4.2"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-6.4.2.tgz#a4e548ca3a90ca9f3724582cab35e1ba15efc6f2"
+  integrity sha512-2N/55r4JDJ4gdrCvGgINMy+HH3iRpNIz8K6SFwVsA+JbQScLiC+clmAxBgwiSPgcG9U15QmvqCGWzMbqda5zGQ==
   dependencies:
     esbuild "^0.25.0"
     fdir "^6.4.4"
@@ -14442,17 +14442,6 @@ vite-plugin-vue2@^2.0.3:
     postcss "^8.5.3"
     rollup "^4.34.9"
     tinyglobby "^0.2.13"
-  optionalDependencies:
-    fsevents "~2.3.3"
-
-vite@~5.4.19, vite@~5.4.21:
-  version "5.4.21"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.21.tgz#84a4f7c5d860b071676d39ba513c0d598fdc7027"
-  integrity sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==
-  dependencies:
-    esbuild "^0.21.3"
-    postcss "^8.4.43"
-    rollup "^4.20.0"
   optionalDependencies:
     fsevents "~2.3.3"
 
