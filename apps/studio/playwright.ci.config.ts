@@ -7,8 +7,9 @@ export default defineConfig({
   expect: {
     timeout: 30000,
   },
-  fullyParallel: false,
-  workers: 1,
+  fullyParallel: true,
+  workers: 3,
+  retries: 3,
   use: {
     actionTimeout: 30000,
     trace: 'on-first-retry',
