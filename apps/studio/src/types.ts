@@ -26,12 +26,13 @@ export type ExternalMenuItem<TabContext = {}> = {
   parentId: string;
   label: string;
   disableWhenDisconnected?: boolean;
+  accelerator?: string;
   action: CustomMenuAction<TabContext>;
 };
 
 export type Platform = "windows" | "mac" | "linux";
 
-export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror" | "ui" | "tabulator";
+export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror" | "ui" | "tabulator" | "xel";
 
 export type FileHelpers = {
   save: (options: SaveFileOptions) => Promise<void>;

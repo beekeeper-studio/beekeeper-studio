@@ -67,6 +67,7 @@ export const MenuBarModule: Module<State, RootState> = {
           click: () => {
             actionHandler.handleAction(externalItem.action);
           },
+          accelerator: externalItem.accelerator,
         });
       }
 

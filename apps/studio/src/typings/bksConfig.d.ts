@@ -323,6 +323,11 @@ declare interface IBksConfig {
             save: string;
             undo: string;
         };
+        plugins: {
+            "bks-ai-shell": {
+                "new-tab-dropdown-item": string;
+            };
+        };
         queryEditor: {
             closeTableFilter: string;
             copyResultSelection: string;
