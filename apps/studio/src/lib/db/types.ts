@@ -1,4 +1,4 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import type { SshMode } from '@/common/interfaces/IConnection';
 
@@ -257,6 +257,7 @@ export interface IBasicDatabaseClient {
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
   executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>,
+  getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]>
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
@@ -285,7 +286,7 @@ export interface IBasicDatabaseClient {
   alterPartition(changes: AlterPartitionsSpec): Promise<void>,
 
   applyChangesSql(changes: TableChanges): Promise<string>,
-  applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
+  applyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]>,
   setTableDescription(table: string, description: string, schema?: string): Promise<string>
   setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
