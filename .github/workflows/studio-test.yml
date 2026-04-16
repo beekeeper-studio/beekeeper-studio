@@ -17,6 +17,10 @@ on:
     paths-ignore:
       - apps/sqltools/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prep:
     runs-on: ubuntu-24.04
