@@ -23,7 +23,7 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v2
 
-      - name: Install Python 3.11 (non-Mac)
+      - name: Install Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
@@ -59,21 +59,22 @@ jobs:
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
+      - name: Build UI Kit
+        run: yarn lib:build
+
+      - name: Build Main
+        run: yarn workspace beekeeper-studio build:esbuild
+
+      - name: Serve Vite
+        run: yarn workspace beekeeper-studio dev:vite &
+
       - name: Start postgres container
         run: docker compose up psql15 -d --wait
 
-      - name: Serve + Run Tests
+      - name: Run Tests
         shell: bash
         run: |
-          xvfb-run --auto-servernum --server-args "-screen 0 1024x768x24" bash -c '
-            yarn run electron:serve > server.log 2>&1 &
-            SERVER_PID=$!
-            sleep 15
-            yarn workspace beekeeper-studio test:e2e:ci
-            TEST_EXIT=$?
-            kill $SERVER_PID 2>/dev/null || true
-            exit $TEST_EXIT
-          '
+          xvfb-run --auto-servernum --server-args "-screen 0 1024x768x24" yarn workspace beekeeper-studio test:e2e:ci
         env:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
@@ -83,6 +84,6 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.os }}
+          name: test-results
           path: apps/studio/test-results
           retention-days: 7
