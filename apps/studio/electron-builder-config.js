@@ -159,7 +159,10 @@ module.exports = {
     category: "public.app-category.developer-tools",
     "hardenedRuntime": true,
     notarize: true,
-    publish: ['github']
+    publish: ['github'],
+    extendInfo: {
+      NSLocalNetworkUsageDescription: "Beekeeper Studio needs access to your local network to connect to database servers on your LAN."
+    }
   },
   linux: {
     icon: './public/icons/png/',
