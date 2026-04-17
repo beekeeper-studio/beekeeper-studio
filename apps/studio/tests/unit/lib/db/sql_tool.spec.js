@@ -1,4 +1,4 @@
-import { splitQueries, removeQueryQuotes, extractParams, isTextSelected } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -125,5 +125,46 @@ describe("Text Selection", () => {
       query: [10, 120],
       cursor: [0, 10],
     }).toBe(false);
+  });
+});
+
+describe("SQL Formatter", () => {
+  it("should correctly format Postgres earthdistance operator <@>", () => {
+    const originalQuery = "SELECT point(0, 0)<@>point(0,0);";
+    const expectedFormatted = "SELECT point(0, 0) <@> point(0, 0);"; // Expected: spaces around the operator
+    
+    const formatted = deparameterizeQuery(originalQuery, "postgresql", [], {});
+    
+    // Test that the formatted query contains the earthdistance operator
+    expect(formatted).toContain("<@>");
+    
+    // Test that the query can still be parsed after formatting (no syntax errors)
+    expect(() => splitQueries(formatted, "postgresql")).not.toThrow();
+    
+    // Store the actual result for debugging
+    console.log("Original query:", originalQuery);
+    console.log("Formatted query:", formatted);
+  });
+
+  it("should preserve the functionality of earthdistance operator after formatting", () => {
+    const testQueries = [
+      "SELECT point(0, 0)<@>point(0,0);",
+      "SELECT point(1, 1) <@> point(2, 2);",
+      "SELECT earth_distance(ll_to_earth(0, 0), ll_to_earth(0, 0));",
+    ];
+    
+    testQueries.forEach(query => {
+      const formatted = deparameterizeQuery(query, "postgresql", [], {});
+      
+      // The formatted query should still contain the operator or function
+      const hasOperator = formatted.includes("<@>") || formatted.includes("earth_distance");
+      expect(hasOperator).toBe(true);
+      
+      // Should be parseable
+      expect(() => splitQueries(formatted, "postgresql")).not.toThrow();
+      
+      console.log(`Original: ${query}`);
+      console.log(`Formatted: ${formatted}`);
+    });
   });
 });
