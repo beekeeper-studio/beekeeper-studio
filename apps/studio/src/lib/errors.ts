@@ -38,6 +38,11 @@ export type PluginErrorCode =
   | 'RUNTIME_EXCEPTION'
   | 'DEPENDENCY_MISSING';
 
+/**
+ * Thrown by the plugin system itself — registry lookups, install/update
+ * flows, IPC timeouts, asset resolution. Raised by Beekeeper, not by a
+ * plugin's own code.
+ */
 export class PluginSystemError extends Error {
   constructor(
     public readonly code: PluginSystemErrorCode,
@@ -52,6 +57,11 @@ export class PluginSystemError extends Error {
   }
 }
 
+/**
+ * Thrown for failures attributable to an installed plugin — malformed
+ * manifest, load-time crashes, runtime exceptions, missing dependencies.
+ * The fault lies with the plugin, not the system hosting it.
+ */
 export class PluginError extends Error {
   constructor(
     public readonly code: PluginErrorCode,
