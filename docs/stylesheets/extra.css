@@ -21,6 +21,7 @@
     --md-primary-fg-color--dark: black;
     --md-primary-bg-color: white;
     --md-primary-bg-color--light: #pink;
+    --md-code-hl-comment-color: #898989;
 
 
 }
@@ -29,6 +30,9 @@
   --md-default-bg-color: #1a1a1a;
   --md-typeset-color: rgba(255, 255, 255, 0.72);
   --md-default-fg-color--light: white;
+  --md-code-hl-comment-color: #898989;
+  --md-code-bg-color:hsl(0, 0%, 5.5%);
+
 
 }
 

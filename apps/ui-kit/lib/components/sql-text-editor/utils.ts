@@ -9,11 +9,11 @@ export { getAliases };
 /**
  * Convert column names to auto completion options
  */
-export function columnsToCompletions(columns: string[]): Completion[] {
+export function columnsToCompletions(columns: string[], dialect?: SQLDialect): Completion[] {
+  const idQuote = dialect?.spec.identifierQuotes?.[0] || '"'
+  const caseInsensitiveIdentifiers = !!dialect?.spec.caseInsensitiveIdentifiers;
   return columns.map((column) => ({
-    label: column,
-    type: "column", // This will become the class name
-    apply: column,
+    ...nameCompletion(column, "column", idQuote, caseInsensitiveIdentifiers),
     boost: 10 // Higher than keywords/tables
   }));
 }

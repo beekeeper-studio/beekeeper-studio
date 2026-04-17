@@ -6,12 +6,7 @@ import type {
   TransportOpenTab,
   TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
-import {
-  GetColumnsResponse,
-  RunQueryResponse,
-  TabResponse,
-  ThemeChangedNotification,
-} from "@beekeeperstudio/plugin";
+import { DatabaseType } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
@@ -22,6 +17,7 @@ import {
   PluginMenuItem,
   PluginView,
   TabType,
+  CreatePluginTabOptions,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -34,10 +30,7 @@ type Table = {
   schema?: string;
 };
 
-/**
- * An interface that bridges plugin system and Vuex. It also stores some states
- * for context menu because they don't exist in Vuex.
- */
+/** An interface that bridges plugin system with Vuex and AppEvents. */
 export default class PluginStoreService {
   private tablesChangedListeners: Set<() => void> = new Set();
 
@@ -65,8 +58,8 @@ export default class PluginStoreService {
     this.tablesChangedListeners.delete(listener);
   }
 
-  getTheme(): ThemeChangedNotification["args"] {
-    const styles = getComputedStyle(document.body);
+  getTheme()  {
+    const styles = getComputedStyle(this.getAppEl());
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
@@ -250,14 +243,14 @@ export default class PluginStoreService {
       workspaceId: this.store.state.workspaceId,
       connectionName: this.store.state.usedConfig.name || "",
       connectionType: this.store.state.connectionType,
-      databaseType: this.store.state.connectionType,
+      databaseType: this.store.state.connectionType as DatabaseType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
   }
 
-  serializeTab(tab: TransportOpenTab): TabResponse {
+  serializeTab(tab: TransportOpenTab) {
     if (tab.tabType === "query") {
       return {
         type: "query",
@@ -302,12 +295,17 @@ export default class PluginStoreService {
   }
 
   /* Run query in the background */
-  async runQuery(query: string): Promise<RunQueryResponse> {
+  async runQuery(query: string) {
     const results = await this.store.state.connection.executeQuery(query);
 
     return {
       results: results.map(this.serializeQueryResponse),
     };
+  }
+
+  createPluginTab(options: CreatePluginTabOptions) {
+    const transport = this.buildPluginTabInit(options);
+    this.appEventBus.emit(AppEvent.newCustomTab, transport);
   }
 
   openTab(options: OpenTabRequest['args']): void {
@@ -354,12 +352,9 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
-  buildPluginTabInit(options: {
-    manifest: Manifest;
-    viewId: string;
-    params?: JsonValue;
-    command: string;
-  }): TransportOpenTabInit<PluginTabContext> {
+  buildPluginTabInit(
+    options: CreatePluginTabOptions
+  ): TransportOpenTabInit<PluginTabContext> {
     // FIXME(azmi): duplicated code from CoreTabs.vue
     const tabItems = this.store.getters["tabs/sortedTabs"];
     let title = options.manifest.name;
@@ -388,5 +383,9 @@ export default class PluginStoreService {
         command: options.command,
       },
     };
+  }
+
+  private getAppEl() {
+    return document.body.querySelector('.beekeeper-studio-wrapper');
   }
 }

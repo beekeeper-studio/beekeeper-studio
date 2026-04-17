@@ -155,7 +155,9 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     Vue.config.productionTip = false
     Vue.use(VueHotkey, {
       "pageup": 33,
-      "pagedown": 34
+      "pagedown": 34,
+      "numadd": 107,
+      "numsub": 109
     })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
@@ -205,6 +207,8 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
       }),
       appVersion: window.platformInfo.appVersion,
       fileHelpers: window.main.fileHelpers,
+      noty: Vue.prototype.$noty,
+      confirm: app.$confirm.bind(app),
     });
     webPluginManager.initialize().then(() => {
       store.commit("webPluginManagerStatus", "ready")

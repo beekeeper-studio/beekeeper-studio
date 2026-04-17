@@ -1,7 +1,8 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import type { SshMode } from '@/common/interfaces/IConnection';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -14,8 +15,10 @@ export const ConnectionTypes = [
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
+  { name: 'GreengageDB', value: 'greengage' },
   { name: 'Oracle', value: 'oracle' },
   { name: 'Cassandra', value: 'cassandra' },
+  { name: 'ScyllaDB', value: 'scylladb' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
   { name: 'DuckDB', value: 'duckdb' },
@@ -24,7 +27,8 @@ export const ConnectionTypes = [
   { name: 'SqlAnywhere', value: 'sqlanywhere' },
   { name: 'Trino', value: 'trino' },
   { name: 'SurrealDB', value: 'surrealdb' },
-  { name: 'Redis', value: 'redis' }
+  { name: 'Redis', value: 'redis' },
+  { name: 'Bedrock', value: 'bedrock' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -55,12 +59,20 @@ export enum AzureAuthType {
   Password,
   AccessToken,
   MSIVM,
-  ServicePrincipalSecret
+  ServicePrincipalSecret,
+  CLI
+}
+
+export enum IamAuthType {
+  Key = 'iam_key',
+  File = 'iam_file',
+  CLI = 'iam_cli'
 }
 
 export const IamAuthTypes = [
-  { name: 'IAM Authentication Using Access Key and Secret Key', value: 'iam_key' },
-  { name: 'IAM Authentication Using Credentials File', value: 'iam_file' }
+  { name: 'IAM Authentication Using Access Key and Secret Key', value: IamAuthType.Key },
+  { name: 'IAM Authentication Using Credentials File', value: IamAuthType.File },
+  { name: 'AWS CLI Authentication', value: IamAuthType.CLI }
 ]
 
 // supported auth types that actually work :roll_eyes: default i'm looking at you
@@ -70,20 +82,25 @@ export const AzureAuthTypes = [
   { name: 'Azure AD SSO', value: AzureAuthType.AccessToken },
   // This may be reactivated when we move to client server architecture
   // { name: 'MSI VM', value: AzureAuthType.MSIVM },
-  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret }
+  { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret },
+  { name: 'Azure CLI Authentication', value: AzureAuthType.CLI }
 ];
 
 export interface RedshiftOptions {
+  clusterIdentifier?: string;
+  databaseGroup?: string;
+  tokenDurationSeconds?: number;
+  isServerless?: boolean;
+}
+
+export interface IamAuthOptions {
   awsProfile?: string
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
   awsRegion?: string;
-  clusterIdentifier?: string;
-  databaseGroup?: string;
-  tokenDurationSeconds?: number;
-  isServerless?: boolean;
-  authType?: string;
+  authType?: IamAuthType;
+  cliPath?: string;
 }
 
 export interface CassandraOptions {
@@ -102,6 +119,7 @@ export interface AzureAuthOptions {
   tenantId?: string;
   clientSecret?: string;
   msiEndpoint?: string;
+  cliPath?: string;
 }
 export interface LibSQLOptions {
   mode: 'url' | 'file';
@@ -168,6 +186,12 @@ export interface IDbConnectionServerSSHConfig {
   privateKey: Nullable<string>
   passphrase: Nullable<string>
   bastionHost: Nullable<string>
+  bastionPort: Nullable<number>
+  bastionUser: Nullable<string>
+  bastionPassword: Nullable<string>
+  bastionPrivateKey: Nullable<string>
+  bastionPassphrase: Nullable<string>
+  bastionMode: Nullable<SshMode>
   keepaliveInterval: number
   useAgent: boolean
 }
@@ -198,6 +222,7 @@ export interface IDbConnectionServerConfig {
   oracleConfigLocation?: string
   options?: any
   redshiftOptions?: RedshiftOptions
+  iamAuthOptions?: IamAuthOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
   azureAuthOptions?: AzureAuthOptions
@@ -234,6 +259,7 @@ export interface IBasicDatabaseClient {
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
   executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>,
+  getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]>
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
@@ -262,7 +288,7 @@ export interface IBasicDatabaseClient {
   alterPartition(changes: AlterPartitionsSpec): Promise<void>,
 
   applyChangesSql(changes: TableChanges): Promise<string>,
-  applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
+  applyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]>,
   setTableDescription(table: string, description: string, schema?: string): Promise<string>
   setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
@@ -282,6 +308,8 @@ export interface IBasicDatabaseClient {
 
   getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
   syncDatabase(): Promise<void>
+
+  getServerStatistics(): Promise<ServerStatistics | null>
 
   importStepZero(table: TableOrView): Promise<any>
   importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>

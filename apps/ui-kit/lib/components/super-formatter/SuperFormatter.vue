@@ -2,7 +2,7 @@
   <section class="BksUiKit BksSuperFormatter" ref="super-formatter">
     <div class="core-columns">
       <div v-if="canAddPresets && !addNewPreset" class="presets">
-        <label>
+        <label class="form-row">
           Preset
           <select
             @change="handlePresetChange"
@@ -26,7 +26,7 @@
         </button>
       </div>
       <div v-if="addNewPreset" class="presets">
-        <label>
+        <label class="form-row">
           Add New Preset
           <input
             type="text"
@@ -43,7 +43,16 @@
         </button>
       </div>
       <div class="formatter-settings">
-        <label class="formatter-settings__inputs">
+        <label class="formatter-settings__inputs checkbox form-row">
+          <input
+            @change="updatePreview"
+            v-model="unsavedPreset['useTabs']"
+            type="checkbox"
+            aria-label="Use Tabs"
+          >
+          <span>Use Tabs</span>
+        </label>
+        <label class="formatter-settings__inputs form-row">
           Tab Width
           <input
             @change="updatePreview"
@@ -54,19 +63,7 @@
             step="1"
           >
         </label>
-        <label class="formatter-settings__inputs switch">
-          <span class="sr-only">Use Tabs</span>
-          <span class="switch-control">
-            <input
-              @change="updatePreview"
-              v-model="unsavedPreset['useTabs']"
-              type="checkbox"
-              aria-label="Use Tabs"
-            >
-            <span class="slider" />
-          </span>
-        </label>
-        <label class="formatter-settings__inputs">
+        <label class="formatter-settings__inputs form-row">
           Keyword Case
           <select
             @change="updatePreview"
@@ -77,7 +74,7 @@
             </option>
           </select>
         </label>
-        <label class="formatter-settings__inputs">
+        <label class="formatter-settings__inputs form-row">
           Data Type Case
           <select
             @change="updatePreview"
@@ -88,7 +85,7 @@
             </option>
           </select>
         </label>
-        <label class="formatter-settings__inputs">
+        <label class="formatter-settings__inputs form-row">
           Function Case
           <select
             @change="updatePreview"
@@ -99,20 +96,7 @@
             </option>
           </select>
         </label>
-        <label class="formatter-settings__inputs switch">
-          <span class="sr-only">Logical Operator New Line</span>
-          <span class="switch-control">
-            <input
-              @change="updatePreview"
-              v-model="unsavedPreset['logicalOperatorNewline']"
-              type="checkbox"
-              aria-label="logical operator new line"
-            >
-            <span class="slider" />
-          </span>
-          <span class="slider" />
-        </label>
-        <label class="formatter-settings__inputs">
+        <label class="formatter-settings__inputs form-row">
           Expression Width
           <input
             @change="updatePreview"
@@ -123,7 +107,7 @@
             step="1"
           >
         </label>
-        <label class="formatter-settings__inputs">
+        <label class="formatter-settings__inputs form-row">
           Lines Between Queries
           <input
             @change="updatePreview"
@@ -134,73 +118,36 @@
             step="1"
           >
         </label>
-        <label class="formatter-settings__inputs switch">
-          <span class="sr-only">Dense Operators</span>
-          <span class="switch-control">
-            <input
-              @change="updatePreview"
-              v-model="unsavedPreset['denseOperators']"
-              type="checkbox"
-              aria-label="Use Dense Operators"
-            >
-            <span class="slider" />
-          </span>
+        <label class="formatter-settings__inputs checkbox form-row">
+          <input
+            @change="updatePreview"
+            v-model="unsavedPreset['logicalOperatorNewline']"
+            type="checkbox"
+            aria-label="logical operator new line"
+          >
+          <span>Logical Operator New Line</span>
         </label>
-        <label class="formatter-settings__inputs switch">
-          <span class="sr-only">New Line Before Semicolon</span>
-          <span class="switch-control">
-            <input
-              @change="updatePreview"
-              v-model="unsavedPreset['newlineBeforeSemicolon']"
-              type="checkbox"
-              aria-label="new line before semicolon"
-            >
-            <span class="slider" />
-          </span>
+        <label class="formatter-settings__inputs checkbox form-row">
+          <input
+            @change="updatePreview"
+            v-model="unsavedPreset['newlineBeforeSemicolon']"
+            type="checkbox"
+            aria-label="new line before semicolon"
+          >
+          <span>New Line Before Semicolon</span>
         </label>
-      </div>
-      <div class="formatter-buttons">
-        <div class="formatter-buttons__btn-group">
-          <button
-            class="btn btn-flat btn-small"
-            type="button"
-            @click.prevent="savePreset"
-            :disabled="!shouldBeSaved"
-            v-if="canAddPresets"
+        <label class="formatter-settings__inputs checkbox form-row">
+          <input
+            @change="updatePreview"
+            v-model="unsavedPreset['denseOperators']"
+            type="checkbox"
+            aria-label="Use Dense Operators"
           >
-            {{ saveText }}
-          </button>
-          <button
-            class="btn btn-danger"
-            type="button"
-            @click.prevent="deleteConfig"
-            v-if="canAddPresets && canDelete"
-          >
-            Delete Config
-          </button>
-        </div>
-        <div class="formatter-buttons__btn-group">
-          <button
-            @click.prevent="copyToClipboard"
-            class="btn btn-flat btn-small"
-            type="button"
-          >
-            Copy to Clipboard
-          </button>
-          <button
-            class="btn btn-primary btn-small"
-            type="button"
-            @click.prevent="applyFormat"
-          >
-            Apply
-          </button>
-        </div>
+          <span>Dense Operators</span>
+        </label>
       </div>
     </div>
     <div class="core-columns">
-      <p>
-        Preview
-      </p>
       <!--
         This formatting for pre > code is very important because it's adding all the whitespace
         to the first line of the code presented. Very silly decision
@@ -210,6 +157,44 @@
         class="language-sql"
         v-html="formattedCode"
       /></pre>
+    </div>
+    <div class="formatter-buttons">
+      <slot name="start-footer" />
+      <div class="formatter-buttons__btn-group">
+        <button
+          class="btn btn-flat btn-small"
+          type="button"
+          @click.prevent="savePreset"
+          :disabled="!shouldBeSaved"
+          v-if="canAddPresets"
+        >
+          {{ saveText }}
+        </button>
+        <button
+          class="btn btn-danger"
+          type="button"
+          @click.prevent="deleteConfig"
+          v-if="canAddPresets && canDelete"
+        >
+          Delete Config
+        </button>
+      </div>
+      <div class="formatter-buttons__btn-group">
+        <button
+          @click.prevent="copyToClipboard"
+          class="btn btn-flat btn-small"
+          type="button"
+        >
+          Copy to Clipboard
+        </button>
+        <button
+          class="btn btn-primary btn-small"
+          type="button"
+          @click.prevent="applyFormat"
+        >
+          Apply
+        </button>
+      </div>
     </div>
   </section>
 </template>
@@ -296,7 +281,6 @@ export default Vue.extend({
   },
   methods: {
     highlightCode() {
-      console.log('ohai there we are highlighting stuff')
       this.$nextTick(() => {
         const codeBlock = this.$refs.superFormatterCodeBlock
         if (codeBlock) {
@@ -386,17 +370,28 @@ export default Vue.extend({
   pre {
     flex: 1;
     min-height: 0;
-    padding: 1rem;
+    padding: 1rem 0.75rem 0.75rem;
+    margin: 0;
     overflow-x: scroll;
     overflow-y: auto;
+    background-color: var(--query-editor-bg);
+    border-radius: 8px;
+    user-select: text;
+    cursor: text;
+
+    ::selection {
+      background: var(--bks-text-editor-selected-bg-color);
+    }
   }
 
   .BksSuperFormatter {
+    --background-color: hsl(from var(--theme-bg) h s calc(l + 1));
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: 3fr 2fr; /* 3/5 and 2/5 */
-    gap: 2rem;
+    grid-template-columns: 20rem auto;
+    grid-template-rows: auto 1.75rem;
+    grid-row-gap: 1rem;
     align-items: stretch;
   }
 
@@ -407,10 +402,9 @@ export default Vue.extend({
     min-height: 0;
   }
 
-  .formatter-settings {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
+  .core-columns:first-child {
+    overflow-y: auto;
+    padding-right: 1rem;
   }
 
   .formatter-textarea {
@@ -421,78 +415,91 @@ export default Vue.extend({
   }
 
   .formatter-buttons {
-    padding-top: 2rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    grid-column-start: span 2;
+
     &__btn-group {
       display: flex;
-      gap: 1rem;
+      gap: 0.5rem;
+    }
+  }
+
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    font-size: .85rem;
+    color: var(--text);
+    line-height: 1.5;
+    border-radius: 8px;
+    padding-block: 0.5rem;
+
+    &.checkbox {
+      flex-direction: row;
+    }
+
+    &:hover {
+      background-color: color-mix(in srgb,
+        var(--theme-base) 3.5%,
+        var(--theme-bg));
+    }
+
+    select {
+      background-color: var(--background-color);
+    }
+
+    input:not([type="checkbox"]) {
+      background-color: var(--background-color);
+    }
+
+    select, input  {
+      margin-top: 2px;
+      font-size: .9rem;
     }
   }
 
   .presets {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--background-color);
+
+    &:hover {
+      background-color: color-mix(in srgb,
+        var(--theme-base) 3.5%,
+        var(--theme-bg));
+    }
+
     label {
-      width: 90%;
-    }
-    padding-bottom: 2rem;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: nowrap;
-    align-items: flex-end;
-  }
+      width: 100%;
 
-  .switch {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-
-    .switch-label {
-      font-size: 14px;
+      select {
+        width: 100%;
+      }
     }
 
-    .switch-control {
-      position: relative;
-      display: inline-block;
-      width: 2.6em;
-      height: 1.5em;
+    >.btn {
+      margin-top: 1.95rem;
+    }
 
-      input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-        position: absolute;
+    .menu-btn {
+      i.material-icons {
+        transition: all 0.2s ease-in-out;
+        color: var(--text-lighter);
       }
 
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        inset: 0;
-        background-color: rgb(from var(--theme-base) r g b / 30%);
-        border-radius: 9999px;
-        transition: 0.15s;
+      &:hover,
+      &:focus {
+        background: none;
 
-        &::before {
-          position: absolute;
-          content: "";
-          height: 1em;
-          width: 1em;
-          left: 0.3em;
-          bottom: 0.25em;
-          background-color: var(--text);
-          -webkit-transition: 0.15s;
-          transition: 0.15s;
-          border-radius: 9999px;
-        }
-      }
-
-      input:checked + .slider {
-        background-color: rgb(from var(--theme-primary) r g b / 60%);
-
-        &::before {
-          transform: translateX(1em);
+        i {
+          color: var(--bks-link-color);
         }
       }
     }
-  }
 
+    display: flex;
+    gap: 0.5rem;
+  }
 </style>

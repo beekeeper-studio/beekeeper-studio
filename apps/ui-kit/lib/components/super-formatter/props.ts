@@ -1,5 +1,5 @@
 import { PropType } from "vue"
-import { FormatOptions } from "sql-formatter"
+import { FormatOptions, FormatOptionsWithLanguage } from "sql-formatter"
 
 export default {
   value: String,
@@ -26,7 +26,7 @@ export default {
     default: () => []
   },
   formatterDialect: {
-    type: String as PropType<FormatOptions["language"]>,
+    type: String as PropType<FormatOptionsWithLanguage["language"]>,
     default: "sql",
   }
 }

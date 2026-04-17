@@ -29,10 +29,12 @@
           <li
             class="menu-item"
             :class="{'has-children': !!item.submenu, ...hoverClass(item), 'disabled-app-menu': isMenuItemDisabled(item.id)}"
-            v-for="(item, idx) in (menu.submenu || [])"
+            v-for="(item, idx) in visibleSubmenuItems(menu)"
             :key="item.id || idx"
           >
+            <div v-if="item.type === 'separator'" class="separator" />
             <a
+              v-else
               @mousedown.prevent="noop()"
               @mouseup.prevent="handle(item)"
               @mouseover.prevent="setHover(item)"
@@ -54,7 +56,9 @@
                 v-for="subitem in (item.submenu || [])"
                 :key="subitem.label"
               >
+                <div v-if="item.type === 'separator'" class="separator" />
                 <a
+                  v-else
                   @mouseover.prevent="setHover(subitem, item)"
                   :class="hoverClass(subitem)"
                   @mousedown.prevent="noop()"
@@ -140,6 +144,9 @@ export default {
   methods: {
     isMenuItemDisabled(itemId){
       return this.connectionMenuItems.includes(itemId) && !this.connected;
+    },
+    visibleSubmenuItems(menu) {
+      return (menu.submenu || []).filter(item => item.visible !== false);
     },
     getNext(array, item) {
       const selectedIndex = item ? _.indexOf(array, item) : -1
@@ -271,3 +278,12 @@ export default {
 
 }
 </script>
+
+<style scoped>
+.separator {
+  margin-block: 0.35em;
+  width: 100%;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+</style>

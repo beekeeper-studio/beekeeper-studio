@@ -745,6 +745,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
           fields: [],
           affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
+          text: result.statement.text,
           rows: [],
           rowCount: 0,
         });
@@ -756,6 +757,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
           fields: [{ id: "c0", name: "Result" }],
           affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
+          text: result.statement.text,
           rows: [{ c0: data }],
           rowCount: 1,
         });
@@ -776,6 +778,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         fields,
         affectedRows: 0, // TODO we can get this somewhere i feel like??
         command: result.statement.type,
+        text: result.statement.text,
         rows,
         rowCount: rows.length,
       });
@@ -1044,8 +1047,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return { totalRows, columns, cursor };
   }
 
-  queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
-    throw new Error("Method not implemented.");
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const cursorOpts = {
+      query,
+      params: [],
+      client: this.client,
+      chunkSize
+    }
+
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+
+    return {
+      totalRows,
+      columns,
+      cursor: new ClickHouseCursor(cursorOpts)
+    }
   }
 
   wrapIdentifier(value: string): string {

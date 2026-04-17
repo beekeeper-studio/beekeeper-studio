@@ -1,4 +1,5 @@
 import type { BksVersion } from '@/lib/license';
+import type { Platform } from '@/types';
 
 export interface IPlatformInfo {
   isWindows: boolean,
@@ -10,6 +11,7 @@ export interface IPlatformInfo {
   sessionType: string,
   isWayland: boolean,
   isSnap: string,
+  isFlatpak: boolean,
   isPortable: string,
   isDevelopment: boolean,
   isAppImage: boolean,
@@ -23,7 +25,7 @@ export interface IPlatformInfo {
   },
   debugEnabled: boolean,
   DEBUG: string,
-  platform: "linux" | "windows" | "mac",
+  platform: Platform,
   darkMode: boolean,
   userDirectory: string,
   downloadsDirectory: string,

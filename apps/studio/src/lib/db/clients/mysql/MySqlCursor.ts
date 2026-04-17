@@ -12,8 +12,8 @@ interface Conn {
 }
 
 interface MiniCursor {
-  q: Query,
-  connection: PoolConnection
+  q: Query.Query,
+  connection: PoolConnection.PoolConnection
 }
 
 export class MysqlCursor extends BeeCursor {
@@ -63,7 +63,7 @@ export class MysqlCursor extends BeeCursor {
     this.end = true
     this.cursor?.connection.destroy()
   }
-  
+
   private handleError(error: Error) {
     log.debug("handling error")
     this.error = error
@@ -93,7 +93,7 @@ export class MysqlCursor extends BeeCursor {
   async cancel(): Promise<void> {
     log.debug('cursor cancelled')
     this.cursor?.connection.destroy()
-    
+
   }
 
 }

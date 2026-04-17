@@ -183,12 +183,12 @@
               v-model="dryRun"
             >
           </x-button>
-          <x-button
-            @click.prevent="formatterPreset"
-            class="btn btn-flat btn-small"
-          >
-            Open Query Formatter
-          </x-button>
+          <!-- <x-button -->
+          <!--   @click.prevent="formatterPreset" -->
+          <!--   class="btn btn-flat btn-small" -->
+          <!-- > -->
+          <!--   Open Query Formatter -->
+          <!-- </x-button> -->
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -196,18 +196,18 @@
             Save
           </x-button>
 
-          <x-buttons class="">
+          <x-buttons class="" v-tooltip="runButtonTooltip">
             <x-button
               class="btn btn-primary btn-small"
               v-tooltip="'Ctrl+Enter'"
               @click.prevent="submitTabQuery"
-              :disabled="this.tab.isRunning || running"
+              :disabled="runButtonDisabled"
             >
               <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
-              :disabled="this.tab.isRunning || running"
+              :disabled="runButtonDisabled"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -271,12 +271,15 @@
       <result-table
         ref="table"
         v-else-if="showResultTable"
+        :editData="resultEditData"
+        :editingData="editingResult"
         :focus="focusingElement === 'table'"
         :active="active"
         :table-height="tableHeight"
         :result="result"
         :query="query"
         :tab="tab"
+        :isManualCommit="isManualCommit"
         :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
@@ -315,6 +318,15 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
+        :editing="editingResult"
+        :changesCount="$refs.table?.pendingChangesCount"
+        :changesString="$refs.table?.pendingChangesString"
+        :result-editable="resultEditable"
+        @editResults="editResults"
+        @stopEditing="stopEditing"
+        @saveChanges="saveChanges"
+        @copyToSql="copyToSql"
+        @discardChanges="discardChanges"
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
@@ -340,15 +352,6 @@
             <p>
               Super Formatter
             </p>
-            <button
-              type="button"
-              class="btn btn-flat btn-fab"
-              aria-label="Close super formatter"
-              title="Close super formatter"
-              @click="handleFormatterPresetModal({ showFormatter: false })"
-            >
-              X
-            </button>
           </div>
           <bks-super-formatter
             :value="unsavedText"
@@ -362,7 +365,19 @@
             @bks-save-preset="savePreset"
             @bks-create-preset="savePreset"
             @bks-delete-preset="deletePreset"
-          />
+          >
+            <template #start-footer>
+              <button
+                type="button"
+                class="btn btn-small btn-flat"
+                aria-label="Close super formatter"
+                title="Close super formatter"
+                @click="handleFormatterPresetModal({ showFormatter: false })"
+              >
+                Cancel
+              </button>
+            </template>
+          </bks-super-formatter>
         </div>
       </modal>
     </portal>
@@ -402,6 +417,13 @@
                   v-model="query.title"
                   autofocus
                 >
+              </div>
+              <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
+                <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+                <select v-model="query.queryFolderId" :disabled="!isUltimate && !isCloud">
+                  <option :value="null">No folder</option>
+                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+                </select>
               </div>
             </div>
           </div>
@@ -513,14 +535,14 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
-  import { TableOrView } from "@/lib/db/models";
+  import { FieldEditData, TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
-  import { IdentifyResult } from 'sql-query-identifier/defines'
+  import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -596,16 +618,20 @@
         warningNoty: null,
         showTransactionActiveTooltip: false,
         enteredTransactionFromIdent: false,
+        editingResult: false,
+        resultsEditData: [],
+        resultEditableMap: []
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
       }),
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
+      ...mapState('data/queryFolders', { queryFolders: 'items' }),
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
@@ -686,6 +712,32 @@
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
       },
+      runButtonTooltip() {
+        if (this.tab.isRunning || this.running) {
+          return "Query is already running."
+        } else if (this.editingResult && this.changesCount > 0) {
+          return "Discard or apply your changes to run queries";
+        } else {
+          return null
+        }
+      },
+      runButtonDisabled() {
+        return this.tab.isRunning ||
+          this.running ||
+          (this.editingResult && this.changesCount > 0);
+      },
+      changesCount() {
+        return this.$refs.table?.pendingChangesCount;
+      },
+      pendingChangesString() {
+        return this.$refs.table?.pendingChangesString;
+      },
+      resultEditData() {
+        return this.resultsEditData[this.selectedResult]
+      },
+      resultEditable() {
+        return this.resultEditableMap[this.selectedResult]
+      },
       result() {
         return this.results[this.selectedResult]
       },
@@ -746,7 +798,7 @@
           }
           const values = Object.values(this.queryParameterValues) as string[];
           const convertedParams = convertParamsForReplacement(placeholders, values);
-          query = deparameterizeQuery(query, this.dialect, convertedParams, this.$bksConfig.db[this.dialect]?.paramTypes);
+          query = deparameterizeQuery(query, this.dialect, convertedParams, this.paramTypes);
         } catch (ex) {
           log.error("Unable to deparameterize query", ex)
         }
@@ -819,7 +871,8 @@
         if (this.dialect === 'redis') {
           return {};
         }
-        return this.$bksConfig.db[this.dialect]?.paramTypes
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        return this.$bksConfig.db[dbType]?.paramTypes
       },
       identifierDialect() {
         return findSqlQueryIdentifierDialect(this.queryDialect)
@@ -847,6 +900,9 @@
       },
     },
     watch: {
+      selectedResult() {
+        this.editingResult = false
+      },
       error() {
         this.errorMarker = null
         if (this.dialect === 'postgresql' && this.error && this.error.position) {
@@ -1112,6 +1168,47 @@
           this.runningQuery = null;
         }
       },
+      stopEditing() {
+        this.editingResult = false;
+      },
+      async editResults() {
+        if (this.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to edit query result data")
+          return;
+        }
+        if (!this.resultsEditData[this.selectedResult]) {
+          const resultEditData: FieldEditData[] = await this.connection.getResultEditData(this.result?.text, this.result.fields);
+
+
+          const mapped = new Map(resultEditData.map((e) => [e.id, e]));
+          this.$set(this.resultsEditData, this.selectedResult, mapped)
+          await this.$nextTick();
+          this.$refs.table.rebuildColumns()
+
+          if (!resultEditData.some((e) => e.editable)) {
+            this.$noty.warning("There is not enough information in the result set to generate an update query. Make sure all primary keys are present.")
+            this.$set(this.resultEditableMap, this.selectedResult, false)
+            await this.$nextTick();
+            return;
+          }
+        }
+        this.editingResult = true;
+      },
+      async saveChanges() {
+        // This covers the instance where someone runs a query, toggles manual commit on, and then makes edits and tries to save them. This ensures it will then be inside a transaction
+        if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
+          await this.manualBegin();
+        }
+
+        await this.$refs.table.saveChanges();
+        this.editingResult = false;
+      },
+      copyToSql() {
+        this.$refs.table.copyToSql();
+      },
+      discardChanges() {
+        this.$refs.table.discardChanges();
+      },
       download(format) {
         this.$refs.table.download(format)
       },
@@ -1159,9 +1256,18 @@
           try {
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
+            payload.excerpt = payload.text.substr(0, 250)
             this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
+            try {
+              const savedQuery = await this.$store.dispatch('data/queries/findOne', id)
+              this.fullQuery = savedQuery
+            } catch (e) {
+              log.error("Could not find saved query", e);
+              // fallback to payload
+              this.fullQuery = payload;
+            }
 
             this.$nextTick(async () => {
               this.unsavedText = this.query.text
@@ -1215,6 +1321,8 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
+        if (this.runButtonDisabled) return;
+
         // run the currently hilighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
@@ -1227,6 +1335,8 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
+        if (this.runButtonDisabled) return;
+
         // run the currently selected query (if there are multiple) to a file, else all sql
         const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
@@ -1235,7 +1345,7 @@
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if(this.running) return;
+        if (this.runButtonDisabled) return;
         if (this.currentlySelectedQuery) {
           this.runningType = 'current'
           await this.submitQuery(this.currentlySelectedQuery.text)
@@ -1245,7 +1355,7 @@
         }
       },
       async submitTabQuery() {
-        if(this.running) return;
+        if (this.runButtonDisabled) return;
         const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
         this.runningType = this.hasSelectedText ? 'selection' : 'everything'
         if (text.trim()) {
@@ -1277,16 +1387,15 @@
 
         this.showKeepAlive = false
         this.maybeCloseWarningNoty();
-        this.tab.isRunning = true
-        this.updateTab();
-        this.running = true
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
+        this.resultsEditData = []
+        this.resultEditableMap = []
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
@@ -1317,6 +1426,10 @@
             }
           }
 
+          this.tab.isRunning = true
+          this.updateTab();
+          this.running = true
+
           const query = this.deparameterizedQuery
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
@@ -1332,6 +1445,7 @@
               body: `${this.tab.title} has been executed successfully.`,
             });
           }
+          log.info("RESULTS: ", results)
 
           // eslint-disable-next-line
           // @ts-ignore
@@ -1340,23 +1454,19 @@
           results.forEach((result, idx) => {
             result.rowCount = result.rowCount || 0
 
-            // TODO (matthew): remove truncation logic somewhere sensible
-            totalRows += result.rowCount
-            if (result.rowCount > this.$bksConfig.ui.queryEditor.maxResults) {
-              result.rows = _.take(result.rows, this.$bksConfig.ui.queryEditor.maxResults)
-              result.truncated = true
-              result.totalRowCount = result.rowCount
-            }
-
+            totalRows += result.totalRowCount
             const identifiedTables = identification[idx]?.tables || []
             if (identifiedTables.length > 0) {
-              result.tableName = identifiedTables[0]
+              result.tableName = identifiedTables[0]?.name
+              result.schema = identifiedTables[0]?.schema
             } else {
               result.tableName = "mytable"
+              result.schema = this.defaultSchema
             }
-            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
+          this.resultsEditData = this.results.map(() => null)
+          this.resultEditableMap = this.results.map(() => true)
 
           // const defaultResult = Math.max(results.length - 1, 0)
 

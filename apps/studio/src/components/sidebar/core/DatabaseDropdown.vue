@@ -26,7 +26,7 @@
         <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
       </a>
       <a
-        v-if="!usedConfig.readOnlyMode"
+        v-if="!usedConfig?.readOnlyMode"
         class="refresh"
         @click.prevent="$modal.show('config-add-database')"
         :title="'Add Database'"

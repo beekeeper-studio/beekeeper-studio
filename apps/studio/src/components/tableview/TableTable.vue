@@ -412,7 +412,7 @@ export default Vue.extend({
       return _.isEmpty(this.data);
     },
     isCassandra() {
-      return this.connectionType === 'cassandra'
+      return ['cassandra', 'scylladb'].includes(this.connectionType)
     },
     queryDialect() {
       return this.dialectData?.queryDialectOverride ?? this.dialect;
@@ -620,7 +620,7 @@ export default Vue.extend({
       return signs
     },
     editablePaths() {
-      if (!this.table.columns) return []
+      if (!this.table.columns || !this.editable) return []
 
       const paths = []
       for (const column of this.table.columns) {
@@ -971,7 +971,8 @@ export default Vue.extend({
     },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const selectedRows = this.getSelectedRows()
+      const rows = selectedRows.length > 0 ? selectedRows : (range ? range.getRows() : [])
       this.addRowsToPendingDeletes(rows);
     },
     headerFormatter(_cell, formatterParams) {
@@ -1091,12 +1092,23 @@ export default Vue.extend({
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
+      this.tabulator.on('historyUndo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
+      })
+      this.tabulator.on('historyRedo', (action, component) => {
+        if (action === "cellEdit") {
+          this.cellEdited(component);
+        }
+      })
 
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
+      const selectedRowsCount = this.getSelectedRows().length
       return [
         {
           label:
@@ -1108,7 +1120,9 @@ export default Vue.extend({
         },
         {
           label:
-            range.getTopEdge() === range.getBottomEdge()
+            selectedRowsCount > 1
+              ? createMenuItem(`Delete ${selectedRowsCount} selected rows`, "Delete")
+              : range.getTopEdge() === range.getBottomEdge()
               ? createMenuItem("Delete row", "Delete")
               : createMenuItem(`Delete rows ${rowRangeLabel}`, "Delete"),
           action: () => {
@@ -1375,6 +1389,7 @@ export default Vue.extend({
       } else if (currentEdit?.oldValue == cell.getValue()) {
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
+        this.updateJsonViewer()
         return
       }
 
@@ -1641,6 +1656,7 @@ export default Vue.extend({
 
           return
         } finally {
+          this.updateJsonViewerSidebar()
           if (!this.active) {
             this.forceRedraw = true
           }
@@ -1806,7 +1822,8 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
-            await this.getTableKeys();
+            // Removed getTableKeys() call here to fix 5-10 second performance regression
+            // Keys are now fetched only on initialization and explicit refresh (issue #3775)
             resolve({
               last_page: 1,
               data
@@ -1865,6 +1882,10 @@ export default Vue.extend({
 
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
+
+      // Re-fetch table keys on explicit refresh to pick up schema changes (issue #3775)
+      await this.getTableKeys()
+
       await this.tabulator.replaceData()
       await this.tabulator.setColumns(this.tableColumns)
       this.tabulator.setPage(page)
@@ -2048,6 +2069,9 @@ export default Vue.extend({
       ])
     },
     handleJsonValueChange({key, value}) {
+      // this is just a safeguard, we shouldn't hit it but if we do it can save us from catastrophe
+      if (!this.editable) return;
+
       const column = this.table.columns.find((c) => c.columnName === key);
       if (column) {
         const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'

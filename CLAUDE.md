@@ -162,3 +162,77 @@ Test files are organized in `apps/studio/tests/`:
 ## Database Support
 
 The app supports 15+ databases including PostgreSQL, MySQL, SQLite, SQL Server, Oracle, BigQuery, MongoDB, and more. Database-specific connection logic is in `src/components/connection/` with corresponding client implementations in `src/lib/db/`.
+
+## Documentation Translation Guidelines
+
+The documentation site (`docs/`) uses MkDocs Material with the `mkdocs-static-i18n` plugin for multi-language support. See `mkdocs.yml` for the list of 10 target languages.
+
+### File Structure
+
+Translations use **suffix-based naming**:
+- English (default): `filename.md`
+- Spanish: `filename.es.md`
+- Portuguese (Brazil): `filename.pt-BR.md`
+- Other languages: `filename.{locale}.md`
+
+Translation files live alongside the original English files in the same directory.
+
+### Creating Translations
+
+1. **Copy the English file** as a starting point
+2. **Keep the same frontmatter structure** (title, summary, icons, etc.) but translate the values
+3. **Translate all content** including:
+   - Frontmatter `title` and `summary`
+   - All body text and headings
+   - Alt text for images
+   - Admonition titles (e.g., `!!! note "Translated Title"`)
+4. **Do NOT translate**:
+   - File paths and URLs
+   - Code blocks (unless comments need translation)
+   - Technical terms that are commonly used in English (e.g., "plugin", "SQL")
+   - Brand names (e.g., "Beekeeper Studio", "GitHub")
+
+### Navigation Translations
+
+Add `nav_translations` in `mkdocs.yml` under each language locale to translate menu items:
+
+```yaml
+- locale: es
+  name: Espanol
+  nav_translations:
+    Introduction: Introduccion
+    Features: Caracteristicas
+```
+
+### Adding a New Language
+
+1. Add the locale to `mkdocs.yml` under `plugins > i18n > languages`
+2. Include `site_name`, `site_description`, and `nav_translations`
+3. Create `.{locale}.md` files for each page in `docs/`
+4. Test with `mkdocs serve` from the `studio/` directory
+
+### Finding Files to Translate
+
+English is the primary language. To find all files needing translation for a new language:
+
+1. Scan `docs/` recursively for all `.md` files
+2. Exclude files that already have a locale suffix (e.g., `.es.md`, `.de.md`)
+3. For each English file found, create the corresponding `.{locale}.md` translation
+
+Example: If you find `docs/user_guide/security.md`, create `docs/user_guide/security.es.md` for Spanish.
+
+### README Translations
+
+The main `README.md` has translations in the repo root using the pattern `README-{locale}.md` or `README.{locale}.md`:
+- `README.md` - English (primary)
+- `README-es.md` - Spanish
+- `README.pt-br.md` - Portuguese (Brazil)
+
+When adding a new README translation:
+1. Create `README-{locale}.md` in the repo root
+2. Add a link to it in the translation line at the top of `README.md`
+
+The first line of `README.md` links to all translations using the format:
+```markdown
+🌐 [ES](README-es.md) | [PT-BR](README.pt-br.md)
+```
