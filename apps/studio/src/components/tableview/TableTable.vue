@@ -1026,7 +1026,14 @@ export default Vue.extend({
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
         schema: this.table.schema,
-        persistenceID: this.tableId,
+        appDBPersistence: !this.usedConfig?.id
+          ? undefined
+          : {
+            workspaceId: this.workspaceId ?? -1,
+            connectionId: this.usedConfig?.id,
+            schema: this.table.schema || '',
+            table: this.table.name,
+          },
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
             const ranges = cell.getRanges();

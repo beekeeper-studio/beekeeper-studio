@@ -15,6 +15,8 @@ import { QueryFolder } from "@/common/appdb/models/QueryFolder";
 import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
 import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
+import { TabulatorState } from "@/common/appdb/models/TabulatorState";
+import { TransportTabulatorState } from "@/common/transport/TransportTabulatorState";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
@@ -174,6 +176,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
+  ...handlersFor<TransportTabulatorState>('tabulatorState', TabulatorState),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

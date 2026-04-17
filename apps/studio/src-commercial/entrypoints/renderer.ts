@@ -37,6 +37,7 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
+import { AppDBPersistenceTabulatorModule } from '@/plugins/AppDBPersistenceTabulatorModule'
 import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
@@ -98,7 +99,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule]);
+    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule, AppDBPersistenceTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
 
     (window as any).$ = $;
