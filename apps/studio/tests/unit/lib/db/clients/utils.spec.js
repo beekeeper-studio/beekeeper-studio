@@ -1,4 +1,5 @@
-import { buildSchemaFilter, buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
+import { buildSchemaFilter, buildSelectTopQuery, buildInsertQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
+import knexLib from 'knex';
 
 describe('Escape String', () => {
   it("should escape single quotes", () => {
@@ -106,6 +107,49 @@ describe('buildSchemaFilter SQL injection', () => {
     expect(result).toContain("'''; DROP TABLE users; --'")
   })
 })
+
+describe('buildInsertQuery', () => {
+  const knex = knexLib({ client: 'better-sqlite3', connection: { filename: ':memory:' } });
+
+  afterAll(() => knex.destroy());
+
+  it('should not alter regular scalar values', () => {
+    const insert = {
+      table: 'test_table',
+      schema: null,
+      data: [{ id: 1, name: 'hello', score: 42 }],
+    };
+    const query = buildInsertQuery(knex, insert);
+    expect(query).toContain("'hello'");
+    expect(query).toContain('42');
+  });
+
+  it('should preserve null values as-is', () => {
+    const insert = {
+      table: 'test_table',
+      schema: null,
+      data: [{ id: 1, metadata: null }],
+    };
+    const query = buildInsertQuery(knex, insert);
+    expect(query.toLowerCase()).toContain('null');
+    expect(query).not.toContain("'null'");
+  });
+
+  it('should produce valid SQL when data is pre-stringified JSON', () => {
+    // getInsertQuery stringifies JSON before calling buildInsertQuery,
+    // so buildInsertQuery receives strings, not raw objects/arrays.
+    const insert = {
+      table: 'test_table',
+      schema: null,
+      data: [{ id: 1, metadata: '[1,2,3]', config: '{"key":"value"}' }],
+    };
+    const query = buildInsertQuery(knex, insert);
+    expect(query).toContain("'[1,2,3]'");
+    expect(query).toContain("'{\"key\":\"value\"}'");
+    const valueMatches = query.match(/\bvalues\b/gi);
+    expect(valueMatches).toHaveLength(1);
+  });
+});
 
 describe('isAllowedReadOnly', () => {
   it('Should return as a read only query', () => {
