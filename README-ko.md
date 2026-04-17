@@ -25,29 +25,30 @@ Beekeeper Studio는 무료로 다운로드할 수 있으며, 가입, 등록, 신
 <!-- Don't edit this, it gets built automatically from docs/includes/supported_databases.md -->
 <!-- SUPPORT_BEGIN -->
 
-| 데이터베이스                                              | 지원                         | Community | 유료 버전 |                             Beekeeper 링크 |
+| Database                                                 | Support                      | Community | Paid Editions |                             Beekeeper Links |
 | :------------------------------------------------------- | :--------------------------- | :-------: | :------: | -----------------------------------------: |
-| [PostgreSQL](https://postgresql.org)                     | ⭐ 완전 지원                 |    ✅     |    ✅    |  [기능](https://beekeeperstudio.io/db/postgres-client) |
-| [MySQL](https://www.mysql.com/)                          | ⭐ 완전 지원                 |    ✅     |    ✅    |  [기능](https://beekeeperstudio.io/db/mysql-client)|
-| [SQLite](https://sqlite.org)                             | ⭐ 완전 지원                 |    ✅     |    ✅    |   [기능](https://beekeeperstudio.io/db/sqlite-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/sqlite) |
-| [SQL Server](https://www.microsoft.com/en-us/sql-server) | ⭐ 완전 지원                 |    ✅     |    ✅    |   [기능](https://beekeeperstudio.io/db/sql-server-client)  |
-| [Amazon Redshift](https://aws.amazon.com/redshift/)      | ⭐ 완전 지원                 |    ✅     |    ✅    |    [기능](https://beekeeperstudio.io/db/redshift-client) |
-| [CockroachDB](https://www.cockroachlabs.com/)            | ⭐ 완전 지원                 |    ✅     |    ✅    | [기능](https://beekeeperstudio.io/db/cockroachdb-client)|
-| [MariaDB](https://mariadb.org/)                          | ⭐ 완전 지원                 |    ✅     |    ✅    |     [기능](https://beekeeperstudio.io/db/mariadb-client) |
-| [TiDB](https://pingcap.com/products/tidb/)               | ⭐ 완전 지원                 |    ✅     |    ✅    |        [기능](https://beekeeperstudio.io/db/tidb-client) |
-| [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ 완전 지원                 |    ✅      |    ✅    |    [기능](https://beekeeperstudio.io/db/google-big-query-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
-| [Redis](https://redis.io/)                               | ⭐ 완전 지원                 |    ✅    |    ✅    |       [기능](https://www.beekeeperstudio.io/db/redis-client/) |
-| [Oracle Database](https://www.oracle.com/database/)      | ⭐ 완전 지원                 |           |    ✅    |      [기능](https://beekeeperstudio.io/db/oracle-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
-| [Cassandra](http://cassandra.apache.org/)                | ⭐ 완전 지원                 |           |    ✅    |   [기능](https://beekeeperstudio.io/db/cassandra-client) |
-| [Firebird](https://firebirdsql.org/)                     | ⭐ 완전 지원                 |           |    ✅    |    [기능](https://beekeeperstudio.io/db/firebird-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
-| [LibSQL](https://libsql.org/)                            | ⭐ 완전 지원                 |          |    ✅    |      [기능](https://beekeeperstudio.io/db/libsql-client) |
-| [ClickHouse](https://clickhouse.tech/)                   | ⭐ 완전 지원                 |         |    ✅    |  [기능](https://www.beekeeperstudio.io/db/clickhouse-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse) |
-| [DuckDB](https://duckdb.org/)                            | ⭐ 완전 지원                 |         |    ✅    |      [기능](https://www.beekeeperstudio.io/db/duckdb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
-| [SQL Anywhere](https://www.sap.com/products/technology-platform/sql-anywhere.html)  | ⭐ 완전 지원    |           |    ✅    |      [기능](https://www.beekeeperstudio.io/db/sql-anywhere-client/) |
-| [MongoDB](https://www.mongodb.com/)                      | ⭐ 완전 지원                 |          |    ✅    |     [기능](https://www.beekeeperstudio.io/db/mongodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
-| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ 완전 지원              |           |    ✅    |    [기능](https://www.beekeeperstudio.io/db/trino-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/trino/) |
-| [Snowflake](https://www.snowflake.com/)                  | ⏳ 곧 출시                   |           |    ✅    |   -- |
-| [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🗓️ 계획됨                   |           |    ✅    |       -- |
+| [PostgreSQL](https://postgresql.org)                     | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/postgres-client) |
+| [MySQL](https://www.mysql.com/)                          | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/mysql-client)|
+| [SQLite](https://sqlite.org)                             | ⭐ Full Support              |    ✅     |    ✅    |   [Features](https://beekeeperstudio.io/db/sqlite-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/sqlite) |
+| [SQL Server](https://www.microsoft.com/en-us/sql-server) | ⭐ Full Support              |    ✅     |    ✅    |   [Features](https://beekeeperstudio.io/db/sql-server-client)  |
+| [Amazon Redshift](https://aws.amazon.com/redshift/)      | ⭐ Full Support              |    ✅     |    ✅    |    [Features](https://beekeeperstudio.io/db/redshift-client) |
+| [CockroachDB](https://www.cockroachlabs.com/)            | ⭐ Full Support              |    ✅     |    ✅    | [Features](https://beekeeperstudio.io/db/cockroachdb-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/cockroachdb) |
+| [MariaDB](https://mariadb.org/)                          | ⭐ Full Support              |    ✅     |    ✅    |     [Features](https://beekeeperstudio.io/db/mariadb-client) |
+| [TiDB](https://pingcap.com/products/tidb/)               | ⭐ Full Support              |    ✅     |    ✅    |        [Features](https://beekeeperstudio.io/db/tidb-client) |
+| [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ Full Support             |    ✅      |    ✅    |    [Features](https://beekeeperstudio.io/db/google-big-query-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
+| [Redis](https://redis.io/)                               | ⭐ Full Support               |    ✅    |    ✅    |       [Features](https://www.beekeeperstudio.io/db/redis-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/redis) |
+| [Oracle Database](https://www.oracle.com/database/)      | ⭐ Full Support              |           |    ✅    |      [Features](https://beekeeperstudio.io/db/oracle-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
+| [Cassandra](http://cassandra.apache.org/)                | ⭐ Full Support              |           |    ✅    |   [Features](https://beekeeperstudio.io/db/cassandra-client) |
+| [Firebird](https://firebirdsql.org/)                     | ⭐ Full Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
+| [LibSQL](https://libsql.org/)                            | ⭐ Full Support               |          |    ✅    |      [Features](https://beekeeperstudio.io/db/libsql-client) |
+| [ClickHouse](https://clickhouse.tech/)                   | ⭐ Full Support                |         |    ✅    |  [Features](https://www.beekeeperstudio.io/db/clickhouse-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse) |
+| [DuckDB](https://duckdb.org/)                            | ⭐ Full Support                |         |    ✅    |      [Features](https://www.beekeeperstudio.io/db/duckdb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
+| [SQL Anywhere](https://www.sap.com/products/technology-platform/sql-anywhere.html)  | ⭐ Full Support    |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/sql-anywhere-client/) |
+| [MongoDB](https://www.mongodb.com/)                      | ⭐ Full Support               |          |    ✅    |     [Features](https://www.beekeeperstudio.io/db/mongodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
+| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ Full Support                |           |    ✅    |    [Features](https://www.beekeeperstudio.io/db/trino-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/trino/) |
+| [SurrealDB](https://surrealdb.com/)                      | ⭐ Full Support               |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/surrealdb) |
+| [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
+| [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🗓️ Planned               |           |    ✅    |       -- |
 
 
 

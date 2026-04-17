@@ -6,15 +6,15 @@ import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { fromIni } from "@aws-sdk/credential-providers";
 import { Signer } from "@aws-sdk/rds-signer";
-import globals from "@/common/globals";
 import {
   AWSCredentials
 } from "@/lib/db/authentication/amazon-redshift";
 import { IamAuthOptions, IamAuthType, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AuthOptions } from "@/lib/db/authentication/azure";
 import { spawn } from "child_process";
-import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
+import { loadSharedConfigFiles } from "@smithy/shared-ini-file-loader";
 import { AwsCredentialIdentity, RuntimeConfigAwsCredentialIdentityProvider } from '@aws-sdk/types'
+import platformInfo from '@/common/platform_info'
 
 const log = logRaw.scope('db/util')
 
@@ -48,17 +48,17 @@ export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   const { schema, only, ignore } = filter
 
   if (schema) {
-    return `${schemaField} = '${schema}'`;
+    return `${schemaField} = '${escapeString(schema)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${schemaField} IN (${only.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${schemaField} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${schemaField} NOT IN (${ignore.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${schemaField} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');
@@ -437,6 +437,18 @@ export async function refreshTokenIfNeeded(iamOptions: IamAuthOptions, server: a
   return resolvedPw;
 }
 
+export function sanitizeCommandPath(path: string): string {
+  if (!path) return path;
+
+  if (platformInfo.isWindows) {
+    const escaped = path.replace(/"/g, '""');
+    return `"${escaped}"`;
+  } else {
+    const escaped = path.replace(/'/g, "'\\''");
+    return `'${escaped}'`;
+  }
+}
+
 export async function getAWSCLIToken(server: IDbConnectionServerConfig, options: IamAuthOptions): Promise<string> {
   if (!options?.cliPath) {
     throw new Error('AZ command not specified');
@@ -449,7 +461,7 @@ export async function getAWSCLIToken(server: IDbConnectionServerConfig, options:
   }
 
   return new Promise<string>((resolve, reject) => {
-    const proc = spawn(options.cliPath, [
+    const proc = spawn(sanitizeCommandPath(options.cliPath), [
       'rds',
       'generate-db-auth-token',
       '--hostname',
@@ -461,7 +473,7 @@ export async function getAWSCLIToken(server: IDbConnectionServerConfig, options:
       '--username',
       server.user,
       ...extraArgs
-    ]);
+    ], { shell: true });
 
     let stdout = '';
     let stderr = '';

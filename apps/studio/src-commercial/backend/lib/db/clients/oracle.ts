@@ -51,6 +51,7 @@ import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderB
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
 import Client_Oracledb from '@shared/lib/knex-oracledb';
+import fs from 'fs';
 
 const log = rawLog.scope('oracle')
 
@@ -59,6 +60,12 @@ oracle.fetchAsString = [oracle.CLOB]
 oracle.fetchAsBuffer = [oracle.BLOB]
 
 let oracleInitialized = false
+let oracleInitConfigDir: string | null = null
+
+export function _resetOracleStateForTesting() {
+  oracleInitialized = false
+  oracleInitConfigDir = null
+}
 
 export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
   pool: oracle.Pool;
@@ -227,7 +234,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return this.version
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     const insertQueries = buildInsertQueries(this.knex, changes.inserts)
     const updateQueries = buildUpdateQueries(this.knex, changes.updates)
     const deleteQueries = buildDeleteQueries(this.knex, changes.deletes)
@@ -238,7 +245,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       const selectQueries = buildSelectQueriesFromUpdates(this.knex, changes.updates)
       queries.push(...selectQueries)
     }
-    const results = await this.driverExecuteMultiple(queries.join(";"))
+    const results = await this.driverExecuteMultiple(queries.join(";"), { tabId })
     const selectResults = changes.updates ? results.slice(results.length - changes.updates?.length, -1) : []
     return selectResults
   }
@@ -778,17 +785,42 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     const configLocation = this.platformPath(this.server.config.oracleConfigLocation)
 
     if (cliLocation && !oracleInitialized) {
-      const payload = {}
-      payload['libDir'] = cliLocation
+      // Validate paths before calling initOracleClient — once it's called
+      // (even if it fails) it can never be called again in this process.
+      if (!fs.existsSync(cliLocation)) {
+        throw new Error(`Oracle Instant Client directory does not exist: ${cliLocation}`)
+      }
+      if (configLocation && !fs.existsSync(configLocation)) {
+        throw new Error(`Oracle configuration directory does not exist: ${configLocation}`)
+      }
+
+      const payload: Record<string, string> = { libDir: cliLocation }
       if (configLocation) {
-        payload['configDir'] = configLocation
+        payload.configDir = configLocation
       }
       log.debug("initializing oracle client with", payload)
-      oracle.initOracleClient(payload)
+      try {
+        oracle.initOracleClient(payload)
+      } catch (err) {
+        // initOracleClient can only be called once per process — even if it
+        // fails, a second call will crash the native addon (DPI-1050).
+        // Mark it as initialized so we never call it again.
+        oracleInitialized = true
+        oracleInitConfigDir = configLocation || null
+        throw new Error(`Failed to initialize Oracle client: ${err.message}`)
+      }
       oracleInitialized = true
+      oracleInitConfigDir = configLocation || null
     } else {
       if (!cliLocation) {
         log.warn("Oracle is connecting using THIN mode -- some functionality might not be supported. Provide a path to the Oracle Instant client for full functionality")
+      }
+      if (cliLocation && oracleInitialized && configLocation && configLocation !== oracleInitConfigDir) {
+        throw new Error(
+          `Oracle configuration directory cannot be changed after the client has been initialized. ` +
+          `Current: "${oracleInitConfigDir || '(none)'}",  requested: "${configLocation}". ` +
+          `Please restart Beekeeper Studio to use a different configuration directory.`
+        )
       }
     }
 
@@ -809,7 +841,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       if (user) poolConfig['user'] = user
       if (password) poolConfig['password'] = password
     } else {
-      const { host, port, serviceName, ssl } = this.server.config
+      const { serviceName, ssl } = this.server.config
+      const host = this.server.sshTunnel ? this.server.config.localHost : this.server.config.host
+      const port = this.server.sshTunnel ? this.server.config.localPort : this.server.config.port
       const scheme = ssl ? 'tcps://' : ''
       const str = `${scheme}${host}:${port}/${serviceName}`
       poolConfig = {
@@ -819,7 +853,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         connectString: str,
       }
     }
-    // we only do this in thin mode
+    // In thin mode (no instant client), also pass configDir directly to the pool
     if (configLocation && !cliLocation) {
       poolConfig['configDir'] = configLocation
     }
@@ -964,10 +998,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            await this.driverExecuteMultiple(text, { connection, tabId })
+            await this.executeQuery(text, { connection, tabId })
           ])
           if (!data) return []
-          return this.parseResults(data)
+          return data;
         } catch (err) {
           if (canceling) {
             console.warn('user cancelled query execution')
@@ -1010,8 +1044,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     }
   }
 
-  async executeQuery(query: string): Promise<NgQueryResult[]> {
-    const results = await this.driverExecuteMultiple(query)
+  async executeQuery(query: string, options?: any): Promise<NgQueryResult[]> {
+    const results = await this.driverExecuteMultiple(query, options)
     return this.parseResults(results)
   }
 
@@ -1027,7 +1061,8 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     const fields = this.metaToFields(result.result.metaData)
     const fieldIds = fields?.map((f) => f.id) || []
     return {
-      command: result.info.text,
+      command: result.info.type,
+      text: result.info.text,
       rowCount: result.result.rows?.length || 0,
       affectedRows: result.result.rowsAffected || 0,
       rows: result.result.rows?.map((r: any) => _.zipObject(fieldIds, r)) || [],

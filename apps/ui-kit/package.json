@@ -7,7 +7,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "private": false,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
@@ -106,8 +106,8 @@
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
     "ist": "^1.1.7",
-    "happy-dom": "^20.0.2",
-    "lodash": "^4.17.23",
+    "happy-dom": "^20.8.9",
+    "lodash": "^4.18.1",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
     "rimraf": "^6.0.1",
@@ -115,7 +115,7 @@
     "scrollyfills": "^1.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "15.6.10",
-    "sql-query-identifier": "^2.8.0",
+    "sql-query-identifier": "^2.10.0",
     "tabulator-tables": "beekeeper-studio/tabulator#f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1",
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",

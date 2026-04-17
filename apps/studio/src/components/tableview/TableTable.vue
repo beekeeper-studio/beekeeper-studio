@@ -412,7 +412,7 @@ export default Vue.extend({
       return _.isEmpty(this.data);
     },
     isCassandra() {
-      return this.connectionType === 'cassandra'
+      return ['cassandra', 'scylladb'].includes(this.connectionType)
     },
     queryDialect() {
       return this.dialectData?.queryDialectOverride ?? this.dialect;
@@ -971,7 +971,8 @@ export default Vue.extend({
     },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
-      const rows = range ? range.getRows() : this.getSelectedRows()
+      const selectedRows = this.getSelectedRows()
+      const rows = selectedRows.length > 0 ? selectedRows : (range ? range.getRows() : [])
       this.addRowsToPendingDeletes(rows);
     },
     headerFormatter(_cell, formatterParams) {
@@ -1107,6 +1108,7 @@ export default Vue.extend({
     },
     rowActionsMenu(range: RangeComponent) {
       const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
+      const selectedRowsCount = this.getSelectedRows().length
       return [
         {
           label:
@@ -1118,7 +1120,9 @@ export default Vue.extend({
         },
         {
           label:
-            range.getTopEdge() === range.getBottomEdge()
+            selectedRowsCount > 1
+              ? createMenuItem(`Delete ${selectedRowsCount} selected rows`, "Delete")
+              : range.getTopEdge() === range.getBottomEdge()
               ? createMenuItem("Delete row", "Delete")
               : createMenuItem(`Delete rows ${rowRangeLabel}`, "Delete"),
           action: () => {
@@ -1818,7 +1822,8 @@ export default Vue.extend({
             this.columnWidths = this.tabulator.getColumns().map((c) => {
               return { field: c.getField(), width: c.getWidth()}
             })
-            await this.getTableKeys();
+            // Removed getTableKeys() call here to fix 5-10 second performance regression
+            // Keys are now fetched only on initialization and explicit refresh (issue #3775)
             resolve({
               last_page: 1,
               data
@@ -1877,6 +1882,10 @@ export default Vue.extend({
 
       log.debug('refreshing table')
       const page = this.tabulator.getPage()
+
+      // Re-fetch table keys on explicit refresh to pick up schema changes (issue #3775)
+      await this.getTableKeys()
+
       await this.tabulator.replaceData()
       await this.tabulator.setColumns(this.tableColumns)
       this.tabulator.setPage(page)

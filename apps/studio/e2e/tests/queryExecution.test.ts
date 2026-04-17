@@ -23,7 +23,9 @@ test.describe("Postgres query execution", () => {
     });
 
     afterEach(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test("perform a Postgres query", async () => {

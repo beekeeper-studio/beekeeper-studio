@@ -64,7 +64,7 @@ export default class PluginStoreService {
   }
 
   getTheme()  {
-    const styles = getComputedStyle(document.body);
+    const styles = getComputedStyle(this.getAppEl());
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
@@ -400,5 +400,9 @@ export default class PluginStoreService {
         command: options.command,
       },
     };
+  }
+
+  private getAppEl() {
+    return document.body.querySelector('.beekeeper-studio-wrapper');
   }
 }

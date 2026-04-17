@@ -193,6 +193,10 @@ export function convertKeybinding(
       if (mod === "ctrlorcmd") {
         mod = platform === "mac" ? "meta" : "ctrl";
       }
+
+      if (mod === "delete" && platform === "mac") {
+        mod = "backspace";
+      }
     }
 
     if (target === "codemirror" && !modifierMap[key]) {

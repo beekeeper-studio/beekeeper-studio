@@ -39,9 +39,7 @@ interface QuerySelectionState {
 // Effects for updating the state
 const setDialectEffect = StateEffect.define<Options["dialect"]>();
 const setParamTypesEffect = StateEffect.define<Options["paramTypes"]>();
-const setCallbackEffect = StateEffect.define<(params: QuerySelectionChangeParams) => void>();
-
-// State for storing dialect and callback
+// State for storing dialect
 const dialectState = StateField.define<Options["dialect"]>({
   create: () => "generic",
   update: (value, tr) => {
@@ -66,17 +64,6 @@ const paramTypeState = StateField.define<Options["paramTypes"]>({
   }
 })
 
-const callbackState = StateField.define<((params: QuerySelectionChangeParams) => void) | null>({
-  create: () => null,
-  update: (value, tr) => {
-    for (const effect of tr.effects) {
-      if (effect.is(setCallbackEffect)) {
-        return effect.value;
-      }
-    }
-    return value;
-  }
-});
 
 function getSelectedQueryPosition(
   queries: IdentifyResult[],
@@ -140,7 +127,6 @@ const querySelectionState = StateField.define<QuerySelectionState>({
   update: (state, tr) => {
     const dialect = tr.state.field(dialectState);
     const paramTypes = tr.state.field(paramTypeState);
-    const callback = tr.state.field(callbackState);
 
     // Get cursor positions
     const cursor = tr.state.selection.main;
@@ -179,14 +165,6 @@ const querySelectionState = StateField.define<QuerySelectionState>({
       ]);
     }
 
-    // Call the callback if provided
-    if (callback && queries[selectedQueryIndex]) {
-      callback({
-        queries,
-        selectedQuery: queries[selectedQueryIndex],
-      });
-    }
-
     return {
       queries,
       selectedQueryIndex,
@@ -207,10 +185,23 @@ export function querySelection(
   return [
     dialectState,
     paramTypeState,
-    callbackState,
     querySelectionState,
     EditorView.updateListener.of((update) => {
       if (update.docChanged || update.selectionSet) {
+        // Call the callback if query selection changed
+        const currentState = update.state.field(querySelectionState);
+        const prevState = update.startState.field(querySelectionState);
+        if (
+          onQuerySelectionChange &&
+          currentState !== prevState &&
+          currentState.queries[currentState.selectedQueryIndex]
+        ) {
+          onQuerySelectionChange({
+            queries: currentState.queries,
+            selectedQuery: currentState.queries[currentState.selectedQueryIndex],
+          });
+        }
+
         // Trigger state update by dispatching effects
         const effects = [];
         if (update.view.state.field(dialectState) !== dialect) {
@@ -218,9 +209,6 @@ export function querySelection(
         }
         if (update.view.state.field(paramTypeState) !== paramTypes) {
           effects.push(setParamTypesEffect.of(paramTypes));
-        }
-        if (update.view.state.field(callbackState) !== onQuerySelectionChange) {
-          effects.push(setCallbackEffect.of(onQuerySelectionChange));
         }
 
         if (effects.length > 0) {
