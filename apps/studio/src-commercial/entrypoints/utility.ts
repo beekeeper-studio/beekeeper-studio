@@ -16,6 +16,7 @@ import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
+import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
@@ -23,10 +24,15 @@ import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers } from '@/handlers/pluginHandlers';
+import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
+import {
+  ConfigurationModule,
+  BundledPluginModule,
+} from '@commercial/backend/plugin-system/modules';
+import bksConfig from '@/common/bksConfig';
 
 import * as sms from 'source-map-support'
 
@@ -41,6 +47,8 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
+pluginManager.registerModule(ConfigurationModule.with({ config: bksConfig }));
+pluginManager.registerModule(BundledPluginModule);
 
 interface Reply {
   id: string,
@@ -58,6 +66,7 @@ export const handlers: Handlers = {
   ...ImportHandlers,
   ...AppDbHandlers,
   ...BackupHandlers,
+  ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
   ...TempHandlers,

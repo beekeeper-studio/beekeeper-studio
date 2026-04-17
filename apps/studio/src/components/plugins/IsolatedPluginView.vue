@@ -1,9 +1,44 @@
 <template>
-  <div class="isolated-plugin-view" ref="container">
-    <div v-if="$bksConfig.plugins?.[pluginId]?.disabled" class="alert">
-      <i class="material-icons-outlined">info</i>
-      <div>This plugin ({{ pluginId }}) has been disabled via configuration</div>
+  <div class="isolated-plugin-view">
+    <div v-if="pluginManagerStatus !== 'ready'" class="alert">
+      <template v-if="pluginManagerStatus === 'initializing'">
+        Initializing plugins ...
+      </template>
+      <template v-else-if="pluginManagerStatus === 'failed-to-initialize'">
+        Failed to initialize plugin manager.
+      </template>
     </div>
+    <div v-else-if="!snapshot" class="alert">
+      <div class="alert-body">Plugin "{{ pluginId }}" is not installed.</div>
+      <button class="btn btn-flat" @click="reloadComponent">Reload</button>
+    </div>
+    <div v-else-if="!snapshot.loadable" class="plugin-status">
+      <p>
+        Plugin "{{ snapshot.manifest.name }}" isn’t compatible with this version
+        of Beekeeper Studio. It requires version
+        {{ snapshot.manifest.minAppVersion }} or newer.
+      </p>
+
+      <p>To fix this:</p>
+
+      <ol>
+        <li>Upgrade your Beekeeper Studio.</li>
+        <li>
+          Or install an older plugin version manually (see
+          <a
+            href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version"
+            >instructions</a
+          >).
+        </li>
+      </ol>
+    </div>
+    <div v-else-if="error" class="alert alert-danger">
+      <i class="material-icons-outlined">error</i>
+      <div class="alert-body">{{ error }}</div>
+      <button class="btn btn-flat" @click="reloadComponent">Reload</button>
+    </div>
+    <DisableStateAlert v-else :pluginId="pluginId" />
+    <div class="iframe-container" ref="container" />
   </div>
 </template>
 
@@ -11,9 +46,19 @@
 import Vue, { PropType } from "vue";
 import { LoadViewParams } from "@beekeeperstudio/plugin";
 import { ThemeChangedNotification } from "@beekeeperstudio/plugin";
+import rawLog from "@bksLogger";
+import { mapGetters, mapState } from "vuex";
+import type { PluginSnapshot } from "@/services/plugin/types";
+import DisableStateAlert from "./DisableStateAlert.vue";
+import { AppEvent } from "@/common/AppEvent";
+
+const log = rawLog.scope("IsolatedPluginView");
 
 export default Vue.extend({
   name: "IsolatedPluginView",
+  components: {
+    DisableStateAlert,
+  },
   props: {
     visible: {
       type: Boolean,
@@ -23,31 +68,30 @@ export default Vue.extend({
       type: String,
       required: true,
     },
-    command: String,
-    params: null as PropType<LoadViewParams>,
-    url: {
+    viewId: {
       type: String,
       required: true,
     },
+    command: String,
+    params: null as PropType<LoadViewParams>,
     onRequest: Function,
-    reload: null,
   },
   data() {
     return {
       loaded: false,
-      mounted: false,
-      // Use a timestamp parameter to force iframe refresh
-      timestamp: Date.now(),
       unsubscribe: null,
       unsubscribeOnReady: null,
       unsubscribeOnDispose: null,
       iframe: null,
+      error: null as string | null,
+      mounting: false,
     };
   },
   computed: {
-    baseUrl() {
-      // FIXME move this somewhere
-      return `${this.url}?timestamp=${this.timestamp}`;
+    ...mapState(["pluginManagerStatus"]),
+    ...mapGetters("plugins/snapshots", ["snapshotsById"]),
+    snapshot(): PluginSnapshot | undefined {
+      return this.snapshotsById[this.pluginId];
     },
     shouldMountIframe() {
       // If it's already mounted, do not unmount it unless it's not loaded
@@ -56,16 +100,19 @@ export default Vue.extend({
       }
       return this.visible && this.loaded;
     },
+    mounted() {
+      return !!this.iframe;
+    },
   },
   watch: {
-    reload() {
-      this.timestamp = Date.now();
-    },
     shouldMountIframe: {
       async handler() {
         await this.$nextTick();
         if (this.shouldMountIframe) {
-          this.mountIframe();
+          this.mountIframe().catch((e) => {
+            log.error(e);
+            this.error = e instanceof Error ? e.message : String(e);
+          });
         } else {
           this.unmountIframe();
         }
@@ -74,15 +121,35 @@ export default Vue.extend({
     },
   },
   methods: {
-    mountIframe() {
-      if (this.iframe) {
+    async mountIframe() {
+      if (this.iframe || this.mounting) {
+        return;
+      }
+
+      this.mounting = true;
+      this.error = null;
+
+      try {
+        const exists = await this.$plugin.viewEntrypointExists(
+          this.pluginId,
+          this.viewId
+        );
+        if (!exists) {
+          this.error = "Plugin view entrypoint does not exist";
+          return;
+        }
+      } catch (e) {
+        this.error =
+          `${e.message} - The plugin may not be installed, or it tried to ` +
+          "load a view that doesn't exist."
         return;
       }
 
       const iframe = document.createElement("iframe");
-      iframe.src = this.baseUrl;
+      iframe.src = this.$plugin.buildUrlFor(this.pluginId, this.viewId);
       iframe.sandbox = "allow-scripts allow-same-origin allow-forms";
       iframe.allow = "clipboard-read; clipboard-write;";
+      iframe.style = "width: 100%; height: 100%;border: none;";
 
       // HACK(azmi): Trigger an initial `themeChanged` notification because
       // older versions of AI Shell don't automatically handle theme state on load.
@@ -107,7 +174,7 @@ export default Vue.extend({
       });
       this.$refs.container.appendChild(iframe);
       this.iframe = iframe;
-      this.mounted = true;
+      this.mounting = false;
     },
     unmountIframe() {
       if (!this.iframe) {
@@ -118,24 +185,59 @@ export default Vue.extend({
       this.unsubscribe?.();
       this.iframe.remove();
       this.iframe = null;
-      this.mounted = false;
     },
-    handleError(e) {
-      console.error(`${this.pluginId} iframe error`, e);
-    }
+    initialize() {
+      this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
+        this.loaded = true;
+      });
+      this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
+        this.loaded = false;
+      })
+    },
+    cleanup() {
+      this.unsubscribeOnReady?.();
+      this.unsubscribeOnDispose?.();
+      this.loaded = false;
+    },
+    async reloadComponent() {
+      try {
+        this.cleanup();
+        this.unmountIframe();
+        this.initialize();
+        await this.mountIframe();
+      } catch (e) {
+        log.error(e);
+        this.error = e instanceof Error ? e.message : String(e);
+      }
+    },
   },
   mounted() {
-    this.unsubscribeOnReady = this.$plugin.onReady(this.pluginId, () => {
-      this.loaded = true;
-    });
-    this.unsubscribeOnDispose = this.$plugin.onDispose(this.pluginId, () => {
-      this.loaded = false;
-    })
+    try {
+      this.initialize();
+    } catch (e) {
+      log.error(e);
+      this.error = e.message;
+    }
   },
   beforeDestroy() {
-    this.unsubscribeOnReady?.();
-    this.unsubscribeOnDispose?.();
+    this.cleanup();
     this.unmountIframe();
   },
 });
 </script>
+
+<style scoped>
+.isolated-plugin-view .alert {
+  margin: 1rem;
+}
+
+.iframe-container {
+  height: 100%;
+  width: 100%;
+}
+
+.alert-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+</style>

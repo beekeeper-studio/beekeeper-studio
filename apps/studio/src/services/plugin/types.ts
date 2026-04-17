@@ -2,7 +2,8 @@ import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/di
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
-import { FileHelpers } from "@/types";
+import { FileHelpers, JsonValue } from "@/types";
+import type Noty from "noty";
 
 /**
  * The kind of the tab. There is only one kind currently:
@@ -74,6 +75,14 @@ export interface PluginMenuItem {
   order?: number;
 }
 
+/** For NativeMenuBuilder.ts */
+export type NativePluginMenuItem = {
+  id: string;
+  pluginId: string;
+  label: string;
+  command: string;
+};
+
 /** Used by earlier versions of AI Shell. */
 type LegacyViews = {
   tabTypes?: {
@@ -134,6 +143,11 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
   }
 };
 
+/**
+ * The structure of a plugin entry.
+ *
+ * @see {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins}
+ */
 export type PluginRegistryEntry = Pick<
   Manifest,
   "id" | "name" | "author" | "description"
@@ -173,18 +187,28 @@ export type PluginSettings = {
 
 
 export type WebPluginContext = {
-  manifest: Manifest;
+  manifest: ManifestV1;
   store: PluginStoreService;
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
   fileHelpers: FileHelpers;
+  noty: {
+    success(text: string, options?: any): Noty;
+    error(text: string, options?: any): Noty;
+    warning(text: string, options?: any): Noty;
+    info(text: string, options?: any): Noty;
+  };
+  confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
 
-export type PluginContext = {
-  manifest: Manifest;
+export type PluginSnapshot = {
+  manifest: ManifestV1;
+  /** Is this compatible with the current app version? */
   loadable: boolean;
-}
+  origin: PluginOrigin;
+  disableState: DisableState;
+};
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
@@ -192,3 +216,32 @@ export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
   context: any;
 }
+
+export type CreatePluginTabOptions = {
+  manifest: Manifest;
+  viewId: string;
+  params?: JsonValue;
+  command: string;
+};
+
+/**
+ * By default, `disabled` is `false`.
+ * This value may be modified by other modules (e.g. {@link ConfigurationModule}).
+ */
+type DisableState =
+  | { disabled: false }
+  | {
+      disabled: true;
+      reason:
+        | "plugin-system-disabled"
+        | "community-plugins-disabled"
+        | "disabled-by-config";
+    };
+
+/**
+ * Indicates where a plugin originates from:
+ * - `official`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json}
+ * - `community`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json}
+ * - `unlisted`: Not listed in either repository
+ */
+export type PluginOrigin = "official" | "community" | "unlisted";

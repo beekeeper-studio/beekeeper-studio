@@ -53,6 +53,12 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
     log.info("not doing any updates, didn't meet conditional")
     return
   }
+
+  if (BksConfig.general.checkForUpdatesDisabled) {
+    log.info("automatic update checks are disabled")
+    return
+  }
+
   setAllowBeta(allowBeta);
 
   dealWithAppImage();

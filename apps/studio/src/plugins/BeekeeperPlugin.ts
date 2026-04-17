@@ -133,6 +133,19 @@ export const BeekeeperPlugin = {
     }
     return { cancelled: false }
   },
+  async promptJwtToken(connectionName?: string): Promise<{ token?: string; cancelled: boolean }> {
+    return new Promise((resolve) => {
+      const description = connectionName
+        ? `Paste a fresh CockroachDB JWT to connect to ${connectionName}. Beekeeper will send it as the password for this connection.`
+        : 'Paste a fresh CockroachDB JWT. Beekeeper will send it as the password for this connection.';
+
+      Vue.prototype.$modal.show('input-jwt-modal', {
+        description,
+        onSubmit: (token: string) => resolve({ token, cancelled: false }),
+        onCancel: () => resolve({ cancelled: true }),
+      })
+    })
+  },
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin

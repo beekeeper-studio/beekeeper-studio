@@ -70,7 +70,7 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import FilePicker from "@/components/common/form/FilePicker.vue"
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
   components: { CommonServerInputs, FilePicker, MaskedInput },
@@ -81,7 +81,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     isServer() {
       return this.config.sqlAnywhereOptions.mode === 'server';
     },

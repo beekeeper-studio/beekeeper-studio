@@ -3,13 +3,14 @@ import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
 import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
-import { parseIni, processRawConfig } from "../../../src/config/helpers.mjs";
+import { parseIni, processRawConfig } from "@/config/helpers";
 import {
   BksConfigProvider,
   ConfigEntryDetailWarning,
   BksConfigSource,
   BksConfig,
 } from "./BksConfigProvider";
+import globals from "@/common/globals";
 
 type ConfigFileName =
   | "default.config.ini"
@@ -50,13 +51,30 @@ export function checkUnrecognized(
           section,
           path,
         });
-      } else if (typeof value === "object") {
+      } else if (typeof value === "object" && !Array.isArray(value)) {
         traverse(value, path);
       }
     }
   }
 
   traverse(newConfig);
+
+  // Validate that pluginSystem.allow only contains known bundled plugin IDs
+  const allow = _.get(newConfig, "pluginSystem.allow") as string[] | undefined;
+  if (Array.isArray(allow)) {
+    const bundledPluginIds = globals.plugins.ensureInstalled.map((p) => p.id);
+    for (const id of allow) {
+      if (!bundledPluginIds.includes(id)) {
+        results.push({
+          type: "unknown-allow-plugin",
+          sourceName,
+          section: "pluginSystem",
+          path: "pluginSystem.allow",
+          value: id,
+        });
+      }
+    }
+  }
 
   return results;
 }
@@ -73,7 +91,7 @@ export function checkConflicts(
     for (const key of Object.keys(obj)) {
       const path = parentPath ? `${parentPath}.${key}` : key;
       const value = obj[key];
-      if (typeof value === "object") {
+      if (typeof value === "object" && !Array.isArray(value)) {
         traverse(value, path);
       } else if (_.has(target, path)) {
         results.push({
@@ -244,7 +262,9 @@ export function mainBksConfig(): BksConfig {
   };
 
   log.info(`Configs successfully loaded with ${warnings.length} warnings.`);
-  log.warn("Warnings:", warnings);
+  if (warnings.length > 0) {
+    log.warn("Warnings:", warnings);
+  }
   log.info(`Default config: ${JSON.stringify(defaultConfig, null, 2)}`);
   log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
   log.info(`User config: ${JSON.stringify(userConfig, null, 2)}`);

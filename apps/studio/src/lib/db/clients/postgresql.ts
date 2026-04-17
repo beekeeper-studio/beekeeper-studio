@@ -26,6 +26,8 @@ import { defaultCreateScript, postgres10CreateScript } from './postgresql/script
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
+import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
 
@@ -136,16 +138,18 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
     const dbConfig = await this.configDatabase(this.server, this.database);
 
+    log.info("CONFIG: ", dbConfig)
+
     this.conn = {
       pool: new pg.Pool(dbConfig)
     };
 
     const test = await this.conn.pool.connect()
 
-    if (this.server.config.redshiftOptions?.iamAuthenticationEnabled) {
+    if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
       this.interval = setInterval(async () => {
         try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.redshiftOptions, this.server, this.server.config.port || 5432);
+          const newPassword = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 5432);
 
           const newPool = new pg.Pool({
             ...dbConfig,
@@ -747,6 +751,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             cancelable.wait(),
             this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
+          console.info("QUERYDATA: ", data)
 
           pid = null;
 
@@ -795,7 +800,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const arrayMode: boolean = options?.arrayMode;
     const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
-    const commands = this.identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText);
+    log.info("COMMANDS: ", commands)
 
     return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
   }
@@ -817,10 +823,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => row.datname);
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
-    await this.runWithTransaction(async (connection) => {
+    const run = async (connection: PoolClient) => {
       log.debug("Applying changes", changes)
       if (changes.inserts) {
         await this.insertRows(changes.inserts, connection);
@@ -833,7 +839,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       if (changes.deletes) {
         await this.deleteRows(changes.deletes, connection)
       }
-    })
+    }
+
+    if (tabId) {
+      const conn = this.peekConnection(tabId);
+      await run(conn);
+    } else {
+      await this.runWithTransaction(run)
+    }
+
     return results
   }
 
@@ -1315,8 +1329,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     await this.runQuery(conn, 'ROLLBACK', {});
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
-    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, tabId?: number }): Promise<QueryResult | QueryResult[]> {
     const hasReserved = this.reservedConnections.has(options?.tabId)
     if (options?.tabId && hasReserved) {
       const conn = this.peekConnection(options?.tabId);
@@ -1373,13 +1386,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     })
   }
 
-  parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
+  parseRowQueryResult(data: QueryResult, command: IdentifyResult, rowResults: boolean): NgQueryResult {
     const fields = this.parseFields(data.columns, rowResults)
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
     return {
-      command: command || data.command,
+      command: command?.type || data.command,
+      text: command?.text,
       rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
       fields: fields,
       rowCount: rowCount,
@@ -1493,21 +1507,32 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
 
+    let iamToken = undefined;
+    if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+    }
+
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: await refreshTokenIfNeeded(server.config?.redshiftOptions, server, server.config.port || 5432) || server.config.password || undefined,
+      password: iamToken || server.config.password || undefined,
       database: database.database,
       max: BksConfig.db.postgres.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
       idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
     };
 
+    if (server.config.azureAuthOptions?.azureAuthEnabled) {
+      const authService = new AzureAuthService();
+      config.user = server.config.user
+      return authService.configDB(server, config)
+    }
+
     if (
       server.config.client === "postgresql" &&
       // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
       // we only need SSL for iam authentication
-      server.config?.redshiftOptions?.iamAuthenticationEnabled
+      server.config?.iamAuthOptions?.iamAuthenticationEnabled
     ){
       server.config.ssl = true;
     }

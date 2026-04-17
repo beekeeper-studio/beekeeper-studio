@@ -1,7 +1,19 @@
 # check if default.config.ini was changed and staged
-if git status --porcelain | grep -q '^M  .*default\.config\.ini$'; then
-  yarn bks:config:build;
-  if git status --porcelain | grep -q bkconfig.d.ts; then
-    git add */**/bkconfig.d.ts
-  fi
+if git diff --cached --name-only | grep -q 'default\.config\.ini$'; then
+  echo ""
+  echo "📝 Hey! You changed default.config.ini, so let me regenerate the config types first before we commit your change..."
+  echo ""
+  printf "   Generating"
+  yarn bks:config:build > /dev/null 2>&1 &
+  pid=$!
+  while kill -0 $pid 2>/dev/null; do
+    printf "."
+    sleep 0.3
+  done
+  wait $pid
+  echo ""
+  git add apps/studio/src/typings/bksConfig.d.ts
+  echo ""
+  echo "✅ Config types regenerated and staged!"
+  echo ""
 fi

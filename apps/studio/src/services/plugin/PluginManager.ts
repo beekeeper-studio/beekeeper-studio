@@ -2,17 +2,20 @@ import _ from "lodash";
 import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
-  Manifest,
-  PluginContext,
-  PluginRegistryEntry,
+  Manifest as AnyVersionManifest,
+  ManifestV1 as Manifest,
+  PluginOrigin,
   PluginRepository,
   PluginSettings,
+  PluginSnapshot,
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { NotFoundPluginError, NotSupportedPluginError } from "./errors";
+import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
+import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
+import { Hookable } from "./Hookable";
 
 const log = rawLog.scope("PluginManager");
 
@@ -22,22 +25,19 @@ export type PluginManagerOptions = {
   appVersion: string;
 }
 
-export default class PluginManager {
+export default class PluginManager extends Hookable {
   private initialized = false;
-  private registry: PluginRegistry;
-  private fileManager: PluginFileManager;
-  private plugins: PluginContext[] = [];
+  public readonly registry: PluginRegistry;
+  public readonly fileManager: PluginFileManager;
+  private manifests: Manifest[] = [];
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
-  /** This is a list of plugins that are preinstalled by default. When the
-   * application starts, these plugins will be installed automatically. The user
-   * should be able to uninstall them later. */
-  static readonly PREINSTALLED_PLUGINS = ["bks-ai-shell", "bks-er-diagram"];
 
   constructor(readonly options: PluginManagerOptions) {
+    super();
     this.fileManager = options.fileManager;
     this.registry =
       options.registry ||
@@ -50,35 +50,29 @@ export default class PluginManager {
       return;
     }
 
-    const installedPlugins = this.fileManager.scanPlugins();
+    // FIXME: Migrate to full ini file configuration
+    await this.loadPluginSettings();
+
+    await this.callHook("before-initialize");
+
+    const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
+    this.manifests = installedPlugins;
 
     log.debug("Installed plugins:", installedPlugins);
 
-    await this.loadPluginSettings();
-
-    this.plugins = installedPlugins.map((manifest) => ({
-      manifest,
-      loadable: this.isPluginLoadable(manifest),
-    }));
-
     this.initialized = true;
 
-    for (const id of PluginManager.PREINSTALLED_PLUGINS) {
-      // have installed before?
-      if (this.pluginSettings[id]) {
+    for (const plugin of installedPlugins) {
+      if (!this.pluginSettings[plugin.id]?.autoUpdate) {
         continue;
       }
 
-      await this.installPlugin(id);
-    }
-
-
-    for (const plugin of installedPlugins) {
-      if (
-        this.pluginSettings[plugin.id]?.autoUpdate &&
-        (await this.checkForUpdates(plugin.id))
-      ) {
-        await this.updatePlugin(plugin.id);
+      try {
+        if (await this.checkForUpdates(plugin.id)) {
+          await this.updatePlugin(plugin.id);
+        }
+      } catch (e) {
+        log.error(`Failed to check for updates for plugin "${plugin.id}"`, e);
       }
     }
   }
@@ -88,14 +82,27 @@ export default class PluginManager {
     return await this.registry.getEntries();
   }
 
-  async findPluginEntry(id: string): Promise<PluginRegistryEntry> {
-    this.initializeGuard();
-    const entries = await this.getEntries();
-    const entry = entries.find((entry) => entry.id === id);
-    if (!entry) {
-      throw new Error(`Plugin "${id}" not found in registry.`);
+  /**
+   * Check if the view's entrypoint exists. The plugin must be installed,
+   * and the view must be defined in the plugin's manifest.
+   *
+   * @throws if `pluginId` or `viewId` is not found
+   **/
+  viewEntrypointExists(pluginId: string, viewId: string): boolean {
+    const manifest = this.manifests.find((manifest) => manifest.id === pluginId);
+    if (!manifest) {
+      throw new NotFoundPluginError(`Plugin "${pluginId}" not found.`);
     }
-    return entry;
+    const { views } = isManifestV0(manifest)
+      ? mapViewsAndMenuFromV0ToV1(manifest)
+      : manifest.capabilities;
+    const view = views.find((v) => v.id === viewId);
+    if (!view) {
+      throw new NotFoundPluginViewError(
+        `View "${viewId}" not found in plugin "${pluginId}".`
+      );
+    }
+    return this.fileManager.viewEntrypointExists(manifest, view);
   }
 
   async getRepository(pluginId: string): Promise<PluginRepository> {
@@ -103,14 +110,44 @@ export default class PluginManager {
     return await this.registry.getRepository(pluginId);
   }
 
-  getPlugins(): PluginContext[] {
+ /** Returns snapshots of installed plugins, derived from manifests and runtime state */
+  async getPlugins(): Promise<PluginSnapshot[]> {
     this.initializeGuard();
-    return this.plugins;
+
+    const snapshots: PluginSnapshot[] = [];
+
+    for (const manifest of this.manifests) {
+      const loadable = this.isPluginLoadable(manifest);
+
+      let origin: PluginOrigin = "unlisted";
+
+      try {
+        const found = await this.registry.findEntry(manifest.id);
+        origin = found.origin;
+      } catch (e) {
+        if (e instanceof NotFoundPluginError) {
+          // There's nothing wrong if the plugin is not found in the registry.
+          // It may be a local plugin.
+        } else {
+          // Else, it might be a real error
+          log.error(e);
+        }
+      }
+
+      snapshots.push({
+        manifest,
+        loadable,
+        disableState: { disabled: false },
+        origin,
+      });
+    }
+
+    return await this.applyHook("plugin-snapshots", snapshots);
   }
 
   /** Plugin is not loadable if the **current app version** is lower than the
    * **minimum app version** required by the plugin. */
-  isPluginLoadable(manifest: Manifest): boolean {
+  isPluginLoadable(manifest: AnyVersionManifest): boolean {
     if (!manifest.minAppVersion) {
       return true;
     }
@@ -121,10 +158,12 @@ export default class PluginManager {
   async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
 
+    await this.callHook("before-install-plugin", id);
+
     let update = false;
 
     // If plugin is already installed, perform update
-    if (this.plugins.find(({ manifest }) => manifest.id === id)) {
+    if (this.manifests.find((manifest) => manifest.id === id)) {
       update = true;
     }
 
@@ -149,17 +188,13 @@ export default class PluginManager {
       }
 
       const manifest = this.fileManager.getManifest(id);
-      const installedPluginIdx = this.plugins.findIndex(
-        ({ manifest }) => manifest.id === id
+      const installedPluginIdx = this.manifests.findIndex(
+        (manifest) => manifest.id === id
       );
-      const plugin: PluginContext = {
-        manifest,
-        loadable: this.isPluginLoadable(manifest),
-      };
       if (installedPluginIdx === -1) {
-        this.plugins.push(plugin);
+        this.manifests.push(manifest);
       } else {
-        this.plugins[installedPluginIdx] = plugin;
+        this.manifests[installedPluginIdx] = manifest;
       }
 
       if (!this.pluginSettings[id]) {
@@ -187,8 +222,8 @@ export default class PluginManager {
       log.debug(`Uninstalling plugin "${id}"...`);
 
       this.fileManager.remove(id);
-      this.plugins = this.plugins.filter(
-        ({ manifest }) => manifest.id !== id
+      this.manifests = this.manifests.filter(
+        (manifest) => manifest.id !== id
       );
 
       log.debug(`Plugin "${id}" uninstalled!`);
@@ -198,8 +233,8 @@ export default class PluginManager {
   /** if returns true, update is available */
   async checkForUpdates(id: string): Promise<boolean> {
     this.initializeGuard();
-    const { manifest } = this.plugins.find(
-      ({ manifest }) => manifest.id === id
+    const manifest = this.manifests.find(
+      (manifest) => manifest.id === id
     );
     if (!manifest) {
       throw new Error(`Plugin "${id}" is not installed.`);
@@ -270,7 +305,11 @@ export default class PluginManager {
    * Enable or disable automatic update checks for a specific plugin
    */
   async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
-    this.pluginSettings[id].autoUpdate = enabled;
+    if (!this.pluginSettings[id]) {
+      this.pluginSettings[id] = { autoUpdate: enabled };
+    } else {
+      this.pluginSettings[id].autoUpdate = enabled;
+    }
     // Persist the changes to the database
     await this.savePluginSettings();
   }
