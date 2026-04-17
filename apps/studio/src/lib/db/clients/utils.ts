@@ -71,17 +71,17 @@ export function buildDatabaseFilter(filter, databaseField) {
   const { only, ignore, database } = filter
 
   if (database) {
-    return `${databaseField} = '${database}'`;
+    return `${databaseField} = '${escapeString(database)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${databaseField} IN (${only.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${databaseField} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${databaseField} NOT IN (${ignore.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${databaseField} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');

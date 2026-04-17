@@ -1,4 +1,4 @@
-import { buildSchemaFilter, buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
+import { buildDatabaseFilter, buildSchemaFilter, buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
 
 describe('Escape String', () => {
   it("should escape single quotes", () => {
@@ -103,6 +103,26 @@ describe('buildSchemaFilter SQL injection', () => {
 
   it("should escape single quotes in 'ignore' filter values", () => {
     const result = buildSchemaFilter({ ignore: ["'; DROP TABLE users; --"] })
+    expect(result).toContain("'''; DROP TABLE users; --'")
+  })
+})
+
+describe('buildDatabaseFilter SQL injection', () => {
+  it("should escape single quotes in 'database' value to prevent SQL injection", () => {
+    const malicious = "'; DROP TABLE users; --"
+    const result = buildDatabaseFilter({ database: malicious }, 'datname')
+    // The single quote must be doubled so the value stays inside the SQL string literal
+    expect(result).toBe("datname = '''; DROP TABLE users; --'")
+  })
+
+  it("should escape single quotes in 'only' filter values", () => {
+    const result = buildDatabaseFilter({ only: ["public", "'; DROP TABLE users; --"] }, 'datname')
+    expect(result).toContain("'public'")
+    expect(result).toContain("'''; DROP TABLE users; --'")
+  })
+
+  it("should escape single quotes in 'ignore' filter values", () => {
+    const result = buildDatabaseFilter({ ignore: ["'; DROP TABLE users; --"] }, 'datname')
     expect(result).toContain("'''; DROP TABLE users; --'")
   })
 })
