@@ -1,5 +1,8 @@
 name: SQL Server Windows Auth integration test
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     paths:
