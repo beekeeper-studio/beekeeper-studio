@@ -119,6 +119,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     shell.openExternal("https://docs.beekeeperstudio.io/support/contact-support/")
   }
 
+  openGettingStarted(): void {
+    shell.openExternal("https://docs.beekeeperstudio.io/getting-started-guide/")
+  }
+
   checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {
     autoUpdater.checkForUpdates()
   }
@@ -213,8 +217,20 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
+  togglePrivacyMode = async (): Promise<void> => {
+    this.settings.privacyMode.value = !this.settings.privacyMode.value
+    await this.settings.privacyMode.save()
+    getActiveWindows().forEach(window => {
+      window.send(AppEvent.settingsChanged)
+    })
+  }
+
   switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.switchLicenseState, state)
+  }
+
+  simulatePlatform = async (platform: Electron.MenuItem | string, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.simulatePlatform, platform)
   }
 
   toggleBeta = async (menuItem: Electron.MenuItem): Promise<void> => {

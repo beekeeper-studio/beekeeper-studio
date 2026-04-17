@@ -95,6 +95,12 @@ CREATE PROCEDURE simpleproc (OUT param1 INT)
 ```
 
 
+### Access denied for user (using password: YES)
+
+If you get an `Access denied for user 'xxx' (using password: YES)` error when connecting, try toggling **Enable SSL** on in the connection settings.
+
+Some MySQL servers (including Google Cloud SQL) require SSL for the user account.
+
 ## SQLite
 
 ### No such column: x
@@ -120,15 +126,27 @@ select 'string' as my_column from foo
 
 
 
-### I get 'permission denied' when trying to access a database on an external drive
+### I get 'permission denied' or 'unable to open database file' when trying to access a SQLite database
 
-If you're on Linux and using the `snap` version of Beekeeper you need to give the app an extra permission.
+This is usually caused by the sandboxed packaging format (Snap or Flatpak) not having permission to access the file's location.
+
+**Flatpak users:**
+
+Flatpak restricts file access by default. The file picker may show a sandboxed path (e.g. `/run/user/1000/...`) instead of the real path. To grant Beekeeper Studio access to your files:
+
+```bash
+sudo flatpak override io.beekeeperstudio.Studio --filesystem=host
+```
+
+**Snap users:**
+
+If the database is on an external or removable drive, you need to grant extra permissions:
 
 ```bash
 sudo snap connect beekeeper-studio:removable-media :removable-media
 ```
 
-If you're on another platform, please [open a ticket][bug] and we'll try to help you debug the problem.
+If neither of these applies, please [open a ticket][bug] and we'll try to help you debug the problem.
 
 [bug]: https://github.com/beekeeper-studio/beekeeper-studio/issues/new?template=bug_report.md&title=BUG:
 
@@ -156,6 +174,29 @@ CREATE table foo("myColumn" int);
 - This will works: `select "myColumn" from foo`
 
 See [this StackOverflow answer](https://stackoverflow.com/a/20880247/18818) or [this section in the PostgreSQL manual](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS)
+
+## Cloud Databases (Google Cloud SQL, Amazon RDS)
+
+### Connections drop after IP allowlist expires
+
+If you use a time-limited IP allowlist to connect to your database (for example, `gcloud sql connect` which allowlists your IP for 5 minutes), you may find that queries fail after the allowlist window closes.
+
+Beekeeper Studio uses a connection pool that keeps connections alive while idle. By default, idle connections are dropped after 20 seconds. Once dropped, the pool creates new connections on demand — but if your IP is no longer allowlisted, those new connections will be rejected.
+
+To work around this, you can increase the idle timeout in your [user configuration file](../user_guide/configuration.md) so that connections stay alive longer:
+
+```ini
+; Keep idle connections alive for 5 minutes instead of the default 20 seconds.
+; Adjust this to match your IP allowlist window.
+
+[db.postgres]
+idleTimeout = 300000
+
+[db.mysql]
+idleTimeout = 300000
+```
+
+For a more permanent solution, consider using an [SSH tunnel](../user_guide/connecting/connecting.md#ssh) to connect to your database instead of relying on IP allowlisting.
 
 ## Linux (Wayland)
 

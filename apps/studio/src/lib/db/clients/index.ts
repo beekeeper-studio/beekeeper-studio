@@ -75,6 +75,15 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'greengage',
+    name: 'GreengageDB',
+    defaultDatabase: 'postgres',
+    defaultPort: 5432,
+    disabledFeatures: [
+      'server:domain',
+    ],
+  },
+  {
     key: 'redshift',
     name: 'Amazon Redshift',
     defaultDatabase: 'postgres',
@@ -116,6 +125,20 @@ export const CLIENTS: ClientConfig[] = [
   {
     key: 'cassandra',
     name: 'Cassandra',
+    defaultPort: 9042,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:schema',
+      'server:domain',
+      'scriptCreateTable',
+      'cancelQuery',
+      'server:socketPathWithCustomPort',
+    ],
+  },
+  {
+    key: 'scylladb',
+    name: 'ScyllaDB',
     defaultPort: 9042,
     disabledFeatures: [
       'server:ssl',
@@ -265,5 +288,15 @@ export const CLIENTS: ClientConfig[] = [
       'scriptCreateTable',
       'cancelQuery'
     ],
+  },
+  {
+    key: 'bedrock',
+    name: 'Bedrock',
+    defaultPort: 3306,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+      'server:socketPathWithCustomPort',
+    ]
   }
 ];

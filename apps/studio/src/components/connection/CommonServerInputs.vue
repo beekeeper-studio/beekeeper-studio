@@ -84,7 +84,7 @@
         />
       </div>
       <div class="col s6 form-group" v-show="showPasswordForm">
-        <label for="password">Password</label>
+        <label for="password">{{ passwordLabel }}</label>
         <input
           :type="togglePasswordInputType"
           v-model="config.password"
@@ -99,7 +99,7 @@
     <slot />
     <div class="form-group expand">
       <label
-        v-if="config.connectionType !== 'cassandra'"
+        v-if="!['cassandra', 'scylladb'].includes(config.connectionType)"
         for="defaultDatabase"
       >Default {{ topLevelEntityName }}</label>
       <label
@@ -119,7 +119,7 @@
 import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
 import CommonSsl from './CommonSsl.vue'
-import { mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
   props: {
@@ -137,6 +137,10 @@ export default {
     hideCredentials: {
       type: Boolean,
       default: false
+    },
+    passwordLabel: {
+      type: String,
+      default: 'Password'
     }
   },
   components: {
@@ -149,7 +153,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     togglePasswordIcon() {
       return this.showPassword ? "visibility_off" : "visibility"
     },
