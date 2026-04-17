@@ -12,7 +12,7 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
+import { PluginSystemError, PluginSystemErrorCode } from "@/lib/errors";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
 
@@ -89,15 +89,19 @@ export default class PluginManager extends Hookable {
   viewEntrypointExists(pluginId: string, viewId: string): boolean {
     const manifest = this.plugins.find((p) => p.manifest.id === pluginId)?.manifest;
     if (!manifest) {
-      throw new NotFoundPluginError(`Plugin "${pluginId}" not found.`);
+      throw new PluginSystemError(
+        `Plugin "${pluginId}" not found.`,
+        PluginSystemErrorCode.PLUGIN_NOT_FOUND
+      );
     }
     const { views } = isManifestV0(manifest)
       ? mapViewsAndMenuFromV0ToV1(manifest)
       : manifest.capabilities;
     const view = views.find((v) => v.id === viewId);
     if (!view) {
-      throw new NotFoundPluginViewError(
-        `View "${viewId}" not found in plugin "${pluginId}".`
+      throw new PluginSystemError(
+        `View "${viewId}" not found in plugin "${pluginId}".`,
+        PluginSystemErrorCode.PLUGIN_VIEW_NOT_FOUND
       );
     }
     return this.fileManager.viewEntrypointExists(manifest, view);
@@ -136,12 +140,16 @@ export default class PluginManager extends Hookable {
     return await this.withPluginLock(id, async () => {
       const info = await this.registry.getRepository(id);
       if (!info) {
-        throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
+        throw new PluginSystemError(
+          `Plugin "${id}" not found in registry.`,
+          PluginSystemErrorCode.PLUGIN_NOT_FOUND
+        );
       }
 
       if (!this.isPluginLoadable(info.latestRelease.manifest)) {
-        throw new NotSupportedPluginError(
-          `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
+        throw new PluginSystemError(
+          `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`,
+          PluginSystemErrorCode.PLUGIN_NOT_SUPPORTED
         );
       }
 
