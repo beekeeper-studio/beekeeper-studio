@@ -1,5 +1,6 @@
 import yargs from 'yargs-parser'
 import _ from 'lodash'
+import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
@@ -79,6 +80,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     sessionType,
     isWayland: isWaylandMode(),
     isSnap: p.env.ELECTRON_SNAP,
+    isFlatpak: !!p.env.FLATPAK_ID || existsSync('/.flatpak-info'),
     isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
     isDevelopment: isDevEnv,
     isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
@@ -104,10 +106,10 @@ export function mainPlatformInfo(): IPlatformInfo {
     appVersion,
     parsedAppVersion,
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
-    cloudUrl: 'https://app.beekeeperstudio.io',
+    // cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
 
-    // cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
+    cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }
 }
 

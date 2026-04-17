@@ -28,6 +28,7 @@ import { UtilProcMessage } from '@/types'
 import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
+import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -204,9 +205,11 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
 
-      installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
-        .then((name) => console.log(`Added Extension:  ${name}`))
-        .catch((err) => console.log('An error occurred: ', err));
+    // Per: www.npmjs.com/package/electron-devtools-installer?activeTab=readme#what-extensions-can-i-use
+    // https://chromewebstore.google.com/detail/vuejs-devtools/iaajmlceplecbljialhhkmedjlpdblhp
+    installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
+      .then((name) => console.log(`Added Extension:  ${name}`))
+      .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because
     // we can't connect to bigquery-emulator on localhost.
     // See: https://github.com/electron/electron/issues/23664
@@ -227,6 +230,7 @@ app.on('ready', async () => {
     if (getActiveWindows().length === 0) {
       const settings = await initBasics()
       initializeSecurity(app);
+      initializeFileHelpers();
       await createUtilityProcess()
 
       await buildWindow(settings)
@@ -235,7 +239,7 @@ app.on('ready', async () => {
 
 })
 
-function createAndSendPorts(filter: boolean, utilDied: boolean = false) {
+function createAndSendPorts(filter: boolean, utilDied = false) {
   getActiveWindows().forEach((w) => {
     if (!filter || newWindows.includes(w.winId)) {
       const { port1, port2 } = new electron.MessageChannelMain();

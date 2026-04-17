@@ -1,0 +1,86 @@
+/* Theme
+
+This was converted from SASS variables & functions to CSS variables & functions
+based on the following:
+
+  1. $theme-bg -> --bks-theme-bg, etc..
+  2. rgba($a, 0.87) -> rgb(from var(--bks-a) r g b / 87%)
+  3. color.adjust($a, $lightness: n%) -> hsl(from var(--bks-a) h s calc(l + n))
+  4. color.adjust($a, $lightness: -n%) -> hsl(from var(--bks-a) h s calc(l - n))
+  5. color.mix($a, $b, n%) -> color-mix(in srgb, var(--bks-a) n%, var(--bks-b))
+*/
+
+:root {
+  // Core theme colors
+  --bks-theme-bg: #f8f8f8;
+  --bks-theme-base: black;
+  --bks-theme-primary: hsl(from #fad83b h s calc(l - 10));
+  --bks-theme-secondary: #0099ff;
+
+  // Text colors
+  --bks-text-dark: #{rgb(from var(--bks-theme-base) r g b / 87%)};
+  --bks-text: #{rgb(from var(--bks-theme-base) r g b / 67%)};
+  --bks-text-light: #{rgb(from var(--bks-theme-base) r g b / 57%)};
+  --bks-text-lighter: #{rgb(from var(--bks-theme-base) r g b / 37%)};
+  --bks-text-hint: #{rgb(from var(--bks-theme-base) r g b / 37%)};
+  --bks-text-disabled: #{rgb(from var(--bks-theme-base) r g b / 37%)};
+
+  // Brand colors
+  --bks-brand-info: #3498db;
+  --bks-brand-success: #15db95;
+  --bks-brand-warning: #ff8d21;
+  --bks-brand-danger: #ff5d59;
+  --bks-brand-default: #{rgb(from var(--bks-theme-base) r g b / 57%)};
+  --bks-brand-purple: #9858ff;
+  --bks-brand-pink: #ff00f0;
+  --bks-brand-primary: var(--bks-theme-primary);
+  --bks-brand-secondary: var(--bks-theme-secondary);
+
+  // App colors
+  --bks-border-color: #{rgb(from var(--bks-theme-base) r g b / 15%)};
+  --bks-link-color: var(--bks-text-dark);
+  --bks-placeholder: var(--bks-text-hint);
+  --bks-selection: #{rgb(from var(--bks-theme-primary) r g b / 20%)};
+  --bks-input-highlight: #{rgb(from var(--bks-theme-base) r g b / 27%)};
+
+  // Editor colors
+  --bks-codemirror-hint-bg: #{hsl(from var(--bks-theme-bg) h s calc(l - 2))};
+  --bks-query-editor-bg: white;
+  --bks-db-select-text: white;
+
+  // Table editing colors
+  --bks-row-handle-selected: hsl(from var(--bks-query-editor-bg) h s calc(l - 10));
+  --bks-row-handle-hover: hsl(from var(--bks-query-editor-bg) h s calc(l - 5));
+  --bks-row-highlight: hsl(from var(--bks-query-editor-bg) h s calc(l - 3));
+  --bks-row-add: #5ff3c0;
+  --bks-row-delete: #FC8A87;
+  --bks-row-error: color-mix(in srgb, var(--bks-query-editor-bg) 70%, var(--bks-brand-danger));
+
+  --bks-cell-edited: #EDDFA1;
+  --bks-cell-error: var(--bks-row-error);
+  --bks-cell-success: var(--bks-row-add);
+
+  // Layout colors
+  --bks-titlebar-bg: transparent;
+  --bks-global-sidebar-bg: transparent;
+  --bks-sidebar-bg: #{hsl(from var(--bks-theme-bg) h s calc(l - 3))};
+  --bks-sidebar-heading-bg: var(--bks-theme-bg);
+  --bks-sidebar-list-icons: var(--bks-theme-primary);
+  --bks-tabs-bg: transparent;
+  --bks-tabs-heading: #{rgb(from var(--bks-theme-base) r g b / 8%)};
+  --bks-grouped-tables-base: #{hsl(from var(--bks-theme-bg) h s calc(l + 2))};
+  --bks-grouped-tables-light: #{hsl(from var(--bks-grouped-tables-base) h s calc(l + 2))};
+
+  --bks-editor-statusbar: #{rgb(from var(--bks-theme-base) r g b / 3.5%)};
+  --bks-statusbar-bg: #{rgb(from var(--bks-theme-base) r g b / 10%)};
+  --bks-statusbar-text: var(--bks-theme-base);
+  --bks-statusbar-text-default: white;
+
+  --bks-tab-link: #{hsl(from var(--bks-theme-bg) h s calc(l - 4))};
+  --bks-badge-bg: #{rgb(from var(--bks-theme-base) r g b / 10%)};
+
+  // Icons
+  --bks-icon-table-color: hsl(from var(--bks-theme-primary) h s calc(l - 6));
+  --bks-icon-view-color: var(--bks-brand-secondary);
+  --bks-icon-materialized-view-color: var(--bks-brand-success);
+}

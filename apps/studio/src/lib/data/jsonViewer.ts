@@ -1,5 +1,6 @@
 import { TableKey } from "@/shared/lib/dialects/models";
 import _ from "lodash";
+import rawLog from "@bksLogger";
 import globals from '@/common/globals'
 import { LineGutter } from "../editor/utils";
 import { toRegexSafe } from "@/common/utils";
@@ -12,6 +13,9 @@ export interface UpdateOptions {
   signs: Record<string, LineGutter["type"]>;
   editablePaths: string[];
 }
+
+const log = rawLog.scope("jsonViewer");
+
 
 export interface ExpandablePath {
   path: string[];
@@ -105,7 +109,7 @@ export function deepFilterObjectProps(
 
   if (!paths) paths = getPaths(obj);
   const filteredPaths = paths.filter((path) =>
-    regex ? regex.test(path) : path.toLowerCase().includes(filter)
+    regex ? regex.test(path) : path.toLowerCase().includes(filter.toLowerCase())
   );
   return _.pick(obj, filteredPaths);
 }
@@ -149,6 +153,42 @@ export function eachPaths(
       fn(newPath, value);
     }
   }
+}
+
+/** Mutate the row data to replace JSON columns with parsed JSON objects */
+export function parseRowDataForJsonViewer(data: Record<string, any>, tableColumns: { field: string, dataType: string }[]) {
+  tableColumns.forEach(column => {
+    const columnValue = data[column.field]
+
+    // Check if the column is a JSON column
+    let isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
+
+    // If the column is not a JSON column, check if it is a JSON string
+    if (!isJsonColumn) {
+      const isColumnHasStringAndNotEmpty = typeof columnValue === 'string' && columnValue.trim() !== ''
+
+      if (isColumnHasStringAndNotEmpty) {
+        const trimmedValue = columnValue.trim()
+        const isJsonObjectString = trimmedValue.startsWith('{') && trimmedValue.endsWith('}')
+        const isJsonArrayString = trimmedValue.startsWith('[') && trimmedValue.endsWith(']')
+
+        if (isJsonObjectString || isJsonArrayString) {
+          isJsonColumn = true
+        }
+      }
+    }
+
+    if (isJsonColumn) {
+      try {
+        if (_.isString(data[column.field])) {
+          data[column.field] = JSON.parse(data[column.field])
+        }
+      } catch (e) {
+        log.warn(`Failed to parse JSON for column ${column.field}:`, e)
+      }
+    }
+  })
+  return data
 }
 
 export function createTruncatableTextDecoration(

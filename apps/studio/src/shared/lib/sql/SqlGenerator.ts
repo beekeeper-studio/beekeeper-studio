@@ -65,7 +65,7 @@ export class SqlGenerator {
         // TODO: autoincrement makes cassandra just roll over and die Need to remove it from the default values.
         // Other than that, was creating tables pretty ok I think
         let col: Knex.ColumnBuilder;
-        if (column.dataType.match(/autoincrement/i) && this.dialect === 'postgresql') {
+        if (column.dataType.match(/autoincrement/i) && ['postgresql', 'greengage'].includes(this.dialect)) {
           col = table.specificType(column.columnName, 'serial')
         } else if (column.dataType.match(/autoincrement/i)) {
           col = table.increments(column.columnName)

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, nativeImage } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
 import path from 'path';
 import fs from 'fs';
@@ -9,7 +9,8 @@ import username from 'username';
 import { execSync } from 'child_process';
 import 'electron-log/preload';
 import pluralize from 'pluralize';
-
+import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
+import type { NativePluginMenuItem } from '@/services/plugin/types';
 
 const electron = require('@electron/remote');
 
@@ -140,6 +141,9 @@ export const api = {
   writeTextToClipboard(text: string) {
     return electron.clipboard.writeText(text);
   },
+  writeImageToClipboard(dataUrl: string) {
+    return electron.clipboard.writeImage(nativeImage.createFromDataURL(dataUrl));
+  },
   readTextFromClipboard(): string {
     return electron.clipboard.readText();
   },
@@ -175,7 +179,18 @@ export const api = {
   },
   pluralize(word: string, count?: number, inclusive?: boolean) {
     return pluralize(word, count, inclusive);
-  }
+  },
+  fileHelpers: {
+    save(options: SaveFileOptions) {
+      return ipcRenderer.invoke('fileHelpers:save', options);
+    },
+  },
+  addNativeMenuItem(item: NativePluginMenuItem) {
+    ipcRenderer.send('add-native-menu-item', item);
+  },
+  removeNativeMenuItem(id: string) {
+    ipcRenderer.send('remove-native-menu-item', id);
+  },
 }
 
 contextBridge.exposeInMainWorld('main', api);

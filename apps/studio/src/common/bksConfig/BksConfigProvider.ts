@@ -1,6 +1,7 @@
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { IPlatformInfo } from "../IPlatformInfo";
+import type { KeybindingTarget, Platform } from "@/types";
 
 export interface BksConfigSource {
   defaultConfig: IBksConfig;
@@ -24,9 +25,11 @@ export interface ConfigEntryDetailWarning {
 
 type IniValue = string | number | boolean | IniArray | undefined;
 
-type ConfigValue = IniValue | Record<string, IniValue>;
+export type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
+
+type ModifierMap = Record<string, string | ((isMac: boolean) => string)>;
 
 interface IBksConfigDebugInfo {
   path: string;
@@ -39,6 +42,26 @@ interface IBksConfigDebugInfo {
 }
 
 const log = rawLog.scope("BksConfigProvider");
+
+const codeMirrorModifierMap = {
+  CTRL: "Ctrl",
+  CMD: "Cmd",
+  CTRLORCMD: "Mod",
+  CMDORCTRL: "Mod",
+  CONTROL: "Ctrl",
+  COMMAND: "Cmd",
+  CONTROLORCOMMAND: "Mod",
+  COMMANDORCONTROL: "Mod",
+  SHIFT: "Shift",
+  ALT: "Alt",
+  OPTION: "Option",
+  ALTGR: "AltGraph",
+  SUPER: "Meta",
+  META: "Meta",
+  WINDOWS: "Meta",
+  ENTER: "Enter",
+  F5: "F5"
+} as const;
 
 const electronModifierMap = {
   CTRL: "Control",
@@ -58,7 +81,7 @@ const electronModifierMap = {
   WINDOWS: "Meta",
 } as const;
 
-const vHotkeyModifierMap = {
+const vHotkeyModifierMap: ModifierMap = {
   CTRL: "ctrl",
   CMD: "cmd",
   CTRLORCMD: "ctrlOrCmd",
@@ -76,31 +99,125 @@ const vHotkeyModifierMap = {
   WINDOWS: "windows",
 } as const;
 
+export const tabulatorModifierMap = {
+  CTRL: "ctrl",
+  CMD: "ctrl",
+  CTRLORCMD: "ctrl",
+  CMDORCTRL: "ctrl",
+  CONTROL: "ctrl",
+  COMMAND: "ctrl",
+  CONTROLORCOMMAND: "ctrl",
+  COMMANDORCONTROL: "ctrl",
+  SHIFT: "shift",
+  ALT: "alt",
+  OPTION: "18",
+  ALTGR: "225",
+  SUPER: "91",
+  META: "224",
+  WINDOWS: "91",
+} as const;
+
+const uiModifierMap: ModifierMap = {
+  CTRL: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  CMD: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  CTRLORCMD: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  CMDORCTRL: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  CONTROL: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  COMMAND: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  CONTROLORCOMMAND: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  COMMANDORCONTROL: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  SHIFT: (isMac) => (isMac ? "⇧" : "Shift"),
+  ALT: (isMac) => (isMac ? "⌥" : "Alt"),
+  OPTION: (isMac) => (isMac ? "⌥" : "Alt"),
+  ALTGR: "AltGr",
+  SUPER: (isMac) => (isMac ? "⌘" : "Super"),
+  META: (isMac) => (isMac ? "^" : "Meta"),
+  PAGEUP: "PageUp",
+  PAGEDOWN: "PageDown",
+};
+
 export function convertKeybinding(
-  target: "electron" | "v-hotkey",
+  target: KeybindingTarget,
   keybinding: string,
-  platform: "windows" | "mac" | "linux"
-) {
-  const modifierMap =
-    target === "electron" ? electronModifierMap : vHotkeyModifierMap;
+  platform: Platform
+): string;
+export function convertKeybinding(
+  target: "ui",
+  keybinding: string,
+  platform: Platform
+): string[];
+export function convertKeybinding(
+  target: "electron" | "v-hotkey" | "codemirror" | "ui",
+  keybinding: string,
+  platform: Platform
+): string[] | string {
+
+  let modifierMap: ModifierMap;
+  let joinChar = '+'
+
+  switch (target) {
+    case "electron":
+      modifierMap = electronModifierMap;
+      break;
+    case "v-hotkey":
+      modifierMap = vHotkeyModifierMap;
+      break;
+    case "codemirror":
+      modifierMap = codeMirrorModifierMap;
+      joinChar = '-'
+      break;
+    case "tabulator":
+      modifierMap = tabulatorModifierMap;
+      joinChar = ' + ';
+    case "ui":
+      modifierMap = uiModifierMap;
+      break;
+    default:
+      log.error("Unrecognized target for keybinding conversion: ", target)
+      return;
+  }
 
   const combination: string[] = [];
   for (const _key of keybinding.split("+")) {
     const key = _key.toUpperCase().trim();
 
-    let mod: string = modifierMap[key] ?? key;
+    let mod = modifierMap[key] ?? key;
+
+    if (typeof mod === "function") {
+      mod = mod(platform === "mac");
+    }
 
     if (target === "v-hotkey") {
       mod = mod.toLowerCase();
       if (mod === "ctrlorcmd") {
         mod = platform === "mac" ? "meta" : "ctrl";
       }
+
+      if (mod === "delete" && platform === "mac") {
+        mod = "backspace";
+      }
+    }
+
+    if (target === "codemirror" && !modifierMap[key]) {
+      mod = mod.toLowerCase();
+    }
+
+    if (target === "tabulator" && !modifierMap[key]) {
+      mod = mod.toLowerCase();
+    }
+    
+    if (target === "ui" && !modifierMap[key]) {
+      mod = _.upperFirst(mod.toLowerCase());
     }
 
     combination.push(mod);
   }
 
-  return combination.join("+");
+  if (target === "ui") {
+    return combination;
+  }
+
+  return combination.join(joinChar);
 }
 
 /**
@@ -213,7 +330,7 @@ export class BksConfigProvider {
     return getDebugAll(this.mergedConfig);
   }
 
-  getKeybindings(target: "electron" | "v-hotkey", path: KeybindingPath) {
+  getKeybindings(target: KeybindingTarget, path: KeybindingPath) {
     const keybindings = this.get(`keybindings.${path}`);
 
     if (isIniArray(keybindings)) {
@@ -224,9 +341,9 @@ export class BksConfigProvider {
 
     if (typeof keybindings !== "string") {
       log.warn(`Invalid keybindings: ${keybindings} at ${path}`);
+      return [];
     }
 
-    // @ts-expect-error keybindings should be a string
     return convertKeybinding(target, keybindings, this.platformInfo.platform);
   }
 

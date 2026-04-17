@@ -54,6 +54,10 @@
             v-else-if="blob.tabType === 'database' || blob.tabDetails?.tabType === 'database'"
           >storage</i>
           <i
+            class="material-icons item-icon plugin"
+            v-else-if="blob.tabType.startsWith('plugin-')"
+          >{{ $bksPlugin.pluginOf(blob.generatedPluginId)?.manifest.icon }}</i>
+          <i
             class="material-icons item-icon database"
             v-else
           >code</i>
@@ -126,7 +130,7 @@
             class="material-icons item-icon database"
             v-if="blob.type === 'database'"
           >storage</i>
-          <span v-html="highlight(blob)" />
+          <span v-html="blob.highlight" />
         </li>
       </ul>
     </div>
@@ -140,6 +144,9 @@ import { mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
 import TableIcon from '@/components/common/TableIcon.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
+import { isUltimateType } from '@/common/interfaces/IConnection'
+import { searchItems } from '@/store/modules/SearchModule'
+
 export default Vue.extend({
   components: { TableIcon },
   mounted() {
@@ -170,10 +177,9 @@ export default Vue.extend({
       }
 
     },
-    async searchTerm() {
+    searchTerm() {
       if (this.searchTerm) {
-        const ids: any[] = await this.searchIndex.searchAsync(this.searchTerm, 20)
-        this.results = this.database.filter((blob) => ids.includes(blob.id))
+        this.results = searchItems(this.database, this.searchTerm, 20)
 
         if (this.selectedItem >= this.results.length) this.selectedItem = this.results.length - 1
       } else {
@@ -185,8 +191,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(['usedConfig']),
-    ...mapState('search', ['searchIndex']),
-    ...mapGetters({ database: 'search/database'}),
+    ...mapGetters({ database: 'search/database', isUltimate: 'isUltimate' }),
     ...mapState(['tables']),
     ...mapState('tabs', { 'tabs': 'tabs' }),
     elements() {
@@ -212,15 +217,7 @@ export default Vue.extend({
   methods: {
     async getTabHistory() {
       const results = await Vue.prototype.$util.send('appdb/tabhistory/get', { workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
-      this.historyResults = results 
-    },
-    highlight(blob) {
-      const dangerous = blob.title
-      const text = escapeHtml(dangerous || "unknown item")
-      const regex = new RegExp(this.searchTerm.split(/\s+/).filter((i) => i?.length).join("|"), 'gi')
-      const result = text.replace(regex, (match) => `<strong>${match}</strong>`)
-
-      return result
+      this.historyResults = results
     },
     highlightHistory(blob) {
       const dangerous = blob.title
@@ -258,6 +255,11 @@ export default Vue.extend({
           this.$root.$emit('favoriteClick', result.item)
           break;
         case 'connection':
+          if (!this.isUltimate && isUltimateType(result.item.connectionType)) {
+            this.$noty.error('Cannot switch to Ultimate only connection.')
+            return
+          }
+
           await this.$store.dispatch('disconnect')
           try {
             const { auth, cancelled } = await this.$bks.unlock();
@@ -306,7 +308,7 @@ export default Vue.extend({
       let result = this.results[this.selectedItem]
       if (!this.results.length && !this.searchTerm && this.historyResults.length) {
         result = this.historyResults[this.selectedItem]
-        this.handleHistoryClick(_, result) 
+        this.handleHistoryClick(_, result)
       } else {
         this.submit(result)
       }
@@ -315,7 +317,7 @@ export default Vue.extend({
       let result = this.results[this.selectedItem]
       if (!this.results.length && !this.searchTerm && this.historyResults.length) {
         result = this.historyResults[this.selectedItem]
-        this.handleHistoryClick(_, result) 
+        this.handleHistoryClick(_, result)
       } else {
         this.submitAlt(result)
       }

@@ -17,6 +17,8 @@ export interface ContextOption {
 }
 
 interface MenuProps {
+  /** The id of the menu. Not to be confused with the `elementId`. */
+  id?: string
   options: ContextOption[],
   elementId?: string
   item: any,
@@ -63,7 +65,7 @@ export const BeekeeperPlugin = {
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
-    if (config.connectionType.match(/sqlite|libsql|duckdb/)) {
+    if (config.connectionType?.match(/sqlite|libsql|duckdb/)) {
       return config.defaultDatabase || "./unknown.db"
     } else if (config.connectionType === 'mongodb') {
       return config.url
@@ -87,7 +89,7 @@ export const BeekeeperPlugin = {
     if (config.socketPathEnabled) return config.socketPath;
 
     let connectionString = `${config.host}:${config.port}`;
-    if (config.connectionType.match(/sqlite|libsql|duckdb/)) {
+    if (config.connectionType?.match(/sqlite|libsql|duckdb/)) {
       return window.main.basename(config.defaultDatabase || "./unknown.db")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
@@ -130,6 +132,19 @@ export const BeekeeperPlugin = {
       })
     }
     return { cancelled: false }
+  },
+  async promptJwtToken(connectionName?: string): Promise<{ token?: string; cancelled: boolean }> {
+    return new Promise((resolve) => {
+      const description = connectionName
+        ? `Paste a fresh CockroachDB JWT to connect to ${connectionName}. Beekeeper will send it as the password for this connection.`
+        : 'Paste a fresh CockroachDB JWT. Beekeeper will send it as the password for this connection.';
+
+      Vue.prototype.$modal.show('input-jwt-modal', {
+        description,
+        onSubmit: (token: string) => resolve({ token, cancelled: false }),
+        onCancel: () => resolve({ cancelled: true }),
+      })
+    })
   },
 }
 

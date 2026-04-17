@@ -11,7 +11,7 @@ This works great for 99% of users, but sometimes online validation of a license 
 
 ![Trial ended by mistake](../assets/images/trial-ended.png)
 
-To solve this problem, if you purchased a yearly professional license or team license you can download the key for 100% offline validation.
+To solve this problem, if you purchased a yearly business license or team license you can download the key for 100% offline validation.
 
 ## How to use an offline license
 
@@ -31,6 +31,12 @@ To solve this problem, if you purchased a yearly professional license or team li
 ## How offline licenses work
 
 The offline license file contains a digitally signed license key that Beekeeper Studio can verify locally without contacting any servers. When present, the offline license takes priority over any online licenses. The app verifies the license signature using a public key that's bundled with the application.
+
+## Subscription renewals and offline licenses
+
+The license you download is only valid for your paid subscription period. That means every time your subscription renews you'll need to download a new license file.
+
+Because of that we recommend purchasing an annual subscription if you intend to use offline licenses.
 
 ## Troubleshooting
 

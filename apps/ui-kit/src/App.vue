@@ -24,18 +24,6 @@
       @bks-entities-request-columns="requestColumns"
       @bks-value-change="handleValueChange"
     />
-    <h2>SqlTextEditor Legacy</h2>
-    <sql-text-editor-legacy
-      :value="value"
-      :entities="entities"
-      :columns-getter="columnsGetter"
-      :keymap="keymap"
-      :line-wrapping="lineWrapping"
-      :line-numbers="lineNumbers"
-      :keybindings="keybindings"
-      @bks-entities-request-columns="requestColumns"
-      @bks-value-change="handleValueChange"
-    />
     <button
       @click="
         entities = [
@@ -49,16 +37,15 @@
 </template>
 
 <script lang="ts">
-import "../lib/components/sql-text-editor/v1/sql-text-editor.scss";
+import "../lib/components/sql-text-editor/sql-text-editor.scss";
 import "../lib/style.scss";
 import { LanguageServerConfiguration } from "../lib/components/text-editor";
-import TextEditor from "../lib/components/text-editor/v2/TextEditor.vue";
-import SqlTextEditor from "../lib/components/sql-text-editor/v2/SqlTextEditor.vue";
-import SqlTextEditorLegacy from "../lib/components/sql-text-editor/v1/SqlTextEditor.vue";
+import TextEditor from "../lib/components/text-editor/TextEditor.vue";
+import SqlTextEditor from "../lib/components/sql-text-editor/SqlTextEditor.vue";
 import _ from "lodash";
 
 export default {
-  components: { TextEditor, SqlTextEditor, SqlTextEditorLegacy },
+  components: { TextEditor, SqlTextEditor },
   data() {
     return {
       textEditorValue: `function sum(a: number, b: number) {

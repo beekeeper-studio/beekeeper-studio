@@ -83,7 +83,7 @@ $cell-success:           $row-add;
       font-weight: 500;
       padding: $gutter-w ($gutter-w * 1.25);
       color: $text-light;
-      transition: color 0.2s ease-in-out, 
+      transition: color 0.2s ease-in-out,
                   box-shadow 0.2s ease-in-out;
       &:hover {
         color: $text-dark;
@@ -97,7 +97,7 @@ $cell-success:           $row-add;
   }
 
 
-  // Table Info 
+  // Table Info
   // --------------------------------
   // Table Info Header
   .table-info {
@@ -259,6 +259,7 @@ $cell-success:           $row-add;
 
     // Tabulator Header Row
     .tabulator {
+      --tabulator-row-even-deleted-bg-color: var(--tabulator-row-odd-deleted-bg-color);
       .tabulator-header {
         .tabulator-col {
           padding: 0 $cell-padding;
@@ -273,9 +274,9 @@ $cell-success:           $row-add;
     // Field Rows
     .tabulator-row {
       margin: $row-gutter 0;
+      background-color: transparent;
       &.tabulator-row-even {
-        --row-bg-color: #{rgba($theme-base, 0.05)};
-        background: rgba($theme-base, 0.05)!important;
+        background-color: rgb(from var(--theme-base) r g b / 5%);
       }
       .tabulator-cell {
         min-height: $row-height;
@@ -400,17 +401,15 @@ $cell-success:           $row-add;
       font-size: 18px;
     }
 
+    &.deleted {
+      div.dynamic-action::after {
+        content: "undo";
+      }
+    }
+
     &.tabulator-row-even {
       &.inserted {
-        --row-bg-color: #{$row-add};
         background-color: $row-add!important;
-      }
-      &.deleted {
-        --row-bg-color: #{$row-delete};
-        background-color: $row-delete!important;
-        div.dynamic-action::after {
-          content: "undo";
-        }
       }
       &.inserted, &.deleted {
         .tabulator-cell {

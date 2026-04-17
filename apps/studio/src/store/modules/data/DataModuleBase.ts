@@ -25,6 +25,7 @@ export interface DataState<T> {
   error: ClientError
   pollError: ClientError
   filter?: string
+  pendingSaveIds?: number[]
 }
 
 
@@ -72,6 +73,17 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   pollError(state, error: Error | null) {
     state.pollError = error
   },
+  addPendingSave(state, id: number) {
+    if (!state.pendingSaveIds) state.pendingSaveIds = []
+    if (!state.pendingSaveIds.includes(id)) {
+      state.pendingSaveIds.push(id)
+    }
+  },
+  removePendingSave(state, id: number) {
+    if (state.pendingSaveIds) {
+      state.pendingSaveIds = state.pendingSaveIds.filter((i) => i !== id)
+    }
+  },
   set(state, items: T[] | T) {
     items = _.isArray(items) ? items : [items];
     const sorted = sortBy ? _.sortBy(items, sortBy.field) : items;
@@ -87,13 +99,18 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
     state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted
   },
   replace(state, items: T[]) {
+    const pendingIds = state.pendingSaveIds || []
     const itemIds = items.map((i) => i.id)
     const stateIds = state.items.map((i) => i.id)
 
-    const toUpdate = items.filter((i) => stateIds.includes(i.id))
+    // Don't update items that have pending saves - keep local optimistic version
+    const toUpdate = items.filter((i) => stateIds.includes(i.id) && !pendingIds.includes(i.id))
     const toInsert = items.filter((i) => !stateIds.includes(i.id))
 
-    const stateItems = _.reject(state.items, (item) => !itemIds.includes(item.id))
+    // Don't remove items that have pending saves
+    const stateItems = _.reject(state.items, (item) =>
+      !itemIds.includes(item.id) && !pendingIds.includes(item.id)
+    )
     const upsertable = [...toUpdate, ...toInsert]
     upsertable.forEach((i) => upsert(stateItems, i))
     const sorted = sortBy ? _.sortBy(stateItems, sortBy.field) : stateItems
@@ -116,7 +133,7 @@ export function mutationsFor<T extends HasId>(obj: any = {}, sortBy?: SortSpec) 
   }
 }
 
-export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}) {
+export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}, findOneSelects: any = {}) {
   return {
     async load(context) {
       context.commit("error", null);
@@ -149,13 +166,22 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
       return updated.id;
     },
 
+    async saveMany(context, items: T[]) {
+      // Optimistic commit so any re-renders during the async saves see correct state
+      context.commit('upsert', items);
+      const saved = await Promise.all(
+        items.map(item => Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item }))
+      );
+      context.commit('upsert', saved);
+    },
+
     async remove(context, item: T) {
       await Vue.prototype.$util.send(`appdb/${type}/remove`, { obj: item });
       context.commit('remove', item)
     },
 
     async reload(context, id: number) {
-      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, { options: { id } })
+      const item = await Vue.prototype.$util.send(`appdb/${type}/findOneBy`, { options: { id } })
       if (item) {
         context.commit('upsert', item)
         return item.id
@@ -164,79 +190,16 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
         return null
       }
     },
-    ...other
-  }
-}
-
-
-export function localActionsFor<T extends Transport>(cls: any, other: any, loadOptions: any = {}) {
-  return {
-    async load(context) {
-      context.commit("error", null)
-      await safely(context, async () => {
-
-        const items = await cls.find(loadOptions)
-        if (context.rootState.workspaceId === LocalWorkspace.id) {
-          context.commit('upsert', items)
+    async findOne(_context, id: number) {
+      const item = await Vue.prototype.$util.send(`appdb/${type}/findOne`, {
+        options: {
+          where: {
+            id
+          },
+          select: findOneSelects
         }
-      })
-    },
-
-    async poll() {
-      // do nothing, locally we don't need to poll.
-      // nothing else can change anything.
-    },
-
-    async clearError(context) {
-      context.commit('error', null)
-    },
-
-    async clone(_context, item: T) {
-      const result = new cls()
-      Object.assign(result, item);
-      result.id = null
-      result.createdAt = new Date()
-      return result
-    },
-
-    async create(context, item: T) {
-      const q = new cls()
-      Object.assign(q, item);
-      await q.save()
-      context.commit('upsert', q)
-      return q.id
-    },
-
-    async update(context, item: T) {
-      const existing = context.state.items.find((i) => i.id === item.id)
-      if (!existing) throw new Error("Could not find this item")
-      Object.assign(existing, item);
-      await existing.save()
-      return existing.id
-    },
-
-    async save(context, item: T) {
-      if (item.id) {
-        return await context.dispatch('update', item)
-      } else {
-        return await context.dispatch('create', item)
-      }
-    },
-
-    async remove(context, item: T) {
-      await item.remove()
-      context.commit('remove', item)
-    },
-
-    async reload(context, id: number) {
-      const item = await cls.findOneBy({ id: id })
-      if (item) {
-        context.commit('upsert', item)
-        return item.id
-      } else {
-        context.commit('remove', id)
-        return null
-      }
+      });
+      return item;
     },
     ...other
   }
@@ -311,6 +274,13 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
       result['id'] = null
       result['createdAt'] = null
       return result
+    },
+    async findOne(context, id: number): Promise<T> {
+      let item;
+      await havingCli(context, async (cli) => {
+        item = await cli[scope].get(id);
+      });
+      return item;
     },
     ...obj
   }

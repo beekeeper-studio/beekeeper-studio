@@ -1,154 +1,74 @@
 import type { Store } from "vuex";
 import { State as RootState } from "@/store";
 import type {
+  PluginTabContext,
   TabTypeConfig,
   TransportOpenTab,
+  TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
-import {
-  GetAllTabsResponse,
-  GetColumnsResponse,
-  GetConnectionInfoResponse,
-  GetTablesResponse,
-  RunQueryResponse,
-  TabResponse,
-  ThemeChangedNotification,
-} from "@beekeeperstudio/plugin";
-import { findTable } from "@/common/transport/TransportOpenTab";
+import { DatabaseType } from "@beekeeperstudio/plugin";
+import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { NgQueryResult } from "@/lib/db/models";
+import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
-import { TabKind } from "../types";
+import {
+  Manifest,
+  PluginMenuItem,
+  PluginView,
+  TabType,
+  CreatePluginTabOptions,
+} from "../types";
+import { ExternalMenuItem, JsonValue } from "@/types";
+import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { cssVars } from "./cssVars";
+import type { DialectData } from "@/shared/lib/dialects/models";
 
-/**
- * Service that provides an interface to the plugin Vuex module
- */
+type Table = {
+  name: string;
+  schema?: string;
+};
+
+/** An interface that bridges plugin system with Vuex and AppEvents. */
 export default class PluginStoreService {
+  private tablesChangedListeners: Set<() => void> = new Set();
+
   constructor(
     private store: Store<RootState>,
-    private appEventBus: {
+    public appEventBus: {
       emit: (event: AppEvent, ...args: any) => void;
       on: (event: AppEvent, listener: (...args: any) => void) => void;
       off: (event: AppEvent, listener: (...args: any) => void) => void;
     }
-  ) {}
+  ) {
+    this.store.subscribe((mutation) => {
+      if (mutation.type === "tables") {
+        this.tablesChangedListeners.forEach((listener) => listener());
+      }
+    })
+  }
 
-  getTheme(): ThemeChangedNotification["args"] {
-    const cssProps = [
-      "--theme-bg",
-      "--theme-base",
-      "--theme-primary",
-      "--theme-secondary",
+  on(name: 'tablesChanged', listener: () => void) {
+    this.tablesChangedListeners.add(listener);
+    return () => this.tablesChangedListeners.delete(listener);
+  }
 
-      "--text-dark",
-      "--text",
-      "--text-light",
-      "--text-lighter",
-      "--text-hint",
-      "--text-disabled",
+  off(name: 'tablesChanged', listener: () => void) {
+    this.tablesChangedListeners.delete(listener);
+  }
 
-      "--brand-info",
-      "--brand-success",
-      "--brand-warning",
-      "--brand-danger",
-      "--brand-default",
-      "--brand-purple",
-      "--brand-pink",
-
-      "--border-color",
-      "--link-color",
-      "--placeholder",
-      "--selection",
-      "--input-highlight",
-
-      "--query-editor-bg",
-
-      // BksTextEditor
-      "--bks-text-editor-activeline-bg-color",
-      "--bks-text-editor-activeline-gutter-bg-color",
-      "--bks-text-editor-atom-fg-color",
-      "--bks-text-editor-bg-color",
-      "--bks-text-editor-bracket-fg-color",
-      "--bks-text-editor-builtin-fg-color",
-      "--bks-text-editor-comment-attribute-fg-color",
-      "--bks-text-editor-comment-def-fg-color",
-      "--bks-text-editor-comment-fg-color",
-      "--bks-text-editor-comment-tag-fg-color",
-      "--bks-text-editor-comment-type-fg-color",
-      "--bks-text-editor-cursor-bg-color",
-      "--bks-text-editor-def-fg-color",
-      "--bks-text-editor-error-bg-color",
-      "--bks-text-editor-error-fg-color",
-      "--bks-text-editor-fg-color",
-      "--bks-text-editor-gutter-bg-color",
-      "--bks-text-editor-guttermarker-fg-color",
-      "--bks-text-editor-guttermarker-subtle-fg-color",
-      "--bks-text-editor-header-fg-color",
-      "--bks-text-editor-keyword-fg-color",
-      "--bks-text-editor-linenumber-fg-color",
-      "--bks-text-editor-link-fg-color",
-      "--bks-text-editor-matchingbracket-fg-color",
-      "--bks-text-editor-matchingbracket-bg-color",
-      "--bks-text-editor-number-fg-color",
-      "--bks-text-editor-property-fg-color",
-      "--bks-text-editor-selected-bg-color",
-      "--bks-text-editor-string-fg-color",
-      "--bks-text-editor-tag-fg-color",
-      "--bks-text-editor-variable-2-fg-color",
-      "--bks-text-editor-variable-3-fg-color",
-      "--bks-text-editor-variable-fg-color",
-      "--bks-text-editor-namespace-fg-color",
-      "--bks-text-editor-type-fg-color",
-      "--bks-text-editor-class-fg-color",
-      "--bks-text-editor-enum-fg-color",
-      "--bks-text-editor-interface-fg-color",
-      "--bks-text-editor-struct-fg-color",
-      "--bks-text-editor-typeParameter-fg-color",
-      "--bks-text-editor-parameter-fg-color",
-      "--bks-text-editor-enumMember-fg-color",
-      "--bks-text-editor-decorator-fg-color",
-      "--bks-text-editor-event-fg-color",
-      "--bks-text-editor-function-fg-color",
-      "--bks-text-editor-method-fg-color",
-      "--bks-text-editor-macro-fg-color",
-      "--bks-text-editor-label-fg-color",
-      "--bks-text-editor-regexp-fg-color",
-      "--bks-text-editor-operator-fg-color",
-      "--bks-text-editor-definition-fg-color",
-      "--bks-text-editor-variableName-fg-color",
-      "--bks-text-editor-bool-fg-color",
-      "--bks-text-editor-null-fg-color",
-      "--bks-text-editor-className-fg-color",
-      "--bks-text-editor-propertyName-fg-color",
-      "--bks-text-editor-punctuation-fg-color",
-      "--bks-text-editor-meta-fg-color",
-      "--bks-text-editor-typeName-fg-color",
-      "--bks-text-editor-labelName-fg-color",
-      "--bks-text-editor-attributeName-fg-color",
-      "--bks-text-editor-attributeValue-fg-color",
-      "--bks-text-editor-heading-fg-color",
-      "--bks-text-editor-url-fg-color",
-      "--bks-text-editor-processingInstruction-fg-color",
-      "--bks-text-editor-special-string-fg-color",
-
-      // BksTextEditor context menu
-      "--bks-text-editor-context-menu-bg-color",
-      "--bks-text-editor-context-menu-fg-color",
-      "--bks-text-editor-context-menu-item-bg-color-active",
-      "--bks-text-editor-context-menu-item-fg-color-active",
-      "--bks-text-editor-context-menu-item-bg-color-hover",
-    ];
-
-    const styles = getComputedStyle(document.body);
+  getTheme()  {
+    const styles = getComputedStyle(this.getAppEl());
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
-    for (const name of cssProps) {
+    for (const name of cssVars) {
       const camelKey = _.camelCase(name);
       palette[camelKey] = styles.getPropertyValue(name).trim();
     }
 
-    const cssString = cssProps
+    const cssString = cssVars
       .map((cssProp) => `${cssProp}: ${palette[_.camelCase(cssProp)]};`)
       .join("");
 
@@ -167,14 +87,15 @@ export default class PluginStoreService {
     this.store.commit("sidebar/removeSecondarySidebar", id);
   }
 
-  addTabTypeConfig(params: {
+  /** @deprecated use `addTabTypeConfigs` or `setTabDropdownItem` instead */
+  addTabTypeConfigV0(params: {
     pluginId: string;
     pluginTabTypeId: string;
     name: string;
-    kind: TabKind;
+    kind: TabType;
     icon?: string;
   }): void {
-    const config: TabTypeConfig.PluginShellConfig = {
+    const config: TabTypeConfig.PluginConfig = {
       type: `plugin-${params.kind}` as const,
       name: params.name,
       pluginId: params.pluginId,
@@ -185,15 +106,92 @@ export default class PluginStoreService {
     this.store.commit("tabs/addTabTypeConfig", config);
   }
 
-  removeTabTypeConfig(identifier: TabTypeConfig.PluginShellConfigIdentifiers): void {
+  /** @deprecated use `removeTabTypeConfigs` or `unsetTabDropdownItem` instead */
+  removeTabTypeConfigV0(
+    identifier: TabTypeConfig.PluginRef
+  ): void {
     this.store.commit("tabs/removeTabTypeConfig", identifier);
   }
 
-  getTables(): GetTablesResponse {
-    return this.store.state.tables.map((t) => ({
-      name: t.name,
-      schema: t.schema,
-    }));
+  /** Register plugin views as tabs */
+  addTabTypeConfigs(manifest: Manifest, views: PluginView[]): void {
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      const type: PluginTabType = view.type.includes("shell")
+        ? "plugin-shell"
+        : "plugin-base";
+      const config: TabTypeConfig.PluginConfig = {
+        ...ref,
+        type,
+        name: manifest.name,
+        icon: manifest.icon,
+      };
+      this.store.commit("tabs/addTabTypeConfig", config);
+    });
+  }
+
+  removeTabTypeConfigs(manifest: Manifest, views: PluginView[]): void {
+    views.forEach((view) => {
+      const ref: TabTypeConfig.PluginRef = {
+        pluginId: manifest.id,
+        pluginTabTypeId: view.id,
+      };
+      this.store.commit("tabs/removeTabTypeConfig", ref);
+    })
+  }
+
+  setTabDropdownItem(options: {
+    menuItem: PluginMenuItem;
+    manifest: Manifest;
+  }): void {
+    const ref: TabTypeConfig.PluginRef = {
+      pluginId: options.manifest.id,
+      pluginTabTypeId: options.menuItem.view,
+    };
+    const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
+      label: options.menuItem.name,
+      command: options.menuItem.command,
+    }
+    this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
+  }
+
+  unsetTabDropdownItem(options: {
+    menuItem: PluginMenuItem;
+    manifest: Manifest;
+  }): void {
+    const ref: TabTypeConfig.PluginRef = {
+      pluginId: options.manifest.id,
+      pluginTabTypeId: options.menuItem.view,
+    };
+    this.store.commit("tabs/unsetMenuItem", ref);
+  }
+
+  getTables(schema?: string): Table[] {
+    const allTables = this.store.state.tables;
+
+    const dialect: DialectData = this.store.getters.dialectData;
+    if (dialect.disabledFeatures?.schema) {
+      return allTables;
+    }
+
+    const tables: Table[] = [];
+    // If no schema is provided, use the default schema
+    const effectiveSchema = typeof schema === "undefined"
+      ? this.store.state.defaultSchema
+      : schema;
+
+    for (const table of allTables) {
+      if (table.schema && table.schema === effectiveSchema) {
+        tables.push({
+          name: table.name,
+          schema: table.schema,
+        });
+      }
+    }
+    return tables;
   }
 
   private findTable(name: string, schema?: string) {
@@ -208,50 +206,51 @@ export default class PluginStoreService {
     });
   }
 
+  /** @throws {Error} Not found */
+  private findTableOrThrow(name: string, schema?: string) {
+    const table = this.findTable(name, schema);
+    if (!table) {
+      throw new Error(schema ? `Table not found (table=${name}, schema=${schema})` : `Table not found (table=${name})`);
+    }
+    return table;
+  }
+
   async getColumns(
     tableName: string,
     schema?: string
-  ): Promise<GetColumnsResponse> {
-    const table = this.findTable(tableName, schema);
-
-    if (!table) {
-      throw new Error(`Table ${tableName} not found`);
-    }
+  ) {
+    const table = this.findTableOrThrow(tableName, schema);
 
     if (!table.columns || table.columns.length === 0) {
       await this.store.dispatch("updateTableColumns", table);
     }
 
-    return this.findTable(tableName, schema).columns.map((c) => ({
+    return this.findTable(tableName, schema).columns.map((c: ExtendedTableColumn) => ({
       name: c.columnName,
       type: c.dataType,
+      comment: c.comment ?? "",
+      nullable: c.nullable ?? false,
+      defaultValue: c.defaultValue,
+      extra: c.extra ?? "",
+      generated: c.generated ?? false,
+      ordinalPosition: c.ordinalPosition,
     }));
   }
 
-  getConnectionInfo(): GetConnectionInfoResponse {
+  getConnectionInfo() {
     return {
+      id: this.store.state.usedConfig.id,
+      workspaceId: this.store.state.workspaceId,
+      connectionName: this.store.state.usedConfig.name || "",
       connectionType: this.store.state.connectionType,
+      databaseType: this.store.state.connectionType as DatabaseType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
     };
   }
 
-  getActiveTab(): GetActiveTabResponse {
-    const activeTab: TransportOpenTab = this.store.state.tabs.active;
-
-    if (!activeTab) {
-      return null;
-    }
-
-    return this.serializeTab(activeTab);
-  }
-
-  getAllTabs(): GetAllTabsResponse {
-    return this.store.state.tabs.tabs.map((tab) => this.serializeTab(tab));
-  }
-
-  private serializeTab(tab: TransportOpenTab): TabResponse {
+  serializeTab(tab: TransportOpenTab) {
     if (tab.tabType === "query") {
       return {
         type: "query",
@@ -296,11 +295,97 @@ export default class PluginStoreService {
   }
 
   /* Run query in the background */
-  async runQuery(query: string): Promise<RunQueryResponse> {
+  async runQuery(query: string) {
     const results = await this.store.state.connection.executeQuery(query);
 
     return {
       results: results.map(this.serializeQueryResponse),
     };
+  }
+
+  createPluginTab(options: CreatePluginTabOptions) {
+    const transport = this.buildPluginTabInit(options);
+    this.appEventBus.emit(AppEvent.newCustomTab, transport);
+  }
+
+  openTab(options: OpenTabRequest['args']): void {
+    if (options.type === "query") {
+      if (!options.query) {
+        this.appEventBus.emit(AppEvent.newTab)
+      } else {
+        this.appEventBus.emit(AppEvent.newTab, options.query)
+      }
+      return;
+    }
+
+    if (options.type === "tableStructure") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.openTableProperties, { table });
+      return;
+    }
+
+    if (options.type === "tableTable") {
+      const table = this.findTableOrThrow(options.table, options.schema);
+      this.appEventBus.emit(AppEvent.loadTable, {
+        table,
+        filters: options.filters,
+      });
+      return;
+    }
+
+    throw new Error(`Unsupported tab type: ${options.type}`);
+  }
+
+  addPopupMenuItem(menuId: string, item: ContextOption) {
+    this.store.commit("popupMenu/add", { menuId, item });
+  }
+
+  removePopupMenuItem(menuId: string, slug: string) {
+    this.store.commit("popupMenu/remove", { menuId, slug });
+  }
+
+  addMenuBarItem(item: ExternalMenuItem<PluginTabContext>) {
+    this.store.commit("menuBar/add", item);
+  }
+
+  removeMenuBarItem(id: string) {
+    this.store.commit("menuBar/remove", id);
+  }
+
+  buildPluginTabInit(
+    options: CreatePluginTabOptions
+  ): TransportOpenTabInit<PluginTabContext> {
+    // FIXME(azmi): duplicated code from CoreTabs.vue
+    const tabItems = this.store.getters["tabs/sortedTabs"];
+    let title = options.manifest.name;
+    let tNum = 0;
+    do {
+      tNum = tNum + 1;
+      title = `${options.manifest.name} #${tNum}`;
+    } while (tabItems.filter((t) => t.title === title).length > 0);
+
+    const views = isManifestV0(options.manifest)
+      ? mapViewsAndMenuFromV0ToV1(options.manifest).views
+      : options.manifest.capabilities.views;
+    const view = views.find((v) => v.id === options.viewId);
+    const tabType: PluginTabType = view.type.includes("shell")
+      ? "plugin-shell"
+      : "plugin-base";
+
+    return {
+      tabType,
+      title: options.manifest.name,
+      unsavedChanges: false,
+      context: {
+        pluginId: options.manifest.id,
+        pluginTabTypeId: options.viewId,
+        params: options.params,
+        command: options.command,
+      },
+    };
+  }
+
+  private getAppEl() {
+    return document.body.querySelector('.beekeeper-studio-wrapper');
   }
 }

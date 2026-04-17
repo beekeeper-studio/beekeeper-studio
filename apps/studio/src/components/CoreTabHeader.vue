@@ -12,8 +12,8 @@
         class="nav-link"
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
-        @contextmenu="$bks.openMenu({item: tab, options: contextOptions, event: $event})"
-        :class="{ active: selected }"
+        @contextmenu="$bks.openMenu({id: headerContextMenuId, item: tab, options: contextOptions, event: $event})"
+        :class="{ active: selected, 'active-transaction': isTransaction }"
       >
         <tab-icon :tab="tab" />
         <span
@@ -84,6 +84,7 @@
 <script>
 import TabIcon from './tab/TabIcon.vue'
 import { mapState } from 'vuex'
+import _ from 'lodash'
 
   export default {
   components: { TabIcon },
@@ -121,6 +122,11 @@ import { mapState } from 'vuex'
         event.preventDefault()
         this.$emit('close', this.tab)
       },
+      forceClose(event) {
+        event.stopPropagation()
+        event.preventDefault()
+        this.$emit('forceClose', this.tab)
+      },
       doNothing() {
         // Empty on purpose
       },
@@ -142,13 +148,12 @@ import { mapState } from 'vuex'
     },
     computed: {
       ...mapState('tabs', { 'activeTab': 'active' }),
+      headerContextMenuId() {
+        // "tab.query.header", "tab.table.header", "tab.tableProperties.header", etc..
+        return `tab.${_.camelCase(this.tab.tabType)}-header`
+      },
       contextOptions() {
         const copyNameClass = (this.tab.tabType === "table" || this.tab.tabType === "table-properties") ? "" : "disabled";
-
-        const devOptions = []
-        if (this.tab.tabType === "plugin-shell") {
-          devOptions.push({ name: "[DEV] Reload plugin view", slug: 'dev-reload-plugin-view', handler: ({item}) => this.$emit('reloadPluginView', item) })
-        }
 
         return [
           { name: "Close", slug: 'close', handler: ({event}) => this.maybeClose(event)},
@@ -157,7 +162,6 @@ import { mapState } from 'vuex'
           { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
           { name: "Copy Entity Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
-          ...(window.platformInfo.isDevelopment && devOptions),
         ];
       },
       modalName() {
@@ -173,6 +177,7 @@ import { mapState } from 'vuex'
 
         return this.$vHotkeyKeymap({
           'tab.closeTab': this.maybeClose,
+          'tab.forceCloseTab': this.forceClose,
         })
       },
       cleanText() {
@@ -213,6 +218,9 @@ import { mapState } from 'vuex'
       title() {
         return this.queryTabTitle || this.tableTabTitle || "Unknown"
       },
+      isTransaction() {
+        return this.tab.isTransaction === true;
+      }
     }
   }
 

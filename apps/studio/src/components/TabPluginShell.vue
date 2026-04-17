@@ -1,18 +1,45 @@
 <template>
   <div
-    v-if="isCommunity && tab.context.pluginId === 'bks-ai-shell'"
+    v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
     class="tab-upsell-wrapper"
   >
     <upsell-content />
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
+      <div
+        v-if="pluginManagerStatus !== 'ready'"
+        class="plugin-status"
+        :class="pluginManagerStatus"
+      >
+        <template v-if="pluginManagerStatus === 'initializing'">
+          Initializing plugins ...
+        </template>
+        <template v-else-if="pluginManagerStatus === 'failed-to-initialize'">
+          Failed to initialize plugin manager.
+        </template>
+      </div>
+      <div v-else-if="plugin && !plugin.loadable" class="plugin-status">
+        <p>
+          Plugin "{{ plugin.manifest.name }}" isn’t compatible with this version of Beekeeper Studio.
+          It requires version {{ plugin.manifest.minAppVersion }} or newer.
+        </p>
+
+        <p>To fix this:</p>
+
+        <ol>
+          <li>Upgrade your Beekeeper Studio.</li>
+          <li>Or install an older plugin version manually (see <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">instructions</a>).</li>
+        </ol>
+      </div>
       <isolated-plugin-view
+        v-else
         :visible="active"
         :plugin-id="tab.context.pluginId"
-        :url="url"
-        :reload="reload"
+        :view-id="tab.context.pluginTabTypeId"
         :on-request="handleRequest"
+        :command="tab.context.command"
+        :params="tab.context.params"
       />
     </div>
     <div class="bottom-panel" ref="bottomPanel" :class="{ 'hidden-panel': !isTablePanelVisible }">
@@ -51,6 +78,7 @@
       </div>
     </div>
     <query-editor-status-bar
+      v-if="showStatusBarUI"
       v-model="selectedResult"
       :results="results"
       :running="isRunningQuery"
@@ -82,13 +110,16 @@ import ShortcutHints from "@/components/editor/ShortcutHints.vue";
 import QueryEditorStatusBar from "@/components/editor/QueryEditorStatusBar.vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { PropType } from "vue";
-import { TransportPluginShellTab } from "@/common/transport/TransportOpenTab";
+import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { mapGetters } from "vuex";
+import { mapState, mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
-import { OnViewRequestListenerParams } from "@/services/plugin/types";
+import type { OnViewRequestListenerParams, PluginContext } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('TabPluginShell')
 
 export default Vue.extend({
   components: {
@@ -102,11 +133,10 @@ export default Vue.extend({
   },
   props: {
     tab: {
-      type: Object as PropType<TransportPluginShellTab>,
+      type: Object as PropType<TransportPluginTab>,
       required: true,
     },
     active: Boolean,
-    reload: null,
   },
   data() {
     return {
@@ -124,19 +154,22 @@ export default Vue.extend({
       focusingElement: "table",
       query: "",
       isTablePanelVisible: false,
+      showStatusBarUI: true,
     };
   },
   computed: {
+    ...mapState(["pluginManagerStatus"]),
     ...mapGetters(["isCommunity"]),
-    url() {
-      const manifest = this.$plugin.manifestOf(this.tab.context.pluginId);
-      const tabType = manifest.capabilities.views.tabTypes.find(
-        (t) => t.id === this.tab.context.pluginTabTypeId
-      );
-      return this.$plugin.buildUrlFor(this.tab.context.pluginId, tabType.entry);
+    plugin(): PluginContext {
+      try {
+        return this.$plugin.pluginOf(this.tab.context.pluginId);
+      } catch (e) {
+        log.error(e);
+        return null;
+      }
     },
     shouldInitialize() {
-      return this.active && !this.initialized;
+      return !this.isCommunity && this.active && !this.initialized;
     },
     errors() {
       return this.error ? [this.error] : null;
@@ -161,8 +194,11 @@ export default Vue.extend({
     },
   },
   watch: {
-    shouldInitialize() {
-      if (this.shouldInitialize) this.initialize();
+    async shouldInitialize() {
+      if (this.shouldInitialize) {
+        await this.$nextTick();
+        this.initialize();
+      }
     },
   },
   methods: {
@@ -197,6 +233,14 @@ export default Vue.extend({
       this.$nextTick(() => {
         this.tableHeight = this.$refs.bottomPanel.clientHeight;
       });
+
+      if (this.containerResizeObserver) {
+        this.containerResizeObserver.disconnect();
+      }
+      this.containerResizeObserver = new ResizeObserver(() => {
+        this.tableHeight = this.$refs.bottomPanel?.clientHeight || 0;
+      });
+      this.containerResizeObserver.observe(this.$refs.container);
     },
     download(format) {
       this.$refs.table.download(format)
@@ -256,6 +300,14 @@ export default Vue.extend({
           await this.$store.dispatch('tabs/save', this.tab)
           break;
         }
+        case "toggleStatusBarUI": {
+          if (typeof request.args?.force === "boolean") {
+            this.showStatusBarUI = request.args.force;
+          } else {
+            this.showStatusBarUI = !this.showStatusBarUI;
+          }
+          break;
+        }
       }
     },
     async switchPaneFocus(
@@ -298,17 +350,12 @@ export default Vue.extend({
       await this.$nextTick();
       this.initialize();
     }
-
-    this.containerResizeObserver = new ResizeObserver(() => {
-      this.tableHeight = this.$refs.bottomPanel?.clientHeight || 0;
-    });
-    this.containerResizeObserver.observe(this.$refs.container);
   },
   beforeDestroy() {
     if (this.split) {
       this.split.destroy();
     }
-    this.containerResizeObserver.disconnect();
+    this.containerResizeObserver?.disconnect();
   },
 });
 </script>

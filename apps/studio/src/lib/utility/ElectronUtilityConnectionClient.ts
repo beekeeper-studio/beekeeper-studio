@@ -1,6 +1,6 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, FieldDescriptor, FieldEditData, ServerStatistics } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
 
@@ -54,8 +54,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/listMaterializedViewColumns', { table, schema })
   }
 
-  async listTableColumns(table: string, schema?: string): Promise<ExtendedTableColumn[]> {
-    return await Vue.prototype.$util.send('conn/listTableColumns', { table, schema });
+  async listTableColumns(table: string, schema?: string, database?: string): Promise<ExtendedTableColumn[]> {
+    return await Vue.prototype.$util.send('conn/listTableColumns', { table, schema, database });
   }
 
   async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
@@ -86,16 +86,20 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/executeCommand', { commandText });
   }
 
-  async query(queryText: string, options?: any): Promise<CancelableQuery> {
-    const id = await Vue.prototype.$util.send('conn/query', { queryText, options });
+  async query(queryText: string, tabId: number, options?: any, hasActiveTransaction: boolean = false): Promise<CancelableQuery> {
+    const id = await Vue.prototype.$util.send('conn/query', { queryText, options, tabId, hasActiveTransaction });
     return {
       execute: async () => {
-        return await Vue.prototype.$util.send('query/execute', { queryId: id })
+        return await Vue.prototype.$util.send('query/execute', { queryId: id, isManualCommit: options?.isManualCommit })
       },
       cancel: async () => {
         return await Vue.prototype.$util.send('query/cancel', { queryId: id })
       }
     }
+  }
+
+  async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
+    return await Vue.prototype.$util.send('conn/getResultEditData', { queryText, fields });
   }
 
   async getCompletions(cmd: string): Promise<string[]> {
@@ -206,8 +210,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/applyChangesSql', { changes });
   }
 
-  async applyChanges(changes: TableChanges): Promise<any[]> {
-    return await Vue.prototype.$util.send('conn/applyChanges', { changes });
+  async applyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
+    return await Vue.prototype.$util.send('conn/applyChanges', { changes, tabId });
   }
 
   async setTableDescription(table: string, description: string, schema?: string): Promise<string> {
@@ -230,12 +234,12 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/truncateAllTables', { schema });
   }
 
-  async getTableLength(table: string, schema?: string): Promise<number> {
-    return await Vue.prototype.$util.send('conn/getTableLength', { table, schema });
+  async getTableLength(table: string, schema?: string, database?: string): Promise<number> {
+    return await Vue.prototype.$util.send('conn/getTableLength', { table, schema, database });
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
-    return await Vue.prototype.$util.send('conn/selectTop', { table, offset, limit, orderBy, filters, schema, selects });
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[], database?: string): Promise<TableResult> {
+    return await Vue.prototype.$util.send('conn/selectTop', { table, offset, limit, orderBy, filters, schema, selects, database });
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string> {
@@ -281,27 +285,27 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   async importStepZero(_table: TableOrView): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importBeginCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importTruncateCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importLineReadCommand(_table: TableOrView, _sqlString: string | string[], _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importCommitCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importRollbackCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
-  
+
   async importFinalCommand(_table: TableOrView, _importOptions?: ImportFuncOptions): Promise<any> {
     throw new Error ('Do not use on front end')
   }
@@ -309,5 +313,33 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
   /** Returns a query for the given filter */
   async getQueryForFilter(filter: TableFilter): Promise<string> {
     return await Vue.prototype.$util.send('conn/getQueryForFilter', { filter });
+  }
+
+  async getFilteredDataCount(table: string, schema: string | null, filter: string): Promise<string> {
+    return await Vue.prototype.$util.send('conn/getFilteredDataCount', { table, schema, filter });
+  }
+
+  async reserveConnection(tabId: number) {
+    return await Vue.prototype.$util.send('conn/reserveConnection', { tabId });
+  }
+
+  async releaseConnection(tabId: number) {
+    return await Vue.prototype.$util.send('conn/releaseConnection', { tabId });
+  }
+
+  async startTransaction(tabId: number) {
+    return await Vue.prototype.$util.send('conn/startTransaction', { tabId });
+  }
+
+  async commitTransaction(tabId: number) {
+    return await Vue.prototype.$util.send('conn/commitTransaction', { tabId });
+  }
+
+  async rollbackTransaction(tabId: number) {
+    return await Vue.prototype.$util.send('conn/rollbackTransaction', { tabId });
+  }
+  // no frontend for this yet
+  getServerStatistics(): Promise<ServerStatistics | null> {
+      throw new Error("Method not implemented.");
   }
 }

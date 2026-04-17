@@ -82,7 +82,7 @@
               :value="content"
               :language-id="language.languageId"
               :line-wrapping="wrapText"
-              :focus="editorFocus"
+              :is-focused="editorFocus"
               :readOnly="isReadOnly"
               :replace-extensions="replaceExtensions"
               @focus="editorFocus = $event"

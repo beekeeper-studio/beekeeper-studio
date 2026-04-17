@@ -14,8 +14,10 @@
 <script lang="ts">
 import Vue from 'vue'
 import { mapState } from 'vuex'
+import { joinFilters } from "@/common/utils"
+
 export default Vue.extend({
-  props: ['table'],
+  props: ['table', 'filters'],
   data: () => ({
     totalRecords: null,
     fetchingTotalRecords: false,
@@ -35,9 +37,19 @@ export default Vue.extend({
   methods: {
     async fetchTotalRecords() {
       this.fetchingTotalRecords = true
+      
       try {
+        const allFilters = []
         this.error = null
-        this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema);
+        if (Array.isArray(this.filters) && this.filters.length > 0 ) {
+          for (const filter of this.filters) {
+            allFilters.push(await this.connection.getQueryForFilter(filter))
+          }
+
+          this.totalRecords = await this.connection.getFilteredDataCount(this.table.name, this.table.schema, joinFilters(allFilters, this.filters))
+        } else {
+          this.totalRecords = await this.connection.getTableLength(this.table.name, this.table.schema);
+        }
       } catch (ex) {
         console.error("unable to fetch total records", ex)
         this.totalRecords = 0

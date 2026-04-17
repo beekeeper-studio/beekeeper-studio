@@ -54,6 +54,7 @@ class ClickHouseColumnType extends ColumnType {
 }
 
 export const ClickHouseData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ClickHouseColumnType(t, false, defaultLength(t))),
   constraintActions: [],
   wrapIdentifier(value: string) {
@@ -75,6 +76,15 @@ export const ClickHouseData: DialectData = {
     const matched = value.match(UNWRAPPER);
     return matched ? matched[1] : value;
   },
+  importDataType: {
+    stringType: 'String',
+    longStringType: 'String',
+    dateType: 'Date',
+    booleanType: 'Bool',
+    integerType: 'INT',
+    numberType: 'DOUBLE',
+    defaultType: 'String'
+  },
   textEditorMode: "text/x-mysql",
   versionWarnings: [
     {
@@ -83,9 +93,11 @@ export const ClickHouseData: DialectData = {
     }
   ],
   disabledFeatures: {
+    manualCommit: true,
     shell: true,
     triggers: true,
     compositeKeys: true,
+    foreignKeys: true,
     createIndex: true,
     generatedColumns: true,
     alter: {

@@ -5,6 +5,9 @@
     v-hotkey="allHotkeys"
     :class="{active: menuActive}"
     ref="nav"
+    tabindex="-1"
+    role="menubar"
+    @keydown="maybeCaptureKeydown"
   >
     <!-- TOP MENU, eg File, Edit -->
     <ul class="menu-bar">
@@ -26,18 +29,20 @@
           <li
             class="menu-item"
             :class="{'has-children': !!item.submenu, ...hoverClass(item), 'disabled-app-menu': isMenuItemDisabled(item.id)}"
-            v-for="(item, idx) in (menu.submenu || [])"
+            v-for="(item, idx) in visibleSubmenuItems(menu)"
             :key="item.id || idx"
           >
+            <div v-if="item.type === 'separator'" class="separator" />
             <a
+              v-else
               @mousedown.prevent="noop()"
               @mouseup.prevent="handle(item)"
               @mouseover.prevent="setHover(item)"
               :class="hoverClass(item)"
             >
               <span class="label">
-                <span 
-                  class="material-icons" 
+                <span
+                  class="material-icons"
                   v-if="item.checked"
                 >done</span>
                 <span>{{ item.label }}</span>
@@ -51,7 +56,9 @@
                 v-for="subitem in (item.submenu || [])"
                 :key="subitem.label"
               >
+                <div v-if="item.type === 'separator'" class="separator" />
                 <a
+                  v-else
                   @mouseover.prevent="setHover(subitem, item)"
                   :class="hoverClass(subitem)"
                   @mousedown.prevent="noop()"
@@ -88,7 +95,6 @@ export default {
     return {
       menuBuilder: null,
       actionHandler: new ClientMenuActionHandler(),
-      menus: [],
       menuActive: false,
       selected: null,
       hovered: null,
@@ -101,18 +107,6 @@ export default {
         "Escape": this.closeMenu,
         "Enter": this.clickHovered
       },
-      connectionMenuItems:[
-          "new-query-menu", 
-          "go-to", 
-          "disconnect", 
-          "import-sql-files", 
-          "close-tab", 
-          "menu-toggle-sidebar", 
-          "menu-secondary-sidebar",
-          "backup-database", 
-          "restore-database", 
-          "export-tables"
-      ]
     }
   },
   computed: {
@@ -132,17 +126,10 @@ export default {
     menuElements() {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
     },
-    ...mapGetters({'settings': 'settings/settings'}),
+    ...mapGetters('menuBar', ['menus', 'connectionMenuItems']),
     ...mapState(['connected'])
   },
   watch: {
-    settings: {
-      deep: true,
-      handler() {
-        this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config, this.$bksConfig)
-        this.menus = this.menuBuilder.buildTemplate()
-      }
-    },
     menuActive() {
       if (!this.menuActive) {
         this.selected = null
@@ -157,6 +144,9 @@ export default {
   methods: {
     isMenuItemDisabled(itemId){
       return this.connectionMenuItems.includes(itemId) && !this.connected;
+    },
+    visibleSubmenuItems(menu) {
+      return (menu.submenu || []).filter(item => item.visible !== false);
     },
     getNext(array, item) {
       const selectedIndex = item ? _.indexOf(array, item) : -1
@@ -248,6 +238,7 @@ export default {
     setActive(item) {
       this.menuActive = !this.menuActive
       this.selected = item
+      this.$nextTick(() => this.$refs.nav?.focus())
     },
     setSelected(item) {
       this.selected = item
@@ -278,16 +269,21 @@ export default {
     }
   },
   async mounted() {
-    this.menuBuilder = new MenuBuilder(this.settings, this.actionHandler, this.$config, this.$bksConfig)
-    this.menus = this.menuBuilder.buildTemplate()
     document.addEventListener('click', this.maybeHideMenu)
-    window.addEventListener('keydown', this.maybeCaptureKeydown, false)
   },
   beforeDestroy() {
     document.removeEventListener('click', this.maybeHideMenu)
-    window.removeEventListener('keydown', this.maybeCaptureKeydown, false)
   }
 
 
 }
 </script>
+
+<style scoped>
+.separator {
+  margin-block: 0.35em;
+  width: 100%;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+</style>

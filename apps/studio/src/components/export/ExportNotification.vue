@@ -59,6 +59,11 @@ export default {
     }
   },
   watch: {
+    percentComplete() {
+      if(this.percentComplete === 100) {
+        setTimeout(()=> this.notification.close(), 2000);
+      }
+    },
     notificationText: {
       handler() {
         if (this.notification) {

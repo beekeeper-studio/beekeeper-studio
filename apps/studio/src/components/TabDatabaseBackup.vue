@@ -1,6 +1,18 @@
 <template>
   <div
-    v-if="!isSupported"
+    v-if="isRestore && usedConfig.readOnlyMode"
+    class="tabcontent"
+  >
+    <div class="not-supported">
+      <div class="card-flat padding">
+        <h3 class="card-title">
+          Read Only Mode is enabled for this connection. Restoring is disabled
+        </h3>
+      </div>
+    </div>
+  </div>
+  <div
+    v-else-if="!isSupported"
     class="tabcontent"
   >
     <div class="not-supported">
@@ -177,6 +189,7 @@ export default Vue.extend({
       'failed': 'failed',
     }),
     ...mapState({
+      'usedConfig': 'usedConfig',
       'supportedFeatures': 'supportedFeatures'
     }),
     includedTables() {

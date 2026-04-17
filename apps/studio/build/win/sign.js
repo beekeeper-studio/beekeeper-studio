@@ -7,27 +7,27 @@ function isEmpty(value) {
 exports.default = async function (configuration) {
 
   const certificate = process.env.KV_WIN_CERTIFICATE;
-  const auth_raw = process.env.KEYVAULT_AUTH;
+  const keyvaultUrl = process.env.KEYVAULT_URL;
+
   // this way we don't have to sign EVERY build
-  if(isEmpty(certificate) || isEmpty(auth_raw)) {
-    console.warn(`build/sign.js: Cannot sign exe, no KV_WIN_CERTIFICATE/KEYVAULT_AUTH provided for ${configuration.path}`);
+  if(isEmpty(certificate) || isEmpty(keyvaultUrl)) {
+    console.warn(`build/sign.js: Cannot sign exe, no KV_WIN_CERTIFICATE/KEYVAULT_URL provided for ${configuration.path}`);
     return null;
   }
 
-  const keyvault = JSON.parse(auth_raw)
   const timeserver = "http://timestamp.digicert.com"
 
-  // This took me 2 weeks to figure out.
-  // Hi there Matthew in 2026, hope this still works.
+  // Updated to use Azure managed identity authentication via azure/login action
+  // This uses the token obtained from the azure/login step in the GitHub workflow
+  // The -kvm flag enables managed identity authentication (uses Azure CLI credentials)
   const command = [
     'azuresigntool.exe sign -fd sha384',
-    '-kvu', keyvault.url,
-    '-kvi', keyvault.id,
-    '-kvt', keyvault.tenant,
-    '-kvs', keyvault.secret,
+    '-kvu', keyvaultUrl,
+    '-kvm',  // Use managed identity / Azure CLI authentication
     '-kvc', certificate,
     "-tr", timeserver,
     '-td', 'sha384',
+    '--max-degree-of-parallelism', '1',
     '-v'
   ]
 

@@ -44,7 +44,7 @@
 import _ from "lodash";
 import Vue from "vue";
 import EntityList from "../entity-list/EntityList.vue";
-import SqlTextEditor from "../sql-text-editor/v2/SqlTextEditor.vue";
+import SqlTextEditor from "../sql-text-editor/SqlTextEditor.vue";
 import TableComponent from "../table/Table.vue";
 import Split from "split.js";
 import { Table } from "./types";

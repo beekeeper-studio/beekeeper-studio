@@ -26,6 +26,7 @@
         <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
       </a>
       <a
+        v-if="!usedConfig?.readOnlyMode"
         class="refresh"
         @click.prevent="$modal.show('config-add-database')"
         :title="'Add Database'"
@@ -122,7 +123,7 @@
       },
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
-        if (this.dialect.disabledFeatures?.multipleDatabase) {
+        if (this.dialect.disabledFeatures?.multipleDatabases) {
           const fileLocation = this.selectedDatabase.split('/')
           fileLocation.pop()
           const url = this.connectionType === 'sqlite' ? `${fileLocation.join('/')}/${db}.db` : `${fileLocation.join('/')}/${db}`
@@ -147,7 +148,7 @@
         return _.without(this.dbs, this.selectedDatabase)
       },
       ...mapGetters(['dialect', 'dialectData']),
-      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType'}),
+      ...mapState({currentDatabase: 'database', dbs: 'databaseList', connectionType: 'connectionType', usedConfig: 'usedConfig'}),
     },
     watch: {
       currentDatabase(newValue) {
@@ -178,7 +179,7 @@
       100% { transform: rotate(360deg); }
     }
   }
-  
+
   .sqlite-db-name {
     width: 90%;
     overflow: hidden;

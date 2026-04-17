@@ -28,7 +28,7 @@ async function createLicense(options: {
   supportUntil?: string;
   maxAllowedAppRelease: Nullable<{ tagName: string }>;
 }) {
-  await LicenseKey.delete({});
+  await LicenseKey.clear();
   const license = new LicenseKey();
   license.validUntil = new Date(options.validUntil);
   license.supportUntil = new Date(options.supportUntil ?? options.validUntil);

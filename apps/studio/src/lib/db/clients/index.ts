@@ -26,6 +26,7 @@ interface ClientConfig {
   key: string,
   name: string,
   defaultPort?: number,
+  topLevelEntity?: string,
   defaultDatabase?: string,
   disabledFeatures?: string[],
 }
@@ -74,6 +75,15 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'greengage',
+    name: 'GreengageDB',
+    defaultDatabase: 'postgres',
+    defaultPort: 5432,
+    disabledFeatures: [
+      'server:domain',
+    ],
+  },
+  {
     key: 'redshift',
     name: 'Amazon Redshift',
     defaultDatabase: 'postgres',
@@ -115,6 +125,20 @@ export const CLIENTS: ClientConfig[] = [
   {
     key: 'cassandra',
     name: 'Cassandra',
+    defaultPort: 9042,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:schema',
+      'server:domain',
+      'scriptCreateTable',
+      'cancelQuery',
+      'server:socketPathWithCustomPort',
+    ],
+  },
+  {
+    key: 'scylladb',
+    name: 'ScyllaDB',
     defaultPort: 9042,
     disabledFeatures: [
       'server:ssl',
@@ -209,6 +233,16 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'trino',
+    name: 'Trino',
+    topLevelEntity: 'Catalog',
+    defaultPort: 8080,
+    disabledFeatures: [
+      'server:socketPath',
+      'cancelQuery', // TODO how to do this?
+    ],
+  },
+  {
     key: 'clickhouse',
     name: 'ClickHouse',
     defaultPort: 8123,
@@ -227,6 +261,42 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
       'server:ssl',
       'server:socketPath'
+    ]
+  },
+  {
+    key: 'surrealdb',
+    name: 'SurrealDB',
+    defaultPort: 8000,
+    disabledFeatures: [
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'server:ssl'
+    ]
+  },
+  {
+    key: 'redis',
+    name: 'Redis',
+    defaultPort: 6379,
+    defaultDatabase: '0',
+    disabledFeatures: [
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'server:schema',
+      'server:domain',
+      'server:ssh',
+      'server:user',
+      'scriptCreateTable',
+      'cancelQuery'
+    ],
+  },
+  {
+    key: 'bedrock',
+    name: 'Bedrock',
+    defaultPort: 3306,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+      'server:socketPathWithCustomPort',
     ]
   }
 ];

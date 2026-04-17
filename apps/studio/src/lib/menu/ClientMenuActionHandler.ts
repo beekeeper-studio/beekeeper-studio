@@ -2,6 +2,7 @@ import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
 import _ from 'lodash'
 import {AppEvent} from '../../common/AppEvent'
 import rawLog from '@bksLogger'
+import { CustomMenuAction } from '@/types'
 
 const log = rawLog.scope("ClientMenuActionHandler")
 
@@ -31,8 +32,10 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   fullscreen = () => send('fullscreen')
   about = () => send('about')
   devtools = () => send('devtools')
+  restart = () => send('restart')
   opendocs = () => send('opendocs')
   contactSupport = () => send('contactSupport')
+  openGettingStarted = () => send('openGettingStarted')
   newWindow = () => send('newWindow')
   newQuery = () => send('newQuery')
   newTab = () => send('newTab')
@@ -54,10 +57,17 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   checkForUpdates = () => send('checkForUpdates')
   importSqlFiles = () => send('importSqlFiles')
   toggleMinimalMode = () => send('toggleMinimalMode')
+  togglePrivacyMode = () => send('togglePrivacyMode')
   switchLicenseState = (_menuItem, _win, type) => send('switchLicenseState', type)
+  simulatePlatform = (_menuItem, _win, platform) => send('simulatePlatform', platform)
   toggleBeta = (menuItem) => {
     send('toggleBeta', menuItem);
   }
   updatePin = () => send('updatePin')
   managePlugins = () => send("managePlugins")
+  keyboardShortcuts = () => send("keyboardShortcuts")
+  handleAction = (action: CustomMenuAction) => send('handleAction', action)
+  editorFontSizeReset = () => send('editorFontSizeReset')
+  editorFontSizeIncrease = () => send('editorFontSizeIncrease')
+  editorFontSizeDecrease = () => send('editorFontSizeDecrease')
 }

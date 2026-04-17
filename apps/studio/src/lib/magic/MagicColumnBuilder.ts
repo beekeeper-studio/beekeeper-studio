@@ -19,7 +19,7 @@ const MagicColumnBuilder = {
     log.debug("finding magics for", parts)
     if (parts.length < 2) return null
     const topLevel = magicFor(parts[1], magics)
-    if (parts[2] && topLevel.subMagics?.length) {
+    if (parts[2] && topLevel?.subMagics?.length) {
       const result = magicFor(parts[2], topLevel.subMagics) || topLevel
       return result
     } else {

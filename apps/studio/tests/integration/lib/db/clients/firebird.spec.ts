@@ -85,6 +85,12 @@ describe("Firebird Tests", () => {
     runCommonTests(() => util);
   });
 
+  describe("Param tests", () => {
+    it("Should be able to handle positional (?) params", async () => {
+      await util.paramTest(['?']);
+    })
+  })
+
   describe("NodeFirebirdWrapper", () => {
     let config: Firebird.Options;
 
@@ -319,8 +325,6 @@ describe("Firebird Tests", () => {
 
     // Test that composite keys are detected correctly
     const tableKeys = await util.connection.getTableKeys('composite_child_test');
-    
-    console.log('All foreign keys:', JSON.stringify(tableKeys, null, 2));
     
     // Get the composite key
     const compositeKey = tableKeys.find(key => key.isComposite);

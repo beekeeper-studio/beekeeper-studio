@@ -84,7 +84,20 @@ $statusbar-height:          2.6rem;
 
 
 // text
-$font-family: 'Roboto, sans-serif';
+$font-family: system-ui,
+          -apple-system, BlinkMacSystemFont,
+          "Segoe UI",
+          "Roboto",
+          "Oxygen",
+          "Ubuntu",
+          "Cantarell",
+          "Fira Sans",
+          "Droid Sans",
+          "Helvetica Neue",
+          Arial, sans-serif;
 
 $grouped-tables-base: color.adjust($theme-bg, $lightness: 2%);
 $grouped-tables-light: color.adjust($grouped-tables-base, $lightness: 2%);
+
+$scrollbar-track: transparent;
+$scrollbar-thumb: color.mix($theme-base, $theme-bg, 20%);

@@ -8,8 +8,17 @@ const types = [
 const supportsLength = [];
 
 export const BigQueryData: DialectData = {
+  sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t))),
   constraintActions: [],
+  importDataType: {
+    stringType: 'string',
+    dateType: 'date',
+    booleanType: 'bool',
+    integerType: 'int64',
+    numberType: 'float64',
+    defaultType: 'string'
+  },
   wrapIdentifier: (id: string) => {
     if (id) {
       // Escape backticks and backslashes
@@ -27,6 +36,8 @@ export const BigQueryData: DialectData = {
   unwrapIdentifier: (s) => s,
   textEditorMode: "text/x-sql",
   disabledFeatures: {
+    manualCommit: true,
+    resultEditing: true,
     shell: true,
     truncateElement: true,
     duplicateTable: true,

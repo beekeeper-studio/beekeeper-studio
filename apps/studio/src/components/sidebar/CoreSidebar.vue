@@ -8,6 +8,10 @@
         :class="tabClasses('tables')"
         v-show="activeItem === 'tables'"
       >
+        <surreal-namespace-dropdown
+          v-if="connectionType === 'surrealdb'"
+          @namespaceSelected="namespaceSelected"
+        />
         <database-dropdown
           @databaseSelected="databaseSelected"
         />
@@ -43,6 +47,7 @@
   import HistoryList from './core/HistoryList.vue'
   import FavoriteList from './core/FavoriteList.vue'
   import DatabaseDropdown from './core/DatabaseDropdown.vue'
+  import SurrealNamespaceDropdown from './core/SurrealNamespaceDropdown.vue'
 
   import { mapState, mapGetters, mapActions } from 'vuex'
   import rawLog from '@bksLogger'
@@ -50,7 +55,7 @@
   const log = rawLog.scope('core-sidebar')
 
   export default {
-    components: { TableList, DatabaseDropdown, HistoryList, FavoriteList},
+    components: { TableList, DatabaseDropdown, HistoryList, FavoriteList, SurrealNamespaceDropdown},
     data() {
       return {
         tableLoadError: null,
@@ -78,7 +83,7 @@
         "activeItem": "globalSidebarActiveItem",
         "sidebarShown": "primarySidebarOpen",
       }),
-      ...mapState(['tables', 'database']),
+      ...mapState(['tables', 'database', 'connectionType']),
       ...mapGetters(['minimalMode']),
     },
     watch: {
@@ -101,6 +106,12 @@
           this.$noty.error(e.message);
         })
         this.allExpanded = false
+      },
+      async namespaceSelected(ns) {
+        log.info("Pool namespace selected", ns);
+        this.$store.dispatch('changeNamespace', ns).catch((e) => {
+          this.$noty.error(e.message);
+        })
       },
       async disconnect() {
         await this.$store.dispatch('disconnect')

@@ -1,5 +1,5 @@
 <template>
-  <loading-spinner v-if="tab.isRunning && !forceIcon" />
+  <loading-spinner v-if="isRunning && !forceIcon" />
   <table-icon
     v-else-if="tab.tabType === 'table'"
     :table="tab"
@@ -55,18 +55,31 @@
 import Vue, { PropType } from 'vue'
 import TableIcon from '../common/TableIcon.vue'
 import LoadingSpinner from '../common/loading/LoadingSpinner.vue'
-import { OpenTab } from '@/common/appdb/models/OpenTab'
 import { mapGetters } from 'vuex'
+import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
 
 export default Vue.extend({
   components: { TableIcon, LoadingSpinner },
   props: {
     tab: {
-      type: Object as PropType<OpenTab>
+      type: Object as PropType<TransportOpenTab>
     },
     forceIcon: {
       type: Boolean,
       default: false
+    }
+  },
+  data() {
+    return {
+      isRunning: false,
+    }
+  },
+  watch: {
+    tab: {
+      deep: true,
+      handler(value) {
+        this.isRunning = value.isRunning;
+      }
     }
   },
   computed: {

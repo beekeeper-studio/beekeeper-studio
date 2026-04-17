@@ -41,11 +41,19 @@ You can provide either:
 - An array of extensions to **fully replace** the default set
 
 ```js
-import { monokai } from "@uiw/codemirror-theme-monokai";
+import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 
 // Modify existing extensions
 textEditor.replaceExtensions = (defaultExtensions) => {
-  return [...defaultExtensions, monokai];
+  return [
+    ...defaultExtensions,
+    monokaiInit({
+      settings: {
+        selection: "",
+        selectionMatch: "",
+      },
+    }),
+  ];
 };
 
 // Replace all default extensions

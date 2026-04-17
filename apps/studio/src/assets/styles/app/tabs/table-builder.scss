@@ -90,10 +90,7 @@
     // Field Rows
     .tabulator-row {
       margin: $row-gutter 0;
-      &.tabulator-row-even {
-        background: rgba($theme-base, 0.05)!important;
-        --row-bg-color: #{rgba($theme-base, 0.05)};
-      }
+      background-color: rgb(from var(--theme-base) r g b / 5%);
       .tabulator-cell {
         min-height: $row-height;
         height: $row-height;

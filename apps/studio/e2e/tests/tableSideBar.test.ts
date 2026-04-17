@@ -32,6 +32,7 @@ test.describe("Table creation", () => {
     });
 
     afterEach(async () => {
+        if (!electronApp) return;
         const dropTableQuery = `DROP TABLE ${newTableName};`
         const newQueryIndex = '1';
 

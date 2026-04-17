@@ -7,6 +7,8 @@ export enum AppEvent {
   menuClick = 'menu-click',
   settingsChanged = "sc-refresh",
   newTab = 'nt',
+  /** Create a new custom tab. First argument is `TransportOpenTab`. */
+  newCustomTab = 'nct',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
   disconnect = 'dc',
@@ -18,12 +20,14 @@ export enum AppEvent {
   beginExport = 'be',
   beginImport = 'beginImport',
   createTable = 'new_table',
+  createTableFromFile = 'new_table_from_file',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
   promptCreateWorkspace = 'cloud_create_workspace',
   promptRenameWorkspace = 'cloud_rename_workspace',
+  promptDeleteWorkspace = 'cloud_delete_workspace',
   promptQueryImport = 'cloud_q_import',
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
@@ -59,6 +63,7 @@ export enum AppEvent {
   toggleBeta = 'toggleBeta',
   switchUserKeymap = 'switchUserKeymap',
   openPluginManager = 'openPluginManager',
+  openKeyboardShortcuts = 'openKeyboardShortcuts',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
@@ -68,9 +73,12 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  simulatePlatform = 'simulatePlatform',
   updatePin = 'updatePin',
   /** The theme has been changed. */
   changedTheme = 'changedTheme',
+  /** A plugin menu item was clicked in the native/client menu under the tools. */
+  pluginMenuClicked = 'pluginMenuClicked',
 }
 
 export interface RootBinding {

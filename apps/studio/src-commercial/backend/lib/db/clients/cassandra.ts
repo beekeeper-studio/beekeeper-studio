@@ -17,6 +17,7 @@ import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialec
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import _ from "lodash";
+import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
 const log = rawLog.scope("cassandra");
 const logger = () => log;
@@ -83,6 +84,16 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     });
   }
 
+  async disconnect(): Promise<void> {
+    await super.disconnect();
+    // cassandra-driver keeps control connections and reconnect timers alive
+    // until shutdown() is called, which prevents Node from exiting.
+    if (this.client) {
+      await this.client.shutdown();
+      this.client = null;
+    }
+  }
+
   getBuilder(table: string, _schema?: string): ChangeBuilderBase {
     return new CassandraChangeBuilder(table, [])
   }
@@ -98,6 +109,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      filterTypes: ['standard']
     }
   }
 
@@ -189,7 +201,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]) // TODO (@will): Make sure this isn't a thing since you shouldn't be doing joins anyway?
   }
 
-  async getTableKeys(table: string, _schema?: string): Promise<TableKey[]> {
+  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     const sql = `
       SELECT column_name
       FROM system_schema.columns
@@ -207,6 +219,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       referencedTable: null,
       keyType: 'PRIMARY KEY'
     } as any));
+  }
+
+  async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    return [];
   }
 
   async query(queryText: string, _options?: any): Promise<CancelableQuery> {
@@ -237,7 +253,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
-    const commands = this.identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText);
 
     const data = await this.driverExecuteSingle(queryText, options);
     return [this.parseRowQueryResult(data, commands[0])];
@@ -593,20 +609,21 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   }
 
 
-  private parseRowQueryResult(data, command) {
+  private parseRowQueryResult(data: CassandraResult, command: IdentifyResult) {
     // Fallback in case the identifier could not recognize the command
-    const isSelect = command ? command === 'SELECT' : Array.isArray(data.rows);
-    const { columns, rows, rowLength } = data
+    const isSelect = command ? command?.type === 'SELECT' : Array.isArray(data.rows);
+    const { columns, rows, length } = data
     const fields = isSelect ? this.parseFields(columns, rows[0]) : []
 
     return {
-      command: command || (isSelect && 'SELECT'),
+      command: command?.type || (isSelect && 'SELECT'),
+      text: command?.text,
       rows: this.parseRows(rows, columns)  || [],
       fields: fields,
       // FIXME not sure what this is, this causes the query to fail. .isPaged() is not defined.
       // isPaged: data.isPaged(),
-      rowCount: isSelect ? (rowLength || 0) : undefined,
-      affectedRows: !isSelect && !isNaN(rowLength) ? rowLength : undefined,
+      rowCount: isSelect ? (length || 0) : undefined,
+      affectedRows: !isSelect && !isNaN(length) ? length : undefined,
     };
   }
 

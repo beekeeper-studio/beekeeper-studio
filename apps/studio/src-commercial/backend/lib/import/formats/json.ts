@@ -30,7 +30,8 @@ export default class extends Import {
       if (!options.isPreview) {
         // This is because currently, we just load the entirety of the file into memory, 
         // and then import it. So we need to manually chunk the data or the drivers will yell at us
-        const chunkSize = 1000;
+        // Sqlite has a problem reading more than 500 selects at a time so going to limit that for sure
+        const chunkSize = 450;
         for (let i = 0; i < data.length; i += chunkSize) {
           const chunkEnd = i + chunkSize;
           const slice = _.slice(data, i, chunkEnd > data.length ? data.length  : chunkEnd);

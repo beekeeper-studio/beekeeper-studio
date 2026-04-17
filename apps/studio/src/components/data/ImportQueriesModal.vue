@@ -66,8 +66,8 @@
   </modal>
 </template>
 <script lang="ts">
-import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { AppEvent } from '@/common/AppEvent'
+import { TransportFavoriteQuery } from '@/common/transport'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
 export default Vue.extend({
@@ -97,7 +97,7 @@ export default Vue.extend({
       this.error = null
     },
     async openModal() {
-      this.queries = (await FavoriteQuery.find()).map((q) => {
+      this.queries = (await this.$util.send('appdb/query/find')).map((q: TransportFavoriteQuery) => {
         return {
           ...q,
           checked: false

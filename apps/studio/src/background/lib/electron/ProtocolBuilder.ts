@@ -11,7 +11,7 @@ const log = rawLog.scope('ProtocolBuilder')
 
 function mimeTypeOf(pathName: string) {
   const extension = path.extname(pathName).toLowerCase()
-  if (extension === '.js') {
+  if (extension === '.js' || extension === '.mjs') {
     return 'text/javascript'
   } else if (extension === '.html') {
     return 'text/html'
@@ -96,11 +96,9 @@ export const ProtocolBuilder = {
         }
 
         const headers = {}
-        if (platformInfo.isDevelopment) {
-          headers['Cache-Control'] = 'no-cache'
-          headers['Pragma'] = 'no-cache'
-          headers['Expires'] = '0'
-        }
+        headers['Cache-Control'] = 'no-cache'
+        headers['Pragma'] = 'no-cache'
+        headers['Expires'] = '0'
 
         const response: any = {
           mimeType: mimeTypeOf(pathName),

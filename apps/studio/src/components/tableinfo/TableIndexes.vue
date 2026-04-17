@@ -128,6 +128,7 @@ const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 interface State {
   mysqlTypes: string[]
@@ -162,14 +163,14 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['connectionType', 'connection']),
+    ...mapState(['connectionType', 'connection', 'usedConfig']),
     ...mapGetters(['dialect', 'dialectData']),
     hasSql() {
       // FIXME (@day): no per db testing
       return this.connectionType !== 'mongodb';
     },
     enabled() {
-      return !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
+      return !this.usedConfig.readOnlyMode && !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
     },
     hotkeys() {
       if (!this.active) return {}
@@ -231,13 +232,14 @@ export default Vue.extend({
       // FIXME (@day): no per-db testing
       const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect != 'mongodb'
       const result = [
-        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, contextMenu: copyCellMenu, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
           editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
+          contextMenu: copyCellMenu,
           cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell),
         },
         {
@@ -264,6 +266,7 @@ export default Vue.extend({
           editable,
           editor: 'list',
           formatter: this.cellFormatter,
+          contextMenu: copyCellMenu,
           editorParams: {
             multiselect: true,
             values: this.indexColumnOptions,
@@ -273,7 +276,7 @@ export default Vue.extend({
           },
           cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)
         },
-        trashButton(this.removeRow)
+        this.usedConfig.readOnlyMode ? null : trashButton(this.removeRow)
       ]
 
       return result.filter((c) => c !== null)
@@ -281,7 +284,7 @@ export default Vue.extend({
   },
   methods: {
     async addRow() {
-      if (this.loading) return
+      if (this.loading || this.usedConfig.readOnlyMode) return
       const tabulator = this.tabulator as Tabulator
       // mongo doesn't have custom names for sql, they're auto generated
       // FIXME (@day): no per-db testing
@@ -296,7 +299,7 @@ export default Vue.extend({
       // but right now if it fails it breaks the whole table.
     },
     async removeRow(_e: any, cell: CellComponent) {
-      if (this.loading) return
+      if (this.loading || this.usedConfig.readOnlyMode) return
       const row = cell.getRow()
       if (this.newRows.includes(row)) {
         this.newRows = _.without(this.newRows, row)

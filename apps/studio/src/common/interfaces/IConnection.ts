@@ -1,4 +1,4 @@
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
@@ -12,7 +12,9 @@ export function isUltimateType(s: ConnectionType) {
     'duckdb',
     'clickhouse',
     'mongodb',
-    'sqlanywhere'
+    'sqlanywhere',
+    'trino',
+    'surrealdb'
   ]
   return types.includes(s)
 }
@@ -36,6 +38,10 @@ export interface ISimpleConnection extends Transport {
   sshKeyfile: Nullable<string>
   sshUsername: Nullable<string>
   sshBastionHost: Nullable<string>
+  sshBastionHostPort: Nullable<number>
+  sshBastionMode: SshMode
+  sshBastionUsername: Nullable<string>
+  sshBastionKeyfile: Nullable<string>
   sshKeepaliveInterval: Nullable<number>
   ssl: boolean
   sslCaFile: Nullable<string>
@@ -48,12 +54,16 @@ export interface ISimpleConnection extends Transport {
   serviceName: Nullable<string>
   options?: any
   redshiftOptions?: RedshiftOptions
+  iamAuthOptions?: IamAuthOptions
   cassandraOptions?: CassandraOptions
   bigQueryOptions?: BigQueryOptions
   azureAuthOptions?: AzureAuthOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
+  surrealDbOptions?: SurrealDBOptions
+  connectionFolderId?: Nullable<number>
+  position?: number
 }
 
 export interface IConnection extends ISimpleConnection {
@@ -63,6 +73,8 @@ export interface IConnection extends ISimpleConnection {
   password: Nullable<string>
   sshPassword: Nullable<string>
   sshKeyfilePassword: Nullable<string>
+  sshBastionPassword: Nullable<string>
+  sshBastionKeyfilePassword: Nullable<string>
 }
 
 export interface ICloudSavedConnection extends IConnection {

@@ -15,16 +15,6 @@ import { LibSQLBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);
 
-/**
- * FIXME: This class doesn't support returning query data as arrays so
- * "select 1 as a, 2 as a" will be returned as [{a:2}]. There are three ways
- * to solve this:
- * 1. Fix this in libsql-js https://github.com/tursodatabase/libsql-js/issues/116
- * 2. Use @libsql/client instead of libsql-js, but this seems to require us
- *    to use node >= 18
- * 3. Treat the object like arrays. If we run the above query, we can get both
- *    values by doing row[0] and row[1].
- */
 export class LibSQLClient extends SqliteClient {
   private isRemote: boolean;
   /** Use this connection only when we need to sync to remote database */
@@ -94,48 +84,13 @@ export class LibSQLClient extends SqliteClient {
     }
   }
 
-  // FIXME (azmi): we need this until array mode is fixed
-  async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
-    const arrayMode: boolean = options.arrayMode;
-    const result = await this.driverExecuteMultiple(queryText, options);
-
-    return (result || []).map(({ rows: data, columns, statement, changes }) => {
-      // Fallback in case the identifier could not reconize the command
-      const isSelect = Array.isArray(data);
-      let rows: any[];
-      let fields: any[];
-
-      if (isSelect && arrayMode) {
-        rows = data.map((row: Record<string, any>) =>
-          Object.keys(row).reduce((obj, key, idx) => {
-            obj[`c${idx}`] = row[key];
-            return obj
-          }, {})
-        );
-        if (columns.length > 0) {
-          fields = columns.map((column, idx) => ({
-            id: `c${idx}`,
-            name: column.name
-          }))
-        } else if (data.length > 0) {
-          fields = Object.keys(data[0]).map((name, idx) => ({
-            id: `c${idx}`,
-            name,
-          }));
-        }
-      } else {
-        rows = data || [];
-        fields = Object.keys(rows[0] || {}).map((name) => ({name, id: name }));
-      }
-
-      return {
-        command: statement.type || (isSelect && 'SELECT'),
-        rows,
-        fields,
-        rowCount: data && data.length,
-        affectedRows: changes || 0,
-      };
-    });
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+    const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
+    const result = await this.driverExecuteSingle(query);
+    const columns = await this.listTableColumns(table);
+    const fields: BksField[] = columns.map((column) => column.bksField);
+    const rows = await this.serializeQueryResult(result, fields);
+    return { result: rows, fields };
   }
 
   protected async rawExecuteQuery(
@@ -144,10 +99,6 @@ export class LibSQLClient extends SqliteClient {
   ): Promise<SqliteResult | SqliteResult[]> {
     const connection = options.connection || this._rawConnection;
     const ownOptions = { ...options, connection };
-    if (this.isRemote) {
-      // FIXME disable arrayMode for now as stmt.raw() doesn't work for remote connection
-      return await super.rawExecuteQuery(q, { ...ownOptions, arrayMode: false });
-    }
     return await super.rawExecuteQuery(q, ownOptions)
   }
 
@@ -161,17 +112,6 @@ export class LibSQLClient extends SqliteClient {
         ? Number(this.libsqlOptions.syncPeriod)
         : undefined,
     });
-  }
-
-  protected checkReader(
-    ...args: Parameters<SqliteClient["checkReader"]>
-  ): boolean {
-    if (this.isRemote) {
-      // statement.reader will always return false in remote connection, which
-      // cause `rawExecuteQuery` to return an empty data.
-      return true;
-    }
-    return super.checkReader(...args);
   }
 
   protected createCursor(
@@ -200,29 +140,5 @@ export class LibSQLClient extends SqliteClient {
 
   private get libsqlOptions() {
     return this.server.config.libsqlOptions;
-  }
-
-  parseQueryResultColumns(qr: SqliteResult): BksField[] {
-    if (qr.columns.length > 0) {
-      return super.parseQueryResultColumns(qr);
-    }
-
-    const columns: BksField[] = [];
-
-    if (qr.rows[0]) {
-      Object.keys(qr.rows[0]).forEach((key) => {
-        const isBlob = qr.rows.some(
-          (row: any) =>
-            !_.isNil(row[key]) &&
-              (_.isBuffer(row[key]) || _.isArrayBuffer(row[key]))
-        );
-        columns.push({
-          name: key,
-          bksType: isBlob ? "BINARY" : "UNKNOWN",
-        });
-      });
-    }
-
-    return columns;
   }
 }
