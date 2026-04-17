@@ -362,6 +362,82 @@ export class DBTestUtil {
     }
   }
 
+  async dropTableWithCascadeTests() {
+    // For DBs that don't support CASCADE, verify the option is safely ignored
+    if (this.data.disabledFeatures?.dropCascade) {
+      const tables = await this.connection.listTables({ schema: this.defaultSchema })
+      await this.connection.dropElement('test_inserts', DatabaseElement.TABLE, this.defaultSchema, { cascade: true })
+      const newTables = await this.connection.listTables({ schema: this.defaultSchema })
+      expect(newTables.length).toBeLessThan(tables.length)
+      return
+    }
+
+    // For CASCADE-supporting DBs: create parent+child tables with a FK relationship,
+    // drop the parent with CASCADE, and verify the child table survives.
+
+    // Cleanup any leftover tables from a previous failed run
+    if (this.dbType === 'oracle') {
+      try { await this.knex.schema.raw('DROP TABLE cascade_child') } catch (e) { /* ignore */ }
+      try { await this.knex.schema.raw('DROP TABLE cascade_parent') } catch (e) { /* ignore */ }
+    } else {
+      await this.knex.schema.dropTableIfExists('cascade_child')
+      await this.knex.schema.dropTableIfExists('cascade_parent')
+    }
+
+    // Create the tables
+    if (this.dbType === 'oracle') {
+      await this.knex.schema.raw(`
+        CREATE TABLE cascade_parent (
+          id NUMBER(10) NOT NULL,
+          name VARCHAR2(255),
+          CONSTRAINT pk_casc_parent PRIMARY KEY (id)
+        )
+      `)
+      await this.knex.schema.raw(`
+        CREATE TABLE cascade_child (
+          id NUMBER(10) NOT NULL,
+          parent_id NUMBER(10) NOT NULL,
+          CONSTRAINT pk_casc_child PRIMARY KEY (id),
+          CONSTRAINT fk_casc_child FOREIGN KEY (parent_id)
+            REFERENCES cascade_parent(id)
+        )
+      `)
+    } else {
+      await this.knex.schema.createTable('cascade_parent', (table) => {
+        table.increments('id').primary()
+        table.string('name')
+      })
+      await this.knex.schema.createTable('cascade_child', (table) => {
+        table.increments('id').primary()
+        table.integer('parent_id').notNullable().unsigned()
+        table.foreign('parent_id').references('cascade_parent.id')
+      })
+    }
+
+    // Verify both tables exist
+    const tablesBefore = await this.connection.listTables({ schema: this.defaultSchema })
+    const namesBefore = tablesBefore.map((t) => t.name.toLowerCase())
+    expect(namesBefore).toContain('cascade_parent')
+    expect(namesBefore).toContain('cascade_child')
+
+    // Drop the parent with CASCADE — the FK constraint on cascade_child should be removed,
+    // but cascade_child itself should survive.
+    await this.connection.dropElement('cascade_parent', DatabaseElement.TABLE, this.defaultSchema, { cascade: true })
+
+    // Parent should be gone, child should still exist
+    const tablesAfter = await this.connection.listTables({ schema: this.defaultSchema })
+    const namesAfter = tablesAfter.map((t) => t.name.toLowerCase())
+    expect(namesAfter).not.toContain('cascade_parent')
+    expect(namesAfter).toContain('cascade_child')
+
+    // Cleanup
+    if (this.dbType === 'oracle') {
+      await this.knex.schema.raw('DROP TABLE cascade_child')
+    } else {
+      await this.knex.schema.dropTableIfExists('cascade_child')
+    }
+  }
+
   async createDatabaseTests() {
     const dbs = await this.connection.listDatabases()
     const collation = 'utf8_general_ci'

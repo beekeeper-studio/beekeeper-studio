@@ -1,6 +1,6 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
-import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "@/lib/db/types";
 import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
 import { identify } from 'sql-query-identifier';
 import rawLog from '@bksLogger';
@@ -212,7 +212,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     await db.collection(tableName).aggregate([{ $out: duplicateTableName }]).toArray();
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement): Promise<void> {
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string, _options?: DropElementOptions): Promise<void> {
     const db = this.conn.db(this.db);
     switch (typeOfElement) {
       case DatabaseElement.TABLE:

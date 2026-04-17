@@ -1,7 +1,7 @@
 import { AlterPartitionsSpec, AlterTableSpec, IndexAlterations, RelationAlterations } from "@/shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { CancelableQuery, TableChanges, TableUpdateResult } from "../models";
-import { DatabaseElement } from "../types";
+import { DatabaseElement, DropElementOptions } from "../types";
 import { BaseQueryResult, BasicDatabaseClient } from "./BasicDatabaseClient";
 import rawLog from '@bksLogger';
 
@@ -65,7 +65,7 @@ export abstract class BaseV1DatabaseClient<RawResultType extends BaseQueryResult
     return '';
   }
 
-  async dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+  async dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string, _options?: DropElementOptions): Promise<void> {
     log.error("V1 Drivers do not support dropping elements");
   }
 
