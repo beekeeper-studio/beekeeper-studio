@@ -17,10 +17,11 @@ export type IniArray = {
 };
 
 export interface ConfigEntryDetailWarning {
-  type: "unrecognized-key" | "system-user-conflict";
+  type: "unrecognized-key" | "system-user-conflict" | "unknown-allow-plugin";
   sourceName: "system" | "user";
   section: string;
   path: string;
+  value?: string;
 }
 
 type IniValue = string | number | boolean | IniArray | undefined;
