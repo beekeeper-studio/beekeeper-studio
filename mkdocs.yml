@@ -137,6 +137,7 @@ nav:
     - Connection Options: user_guide/connecting/connecting.md
     - user_guide/connecting/amazon-rds.md
     - ClickHouse: user_guide/connecting/clickhouse.md
+    - user_guide/connecting/cockroachdb.md
     - user_guide/connecting/duckdb.md
     - user_guide/connecting/firebird.md
     - user_guide/connecting/google-bigquery.md

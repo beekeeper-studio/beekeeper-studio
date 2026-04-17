@@ -194,7 +194,7 @@ class SSHConnection {
         if (this.isWindows) {
           // null or undefined
           if (agentDefault == null) {
-            agentDefault = ElectronFriendlyPageantAgent
+            agentDefault = new ElectronFriendlyPageantAgent()
           }
         }
 

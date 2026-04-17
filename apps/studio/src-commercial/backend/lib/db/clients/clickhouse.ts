@@ -719,6 +719,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
           fields: [],
           affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
+          text: result.statement.text,
           rows: [],
           rowCount: 0,
         });
@@ -730,6 +731,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
           fields: [{ id: "c0", name: "Result" }],
           affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
+          text: result.statement.text,
           rows: [{ c0: data }],
           rowCount: 1,
         });
@@ -750,6 +752,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
         fields,
         affectedRows: 0, // TODO we can get this somewhere i feel like??
         command: result.statement.type,
+        text: result.statement.text,
         rows,
         rowCount: rows.length,
       });

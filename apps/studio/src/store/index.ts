@@ -39,7 +39,7 @@ import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
-import { PluginsModule } from './modules/plugins'
+import { PluginsModule, PluginsState } from './modules/plugins'
 
 
 const log = RawLog.scope('store/index')
@@ -48,6 +48,31 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
   return t2.name === t.name &&
     t2.schema === t.schema &&
     t2.entityType === t.entityType
+}
+
+const shouldPromptForCockroachJwt = (config: Nullable<IConnection>) => {
+  return config?.connectionType === 'cockroachdb' &&
+    !!config?.options?.jwtAuthEnabled &&
+    !config?.password;
+}
+
+const resolveJwtConfig = async (config: IConnection): Promise<IConnection | null> => {
+  const nextConfig = _.cloneDeep(config);
+
+  if (!shouldPromptForCockroachJwt(nextConfig)) {
+    return nextConfig;
+  }
+
+  const { token, cancelled } = await BeekeeperPlugin.promptJwtToken(
+    BeekeeperPlugin.buildConnectionName(config)
+  );
+
+  if (cancelled) {
+    return null;
+  }
+
+  nextConfig.password = token;
+  return nextConfig;
 }
 
 
@@ -83,6 +108,9 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+
+  /** Set by VueX module */
+  plugins?: PluginsState,
 }
 
 Vue.use(Vuex)
@@ -263,6 +291,9 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
+    onboardingNotyShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["onboardingNotyShown"]?.value);
+    },
     aiShellHintShown(_state, getters) {
       return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
     },
@@ -419,7 +450,11 @@ const store = new Vuex.Store<State>({
   },
   actions: {
     async test(context, config: IConnection) {
-      await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
+      const resolvedConfig = await resolveJwtConfig(config);
+      if (!resolvedConfig) return false;
+
+      await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      return true;
     },
 
     async fetchUsername(context) {
@@ -455,15 +490,18 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
+      const resolvedConfig = await resolveJwtConfig(config);
+      if (!resolvedConfig) return false;
+
       if (context.state.username) {
-        await Vue.prototype.$util.send('conn/create', { config, auth, osUser: context.state.username })
+        await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
 
         if (supportedFeatures.backups) {
           const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+          context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
         }
 
         window.main.enableConnectionMenuItems();
@@ -473,7 +511,7 @@ const store = new Vuex.Store<State>({
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
-        config = await context.dispatch('data/usedconnections/recordUsed', config)
+        config = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
         context.commit('newConnection', config)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
@@ -488,6 +526,7 @@ const store = new Vuex.Store<State>({
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
+        return true;
       } else {
         throw "No username provided"
       }
@@ -505,7 +544,13 @@ const store = new Vuex.Store<State>({
         }
       }
     },
-     async reconnect(context, options?:  { silent?: boolean }) {
+    async reconnect(context, options?: { silent?: boolean }) {
+      if (!context.state.connection) return false;
+
+      if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
+        return await context.dispatch('connect', { config: context.state.usedConfig });
+      }
+
       let notyClosed = false;
       const noty: Nullable<Noty> = options?.silent
         ? null
@@ -519,9 +564,7 @@ const store = new Vuex.Store<State>({
         })
 
       try {
-        if (context.state.connection) {
-          await context.state.connection.connect();
-        }
+        await context.state.connection.connect();
         if (notyClosed) {
           Vue.prototype.$noty.success('Connected')
         } else {
@@ -529,6 +572,7 @@ const store = new Vuex.Store<State>({
           noty?.setType('success')
           noty?.setTimeout(2000)
         }
+        return true;
       } catch (err) {
         noty?.close()
         if (!options?.silent) {
@@ -707,7 +751,6 @@ const store = new Vuex.Store<State>({
         () => context.dispatch('licenses/sync'),
         globals.licenseCheckInterval
       )
-      await context.dispatch('plugins/initialize')
     },
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')
@@ -722,6 +765,12 @@ const store = new Vuex.Store<State>({
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    setOnboardingNotyShown(context) {
+      context.dispatch('settings/save', {
+        key: 'onboardingNotyShown',
+        value: new Date(),
+      });
     },
     setAiShellHintShown(context) {
       context.dispatch("settings/save", {

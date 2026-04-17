@@ -21,8 +21,12 @@
             <select
               name="resultSelector"
               id="resultSelector"
-              @change="selectedResult = parseInt($event.target.value);"
+              @change="selectedResult = parseInt($event.target.value)"
               class="form-control"
+              @mouseover="showSwitch = editing && changesCount > 0"
+              @mouseleave="showSwitch = false"
+              :disabled="editing && changesCount > 0"
+              v-tooltip="{ content: 'Discard or apply your changes to switch result sets', trigger: 'manual', show: showSwitch }"
             >
               <option
                 v-for="(resultOption, index) in results"
@@ -76,6 +80,63 @@
       </span>
     </template>
     <span class="expand" />
+    <span
+      v-tooltip="resultEditable ?
+        'Edit table data directly from query results' :
+        'There is not enough information in the result set to generate an update query.'"
+    >
+      <x-button
+        v-if="canEdit && !editing"
+        :disabled="results?.length === 0 || !resultEditable"
+        class="btn btn-flat"
+        @click.prevent="editResults"
+      >
+        Edit Data
+      </x-button>
+    </span>
+    <x-button
+      v-if="canEdit && editing && changesCount > 0"
+      class="btn btn-flat"
+      @click.prevent="discardChanges"
+    >
+      Reset
+    </x-button>
+    <x-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
+      <x-button
+        class="btn btn-primary btn-badge btn-icon"
+        @click.prevent="saveChanges"
+        v-tooltip="`Apply ${changesString}`"
+      >
+        <span
+          class="badge"
+        >
+          <small>{{ changesCount }}</small>
+        </span>
+        <span>Apply</span>
+      </x-button>
+      <x-button
+        class="btn btn-primary"
+        menu
+      >
+        <i class="material-icons">arrow_drop_down</i>
+        <x-menu>
+          <x-menuitem @click.prevent="saveChanges">
+            <x-label>Apply</x-label>
+            <!-- TODO (@day): Keyboard shortcut?? -->
+          </x-menuitem>
+          <x-menuitem @click.prevent="copyToSql">
+            <x-label>Copy to SQL</x-label>
+          </x-menuitem>
+        </x-menu>
+      </x-button>
+    </x-buttons>
+    <x-button
+      v-if="canEdit && editing && changesCount <= 0"
+      class="btn btn-flat"
+      @click.prevent="stopEditing"
+    >
+      Stop Editing
+    </x-button>
     <x-button
       class="btn btn-flat btn-icon end"
       :disabled="results?.length === 0"
@@ -189,11 +250,12 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable'],
   components: { Statusbar },
   data() {
     return {
       showHint: false,
+      showSwitch: false,
       selectedResult: 0
     }
   },
@@ -213,14 +275,14 @@ export default {
       }
     },
     selectedResult(newValue, oldValue) {
-        this.$emit('input', this.selectedResult);
-        if (this.hasUsedDropdown === false) {
-          this.hasUsedDropdown = true
-        }
+      this.$emit('input', this.selectedResult);
+      if (this.hasUsedDropdown === false) {
+        this.hasUsedDropdown = true
+      }
     }
   },
   computed: {
-    ...mapGetters(['dialect']),
+    ...mapGetters(['dialect', 'dialectData']),
     ...mapState('settings', ['settings']),
     userKeymap: {
       get() {
@@ -284,6 +346,9 @@ export default {
         'queryEditor.selectNextResult': this.changeSelectedResult.bind(this, 1),
         'queryEditor.selectPreviousResult': this.changeSelectedResult.bind(this, -1),
       })
+    },
+    canEdit() {
+      return !this.dialectData?.disabledFeatures?.resultEditing;
     }
   },
   methods: {
@@ -309,6 +374,21 @@ export default {
         d = c < 0 ? c : Math.abs(c), // enforce -0 is 0
         e = d + ['', 'K', 'M', 'B', 'T'][k]; // append power
       return e;
+    },
+    stopEditing() {
+      this.$emit('stopEditing');
+    },
+    editResults() {
+      this.$emit('editResults');
+    },
+    saveChanges() {
+      this.$emit('saveChanges');
+    },
+    copyToSql() {
+      this.$emit('copyToSql');
+    },
+    discardChanges() {
+      this.$emit('discardChanges');
     },
     download(format) {
       this.$emit('download', format)

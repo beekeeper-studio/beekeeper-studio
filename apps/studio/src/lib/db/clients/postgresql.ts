@@ -26,6 +26,7 @@ import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { PsqlConnection } from './postgresql/PsqlConnection';
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
 
@@ -687,6 +688,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             cancelable.wait(),
             this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
+          console.info("QUERYDATA: ", data)
 
           pid = null;
 
@@ -735,7 +737,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const arrayMode: boolean = options?.arrayMode;
     const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
-    const commands = this.identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText);
+    log.info("COMMANDS: ", commands)
 
     return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
   }
@@ -757,10 +760,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => row.datname);
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
-    await this.runWithTransaction(async (connection) => {
+    const run = async (connection: PoolClient) => {
       log.debug("Applying changes", changes)
       if (changes.inserts) {
         await this.insertRows(changes.inserts, connection);
@@ -773,7 +776,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       if (changes.deletes) {
         await this.deleteRows(changes.deletes, connection)
       }
-    })
+    }
+
+    if (tabId) {
+      const conn = this.peekConnection(tabId);
+      await run(conn);
+    } else {
+      await this.runWithTransaction(run)
+    }
+
     return results
   }
 
@@ -1254,8 +1265,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     await this.runQuery(conn, 'ROLLBACK', {});
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
-    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, tabId?: number }): Promise<QueryResult | QueryResult[]> {
     const hasReserved = this.reservedConnections.has(options?.tabId)
     if (options?.tabId && hasReserved) {
       const conn = this.peekConnection(options?.tabId);
@@ -1312,13 +1322,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     })
   }
 
-  parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
+  parseRowQueryResult(data: QueryResult, command: IdentifyResult, rowResults: boolean): NgQueryResult {
     const fields = this.parseFields(data.columns, rowResults)
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
     return {
-      command: command || data.command,
+      command: command?.type || data.command,
+      text: command?.text,
       rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
       fields: fields,
       rowCount: rowCount,

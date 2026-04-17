@@ -59,3 +59,28 @@
 .noty_theme__mint.noty_type__success {
   color: color.adjust($brand-success, $lightness: 5%);
 }
+
+// Onboarding notification
+.noty-onboarding-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: $gutter-h * 0.5;
+  display: flex;
+  align-items: center;
+
+  .noty-onboarding-logo {
+    width: auto;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+  }
+}
+
+.noty-onboarding-body .link {
+  color: var(--theme-dark);
+  text-decoration-line: underline;
+  font-weight: 500;
+
+  &:focus-visible {
+    outline: 1px auto var(--text-dark);
+  }
+}
