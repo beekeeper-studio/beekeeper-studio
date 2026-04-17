@@ -807,7 +807,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
-    const databaseFilter = buildDatabaseFilter(filter, 'datname');
+    const databaseFilter = buildDatabaseFilter(filter, 'datname', wrapIdentifier);
     const sql = `
       SELECT datname
       FROM pg_database

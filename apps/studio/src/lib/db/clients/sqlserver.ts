@@ -597,7 +597,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listDatabases(filter: DatabaseFilterOptions) {
-    const databaseFilter = buildDatabaseFilter(filter, 'name');
+    const databaseFilter = buildDatabaseFilter(filter, 'name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT name
       FROM sys.databases

@@ -108,22 +108,38 @@ describe('buildSchemaFilter SQL injection', () => {
 })
 
 describe('buildDatabaseFilter SQL injection', () => {
+  const identity = (s) => s
+
   it("should escape single quotes in 'database' value to prevent SQL injection", () => {
     const malicious = "'; DROP TABLE users; --"
-    const result = buildDatabaseFilter({ database: malicious }, 'datname')
+    const result = buildDatabaseFilter({ database: malicious }, 'datname', identity)
     // The single quote must be doubled so the value stays inside the SQL string literal
     expect(result).toBe("datname = '''; DROP TABLE users; --'")
   })
 
   it("should escape single quotes in 'only' filter values", () => {
-    const result = buildDatabaseFilter({ only: ["public", "'; DROP TABLE users; --"] }, 'datname')
+    const result = buildDatabaseFilter({ only: ["public", "'; DROP TABLE users; --"] }, 'datname', identity)
     expect(result).toContain("'public'")
     expect(result).toContain("'''; DROP TABLE users; --'")
   })
 
   it("should escape single quotes in 'ignore' filter values", () => {
-    const result = buildDatabaseFilter({ ignore: ["'; DROP TABLE users; --"] }, 'datname')
+    const result = buildDatabaseFilter({ ignore: ["'; DROP TABLE users; --"] }, 'datname', identity)
     expect(result).toContain("'''; DROP TABLE users; --'")
+  })
+
+  it("should wrap the databaseField identifier via the provided wrapIdentifier", () => {
+    const wrap = (s) => `[${s}]`
+    expect(buildDatabaseFilter({ database: 'foo' }, 'name', wrap)).toBe("[name] = 'foo'")
+    expect(buildDatabaseFilter({ only: ['a', 'b'] }, 'name', wrap)).toBe("[name] IN ('a','b')")
+    expect(buildDatabaseFilter({ ignore: ['a'] }, 'name', wrap)).toBe("[name] NOT IN ('a')")
+  })
+
+  it("should wrap a malicious databaseField safely via wrapIdentifier", () => {
+    // Simulates SQL Server-style bracket quoting
+    const wrap = (s) => `[${s.replace(/\]/g, ']]')}]`
+    const result = buildDatabaseFilter({ database: 'foo' }, "name]; DROP TABLE x; --", wrap)
+    expect(result).toBe("[name]]; DROP TABLE x; --] = 'foo'")
   })
 })
 

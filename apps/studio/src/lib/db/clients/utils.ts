@@ -64,24 +64,25 @@ export function buildSchemaFilter(filter, schemaField = 'schema_name') {
   return where.join(' AND ');
 }
 
-export function buildDatabaseFilter(filter, databaseField) {
+export function buildDatabaseFilter(filter, databaseField, wrapIdentifier: (s: string) => string) {
   if (!filter) {
     return null
   }
   const { only, ignore, database } = filter
+  const field = wrapIdentifier(databaseField);
 
   if (database) {
-    return `${databaseField} = '${escapeString(database)}'`;
+    return `${field} = '${escapeString(database)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${databaseField} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
+    where.push(`${field} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${databaseField} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
+    where.push(`${field} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');
