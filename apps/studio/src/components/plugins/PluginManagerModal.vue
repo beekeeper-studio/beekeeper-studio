@@ -199,12 +199,13 @@ export default Vue.extend({
         const info = await this.$util.send("plugin/repository", { id });
         this.selectedPluginReadme = info.readme;
       } catch (e) {
+        log.error(e);
+
         if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
           // FIXME use error alert box
           this.selectedPluginReadme = "We can't find the repository for this plugin.";
         } else {
           this.selectedPluginReadme = "Something went wrong.";
-          log.error(e);
           this.$noty.error(`Error opening plugin page: ${e.message}`);
         }
       }
