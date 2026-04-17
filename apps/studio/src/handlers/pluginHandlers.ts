@@ -1,7 +1,7 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
 import { Manifest, PluginContext, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
-import { PluginSystemError, PluginSystemErrorCode } from "@/lib/errors";
+import { PluginSystemError } from "@/lib/errors";
 
 interface IPluginHandlers {
   "plugin/plugins": () => Promise<PluginContext[]>
@@ -39,8 +39,8 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
           clearInterval(interval);
           reject(
             new PluginSystemError(
-              "Plugin initialization timed out",
-              PluginSystemErrorCode.INIT_TIMEOUT
+              "INIT_TIMEOUT",
+              "Plugin initialization timed out"
             )
           );
         }

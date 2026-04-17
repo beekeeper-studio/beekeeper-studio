@@ -53,9 +53,9 @@ export class UtilityConnection {
           this.replyHandlers.delete(id);
           let err: Error;
           if (errorName === "PluginSystemError") {
-            err = new PluginSystemError(error, errorCode);
+            err = new PluginSystemError(errorCode, error);
           } else if (errorName === "PluginError") {
-            err = new PluginError(error, errorCode);
+            err = new PluginError(errorCode, error);
           } else {
             err = new Error(error);
           }

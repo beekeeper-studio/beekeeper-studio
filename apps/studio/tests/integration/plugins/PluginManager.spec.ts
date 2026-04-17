@@ -5,7 +5,7 @@ import PluginManager, {
 import { createPluginServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/fileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
-import { PluginSystemError, PluginSystemErrorCode } from "@/lib/errors";
+import { PluginSystemError } from "@/lib/errors";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
@@ -144,20 +144,14 @@ describe("Basic Plugin Management", () => {
       const manager = await initPluginManager(AppVer.INCOMPAT);
       const promise = manager.installPlugin("test-plugin");
       await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty(
-        "code",
-        PluginSystemErrorCode.PLUGIN_NOT_SUPPORTED
-      );
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_SUPPORTED");
     });
 
     it("can not install nonexistent plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       const promise = manager.installPlugin("microwave-pizza");
       await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty(
-        "code",
-        PluginSystemErrorCode.PLUGIN_NOT_FOUND
-      );
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
     });
   });
 
@@ -256,20 +250,14 @@ describe("Basic Plugin Management", () => {
 
       const promise = manager.updatePlugin("test-plugin");
       await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty(
-        "code",
-        PluginSystemErrorCode.PLUGIN_NOT_SUPPORTED
-      );
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_SUPPORTED");
     });
 
     it("can not update nonexistent plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       const promise = manager.updatePlugin("microwave-pizza");
       await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty(
-        "code",
-        PluginSystemErrorCode.PLUGIN_NOT_FOUND
-      );
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
     });
   });
 

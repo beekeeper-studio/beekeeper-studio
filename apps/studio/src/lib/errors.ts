@@ -14,36 +14,34 @@ export const errors: {[code: string]: Error} = {
   }
 };
 
-export enum PluginSystemErrorCode {
-  UNKNOWN = 1000,
-  INIT_FAILURE = 1001,
-  REGISTRY_LOAD = 1002,
-  PLUGIN_DIR_NOT_FOUND = 1003,
-  FILE_ACCESS_DENIED = 1004,
-  STORAGE_READ_ERROR = 1005,
-  STORAGE_WRITE_ERROR = 1006,
-  PLUGIN_NOT_FOUND = 1007,
-  PLUGIN_LATEST_RELEASE_NOT_FOUND = 1008,
-  PLUGIN_RELEASE_ASSET_NOT_FOUND = 1009,
-  PLUGIN_VIEW_NOT_FOUND = 1010,
-  PLUGIN_NOT_SUPPORTED = 1011,
-  INIT_TIMEOUT = 1012,
-}
+export type PluginSystemErrorCode =
+  | 'UNKNOWN'
+  | 'INIT_FAILURE'
+  | 'REGISTRY_LOAD'
+  | 'PLUGIN_DIR_NOT_FOUND'
+  | 'FILE_ACCESS_DENIED'
+  | 'STORAGE_READ_ERROR'
+  | 'STORAGE_WRITE_ERROR'
+  | 'PLUGIN_NOT_FOUND'
+  | 'PLUGIN_LATEST_RELEASE_NOT_FOUND'
+  | 'PLUGIN_RELEASE_ASSET_NOT_FOUND'
+  | 'PLUGIN_VIEW_NOT_FOUND'
+  | 'PLUGIN_NOT_SUPPORTED'
+  | 'INIT_TIMEOUT';
 
-export enum PluginErrorCode {
-  UNKNOWN = 2000,
-  MANIFEST_PARSE = 2001,
-  NOT_INSTALLED = 2002,
-  LOAD_ERROR = 2003,
-  API_NOT_SUPPORTED = 2004,
-  RUNTIME_EXCEPTION = 2005,
-  DEPENDENCY_MISSING = 2006,
-}
+export type PluginErrorCode =
+  | 'UNKNOWN'
+  | 'MANIFEST_PARSE'
+  | 'NOT_INSTALLED'
+  | 'LOAD_ERROR'
+  | 'API_NOT_SUPPORTED'
+  | 'RUNTIME_EXCEPTION'
+  | 'DEPENDENCY_MISSING';
 
 export class PluginSystemError extends Error {
   constructor(
-    message: string,
-    public readonly code: PluginSystemErrorCode = PluginSystemErrorCode.UNKNOWN,
+    public readonly code: PluginSystemErrorCode,
+    message?: string,
     options?: ErrorOptions
   ) {
     super(message, options);
@@ -56,8 +54,8 @@ export class PluginSystemError extends Error {
 
 export class PluginError extends Error {
   constructor(
-    message: string,
-    public readonly code: PluginErrorCode = PluginErrorCode.UNKNOWN,
+    public readonly code: PluginErrorCode,
+    message?: string,
     options?: ErrorOptions
   ) {
     super(message, options);

@@ -12,7 +12,7 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { PluginSystemError, PluginSystemErrorCode } from "@/lib/errors";
+import { PluginSystemError } from "@/lib/errors";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
 
@@ -90,8 +90,8 @@ export default class PluginManager extends Hookable {
     const manifest = this.plugins.find((p) => p.manifest.id === pluginId)?.manifest;
     if (!manifest) {
       throw new PluginSystemError(
-        `Plugin "${pluginId}" not found.`,
-        PluginSystemErrorCode.PLUGIN_NOT_FOUND
+        "PLUGIN_NOT_FOUND",
+        `Plugin "${pluginId}" not found.`
       );
     }
     const { views } = isManifestV0(manifest)
@@ -100,8 +100,8 @@ export default class PluginManager extends Hookable {
     const view = views.find((v) => v.id === viewId);
     if (!view) {
       throw new PluginSystemError(
-        `View "${viewId}" not found in plugin "${pluginId}".`,
-        PluginSystemErrorCode.PLUGIN_VIEW_NOT_FOUND
+        "PLUGIN_VIEW_NOT_FOUND",
+        `View "${viewId}" not found in plugin "${pluginId}".`
       );
     }
     return this.fileManager.viewEntrypointExists(manifest, view);
@@ -141,15 +141,15 @@ export default class PluginManager extends Hookable {
       const info = await this.registry.getRepository(id);
       if (!info) {
         throw new PluginSystemError(
-          `Plugin "${id}" not found in registry.`,
-          PluginSystemErrorCode.PLUGIN_NOT_FOUND
+          "PLUGIN_NOT_FOUND",
+          `Plugin "${id}" not found in registry.`
         );
       }
 
       if (!this.isPluginLoadable(info.latestRelease.manifest)) {
         throw new PluginSystemError(
-          `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`,
-          PluginSystemErrorCode.PLUGIN_NOT_SUPPORTED
+          "PLUGIN_NOT_SUPPORTED",
+          `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
         );
       }
 

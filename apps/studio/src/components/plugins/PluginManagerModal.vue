@@ -49,7 +49,7 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
-import { PluginSystemErrorCode } from "@/lib/errors";
+import { PluginSystemError } from "@/lib/errors";
 import type { PluginContext, PluginRegistryEntry } from "@/services/plugin";
 import { mapGetters, mapState } from "vuex";
 
@@ -199,7 +199,7 @@ export default Vue.extend({
         const info = await this.$util.send("plugin/repository", { id });
         this.selectedPluginReadme = info.readme;
       } catch (e) {
-        if (e.code === PluginSystemErrorCode.PLUGIN_NOT_FOUND) {
+        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
           // FIXME use error alert box
           this.selectedPluginReadme = "We can't find the repository for this plugin.";
         } else {
