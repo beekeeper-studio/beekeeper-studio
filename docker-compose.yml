@@ -347,3 +347,10 @@ services:
     command: import --conn http://surrealdb:8000 --user root --pass root --ns test --db test /seed.surql
     volumes:
       - ./dev/docker_surrealdb_init/seed.surql:/seed.surql:ro
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    platform: linux/amd64
+    ports:
+      - 8000:8000
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"

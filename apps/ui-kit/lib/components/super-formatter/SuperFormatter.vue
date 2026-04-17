@@ -206,7 +206,7 @@ import hljs from 'highlight.js/lib/core'
 import sql from 'highlight.js/lib/languages/sql'
 import isEqual from 'lodash/isEqual'
 import props from './props'
-import { format } from 'sql-formatter'
+import { format, formatDialect } from 'sql-formatter'
 
 // Register SQL language with highlight.js
 hljs.registerLanguage('sql', sql)
@@ -310,10 +310,23 @@ export default Vue.extend({
       this.clipboard.writeText(this.formattedCode)
     },
     updatePreview() {
-      this.formattedCode = format(this.value, {
-        language: this.formatterDialect,
-        ...this.unsavedPreset
-      })
+      try {
+        if (this.formatterDialectOptions) {
+          this.formattedCode = formatDialect(this.value, {
+            dialect: this.formatterDialectOptions,
+            ...this.unsavedPreset
+          })
+        } else {
+          this.formattedCode = format(this.value, {
+            language: this.formatterDialect,
+            ...this.unsavedPreset
+          })
+        }
+      } catch (_e) {
+        // Fall back to the raw input if the formatter can't parse — matches the
+        // behavior of the studio's safeSqlFormat wrapper.
+        this.formattedCode = this.value
+      }
     },
     handlePresetChange() {
       const presetValues = this.presets.find(p => p.id === this.selectedPresetId)

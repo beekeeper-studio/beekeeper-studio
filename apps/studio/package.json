@@ -30,9 +30,11 @@
   },
   "main": "dist/main.js",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1031.0",
     "@aws-sdk/client-redshift": "^3.1028.0",
     "@aws-sdk/client-redshift-serverless": "^3.1028.0",
     "@aws-sdk/credential-providers": "^3.1028.0",
+    "@aws-sdk/lib-dynamodb": "^3.1031.0",
     "@aws-sdk/rds-signer": "^3.1028.0",
     "@smithy/shared-ini-file-loader": "^4.4.8",
     "@azure/msal-node": "^2.12.0",

@@ -147,6 +147,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <dynamo-db-form
+                  v-else-if="config.connectionType === 'dynamodb' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
@@ -256,6 +261,7 @@ import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
 import TrinoForm from './connection/TrinoForm.vue'
 import SurrealDbForm from './connection/SurrealDBForm.vue'
 import RedisForm from './connection/RedisForm.vue'
+import DynamoDbForm from './connection/DynamoDBForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -278,7 +284,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm,
     ContentPlaceholderHeading, SurrealDbForm
   },
 
