@@ -8,6 +8,8 @@ import { State as RootState } from '../index'
 
 export interface IndexItem {
   title: string
+  searchTitle?: string
+  columns?: string[]
   item: TransportFavoriteQuery | TableOrView | IConnection | string
   type: 'query' | 'table' | 'connection' | 'database'
   id: string
@@ -27,8 +29,8 @@ export function searchItems(
   searchTerm: string,
   limit = 20
 ): SearchResult[] {
-  const titles = items.map((item) => item.title);
-  const [idxs, info, order] = uf.search(titles, searchTerm, 0, Infinity);
+  const searchTitles = items.map((item) => item.searchTitle || item.title);
+  const [idxs, info, order] = uf.search(searchTitles, searchTerm, 0, Infinity);
 
   if (!idxs || !order) {
     return [];
@@ -41,12 +43,32 @@ export function searchItems(
     const itemIdx = idxs[infoIdx];
     const item = items[itemIdx];
 
-    const highlight = uFuzzy.highlight(
-      titles[info.idx[infoIdx]],
-      info.ranges[infoIdx],
-      (part, matched) =>
-        matched ? `<strong>${escapeHtml(part) ?? ""}</strong>` : escapeHtml(part) ?? ""
-    );
+    const displayTitle = items[itemIdx].title;
+    const matchedTitle = searchTitles[info.idx[infoIdx]];
+    const matchedOnFields = displayTitle !== matchedTitle;
+
+    let highlight: string;
+    if (matchedOnFields) {
+      highlight = escapeHtml(displayTitle) ?? displayTitle;
+    } else {
+      highlight = uFuzzy.highlight(
+        matchedTitle,
+        info.ranges[infoIdx],
+        (part, matched) =>
+          matched ? `<strong>${escapeHtml(part) ?? ""}</strong>` : escapeHtml(part) ?? ""
+      );
+    }
+
+    if (item.columns?.length) {
+      const term = searchTerm.toLowerCase()
+      const matching = item.columns.filter((c) => c.includes(term))
+      if (matching.length > 0) {
+        const label = matching.length > 2
+          ? `${matching.length} fields`
+          : matching.join(', ')
+        highlight += ` <span style="font-style: italic; opacity: 0.5">(${escapeHtml(label)})</span>`
+      }
+    }
 
     results.push({
       ...item,
@@ -61,9 +83,13 @@ export const SearchModule: Module<never, RootState> = {
   namespaced: true,
   getters: {
     database(_state, _getters, root: RootState): IndexItem[] {
+      const fieldIndex = root.entityFilter.showFields ? root.fieldSearchIndex : {}
       const tables: IndexItem[] = root.tables.map((t) => {
         const title = t.schema ? `${t.schema}.${t.name}` : t.name
-        return { item: t, type: 'table', title, id: title }
+        const key = `${t.schema || ''}:${t.name}`
+        const columns = fieldIndex[key]
+        const searchTitle = columns?.length ? `${title} (${columns.join(', ')})` : title
+        return { item: t, type: 'table', title, searchTitle, columns: columns || [], id: title }
       })
       const queryFolders = root['data/queryFolders']['items']
       const favorites: IndexItem[] = root['data/queries']['items'].map((f) => {
