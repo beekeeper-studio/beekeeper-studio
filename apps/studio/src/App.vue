@@ -8,7 +8,7 @@
       <titlebar />
       <template v-if="storeInitialized">
         <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
-        <connection-interface v-if="!connected" />
+        <connection-interface v-if="!connected && !migrationActive" />
         <core-interface
           @databaseSelected="databaseSelected"
           v-else
@@ -112,6 +112,7 @@ export default Vue.extend({
       interval: null,
       licenseInterval: null,
       runningWayland: false,
+      migrationActive: false,
     }
   },
   computed: {
@@ -134,6 +135,12 @@ export default Vue.extend({
     }
   },
   watch: {
+    connected(isConnected) {
+      // If user connects to a database, deactivate migration-only mode
+      if (isConnected) {
+        this.migrationActive = false
+      }
+    },
     database() {
       log.info('database changed', this.database)
     },
@@ -155,6 +162,8 @@ export default Vue.extend({
   async beforeDestroy() {
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
+    this.$root.$off(AppEvent.migrateServer, this.handleMigrateServer)
+    this.$root.$off(AppEvent.migrationTabClosed, this.handleMigrationTabClosed)
   },
   async mounted() {
     this.notifyFreeTrial()
@@ -170,6 +179,8 @@ export default Vue.extend({
       this.runningWayland = !!query.runningWayland
     }
 
+    this.$root.$on(AppEvent.migrateServer, this.handleMigrateServer)
+    this.$root.$on(AppEvent.migrationTabClosed, this.handleMigrationTabClosed)
 
     this.$nextTick(() => {
       window.main.isReady();
@@ -220,6 +231,17 @@ export default Vue.extend({
     },
     databaseSelected(_db) {
       // TODO: do something here if needed
+    },
+    handleMigrateServer() {
+      this.migrationActive = true
+      this.$nextTick(() => {
+        this.$store.dispatch('sidebar/setPrimarySidebarOpen', true)
+      })
+    },
+    handleMigrationTabClosed() {
+      if (!this.connected) {
+        this.migrationActive = false
+      }
     },
     validateLicenseExpiry(curr?: LicenseStatus, prev?: LicenseStatus) {
       if (SmartLocalStorage.getBool('expiredLicenseEventsEmitted', false)) return

@@ -1,4 +1,11 @@
-import sqlanywhere from 'sqlanywhere';
+// Try to load sqlanywhere module, fallback gracefully if not available
+let sqlanywhere: any = null;
+try {
+  sqlanywhere = require('sqlanywhere');
+} catch (err) {
+  console.warn('SQL Anywhere module not available (optional dependency):', err.message);
+}
+
 import { promisify } from 'util';
 import rawLog from '@bksLogger';
 import _ from 'lodash';
@@ -13,6 +20,9 @@ export class SqlAnywhereConn {
 
   constructor(config, pool: SqlAnywherePool) {
     this.config = config;
+    if (!sqlanywhere) {
+      throw new Error('SQL Anywhere module is not available. Please install the sqlanywhere native module.');
+    }
     this.rawConnection = sqlanywhere.createConnection();
     this.pool = pool;
   }

@@ -150,6 +150,7 @@ export default class extends DefaultMenu {
         submenu: [
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
+          this.menuItems.migrateServer,
           this.menuItems.exportTables,
           ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : []),
           { type: 'separator' },

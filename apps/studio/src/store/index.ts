@@ -31,6 +31,7 @@ import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
+import { MigrationModule } from './modules/migration/MigrationModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
@@ -131,6 +132,7 @@ const store = new Vuex.Store<State>({
     multiTableExports: MultiTableExportStoreModule,
     imports: ImportStoreModule,
     backups: BackupModule,
+    migration: MigrationModule,
     sidebar: SidebarModule,
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,

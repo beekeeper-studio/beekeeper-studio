@@ -197,6 +197,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.restoreDatabase)
   }
 
+  migrateServer = (_1: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.migrateServer)
+  }
+
   exportTables = (_1: Electron.MenuItem, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.exportTables)
   }

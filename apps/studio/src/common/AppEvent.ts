@@ -46,6 +46,7 @@ export enum AppEvent {
   duplicateDatabaseTable = 'duplicateDatabaseTable',
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',
+  migrateServer = 'migrateServer',
   upgradeModal = 'upgradeModal',
   toggleExpandTableList = 'toggleExpandTableList',
   togglePinTableList = 'togglePinTableList',
@@ -79,6 +80,8 @@ export enum AppEvent {
   changedTheme = 'changedTheme',
   /** A plugin menu item was clicked in the native/client menu under the tools. */
   pluginMenuClicked = 'pluginMenuClicked',
+  /** Migration tab has been closed. */
+  migrationTabClosed = 'migrationTabClosed',
 }
 
 export interface RootBinding {
