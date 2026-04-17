@@ -1,7 +1,7 @@
 import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
-import { BksError } from "../errors";
+import { PluginError, PluginSystemError } from "../errors";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
@@ -51,9 +51,14 @@ export class UtilityConnection {
         if (handler) {
           log.error('GOT ERROR BACK FOR REQUEST ID: ', id);
           this.replyHandlers.delete(id);
-          const err = errorName === "BksError"
-            ? new BksError(error, errorCode)
-            : new Error(error);
+          let err: Error;
+          if (errorName === "PluginSystemError") {
+            err = new PluginSystemError(error, errorCode);
+          } else if (errorName === "PluginError") {
+            err = new PluginError(error, errorCode);
+          } else {
+            err = new Error(error);
+          }
           err.stack = stack;
           handler.reject(err);
         }

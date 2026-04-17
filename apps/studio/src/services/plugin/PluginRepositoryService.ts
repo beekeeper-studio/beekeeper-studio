@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { RequestError } from "@octokit/request-error";
 import { Manifest, PluginRepository, Release, PluginRegistryEntry } from "./types";
-import { BksError, PluginSystemErrorCode } from "@/lib/errors";
+import { PluginSystemError, PluginSystemErrorCode } from "@/lib/errors";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("PluginRepositoryService");
@@ -30,7 +30,7 @@ export default class PluginRepositoryService {
       }
     ).catch((e) => {
         if (e instanceof RequestError && e.status === 404) {
-          throw new BksError(
+          throw new PluginSystemError(
             `No latest release found for ${owner}/${repo}`,
             PluginSystemErrorCode.PLUGIN_LATEST_RELEASE_NOT_FOUND,
             { cause: e }
@@ -42,7 +42,7 @@ export default class PluginRepositoryService {
     const manifestAsset = response.data.assets.find((asset) => asset.name === "manifest.json")
 
     if (!manifestAsset) {
-      throw new BksError(
+      throw new PluginSystemError(
         `No manifest.json found in the latest release`,
         PluginSystemErrorCode.PLUGIN_RELEASE_ASSET_NOT_FOUND
       )
@@ -69,7 +69,7 @@ export default class PluginRepositoryService {
       asset.name === `${manifest.id}-${manifest.version}.zip`
     )
     if (!asset) {
-      throw new BksError(
+      throw new PluginSystemError(
         `No asset found matching ${manifest.id}.zip or ${manifest.id}-${manifest.version}.zip in the latest release`,
         PluginSystemErrorCode.PLUGIN_RELEASE_ASSET_NOT_FOUND
       )

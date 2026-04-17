@@ -14,10 +14,6 @@ export const errors: {[code: string]: Error} = {
   }
 };
 
-export enum BksErrorCode {
-  UNKNOWN = 0,
-}
-
 export enum PluginSystemErrorCode {
   UNKNOWN = 1000,
   INIT_FAILURE = 1001,
@@ -41,12 +37,24 @@ export enum PluginErrorCode {
   DEPENDENCY_MISSING = 2006,
 }
 
-type BksErrorCodeType = BksErrorCode | PluginSystemErrorCode | PluginErrorCode;
-
-export class BksError extends Error {
+export class PluginSystemError extends Error {
   constructor(
     message: string,
-    public readonly code: BksErrorCodeType = BksErrorCode.UNKNOWN,
+    public readonly code: PluginSystemErrorCode = PluginSystemErrorCode.UNKNOWN,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+export class PluginError extends Error {
+  constructor(
+    message: string,
+    public readonly code: PluginErrorCode = PluginErrorCode.UNKNOWN,
     options?: ErrorOptions
   ) {
     super(message, options);
