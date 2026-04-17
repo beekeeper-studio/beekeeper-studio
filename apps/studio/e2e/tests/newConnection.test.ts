@@ -1,15 +1,15 @@
 import { _electron as electron } from 'playwright';
-import { test, expect } from '@playwright/test';
+import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 
-let electronApp;
-let window;
-let newDatabaseConnection;
-let queryTab;
-let userAttemptsTo;
+let electronApp: ElectronApplication;
+let window: Page;
+let newDatabaseConnection: NewDatabaseConnection;
+let queryTab: QueryTab;
+let userAttemptsTo: any;
 
 
 test.describe('New Connection Tests', () => {
@@ -28,7 +28,6 @@ test.describe('New Connection Tests', () => {
     });
 
     test('Test a Postgres connection', async () => {
-
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
         await userAttemptsTo.testDatabaseConnection();
