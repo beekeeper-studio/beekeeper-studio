@@ -9,9 +9,17 @@ export async function launchElectron() {
     }
   });
 
-  // Make window wider so welcome modal doesn't cover Connect button
   const window = await app.firstWindow();
-  await window.setViewportSize({ width: 1400, height: 900 });
+
+  // Dismiss welcome modal if it appears
+  try {
+    const dontShowButton = window.getByText("Don't show again");
+    if (await dontShowButton.isVisible({ timeout: 2000 })) {
+      await dontShowButton.click();
+    }
+  } catch (e) {
+    // Modal not present, continue
+  }
 
   return app;
 }
