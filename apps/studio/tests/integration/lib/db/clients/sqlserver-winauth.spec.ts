@@ -135,15 +135,19 @@ describeWin('SQLServerClient -- Windows Auth must not hang forever on SSPI stall
     const elapsed = Date.now() - start
 
     expect(caught).toBeDefined()
-    // Total budget: probe timeout (10s) + startup overhead. The main pool
-    // never gets reached because the probe fails first.
-    expect(elapsed).toBeLessThan(30_000)
+    // Total budget: probe outer timer is 10s and ODBC's Connection Timeout
+    // is 30s, so we expect the outer timer to win; 25s gives generous
+    // headroom for slow startup without masking a real hang regression.
+    expect(elapsed).toBeLessThan(25_000)
 
     const msg = String(caught?.message || '')
-    // The new error messages name what timed out and where. A hang regression
-    // would surface as the elapsed-time check failing; a generic-error regression
-    // would surface here.
-    expect(msg).toMatch(/timed out/i)
-    expect(msg).toMatch(new RegExp(`localhost[,:]?${BLACKHOLE_PORT}|Windows Authentication`, 'i'))
+    // Our outer-timer diagnostic is supposed to win the race (it's set
+    // lower than ODBC's Connection Timeout). The message must name what
+    // timed out and where so the user can diagnose without a debugger.
+    // We accept ODBC's "Login timeout expired" too as a defensive fallback
+    // in case msnodesqlv8 ignores our outer timer for some reason.
+    expect(msg).toMatch(/timed? ?out|timeout expired/i)
+    expect(msg).toMatch(new RegExp(
+      `localhost[,:]?${BLACKHOLE_PORT}|Windows Authentication probe`, 'i'))
   })
 })

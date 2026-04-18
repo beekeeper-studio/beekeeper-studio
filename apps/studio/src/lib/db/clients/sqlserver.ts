@@ -1122,19 +1122,28 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
           if (trustCert) cfg.conn_str += ';TrustServerCertificate=yes'
         }
       }).connect()
-      this.pool = await Promise.race([
-        poolConnect,
-        new Promise<never>((_resolve, reject) => {
-          setTimeout(() => reject(new Error(
-            `Windows Authentication connection timed out after ${CONNECT_TIMEOUT_MS / 1000}s ` +
-            `opening the msnodesqlv8 pool to ${this.dbConfig.server},${this.dbConfig.port || 1433} ` +
-            `with Driver={${driver}}. The ODBC probe succeeded earlier, so the server is reachable, ` +
-            `but the full SSPI login handshake did not complete in time. ` +
-            `Check SPN registration on the SQL Server and that the current Windows user's ` +
-            `Kerberos ticket / NTLM fallback can reach a domain controller.`
-          )), CONNECT_TIMEOUT_MS)
-        })
-      ])
+      let connectTimer: ReturnType<typeof setTimeout> | undefined
+      try {
+        this.pool = await Promise.race([
+          poolConnect,
+          new Promise<never>((_resolve, reject) => {
+            connectTimer = setTimeout(() => reject(new Error(
+              `Windows Authentication connection timed out after ${CONNECT_TIMEOUT_MS / 1000}s ` +
+              `opening the msnodesqlv8 pool to ${this.dbConfig.server},${this.dbConfig.port || 1433} ` +
+              `with Driver={${driver}}. The ODBC probe succeeded earlier, so the server is reachable, ` +
+              `but the full SSPI login handshake did not complete in time. ` +
+              `Check SPN registration on the SQL Server and that the current Windows user's ` +
+              `Kerberos ticket / NTLM fallback can reach a domain controller.`
+            )), CONNECT_TIMEOUT_MS)
+          })
+        ])
+      } finally {
+        // Critical: clear the timer whether we won or lost the race.
+        // Otherwise it keeps the event loop alive for CONNECT_TIMEOUT_MS
+        // after every successful connect, which in tests stacks up to
+        // suite-level hangs.
+        if (connectTimer) clearTimeout(connectTimer)
+      }
     } else {
       this.pool = await new ConnectionPool(this.dbConfig).connect()
     }
@@ -1318,18 +1327,23 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       { driver: 'SQL Server', legacy: true },
     ]
 
-    // Probe timeout. ODBC's own "Connection Timeout" handles the well-behaved
-    // case (server answers with a login error, driver returns promptly). The
-    // outer Promise timer is defence against SSPI/Kerberos negotiation stalls
-    // where the driver's callback never fires at all -- the exact symptom
-    // users hit on remote servers before this timeout existed.
+    // Probe outer timeout. We deliberately set this LOWER than the ODBC
+    // "Connection Timeout" below so our Promise.race timer wins on a true
+    // SSPI/Kerberos stall and the user sees our diagnostic message naming
+    // the driver, server:port, and probable cause -- not ODBC's terse
+    // "Login timeout expired".
     const PROBE_TIMEOUT_MS = 10_000
+    // ODBC's own ceiling. Lets a real, well-behaved auth error (e.g. the
+    // server responds with "Login failed") propagate through quickly
+    // without our outer timer hijacking it; only kicks in if msnodesqlv8
+    // ignores our timer too.
+    const ODBC_CONNECTION_TIMEOUT_S = 30
 
     for (const candidate of candidates) {
       const connStr =
         `Driver={${candidate.driver}};Server=${server},${port};Database=${database};` +
         `Trusted_Connection=yes;TrustServerCertificate=${trustCert};` +
-        `Connection Timeout=${Math.ceil(PROBE_TIMEOUT_MS / 1000)};`
+        `Connection Timeout=${ODBC_CONNECTION_TIMEOUT_S};`
       const result: { ok: boolean, error?: string, timedOut?: boolean } = await new Promise((resolve) => {
         let settled = false
         const finish = (r: { ok: boolean, error?: string, timedOut?: boolean }) => {
