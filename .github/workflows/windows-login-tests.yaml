@@ -16,7 +16,9 @@ on:
 jobs:
   sqlserver-winauth:
     runs-on: windows-2022
-    timeout-minutes: 45
+    # Tight enough that a stall surfaces in minutes, not in an hour of
+    # wall-clock. Bump it if install+test growth ever gets close.
+    timeout-minutes: 25
     defaults:
       run:
         shell: pwsh
@@ -123,7 +125,15 @@ jobs:
         env:
           TEST_MODE: '1'
           ELECTRON_RUN_AS_NODE: '1'
-        run: yarn internal:integration --testPathPattern sqlserver-winauth --runInBand --ci
+        # --forceExit: the blackhole regression test deliberately leaves
+        # msnodesqlv8 holding a half-open TCP connection (that's the bug we're
+        # regression-testing). Our JS timers fire and the tests pass, but
+        # Node can't exit cleanly with the native socket still owned by the
+        # ODBC driver. --forceExit tells Jest to call process.exit() once all
+        # tests complete, regardless of leaked native handles.
+        # --testTimeout: global per-test ceiling so any legitimate hang in a
+        # single test fails in 90s instead of consuming the whole job budget.
+        run: yarn internal:integration --testPathPattern sqlserver-winauth --runInBand --ci --forceExit --testTimeout=90000
 
       - name: Collect SQL Server ERRORLOGs on failure
         if: failure()
