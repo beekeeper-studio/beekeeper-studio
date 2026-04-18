@@ -1,3 +1,4 @@
+import os from 'os'
 import { createServer } from '@commercial/backend/lib/db/server'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
 
@@ -11,48 +12,64 @@ import { IDbConnectionServerConfig } from '@/lib/db/types'
 // localhost:1433 and the GitHub Actions runner user (BUILTIN\Administrators)
 // is a sysadmin. The companion workflow .github/workflows/windows-login-tests.yaml
 // provisions that environment.
+//
+// Two host modes are exercised:
+//   - 'localhost'   -- loopback, exercises NTLM over the shortest path and
+//                      deliberately mismatches the self-signed cert CN so the
+//                      TrustServerCertificate handling has to kick in.
+//   - hostname      -- real DNS/NetBIOS resolution over TCP, closer to a
+//                      "remote" connection than loopback; the cert CN matches
+//                      the hostname so ODBC 18's default Encrypt=yes should
+//                      succeed cleanly.
 
 const describeWin = process.platform === 'win32' ? describe : describe.skip
 
-describeWin('SQLServerClient -- Windows Authentication (no password)', () => {
-  let server: ReturnType<typeof createServer>
-  let connection: any
+const hostCases = [
+  { label: 'localhost', host: 'localhost' },
+  { label: 'hostname', host: os.hostname() },
+]
 
-  beforeAll(async () => {
-    const config = {
-      client: 'sqlserver',
-      host: 'localhost',
-      port: 1433,
-      user: null,
-      password: null,
-      windowsAuthEnabled: true,
-      trustServerCertificate: true,
-      readOnlyMode: false,
-    } as IDbConnectionServerConfig
+hostCases.forEach(({ label, host }) => {
+  describeWin(`SQLServerClient -- Windows Authentication (no password) via ${label} [${host}]`, () => {
+    let server: ReturnType<typeof createServer>
+    let connection: any
 
-    server = createServer(config)
-    connection = server.createConnection('master')
-    await connection.connect()
-  })
+    beforeAll(async () => {
+      const config = {
+        client: 'sqlserver',
+        host,
+        port: 1433,
+        user: null,
+        password: null,
+        windowsAuthEnabled: true,
+        trustServerCertificate: true,
+        readOnlyMode: false,
+      } as IDbConnectionServerConfig
 
-  afterAll(async () => {
-    if (server) await server.disconnect()
-  })
+      server = createServer(config)
+      connection = server.createConnection('master')
+      await connection.connect()
+    })
 
-  it('authenticates with SSPI (no credentials supplied)', async () => {
-    const result = await connection.driverExecuteSingle('SELECT SUSER_SNAME() AS loginName')
-    const loginName = result.data.recordset[0].loginName
-    expect(loginName).toBeTruthy()
-    expect(String(loginName).toLowerCase()).toMatch(/runner/)
-  })
+    afterAll(async () => {
+      if (server) await server.disconnect()
+    })
 
-  it('can execute a trivial query against master', async () => {
-    const result = await connection.driverExecuteSingle('SELECT @@VERSION AS v')
-    expect(String(result.data.recordset[0].v)).toMatch(/SQL Server/i)
-  })
+    it('authenticates with SSPI (no credentials supplied)', async () => {
+      const result = await connection.driverExecuteSingle('SELECT SUSER_SNAME() AS loginName')
+      const loginName = result.data.recordset[0].loginName
+      expect(loginName).toBeTruthy()
+      expect(String(loginName).toLowerCase()).toMatch(/runner/)
+    })
 
-  it('lists databases', async () => {
-    const dbs = await connection.listDatabases()
-    expect(dbs).toEqual(expect.arrayContaining(['master']))
+    it('can execute a trivial query against master', async () => {
+      const result = await connection.driverExecuteSingle('SELECT @@VERSION AS v')
+      expect(String(result.data.recordset[0].v)).toMatch(/SQL Server/i)
+    })
+
+    it('lists databases', async () => {
+      const dbs = await connection.listDatabases()
+      expect(dbs).toEqual(expect.arrayContaining(['master']))
+    })
   })
 })

@@ -63,14 +63,29 @@ jobs:
             Start-Sleep -Seconds 2
           }
 
+      - name: Open Windows Firewall for TCP/1433
+        run: |
+          # Connections by hostname (vs localhost) traverse the NIC and are
+          # subject to firewall rules. Loopback bypasses the firewall, so the
+          # localhost case works without this rule, but the hostname case in
+          # the Jest spec needs it.
+          New-NetFirewallRule -DisplayName 'SQL Server TCP 1433 (CI)' `
+            -Direction Inbound -Action Allow -Protocol TCP -LocalPort 1433 | Out-Null
+
       - name: Verify Windows Auth reaches SQL Server (pre-flight)
         run: |
           # The chocolatey package adds the installing user (runneradmin) as a
           # sysadmin, so Windows Auth over TCP should succeed without any
           # further GRANT. If this step fails the Jest step will too, so fail
-          # early with a cleaner diagnostic.
+          # early with a cleaner diagnostic. Exercise both hostnames the Jest
+          # spec will try.
           sqlcmd -S "localhost,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@VERSION AS v;"
-          if ($LASTEXITCODE -ne 0) { throw "Windows Authentication pre-flight failed (exit $LASTEXITCODE)." }
+          if ($LASTEXITCODE -ne 0) { throw "Windows Authentication pre-flight (localhost) failed (exit $LASTEXITCODE)." }
+
+          $hn = [System.Net.Dns]::GetHostName()
+          Write-Host "Pre-flighting hostname connection to $hn,1433"
+          sqlcmd -S "$hn,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@SERVERNAME AS server;"
+          if ($LASTEXITCODE -ne 0) { throw "Windows Authentication pre-flight (hostname=$hn) failed (exit $LASTEXITCODE)." }
 
       - name: Install workspace dependencies
         run: yarn install --frozen-lockfile
