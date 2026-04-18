@@ -1,19 +1,14 @@
 <template>
   <div class="banner" v-if="privacyMode">
     <span>
-      In Privacy Mode
+      <a href="https://docs.beekeeperstudio.io/user_guide/security/#privacy-mode">Privacy mode</a> is enabled. Some information is redacted.
     </span>
     <button
       type="button"
       @click.prevent="togglePrivacy"
-      class="btn btn-flat btn-small"
+      class="btn btn-primary btn-small"
     >
-      <i
-        class="material-icons"
-        v-tooltip="'Privacy Mode is enabled, disable it in the View menu or clicking this button'"
-      >
-        visibility_off
-      </i>
+      Disable Privacy Mode
     </button>
   </div>
 </template>
@@ -41,11 +36,13 @@ export default Vue.extend({
     justify-content: center;
     align-items: center;
     gap: 1rem;
-    padding-top: .5rem;
-    padding-bottom: .5rem;
-
-    button {
-      color: inherit;
+    padding-top: .2rem;
+    padding-bottom: .2rem;
+    font-weight: 700;
+    font-size: .875rem;
+    a {
+      color: #181818;
+      text-decoration: underline;
     }
   }
 </style>
