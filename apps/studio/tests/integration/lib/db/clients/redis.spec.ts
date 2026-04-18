@@ -836,7 +836,7 @@ describe('Redis', () => {
     it('should execute PUBSUB NUMSUB command', async () => {
       const numsubResult = await connection.executeQuery('PUBSUB NUMSUB test:channel');
       expect(numsubResult[0].rows).toEqual([
-        { field: "test:channel", value: "0" }
+        { field: "test:channel", value: 0 }
       ]);
     });
 

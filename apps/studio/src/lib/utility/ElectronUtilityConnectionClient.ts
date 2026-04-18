@@ -1,6 +1,6 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions } from "../db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, FieldDescriptor, FieldEditData, ServerStatistics } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
 
@@ -96,6 +96,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
         return await Vue.prototype.$util.send('query/cancel', { queryId: id })
       }
     }
+  }
+
+  async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
+    return await Vue.prototype.$util.send('conn/getResultEditData', { queryText, fields });
   }
 
   async getCompletions(cmd: string): Promise<string[]> {
@@ -206,8 +210,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/applyChangesSql', { changes });
   }
 
-  async applyChanges(changes: TableChanges): Promise<any[]> {
-    return await Vue.prototype.$util.send('conn/applyChanges', { changes });
+  async applyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
+    return await Vue.prototype.$util.send('conn/applyChanges', { changes, tabId });
   }
 
   async setTableDescription(table: string, description: string, schema?: string): Promise<string> {
@@ -333,5 +337,9 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async rollbackTransaction(tabId: number) {
     return await Vue.prototype.$util.send('conn/rollbackTransaction', { tabId });
+  }
+  // no frontend for this yet
+  getServerStatistics(): Promise<ServerStatistics | null> {
+      throw new Error("Method not implemented.");
   }
 }

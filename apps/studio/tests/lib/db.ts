@@ -86,6 +86,8 @@ const KnexTypes: any = {
   "firebird": Client_Firebird,
   "oracle": Client_Oracledb,
   "duckdb": Client_DuckDB,
+  "cassandra": "cassandra-knex",
+  "scylladb": "cassandra-knex",
 }
 
 export interface Options {
@@ -147,7 +149,7 @@ export class DBTestUtil {
 
     if (options.knex) {
       this.knex = options.knex
-    } else if (config.client === 'trino') {
+    } else if (config.client === 'trino' || config.client === 'cassandra' || config.client === 'scylladb') {
       this.knex = null
     } else if (config.client === 'sqlite' || config.client === 'duckdb') {
       this.knex = knex({

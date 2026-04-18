@@ -195,19 +195,19 @@
             Save
           </x-button>
 
-          <x-buttons class="">
+          <x-buttons class="" v-tooltip="runButtonTooltip">
             <x-button
               class="btn btn-primary btn-small"
               :v-tooltip="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)"
               @click.prevent="queryFunctions.primaryRead"
-              :disabled="this.tab.isRunning || running"
+              :disabled="runButtonDisabled"
             >
               <x-label>{{ runQueryText(true, false) }}</x-label>
             </x-button>
             
             <x-button
               class="btn btn-primary btn-small"
-              :disabled="this.tab.isRunning || running"
+              :disabled="runButtonDisabled"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
@@ -271,12 +271,15 @@
       <result-table
         ref="table"
         v-else-if="showResultTable"
+        :editData="resultEditData"
+        :editingData="editingResult"
         :focus="focusingElement === 'table'"
         :active="active"
         :table-height="tableHeight"
         :result="result"
         :query="query"
         :tab="tab"
+        :isManualCommit="isManualCommit"
         :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
@@ -315,6 +318,15 @@
         v-model="selectedResult"
         :results="results"
         :running="running"
+        :editing="editingResult"
+        :changesCount="$refs.table?.pendingChangesCount"
+        :changesString="$refs.table?.pendingChangesString"
+        :result-editable="resultEditable"
+        @editResults="editResults"
+        @stopEditing="stopEditing"
+        @saveChanges="saveChanges"
+        @copyToSql="copyToSql"
+        @discardChanges="discardChanges"
         @download="download"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
@@ -523,7 +535,7 @@
   import { PropType } from 'vue'
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
-  import { TableOrView } from "@/lib/db/models";
+  import { FieldEditData, TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
@@ -611,7 +623,10 @@
           secondaryRead: () => Promise<void>,
           primaryWrite: () => Promise<void>,
           secondaryWrite: () => Promise<void>,
-        }
+        },
+        editingResult: false,
+        resultsEditData: [],
+        resultEditableMap: []
       }
     },
     computed: {
@@ -708,6 +723,32 @@
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
+      },
+      runButtonTooltip() {
+        if (this.tab.isRunning || this.running) {
+          return "Query is already running."
+        } else if (this.editingResult && this.changesCount > 0) {
+          return "Discard or apply your changes to run queries";
+        } else {
+          return null
+        }
+      },
+      runButtonDisabled() {
+        return this.tab.isRunning ||
+          this.running ||
+          (this.editingResult && this.changesCount > 0);
+      },
+      changesCount() {
+        return this.$refs.table?.pendingChangesCount;
+      },
+      pendingChangesString() {
+        return this.$refs.table?.pendingChangesString;
+      },
+      resultEditData() {
+        return this.resultsEditData[this.selectedResult]
+      },
+      resultEditable() {
+        return this.resultEditableMap[this.selectedResult]
       },
       result() {
         return this.results[this.selectedResult]
@@ -871,6 +912,9 @@
       }
     },
     watch: {
+      selectedResult() {
+        this.editingResult = false
+      },
       error() {
         this.errorMarker = null
         if (this.dialect === 'postgresql' && this.error && this.error.position) {
@@ -1174,6 +1218,47 @@
           this.runningQuery = null;
         }
       },
+      stopEditing() {
+        this.editingResult = false;
+      },
+      async editResults() {
+        if (this.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to edit query result data")
+          return;
+        }
+        if (!this.resultsEditData[this.selectedResult]) {
+          const resultEditData: FieldEditData[] = await this.connection.getResultEditData(this.result?.text, this.result.fields);
+
+
+          const mapped = new Map(resultEditData.map((e) => [e.id, e]));
+          this.$set(this.resultsEditData, this.selectedResult, mapped)
+          await this.$nextTick();
+          this.$refs.table.rebuildColumns()
+
+          if (!resultEditData.some((e) => e.editable)) {
+            this.$noty.warning("There is not enough information in the result set to generate an update query. Make sure all primary keys are present.")
+            this.$set(this.resultEditableMap, this.selectedResult, false)
+            await this.$nextTick();
+            return;
+          }
+        }
+        this.editingResult = true;
+      },
+      async saveChanges() {
+        // This covers the instance where someone runs a query, toggles manual commit on, and then makes edits and tries to save them. This ensures it will then be inside a transaction
+        if (this.canManageTransactions && this.isManualCommit && !this.hasActiveTransaction) {
+          await this.manualBegin();
+        }
+
+        await this.$refs.table.saveChanges();
+        this.editingResult = false;
+      },
+      copyToSql() {
+        this.$refs.table.copyToSql();
+      },
+      discardChanges() {
+        this.$refs.table.discardChanges();
+      },
       download(format) {
         this.$refs.table.download(format)
       },
@@ -1287,6 +1372,7 @@
           return;
         }
         const query_sql = this.unsavedText
+        if (this.runButtonDisabled) return;
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -1297,6 +1383,7 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
+        if (this.runButtonDisabled) return;
         // run the currently selected query or higlighted (if there are multiple) to a file, else all sql
         let query_sql = ''
 
@@ -1307,14 +1394,13 @@
         } else {
           query_sql = this.unsavedText
         }
-        
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if(this.running) return;
+        if(this.runButtonDisabled) return;
         this.runningType = 'current'
 
         if (this.hasSelectedText) {
@@ -1337,7 +1423,7 @@
         }
       },
       async submitTabQuery() {
-        if(this.running) return;
+        if(this.runButtonDisabled) return;
         const text = this.unsavedText
         this.runningType = 'everything'
         if (text.trim()) {
@@ -1372,10 +1458,12 @@
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
+        this.resultsEditData = []
+        this.resultEditableMap = []
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true })
+          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
@@ -1425,6 +1513,7 @@
               body: `${this.tab.title} has been executed successfully.`,
             });
           }
+          log.info("RESULTS: ", results)
 
           // eslint-disable-next-line
           // @ts-ignore
@@ -1436,13 +1525,16 @@
             totalRows += result.totalRowCount
             const identifiedTables = identification[idx]?.tables || []
             if (identifiedTables.length > 0) {
-              result.tableName = identifiedTables[0]
+              result.tableName = identifiedTables[0]?.name
+              result.schema = identifiedTables[0]?.schema
             } else {
               result.tableName = "mytable"
+              result.schema = this.defaultSchema
             }
-            result.schema = this.defaultSchema
           })
           this.results = Object.freeze(results);
+          this.resultsEditData = this.results.map(() => null)
+          this.resultEditableMap = this.results.map(() => true)
 
           // const defaultResult = Math.max(results.length - 1, 0)
 
