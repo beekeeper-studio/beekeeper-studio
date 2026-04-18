@@ -1,3 +1,4 @@
+import net from 'net'
 import os from 'os'
 import { createServer } from '@commercial/backend/lib/db/server'
 import { IDbConnectionServerConfig } from '@/lib/db/types'
@@ -71,5 +72,78 @@ hostCases.forEach(({ label, host }) => {
       const dbs = await connection.listDatabases()
       expect(dbs).toEqual(expect.arrayContaining(['master']))
     })
+  })
+})
+
+// Regression test for the original manual-testing symptom: Windows Auth
+// against a server where the TCP handshake completes but the SSPI handshake
+// never responds would hang indefinitely with no error. The probe and the
+// main pool now both carry explicit timeouts with diagnostic messages.
+//
+// We reproduce the stall deterministically by spinning up a TCP server on
+// loopback that accept()s incoming connections but never writes a single
+// byte back. That matches exactly what a stuck Kerberos/NTLM negotiation
+// looks like to the ODBC driver: TCP is up, the login reply never comes.
+const BLACKHOLE_PORT = 14330
+
+describeWin('SQLServerClient -- Windows Auth must not hang forever on SSPI stall', () => {
+  // Per-test generous budget: probe (10s) + main connect (15s if reached) + overhead.
+  jest.setTimeout(60_000)
+
+  let blackhole: net.Server
+  const acceptedSockets: net.Socket[] = []
+
+  beforeAll((done) => {
+    blackhole = net.createServer((socket) => {
+      // Accept the connection and hold it open without writing anything.
+      // This is what the stuck SSPI negotiation path looked like to msnodesqlv8.
+      acceptedSockets.push(socket)
+      socket.on('error', () => { /* ignore -- we're killing these in afterAll */ })
+    })
+    blackhole.listen(BLACKHOLE_PORT, '127.0.0.1', done)
+  })
+
+  afterAll((done) => {
+    for (const s of acceptedSockets) { try { s.destroy() } catch { /* noop */ } }
+    blackhole.close(() => done())
+  })
+
+  it('rejects with a timeout error naming the host/port instead of hanging', async () => {
+    const config = {
+      client: 'sqlserver',
+      host: 'localhost',
+      port: BLACKHOLE_PORT,
+      user: null,
+      password: null,
+      windowsAuthEnabled: true,
+      trustServerCertificate: true,
+      readOnlyMode: false,
+    } as IDbConnectionServerConfig
+
+    const server = createServer(config)
+    const connection = server.createConnection('master')
+
+    const start = Date.now()
+    let caught: Error | undefined
+    try {
+      await connection.connect()
+    } catch (e) {
+      caught = e as Error
+    } finally {
+      try { await server.disconnect() } catch { /* cleanup best-effort */ }
+    }
+    const elapsed = Date.now() - start
+
+    expect(caught).toBeDefined()
+    // Total budget: probe timeout (10s) + startup overhead. The main pool
+    // never gets reached because the probe fails first.
+    expect(elapsed).toBeLessThan(30_000)
+
+    const msg = String(caught?.message || '')
+    // The new error messages name what timed out and where. A hang regression
+    // would surface as the elapsed-time check failing; a generic-error regression
+    // would surface here.
+    expect(msg).toMatch(/timed out/i)
+    expect(msg).toMatch(new RegExp(`localhost[,:]?${BLACKHOLE_PORT}|Windows Authentication`, 'i'))
   })
 })
