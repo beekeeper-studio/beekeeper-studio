@@ -2,7 +2,7 @@
   <div class="shortcut-wrapper">
     <div
       class="shortcut"
-      v-for="sc in this.getShortcut(this.shortcutPath)"
+      v-for="sc in getShortcut"
       :key="sc"
     >
       <span v-for="kb in sc" :key="kb">{{ kb }}</span>
@@ -12,9 +12,9 @@
 <script type="text/javascript">
   export default {
     props: ['shortcutPath'],
-    methods : {
-      getShortcut(shortcut) {
-        const results = this.$bksConfig.getKeybindings('ui', shortcut)
+    computed : {
+      getShortcut() {
+        const results = this.$bksConfig.getKeybindings('ui', this.shortcutPath)
         const keybindings = []
 
         if (typeof results[0] === 'string') {
