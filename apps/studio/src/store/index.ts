@@ -39,7 +39,7 @@ import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
-import { PluginsModule } from './modules/plugins'
+import { PluginsModule, PluginsState } from './modules/plugins'
 
 
 const log = RawLog.scope('store/index')
@@ -108,6 +108,9 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+
+  /** Set by VueX module */
+  plugins?: PluginsState,
 }
 
 Vue.use(Vuex)
@@ -710,7 +713,6 @@ const store = new Vuex.Store<State>({
         () => context.dispatch('licenses/sync'),
         globals.licenseCheckInterval
       )
-      await context.dispatch('plugins/initialize')
     },
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')

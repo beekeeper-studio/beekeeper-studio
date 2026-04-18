@@ -28,6 +28,7 @@ export const TrinoData: DialectData = {
   textEditorMode: "text/x-sql",
   disabledFeatures: {
     manualCommit: true,
+    resultEditing: true,
     rawFilters: true,
     shell: true,
     informationSchema: {
