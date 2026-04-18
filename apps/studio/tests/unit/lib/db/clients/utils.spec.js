@@ -83,27 +83,44 @@ describe("buildSelectTopQuery", () => {
 })
 
 describe('buildSchemaFilter SQL injection', () => {
+  const identity = (s) => s
+
   it("should escape single quotes in schema name to prevent SQL injection", () => {
     const malicious = "'; DROP TABLE users; --"
-    const result = buildSchemaFilter({ schema: malicious })
+    const result = buildSchemaFilter({ schema: malicious }, 'schema_name', identity)
     // The single quote must be doubled so the value stays inside the SQL string literal
-    // Safe:   schema_name = '''; DROP TABLE users; --'  (the '' is an escaped quote inside the literal)
-    // Unsafe: schema_name = ''; DROP TABLE users; --'   (the ' closes the literal, rest is executable)
-    // Result: schema_name = '''; DROP TABLE users; --'
-    // In SQL: opening ', then '' (escaped quote), then rest of string, closing '
-    // The whole value is treated as one string literal — safe.
     expect(result).toBe("schema_name = '''; DROP TABLE users; --'")
   })
 
   it("should escape single quotes in 'only' filter values", () => {
-    const result = buildSchemaFilter({ only: ["public", "'; DROP TABLE users; --"] })
+    const result = buildSchemaFilter({ only: ["public", "'; DROP TABLE users; --"] }, 'schema_name', identity)
     expect(result).toContain("'public'")
     expect(result).toContain("'''; DROP TABLE users; --'")
   })
 
   it("should escape single quotes in 'ignore' filter values", () => {
-    const result = buildSchemaFilter({ ignore: ["'; DROP TABLE users; --"] })
+    const result = buildSchemaFilter({ ignore: ["'; DROP TABLE users; --"] }, 'schema_name', identity)
     expect(result).toContain("'''; DROP TABLE users; --'")
+  })
+
+  it("should wrap the schemaField identifier via the provided wrapIdentifier", () => {
+    const wrap = (s) => `[${s}]`
+    expect(buildSchemaFilter({ schema: 'dbo' }, 'table_schema', wrap)).toBe("[table_schema] = 'dbo'")
+    expect(buildSchemaFilter({ only: ['a'] }, 'table_schema', wrap)).toBe("[table_schema] IN ('a')")
+    expect(buildSchemaFilter({ ignore: ['a'] }, 'table_schema', wrap)).toBe("[table_schema] NOT IN ('a')")
+  })
+
+  it("should wrap each segment of a qualified (dotted) schemaField", () => {
+    const wrap = (s) => `"${s}"`
+    expect(buildSchemaFilter({ schema: 'public' }, 'r.routine_schema', wrap))
+      .toBe(`"r"."routine_schema" = 'public'`)
+  })
+
+  it("should wrap a malicious schemaField segment safely via wrapIdentifier", () => {
+    // Simulates SQL Server-style bracket quoting
+    const wrap = (s) => `[${s.replace(/\]/g, ']]')}]`
+    const result = buildSchemaFilter({ schema: 'dbo' }, "schema]; DROP TABLE x; --", wrap)
+    expect(result).toBe("[schema]]; DROP TABLE x; --] = 'dbo'")
   })
 })
 
