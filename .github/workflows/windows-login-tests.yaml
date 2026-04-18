@@ -29,9 +29,37 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
-      - name: Install SQL Server Express (SQLEXPRESS named instance)
+      - name: Ensure SQL Server Express is installed
         run: |
-          choco install sql-server-express -y --no-progress --ignore-checksums --limit-output
+          # Skip if a SQL Server instance is already installed on the runner.
+          # windows-2022 has historically shipped with SQL Server Express 2019
+          # pre-installed; relying on that when it's there sidesteps chocolatey
+          # flakes entirely.
+          $existing = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server' -ErrorAction SilentlyContinue |
+            Where-Object {
+              $_.Name -match 'MSSQL\d+\.' -and
+              (Test-Path (Join-Path $_.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'))
+            } | Select-Object -First 1
+          if ($existing) {
+            Write-Host "Using pre-installed SQL Server instance: $($existing.Name)"
+            exit 0
+          }
+
+          Write-Host 'No pre-installed SQL Server found. Installing via chocolatey with retry.'
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Write-Host "::group::chocolatey install attempt $attempt of $maxAttempts"
+            # --limit-output dropped on purpose: we want full logs when it fails.
+            choco install sql-server-express -y --no-progress --ignore-checksums
+            $exit = $LASTEXITCODE
+            Write-Host '::endgroup::'
+            if ($exit -eq 0) { exit 0 }
+            if ($attempt -lt $maxAttempts) {
+              Write-Host "Chocolatey exit $exit. Backing off before retry."
+              Start-Sleep -Seconds 30
+            }
+          }
+          throw "Failed to install SQL Server Express after $maxAttempts chocolatey attempts."
 
       - name: Enable TCP/IP on port 1433 and restart the instance
         run: |
