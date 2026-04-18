@@ -203,7 +203,6 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
-
     // Per: www.npmjs.com/package/electron-devtools-installer?activeTab=readme#what-extensions-can-i-use
     // https://chromewebstore.google.com/detail/vuejs-devtools/iaajmlceplecbljialhhkmedjlpdblhp
     installExtension('iaajmlceplecbljialhhkmedjlpdblhp')

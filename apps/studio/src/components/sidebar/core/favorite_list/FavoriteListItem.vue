@@ -116,7 +116,18 @@ export default Vue.extend({
           name: "Export",
           handler: ({ item }) => this.$emit('export', item)
         },
+        {
+          type: 'divider'
+        }
       ]
+
+      if (this.isCloud) {
+        options.push({
+            name: 'Get Query Link',
+            handler: ({ item }) => this.$emit('getQueryLink', item)
+          })
+      }
+
       if (this.folders.length > 0) {
         options.push({ type: 'divider' })
         if (!this.isCloud && this.item.queryFolderId) {

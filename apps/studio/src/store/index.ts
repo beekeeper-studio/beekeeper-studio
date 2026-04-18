@@ -34,6 +34,7 @@ import { BackupModule } from './modules/backup/BackupModule'
 import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
+import { SharedQueryLink } from '@/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
@@ -108,6 +109,7 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+  sharedQueryLink: Nullable<SharedQueryLink>,
 
   /** Set by VueX module */
   plugins?: PluginsState,
@@ -171,6 +173,7 @@ const store = new Vuex.Store<State>({
     namespace: null,
     namespaceList: [],
     pluginManagerStatus: "initializing",
+    sharedQueryLink: null
   },
 
   getters: {
@@ -381,6 +384,9 @@ const store = new Vuex.Store<State>({
       state.tables = []
       state.tablesInitialLoaded = false
     },
+    sharedQueryLink(state, queryLink: SharedQueryLink|null) {
+      state.sharedQueryLink = queryLink
+    },
     tables(state, tables: TableOrView[]) {
       if(state.tables.length === 0) {
         state.tables = tables
@@ -465,6 +471,22 @@ const store = new Vuex.Store<State>({
     async openUrl(context, { url, auth }: { url: string, auth?: { input: string; mode: 'pin'; }}) {
       const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
       await context.dispatch('connect', { config: conn, auth })
+    },
+
+    async openSharedQuery(context, { db, query }: { db: string, query: string }) {
+      try {
+        const [cloudClient] = context.getters['credentials/clients']
+
+        const response = await cloudClient.axios.get('/queries/open-from-share', {
+          params: { database: db, query }
+        })
+
+        const { databaseId, queryId, workspaceId } = response.data
+
+        context.commit('sharedQueryLink', { databaseId, queryId, workspaceId })
+      } catch (e){
+        log.error(e)
+      }
     },
 
     updateWindowTitle(context) {
