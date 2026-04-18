@@ -300,7 +300,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         return obj;
       });
 
-      return { fields, rows, rowCount: result.rowCount };
+      return {
+        fields,
+        rows,
+        rowCount: result.rowCount,
+        text: result.statement.text,
+        command: result.statement.type
+      };
     });
   }
 

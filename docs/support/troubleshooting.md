@@ -95,6 +95,12 @@ CREATE PROCEDURE simpleproc (OUT param1 INT)
 ```
 
 
+### Access denied for user (using password: YES)
+
+If you get an `Access denied for user 'xxx' (using password: YES)` error when connecting, try toggling **Enable SSL** on in the connection settings.
+
+Some MySQL servers (including Google Cloud SQL) require SSL for the user account.
+
 ## SQLite
 
 ### No such column: x

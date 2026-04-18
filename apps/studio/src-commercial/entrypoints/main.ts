@@ -11,7 +11,6 @@ import log from '@bksLogger'
 require('@electron/remote/main').initialize()
 log.info("initializing background")
 
-
 import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
