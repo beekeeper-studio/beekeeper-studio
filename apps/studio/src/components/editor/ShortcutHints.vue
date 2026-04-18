@@ -2,18 +2,7 @@
   <div class="shortcuts">
     <div class="shortcut-item">
       <div>Quick Search</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>P</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.general.openQuickSearch)" :key="sc">{{ sc }}</span>
-      </div>
+      <shortcut-display-helper shortcut-path="general.openQuickSearch" />
     </div>
     <div class="shortcut-item">
       <div>Autocomplete</div>
@@ -23,19 +12,11 @@
     </div>
     <div class="shortcut-item">
       <div>{{ queryActionText(true) }}</div>
-      <div
-        class="shortcut"
-      >
-        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)" :key="sc">{{ sc }}</span>
-      </div>
+      <shortcut-display-helper shortcut-path="queryEditor.primaryQueryAction" />
     </div>
     <div class="shortcut-item">
       <div>{{ queryActionText(false) }}</div>
-      <div
-        class="shortcut"
-      >
-        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)" :key="sc">{{ sc }}</span>
-      </div>
+      <shortcut-display-helper shortcut-path="queryEditor.secondaryQueryAction" />
     </div>
     <div class="shortcut-item">
       <div>New Window</div>
@@ -69,19 +50,11 @@
     </div>
     <div class="shortcut-item">
       <div>Reopen Closed Tabs</div>
-      <div
-        class="shortcut"
-      >
-        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.tab.reopenLastClosedTab)" :key="sc">{{ sc }}</span>
-      </div>
+      <shortcut-display-helper shortcut-path="tab.reopenLastClosedTab" />
     </div>
     <div class="shortcut-item">
       <div>Close Tab</div>
-      <div
-        class="shortcut"
-      >
-        <span v-for="sc in this.getShortcut(this.$bksConfig.keybindings.tab.closeTab)" :key="sc">{{ sc }}</span>
-      </div>
+      <shortcut-display-helper shortcut-path="tab.closeTab" />
     </div>
     <div class="shortcut-item">
       <div>Find</div>
@@ -109,19 +82,14 @@
   </div>
 </template>
 <script type="text/javascript">
-  import { convertKeybinding } from '@/common/bksConfig/BksConfigProvider'
+import ShortcutDisplayHelper from './ShortcutDisplayHelper.vue';
 
   export default {
     props: ['isMongo'],
-    data() {
-      return {
-
-      }
+    components: {
+      ShortcutDisplayHelper
     },
     methods : {
-      getShortcut(shortcut) {
-        return convertKeybinding('ui', Array.isArray(shortcut) ? shortcut[0] : shortcut, this.$bksConfig.platformInfo.platform)
-      },
       isPrimaryRunCurrentQuery() {
         const { settings: configSettings } = this.$bksConfig
         return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
