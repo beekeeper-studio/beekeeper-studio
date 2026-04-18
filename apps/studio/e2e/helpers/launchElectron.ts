@@ -11,6 +11,9 @@ export async function launchElectron() {
 
   const window = await app.firstWindow();
 
+  // Set larger window size so modal doesn't cover Connect button
+  await window.setViewportSize({ width: 1600, height: 1000 });
+
   // Dismiss welcome modal if it appears
   try {
     const dontShowButton = window.getByText("Don't show again");
