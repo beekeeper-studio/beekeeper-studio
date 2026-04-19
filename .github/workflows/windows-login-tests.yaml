@@ -1,0 +1,145 @@
+name: SQL Server Windows Auth integration test
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'apps/studio/src/lib/db/clients/sqlserver.ts'
+      - 'apps/studio/src/lib/db/types.ts'
+      - 'apps/studio/package.json'
+      - 'apps/studio/tests/integration/lib/db/clients/sqlserver-winauth.spec.ts'
+      - '.github/workflows/windows-login-tests.yaml'
+  workflow_dispatch:
+
+jobs:
+  sqlserver-winauth:
+    runs-on: windows-2022
+    # Tight enough that a stall surfaces in minutes, not in an hour of
+    # wall-clock. Bump it if install+test growth ever gets close.
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Ensure SQL Server Express is installed
+        run: |
+          # Skip if a SQL Server instance is already installed on the runner.
+          # windows-2022 has historically shipped with SQL Server Express 2019
+          # pre-installed; relying on that when it's there sidesteps chocolatey
+          # flakes entirely.
+          $existing = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server' -ErrorAction SilentlyContinue |
+            Where-Object {
+              $_.Name -match 'MSSQL\d+\.' -and
+              (Test-Path (Join-Path $_.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'))
+            } | Select-Object -First 1
+          if ($existing) {
+            Write-Host "Using pre-installed SQL Server instance: $($existing.Name)"
+            exit 0
+          }
+
+          Write-Host 'No pre-installed SQL Server found. Installing via chocolatey with retry.'
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Write-Host "::group::chocolatey install attempt $attempt of $maxAttempts"
+            # --limit-output dropped on purpose: we want full logs when it fails.
+            choco install sql-server-express -y --no-progress --ignore-checksums
+            $exit = $LASTEXITCODE
+            Write-Host '::endgroup::'
+            if ($exit -eq 0) { exit 0 }
+            if ($attempt -lt $maxAttempts) {
+              Write-Host "Chocolatey exit $exit. Backing off before retry."
+              Start-Sleep -Seconds 30
+            }
+          }
+          throw "Failed to install SQL Server Express after $maxAttempts chocolatey attempts."
+
+      - name: Enable TCP/IP on port 1433 and restart the instance
+        run: |
+          $base = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server' |
+            Where-Object {
+              $_.Name -like '*SQLEXPRESS*' -and
+              (Test-Path (Join-Path $_.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'))
+            } | Select-Object -First 1
+          if (-not $base) { throw 'Could not locate the SQLEXPRESS registry key.' }
+
+          $tcp = Join-Path $base.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'
+          Set-ItemProperty -Path $tcp -Name 'Enabled' -Value 1
+
+          # Wipe dynamic ports and pin TcpPort=1433 on every IP stanza so the
+          # PR's probe (Server=localhost,1433) reliably lands on this instance.
+          Get-ChildItem $tcp | ForEach-Object {
+            Set-ItemProperty -Path $_.PSPath -Name 'TcpDynamicPorts' -Value ''
+            Set-ItemProperty -Path $_.PSPath -Name 'TcpPort' -Value '1433'
+          }
+
+          Restart-Service 'MSSQL$SQLEXPRESS' -Force
+
+          $deadline = (Get-Date).AddSeconds(90)
+          while ((Get-Date) -lt $deadline) {
+            if (Test-NetConnection -ComputerName localhost -Port 1433 -InformationLevel Quiet -WarningAction SilentlyContinue) {
+              Write-Host 'SQL Server is listening on 1433.'
+              break
+            }
+            Start-Sleep -Seconds 2
+          }
+
+      - name: Open Windows Firewall for TCP/1433
+        run: |
+          # Connections by hostname (vs localhost) traverse the NIC and are
+          # subject to firewall rules. Loopback bypasses the firewall, so the
+          # localhost case works without this rule, but the hostname case in
+          # the Jest spec needs it.
+          New-NetFirewallRule -DisplayName 'SQL Server TCP 1433 (CI)' `
+            -Direction Inbound -Action Allow -Protocol TCP -LocalPort 1433 | Out-Null
+
+      - name: Verify Windows Auth reaches SQL Server (pre-flight)
+        run: |
+          # The chocolatey package adds the installing user (runneradmin) as a
+          # sysadmin, so Windows Auth over TCP should succeed without any
+          # further GRANT. If this step fails the Jest step will too, so fail
+          # early with a cleaner diagnostic. Exercise both hostnames the Jest
+          # spec will try.
+          sqlcmd -S "localhost,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@VERSION AS v;"
+          if ($LASTEXITCODE -ne 0) { throw "Windows Authentication pre-flight (localhost) failed (exit $LASTEXITCODE)." }
+
+          $hn = [System.Net.Dns]::GetHostName()
+          Write-Host "Pre-flighting hostname connection to $hn,1433"
+          sqlcmd -S "$hn,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@SERVERNAME AS server;"
+          if ($LASTEXITCODE -ne 0) { throw "Windows Authentication pre-flight (hostname=$hn) failed (exit $LASTEXITCODE)." }
+
+      - name: Install workspace dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run SQL Server Windows Auth Jest spec
+        working-directory: apps/studio
+        env:
+          TEST_MODE: '1'
+          ELECTRON_RUN_AS_NODE: '1'
+        # --forceExit: the blackhole regression test deliberately leaves
+        # msnodesqlv8 holding a half-open TCP connection (that's the bug we're
+        # regression-testing). Our JS timers fire and the tests pass, but
+        # Node can't exit cleanly with the native socket still owned by the
+        # ODBC driver. --forceExit tells Jest to call process.exit() once all
+        # tests complete, regardless of leaked native handles.
+        # --testTimeout: global per-test ceiling so any legitimate hang in a
+        # single test fails in 90s instead of consuming the whole job budget.
+        run: yarn internal:integration --testPathPattern sqlserver-winauth --runInBand --ci --forceExit --testTimeout=90000
+
+      - name: Collect SQL Server ERRORLOGs on failure
+        if: failure()
+        run: |
+          Get-ChildItem 'C:\Program Files\Microsoft SQL Server\*\MSSQL\Log\ERRORLOG*' -ErrorAction SilentlyContinue |
+            ForEach-Object {
+              Write-Host "===== $($_.FullName) ====="
+              Get-Content $_.FullName -Tail 200
+            }

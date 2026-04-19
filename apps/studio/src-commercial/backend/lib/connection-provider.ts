@@ -79,6 +79,7 @@ export default {
       sslKeyFile: config.sslKeyFile,
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
+      windowsAuthEnabled: config.windowsAuthEnabled,
       instantClientLocation: settings?.oracleInstantClient?.stringValue || undefined,
       oracleConfigLocation: settings?.oracleConfigLocation?.stringValue || undefined,
       options: config.options,

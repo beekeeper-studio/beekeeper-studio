@@ -33,6 +33,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       }
       this.options = other.options
       this.trustServerCertificate = other.trustServerCertificate
+      this.windowsAuthEnabled = other.windowsAuthEnabled
       this.redshiftOptions = other.redshiftOptions
       this.cassandraOptions = other.cassandraOptions
       this.socketPath = other.socketPath
