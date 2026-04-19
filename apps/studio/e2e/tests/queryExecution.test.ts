@@ -4,6 +4,7 @@ import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from '../helpers/launchElectron';
 
 let electronApp;
 let window;
@@ -15,7 +16,7 @@ const testQueryPrefix = `SELECT * FROM actor`;
 test.describe("Postgres query execution", () => {
 
     beforeEach(async () => {
-        electronApp = await electron.launch({ args: ['dist/main.js'] });
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);

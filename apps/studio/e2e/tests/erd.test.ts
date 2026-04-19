@@ -3,6 +3,7 @@ import { test, expect, beforeEach, afterEach } from '@playwright/test';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from '../helpers/launchElectron';
 
 let electronApp;
 let window;
@@ -11,14 +12,7 @@ let userAttemptsTo;
 
 test.describe("ERD (Entity Relationship Diagram) Feature", () => {
   beforeEach(async () => {
-    electronApp = await electron.launch({
-      args: ['dist/main.js'],
-      env: {
-        ...process.env,
-        // Don't set TEST_MODE - it causes config path issues
-        // TEST_MODE resolves config to monorepo root, but files are in apps/studio/
-      },
-    });
+    electronApp = await launchElectron();
     window = await electronApp.firstWindow();
     queryTab = new QueryTab(window);
     userAttemptsTo = userActions(window);
