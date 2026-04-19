@@ -9,9 +9,16 @@
     </div>
   </div>
 </template>
-<script type="text/javascript">
+<script lang="ts">
+  import type { KeybindingPath } from "@/common/bksConfig/BksConfigProvider"
+
   export default {
-    props: ['shortcutPath'],
+    props: {
+      shortcutPath: {
+        required: true,
+        type: String as () => KeybindingPath
+      }
+    },
     computed : {
       getShortcut() {
         const results = this.$bksConfig.getKeybindings('ui', this.shortcutPath)

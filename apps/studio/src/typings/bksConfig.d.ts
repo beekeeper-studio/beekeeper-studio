@@ -355,9 +355,9 @@ declare interface IBksConfig {
             manualCommit: string;
             manualRollback: string;
             openTableFilter: string;
-            primaryQueryAction: string[];
+            primaryQueryAction: string|string[];
             primaryQueryToFileAction: string;
-            secondaryQueryAction: string[];
+            secondaryQueryAction: string|string[];
             secondaryQueryToFileAction: string;
             selectEditor: string;
             selectNextResult: string;

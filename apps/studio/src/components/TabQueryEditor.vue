@@ -198,7 +198,7 @@
           <x-buttons class="" v-tooltip="runButtonTooltip">
             <x-button
               class="btn btn-primary btn-small"
-              :v-tooltip="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)"
+              :v-tooltip="displayShortcut('queryEditor.primaryQueryAction')"
               @click.prevent="queryFunctions.primaryRead"
               :disabled="runButtonDisabled"
             >
@@ -214,11 +214,11 @@
               <x-menu>
                 <x-menuitem @click.prevent="queryFunctions.primaryRead">
                   <x-label>{{ runQueryText(true, false) }}</x-label>
-                  <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.primaryQueryAction)" />
+                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="queryFunctions.secondaryRead">
                   <x-label>{{ runQueryText(false, false) }}</x-label>
-                  <x-shortcut :value="displayShortcut(this.$bksConfig.keybindings.queryEditor.secondaryQueryAction)" />
+                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
@@ -543,6 +543,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -1738,8 +1739,12 @@
         clearInterval(this.timerInterval);
         this.timerInterval = null;
       },
-      displayShortcut(shortcut: string|string[]) {
-        return this.$getUiKeybind(shortcut).join('')
+      displayShortcut(shortcutPath: KeybindingPath) {
+        const keybindings = this.$bksConfig.getKeybindings('ui', shortcutPath)
+        const displayKeybinding: string[] = Array.isArray(keybindings[0]) ? keybindings[0] : keybindings
+        return displayKeybinding.join('')
+        
+        // return this.$getUiKeybind(shortcut).join('')
       },
       editorContextMenu(_event, _context, items) {
         return [
