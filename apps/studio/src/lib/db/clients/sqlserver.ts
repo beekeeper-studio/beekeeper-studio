@@ -1108,41 +1108,42 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       // Trusted_Connection as a boolean (should be yes/no), and doesn't include TrustServerCertificate.
       // beforeConnect also preserves mssql's instance name and SSH tunnel server handling.
       const trustCert = this.dbConfig.options?.trustServerCertificate
-      // Overall login timeout for the real msnodesqlv8 pool. Matches the probe's
-      // defence: if the SSPI handshake stalls after ODBC is already confirmed
-      // working, fail with an actionable message instead of hanging forever.
-      const CONNECT_TIMEOUT_MS = 15_000
-      const poolConnect = new sqlWindows.ConnectionPool({
-        ...this.dbConfig,
-        connectionTimeout: CONNECT_TIMEOUT_MS,
-        beforeConnect: (cfg: any) => {
-          cfg.conn_str = cfg.conn_str
-            .replace(/Driver=[^;]*/i, `Driver={${driver}}`)
-            .replace(/Trusted_Connection=[^;]*/i, 'Trusted_Connection=yes')
-          if (trustCert) cfg.conn_str += ';TrustServerCertificate=yes'
-        }
-      }).connect()
-      let connectTimer: ReturnType<typeof setTimeout> | undefined
+      // Overall login timeout for the msnodesqlv8 pool. We set this at msnodesqlv8's
+      // *native* layer (cfg.conn_timeout, in seconds) inside beforeConnect below --
+      // the ODBC "Connection Timeout" + mssql's connectionTimeout options both get
+      // stuck silently when SSPI/Kerberos negotiation stalls, but conn_timeout is
+      // honoured by the native driver and actually fires the callback so the handle
+      // is released instead of leaking and hanging the process at exit.
+      const CONNECT_TIMEOUT_S = 15
+      const server = this.dbConfig.server
+      const port = this.dbConfig.port || 1433
       try {
-        this.pool = await Promise.race([
-          poolConnect,
-          new Promise<never>((_resolve, reject) => {
-            connectTimer = setTimeout(() => reject(new Error(
-              `Windows Authentication connection timed out after ${CONNECT_TIMEOUT_MS / 1000}s ` +
-              `opening the msnodesqlv8 pool to ${this.dbConfig.server},${this.dbConfig.port || 1433} ` +
-              `with Driver={${driver}}. The ODBC probe succeeded earlier, so the server is reachable, ` +
-              `but the full SSPI login handshake did not complete in time. ` +
-              `Check SPN registration on the SQL Server and that the current Windows user's ` +
-              `Kerberos ticket / NTLM fallback can reach a domain controller.`
-            )), CONNECT_TIMEOUT_MS)
-          })
-        ])
-      } finally {
-        // Critical: clear the timer whether we won or lost the race.
-        // Otherwise it keeps the event loop alive for CONNECT_TIMEOUT_MS
-        // after every successful connect, which in tests stacks up to
-        // suite-level hangs.
-        if (connectTimer) clearTimeout(connectTimer)
+        this.pool = await new sqlWindows.ConnectionPool({
+          ...this.dbConfig,
+          connectionTimeout: CONNECT_TIMEOUT_S * 1000,
+          beforeConnect: (cfg: any) => {
+            cfg.conn_str = cfg.conn_str
+              .replace(/Driver=[^;]*/i, `Driver={${driver}}`)
+              .replace(/Trusted_Connection=[^;]*/i, 'Trusted_Connection=yes')
+            if (trustCert) cfg.conn_str += ';TrustServerCertificate=yes'
+            // conn_timeout is honoured by the msnodesqlv8 native layer. This is
+            // the only timeout that reliably cancels a stuck SSPI handshake.
+            cfg.conn_timeout = CONNECT_TIMEOUT_S
+          }
+        }).connect()
+      } catch (err: any) {
+        const raw = err?.message || String(err)
+        if (/timeout|timed? out/i.test(raw)) {
+          throw new Error(
+            `Windows Authentication connection timed out after ${CONNECT_TIMEOUT_S}s ` +
+            `opening the msnodesqlv8 pool to ${server},${port} with Driver={${driver}}. ` +
+            `The ODBC probe succeeded earlier, so the server is reachable, but the ` +
+            `full SSPI login handshake did not complete in time. Check SPN registration ` +
+            `on the SQL Server and that the current Windows user's Kerberos ticket / ` +
+            `NTLM fallback can reach a domain controller. Underlying driver error: ${raw}`
+          )
+        }
+        throw err
       }
     } else {
       this.pool = await new ConnectionPool(this.dbConfig).connect()
@@ -1327,54 +1328,27 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       { driver: 'SQL Server', legacy: true },
     ]
 
-    // Probe outer timeout. We deliberately set this LOWER than the ODBC
-    // "Connection Timeout" below so our Promise.race timer wins on a true
-    // SSPI/Kerberos stall and the user sees our diagnostic message naming
-    // the driver, server:port, and probable cause -- not ODBC's terse
-    // "Login timeout expired".
-    const PROBE_TIMEOUT_MS = 10_000
-    // ODBC's own ceiling. Lets a real, well-behaved auth error (e.g. the
-    // server responds with "Login failed") propagate through quickly
-    // without our outer timer hijacking it; only kicks in if msnodesqlv8
-    // ignores our timer too.
-    const ODBC_CONNECTION_TIMEOUT_S = 30
+    // Probe timeout at the msnodesqlv8 *native* layer (seconds). This is the
+    // only timeout that reliably cancels a stuck SSPI/Kerberos handshake --
+    // the ODBC "Connection Timeout" conn-string property and a JS setTimeout
+    // outside the callback both leave the native socket held open, which
+    // hangs Node at exit. Native conn_timeout actually fires our callback
+    // with a TimeoutError and releases the handle.
+    const PROBE_TIMEOUT_S = 10
 
     for (const candidate of candidates) {
       const connStr =
         `Driver={${candidate.driver}};Server=${server},${port};Database=${database};` +
-        `Trusted_Connection=yes;TrustServerCertificate=${trustCert};` +
-        `Connection Timeout=${ODBC_CONNECTION_TIMEOUT_S};`
-      const result: { ok: boolean, error?: string, timedOut?: boolean } = await new Promise((resolve) => {
-        let settled = false
-        const finish = (r: { ok: boolean, error?: string, timedOut?: boolean }) => {
-          if (settled) return
-          settled = true
-          resolve(r)
-        }
-
-        const timer = setTimeout(() => {
-          finish({
-            ok: false,
-            timedOut: true,
-            error:
-              `Windows Authentication probe timed out after ${PROBE_TIMEOUT_MS / 1000}s ` +
-              `using Driver={${candidate.driver}} against Server=${server},${port}. ` +
-              `TCP is reachable but ODBC's SSPI/Kerberos negotiation did not return. ` +
-              `This usually means an SPN/Kerberos issue on the SQL Server or a blocked path ` +
-              `to the domain controller. Try connecting the same server from the same ` +
-              `machine with SSMS to confirm.`,
-          })
-        }, PROBE_TIMEOUT_MS)
-
-        rawSql.open(connStr, (err: any, conn: any) => {
-          clearTimeout(timer)
+        `Trusted_Connection=yes;TrustServerCertificate=${trustCert};`
+      const result: { ok: boolean, error?: string } = await new Promise((resolve) => {
+        rawSql.open({ conn_str: connStr, conn_timeout: PROBE_TIMEOUT_S }, (err: any, conn: any) => {
           if (err) {
             const msgs = (Array.isArray(err) ? err : [err])
               .map((e: any) => (typeof e?.message === 'string' ? e.message : String(e)))
               .filter(Boolean).join('; ')
-            finish({ ok: false, error: msgs })
+            resolve({ ok: false, error: msgs })
           } else {
-            conn.close(() => finish({ ok: true }))
+            conn.close(() => resolve({ ok: true }))
           }
         })
       })
@@ -1382,10 +1356,22 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       if (result.ok) return candidate
 
       const isDriverMissing = result.error?.includes('Data source name not found') || result.error?.includes('IM002')
-      if (!isDriverMissing) {
-        // Real error (auth failure, server unreachable, timeout, etc.) - surface it directly
-        throw new Error(result.error)
+      if (isDriverMissing) continue
+
+      // Real error (auth failure, server unreachable, timeout, etc). If it
+      // looks like a timeout, wrap the terse native message with our diagnostic
+      // so the user knows exactly what timed out, where, and what to check.
+      if (/timeout|timed? out/i.test(result.error || '')) {
+        throw new Error(
+          `Windows Authentication probe timed out after ${PROBE_TIMEOUT_S}s ` +
+          `using Driver={${candidate.driver}} against Server=${server},${port}. ` +
+          `TCP is reachable but ODBC's SSPI/Kerberos negotiation did not return. ` +
+          `This usually means an SPN/Kerberos issue on the SQL Server or a blocked ` +
+          `path to the domain controller. Try connecting the same server from the ` +
+          `same machine with SSMS to confirm. Underlying driver error: ${result.error}`
+        )
       }
+      throw new Error(result.error)
     }
 
     throw new Error('Windows Authentication requires an ODBC Driver for SQL Server to be installed. ' +
