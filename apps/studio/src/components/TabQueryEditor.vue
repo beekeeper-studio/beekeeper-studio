@@ -160,7 +160,6 @@
               <x-label>Rollback</x-label>
             </x-button>
           </x-buttons>
-
         </div>
 
         <div class="editor-help expand" />
@@ -199,12 +198,13 @@
           <x-buttons class="" v-tooltip="runButtonTooltip">
             <x-button
               class="btn btn-primary btn-small"
-              v-tooltip="'Ctrl+Enter'"
-              @click.prevent="submitTabQuery"
+              :v-tooltip="displayShortcut('queryEditor.primaryQueryAction')"
+              @click.prevent="queryFunctions.primaryRead"
               :disabled="runButtonDisabled"
             >
-              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+              <x-label>{{ runQueryText(true, false) }}</x-label>
             </x-button>
+            
             <x-button
               class="btn btn-primary btn-small"
               :disabled="runButtonDisabled"
@@ -212,35 +212,35 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
-                  <x-shortcut value="Control+Enter" />
+                <x-menuitem @click.prevent="queryFunctions.primaryRead">
+                  <x-label>{{ runQueryText(true, false) }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>Run Current</x-label>
-                  <x-shortcut value="Control+Shift+Enter" />
+                <x-menuitem @click.prevent="queryFunctions.secondaryRead">
+                  <x-label>{{ runQueryText(false, false) }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
-                  @click.prevent="submitQueryToFile"
+                  @click.prevent="queryFunctions.primaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
+                  <x-label>{{ runQueryText(true, true) }}</x-label>
                   <i
                     v-if="isCommunity"
-                    class="material-icons menu-icon"
+                    class="material-icons menu-icon "
                   >
                     stars
                   </i>
                 </x-menuitem>
                 <x-menuitem
-                  @click.prevent="submitCurrentQueryToFile"
+                  @click.prevent="queryFunctions.secondaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>Run Current to File</x-label>
+                  <x-label>{{ runQueryText(false, true) }}</x-label>
                   <i
                     v-if="isCommunity"
-                    class="material-icons menu-icon "
+                    class="material-icons menu-icon"
                   >
                     stars
                   </i>
@@ -543,6 +543,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -561,7 +562,7 @@
         results: [],
         running: false,
         runningCount: 1,
-        runningType: 'all queries',
+        runningType: 'current',
         selectedResult: 0,
         unsavedText: editorDefault,
         editor: {
@@ -618,6 +619,12 @@
         warningNoty: null,
         showTransactionActiveTooltip: false,
         enteredTransactionFromIdent: false,
+        queryFunctions: {} as {
+          primaryRead: () => Promise<void>,
+          secondaryRead: () => Promise<void>,
+          primaryWrite: () => Promise<void>,
+          secondaryWrite: () => Promise<void>,
+        },
         editingResult: false,
         resultsEditData: [],
         resultEditableMap: []
@@ -639,6 +646,8 @@
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title;
         }
+
+        return ''
       },
       canManageTransactions() {
         return !this.dialectData?.disabledFeatures?.manualCommit;
@@ -669,6 +678,10 @@
       },
       showDryRun() {
         return this.dialect == 'bigquery'
+      },
+      isPrimaryRunCurrentQuery() {
+        const { settings: configSettings } = this.$bksConfig
+        return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
       },
       identifyDialect() {
         // dialect for sql-query-identifier
@@ -761,8 +774,8 @@
         return this.$vHotkeyKeymap({
           'queryEditor.switchPaneFocus': this.switchPaneFocus,
           'queryEditor.selectEditor': this.selectEditor,
-          'queryEditor.submitQueryToFile': this.submitQueryToFile,
-          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.primaryQueryToFileAction': this.queryFunctions.primaryWrite,
+          'queryEditor.secondaryQueryToFileAction': this.queryFunctions.secondaryWrite,
           'queryEditor.manualCommit': this.manualCommit,
           'queryEditor.manualRollback': this.manualRollback,
         })
@@ -814,8 +827,8 @@
       keybindings() {
         const keybindings = this.$CMKeymap({
           'general.save': this.triggerSave,
-          'queryEditor.submitCurrentQuery': this.submitCurrentQuery,
-          'queryEditor.submitTabQuery': this.submitTabQuery,
+          'queryEditor.primaryQueryAction': this.queryFunctions.primaryRead,
+          'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
         })
 
         if(this.userKeymap === "vim") {
@@ -897,7 +910,7 @@
             this.queryMagic.extensions,
           ]
         }
-      },
+      }
     },
     watch: {
       selectedResult() {
@@ -981,6 +994,44 @@
           this.$modal.show(this.superFormatterId)
         } else {
           this.$modal.hide(this.superFormatterId)
+        }
+      },
+      runQueryText(isPrimary: boolean, isWrite: boolean): string{
+        const writeText = ' to File'
+        const { settings: configSettings } = this.$bksConfig
+        let runSelect = this.hasSelectedText ? 'Run Selection' : 'Run Current'
+        let runAll = 'Run All'
+
+        if (isWrite) {
+          runSelect += writeText
+          runAll += writeText
+        }
+
+        if (configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery') {
+          return isPrimary ? runAll : runSelect
+        }
+
+        return isPrimary ? runSelect : runAll
+      },
+      getQueryActions() {
+        const { settings: configSettings } = this.$bksConfig
+        let primaryFunc = this.submitCurrentQuery
+        let secondaryFunc = this.submitTabQuery
+        let primaryWriteFunction = this.submitCurrentQueryToFile
+        let secondaryWriteFunc = this.submitQueryToFile
+
+        if (configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery') {
+          primaryFunc = this.submitTabQuery
+          secondaryFunc = this.submitCurrentQuery
+          primaryWriteFunction = this.submitQueryToFile
+          secondaryWriteFunc = this.submitCurrentQueryToFile
+        }
+
+        return {
+          primaryFunc,
+          secondaryFunc,
+          primaryWriteFunction,
+          secondaryWriteFunc
         }
       },
       getPresets(presetId) {
@@ -1136,7 +1187,7 @@
           this.updateEditorHeight()
         })
       },
-      handleEditorInitialized(detail) {
+      handleEditorInitialized() {
         this.editor.initialized = true
 
         // Setup query magic data providers
@@ -1321,10 +1372,8 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
+        const query_sql = this.unsavedText
         if (this.runButtonDisabled) return;
-
-        // run the currently hilighted text (if any) to a file, else all sql
-        const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -1336,28 +1385,48 @@
           return;
         }
         if (this.runButtonDisabled) return;
+        // run the currently selected query or higlighted (if there are multiple) to a file, else all sql
+        let query_sql = ''
 
-        // run the currently selected query (if there are multiple) to a file, else all sql
-        const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.unsavedText
+        if ( this.hasSelectedText ) {
+          query_sql = this.editor.selection
+        } else if (this.currentlySelectedQuery) {
+          query_sql = this.currentlySelectedQuery.text
+        } else {
+          query_sql = this.unsavedText
+        }
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if (this.runButtonDisabled) return;
+        if(this.runButtonDisabled) return;
+        this.runningType = 'current'
+
+        if (this.hasSelectedText) {
+          this.runningType = 'selection'
+          return await this.submitQuery(this.editor.selection)
+        }
+
         if (this.currentlySelectedQuery) {
-          this.runningType = 'current'
-          await this.submitQuery(this.currentlySelectedQuery.text)
+          return await this.submitQuery(this.currentlySelectedQuery.text)
+        }
+
+        const queries = identify(this.unsavedText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        if (queries.length > 0) {
+          this.individualQueries = queries
+          this.currentlySelectedQuery = queries[0]
+          return await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
         }
       },
       async submitTabQuery() {
-        if (this.runButtonDisabled) return;
-        const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
-        this.runningType = this.hasSelectedText ? 'selection' : 'everything'
+        if(this.runButtonDisabled) return;
+        const text = this.unsavedText
+        this.runningType = 'everything'
         if (text.trim()) {
           this.submitQuery(text)
         } else {
@@ -1515,6 +1584,12 @@
         }
         const originalText = this.query?.text || this.tab.unsavedQueryText
         if (originalText) {
+          const queries = identify(originalText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          if (queries.length > 0) {
+            this.individualQueries = queries
+            this.currentlySelectedQuery = queries[0]
+          }
+
           this.originalText = originalText
           this.unsavedText = originalText
         }
@@ -1664,6 +1739,13 @@
         clearInterval(this.timerInterval);
         this.timerInterval = null;
       },
+      displayShortcut(shortcutPath: KeybindingPath) {
+        const keybindings = this.$bksConfig.getKeybindings('ui', shortcutPath)
+        const displayKeybinding: string[] = Array.isArray(keybindings[0]) ? keybindings[0] : keybindings
+        return displayKeybinding.join('')
+        
+        // return this.$getUiKeybind(shortcut).join('')
+      },
       editorContextMenu(_event, _context, items) {
         return [
           ...items,
@@ -1722,6 +1804,20 @@
       }
     },
     async mounted() {
+      const {
+        primaryFunc,
+        secondaryFunc,
+        primaryWriteFunction,
+        secondaryWriteFunc
+      } = this.getQueryActions()
+
+      this.queryFunctions = {
+        primaryRead: primaryFunc,
+        secondaryRead: secondaryFunc,
+        primaryWrite: primaryWriteFunction,
+        secondaryWrite: secondaryWriteFunc
+      }
+
       if (this.tab.queryId) {
         this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
       } else if (this.tab.usedQueryId) {

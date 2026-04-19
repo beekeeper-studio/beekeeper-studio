@@ -355,13 +355,13 @@ declare interface IBksConfig {
             manualCommit: string;
             manualRollback: string;
             openTableFilter: string;
+            primaryQueryAction: string|string[];
+            primaryQueryToFileAction: string;
+            secondaryQueryAction: string|string[];
+            secondaryQueryToFileAction: string;
             selectEditor: string;
             selectNextResult: string;
             selectPreviousResult: string;
-            submitCurrentQuery: string[];
-            submitCurrentQueryToFile: string;
-            submitQueryToFile: string;
-            submitTabQuery: string[];
             switchPaneFocus: string;
         };
         quickSearch: {
@@ -420,6 +420,12 @@ declare interface IBksConfig {
         idleThresholdSeconds: number;
         lockMode: string;
         minPinLength: number;
+    };
+    settings: {
+        queryEditor: {
+            primaryQueryAction: string;
+            secondaryQueryAction: string;
+        };
     };
     ui: {
         export: {
