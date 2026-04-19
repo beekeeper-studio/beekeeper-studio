@@ -1,5 +1,7 @@
 import { SideBarToggle } from "../../pageComponents/SideBarToggle";
 
 export const toggleLeftSideBar = async (sideBarToggle: SideBarToggle): Promise<void> => {
-    (await sideBarToggle.leftSideBarToggle()).click();
+    const toggleSideBar = await sideBarToggle.leftSideBarToggle();
+    console.log('EITTAA', toggleSideBar)
+    await toggleSideBar.click();
 };

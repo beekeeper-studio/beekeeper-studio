@@ -6,6 +6,7 @@ import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { TablesSideBar } from '../pageComponents/TablesSideBar';
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 import { userActions } from "../pageActions/index";
+import { launchElectron } from '../helpers/launchElectron';
 
 let electronApp;
 let window;
@@ -18,7 +19,7 @@ let newTableName;
 test.describe("Table creation", () => {
 
     beforeEach(async () => {
-        electronApp = await electron.launch({ args: ['dist/main.js'] });
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         newDatabaseConnection = new NewDatabaseConnection(window);
         queryTab = new QueryTab(window);

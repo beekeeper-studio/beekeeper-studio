@@ -5,6 +5,7 @@ import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from '../helpers/launchElectron';
 
 const POSTGRES_QUERY = 'SELECT * FROM actor WHERE actor_id IN (1, 2);';
 
@@ -19,9 +20,7 @@ let userAttemptsTo;
 test.describe("JSON Sidebar Verifications", () => {
 
     beforeEach(async () => {
-     electronApp = await electron.launch({
-            args: ['dist/main.js']
-        });
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
@@ -44,15 +43,9 @@ test.describe("JSON Sidebar Verifications", () => {
         }
     });
 
-    test.skip("accessing the JSON sidebar", async () => {
-        
-    await userAttemptsTo.toggleLeftSideBar();
-    
-    // need to deal with the free trial modal
-    // await window.getByText('Start Free Trial').click();
-    // await window.getByRole('button', { name: 'more_vert' }).click();
-    // need to create the JSON SideBar files, but since we won't be activating this test now...
-    const jsonSideBar = await window.locator('[contenteditable="true"][role="textbox"]');
-    await expect(jsonSideBar).toBeVisible();
+    test("accessing the JSON sidebar", async () => {
+        await userAttemptsTo.clickFirstResultRow();
+        await userAttemptsTo.toggleLeftSideBar();
+        await userAttemptsTo.verifyJsonViewerVisible();
     });
 });
