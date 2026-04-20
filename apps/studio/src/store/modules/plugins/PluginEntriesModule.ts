@@ -1,6 +1,6 @@
 import { Module } from "vuex";
 import { State as RootState } from "@/store";
-import { PluginRegistryEntry } from "@/services/plugin";
+import { PluginOrigin, PluginRegistryEntry } from "@/services/plugin";
 import Vue from "vue";
 import rawLog from "@bksLogger";
 
