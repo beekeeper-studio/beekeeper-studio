@@ -72,6 +72,7 @@ import createFormatterPresets from './20250831_create_formatter_presets'
 import populateFormatterPresets from './20250831_populate_formatter_presets'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
+import addOnboardingNotyShown from "./20251008_add_onboarding_noty_shown_setting"
 import uniqueNameFormatterPresets from './20251013_unique_name_formatter_presets'
 import addUsedQueryId from './20250620_add_used_query_id'
 import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_column'
@@ -131,6 +132,7 @@ const realMigrations = [
   createConnectionFolders, createQueryFolders,
   addPositionToItems,
   addBastionAuth,
+  addOnboardingNotyShown,
 ]
 
 // fixtures require the models

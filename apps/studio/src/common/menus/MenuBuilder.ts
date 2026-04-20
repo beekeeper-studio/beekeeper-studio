@@ -59,6 +59,7 @@ export default class extends DefaultMenu {
         this.menuItems.keyboardShortcuts,
         this.menuItems.opendocs,
         this.menuItems.support,
+        this.menuItems.gettingStartedGuide,
         { type: 'separator' },
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,

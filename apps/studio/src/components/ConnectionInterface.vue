@@ -62,6 +62,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <bedrock-form
+                  v-else-if="config.connectionType === 'bedrock'"
+                  :config="config"
+                  :testing="testing"
+                />
                 <postgres-form
                   v-else-if="['postgresql', 'greengage'].includes(config.connectionType)"
                   :config="config"
@@ -98,7 +103,7 @@
                   :testing="testing"
                 />
                 <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && isUltimate"
+                  v-if="['cassandra', 'scylladb'].includes(config.connectionType) && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
@@ -232,6 +237,7 @@
 <script lang="ts">
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
 import MysqlForm from './connection/MysqlForm.vue'
+import BedrockForm from './connection/BedrockForm.vue'
 import PostgresForm from './connection/PostgresForm.vue'
 import RedshiftForm from './connection/RedshiftForm.vue'
 import Sidebar from './common/Sidebar.vue'
@@ -272,7 +278,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
     ContentPlaceholderHeading, SurrealDbForm
   },
 
@@ -520,7 +526,8 @@ export default Vue.extend({
       try {
         this.testing = true
         this.connectionError = null
-        await this.$store.dispatch('test', this.config)
+        const connected = await this.$store.dispatch('test', this.config)
+        if (!connected) return false
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {
