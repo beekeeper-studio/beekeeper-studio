@@ -78,7 +78,7 @@ jobs:
       - name: Build App
         run: yarn workspace beekeeper-studio build
 
-      - name: Serve + Run Tests (Linux/macOS)
+      - name: Run Tests (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
@@ -90,7 +90,7 @@ jobs:
           ELECTRON_DISABLE_SANDBOX: 1
           ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
 
-      - name: Serve + Run Tests (Windows)
+      - name: Run Tests (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
