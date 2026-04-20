@@ -285,8 +285,12 @@ function testWith(dockerTag: string, readonly: boolean) {
         // Beekeeper's readOnlyMode gate, so we can set up fixtures even when
         // the Beekeeper client is in read-only mode.
         await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${dottedTable}]`)
-        await util.knex.schema.raw(`CREATE TABLE dbo.[${dottedTable}](id int, name varchar(255))`)
-        await util.knex.schema.raw(`INSERT INTO dbo.[${dottedTable}](id, name) VALUES (1, 'acme')`)
+        await util.knex.schema.raw(
+          `CREATE TABLE dbo.[${dottedTable}](id int, company_name varchar(255), fingerprint varchar(32))`
+        )
+        await util.knex.schema.raw(
+          `INSERT INTO dbo.[${dottedTable}](id, company_name, fingerprint) VALUES (1, 'acme', 'dotted-3722')`
+        )
       })
 
       afterAll(async () => {
@@ -295,6 +299,22 @@ function testWith(dockerTag: string, readonly: boolean) {
         } catch (e) {
           // ignore
         }
+      })
+
+      it("listTableColumns returns this table's columns (not a mis-split object)", async () => {
+        const columns = await util.connection.listTableColumns(dottedTable, 'dbo')
+        const names = columns.map((c) => c.columnName).sort()
+        expect(names).toEqual(['company_name', 'fingerprint', 'id'])
+      })
+
+      it("selectTop returns this table's row for a dotted name", async () => {
+        const top = await util.connection.selectTop(
+          dottedTable, 0, 10, [{ dir: 'ASC', field: 'id' }], [], 'dbo'
+        )
+        expect(top.result.length).toBe(1)
+        const row = top.result[0]
+        expect(row.company_name || row.COMPANY_NAME).toBe('acme')
+        expect(row.fingerprint || row.FINGERPRINT).toBe('dotted-3722')
       })
 
       it("listTableTriggers succeeds for a table name containing a dot", async () => {
@@ -314,7 +334,12 @@ function testWith(dockerTag: string, readonly: boolean) {
         const renamed = 'Common.Renamed'
         await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
         await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
-        await util.knex.schema.raw(`CREATE TABLE dbo.[${source}](id int)`)
+        await util.knex.schema.raw(
+          `CREATE TABLE dbo.[${source}](id int, marker_col varchar(16))`
+        )
+        await util.knex.schema.raw(
+          `INSERT INTO dbo.[${source}](id, marker_col) VALUES (42, 'rename-3722')`
+        )
 
         try {
           await util.connection.setElementName(
@@ -324,6 +349,19 @@ function testWith(dockerTag: string, readonly: boolean) {
           const names = (await util.connection.listTables()).map((t) => t.name)
           expect(names).toContain(renamed)
           expect(names).not.toContain(source)
+
+          // Columns and data must survive the rename -> proves sp_rename
+          // actually targeted the dotted source table.
+          const columns = await util.connection.listTableColumns(renamed, 'dbo')
+          const columnNames = columns.map((c) => c.columnName).sort()
+          expect(columnNames).toEqual(['id', 'marker_col'])
+
+          const top = await util.connection.selectTop(
+            renamed, 0, 10, [{ dir: 'ASC', field: 'id' }], [], 'dbo'
+          )
+          expect(top.result.length).toBe(1)
+          const row = top.result[0]
+          expect(row.marker_col || row.MARKER_COL).toBe('rename-3722')
         } finally {
           await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
           await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
