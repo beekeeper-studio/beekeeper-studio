@@ -9,6 +9,8 @@ export async function launchElectron() {
 
   const win = await app.firstWindow();
 
+  await win.setViewportSize({ width: 1600, height: 1000 });
+
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   try {
