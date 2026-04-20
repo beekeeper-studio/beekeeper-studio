@@ -27,6 +27,7 @@ export type PluginSystemErrorCode =
   | 'PLUGIN_RELEASE_ASSET_NOT_FOUND'
   | 'PLUGIN_VIEW_NOT_FOUND'
   | 'PLUGIN_NOT_SUPPORTED'
+  | 'PLUGIN_SYSTEM_DISABLED'
   | 'INIT_TIMEOUT';
 
 export type PluginErrorCode =

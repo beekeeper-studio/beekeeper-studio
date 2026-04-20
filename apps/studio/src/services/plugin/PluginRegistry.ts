@@ -7,6 +7,11 @@ const log = rawLog.scope("PluginRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
+  /** Disable fetching community entries. */
+  public communityDisabled = false;
+  /** Disable fetching official entries. */
+  public officialDisabled = false;
+
   private officialEntries: PluginRegistryEntry[] = [];
   private communityEntries: PluginRegistryEntry[] = [];
   private officialEntriesCached = false;
@@ -52,7 +57,7 @@ export default class PluginRegistry {
   }
 
   private async loadOfficialEntries() {
-    if (this.officialEntriesCached) {
+    if (this.officialDisabled || this.officialEntriesCached) {
       return;
     }
     log.debug("Fetching official entries...");
@@ -62,7 +67,7 @@ export default class PluginRegistry {
   }
 
   private async loadCommunityEntries() {
-    if (this.communityEntriesCached) {
+    if (this.communityDisabled || this.communityEntriesCached) {
       return;
     }
     log.debug("Fetching community entries...");

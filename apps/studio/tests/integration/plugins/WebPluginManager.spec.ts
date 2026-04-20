@@ -101,7 +101,7 @@ describe("WebPluginManager", () => {
 
       it("should not respond to messages without request ID (notifications)", async () => {
         // Send a notification (no id field)
-        await plugin.notify("someNotification", { data: "test" });
+        await plugin.notify("broadcast", { data: "test" });
 
         // Should not send a response for notifications
         expect(plugin.hasResponses()).toBe(false);

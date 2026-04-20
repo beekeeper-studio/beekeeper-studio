@@ -39,7 +39,6 @@
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
         />
@@ -53,7 +52,6 @@
         <label for="Host">Host</label>
         <masked-input
           :value="config.host"
-          :privacy-mode="privacyMode"
           @input="val => config.host = val"
         />
       </div>
@@ -61,7 +59,6 @@
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
         />
@@ -79,21 +76,12 @@
         <label for="user">User</label>
         <masked-input
           :value="config.username"
-          :privacy-mode="privacyMode"
           @input="val => config.username = val"
         />
       </div>
       <div class="col s6 form-group" v-show="showPasswordForm">
         <label for="password">{{ passwordLabel }}</label>
-        <input
-          :type="togglePasswordInputType"
-          v-model="config.password"
-          class="password form-control"
-        >
-        <i
-          @click.prevent="togglePassword"
-          class="material-icons password-icon"
-        >{{ togglePasswordIcon }}</i>
+        <password-input v-model="config.password" />
       </div>
     </div>
     <slot />
@@ -118,8 +106,8 @@
 <script>
 import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
-import { mapGetters } from 'vuex'
 
 export default {
   props: {
@@ -140,21 +128,10 @@ export default {
   },
   components: {
     MaskedInput,
+    PasswordInput,
     CommonSsl
   },
-  data() {
-    return {
-      showPassword: false,
-    }
-  },
   computed: {
-    ...mapGetters('settings', ['privacyMode']),
-    togglePasswordIcon() {
-      return this.showPassword ? "visibility_off" : "visibility"
-    },
-    togglePasswordInputType() {
-      return this.showPassword ? "text" : "password"
-    },
     supportsSocketPath() {
       return findClient(this.config.connectionType).supportsSocketPath
     },
@@ -175,9 +152,6 @@ export default {
         return;
       }
     },
-    togglePassword() {
-      this.showPassword = !this.showPassword
-    }
   }
 }
 </script>

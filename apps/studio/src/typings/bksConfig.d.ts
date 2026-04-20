@@ -399,6 +399,11 @@ declare interface IBksConfig {
             previousPage: string;
         };
     };
+    pluginSystem: {
+        allow: any[];
+        communityDisabled: boolean;
+        disabled: boolean;
+    };
     plugins: {
         "bks-ai-shell": {
             disabled: boolean;
