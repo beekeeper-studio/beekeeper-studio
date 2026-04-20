@@ -1,9 +1,9 @@
-import { _electron as electron } from 'playwright';
 import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from 'e2e/helpers/launchElectron';
 
 const POSTGRES_QUERY = 'SELECT * FROM actor WHERE actor_id IN (1, 2);';
 
@@ -16,9 +16,7 @@ let userAttemptsTo: any;
 test.describe("JSON Sidebar Verifications", () => {
 
     test.beforeEach(async () => {
-     electronApp = await electron.launch({
-            args: ['dist/main.js']
-        });
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);

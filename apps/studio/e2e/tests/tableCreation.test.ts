@@ -1,8 +1,8 @@
-import { _electron as electron } from 'playwright';
 import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { TablesSideBar } from '../pageComponents/TablesSideBar';
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 import { userActions } from "../pageActions/index";
+import { launchElectron } from 'e2e/helpers/launchElectron';
 
 let electronApp: ElectronApplication;
 let window: Page;
@@ -13,7 +13,7 @@ let userAttemptsTo: any;
 test.describe("Table creation", () => {
 
     test.beforeEach(async () => {
-        electronApp = await electron.launch({ args: ['dist/main.js'] });
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         tablesSideBar = new TablesSideBar(window);
         userAttemptsTo = userActions(window);
