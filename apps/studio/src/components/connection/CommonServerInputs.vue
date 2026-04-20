@@ -80,14 +80,14 @@
         />
       </div>
       <div class="col s6 form-group" v-show="showPasswordForm">
-        <label for="password">Password</label>
+        <label for="password">{{ passwordLabel }}</label>
         <password-input v-model="config.password" />
       </div>
     </div>
     <slot />
     <div class="form-group expand">
       <label
-        v-if="config.connectionType !== 'cassandra'"
+        v-if="!['cassandra', 'scylladb'].includes(config.connectionType)"
         for="defaultDatabase"
       >Default {{ topLevelEntityName }}</label>
       <label
@@ -120,6 +120,10 @@ export default {
     showPasswordForm: {
       type: Boolean,
       default: true
+    },
+    passwordLabel: {
+      type: String,
+      default: 'Password'
     }
   },
   components: {

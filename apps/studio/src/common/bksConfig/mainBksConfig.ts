@@ -10,6 +10,7 @@ import {
   BksConfigSource,
   BksConfig,
 } from "./BksConfigProvider";
+import globals from "@/common/globals";
 
 type ConfigFileName =
   | "default.config.ini"
@@ -50,13 +51,30 @@ export function checkUnrecognized(
           section,
           path,
         });
-      } else if (typeof value === "object" && !_.isArray(value)) {
+      } else if (typeof value === "object" && !Array.isArray(value)) {
         traverse(value, path);
       }
     }
   }
 
   traverse(newConfig);
+
+  // Validate that pluginSystem.allow only contains known bundled plugin IDs
+  const allow = _.get(newConfig, "pluginSystem.allow") as string[] | undefined;
+  if (Array.isArray(allow)) {
+    const bundledPluginIds = globals.plugins.ensureInstalled.map((p) => p.id);
+    for (const id of allow) {
+      if (!bundledPluginIds.includes(id)) {
+        results.push({
+          type: "unknown-allow-plugin",
+          sourceName,
+          section: "pluginSystem",
+          path: "pluginSystem.allow",
+          value: id,
+        });
+      }
+    }
+  }
 
   return results;
 }
@@ -73,7 +91,7 @@ export function checkConflicts(
     for (const key of Object.keys(obj)) {
       const path = parentPath ? `${parentPath}.${key}` : key;
       const value = obj[key];
-      if (typeof value === "object") {
+      if (typeof value === "object" && !Array.isArray(value)) {
         traverse(value, path);
       } else if (_.has(target, path)) {
         results.push({

@@ -12,7 +12,7 @@ import {
 import { IamAuthOptions, IamAuthType, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AuthOptions } from "@/lib/db/authentication/azure";
 import { spawn } from "child_process";
-import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
+import { loadSharedConfigFiles } from "@smithy/shared-ini-file-loader";
 import { AwsCredentialIdentity, RuntimeConfigAwsCredentialIdentityProvider } from '@aws-sdk/types'
 import platformInfo from '@/common/platform_info'
 
