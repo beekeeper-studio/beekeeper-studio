@@ -1,7 +1,7 @@
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/types'
+import { DatabaseElement, IDbConnectionServerConfig } from '@/lib/db/types'
 import fs from 'fs';
 import path from 'path';
 
@@ -271,6 +271,63 @@ function testWith(dockerTag: string, readonly: boolean) {
       expect(secondResult).toStrictEqual({
         id: 2,
         bitcol: true
+      })
+    })
+
+    // Regression test for #3722 -> dotted table names fail in sp_helptrigger /
+    // sp_spaceused / sp_rename because the schema+table were concatenated as a
+    // single quoted string, so SQL Server split on the first dot.
+    describe("Dotted table names (#3722)", () => {
+      const dottedTable = 'Common.Companies'
+
+      beforeAll(async () => {
+        // util.knex is a direct knex connection; it is not affected by
+        // Beekeeper's readOnlyMode gate, so we can set up fixtures even when
+        // the Beekeeper client is in read-only mode.
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${dottedTable}]`)
+        await util.knex.schema.raw(`CREATE TABLE dbo.[${dottedTable}](id int, name varchar(255))`)
+        await util.knex.schema.raw(`INSERT INTO dbo.[${dottedTable}](id, name) VALUES (1, 'acme')`)
+      })
+
+      afterAll(async () => {
+        try {
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${dottedTable}]`)
+        } catch (e) {
+          // ignore
+        }
+      })
+
+      it("listTableTriggers succeeds for a table name containing a dot", async () => {
+        const triggers = await util.connection.listTableTriggers(dottedTable, 'dbo')
+        expect(Array.isArray(triggers)).toBe(true)
+      })
+
+      it("getTableProperties succeeds for a table name containing a dot", async () => {
+        const props = await util.connection.getTableProperties(dottedTable, 'dbo')
+        expect(props).toBeDefined()
+      })
+
+      it("setElementName renames a table whose name contains a dot", async () => {
+        if (readonly) return;
+
+        const source = 'Common.ToRename'
+        const renamed = 'Common.Renamed'
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
+        await util.knex.schema.raw(`CREATE TABLE dbo.[${source}](id int)`)
+
+        try {
+          await util.connection.setElementName(
+            source, renamed, DatabaseElement.TABLE, 'dbo'
+          )
+
+          const names = (await util.connection.listTables()).map((t) => t.name)
+          expect(names).toContain(renamed)
+          expect(names).not.toContain(source)
+        } finally {
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
+        }
       })
     })
 
