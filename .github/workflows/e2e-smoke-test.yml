@@ -72,14 +72,14 @@ jobs:
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
+      - name: Build App
+        run: yarn workspace beekeeper-studio build
+
       - name: Serve + Run Tests (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           xvfb-maybe -a -s "-screen 0 1024x768x24" -- bash -c '
-            yarn run electron:serve > server.log 2>&1 &
-            sleep 15
-            cat server.log
             yarn workspace beekeeper-studio test:e2e:smoke
           '
         env:
@@ -91,9 +91,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          yarn run electron:serve > server.log 2>&1 &
-          sleep 30
-          cat server.log
           yarn workspace beekeeper-studio test:e2e:smoke
         env:
           ELECTRON_ENABLE_LOGGING: 1
