@@ -54,7 +54,7 @@
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml } from '@shared/lib/tabulator'
-  import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+  import { dialectFor, formatOptionsFor } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import Papa from 'papaparse'
@@ -73,7 +73,7 @@
   import { FieldDescriptor, FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-  import { format } from 'sql-formatter'
+  import { safeSqlFormat } from '@/common/utils'
   import pluralize from 'pluralize'
 
   const log = rawLog.scope('ResultTable');
@@ -722,7 +722,7 @@
           };
 
           const sql = await this.connection.applyChangesSql(changes);
-          const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
+          const formatted = safeSqlFormat(sql, formatOptionsFor(this.queryDialect))
           this.$root.$emit(AppEvent.newTab, formatted);
         } catch (ex) {
           log.error(ex)

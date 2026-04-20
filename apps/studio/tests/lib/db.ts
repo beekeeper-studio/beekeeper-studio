@@ -32,7 +32,7 @@ import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_t
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
 type Queries = ConnectionTypeQueries & DialectQueries
-type ExpectedQueries = Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb' | 'sqlanywhere' | 'surrealdb' | 'redis' | 'trino'>
+type ExpectedQueries = Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb' | 'sqlanywhere' | 'surrealdb' | 'redis' | 'trino' | 'dynamodb' | 'bedrock'>
 
 /*
  * Make all properties lowercased. This is useful to even out column names

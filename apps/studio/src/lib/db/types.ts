@@ -2,7 +2,7 @@ import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescr
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import type { SshMode } from '@/common/interfaces/IConnection';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock', 'dynamodb'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -28,7 +28,8 @@ export const ConnectionTypes = [
   { name: 'Trino', value: 'trino' },
   { name: 'SurrealDB', value: 'surrealdb' },
   { name: 'Redis', value: 'redis' },
-  { name: 'Bedrock', value: 'bedrock' }
+  { name: 'Bedrock', value: 'bedrock' },
+  { name: 'DynamoDB', value: 'dynamodb' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -91,6 +92,11 @@ export interface RedshiftOptions {
   databaseGroup?: string;
   tokenDurationSeconds?: number;
   isServerless?: boolean;
+}
+
+export interface DynamoDBOptions {
+  /** Custom endpoint, e.g. `http://localhost:8000` for DynamoDB Local. */
+  endpoint?: string;
 }
 
 export interface IamAuthOptions {
@@ -230,6 +236,7 @@ export interface IDbConnectionServerConfig {
   libsqlOptions?: LibSQLOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
+  dynamoDbOptions?: DynamoDBOptions
   runtimeExtensions?: string[]
 }
 
