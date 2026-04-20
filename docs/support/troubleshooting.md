@@ -59,6 +59,11 @@ DEBUG=* beekeeper-studio
 DEBUG=* open -a "Beekeeper Studio"
 ```
 
+### Windows
+```powershell
+$env:DEBUG="*"; & "$env:LOCALAPPDATA\Programs\beekeeper-studio\Beekeeper Studio.exe"
+```
+
 ## MySQL
 
 * This section also applies to MariaDB
