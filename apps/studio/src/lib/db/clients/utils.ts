@@ -43,7 +43,7 @@ export function joinQueries(queries) {
   return results.join("")
 }
 
-export function buildSchemaFilter(filter, schemaField, wrapIdentifier: (s: string) => string) {
+export function buildSchemaFilter(filter, schemaField, wrapIdentifier: (s: string) => string = ansiWrapIdentifier) {
   if (!filter) return null
   const { schema, only, ignore } = filter
   const field = wrapIdentifierPath(schemaField, wrapIdentifier);
@@ -65,7 +65,7 @@ export function buildSchemaFilter(filter, schemaField, wrapIdentifier: (s: strin
   return where.join(' AND ');
 }
 
-export function buildDatabaseFilter(filter, databaseField, wrapIdentifier: (s: string) => string) {
+export function buildDatabaseFilter(filter, databaseField, wrapIdentifier: (s: string) => string = ansiWrapIdentifier) {
   if (!filter) {
     return null
   }
@@ -93,6 +93,13 @@ export function buildDatabaseFilter(filter, databaseField, wrapIdentifier: (s: s
 // `wrap` to each segment. Single-segment paths pass through one wrap call.
 function wrapIdentifierPath(path: string, wrap: (s: string) => string): string {
   return path.split('.').map(wrap).join('.');
+}
+
+// ANSI SQL identifier quoting. Safe default: every dialect that currently
+// calls the filter helpers (PG, SQL Server, Trino, DuckDB, SQL Anywhere)
+// accepts double-quoted identifiers.
+function ansiWrapIdentifier(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
 }
 
 function wrapIdentifier(value) {

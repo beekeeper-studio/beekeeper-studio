@@ -122,6 +122,17 @@ describe('buildSchemaFilter SQL injection', () => {
     const result = buildSchemaFilter({ schema: 'dbo' }, "schema]; DROP TABLE x; --", wrap)
     expect(result).toBe("[schema]]; DROP TABLE x; --] = 'dbo'")
   })
+
+  it("should default to ANSI SQL identifier quoting when wrapIdentifier is omitted", () => {
+    // Ensures callers that forget to pass a dialect wrapper still emit a
+    // quoted identifier instead of crashing. Every dialect currently calling
+    // this helper (PG, SQL Server, Trino, DuckDB, SQL Anywhere) accepts
+    // ANSI double-quoted identifiers.
+    expect(buildSchemaFilter({ schema: 'public' }, 'table_schema'))
+      .toBe(`"table_schema" = 'public'`)
+    expect(buildSchemaFilter({ schema: 'public' }, 'r.routine_schema'))
+      .toBe(`"r"."routine_schema" = 'public'`)
+  })
 })
 
 describe('buildDatabaseFilter SQL injection', () => {
@@ -157,6 +168,11 @@ describe('buildDatabaseFilter SQL injection', () => {
     const wrap = (s) => `[${s.replace(/\]/g, ']]')}]`
     const result = buildDatabaseFilter({ database: 'foo' }, "name]; DROP TABLE x; --", wrap)
     expect(result).toBe("[name]]; DROP TABLE x; --] = 'foo'")
+  })
+
+  it("should default to ANSI SQL identifier quoting when wrapIdentifier is omitted", () => {
+    expect(buildDatabaseFilter({ database: 'db1' }, 'datname'))
+      .toBe(`"datname" = 'db1'`)
   })
 })
 
