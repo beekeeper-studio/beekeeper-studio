@@ -320,9 +320,11 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options.arrayMode;
     const result = await this.driverExecuteMultiple(queryText, options);
+    const commands = this.identifyCommands(queryText)
 
-    return (result || []).map(({ rows: data, columns, statement, changes }) => {
+    return (result || []).map(({ rows: data, columns, statement, changes }, i) => {
       // Fallback in case the identifier could not reconize the command
+      const text = commands[i]?.text;
       const isSelect = Array.isArray(data);
       let rows: any[];
       let fields: any[];
@@ -349,6 +351,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         fields,
         rowCount: data && data.length,
         affectedRows: changes || 0,
+        text
       };
     });
   }
@@ -623,7 +626,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
     connection.defaultSafeIntegers(true);
 
-    console.log("Extensions: ", this.server.config.runtimeExtensions)
+    log.info("Extensions: ", this.server.config.runtimeExtensions)
     if (this.server.config.runtimeExtensions && this.server.config.runtimeExtensions.length > 0) {
       for (const extension of this.server.config.runtimeExtensions) {
         try {

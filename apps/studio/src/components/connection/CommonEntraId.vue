@@ -23,12 +23,7 @@
           Azure CLI Path (az)
           </label
         >
-        <input
-          name="cliPath"
-          type="text"
-          class="form-control"
-          v-model="config.azureAuthOptions.cliPath"
-        />
+        <file-picker v-model="config.azureAuthOptions.cliPath"/>
         <div class="alert alert-danger" v-show="!cliFound">
           <i class="material-icons-outlined">warning</i>
           <div>
@@ -49,13 +44,13 @@
             style="padding-left: 0.25rem"
             v-tooltip="{
               content:
-                'This is the <code>\'Server name\'</code> field on your Sql Server in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
+                'This is the <code>\'Server name\'</code> field on your database in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
               html: true,
             }"
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.host" :privacy-mode="privacyMode" @input="val => config.host = val" />
+        <masked-input :value="config.host" @input="val => config.host = val" />
       </div>
       <div class="form-group">
         <label for="database">Database</label>
@@ -85,6 +80,15 @@
           </button>
         </div>
       </div>
+      <div class="form-group" v-show="showUser">
+        <label for="user">User</label>
+        <input
+          name="user"
+          type="text"
+          class="form-control"
+          v-model="config.username"
+        >
+      </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="tenantId">
           Tenant ID
@@ -99,29 +103,21 @@
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.azureAuthOptions.tenantId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.tenantId = val" />
+        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientId">Client ID</label>
-        <masked-input :value="config.azureAuthOptions.clientId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientId = val" />
+        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" />
       </div>
       <div class="row gutter">
         <div class="col s12 form-group" v-show="isServicePrincipal">
           <label for="clientSecret">Client Secret</label>
-          <input
-            :type="toggleClientSecretInputType"
-            v-model="config.azureAuthOptions.clientSecret"
-            class="password form-control"
-          >
-          <i
-            @click.prevent="toggleClientSecret"
-            class="material-icons password-icon"
-          >{{ toggleClientSecretIcon }}</i>
+          <password-input v-model="config.azureAuthOptions.clientSecret" />
         </div>
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
-        <masked-input :value="config.azureAuthOptions.msiEndpoint" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.msiEndpoint = val" />
+        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" />
       </div>
     </div>
   </div>
@@ -131,12 +127,26 @@ import { AzureAuthType } from "@/lib/db/types";
 import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
+import CommonSsl from './CommonSsl.vue'
+import { mapState, mapGetters } from 'vuex'
+import FilePicker from '@/components/common/form/FilePicker.vue'
 
 export default {
-  props: ["config", "authType"],
+  props: {
+    config: Object,
+    authType: [String, Number],
+    sslHelp: String,
+    supportComplexSSL: {
+      type: Boolean,
+      default: true
+    }
+  },
   components: {
     MaskedInput,
+    PasswordInput,
+    CommonSsl,
+    FilePicker
   },
   data() {
     return {
@@ -144,19 +154,12 @@ export default {
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
-      showClientSecret: false,
       cliError: false
     };
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
+    ...mapGetters('settings', ['privacyMode']),
     ...mapState(['connection']),
-    toggleClientSecretIcon() {
-      return this.showClientSecret ? "visibility_off" : "visibility"
-    },
-    toggleClientSecretInputType() {
-      return this.showClientSecret ? "text" : "password"
-    },
     showUser() {
       return this.authType === AzureAuthType.CLI;
     },
@@ -194,9 +197,6 @@ export default {
       this.azureAuthEnabled = !this.azureAuthEnabled;
       this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled;
     },
-    toggleClientSecret() {
-      return this.showClientSecret = !this.showClientSecret
-    },
     async signOut() {
       try {
         this.signingOut = true;
@@ -215,14 +215,14 @@ export default {
         try {
           const result = await this.$util.send('backup/whichDumpTool', {toolName: "az"});
           if (result) {
-            this.config.azureAuthOptions.cliPath = result;
+            this.$set(this.config.azureAuthOptions, 'cliPath', result);
             this.cliError = false;
           } else {
-            this.config.azureAuthOptions.cliPath = null;
+            this.$set(this.config.azureAuthOptions, 'cliPath', null);
             this.cliError = true;
           }
         } catch (e) {
-          this.config.azureAuthOptions.cliPath = null;
+          this.$set(this.config.azureAuthOptions, 'cliPath', null);
           this.cliError = true;
         }
       }

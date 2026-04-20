@@ -110,8 +110,14 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     async add(context, { email, key, trial }) {
       if (trial) {
-        await Vue.prototype.$util.send('license/createTrialLicense')
-        await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
+        try {
+          await Vue.prototype.$util.send('license/createTrialLicense')
+          await Vue.prototype.$noty.info("Your 14 day free trial has started, enjoy!")
+        } catch (error) {
+          log.error("Failed to create trial license", error)
+          await Vue.prototype.$noty.error("Unable to start trial: a license already exists")
+          return
+        }
       } else {
         // Get the installation ID from the backend
         const installationId = context.state.installationId

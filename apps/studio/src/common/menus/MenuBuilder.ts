@@ -11,17 +11,26 @@ export default class extends DefaultMenu {
   viewMenu(): Electron.MenuItemConstructorOptions {
     const result: Electron.MenuItemConstructorOptions = {
       label: 'View',
+      role: 'viewMenu',
       submenu: [
         this.menuItems.zoomreset,
         this.menuItems.zoomin,
         this.menuItems.zoominNumpad,
         this.menuItems.zoomout,
         this.menuItems.zoomoutNumpad,
-        this.menuItems.fullscreen,
-        this.menuItems.themeToggle,
+        { type: 'separator' },
+        this.menuItems.editorFontSizeReset,
+        this.menuItems.editorFontSizeIncrease,
+        this.menuItems.editorFontSizeDecrease,
+        { type: 'separator' },
         this.menuItems.primarySidebarToggle,
         this.menuItems.secondarySidebarToggle,
+        { type: 'separator' },
+        this.menuItems.themeToggle,
         this.menuItems.reload,
+        // This is added automatically in Mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.fullscreen] : []),
+        this.menuItems.privacyModeToggle
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]
@@ -35,24 +44,32 @@ export default class extends DefaultMenu {
       label: 'Dev',
       submenu: [
         this.menuItems.reload,
+        this.menuItems.simulatePlatform,
         this.menuItems.licenseState,
       ],
     }
   }
 
   helpMenu() {
-    const helpMenu = {
+    const helpMenu: Electron.MenuItemConstructorOptions = {
       id: "help",
       label: "Help",
+      role: "help",
       submenu: [
-        this.menuItems.enterLicense,
-        this.menuItems.checkForUpdate,
+        this.menuItems.keyboardShortcuts,
         this.menuItems.opendocs,
         this.menuItems.support,
+        this.menuItems.gettingStartedGuide,
+        { type: 'separator' },
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
-        this.menuItems.about,
+        // Moved to Beekeeper Studio menu for mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.checkForUpdate] : []),
         this.menuItems.restart,
+        { type: 'separator' },
+        // Moved to Beekeeper Studio menu for mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.about] : []),
+        this.menuItems.enterLicense,
       ]
     };
 
@@ -68,28 +85,36 @@ export default class extends DefaultMenu {
     if (this.platformInfo.isMac) {
       appMenu.push({
         label: "Beekeeper Studio",
+        role: "appMenu",
         submenu: [
           this.menuItems.about,
+          this.menuItems.checkForUpdate,
+          { type: 'separator' },
           { role: 'services' },
+          { type: 'separator' },
           { role: 'hide' },
           { role: 'hideOthers' },
           { role: 'unhide' },
+          { type: 'separator' },
           { role: 'quit' }
         ]
       })
     }
 
-    const fileMenu = {
+    const fileMenu: Electron.MenuItemConstructorOptions = {
       id: 'file',
       label: 'File',
+      role: 'fileMenu',
       submenu: [
         this.menuItems.newWindow,
         this.menuItems.newTab,
         this.menuItems.closeTab,
+        { type: 'separator' },
         this.menuItems.importSqlFiles,
         this.menuItems.quickSearch,
         this.menuItems.disconnect,
-        this.menuItems.quit
+        // Moved to Beekeeper Studio menu for mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.quit] : []),
       ]
     }
 
@@ -107,15 +132,17 @@ export default class extends DefaultMenu {
       {
         id: 'edit',
         label: 'Edit',
+        role: 'editMenu',
         submenu: [
           this.menuItems.undo,
           this.menuItems.redo,
+          { type: 'separator' },
           this.menuItems.cut,
           this.menuItems.copy,
           this.menuItems.paste,
           this.menuItems.selectAll,
         ]
-      },
+      } as Electron.MenuItemConstructorOptions,
       this.viewMenu(),
       {
         id: "tools",
@@ -124,8 +151,9 @@ export default class extends DefaultMenu {
           this.menuItems.backupDatabase,
           this.menuItems.restoreDatabase,
           this.menuItems.exportTables,
+          ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : []),
+          { type: 'separator' },
           this.menuItems.managePlugins,
-          ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : [])
         ]
       },
       ...windowMenu,

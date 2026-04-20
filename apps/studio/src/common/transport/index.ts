@@ -43,6 +43,8 @@ export interface TransportFavoriteQuery extends Transport {
   excerpt: string;
   database: string | null;
   connectionHash: string;
+  queryFolderId?: number | null;
+  position?: number;
 }
 
 export function blankFavoriteQuery(): TransportFavoriteQuery {

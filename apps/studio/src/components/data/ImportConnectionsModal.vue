@@ -97,7 +97,8 @@ export default Vue.extend({
       const candidates = this.connections.filter((c) => c.checked)
       try {
         await Promise.all(candidates.map((c) => {
-          const payload = {...c, id: null}
+          // Clear id and connectionFolderId so the connection goes to the personal folder
+          const payload = {...c, id: null, connectionFolderId: null}
           return this.$store.dispatch('data/connections/save', payload)
         }))
         this.$modal.hide('import-connections')

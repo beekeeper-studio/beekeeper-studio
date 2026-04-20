@@ -89,6 +89,32 @@ describe("Saved Connection", () => {
         port: 26257,
         defaultDatabase: "defaultdb"
       },
+      "postgresql://matthew:jwt-token@free.1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&options=--cluster%3Dbks-tester-12345%20--crdb%3Ajwt_auth_enabled%3Dtrue": {
+        connectionType: "cockroachdb",
+        username: "matthew",
+        password: "jwt-token",
+        host: "free.1.cockroachlabs.cloud",
+        port: 26257,
+        defaultDatabase: "defaultdb",
+        options: {
+          connectionMethod: "manual",
+          cluster: "bks-tester-12345",
+          jwtAuthEnabled: true
+        }
+      },
+      "postgresql://hector:jwt-token@crdb.example.test:26257/system?options=--crdb%3Ajwt_auth_enabled%3Dtrue": {
+        connectionType: "cockroachdb",
+        username: "hector",
+        password: "jwt-token",
+        host: "crdb.example.test",
+        port: 26257,
+        defaultDatabase: "system",
+        options: {
+          connectionMethod: "manual",
+          cluster: undefined,
+          jwtAuthEnabled: true
+        }
+      },
       "postgresql://user:p+ssword@default.cluster.redshift.amazonaws.com:5439/database": {
         connectionType: "redshift",
         username: "user",
@@ -104,6 +130,21 @@ describe("Saved Connection", () => {
         host: "default.cluster.redshift.amazonaws.com",
         port: 5439,
         defaultDatabase: "database"
+      },
+      "postgresql://user:pass%20word@localhost:5432/mydb": {
+        connectionType: "postgresql",
+        username: "user",
+        password: "pass word",
+        host: "localhost",
+        port: 5432,
+        defaultDatabase: "mydb"
+      },
+      "mysql://user%40name:p%40ss%3Aword@localhost/db": {
+        connectionType: "mysql",
+        username: "user@name",
+        password: "p@ss:word",
+        host: "localhost",
+        defaultDatabase: "db"
       },
     }
 

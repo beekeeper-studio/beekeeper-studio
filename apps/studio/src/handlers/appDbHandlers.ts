@@ -11,6 +11,9 @@ import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
+import { QueryFolder } from "@/common/appdb/models/QueryFolder";
+import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
+import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
@@ -50,11 +53,15 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       return await transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
+      // Use query builder to select all columns (including those marked select: false by default) 
+      // since all columns are required for validation checks.
+      const repo = cls.getRepository();
+      const alias = "e";
+      const allCols = repo.metadata.columns
+      .map((c: { propertyPath: string }) => `${alias}.${c.propertyPath}`);
       if (_.isArray(obj)) {
           const ids = obj.map((e) => e.id);
-          const dbEntities = await cls.findBy({
-            id: In(ids)
-          });
+          const dbEntities = await repo.createQueryBuilder(alias).select(allCols).where(`${alias}.id IN (:...ids)`, { ids }).getMany();
           const newEnts = await Promise.all(obj.map(async (e) => {
             const dbEnt = dbEntities.find((v) => v.id === e.id);
 
@@ -69,7 +76,13 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           }));
           return await Promise.all((await cls.save(newEnts, options)).map((e) => transform(e, cls)));
       } else {
-        let dbObj: any = obj.id ? await cls.findOneBy({ id: obj.id }) : new cls().withProps(obj);
+        let dbObj = obj.id
+          ? await repo
+              .createQueryBuilder(alias)
+              .select(allCols)
+              .where(`${alias}.id = :id`, { id: obj.id })
+              .getOne()
+          : new cls().withProps(obj);
         if (dbObj && obj.id) {
           cls.merge(dbObj, obj);
         } else if (!dbObj) {
@@ -159,6 +172,8 @@ export const AppDbHandlers = {
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
+  ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
+  ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

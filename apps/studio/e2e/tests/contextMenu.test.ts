@@ -36,7 +36,9 @@ test.describe("Using the context menu", () => {
     });
 
     afterEach(async () => {
-        await electronApp.close();
+        if (electronApp) {
+            await electronApp.close();
+        }
     });
 
     test("paste a query using context menu", async () => {

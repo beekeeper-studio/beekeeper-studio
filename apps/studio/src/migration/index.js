@@ -15,6 +15,7 @@ import dev7 from './dev-7'
 import dev8 from './dev-8'
 import dev9 from './dev-9'
 import dev10 from './dev-10'
+import dev11Greengage from './dev-11-greengage'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -71,14 +72,20 @@ import createFormatterPresets from './20250831_create_formatter_presets'
 import populateFormatterPresets from './20250831_populate_formatter_presets'
 import surrealDbOptions from './20250702_add_surrealdb_options'
 import upgradeSqliteExtensions from './20250911_upgrade_sqlite_extensions'
+import addOnboardingNotyShown from "./20251008_add_onboarding_noty_shown_setting"
 import uniqueNameFormatterPresets from './20251013_unique_name_formatter_presets'
 import addUsedQueryId from './20250620_add_used_query_id'
 import addPluginIdGeneratedColumn from './20251003_add_plugin_id_generated_column'
 import addTabDropdownAIShellHintShownSetting from './20251003_add_tab_dropdown_ai_shell_hint_shown_setting'
+import addEditorFontSize from './20251021_add_editor_font_size'
 import fixMissingExcerpts from './20251222_fix_missing_excerpts'
 import addWindowMaximizedSetting from './20251021_add_window_maximized_setting'
 import addIamAuthOptions from './20250819_add_iamAuthOptions'
 import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_options'
+import createConnectionFolders from './20260223_create_connection_folders'
+import createQueryFolders from './20260223_create_query_folders'
+import addPositionToItems from './20260227_add_position_to_items'
+import addBastionAuth from './20260324_add_bastion_auth'
 
 import ultimate from './ultimate/index'
 
@@ -121,7 +128,11 @@ const realMigrations = [
   addUsedQueryId, addPluginIdGeneratedColumn, addTabDropdownAIShellHintShownSetting,
   createFormatterPresets, populateFormatterPresets, uniqueNameFormatterPresets,
   addWindowMaximizedSetting, fixMissingExcerpts,
-addIamAuthOptions, migrateRedshiftToIamOptions
+  addIamAuthOptions, migrateRedshiftToIamOptions, addEditorFontSize,
+  createConnectionFolders, createQueryFolders,
+  addPositionToItems,
+  addBastionAuth,
+  addOnboardingNotyShown,
 ]
 
 // fixtures require the models
@@ -131,7 +142,7 @@ const fixtures = [
 
 const devMigrations = [
   dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8, dev9,
-  dev10
+  dev10, dev11Greengage
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

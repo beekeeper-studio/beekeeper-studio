@@ -39,12 +39,7 @@
             </div>
           </div>
 
-          <input
-            name="cliPath"
-            type="text"
-            class="form-control"
-            v-model="cliPath"
-          />
+          <file-picker v-model="cliPath"/>
         </div>
       </div>
 
@@ -92,23 +87,23 @@
       <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">Access Key ID</label>
-          <masked-input :value="config.iamAuthOptions.accessKeyId" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" />
+          <masked-input :value="config.iamAuthOptions.accessKeyId" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" />
         </div>
         <div class="form-group">
           <label for="Secret Access Key">Secret Access Key</label>
-          <masked-input :value="config.iamAuthOptions.secretAccessKey" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" />
+          <masked-input :value="config.iamAuthOptions.secretAccessKey" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" />
         </div>
       </div>
 
       <div class="form-group">
         <label for="AWS Region">AWS Region</label>
-        <masked-input :value="config.iamAuthOptions.awsRegion" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.awsRegion = val" />
+        <masked-input :value="config.iamAuthOptions.awsRegion" @input="val => config.iamAuthOptions.awsRegion = val" />
       </div>
 
       <div v-show="isRedshift">
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
-          <masked-input :value="config.redshiftOptions.clusterIdentifier" :privacy-mode="privacyMode" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" />
+          <masked-input :value="config.redshiftOptions.clusterIdentifier" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" />
         </div>
         <div class="form-group">
           <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
@@ -125,12 +120,13 @@
 
 <script>
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import FilePicker from '@/components/common/form/FilePicker.vue'
 
 export default {
   props: ['config', 'authType'],
   components: {
     MaskedInput,
+    FilePicker
   },
   data() {
     return {
@@ -141,7 +137,6 @@ export default {
     };
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
     isRedshift() {
       return this.config.connectionType === 'redshift';
     },

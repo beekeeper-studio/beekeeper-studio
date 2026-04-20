@@ -1,90 +1,113 @@
-# Connecting to Azure Entra ID
-
-Connecting to Azure Entra ID is straightforward once you're familiar with Azure's authentication methods. This guide outlines the three most common methods to connect to databases such as **MySQL**, **PostgreSQL**, and **MS SQL** via Entra ID.
+---
+title: Azure EntraID Support
+summary: Connect to databases hosted in Azure using SSO via EntraID
+icon: material/cloud
 
 ---
+# Connecting to Databases in Azure using Entra ID
 
-## Prerequisites
+Connecting to a database in Azure using Entra ID is straightforward once you're familiar with Azure's authentication methods. This guide outlines the three most common methods to connect to databases such as **MySQL**, **PostgreSQL**, and **MS SQL** via Entra ID.
 
-- **Azure CLI** – Required only for CLI-based authentication
-  [Install AZ CLI](https://learn.microsoft.com/en-us/cli/azure/)
-
----
 
 ## Authentication Methods
 
-![Azure Authentication Methods](../../assets/images/entraid-connections.png)
+We support 3 methods for connecting to databases using EntraID:
+1. Browser based SSO authentication (easiest)
+2. Azure CLI based SSO authentication (recommended)
+3. Service Principal authentication
 
-### 1. Azure CLI Authentication (MySQL, PostgreSQL, MS SQL)
+If you've used any of these tools you'll likely be familiar with the workflows, nevertheless a walkthrough of each of these methods can be seen below.
 
-Uses your local Azure CLI session to retrieve an access token.
+We recommend using the Azure CLI authentication whenever possible.
 
-![Azure EntraId CLI](../../assets/images/azure-entra-cli.png)
+## Browser-based authentication
 
-[Install Azure CLI From Microsoft](https://learn.microsoft.com/en-us/cli/azure/?view=azure-cli-latest)
+!!! info "MS SQL Server Supported"
 
-**Steps:**
-1. Open your terminal and log in:
-   ```bash
-   az login
-   ```
-2. In Beekeeper, select **Azure CLI Authentication**.
-3. Provide:
-   - **Server**
-   - **Database**
-   - **Username**
+Uses your Microsoft EntraID credentials via a browser for a streamlined sign-in experience.
 
-> ✅ The application will use your active CLI session to authenticate securely.
+<video controls>
+    <source id="workspaces" type="video/mp4" src="https://assets.beekeeperstudio.io/bks-azure-entra-sso.mp4" />
+</video>
+<small>Video walkthrough</small>
 
----
+!!! warning "Passes through the BKS webserver"
+    Signing in to your database this way does require authentication through the Beekeeper Studio web server which will temporarily store a token for the app to use. No credentials are stored by the webserver.
 
-### 2. Azure AD SSO (MS SQL Only)
+### Steps
 
-Uses your Microsoft Entra credentials via a browser for a streamlined sign-in experience.
-
-![Azure EntraId SSO](../../assets/images/azure-entra-sso.png)
-
-**Steps:**
+1. Select a database to connect to
 1. Select **Azure AD SSO** as the authentication method.
-2. Enter:
-   - **Server**
-   - **Database**
-3. Click **Connect**. A browser will open for Microsoft login.
+1. Enter:
+    - **Server**
+    - **Database**
+1. Click **Connect**.
+1. Your browser will launch and prompt you to authenticate
+1. After authentication you'll be prompted to switch back to your application to complete the process.
 
-> ✅ Credentials are not stored; the login is handled securely by Microsoft.
 
----
 
-### 3. Service Principal Authentication (MS SQL Only)
+## Azure CLI Authentication
 
-Best suited for automated services or non-interactive applications.
+!!! info "MySQL, PostgreSQL and MS SQL Server Supported"
+    Installation of the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/) is required.
 
-![Azure EntraId Principal](../../assets/images/azure-entra-principal.png)
+Sign into azure using the Azure CLI, then use your authenticated session to access your database in Azure.
 
-**Steps:**
-1. [Create a Service Principal](https://learn.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal)
+This is the most enterprise-friendly workflow as it does not require the cooperation of the Beekeeper Studio servers, simply a pre-authenticated AZ client with the right permissions.
+
+<video controls>
+    <source id="workspaces" type="video/mp4" src="https://assets.beekeeperstudio.io/bks-azure-entra-cli.mp4" />
+</video>
+<small>Azure CLI authentication walkthrough video</small>
+
+To start, make sure you have [installed the Azure CLI From Microsoft](https://learn.microsoft.com/en-us/cli/azure/?view=azure-cli-latest), and know how to use `az login` to sign into your Azure account.
+
+If you're part of a large enterprise, they likely have documentation on how to do this.
+
+### Steps
+
+1. Open your terminal and log in to Azure by typing `az login` and following the prompts
+2. Open Beekeeper Studio and select/enter the database credentials you wish to connect to
+3. Select **Azure CLI Authentication** as the authentication method.
+3. Provide:
+    - **Server**
+    - **Database**
+    - **Username**
+    - Note: No password required!
+1. Click 'connect'. This takes a few moments as Beekeeper Studio asks for the temporary access key
+
+
+## Service Principal Authentication
+
+!!! info "MS SQL Server Supported"
+
+Service principals are best suited for automated services or non-interactive applications, but we support them in Beekeeper Studio in case they are your only option.
+
+We recommend using Azure CLI whenever possible.
+
+
+<video controls>
+    <source id="workspaces" type="video/mp4" src="https://assets.beekeeperstudio.io/bks-azure-entra-principal.mp4" />
+</video>
+<small>Service Principal authentication walkthrough</small>
+
+
+### Steps
+
+1. [Create a Service Principal](https://learn.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal) in Azure.
 2. Grant the Service Principal access to the database.
-3. In the application, select **Service Principal** as the method.
+1. Open Beekeeper Studio and select the database you wish to connect to.
+3. Select **Service Principal** as the authentication method.
 4. Provide:
-   - **Server**
-   - **Database**
-   - **Tenant ID**
-   - **Client ID**
-   - **Client Secret**
+    - **Server**
+    - **Database**
+    - **Tenant ID**
+    - **Client ID**
+    - **Client Secret**
 
-> ⚠️ Ensure proper role assignments in both Azure and the target database.
+!!! warning Beekeeper Studio **will** store your client ID and Secret in this authentication workflow.
 
----
-
-## Summary
-
-| Authentication Method     | Supported Databases        |
-|---------------------------|----------------------------|
-| Azure CLI Authentication  | MySQL, PostgreSQL, MS SQL  |
-| Azure AD SSO              | MS SQL only                |
-| Service Principal         | MS SQL only                |
-
----
 
 ## Troubleshooting
 

@@ -8,11 +8,13 @@ import { MariaDBClient } from '@/lib/db/clients/mariadb';
 import { TiDBClient } from '@/lib/db/clients/tidb';
 import { RedshiftClient } from '@/lib/db/clients/redshift';
 import { CockroachClient } from '@/lib/db/clients/cockroach';
+import { GreengageClient } from '@/lib/db/clients/greengage';
 import { BigQueryClient } from '@/lib/db/clients/bigquery';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { FirebirdClient } from "./clients/firebird";
 import { OracleClient } from "./clients/oracle";
 import { CassandraClient } from "./clients/cassandra";
+import { ScyllaDBClient } from "./clients/scylladb";
 import { LibSQLClient } from "./clients/libsql";
 import { DuckDBClient } from "./clients/duckdb";
 import { ClickHouseClient } from "./clients/clickhouse";
@@ -21,6 +23,7 @@ import { SQLAnywhereClient } from "./clients/anywhere";
 import { TrinoClient } from "./clients/trino";
 import { SurrealDBClient } from "./clients/surrealdb";
 import { RedisClient } from '@/lib/db/clients/redis';
+import { BedrockClient } from '@/lib/db/clients/bedrock';
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -31,10 +34,12 @@ const clients = new Map<ConnectionType, any>([
   ['mariadb', MariaDBClient],
   ['tidb', TiDBClient],
   ['cockroachdb', CockroachClient],
+  ['greengage', GreengageClient],
   ['bigquery', BigQueryClient],
   ['firebird', FirebirdClient],
   ['oracle', OracleClient],
   ['cassandra', CassandraClient],
+  ['scylladb', ScyllaDBClient],
   ['libsql', LibSQLClient],
   ['duckdb', DuckDBClient],
   ['clickhouse', ClickHouseClient],
@@ -42,7 +47,8 @@ const clients = new Map<ConnectionType, any>([
   ['sqlanywhere', SQLAnywhereClient],
   ['trino', TrinoClient],
   ['surrealdb', SurrealDBClient],
-  ['redis', RedisClient]
+  ['redis', RedisClient],
+  ['bedrock', BedrockClient]
 ], );
 
 

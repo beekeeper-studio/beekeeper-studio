@@ -30,6 +30,17 @@ export default {
   firebird: {
     poolSize: 5,
   },
+  plugins: {
+    /**
+     * Ensure these packages are bundled and installed for first time users.
+     *
+     * @see `BundledPluginModule` in src-commercial/backend/plugin-system/modules/BundledPluginModule.ts
+     **/
+    ensureInstalled: [
+      { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
+      { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
+    ],
+  }
 }
 
 

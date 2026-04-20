@@ -1,5 +1,7 @@
 <template>
     <input
+      v-bind="$attrs"
+      v-tooltip="privacyMode ? 'Privacy Mode is enabled, disable it in the View menu to see this data' : null"
       :type="computedType"
       :value="displayedValue"
       @input="handleInput"
@@ -7,18 +9,16 @@
       class="form-control"
     >
   </template>
-  
+
   <script>
+  import { mapGetters } from 'vuex'
+
   export default {
     name: 'MaskedInput',
     props: {
       value: {
         type: [String, Number],
         default: ''
-      },
-      privacyMode: {
-        type: Boolean,
-        default: false
       },
       type: {
         type: String,
@@ -30,7 +30,12 @@
       }
     },
     computed: {
+      ...mapGetters('settings', ['privacyMode']),
       computedType() {
+        // Keep password type as-is so we don't lose its semantics
+        if (this.type === 'password') {
+          return 'password';
+        }
         return this.privacyMode ? 'text' : this.type;
       },
       displayedValue() {

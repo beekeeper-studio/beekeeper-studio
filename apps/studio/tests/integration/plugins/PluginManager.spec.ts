@@ -1,3 +1,5 @@
+import fs from "fs";
+import { tmpdir } from "os";
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager, {
   PluginManagerOptions,
@@ -64,7 +66,6 @@ describe("Basic Plugin Management", () => {
   });
 
   beforeEach(async () => {
-    PluginManager.PREINSTALLED_PLUGINS = [];
     const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
     setting.userValue = "{}";
     await setting.save();
@@ -74,18 +75,21 @@ describe("Basic Plugin Management", () => {
         name: "Test Plugin",
         latestRelease: { version: "1.0.0", minAppVersion: AppVer.COMPAT },
         readme: "# Test Plugin\n\nThis is a test plugin.",
+        origin: "official",
       },
       {
         id: "frozen-banana",
         name: "Frozen Banana",
         latestRelease: { version: "1.0.0", minAppVersion: AppVer.COMPAT },
         readme: "# Frozen Banana\n\nThis is a frozen banana.",
+        origin: "official",
       },
       {
         id: "watermelon-sticker",
         name: "Watermelon Sticker",
         latestRelease: { version: "1.0.0" },
         readme: "# Watermelon Sticker\n\nThe sticker for watermelons.",
+        origin: "community",
       },
     ];
     registry.clearCache();
@@ -99,11 +103,12 @@ describe("Basic Plugin Management", () => {
   describe("Discovery", () => {
     it("can list plugin entries", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
-      const entries = await manager.getEntries();
-      expect(entries).toHaveLength(3);
-      expect(entries[0].id).toBe("test-plugin");
-      expect(entries[1].id).toBe("frozen-banana");
-      expect(entries[2].id).toBe("watermelon-sticker");
+      const { official, community } = await manager.registry.getEntries();
+      expect(official).toHaveLength(2);
+      expect(official[0].id).toBe("test-plugin");
+      expect(official[1].id).toBe("frozen-banana");
+      expect(community).toHaveLength(1);
+      expect(community[0].id).toBe("watermelon-sticker");
     });
 
     it("can get plugin details (versions, readme, etc..)", async () => {
@@ -117,7 +122,9 @@ describe("Basic Plugin Management", () => {
         description: "Test Plugin description",
         capabilities: {
           views: [],
+          menu: [],
         },
+        manifestVersion: 1,
       };
       await expect(manager.getRepository("test-plugin")).resolves.toStrictEqual(
         {
@@ -135,7 +142,7 @@ describe("Basic Plugin Management", () => {
     it("can install the latest plugins if compatible", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      const plugins = manager.getPlugins();
+      const plugins = await manager.getPlugins();
       expect(plugins).toHaveLength(1);
       expect(plugins[0].manifest.version).toBe("1.0.0");
     });
@@ -154,23 +161,35 @@ describe("Basic Plugin Management", () => {
       );
     });
 
-    it("can preinstall plugins", async () => {
-      PluginManager.PREINSTALLED_PLUGINS = ["test-plugin", "frozen-banana"];
+    it("cleans up temp files after installing and updating a plugin", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
-      expect(manager.getPlugins()).toHaveLength(2);
-      expect(manager.getPlugins()[0].manifest.id).toBe("test-plugin");
-      expect(manager.getPlugins()[1].manifest.id).toBe("frozen-banana");
-    })
+      await manager.installPlugin("test-plugin");
+
+      let tempDirs = fs.readdirSync(tmpdir()).filter(
+        (dir) => dir.startsWith("beekeeper-plugin-test-plugin-")
+      );
+      expect(tempDirs).toHaveLength(0);
+
+      // Simulate plugin update on the server
+      repositoryService.plugins[0].latestRelease.version = "1.2.0";
+
+      await manager.updatePlugin("test-plugin");
+
+      tempDirs = fs.readdirSync(tmpdir()).filter(
+        (dir) => dir.startsWith("beekeeper-plugin-test-plugin-")
+      );
+      expect(tempDirs).toHaveLength(0);
+    });
   });
 
   describe("Loading", () => {
     it("can load compatible plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      expect(manager.getPlugins()[0]).toHaveProperty("loadable", true);
+      expect((await manager.getPlugins())[0]).toHaveProperty("loadable", true);
 
       await manager.installPlugin("watermelon-sticker");
-      expect(manager.getPlugins()[1]).toHaveProperty("loadable", true);
+      expect((await manager.getPlugins())[1]).toHaveProperty("loadable", true);
     });
 
     // Simulates a user who installed a plugin, then downgraded the app.
@@ -186,7 +205,7 @@ describe("Basic Plugin Management", () => {
       const oldManager = await initPluginManager(AppVer.INCOMPAT);
 
       // 4. The downgraded app should not load incompatible plugins
-      expect(oldManager.getPlugins()[0]).toHaveProperty("loadable", false);
+      expect((await oldManager.getPlugins())[0]).toHaveProperty("loadable", false);
     });
   });
 
@@ -215,25 +234,21 @@ describe("Basic Plugin Management", () => {
         "frozen-banana": { autoUpdate: true },
       });
 
-      console.log(manager.getPlugins());
-
       // Simulate plugin updates on the server
-      console.log(repositoryService.plugins);
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
       repositoryService.plugins[1].latestRelease.version = "1.3.0";
-      console.log(repositoryService.plugins);
 
       // Simulate app restart
       const manager2 = await initPluginManager(AppVer.COMPAT);
-      expect(
+      expect((await
         manager2
-          .getPlugins()
+          .getPlugins())
           .find(({ manifest }) => manifest.id === "test-plugin").manifest
           .version
       ).toBe("1.2.0");
-      expect(
+      expect((await
         manager2
-          .getPlugins()
+          .getPlugins())
           .find(({ manifest }) => manifest.id === "frozen-banana").manifest
           .version
       ).toBe("1.3.0");
@@ -247,7 +262,7 @@ describe("Basic Plugin Management", () => {
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
 
       await manager.updatePlugin("test-plugin");
-      expect(manager.getPlugins()[0].manifest.version).toBe("1.2.0");
+      expect((await manager.getPlugins())[0].manifest.version).toBe("1.2.0");
     });
 
     it("can not update plugins if not compatible", async () => {
@@ -278,7 +293,7 @@ describe("Basic Plugin Management", () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
       await manager.uninstallPlugin("test-plugin");
-      expect(manager.getPlugins()).toHaveLength(0);
+      await expect(manager.getPlugins()).resolves.toHaveLength(0);
     });
   });
 });

@@ -5,6 +5,7 @@ import { Dialect, DialectData } from "./models";
 import { MysqlData } from "./mysql";
 import { OracleData } from "./oracle";
 import { PostgresData } from "./postgresql";
+import { GreengageData } from "./greengage";
 import { SqliteData } from "./sqlite";
 import { SqlServerData } from "./sqlserver";
 import { CassandraData } from './cassandra'
@@ -20,6 +21,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
     case "postgresql":
       return PostgresData
+    case "greengage":
+      return GreengageData
     case "mysql":
       return MysqlData
     case "sqlserver":

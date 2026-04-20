@@ -23,42 +23,47 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'undo',
       label: "Undo",
       accelerator: "CommandOrControl+Z",
-      click: actionHandler.undo
+      click: actionHandler.undo,
+      role: 'undo',
     },
     redo: {
       id: "redo",
       label: "Redo",
       accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
-      click: actionHandler.redo
+      click: actionHandler.redo,
+      role: 'redo',
     },
     cut: {
       id: 'cut',
       label: 'Cut',
       accelerator: 'CommandOrControl+X',
       click: actionHandler.cut,
-      registerAccelerator: false
-
+      registerAccelerator: false,
+      role: 'cut',
     },
     copy: {
       id: 'copy',
       label: 'Copy',
       accelerator: 'CommandOrControl+C',
       click: actionHandler.copy,
-      registerAccelerator: false
+      registerAccelerator: false,
+      role: 'copy',
     },
     paste: {
       id: 'paste',
       label: 'Paste',
       accelerator: 'CommandOrControl+V',
       click: actionHandler.paste,
-      registerAccelerator: false
+      registerAccelerator: false,
+      role: 'paste',
     },
 
     selectAll: {
       id: 'select-all',
       label: 'Select All',
       accelerator: 'CommandOrControl+A',
-      click: actionHandler.selectAll
+      click: actionHandler.selectAll,
+      role: 'selectAll',
     },
     // view
     zoomreset: {
@@ -93,6 +98,23 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.zoomout,
       visible: false,
     },
+    editorFontSizeReset: {
+      id: 'editor-font-size-reset',
+      label: "Reset Editor Font Size",
+      click: actionHandler.editorFontSizeReset
+    },
+    editorFontSizeIncrease: {
+      id: 'editor-font-size-increase',
+      label: "Increase Editor Font Size",
+      accelerator: platformInfo.isMac ? "Command+Shift+." : "Ctrl+Shift+.",
+      click: actionHandler.editorFontSizeIncrease
+    },
+    editorFontSizeDecrease: {
+      id: 'editor-font-size-decrease',
+      label: "Decrease Editor Font Size",
+      accelerator: platformInfo.isMac ? "Command+Shift+," : "Ctrl+Shift+,",
+      click: actionHandler.editorFontSizeDecrease
+    },
     fullscreen: {
       id: 'fullscreen',
       label: "Toggle Full Screen",
@@ -103,7 +125,8 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     about: {
       id: 'about',
       label: 'About Beekeeper Studio',
-      click: actionHandler.about
+      click: actionHandler.about,
+      role: 'about',
     },
     devtools: {
       id: 'dev-tools',
@@ -130,6 +153,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'contactSupport',
       label: 'Contact Support',
       click: actionHandler.contactSupport
+    },
+    gettingStartedGuide: {
+      id: 'gettingStartedGuide',
+      label: 'Getting Started Guide',
+      click: actionHandler.openGettingStarted
     },
     reload: {
       id: 'reload-window',
@@ -199,6 +227,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       // accelerator: "Alt+S",
       click: actionHandler.toggleSecondarySidebar,
       enabled: false,
+    },
+    privacyModeToggle: {
+      id: 'privacy-mode-toggle',
+      label: 'Toggle Privacy Mode',
+      click: actionHandler.togglePrivacyMode,
+      checked: settings?.privacyMode?.value
     },
     themeToggle: {
       id: "theme-toggle-menu",
@@ -270,6 +304,28 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Toggle Minimal Mode",
       click: actionHandler.toggleMinimalMode,
     },
+    simulatePlatform: {
+      id: "simulate-platform",
+      label: "DEV Simulate Platform",
+      submenu: [
+        {
+          type: 'radio',
+          label: "None (use real platform)",
+          checked: true,
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'none'),
+        },
+        {
+          type: 'radio',
+          label: "Snap",
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'snap'),
+        },
+        {
+          type: 'radio',
+          label: "Flatpak",
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'flatpak'),
+        },
+      ],
+    },
     licenseState: {
       id: "license-state",
       label: "DEV Switch License State",
@@ -323,6 +379,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'manage-plugins',
       label: 'Manage Plugins',
       click: actionHandler.managePlugins,
+    },
+    keyboardShortcuts: {
+      id: 'keyboard-shortcuts',
+      label: 'Keyboard Shortcuts',
+      click: actionHandler.keyboardShortcuts,
     },
   }
 }

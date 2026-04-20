@@ -1,7 +1,8 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import type { SshMode } from '@/common/interfaces/IConnection';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -14,8 +15,10 @@ export const ConnectionTypes = [
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
+  { name: 'GreengageDB', value: 'greengage' },
   { name: 'Oracle', value: 'oracle' },
   { name: 'Cassandra', value: 'cassandra' },
+  { name: 'ScyllaDB', value: 'scylladb' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
   { name: 'DuckDB', value: 'duckdb' },
@@ -24,7 +27,8 @@ export const ConnectionTypes = [
   { name: 'SqlAnywhere', value: 'sqlanywhere' },
   { name: 'Trino', value: 'trino' },
   { name: 'SurrealDB', value: 'surrealdb' },
-  { name: 'Redis', value: 'redis' }
+  { name: 'Redis', value: 'redis' },
+  { name: 'Bedrock', value: 'bedrock' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -182,6 +186,12 @@ export interface IDbConnectionServerSSHConfig {
   privateKey: Nullable<string>
   passphrase: Nullable<string>
   bastionHost: Nullable<string>
+  bastionPort: Nullable<number>
+  bastionUser: Nullable<string>
+  bastionPassword: Nullable<string>
+  bastionPrivateKey: Nullable<string>
+  bastionPassphrase: Nullable<string>
+  bastionMode: Nullable<SshMode>
   keepaliveInterval: number
   useAgent: boolean
 }
@@ -249,6 +259,7 @@ export interface IBasicDatabaseClient {
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
   executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>,
+  getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]>
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
@@ -277,7 +288,7 @@ export interface IBasicDatabaseClient {
   alterPartition(changes: AlterPartitionsSpec): Promise<void>,
 
   applyChangesSql(changes: TableChanges): Promise<string>,
-  applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
+  applyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]>,
   setTableDescription(table: string, description: string, schema?: string): Promise<string>
   setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
@@ -297,6 +308,8 @@ export interface IBasicDatabaseClient {
 
   getInsertQuery(tableInsert: TableInsert, runAsUpsert?: boolean): Promise<string>
   syncDatabase(): Promise<void>
+
+  getServerStatistics(): Promise<ServerStatistics | null>
 
   importStepZero(table: TableOrView): Promise<any>
   importBeginCommand(table: TableOrView, importOptions?: ImportFuncOptions): Promise<any>

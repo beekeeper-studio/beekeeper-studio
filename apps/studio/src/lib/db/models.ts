@@ -254,6 +254,25 @@ export interface SupportedFeatures {
   filterTypes: IncludedFilterTypes[];
 }
 
+export enum FieldReadOnlyReason {
+  NoLinkedTable,
+  MissingPK,
+  ImproperMapping,
+  IsGenerated
+}
+
+export interface FieldEditData {
+  editable: boolean;
+  id?: string; // this is what the field is referred to as in the object
+  columnName?: string;
+  linkedTable?: string;
+  linkedSchema?: string;
+  isPK?: boolean;
+  generated?: boolean;
+  readOnlyReason?: FieldReadOnlyReason;
+  dataType?: string;
+}
+
 export interface FieldDescriptor {
   name: string;
   id: string;
@@ -264,9 +283,12 @@ export interface NgQueryResult {
   output?: any;
   fields?: FieldDescriptor[];
   rows?: any[];
+  truncated?: boolean;
   rowCount?: number;
+  totalRowCount?: number;
   affectedRows?: number;
   command?: any;
+  text?: string;
 }
 
 export type QueryResult = NgQueryResult[];
@@ -378,4 +400,27 @@ export interface BuildInsertOptions {
   runAsUpsert?: boolean
   primaryKeys?: string[]
   createUpsertFunc?: null | ((table: DatabaseEntity, data: {[key: string]: any}, primaryKey: string[]) => string)
+}
+
+export interface ServerStatistics {
+  queryCache: {
+    size: string;
+    limit: string;
+    hits: number;
+    inserts: number;
+    lowMemoryPrunes: number;
+  };
+  performance: {
+    connections: number;
+    uptime: number;
+    threadsRunning: number;
+    threadsConnected: number;
+    slowQueries: number;
+    questionsPerSecond: number;
+  };
+  memory: {
+    keyBufferSize: string;
+    innodbBufferPoolSize: string;
+    innodbBufferPoolUsed: string;
+  };
 }
