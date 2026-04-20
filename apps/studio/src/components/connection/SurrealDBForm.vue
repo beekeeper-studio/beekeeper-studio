@@ -25,7 +25,6 @@
           </label>
           <masked-input
             :value="config.host"
-            :privacyMode="privacyMode"
             @input="val => config.host = val"
           />
         </div>
@@ -33,7 +32,6 @@
           <label for="port">Port</label>
           <masked-input
             :value="config.port"
-            :privacyMode="privacyMode"
             :type="'number'"
             @input="val => config.port = val"
           />
@@ -54,35 +52,18 @@
         <label for="user">User</label>
         <masked-input
           :value="config.username"
-          :privacyMode="privacyMode"
           @input="val => config.username = val"
         />
       </div>
       <div class="col s6 form-group">
         <label for="password">Password</label>
-        <input
-          :type="togglePasswordInputType"
-          v-model="config.password"
-          class="password form-control"
-        >
-        <i
-          @click.prevent="togglePassword"
-          class="material-icons password-icon"
-        >{{ togglePasswordIcon }}</i>
+        <password-input v-model="config.password" />
       </div>
     </div>
     <div v-else class="row gutter">
       <div class="form-group col">
         <label for="token">Token</label>
-        <input
-          :type="togglePasswordInputType"
-          v-model="config.surrealDbOptions.token"
-          class="password form-control"
-        >
-        <i
-          @click.prevent="togglePassword"
-          class="material-icons password-icon"
-        >{{ togglePasswordIcon }}</i>
+        <password-input v-model="config.surrealDbOptions.token" />
       </div>
     </div>
     <div class="row gutter">
@@ -115,36 +96,23 @@ import { SurrealAuthType, SurrealAuthTypes } from '../../lib/db/types';
 import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapGetters } from 'vuex';
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
 
 export default Vue.extend({
-  components: { CommonServerInputs, MaskedInput, CommonAdvanced },
+  components: { CommonServerInputs, MaskedInput, PasswordInput, CommonAdvanced },
   props: ['config'],
   data() {
     return {
       authTypes: SurrealAuthTypes,
       authType: null,
       protocols: ['http', 'https', 'ws', 'wss'],
-      showPassword: false
     }
   },
   computed: {
-    ...mapGetters('settings', ['privacyMode']),
-    togglePasswordIcon() {
-      return this.showPassword ? "visibility_off" : "visibility";
-    },
-    togglePasswordInputType() {
-      return this.showPassword ? "text" : "password"
-    },
     isTokenAuth() {
       return this.config.surrealDbOptions.authType === SurrealAuthType.Token;
     }
   },
-  methods: {
-    togglePassword() {
-      this.showPassword = !this.showPassword;
-    }
-  }
 })
 
 </script>

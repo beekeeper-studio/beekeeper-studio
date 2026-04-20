@@ -28,7 +28,6 @@
             <label for="bastionHost">Bastion Host (Jump Host)</label>
             <masked-input
               :value="config.sshBastionHost"
-              :privacyMode="privacyMode"
               @input="val => config.sshBastionHost = val"
             />
           </div>
@@ -36,7 +35,6 @@
             <label for="sshBastionHostPort">Port</label>
             <masked-input
               :value="config.sshBastionHostPort"
-              :privacyMode="privacyMode"
               @input="val => config.sshBastionHostPort = val"
             />
           </div>
@@ -66,7 +64,6 @@
             <label>Bastion Username</label>
             <masked-input
               :value="config.sshBastionUsername"
-              :privacyMode="privacyMode"
               @input="val => config.sshBastionUsername = val"
             />
           </div>
@@ -82,7 +79,6 @@
                 <label>Bastion Username</label>
                 <masked-input
                   :value="config.sshBastionUsername"
-                  :privacyMode="privacyMode"
                   @input="val => config.sshBastionUsername = val"
                 />
               </div>
@@ -117,7 +113,6 @@
               <label>Bastion Username</label>
               <masked-input
                 :value="config.sshBastionUsername"
-                :privacyMode="privacyMode"
                 @input="val => config.sshBastionUsername = val"
               />
             </div>
@@ -142,7 +137,6 @@
           <label for="sshHost">SSH Hostname</label>
           <masked-input
             :value="config.sshHost"
-            :privacyMode="privacyMode"
             @input="val => config.sshHost = val"
           />
         </div>
@@ -150,7 +144,6 @@
           <label for="sshPort">Port</label>
           <masked-input
             :value="config.sshPort"
-            :privacyMode="privacyMode"
             @input="val => config.sshPort = val"
           />
         </div>
@@ -179,7 +172,6 @@
           <label for="sshUsername">SSH Username</label>
           <masked-input
             :value="config.sshUsername"
-            :privacyMode="privacyMode"
             @input="val => config.sshUsername = val"
           />
         </div>
@@ -210,7 +202,6 @@
               <label for="sshUsername">SSH Username</label>
               <masked-input
                 :value="config.sshUsername"
-                :privacyMode="privacyMode"
                 @input="val => config.sshUsername = val"
               />
             </div>
@@ -245,7 +236,6 @@
             <label for="sshUsername">SSH Username</label>
             <masked-input
               :value="config.sshUsername"
-              :privacyMode="privacyMode"
               @input="val => config.sshUsername = val"
             />
           </div>
@@ -288,7 +278,6 @@ import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
 import PlatformWarning from './PlatformWarning.vue'
-import { mapGetters } from 'vuex'
 
 export default {
   props: ['config'],
@@ -296,9 +285,6 @@ export default {
     FilePicker, ExternalLink,
     ToggleFormArea, MaskedInput,
     PlatformWarning
-  },
-  computed: {
-    ...mapGetters('settings', ['privacyMode']),
   },
   data() {
     return {
