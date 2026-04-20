@@ -72,6 +72,9 @@ jobs:
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
+      - name: Build UI Kit
+        run: yarn lib:build
+
       - name: Build App
         run: yarn workspace beekeeper-studio build
 
