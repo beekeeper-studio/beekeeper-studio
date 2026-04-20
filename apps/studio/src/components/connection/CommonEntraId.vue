@@ -50,7 +50,7 @@
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.host" :privacy-mode="privacyMode" @input="val => config.host = val" />
+        <masked-input :value="config.host" @input="val => config.host = val" />
       </div>
       <div class="form-group">
         <label for="database">Database</label>
@@ -103,29 +103,21 @@
             >help_outlined</i
           >
         </label>
-        <masked-input :value="config.azureAuthOptions.tenantId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.tenantId = val" />
+        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientId">Client ID</label>
-        <masked-input :value="config.azureAuthOptions.clientId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientId = val" />
+        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" />
       </div>
       <div class="row gutter">
         <div class="col s12 form-group" v-show="isServicePrincipal">
           <label for="clientSecret">Client Secret</label>
-          <input
-            :type="toggleClientSecretInputType"
-            v-model="config.azureAuthOptions.clientSecret"
-            class="password form-control"
-          >
-          <i
-            @click.prevent="toggleClientSecret"
-            class="material-icons password-icon"
-          >{{ toggleClientSecretIcon }}</i>
+          <password-input v-model="config.azureAuthOptions.clientSecret" />
         </div>
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
-        <masked-input :value="config.azureAuthOptions.msiEndpoint" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.msiEndpoint = val" />
+        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" />
       </div>
     </div>
   </div>
@@ -135,6 +127,7 @@ import { AzureAuthType } from "@/lib/db/types";
 import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import MaskedInput from '@/components/MaskedInput.vue'
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
 import { mapState, mapGetters } from 'vuex'
 import FilePicker from '@/components/common/form/FilePicker.vue'
@@ -151,6 +144,7 @@ export default {
   },
   components: {
     MaskedInput,
+    PasswordInput,
     CommonSsl,
     FilePicker
   },
@@ -160,19 +154,12 @@ export default {
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
-      showClientSecret: false,
       cliError: false
     };
   },
   computed: {
     ...mapGetters('settings', ['privacyMode']),
     ...mapState(['connection']),
-    toggleClientSecretIcon() {
-      return this.showClientSecret ? "visibility_off" : "visibility"
-    },
-    toggleClientSecretInputType() {
-      return this.showClientSecret ? "text" : "password"
-    },
     showUser() {
       return this.authType === AzureAuthType.CLI;
     },
@@ -209,9 +196,6 @@ export default {
     toggleIAMAuthentication() {
       this.azureAuthEnabled = !this.azureAuthEnabled;
       this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled;
-    },
-    toggleClientSecret() {
-      return this.showClientSecret = !this.showClientSecret
     },
     async signOut() {
       try {
