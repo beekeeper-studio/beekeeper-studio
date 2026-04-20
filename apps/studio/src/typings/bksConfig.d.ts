@@ -5,6 +5,19 @@ declare interface IBksConfig {
         ssoPrompt: string;
     };
     db: {
+        bedrock: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: string[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         bigquery: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
@@ -223,6 +236,19 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        scylladb: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
@@ -372,6 +398,11 @@ declare interface IBksConfig {
             openEditorModal: string;
             previousPage: string;
         };
+    };
+    pluginSystem: {
+        allow: any[];
+        communityDisabled: boolean;
+        disabled: boolean;
     };
     plugins: {
         "bks-ai-shell": {

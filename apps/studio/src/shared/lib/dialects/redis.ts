@@ -9,6 +9,7 @@ export const RedisData: DialectData = {
   rawFilterPlaceholder: 'Search',
   disabledFeatures: {
     manualCommit: true,
+    resultEditing: true,
     readOnlyPrimaryKeys: true,
     builderFilters: true,
     shell: true,
