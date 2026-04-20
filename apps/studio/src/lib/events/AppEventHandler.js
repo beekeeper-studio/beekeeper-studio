@@ -19,6 +19,7 @@ export default class {
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
     window.main.on(AppEvent.simulatePlatform, this.simulatePlatform.bind(this))
+    this.forward(AppEvent.disconnect)
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.newCustomTab)

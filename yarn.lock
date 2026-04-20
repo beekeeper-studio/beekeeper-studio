@@ -5811,9 +5811,9 @@ baseline-browser-mapping@^2.9.0:
   integrity sha512-ipDqC8FrAl/76p2SSWKSI+H9tFwm7vYqXQrItCuiVPt26Km0jS+NzSsBWAaBusvSbQcfJG+JitdMm+wZAgTYqg==
 
 basic-ftp@^5.0.2:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-5.1.0.tgz#00eb8128ce536aa697c45716c739bf38e8d890f5"
-  integrity sha512-RkaJzeJKDbaDWTIPiJwubyljaEPwpVWkm9Rt5h9Nd6h7tEXTJ3VB4qxdZBioV7JO5yLUaOKwz7vDOzlncUsegw==
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-5.3.0.tgz#88f057d1ba8442643c505c4c83bbaa4442b15cfd"
+  integrity sha512-5K9eNNn7ywHPsYnFwjKgYH8Hf8B5emh7JKcPaVjjrMJFQQwGpwowEnZNEtHs7DfR7hCZsmaK3VA4HUK0YarT+w==
 
 bcrypt-pbkdf@^1.0.2:
   version "1.0.2"
@@ -8578,9 +8578,9 @@ gtoken@^6.1.0:
     jws "^4.0.0"
 
 handlebars@^4.7.8:
-  version "4.7.8"
-  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.7.8.tgz#41c42c18b1be2365439188c77c6afae71c0cd9e9"
-  integrity sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==
+  version "4.7.9"
+  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.7.9.tgz#6f139082ab58dc4e5a0e51efe7db5ae890d56a0f"
+  integrity sha512-4E71E0rpOaQuJR2A3xDZ+GM1HyWYv1clR58tC8emQNeQe3RH7MAzSbat+V0wG78LQBo6m6bzSG/L4pBuCsgnUQ==
   dependencies:
     minimist "^1.2.5"
     neo-async "^2.6.2"
@@ -11918,9 +11918,9 @@ proto-list@~1.2.1:
   integrity sha512-vtK/94akxsTMhe0/cbfpR+syPuszcuwhqVjJq26CuNDgFGj682oRBXOP5MJpv2r7JtE8MsiepGIqvvOTBwn2vA==
 
 protobufjs@^7.2.5, protobufjs@^7.3.2, protobufjs@^7.5.3:
-  version "7.5.4"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.5.4.tgz#885d31fe9c4b37f25d1bb600da30b1c5b37d286a"
-  integrity sha512-CvexbZtbov6jW2eXAvLukXjXUW1TzFaivC46BpWc/3BpcCysb5Vffu+B3XHMm8lVEuy2Mm4XGex8hBSg1yapPg==
+  version "7.5.5"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.5.5.tgz#b7089ca4410374c75150baf277353ef76db69f96"
+  integrity sha512-3wY1AxV+VBNW8Yypfd1yQY9pXnqTAN+KwQxL8iYm3/BjKYMNg4i0owhEe26PWDOMaIrzeeF98Lqd5NGz4omiIg==
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
