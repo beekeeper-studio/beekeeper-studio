@@ -62,11 +62,8 @@ jobs:
       - name: Build UI Kit
         run: yarn lib:build
 
-      - name: Build Main
-        run: yarn workspace beekeeper-studio build:esbuild
-
-      - name: Serve Vite
-        run: yarn workspace beekeeper-studio dev:vite > /dev/null 2>&1 &
+      - name: Build App
+        run: yarn workspace beekeeper-studio build
 
       - name: Start postgres container
         run: docker compose up psql15 -d --wait
