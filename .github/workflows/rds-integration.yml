@@ -1,0 +1,227 @@
+name: RDS Integration Tests
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - apps/studio/src/lib/db/clients/postgresql.ts
+      - apps/studio/src/lib/db/clients/mysql.ts
+      - apps/studio/src/lib/db/clients/utils.ts
+      - apps/studio/src/lib/db/types.ts
+      - apps/studio/tests/integration/rds/**
+      - apps/studio/jest.rds.config.js
+      - infrastructure/ci/aws-rds/**
+      - bin/rds/**
+      - bin/rds-tests.sh
+      - .github/workflows/rds-integration.yml
+  workflow_dispatch:
+
+# Serialize runs rather than cancelling — a cancelled apply would leak
+# resources, and the janitor only sweeps on a 2h cadence.
+concurrency:
+  group: rds-integration
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-2
+  TF_DIR: infrastructure/ci/aws-rds
+
+jobs:
+  provision:
+    name: Provision RDS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      pg_host: ${{ steps.tf-outputs.outputs.pg_host }}
+      pg_port: ${{ steps.tf-outputs.outputs.pg_port }}
+      pg_iam_user: ${{ steps.tf-outputs.outputs.pg_iam_user }}
+      mysql_host: ${{ steps.tf-outputs.outputs.mysql_host }}
+      mysql_port: ${{ steps.tf-outputs.outputs.mysql_port }}
+      mysql_iam_user: ${{ steps.tf-outputs.outputs.mysql_iam_user }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine runner IP
+        id: runner-ip
+        run: bin/rds/get-runner-ip.sh
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=key=aws-rds/${{ github.run_id }}.tfstate
+
+      - name: Terraform apply
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform apply -auto-approve \
+            -var="run_id=${{ github.run_id }}" \
+            -var="runner_ip=${{ steps.runner-ip.outputs.runner_ip }}" \
+            -var="region=${{ env.AWS_REGION }}"
+
+      - name: Capture Terraform outputs
+        id: tf-outputs
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          set -euo pipefail
+          PG_HOST=$(terraform output -raw pg_host)
+          PG_PORT=$(terraform output -raw pg_port)
+          PG_IAM_USER=$(terraform output -raw pg_iam_user)
+          PG_MASTER_USER=$(terraform output -raw pg_master_user)
+          PG_MASTER_PASSWORD=$(terraform output -raw pg_master_password)
+          MYSQL_HOST=$(terraform output -raw mysql_host)
+          MYSQL_PORT=$(terraform output -raw mysql_port)
+          MYSQL_IAM_USER=$(terraform output -raw mysql_iam_user)
+          MYSQL_MASTER_USER=$(terraform output -raw mysql_master_user)
+          MYSQL_MASTER_PASSWORD=$(terraform output -raw mysql_master_password)
+
+          # Mask hosts so they never show up in logs.
+          echo "::add-mask::$PG_HOST"
+          echo "::add-mask::$MYSQL_HOST"
+          echo "::add-mask::$PG_MASTER_PASSWORD"
+          echo "::add-mask::$MYSQL_MASTER_PASSWORD"
+
+          {
+            echo "pg_host=$PG_HOST"
+            echo "pg_port=$PG_PORT"
+            echo "pg_iam_user=$PG_IAM_USER"
+            echo "mysql_host=$MYSQL_HOST"
+            echo "mysql_port=$MYSQL_PORT"
+            echo "mysql_iam_user=$MYSQL_IAM_USER"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "BKS_RDS_PG_MASTER_USER=$PG_MASTER_USER"
+            echo "BKS_RDS_PG_MASTER_PASSWORD=$PG_MASTER_PASSWORD"
+            echo "BKS_RDS_MYSQL_MASTER_USER=$MYSQL_MASTER_USER"
+            echo "BKS_RDS_MYSQL_MASTER_PASSWORD=$MYSQL_MASTER_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Seed databases
+        env:
+          BKS_RDS_PG_HOST: ${{ steps.tf-outputs.outputs.pg_host }}
+          BKS_RDS_PG_PORT: ${{ steps.tf-outputs.outputs.pg_port }}
+          BKS_RDS_MYSQL_HOST: ${{ steps.tf-outputs.outputs.mysql_host }}
+          BKS_RDS_MYSQL_PORT: ${{ steps.tf-outputs.outputs.mysql_port }}
+        run: bin/rds/seed-rds.sh
+
+  test:
+    name: Test ${{ matrix.engine }}
+    needs: provision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [pg, mysql]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Restore node_modules cache
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Install libaio (for oracle deps on install)
+        run: sudo apt install -y libaio-dev
+
+      - name: Symlink libaio v1
+        run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1 || true
+
+      - name: Run RDS integration tests
+        env:
+          BKS_RDS_AWS_REGION: ${{ env.AWS_REGION }}
+          BKS_RDS_PG_HOST: ${{ needs.provision.outputs.pg_host }}
+          BKS_RDS_PG_PORT: ${{ needs.provision.outputs.pg_port }}
+          BKS_RDS_PG_IAM_USER: ${{ needs.provision.outputs.pg_iam_user }}
+          BKS_RDS_MYSQL_HOST: ${{ needs.provision.outputs.mysql_host }}
+          BKS_RDS_MYSQL_PORT: ${{ needs.provision.outputs.mysql_port }}
+          BKS_RDS_MYSQL_IAM_USER: ${{ needs.provision.outputs.mysql_iam_user }}
+          # Key + File methods consume these directly.
+          BKS_TEST_ACCESS_KEY_ID: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          BKS_TEST_SECRET_ACCESS_KEY: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          BKS_TEST_AWS_PROFILE: bks-ci
+          # CLI method shells out to /usr/bin/aws which reads these.
+          AWS_ACCESS_KEY_ID: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        run: yarn workspace beekeeper-studio run test:rds --runInBand --ci --testPathPattern=${{ matrix.engine }}-iam
+
+  teardown:
+    name: Teardown RDS
+    if: always()
+    needs: [provision, test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine runner IP
+        id: runner-ip
+        run: bin/rds/get-runner-ip.sh
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=key=aws-rds/${{ github.run_id }}.tfstate
+
+      - name: Terraform destroy
+        id: destroy
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform destroy -auto-approve \
+            -var="run_id=${{ github.run_id }}" \
+            -var="runner_ip=${{ steps.runner-ip.outputs.runner_ip }}" \
+            -var="region=${{ env.AWS_REGION }}"
+
+      - name: Report teardown failure
+        if: failure() && steps.destroy.outcome == 'failure'
+        run: |
+          echo "Terraform destroy failed for run ${{ github.run_id }}." >&2
+          echo "The janitor workflow will sweep orphaned instances within 2h." >&2
+          exit 1
