@@ -1,6 +1,7 @@
 import { AppEvent } from "../../common/AppEvent"
 import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import Noty from "noty";
 
 const log = rawLog.scope("AppEventHandler")
 
@@ -13,6 +14,7 @@ export default class {
 
   registerCallbacks() {
     window.main.on(AppEvent.settingsChanged, this.settingsChanged.bind(this))
+    window.main.on(AppEvent.reconnect, this.reconnect.bind(this))
     window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
@@ -35,6 +37,7 @@ export default class {
     this.forward(AppEvent.openPluginManager)
     this.forward(AppEvent.openKeyboardShortcuts)
     this.forward(AppEvent.pluginMenuClicked)
+    this.vueApp.$util.addListener('conn/connection-lost', this.connectionLost.bind(this))
   }
 
   forward(event) {
@@ -63,8 +66,29 @@ export default class {
     this.vueApp.$store.dispatch('data/connections/load')
   }
 
+  reconnect() {
+    this.vueApp.$store.dispatch('reconnect')
+  }
+
   disconnect() {
     this.vueApp.$store.dispatch('disconnect')
+  }
+
+  connectionLost() {
+    this.vueApp.$emit(AppEvent.connectionLost)
+    this.vueApp.$noty.error('Connection lost. Would you like to reconnect?', {
+      timeout: false,
+      closeWith: ['button'],
+      killer: 'connection-lost',
+      queue: 'connection-lost',
+      buttons: [
+        Noty.button('Close', 'btn btn-flat', (noty) => noty.close()),
+        Noty.button('Reconnect', 'btn btn-primary', (noty) => {
+          noty.close()
+          this.vueApp.$store.dispatch('reconnect')
+        }),
+      ],
+    })
   }
 
   settingsChanged() {

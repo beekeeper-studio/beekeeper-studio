@@ -264,8 +264,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     await super.connect();
 
     const config = {
-      host: this.server.config.host,
-      port: this.server.config.port,
+      host: this.server.sshTunnel ? this.server.sshTunnel.localHost : this.server.config.host,
+      port: this.server.sshTunnel ? this.server.sshTunnel.localPort : this.server.config.port,
       user: this.server.config.user,
       password: this.server.config.password,
       database: this.database.database,

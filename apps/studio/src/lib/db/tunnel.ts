@@ -89,7 +89,10 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         resolve(result)
 
       } catch (ex) {
-        reject(new Error('SSH Tunnel Connection Error: ' + ex.message));
+        const message = ex.message || ex.code
+        reject(new Error('SSH Tunnel Connection Error: ' + message, {
+          cause: ex
+        }));
       }
     })()
   })

@@ -112,6 +112,7 @@ export default class extends DefaultMenu {
         { type: 'separator' },
         this.menuItems.importSqlFiles,
         this.menuItems.quickSearch,
+        this.menuItems.reconnect,
         this.menuItems.disconnect,
         // Moved to Beekeeper Studio menu for mac
         ...(!this.platformInfo.isMac ? [this.menuItems.quit] : []),

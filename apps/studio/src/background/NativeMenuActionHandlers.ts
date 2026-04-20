@@ -185,6 +185,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.toggleSecondarySidebar)
   }
 
+  reconnect = (_1: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.reconnect)
+  }
+
   disconnect = (_1: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.disconnect)
   }

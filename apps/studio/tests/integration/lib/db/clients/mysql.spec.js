@@ -7,6 +7,7 @@ import data_mutators from '../../../../../src/mixins/data_mutators';
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { runCommonTests, runReadOnlyTests } from './all'
 import MySQL5_4KnexClient from '@/shared/lib/knex-mysql5_4'
+import { runCommonSshTests } from './ssh/commonSshTests'
 
 const TEST_VERSIONS = [
   { version: '5.1', image: 'vettadock/mysql-old', options: { knexClient: MySQL5_4KnexClient, skipTransactions: true } },
@@ -2341,3 +2342,4 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
 
 TEST_VERSIONS.forEach(({ version, socket, readonly, image, options }) => testWith(version, socket, readonly, image, options ))
 
+runCommonSshTests("mysql");

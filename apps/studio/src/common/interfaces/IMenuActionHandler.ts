@@ -37,6 +37,7 @@ export interface IMenuActionHandler {
   quickSearch: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchTheme: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  reconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   enterLicense: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
