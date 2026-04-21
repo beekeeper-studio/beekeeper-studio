@@ -1,6 +1,6 @@
 <template>
   <portal to="modals">
-    <modal :name="name">
+    <modal :name="name" class="base-modal-root">
       <div v-kbd-trap="true" class="base-modal">
         <div class="base-modal-header">
           <div class="base-modal-title"><slot name="title" /></div>
@@ -42,6 +42,10 @@ export default Vue.extend({
 </script>
 
 <style scoped>
+.base-modal-root ::v-deep .v--modal {
+  min-height: 6rem;
+}
+
 .base-modal {
   display: flex;
   flex-direction: column;
@@ -56,8 +60,8 @@ export default Vue.extend({
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
-  padding: 1.2rem;
-  padding-bottom: 0.8rem;
+  padding-inline: 1.2rem;
+  padding-block: 0.8rem;
 }
 
 .base-modal-title {
@@ -113,8 +117,7 @@ export default Vue.extend({
   width: 100%;
   justify-content: flex-end;
   border: 0 !important;
-  padding: 0 0.4rem 0.8rem;
   padding-inline: 1.2rem;
-  margin-right: -0.25rem;
+  padding-bottom: 0.8rem;
 }
 </style>
