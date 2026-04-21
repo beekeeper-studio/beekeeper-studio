@@ -1,0 +1,107 @@
+name: E2E Smoke Test (Cross-Platform)
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths-ignore:
+      - apps/sqltools/**
+      - docs/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-smoke:
+    name: E2E Smoke - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Install Python 3.11 (non-Mac)
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+        if: runner.os != 'macOS'
+
+      - name: Install Python 3.11 (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          brew install python@3.11
+          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Install xvfb-maybe
+        run: npm install -g xvfb-maybe
+
+      - name: Install Playwright browsers
+        run: yarn playwright install --with-deps chromium
+
+      - name: Build UI Kit
+        run: yarn lib:build
+
+      - name: Build App
+        run: yarn workspace beekeeper-studio build
+
+      - name: Run Tests (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          xvfb-maybe -a -s "-screen 0 1024x768x24" -- bash -c '
+            yarn workspace beekeeper-studio test:e2e:smoke
+          '
+        env:
+          ELECTRON_ENABLE_LOGGING: 1
+          ELECTRON_DISABLE_SANDBOX: 1
+          ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
+
+      - name: Run Tests (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          yarn workspace beekeeper-studio test:e2e:smoke
+        env:
+          ELECTRON_ENABLE_LOGGING: 1
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: apps/studio/test-results
+          retention-days: 7

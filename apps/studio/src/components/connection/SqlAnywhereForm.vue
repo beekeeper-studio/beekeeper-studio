@@ -12,7 +12,6 @@
         <label for="serverName">Server Name</label>
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
-          :privacyMode="privacyMode"
           @input="val => config.sqlAnywhereOptions.serverName = val"
         />
       </div>
@@ -23,28 +22,18 @@
           <label for="user">User</label>
           <masked-input
             :value="config.username"
-            :privacyMode="privacyMode"
             @input="val => config.username = val"
           />
         </div>
         <div class="col s6 form-group">
           <label for="password">Password</label>
-          <input
-            :type="togglePasswordInputType"
-            v-model="config.password"
-            class="password form-control"
-          >
-          <i
-            @click.prevent="togglePassword"
-            class="material-icons password-icon"
-          >{{ togglePasswordIcon }}</i>
+          <password-input v-model="config.password" />
         </div>
       </div>
       <div class="form-group expand">
         <label for="serverName">Server Name</label>
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
-          :privacyMode="privacyMode"
           @input="val => config.sqlAnywhereOptions.serverName = val"
         />
       </div>
@@ -70,32 +59,15 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import FilePicker from "@/components/common/form/FilePicker.vue"
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
 
 export default {
-  components: { CommonServerInputs, FilePicker, MaskedInput },
+  components: { CommonServerInputs, FilePicker, MaskedInput, PasswordInput },
   props: ['config'],
-  data() {
-    return {
-      showPassword: false
-    }
-  },
   computed: {
-    ...mapState('settings', ['privacyMode']),
     isServer() {
       return this.config.sqlAnywhereOptions.mode === 'server';
     },
-    togglePasswordIcon() {
-      return this.showPassword ? "visibility_off" : "visibility"
-    },
-    togglePasswordInputType() {
-      return this.showPassword ? "text" : "password"
-    }
-  },
-  methods: {
-    togglePassword() {
-      this.showPassword = !this.showPassword
-    }
   }
 }
 </script>

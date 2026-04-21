@@ -11,6 +11,7 @@ export interface IPlatformInfo {
   sessionType: string,
   isWayland: boolean,
   isSnap: string,
+  isFlatpak: boolean,
   isPortable: string,
   isDevelopment: boolean,
   isAppImage: boolean,

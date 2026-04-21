@@ -89,11 +89,12 @@ jobs:
             arch: x64
             type: windows
             setup_python: true
-          - name: ubuntu-arm64
+          - name: ubuntu-22.04-arm
             arch: arm64
             type: linux
             setup_python: true
-            clean_zfs: true
+            setup_ruby: true
+            setup_flatpak: true
           - name: macos-14-large
             arch: x64
             type: macos
@@ -102,23 +103,15 @@ jobs:
             type: macos
     steps:
 
+      - name: setup LXD
+        uses: canonical/setup-lxd@main
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
+
       - name: Check out Git repository
         uses: actions/checkout@v1
 
-        # Oh the hacks I put in place for the snap build
-        # Why does it fill up zfs? I don't understand what it does at all
-      - name: Free Up ZFS Space
-        run: |
-          # Force unmount any snapcraft-related ZFS datasets that are busy
-          sudo zfs list -H -o name | grep "snapcraft" | sort -r | xargs -I{} sudo zfs unmount -f {} 2>/dev/null || true
-          # Destroy datasets (clones) first, deepest children first
-          sudo zfs list -H -o name | grep "snapcraft" | sort -r | xargs -I{} sudo zfs destroy -rR {} 2>/dev/null || true
-          # Then destroy any remaining snapshots
-          sudo zfs list -H -o name -t snapshot | grep "snapcraft" | xargs -I{} sudo zfs destroy -rR {} 2>/dev/null || true
-        if: matrix.os.clean_zfs
-
       - name: Install flatpak tools
-        if: matrix.os.type == 'linux' && matrix.os.arch != 'arm64'
+        if: matrix.os.setup_flatpak
         run: bash ./.github/scripts/install-build-deps.sh
 
       - name: Install azuresigntool
@@ -239,7 +232,7 @@ jobs:
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
-        if: matrix.os.type == 'linux' && matrix.os.arch != 'arm64'
+        if: matrix.os.type == 'linux'
 
       - name: Clean cache
         if: steps.cache-nm.outputs.cache-hit != 'true'

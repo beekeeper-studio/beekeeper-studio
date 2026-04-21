@@ -42,6 +42,7 @@
     <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
     <lock-manager />
+    <input-jwt-modal />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
@@ -88,6 +89,7 @@ import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcuts
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import KeychainWarning from '@/components/common/KeychainWarning.vue'
+import InputJwtModal from "@/components/common/modals/InputJwtModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -104,6 +106,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal, KeychainWarning,
+    InputJwtModal,
   },
   data() {
     return {

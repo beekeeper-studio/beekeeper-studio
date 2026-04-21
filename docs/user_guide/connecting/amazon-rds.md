@@ -38,7 +38,8 @@ Below is an example config in Beekeeper Studio once IAM permissions are setup, y
 
 ## Things to note
 
-- SSL has is required on most RDS instances, so ensure this is checked.
+- If you use security groups with time-limited IP allowlisting, idle connections may be dropped and fail to reconnect after the allowlist expires. See [Troubleshooting: Connections drop after IP allowlist expires](../../support/troubleshooting.md#connections-drop-after-ip-allowlist-expires) for how to adjust idle timeouts.
+- SSL is required on most RDS instances, so ensure this is checked.
 - You will need a credentials file configured and would need to follow the guide linked to set this up:
 [AWS CLI Configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 

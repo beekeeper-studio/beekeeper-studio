@@ -9,6 +9,7 @@ type ElectronWindow = Electron.BrowserWindow | undefined
 export interface IMenuActionHandler {
   togglePrimarySidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   toggleSecondarySidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
+  togglePrivacyMode: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   quit: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   undo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   redo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -28,6 +29,7 @@ export interface IMenuActionHandler {
   restart: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   contactSupport: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  openGettingStarted: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newWindow: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newQuery: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -46,6 +48,7 @@ export interface IMenuActionHandler {
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
+  simulatePlatform: (menuItem: Electron.MenuItem, win: ElectronWindow, platform: string) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void

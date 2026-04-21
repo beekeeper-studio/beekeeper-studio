@@ -1,31 +1,23 @@
-import { _electron as electron } from 'playwright';
-import { test, expect, beforeEach, afterEach } from '@playwright/test';
+import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { QueryTab } from '../pageComponents/QueryTab';
-import { Footer } from '../pageComponents/Footer';
-import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from 'e2e/helpers/launchElectron';
 
 const POSTGRES_QUERY = 'SELECT * FROM actor WHERE actor_id IN (1, 2);';
 
-let electronApp;
-let window;
-let queryTab;
-let footer;
-let resultPane;
-let userAttemptsTo;
+let electronApp: ElectronApplication;
+let win: Page;
+let queryTab: QueryTab;
+let userAttemptsTo: any;
 
 test.describe("Using the context menu", () => {
 
-    beforeEach(async () => {
-        electronApp = await electron.launch({
-            args: ['dist/main.js'],
-        });
-        window = await electronApp.firstWindow();
-        queryTab = new QueryTab(window);
-        resultPane = new QueryResultPane(window);
-        footer = new Footer(window);
-        userAttemptsTo = userActions(window);
+    test.beforeEach(async () => {
+        electronApp = await launchElectron();
+        win = await electronApp.firstWindow();
+        queryTab = new QueryTab(win);
+        userAttemptsTo = userActions(win);
 
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
@@ -35,35 +27,22 @@ test.describe("Using the context menu", () => {
         await expect(queryTab.queryTabTextArea).toBeVisible();
     });
 
-    afterEach(async () => {
+    test.afterEach(async () => {
         if (electronApp) {
             await electronApp.close();
         }
     });
 
     test("paste a query using context menu", async () => {
-    // adding a default text to be asserted later
-    await window.evaluate((clipboardText) => navigator.clipboard.writeText(clipboardText), POSTGRES_QUERY);
+      // adding a default text to be asserted later
+      await win.evaluate((clipboardText) => window.main.writeTextToClipboard(clipboardText), POSTGRES_QUERY);
 
-    await queryTab.queryTabTextArea.click({
-    button: 'right'
-  });
+      await queryTab.queryTabTextArea.click({
+        button: 'right'
+      });
 
-    await window.getByRole('menuitem', { name: 'Paste' }).click();
-    const queryTabText = await queryTab.queryTabTextArea.innerText(); 
-    await expect(queryTabText).toContain(POSTGRES_QUERY);
-    });
-
-    test("paste a password using context menu", async () => {
-    // adding a default text to be asserted later
-    await window.evaluate((clipboardText) => navigator.clipboard.writeText(clipboardText), POSTGRES_QUERY);
-    
-    await queryTab.queryTabTextArea.click({
-    button: 'right'
-  });
-
-    await window.getByRole('menuitem', { name: 'Paste' }).click();
-    const queryTabText = await queryTab.queryTabTextArea.innerText(); 
-    await expect(queryTabText).toContain(POSTGRES_QUERY);
+      await win.getByRole('menuitem', { name: 'Paste' }).click();
+      const queryTabText = await queryTab.queryTabTextArea.innerText();
+      expect(queryTabText).toContain(POSTGRES_QUERY);
     });
 });
