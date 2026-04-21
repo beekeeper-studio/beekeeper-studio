@@ -4,6 +4,7 @@ import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from '../helpers/launchElectron';
 
 let electronApp;
 let window;
@@ -14,7 +15,7 @@ let userAttemptsTo;
 
 test.describe('New Connection Tests', () => {
     test.beforeEach(async () => {
-        electronApp = await electron.launch({ args: ['dist/main.js'] });
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         userAttemptsTo = userActions(window);
         newDatabaseConnection = new NewDatabaseConnection(window);

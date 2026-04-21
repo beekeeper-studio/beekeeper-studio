@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
@@ -8,6 +8,8 @@ export default defineConfig({
   },
   fullyParallel: true,
   workers: 3,
+  // Retry failed tests
+  retries: process.env.CI ? 2 : 0, // 2 retries in CI, 0 locally
   use: {
     actionTimeout: 10000,
     trace: 'on-first-retry',
