@@ -130,6 +130,7 @@ async function initBasics() {
   try {
     loadEncryptionKey()
   } catch (err) {
+    log.error('Failed to load encryption key', err)
     electron.dialog.showErrorBox(
       'Encryption Error',
       err.message || 'Could not load encryption key. Please report this at https://github.com/beekeeper-studio/beekeeper-studio/issues'

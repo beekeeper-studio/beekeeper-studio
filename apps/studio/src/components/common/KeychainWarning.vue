@@ -13,12 +13,14 @@
         >Read more</a>
       </span>
     </div>
-    <a
+    <button
+      type="button"
       class="close-button"
-      @click.prevent="dismiss"
+      aria-label="Dismiss keychain warning"
+      @click="dismiss"
     >
       <i class="material-icons">close</i>
-    </a>
+    </button>
   </div>
 </template>
 
@@ -29,14 +31,14 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
 export default Vue.extend({
   name: 'KeychainWarning',
   data() {
+    // window.keychainInsecure is set once during renderer bootstrap
+    // (see renderer.ts -> requestKeychainInsecure) and never changes.
     return {
+      insecure: !!window.keychainInsecure,
       dismissed: SmartLocalStorage.getBool('dismissedKeychainWarning', false),
     }
   },
   computed: {
-    insecure(): boolean {
-      return !!window.keychainInsecure
-    },
     visible(): boolean {
       return this.insecure && !this.dismissed
     }
@@ -75,9 +77,14 @@ export default Vue.extend({
   }
 
   .close-button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
     cursor: pointer;
     opacity: 0.7;
-    &:hover {
+    &:hover,
+    &:focus-visible {
       opacity: 1;
     }
   }

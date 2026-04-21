@@ -175,9 +175,11 @@ async function initState(sId: string, port: MessagePortMain) {
 
 /** Requests the encryption key from the main process via IPC. */
 function fetchEncryptionKey(): Promise<{ key: string, insecure: boolean }> {
+  log.info('Requesting encryption key from main process')
   return new Promise((resolve) => {
     const handler = ({ data }) => {
       if (data.type === 'encryptionKey') {
+        log.info('Received encryption key from main process')
         process.parentPort.off('message', handler)
         resolve({ key: data.key, insecure: data.insecure })
       }
