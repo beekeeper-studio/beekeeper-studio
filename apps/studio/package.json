@@ -128,7 +128,7 @@
     "simple-encryptor": "^3.0.0",
     "source-map-support": "^0.5.21",
     "split.js": "^1.6.5",
-    "sql-formatter": "15.6.10",
+    "sql-formatter": "15.7.3",
     "sql-query-identifier": "^2.10.0",
     "sqlanywhere": "beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d",
     "ssh-config": "^5.1.0",
