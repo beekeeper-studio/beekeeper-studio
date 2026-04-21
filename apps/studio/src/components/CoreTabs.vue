@@ -160,6 +160,12 @@
           :tab="tab"
           @close="close"
         />
+        <ServerMigration
+          v-if="tab.tabType === 'migration'"
+          :active="activeTab?.id === tab.id"
+          :tab="tab"
+          @close="close"
+        />
         <ImportTable
           v-if="tab.tabType === 'import-table'"
           :tab="tab"
@@ -304,6 +310,7 @@ import TableBuilder from './TabTableBuilder.vue'
 import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
 import ImportTable from './TabImportTable.vue'
 import DatabaseBackup from './TabDatabaseBackup.vue'
+import ServerMigration from './TabServerMigration.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
@@ -345,6 +352,7 @@ export default Vue.extend({
     TabWithTable,
     TabIcon,
     DatabaseBackup,
+    ServerMigration,
     PendingChangesButton,
     ConfirmationModal,
     SqlFilesImportModal,
@@ -451,6 +459,7 @@ export default Vue.extend({
         { event: AppEvent.backupDatabase, handler: this.backupDatabase },
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
+        { event: AppEvent.migrateServer, handler: this.migrateServer },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
       ]
     },
@@ -803,6 +812,14 @@ export default Vue.extend({
       if (existing) return this.$store.dispatch('tabs/setActive', existing);
       this.addTab(t);
     },
+    migrateServer() {
+      const t = { tabType: 'migration' };
+      t.title = 'Server Migration';
+      t.unsavedChanges = false;
+      const existing = this.tabItems.find((tab) => matches(tab, t));
+      if (existing) return this.$store.dispatch('tabs/setActive', existing);
+      this.addTab(t);
+    },
     duplicateDatabaseTable({ item: dbActionParams, action: dbAction }) {
       this.dbElement = dbActionParams.name
       this.dbAction = dbAction
@@ -1081,6 +1098,10 @@ export default Vue.extend({
         await this.$store.dispatch('data/queries/reload', tab.queryId)
       }
 
+      if (tab.tabType === 'migration') {
+        this.$root.$emit(AppEvent.migrationTabClosed)
+      }
+
       const { schemaName, tabType, tableName } = tab;
       const closingSidebarItem = `${tabType}.${schemaName}.${tableName}`;
       if(closingSidebarItem === this.selectedSidebarItem){
@@ -1196,6 +1217,12 @@ export default Vue.extend({
 
   async mounted() {
     this.registerHandlers(this.rootBindings)
+
+    if (!this.$store.state.connected && this.tabItems.length === 0) {
+      this.$nextTick(() => {
+        this.migrateServer()
+      })
+    }
   }
 })
 </script>
