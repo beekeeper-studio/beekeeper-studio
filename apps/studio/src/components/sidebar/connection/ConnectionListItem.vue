@@ -121,9 +121,9 @@ export default {
     label() {
       if (this.savedConnection) {
         return this.savedConnection.name
-      } else if (this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') {
+      } else if ((this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') && this.config.defaultDatabase) {
         return window.main.basename(this.config.defaultDatabase)
-      } else if (this.config.connectionType === 'sqlanywhere' && this.config.sqlAnywhereOptions.mode === 'file') {
+      } else if (this.config.connectionType === 'sqlanywhere' && this.config.sqlAnywhereOptions?.mode === 'file' && this.config.sqlAnywhereOptions?.databaseFile) {
         return window.main.basename(this.config.sqlAnywhereOptions.databaseFile);
       }
 
