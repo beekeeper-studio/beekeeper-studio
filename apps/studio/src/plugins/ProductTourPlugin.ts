@@ -48,6 +48,10 @@ const flows: Record<
           }
         },
         async shouldShow(context: Context) {
+          if (window.platformInfo.testMode) {
+            return false;
+          }
+
           if (context.store.getters.isCommunity) {
             return false;
           }
