@@ -51,10 +51,6 @@ export default Vue.extend({
   flex-direction: column;
 }
 
-.base-modal > * {
-  box-sizing: border-box;
-}
-
 .base-modal-header {
   display: flex;
   align-items: center;
@@ -80,11 +76,11 @@ export default Vue.extend({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  min-width: 26px;
-  height: 26px;
-  line-height: 26px;
-  border-radius: 26px;
+  width: 1.625rem;
+  min-width: 1.625rem;
+  height: 1.625rem;
+  line-height: 1.625rem;
+  border-radius: 1.625rem;
   padding: 0;
   margin: 0;
   margin-right: -0.35em;
@@ -101,7 +97,7 @@ export default Vue.extend({
 
 .base-modal-close .material-icons,
 .base-modal-close .material-icons-outlined {
-  font-size: 20px;
+  font-size: 1.25rem;
   color: var(--text-dark);
 }
 
@@ -116,7 +112,6 @@ export default Vue.extend({
   gap: 0.5rem;
   width: 100%;
   justify-content: flex-end;
-  border: 0 !important;
   padding-inline: 1.2rem;
   padding-bottom: 0.8rem;
 }
