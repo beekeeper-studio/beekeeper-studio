@@ -265,7 +265,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   async listTableTriggers(table: string, schema: string) {
     // SQL Server does not have information_schema for triggers, so other way around
     // is using sp_helptrigger stored procedure to fetch triggers related to table
-    const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
+    const qualified = `${D.wrapIdentifier(schema)}.${D.wrapIdentifier(table)}`;
+    const sql = `EXEC sp_helptrigger '${escapeString(qualified)}'`;
 
     const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
 
@@ -372,7 +373,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
     const triggers = await this.listTableTriggers(table, schema)
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
-    const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
+    const qualified = `${D.wrapIdentifier(schema)}.${D.wrapIdentifier(table)}`;
+    const sizeQuery = `EXEC sp_spaceused N'${escapeString(qualified)}'; `
     const { data }  = await this.driverExecuteSingle(sizeQuery, { overrideReadonly: true })
     const row = data.recordset ? data.recordset[0] || {} : {}
     const relations = await this.getTableKeys(table, schema)
@@ -586,7 +588,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
       return ''
     }
 
-    elementName = this.wrapValue(schema + '.' + elementName)
+    elementName = this.wrapValue(`${D.wrapIdentifier(schema)}.${D.wrapIdentifier(elementName)}`)
     newElementName = this.wrapValue(newElementName)
 
     return `EXEC sp_rename ${elementName}, ${newElementName};`
