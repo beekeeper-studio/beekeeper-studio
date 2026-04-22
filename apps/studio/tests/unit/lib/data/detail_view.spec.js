@@ -160,6 +160,26 @@ describe("Detail View", () => {
       expect(result.jsonLikeField).toEqual({ key: 'value', nested: { prop: true } })
       expect(result.textField).toBe('normal text')
     })
+
+    it('should not parse postgres array literals when dataType is not JSON', () => {
+      const rowData = {
+        id: 31,
+        categories: '{foo,bar}',
+        textField: 'normal text'
+      }
+
+      const tableColumns = [
+        { field: 'id', dataType: 'integer' },
+        { field: 'categories', dataType: '_text' },
+        { field: 'textField', dataType: 'varchar' }
+      ]
+
+      const result = parseRowDataForJsonViewer(rowData, tableColumns)
+
+      expect(result.id).toBe(31)
+      expect(result.categories).toBe('{foo,bar}')
+      expect(result.textField).toBe('normal text')
+    })
     
     it('should detect and parse JSON array strings even when dataType is not JSON', () => {
       const rowData = {

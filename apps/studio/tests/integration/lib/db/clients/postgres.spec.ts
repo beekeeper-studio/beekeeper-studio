@@ -260,6 +260,29 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     })
 
+    it("Should allow me to update enum array values using postgres array literal", async () => {
+      const columns = await util.connection.listTableColumns("extra_moody_people")
+      const moodsColumn = columns.find((c) => c.columnName === "current_moods")
+
+      const updates = [{
+        value: "{ok,happy}",
+        column: "current_moods",
+        columnObject: moodsColumn,
+        primaryKeys: [
+          { column: 'id', value: 1 }
+        ],
+        columnType: "_this_is_a_mood",
+        table: "extra_moody_people",
+      }]
+
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        await util.knex("extra_moody_people").insert({ id: 1, current_moods: ['sad', 'happy'] })
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).toMatchObject([{ id: 1, current_moods: ['ok', 'happy'] }])
+      }
+    })
 
     it("Should allow me to update rows with array types when passed as string", async () => {
       const columns = await util.connection.listTableColumns("witharrays")
@@ -412,6 +435,45 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
       const expectedDefault = `SELECT * FROM "public"."jobs" WHERE "job_name" IN ($1,$2) ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
       const expectedInline = `SELECT * FROM "public"."jobs" WHERE "job_name" IN ('Programmer','Surgeon''s Assistant') ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
+
+      expect(fmt(defaultQuery)).toBe(fmt(expectedDefault))
+      expect(fmt(inlineParams)).toBe(fmt(expectedInline))
+    });
+
+    it("should build contains filter SQL for arrays and text columns", async () => {
+      const client = new PostgresClient(null, null);
+      const fmt = (sql: string) =>
+        safeSqlFormat(sql, { language: 'postgresql' })
+
+      const options: STQOptions = {
+        table: "jobs",
+        offset: 0,
+        limit: 100,
+        orderBy: [{ field: "hourly_rate", dir: "ASC" }],
+        filters: [
+          {
+            field: "tags",
+            type: "contains",
+            value: "urgent",
+          },
+        ],
+        selects: ["*"],
+        schema: "public",
+        version: {
+          version: "",
+          number: 0,
+          hasPartitions: false,
+        },
+      }
+
+      const { query: defaultQuery } = client.buildSelectTopQueries(options)
+      const { query: inlineParams } = client.buildSelectTopQueries({
+        ...options,
+        inlineParams: true
+      })
+
+      const expectedDefault = `SELECT * FROM "public"."jobs" WHERE (CASE WHEN jsonb_typeof(to_jsonb("tags")) = 'array' THEN EXISTS (SELECT 1 FROM jsonb_array_elements_text(to_jsonb("tags")) AS element(value) WHERE element.value = $1) ELSE "tags"::text ILIKE '%' || $1 || '%' END) ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
+      const expectedInline = `SELECT * FROM "public"."jobs" WHERE (CASE WHEN jsonb_typeof(to_jsonb("tags")) = 'array' THEN EXISTS (SELECT 1 FROM jsonb_array_elements_text(to_jsonb("tags")) AS element(value) WHERE element.value = 'urgent') ELSE "tags"::text ILIKE '%' || 'urgent' || '%' END) ORDER BY "hourly_rate" ASC LIMIT 100 OFFSET 0`
 
       expect(fmt(defaultQuery)).toBe(fmt(expectedDefault))
       expect(fmt(inlineParams)).toBe(fmt(expectedInline))
