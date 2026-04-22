@@ -1,6 +1,7 @@
 <template>
   <div
     class="query-editor"
+    :class="{ 'editing-result': editingResult }"
     ref="container"
     v-hotkey="keymap"
   >
@@ -183,12 +184,36 @@
               v-model="dryRun"
             >
           </x-button>
-          <!-- <x-button -->
-          <!--   @click.prevent="formatterPreset" -->
-          <!--   class="btn btn-flat btn-small" -->
-          <!-- > -->
-          <!--   Open Query Formatter -->
-          <!-- </x-button> -->
+          <x-button
+            class="btn btn-flat btn-small settings-btn"
+            menu
+          >
+            <i class="material-icons">settings</i>
+            <i class="material-icons">arrow_drop_down</i>
+            <x-menu>
+              <x-menuitem disabled togglable>
+                <x-label>Editor keymap</x-label>
+              </x-menuitem>
+              <x-menuitem
+                :key="t.value"
+                v-for="t in keymapTypes"
+                togglable
+                :toggled="t.value === userKeymap"
+                @click.prevent="userKeymap = t.value"
+              >
+                <x-label>{{ t.name }}</x-label>
+              </x-menuitem>
+              <x-menuitem
+                togglable
+                :toggled="wrapText"
+                @click.prevent="wrapText = !wrapText"
+              >
+                <x-label class="flex-between">
+                  Wrap Text
+                </x-label>
+              </x-menuitem>
+            </x-menu>
+          </x-button>
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -249,6 +274,12 @@
             </x-button>
           </x-buttons>
         </div>
+      </div>
+      <div class="top-panel-overlay" v-if="editingResult">
+        <div>Query editor is disabled while editing results.</div>
+        <button class="btn btn-primary" type="button" @click="stopEditing">
+          Stop Editing
+        </button>
       </div>
     </div>
     <div class="not-supported" v-if="!enabled">
@@ -332,7 +363,6 @@
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
-        @wrap-text="wrapText = !wrapText"
         :execute-time="executeTime"
         :elapsed-time="elapsedTime"
         :active="active"
@@ -897,6 +927,19 @@
             this.queryMagic.extensions,
           ]
         }
+      },
+      userKeymap: {
+        get() {
+          const value = this.settings?.keymap.value;
+          return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+        },
+        set(value) {
+          if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+          this.trigger(AppEvent.switchUserKeymap, value)
+        }
+      },
+      keymapTypes() {
+        return this.$config.defaults.keymapTypes
       },
     },
     watch: {
@@ -1845,6 +1888,36 @@
     100% {
       box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
     }
+  }
+
+  .top-panel {
+    position: relative;
+  }
+
+  .top-panel-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background-color: rgba(from var(--theme-bg) r g b / 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .btn.settings-btn {
+    // padding-inline: 0.5rem;
+    min-width: 0;
+
+    .material-icons {
+      font-size: 1rem;
+    }
+  }
+
+  .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
+    visibility: hidden;
   }
 </style>
 
