@@ -1392,6 +1392,7 @@
         this.results = []
         this.resultsEditData = []
         this.resultEditableMap = []
+        this.editingResult = false
         this.selectedResult = 0
         let identification = []
         try {

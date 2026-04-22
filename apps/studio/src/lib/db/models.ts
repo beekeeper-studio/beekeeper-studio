@@ -269,8 +269,11 @@ export interface FieldEditData {
   linkedSchema?: string;
   isPK?: boolean;
   generated?: boolean;
+  nullable?: boolean;
+  array?: boolean;
   readOnlyReason?: FieldReadOnlyReason;
   dataType?: string;
+  bksField?: BksField;
 }
 
 export interface FieldDescriptor {

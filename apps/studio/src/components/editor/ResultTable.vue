@@ -53,7 +53,7 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
-  import { escapeHtml } from '@shared/lib/tabulator'
+  import { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
   import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
@@ -70,7 +70,7 @@
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
   import rawLog from '@bksLogger';
-  import { FieldDescriptor, FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
+  import { FieldDescriptor, FieldEditData, FieldReadOnlyReason, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { format } from 'sql-formatter'
@@ -377,50 +377,102 @@
           cssClass += ' generated-column';
         }
 
+        if (this.editData && !editData?.editable && !editData?.isPK) {
+          cssClass += ` read-only-field`;
+        }
+
         if (magic.formatterParams?.fk) {
           magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
         }
 
         const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
-        const defaults = {
-          formatter: this.cellFormatter,
-          formatterParams: {
-            binaryEncoding: this.binaryEncoding,
-          },
-        }
 
         const editorType = this.editorType(editData?.dataType);
+        const useVerticalNavigation = editorType === 'textarea'
+
+        const formatterParams: FormatterParams = {
+          fk: false,
+          fkOnClick: undefined,
+          isPK: editData?.isPK,
+          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+        }
+
+        let headerTooltip = escapeHtml(column.name);
+
+        if (editData) {
+          headerTooltip = escapeHtml(`${editData?.generated ? '[Generated]' : ''}${editData?.columnName ?? column.name} ${editData?.dataType ?? ''}`);
+
+          if (!editData.editable) {
+            switch (editData.readOnlyReason) {
+              case FieldReadOnlyReason.NoLinkedTable:
+                headerTooltip += ' -> Could not find a table to link this column to within the query.';
+                break;
+              case FieldReadOnlyReason.MissingPK:
+                headerTooltip += ' -> Could not find all required Primary Keys for this column within the query.';
+                break;
+              case FieldReadOnlyReason.ImproperMapping:
+                headerTooltip == ' -> Could not map field to an existing table column.';
+                break;
+              case FieldReadOnlyReason.IsGenerated:
+                headerTooltip += ' -> Cannot edit generated columns.';
+                break;
+            }
+          }
+        }
 
         const result = {
-          ...defaults,
           title,
+          field: column.id,
           titleFormatter: this.headerFormatter,
           titleFormatterParams: {
             columnName: title,
             dataType: editData?.dataType,
             generated: editData?.generated
           },
-          field: column.id,
           titleDownload: escapeHtml(column.name),
           dataType: editData?.dataType,
           width: columnWidth,
           mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-          formatter: this.cellFormatter,
           maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
           tooltip: this.cellTooltip,
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
           headerMenu: columnMenu,
+          headerTooltip,
           resizable: 'header',
           cssClass,
           editable: this.cellEditCheck,
           editor: editorType,
+          cellEditCancelled: (cell: CellComponent) => cell.getRow().normalizeHeight(),
+          formatter: this.cellFormatter,
+          formatterParams,
+          editorParams: {
+            verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+            dataType: editData?.dataType,
+            search: true,
+            allowEmpty: true,
+            preserveObject: editData?.array,
+            onPreserveObjectFail: (value: unknown) => {
+              log.error('Failed to preserve object for', value)
+              return true
+            },
+            typeHint: editData?.dataType?.toLowerCase(),
+            bksField: editData?.bksField,
+            binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+          },
           ...magicStuff
         }
 
         if (column.dataType === 'INTERVAL') {
           // add interval sorter
           result['sorter'] = this.intervalSorter;
+        } else if (editData?.dataType && /^(bool|boolean)$/i.test(editData?.dataType)) {
+          const values = [
+            { label: 'false', value: this.dialectData.boolean?.false ?? false },
+            { label: 'true', value: this.dialectData.boolean?.true ?? true },
+          ];
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
         }
 
         const results = [];
