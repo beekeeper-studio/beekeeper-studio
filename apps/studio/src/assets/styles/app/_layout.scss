@@ -30,7 +30,9 @@ i {
   font-weight: bold;
   text-transform: uppercase;
   font-size: 80%;
-  letter-spacing: 0.05rem;
+  // NOTE: This was probably ok when we still use Roboto as a font.
+  // Now we use system font. So at least in mac, this isn't good.
+  // letter-spacing: 0.05rem;
 }
 .noselect {
   @include noselect;

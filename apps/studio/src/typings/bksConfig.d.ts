@@ -341,6 +341,7 @@ declare interface IBksConfig {
             cloneSelection: string;
             copySelection: string;
             deleteSelection: string;
+            jsonViewerSidebar: string;
             openInSqlEditor: string;
             openQuickSearch: string;
             pasteSelection: string;
@@ -373,6 +374,9 @@ declare interface IBksConfig {
             openInBackground: string;
             selectDown: string[];
             selectUp: string[];
+        };
+        resultTable: {
+            openEditorModal: string;
         };
         tab: {
             closeTab: string;

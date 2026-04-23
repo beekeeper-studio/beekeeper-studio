@@ -1,3 +1,4 @@
+import { IsNotEmpty, IsString } from "class-validator"
 import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
@@ -280,6 +281,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     return this;
   }
 
+  @IsString({ message: 'Name is required' })
+  @IsNotEmpty({ message: 'Name is required' })
   @Column("varchar")
   name!: string
 

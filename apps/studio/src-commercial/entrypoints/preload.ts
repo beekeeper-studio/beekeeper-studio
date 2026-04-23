@@ -72,6 +72,7 @@ export const api = {
     ipcRenderer.send('install-update');
   },
   openExternally(link: string) {
+    // URL protocol is validated in the main process by safeOpenExternal.
     ipcRenderer.send(AppEvent.openExternally, [link]);
   },
   resolve(toResolve: string) {
@@ -103,7 +104,9 @@ export const api = {
     return electron.dialog.showSaveDialogSync(args);
   },
   openLink(link: string) {
-    return electron.shell.openExternal(link);
+    // Route through the main process so safeOpenExternal validates the
+    // protocol — never call shell.openExternal directly from preload.
+    ipcRenderer.send(AppEvent.openExternally, [link]);
   },
   onMaximize(func: any, sId: string) {
     ipcRenderer.on(`maximize-${sId}`, func);

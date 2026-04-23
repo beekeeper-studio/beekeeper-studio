@@ -1,6 +1,7 @@
 <template>
   <div
     class="query-editor"
+    :class="{ 'editing-result': editingResult }"
     ref="container"
     v-hotkey="keymap"
   >
@@ -34,7 +35,7 @@
       <component
         :is="editorComponent"
         :value="unsavedText"
-        :read-only="editor.readOnly"
+        :read-only="readOnly"
         :is-focused="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
@@ -183,12 +184,6 @@
               v-model="dryRun"
             >
           </x-button>
-          <!-- <x-button -->
-          <!--   @click.prevent="formatterPreset" -->
-          <!--   class="btn btn-flat btn-small" -->
-          <!-- > -->
-          <!--   Open Query Formatter -->
-          <!-- </x-button> -->
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -543,6 +538,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+  import { wait } from '@/shared/lib/wait'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -567,7 +563,6 @@
         editor: {
           height: 100,
           selection: null,
-          readOnly: false,
           cursorIndex: 0,
           cursorIndexAnchor: 0,
           initialized: false,
@@ -635,6 +630,12 @@
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      readOnly() {
+        if (this.remoteDeleted) {
+          return true;
+        }
+        return false;
+      },
       queryTabTitle() {
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title;
@@ -930,11 +931,8 @@
       },
       remoteDeleted() {
         if (this.remoteDeleted) {
-          this.editor.readOnly = 'nocursor'
           this.tab.unsavedChanges = false
           this.tab.alert = true
-        } else {
-          this.editor.readOnly = false
         }
       },
       unsavedChanges() {
@@ -1186,13 +1184,20 @@
           this.$refs.table.rebuildColumns()
 
           if (!resultEditData.some((e) => e.editable)) {
-            this.$noty.warning("There is not enough information in the result set to generate an update query. Make sure all primary keys are present.")
+            this.$noty.warning("Editing results cannot be enabled because no primary keys are included in the query", {
+              buttons: [
+                Noty.button('Learn More', 'btn btn-primary', () => {
+                  window.main.openExternally('https://beekeeperstudio.io/user_guide_sql_editor/editing-data.md')
+                })
+              ]
+            })
             this.$set(this.resultEditableMap, this.selectedResult, false)
             await this.$nextTick();
             return;
           }
         }
         this.editingResult = true;
+        wait(800).then(() => this.$tour.start("startedEditingResult"));
       },
       async saveChanges() {
         // This covers the instance where someone runs a query, toggles manual commit on, and then makes edits and tries to save them. This ensures it will then be inside a transaction
@@ -1392,6 +1397,7 @@
         this.results = []
         this.resultsEditData = []
         this.resultEditableMap = []
+        this.editingResult = false
         this.selectedResult = 0
         let identification = []
         try {
@@ -1499,6 +1505,7 @@
           if (found) {
             this.$store.dispatch('updateTables')
           }
+          wait(1200).then(() => this.$tour.start("ranQuerySuccessfully"));
         } catch (ex) {
           log.error(ex)
           if(this.running) {
@@ -1665,6 +1672,12 @@
         this.timerInterval = null;
       },
       editorContextMenu(_event, _context, items) {
+        if (this.readOnly) {
+          return [
+            ...items,
+            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+          ]
+        }
         return [
           ...items,
           {
@@ -1845,6 +1858,28 @@
     100% {
       box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
     }
+  }
+
+  .top-panel {
+    position: relative;
+  }
+
+  .top-panel-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background-color: rgba(from var(--theme-bg) r g b / 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  // Hide the dot on the range highlight when not editing result
+  .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
+    visibility: hidden;
   }
 </style>
 

@@ -17,14 +17,22 @@ export function initializeSecurity() {
   }
 
   if (bksConfig.security.disconnectOnIdle) {
+    let hasDisconnectedWhileIdle = false;
     idleCheckInterval = setInterval(() => {
-      if (
+      const overThreshold =
         powerMonitor.getSystemIdleTime() >
-        bksConfig.security.idleThresholdSeconds
-      ) {
-        log.info("User has been idle, disconnecting.");
-        disconnect("User has been idle");
+        bksConfig.security.idleThresholdSeconds;
+
+      if (!overThreshold) {
+        hasDisconnectedWhileIdle = false;
+        return;
       }
+
+      if (hasDisconnectedWhileIdle) return;
+
+      log.info("User has been idle, disconnecting.");
+      disconnect("User has been idle");
+      hasDisconnectedWhileIdle = true;
     }, (bksConfig.security.idleCheckIntervalSeconds || 1) * 1000);
     log.info("Idle checker started");
   }

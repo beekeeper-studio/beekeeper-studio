@@ -86,6 +86,8 @@ import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
 import addBastionAuth from './20260324_add_bastion_auth'
+import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
+import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 
 import ultimate from './ultimate/index'
 
@@ -133,6 +135,8 @@ const realMigrations = [
   addPositionToItems,
   addBastionAuth,
   addOnboardingNotyShown,
+  addLicenseInvalidatedAt,
+  cleanupDuplicateLicenseKeys,
 ]
 
 // fixtures require the models

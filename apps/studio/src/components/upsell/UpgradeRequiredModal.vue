@@ -4,7 +4,6 @@
       class="vue-dialog beekeeper-modal upgrade-modal"
       name="upgrade-modal"
       height="auto"
-      @opened="$refs.learnMore.focus()"
     >
       <div
         class="dialog-content"
