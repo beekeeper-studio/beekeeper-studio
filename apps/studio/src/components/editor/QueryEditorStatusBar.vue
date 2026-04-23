@@ -6,11 +6,12 @@
     <slot name="left-actions"></slot>
     <template v-if="results?.length > 0">
       <div
+        id="query-editor-statusbar"
         class="truncate statusbar-info"
         v-hotkey="keymap"
       >
         <span
-          v-show="results?.length > 1 && !editing"
+          v-show="results?.length > 1"
           class="statusbar-item result-selector"
           :title="'Results'"
         >
@@ -53,7 +54,7 @@
         </div>
         <div
           class="statusbar-item affected-rows"
-          v-if="!editing && affectedRowsText"
+          v-if="affectedRowsText"
           :title="affectedRowsText + ' ' + 'Rows Affected'"
         >
           <i class="material-icons">clear_all</i>
@@ -61,17 +62,11 @@
         </div>
         <span
           class="statusbar-item execute-time "
-          v-if="!editing && executeTimeText"
+          v-if="executeTimeText"
           :title="executionTimeTitle"
         >
           <i class="material-icons">update</i>
           <span>{{ executeTimeText }}</span>
-        </span>
-        <span
-          class="statusbar-item editing-count"
-          v-if="editing"
-        >
-          <span>Total changes: {{ changesCount }}</span>
         </span>
       </div>
     </template>
@@ -93,7 +88,11 @@
     >
       Reset
     </x-button>
-    <x-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
+    <x-buttons
+      v-show="canEdit && editing && changesCount > 0"
+      id="apply-changes-btn"
+      class="pending-changes"
+    >
       <x-button
         class="btn btn-primary btn-badge btn-icon"
         @click.prevent="saveChanges"
@@ -122,8 +121,30 @@
         </x-menu>
       </x-button>
     </x-buttons>
+    <span
+      v-tooltip="resultEditable ?
+        'Edit table data directly from query results' :
+        'There is not enough information in the result set to generate an update query.'"
+    >
+      <x-button
+        v-if="canEdit && !editing"
+        :disabled="results?.length === 0 || !resultEditable"
+        class="btn btn-flat btn-icon"
+        id="edit-data-btn"
+        @click.prevent="editResults"
+      >
+        <i class="material-icons">edit</i>
+        Edit Data
+      </x-button>
+    </span>
     <x-button
-      v-show="!editing"
+      v-if="canEdit && editing && changesCount <= 0"
+      class="btn btn-primary"
+      @click.prevent="stopEditing"
+    >
+      Stop Editing
+    </x-button>
+    <x-button
       class="btn btn-flat btn-icon end"
       :disabled="results?.length === 0"
       menu
@@ -180,27 +201,35 @@
         </x-menuitem>
       </x-menu>
     </x-button>
-    <span
-      v-tooltip="resultEditable ?
-        'Edit table data directly from query results' :
-        'There is not enough information in the result set to generate an update query.'"
-    >
-      <x-button
-        v-if="canEdit && !editing"
-        :disabled="results?.length === 0 || !resultEditable"
-        class="btn btn-flat btn-icon"
-        @click.prevent="editResults"
-      >
-        <i class="material-icons">edit</i>
-        Edit Data
-      </x-button>
-    </span>
     <x-button
-      v-if="canEdit && editing"
-      class="btn btn-primary"
-      @click.prevent="stopEditing"
+      class="actions-btn btn btn-flat settings-btn"
+      menu
     >
-      Stop Editing
+      <i class="material-icons">settings</i>
+      <i class="material-icons">arrow_drop_down</i>
+      <x-menu>
+        <x-menuitem disabled togglable>
+          <x-label>Editor keymap</x-label>
+        </x-menuitem>
+        <x-menuitem
+          :key="t.value"
+          v-for="t in keymapTypes"
+          togglable
+          :toggled="t.value === userKeymap"
+          @click.prevent="userKeymap = t.value"
+        >
+          <x-label>{{ t.name }}</x-label>
+        </x-menuitem>
+        <x-menuitem
+          togglable
+          :toggled="wrapText"
+          @click.prevent="$emit('wrap-text')"
+        >
+          <x-label class="flex-between">
+            Wrap Text
+          </x-label>
+        </x-menuitem>
+      </x-menu>
     </x-button>
   </statusbar>
 </template>
@@ -208,6 +237,7 @@
 import humanizeDuration from 'humanize-duration';
 import Statusbar from '../common/StatusBar.vue';
 import { mapState, mapGetters } from 'vuex';
+import { AppEvent } from '@/common/AppEvent';
 import formatSeconds from "@/lib/time/formatSeconds";
 
 const shortEnglishHumanizer = humanizeDuration.humanizer({
@@ -227,7 +257,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable', 'showApplyForcefully'],
   components: { Statusbar },
   data() {
     return {
@@ -261,6 +291,19 @@ export default {
   computed: {
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState('settings', ['settings']),
+    userKeymap: {
+      get() {
+        const value = this.settings?.keymap.value;
+        return value && this.keymapTypes.map(k => k.value).includes(value) ? value : 'default';
+      },
+      set(value) {
+        if (value === this.userKeymap || !this.keymapTypes.map(k => k.value).includes(value)) return;
+        this.trigger(AppEvent.switchUserKeymap, value)
+      }
+    },
+    keymapTypes() {
+      return this.$config.defaults.keymapTypes
+    },
     hasUsedDropdown: {
       get() {
         return this.settings?.hideResultsDropdown?.value ?? false
@@ -377,5 +420,8 @@ export default {
 .global-status-bar x-button.btn.btn-primary {
   background-color: var(--theme-base);
   color: rgb(from var(--theme-bg) r g b / 87%);
+}
+#apply-changes-btn.force-show {
+  display: flex !important;
 }
 </style>
