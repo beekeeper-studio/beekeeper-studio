@@ -18,7 +18,7 @@ import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
-import { overwriteConfig } from '@/common/bksConfig/mainBksConfig'
+import { overwriteConfig, getConfigContent } from '@/common/bksConfig/mainBksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -189,6 +189,17 @@ ipcMain.handle('overwriteConfig', (_event, options: {
     overwriteConfig(options.type, options.content);
   } catch (err) {
     log.error('Failed to save user config from renderer request', err)
+    throw err
+  }
+})
+
+ipcMain.handle('getConfigContent', (_event, options: {
+  type: "user";
+}) => {
+  try {
+    return getConfigContent(options.type);
+  } catch (err) {
+    log.error('Failed to read user config from renderer request', err)
     throw err
   }
 })

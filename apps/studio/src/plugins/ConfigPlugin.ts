@@ -49,9 +49,12 @@ export default {
     const BksConfig = BksConfigProvider.create({
       source: window.bksConfigSource,
       platformInfo: window.platformInfo,
-      onOverwrite: async (content) =>
+      onOverwrite: async (type, content) =>
         // Delegate this to the main process
-        await window.main.overwriteConfig("user", content),
+        await window.main.overwriteConfig(type, content),
+      onGetContent: async (type) =>
+        // Delegate this to the main process
+        await window.main.getConfigContent(type),
     });
     window.bksConfig = BksConfig;
     Vue.prototype.$bksConfig = BksConfig;

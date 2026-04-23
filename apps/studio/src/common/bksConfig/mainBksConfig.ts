@@ -199,14 +199,26 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
   return readConfig(filePath);
 }
 
-export function overwriteConfig(_type: "user", content: string): void {
+function resolveConfigPathByType(type: "user"): string {
   const file = platformInfo.isDevelopment
     ? "local.config.ini"
     : "user.config.ini";
+  return path.join(resolveConfigDir(), file);
+}
 
-  log.debug(`Saving config ${file}.`);
+export function getConfigContent(_type: "user"): string {
+  const filePath = resolveConfigPathByType("user");
+  if (!existsSync(filePath)) {
+    return "";
+  }
+  return readFileSync(filePath, "utf-8");
+}
 
-  const filePath = path.join(resolveConfigDir(), file);
+export function overwriteConfig(_type: "user", content: string): void {
+  const filePath = resolveConfigPathByType("user");
+
+  log.debug(`Saving config ${filePath}.`);
+
   const parentDir = path.dirname(filePath);
 
   if (!existsSync(parentDir)) {
@@ -299,5 +311,6 @@ export function mainBksConfig(): BksConfig {
     source,
     platformInfo,
     onOverwrite: async (type, content) => overwriteConfig(type, content),
+    onGetContent: async (type) => getConfigContent(type),
   });
 }

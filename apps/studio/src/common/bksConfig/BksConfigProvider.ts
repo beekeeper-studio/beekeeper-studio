@@ -14,6 +14,7 @@ export interface BksConfigProviderParams {
   source: BksConfigSource;
   platformInfo: IPlatformInfo;
   onOverwrite: (type: "user", content: string) => Promise<void>;
+  onGetContent: (type: "user") => Promise<string>;
 }
 
 export type BksConfig = BksConfigProvider & IBksConfig;
@@ -299,6 +300,11 @@ export class BksConfigProvider {
   /** Replace the user config file with the given content. */
   async overwrite(type: "user", content: string): Promise<void> {
     return await this.params.onOverwrite(type, content);
+  }
+
+  /** Read the raw content of the user config file. Always returns the latest content from disk. */
+  async getContent(type: "user"): Promise<string> {
+    return await this.params.onGetContent(type);
   }
 
   has(path: string): boolean {

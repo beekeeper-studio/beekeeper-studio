@@ -188,6 +188,9 @@ export const api = {
   overwriteConfig(type: "user", content: string): Promise<void> {
     return ipcRenderer.invoke('overwriteConfig', { type, content });
   },
+  getConfigContent(type: "user"): Promise<string> {
+    return ipcRenderer.invoke('getConfigContent', { type });
+  },
   addNativeMenuItem(item: NativePluginMenuItem) {
     ipcRenderer.send('add-native-menu-item', item);
   },
