@@ -2,7 +2,16 @@ import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
-import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
+import ini from "ini";
+import {
+  existsSync,
+  readFileSync,
+  copyFileSync,
+  accessSync,
+  constants,
+  mkdirSync,
+  writeFileSync,
+} from "fs";
 import { parseIni, processRawConfig } from "@/config/helpers";
 import {
   BksConfigProvider,
@@ -190,6 +199,27 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
   return readConfig(filePath);
 }
 
+/**
+ * Persist a partial config to disk. Counterpart of `loadConfig`. Writes `data`
+ * as-is. Only user-writable files are accepted — admin-owned
+ * `system.config.ini` and the bundled `default.config.ini` are off-limits.
+ */
+export function saveConfig(
+  file: "user.config.ini" | "local.config.ini",
+  data: Record<string, any>
+): void {
+  log.debug(`Saving config ${file}.`);
+
+  const filePath = path.join(resolveConfigDir(), file);
+  const parentDir = path.dirname(filePath);
+
+  if (!existsSync(parentDir)) {
+    mkdirSync(parentDir, { recursive: true });
+  }
+
+  writeFileSync(filePath, ini.stringify(data, { whitespace: true }), "utf-8");
+}
+
 function resolveConfigDir() {
   const dirpath = path.resolve(__dirname);
 
@@ -235,6 +265,14 @@ function collectConfigWarnings(
   return warnings;
 }
 
+/** Persist the full user-config object to its file on disk. */
+export function saveUserConfig(userConfig: Partial<IBksConfig>): void {
+  saveConfig(
+    platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini",
+    userConfig as Record<string, any>
+  );
+}
+
 export function mainBksConfig(): BksConfig {
   log.info(`Loading configs.`);
 
@@ -269,5 +307,9 @@ export function mainBksConfig(): BksConfig {
   log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
   log.info(`User config: ${JSON.stringify(userConfig, null, 2)}`);
 
-  return BksConfigProvider.create(source, platformInfo);
+  return BksConfigProvider.create({
+    source,
+    platformInfo,
+    onSaveUser: async (userConfig) => saveUserConfig(userConfig),
+  });
 }

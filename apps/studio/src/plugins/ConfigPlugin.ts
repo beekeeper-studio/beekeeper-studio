@@ -46,7 +46,13 @@ export function createCodemirroKeymap(
 
 export default {
   install(Vue: VueConstructor) {
-    const BksConfig = BksConfigProvider.create(window.bksConfigSource, window.platformInfo);
+    const BksConfig = BksConfigProvider.create({
+      source: window.bksConfigSource,
+      platformInfo: window.platformInfo,
+      onSaveUser: async (userConfig) =>
+        // Delegate this to the main process
+        await window.main.saveUserConfig(userConfig),
+    });
     window.bksConfig = BksConfig;
     Vue.prototype.$bksConfig = BksConfig;
     Vue.prototype.$bksConfigUI = new ConfigMetadataProvider({

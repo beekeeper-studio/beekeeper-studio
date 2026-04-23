@@ -18,6 +18,7 @@ import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
+import { saveUserConfig } from '@/common/bksConfig/mainBksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -178,6 +179,15 @@ ipcMain.handle('platformInfo', () => {
 
 ipcMain.handle('bksConfigSource', () => {
   return bksConfig.source;
+})
+
+ipcMain.handle('saveUserConfig', (_event, userConfig: Partial<IBksConfig>) => {
+  try {
+    saveUserConfig(userConfig)
+  } catch (err) {
+    log.error('Failed to save user config from renderer request', err)
+    throw err
+  }
 })
 
 app.on('activate', async (_event, hasVisibleWindows) => {

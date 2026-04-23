@@ -185,6 +185,9 @@ export const api = {
       return ipcRenderer.invoke('fileHelpers:save', options);
     },
   },
+  saveUserConfig(userConfig: Partial<IBksConfig>): Promise<void> {
+    return ipcRenderer.invoke('saveUserConfig', userConfig);
+  },
   addNativeMenuItem(item: NativePluginMenuItem) {
     ipcRenderer.send('add-native-menu-item', item);
   },

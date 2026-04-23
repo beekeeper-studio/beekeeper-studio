@@ -10,6 +10,17 @@ export interface BksConfigSource {
   warnings: ConfigEntryDetailWarning[];
 }
 
+export interface BksConfigProviderParams {
+  source: BksConfigSource;
+  platformInfo: IPlatformInfo;
+  /**
+   * Hook invoked whenever the user config is mutated (via `setUserKey` or
+   * `unsetUserKey`). Receives the full user-config object after the change
+   * has been applied — the implementation's job is just to persist it.
+   */
+  onSaveUser: (userConfig: Partial<IBksConfig>) => Promise<void>;
+}
+
 export type BksConfig = BksConfigProvider & IBksConfig;
 
 export type IniArray = {
@@ -264,7 +275,8 @@ export class BksConfigProvider {
   private userConfig: Config;
   private mergedConfig: IBksConfig;
 
-  constructor(public readonly source: BksConfigSource, private platformInfo: IPlatformInfo) {
+  constructor(private readonly params: Readonly<BksConfigProviderParams>) {
+    const { source, platformInfo } = params;
     this.defaultConfig = new Config("default", source.defaultConfig);
     this.systemConfig = new Config("system", source.systemConfig);
     this.userConfig = new Config(
@@ -279,10 +291,26 @@ export class BksConfigProvider {
     );
   }
 
-  static create(source: BksConfigSource, platformInfo: IPlatformInfo) {
-    const provider = new BksConfigProvider(source, platformInfo);
+  get source(): BksConfigSource {
+    return this.params.source;
+  }
+
+  static create(params: Readonly<BksConfigProviderParams>) {
+    const provider = new BksConfigProvider(params);
     Object.assign(provider, provider.mergedConfig);
     return provider as BksConfig;
+  }
+
+  async setUserKey(path: string, value: ConfigValue): Promise<void> {
+    const updated = _.cloneDeep(this.userConfig.config);
+    _.set(updated, path, value);
+    return await this.params.onSaveUser(updated);
+  }
+
+  async unsetUserKey(path: string): Promise<void> {
+    const updated = _.cloneDeep(this.userConfig.config);
+    _.unset(updated, path);
+    return await this.params.onSaveUser(updated);
   }
 
   has(path: string): boolean {
@@ -336,7 +364,7 @@ export class BksConfigProvider {
 
     if (isIniArray(keybindings)) {
       return Object.keys(keybindings).map((idx) =>
-        convertKeybinding(target, keybindings[idx], this.platformInfo.platform)
+        convertKeybinding(target, keybindings[idx], this.params.platformInfo.platform)
       );
     }
 
@@ -345,7 +373,7 @@ export class BksConfigProvider {
       return [];
     }
 
-    return convertKeybinding(target, keybindings, this.platformInfo.platform);
+    return convertKeybinding(target, keybindings, this.params.platformInfo.platform);
   }
 
   get warnings() {
