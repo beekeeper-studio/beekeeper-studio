@@ -12,14 +12,3 @@ export class InvalidConfigMetadata extends Error {
     this.name = "InvalidConfigMetadata";
   }
 }
-
-export class UserConfigWriteError extends Error {
-  constructor(public readonly filePath: string, public readonly cause: unknown) {
-    super(
-      `Failed to write user config at ${filePath}: ${
-        cause instanceof Error ? cause.message : String(cause)
-      }`
-    );
-    this.name = "UserConfigWriteError";
-  }
-}
