@@ -1,7 +1,7 @@
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/types'
+import { DatabaseElement, IDbConnectionServerConfig } from '@/lib/db/types'
 import fs from 'fs';
 import path from 'path';
 
@@ -271,6 +271,101 @@ function testWith(dockerTag: string, readonly: boolean) {
       expect(secondResult).toStrictEqual({
         id: 2,
         bitcol: true
+      })
+    })
+
+    // Regression test for #3722 -> dotted table names fail in sp_helptrigger /
+    // sp_spaceused / sp_rename because the schema+table were concatenated as a
+    // single quoted string, so SQL Server split on the first dot.
+    describe("Dotted table names (#3722)", () => {
+      const dottedTable = 'Common.Companies'
+
+      beforeAll(async () => {
+        // util.knex is a direct knex connection; it is not affected by
+        // Beekeeper's readOnlyMode gate, so we can set up fixtures even when
+        // the Beekeeper client is in read-only mode.
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${dottedTable}]`)
+        await util.knex.schema.raw(
+          `CREATE TABLE dbo.[${dottedTable}](id int, company_name varchar(255), fingerprint varchar(32))`
+        )
+        await util.knex.schema.raw(
+          `INSERT INTO dbo.[${dottedTable}](id, company_name, fingerprint) VALUES (1, 'acme', 'dotted-3722')`
+        )
+      })
+
+      afterAll(async () => {
+        try {
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${dottedTable}]`)
+        } catch (e) {
+          // ignore
+        }
+      })
+
+      it("listTableColumns returns this table's columns (not a mis-split object)", async () => {
+        const columns = await util.connection.listTableColumns(dottedTable, 'dbo')
+        const names = columns.map((c) => c.columnName).sort()
+        expect(names).toEqual(['company_name', 'fingerprint', 'id'])
+      })
+
+      it("selectTop returns this table's row for a dotted name", async () => {
+        const top = await util.connection.selectTop(
+          dottedTable, 0, 10, [{ dir: 'ASC', field: 'id' }], [], 'dbo'
+        )
+        expect(top.result.length).toBe(1)
+        const row = top.result[0]
+        expect(row.company_name || row.COMPANY_NAME).toBe('acme')
+        expect(row.fingerprint || row.FINGERPRINT).toBe('dotted-3722')
+      })
+
+      it("listTableTriggers succeeds for a table name containing a dot", async () => {
+        const triggers = await util.connection.listTableTriggers(dottedTable, 'dbo')
+        expect(Array.isArray(triggers)).toBe(true)
+      })
+
+      it("getTableProperties succeeds for a table name containing a dot", async () => {
+        const props = await util.connection.getTableProperties(dottedTable, 'dbo')
+        expect(props).toBeDefined()
+      })
+
+      it("setElementName renames a table whose name contains a dot", async () => {
+        if (readonly) return;
+
+        const source = 'Common.ToRename'
+        const renamed = 'Common.Renamed'
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
+        await util.knex.schema.raw(
+          `CREATE TABLE dbo.[${source}](id int, marker_col varchar(16))`
+        )
+        await util.knex.schema.raw(
+          `INSERT INTO dbo.[${source}](id, marker_col) VALUES (42, 'rename-3722')`
+        )
+
+        try {
+          await util.connection.setElementName(
+            source, renamed, DatabaseElement.TABLE, 'dbo'
+          )
+
+          const names = (await util.connection.listTables()).map((t) => t.name)
+          expect(names).toContain(renamed)
+          expect(names).not.toContain(source)
+
+          // Columns and data must survive the rename -> proves sp_rename
+          // actually targeted the dotted source table.
+          const columns = await util.connection.listTableColumns(renamed, 'dbo')
+          const columnNames = columns.map((c) => c.columnName).sort()
+          expect(columnNames).toEqual(['id', 'marker_col'])
+
+          const top = await util.connection.selectTop(
+            renamed, 0, 10, [{ dir: 'ASC', field: 'id' }], [], 'dbo'
+          )
+          expect(top.result.length).toBe(1)
+          const row = top.result[0]
+          expect(row.marker_col || row.MARKER_COL).toBe('rename-3722')
+        } finally {
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
+        }
       })
     })
 
