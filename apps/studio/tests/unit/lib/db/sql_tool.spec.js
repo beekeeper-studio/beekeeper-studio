@@ -1,4 +1,4 @@
-import { splitQueries, removeQueryQuotes, extractParams, isTextSelected } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -125,5 +125,32 @@ describe("Text Selection", () => {
       query: [10, 120],
       cursor: [0, 10],
     }).toBe(false);
+  });
+});
+
+describe("SQL Formatter", () => {
+  it("should correctly format Postgres earthdistance operator <@>", () => {
+    const originalQuery = "SELECT point(0, 0)<@>point(0,0);";
+    const formatted = deparameterizeQuery(originalQuery, "postgresql", [], {});
+
+    expect(formatted).toContain("<@>");
+    expect(() => splitQueries(formatted, "psql")).not.toThrow();
+  });
+
+  it("should preserve the functionality of earthdistance operator after formatting", () => {
+    const testQueries = [
+      "SELECT point(0, 0)<@>point(0,0);",
+      "SELECT point(1, 1) <@> point(2, 2);",
+      "SELECT earth_distance(ll_to_earth(0, 0), ll_to_earth(0, 0));",
+    ];
+
+    testQueries.forEach(query => {
+      const formatted = deparameterizeQuery(query, "postgresql", [], {});
+
+      const hasOperator = formatted.includes("<@>") || formatted.includes("earth_distance");
+      expect(hasOperator).toBe(true);
+
+      expect(() => splitQueries(formatted, "psql")).not.toThrow();
+    });
   });
 });
