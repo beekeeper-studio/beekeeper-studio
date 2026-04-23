@@ -291,14 +291,14 @@ export class BksConfigProvider {
     );
   }
 
-  get source(): BksConfigSource {
-    return this.params.source;
-  }
-
   static create(params: Readonly<BksConfigProviderParams>) {
     const provider = new BksConfigProvider(params);
     Object.assign(provider, provider.mergedConfig);
     return provider as BksConfig;
+  }
+
+  get source(): BksConfigSource {
+    return this.params.source;
   }
 
   async setUserKey(path: string, value: ConfigValue): Promise<void> {
