@@ -194,7 +194,7 @@ function resolveConfigDir() {
   const dirpath = path.resolve(__dirname);
 
   if (platformInfo.testMode) {
-    return path.resolve(dirpath, "../../..");
+    return path.dirname(require.resolve('beekeeper-studio/package.json'));
   }
 
   if (!platformInfo.isDevelopment) {
