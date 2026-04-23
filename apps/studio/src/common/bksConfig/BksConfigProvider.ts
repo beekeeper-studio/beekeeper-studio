@@ -13,12 +13,7 @@ export interface BksConfigSource {
 export interface BksConfigProviderParams {
   source: BksConfigSource;
   platformInfo: IPlatformInfo;
-  /**
-   * Hook invoked whenever the user config is mutated (via `setUserKey` or
-   * `unsetUserKey`). Receives the full user-config object after the change
-   * has been applied — the implementation's job is just to persist it.
-   */
-  onSaveUser: (userConfig: Partial<IBksConfig>) => Promise<void>;
+  onOverwrite: (type: "user", content: string) => Promise<void>;
 }
 
 export type BksConfig = BksConfigProvider & IBksConfig;
@@ -217,7 +212,7 @@ export function convertKeybinding(
     if (target === "tabulator" && !modifierMap[key]) {
       mod = mod.toLowerCase();
     }
-    
+
     if (target === "ui" && !modifierMap[key]) {
       mod = _.upperFirst(mod.toLowerCase());
     }
@@ -301,16 +296,9 @@ export class BksConfigProvider {
     return this.params.source;
   }
 
-  async setUserKey(path: string, value: ConfigValue): Promise<void> {
-    const updated = _.cloneDeep(this.userConfig.config);
-    _.set(updated, path, value);
-    return await this.params.onSaveUser(updated);
-  }
-
-  async unsetUserKey(path: string): Promise<void> {
-    const updated = _.cloneDeep(this.userConfig.config);
-    _.unset(updated, path);
-    return await this.params.onSaveUser(updated);
+  /** Replace the user config file with the given content. */
+  async overwrite(type: "user", content: string): Promise<void> {
+    return await this.params.onOverwrite(type, content);
   }
 
   has(path: string): boolean {

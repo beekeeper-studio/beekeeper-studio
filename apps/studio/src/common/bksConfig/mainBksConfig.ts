@@ -199,15 +199,11 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
   return readConfig(filePath);
 }
 
-/**
- * Persist a partial config to disk. Counterpart of `loadConfig`. Writes `data`
- * as-is. Only user-writable files are accepted — admin-owned
- * `system.config.ini` and the bundled `default.config.ini` are off-limits.
- */
-export function saveConfig(
-  file: "user.config.ini" | "local.config.ini",
-  data: Record<string, any>
-): void {
+export function overwriteConfig(_type: "user", content: string): void {
+  const file = platformInfo.isDevelopment
+    ? "local.config.ini"
+    : "user.config.ini";
+
   log.debug(`Saving config ${file}.`);
 
   const filePath = path.join(resolveConfigDir(), file);
@@ -217,7 +213,7 @@ export function saveConfig(
     mkdirSync(parentDir, { recursive: true });
   }
 
-  writeFileSync(filePath, ini.stringify(data, { whitespace: true }), "utf-8");
+  writeFileSync(filePath, content, "utf-8");
 }
 
 function resolveConfigDir() {
@@ -265,14 +261,6 @@ function collectConfigWarnings(
   return warnings;
 }
 
-/** Persist the full user-config object to its file on disk. */
-export function saveUserConfig(userConfig: Partial<IBksConfig>): void {
-  saveConfig(
-    platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini",
-    userConfig as Record<string, any>
-  );
-}
-
 export function mainBksConfig(): BksConfig {
   log.info(`Loading configs.`);
 
@@ -310,6 +298,6 @@ export function mainBksConfig(): BksConfig {
   return BksConfigProvider.create({
     source,
     platformInfo,
-    onSaveUser: async (userConfig) => saveUserConfig(userConfig),
+    onOverwrite: async (type, content) => overwriteConfig(type, content),
   });
 }
