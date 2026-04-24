@@ -1,6 +1,6 @@
 import { Entity } from "../types";
 import { PropType } from "vue";
-import { FormatOptions, FormatOptionsWithLanguage } from "sql-formatter";
+import { DialectOptions, FormatOptions, FormatOptionsWithLanguage } from "sql-formatter";
 import { Options } from "sql-query-identifier";
 import props from "../text-editor/props";
 
@@ -20,6 +20,12 @@ export default {
   formatterDialect: {
     type: String as PropType<FormatOptionsWithLanguage["language"]>,
     default: "sql",
+  },
+  // Optional: custom sql-formatter dialect (e.g. PartiQL) taking precedence
+  // over `formatterDialect`. When set, formatDialect() is used.
+  formatterDialectOptions: {
+    type: Object as PropType<DialectOptions | null>,
+    default: null,
   },
   formatterConfig: {
     type: Object as PropType<FormatOptions>,
