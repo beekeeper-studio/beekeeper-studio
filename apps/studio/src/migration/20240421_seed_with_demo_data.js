@@ -15,11 +15,14 @@ function escapeString(value, quote) {
 const demoQuerySql = escapeString(`
 -- You can run this script directly to see how data is queried in this database.
 -- Press "ctrl/cmd+enter" to run the query and see the results. Yum.
+-- Tip: click "Edit Data" in the footer to edit cheese data inline.
 
 SELECT
+    cheeses.id AS CheeseId,
     cheeses.name AS Cheese,
     cheeses.cheese_type AS Type,
     cheeses.description AS Description,
+    countries.id AS CountryId,
     countries.name AS OriginCountry
 FROM
     cheeses
