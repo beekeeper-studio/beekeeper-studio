@@ -5,7 +5,7 @@ import { Dialect, SchemaItem } from "@shared/lib/dialects/models";
 // through native AWS SDK calls in the client. This builder only exists so the
 // generic alter/rename plumbing in BasicDatabaseClient has something to call.
 export class DynamoDBChangeBuilder extends ChangeBuilderBase {
-  dialect: Dialect = "postgresql";
+  dialect: Dialect = "dynamodb";
 
   wrapIdentifier(value: string): string {
     return value;

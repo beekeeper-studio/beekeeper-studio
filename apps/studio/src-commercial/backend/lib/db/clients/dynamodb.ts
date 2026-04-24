@@ -98,6 +98,10 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     this.readOnlyMode = server?.config?.readOnlyMode;
   }
 
+  async applyChangesSql(_changes: TableChanges): Promise<string> {
+    throw new Error('Copy to SQL is not supported for DynamoDB connections.');
+  }
+
   async connect(): Promise<void> {
     await super.connect();
 
@@ -456,7 +460,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       }
 
       if (clause) {
-        const joiner = idx === 0 ? '' : ` ${(f.op || 'AND')} `;
+        const joiner = parts.length === 0 ? '' : ` ${(f.op || 'AND')} `;
         parts.push(`${joiner}${clause}`);
       }
     });
@@ -664,13 +668,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const cursor = new DynamoDBCursor({
-      kind: 'partiql',
-      client: this.doc,
-      statement: query,
-      chunkSize,
-    }, []);
-    // Peek one row to discover columns
+    // Peek one row to discover columns FIRST
     const preview = await this.doc.send(new ExecuteStatementCommand({
       Statement: query,
       Limit: 1,
@@ -678,7 +676,16 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     const cols: TableColumn[] = (preview.Items && preview.Items[0])
       ? Object.keys(preview.Items[0]).map((k) => ({ columnName: k, dataType: 'S' }))
       : [];
-    (cursor as any).columns = cols.map((c) => c.columnName);
+    const columnNames = cols.map((c) => c.columnName);
+
+    // Now create cursor with discovered columns
+    const cursor = new DynamoDBCursor({
+      kind: 'partiql',
+      client: this.doc,
+      statement: query,
+      chunkSize,
+    }, columnNames);
+
     return { totalRows: 0, columns: cols, cursor };
   }
 

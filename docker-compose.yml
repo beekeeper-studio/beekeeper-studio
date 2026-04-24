@@ -352,5 +352,5 @@ services:
     image: amazon/dynamodb-local:latest
     platform: linux/amd64
     ports:
-      - 8000:8000
+      - 8001:8000
     command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
