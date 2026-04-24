@@ -4,6 +4,11 @@
     :class="{ 'hidden-filter': hiddenFilter }"
     v-hotkey="keymap"
   >
+    <editor-modal
+      ref="editorModal"
+      :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+      @save="onSaveEditorModal"
+    />
     <form
       class="table-search-wrapper table-filter"
       @submit.prevent="searchHandler"
@@ -62,19 +67,21 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteActionsMenu, pasteRange } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
+  import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
   import rawLog from '@bksLogger';
-  import { FieldDescriptor, FieldEditData, FieldReadOnlyReason, NgQueryResult, TableUpdate } from '@/lib/db/models'
-  import { CellComponent, RowComponent } from 'tabulator-tables'
+  import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
+  import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { format } from 'sql-formatter'
   import pluralize from 'pluralize'
+import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -95,6 +102,7 @@
   }
 
   export default {
+    components: { EditorModal },
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
@@ -111,7 +119,8 @@
         internalClassTrackerColumn: "__beekeeper_internal_class_tracker",
         propogatedChangesFilters: new Map<string, Filter[]>(),
         fieldOriginalClassMap: new Map<string, string>(),
-        saveError: null
+        saveError: null,
+        globalAllowTablePopup: true
       }
     },
     props: {
@@ -163,6 +172,9 @@
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
           'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
+          'general.save': this.saveChanges.bind(this),
+          'general.openInSqlEditor': this.copyToSql.bind(this),
+          'resultTable.openEditorModal': this.openEditorMenuByShortcut.bind(this)
         });
       },
       tableFilterKeymap() {
@@ -321,6 +333,67 @@
           element.classList.add(classToAdd);
         }
       },
+      setAsNullMenuItem(range: RangeComponent) {
+        const areAllCellsReadOnly = range
+          .getColumns()
+          .every((col) => !this.cellEditCheck(col, false));
+        return {
+          label: createMenuItem("Set as NULL"),
+          action: () => {
+            // we have to globally disable the popups because for some reason
+            // when setting the value, the edit check is run for every cell in a the row
+            this.globalAllowTablePopup = false;
+            const targets = range.getCells().flat().map((cell) => ({
+              row: cell.getRow(),
+              field: cell.getField()
+            }));
+
+            for (const { row, field } of targets) {
+              const cell = row.getCell(field);
+              if (!cell) continue;
+              if (this.cellEditCheck(cell)) cell.setValue(null);
+            }
+
+            this.globalAllowTablePopup = true;
+          },
+          disabled: areAllCellsReadOnly || !this.editingData,
+        }
+      },
+      openEditorMenuByShortcut() {
+        const range: RangeComponent = _.last(this.tabulator.getRanges())
+        const cell = range.getCells().flat()[0];
+        // (copied from TableTable.vue)
+        // FIXME maybe we can avoid calling child methods directly like this?
+        // it should be done by calling an event using this.$modal.show(modalName)
+        // or this.$trigger(AppEvent.something) if possible
+        this.openCellEditorModal(cell, !this.cellEditCheck(cell, false))
+      },
+      openEditorMenu(cell: CellComponent) {
+        const isReadOnly = !this.cellEditCheck(cell, false);
+        let keybind = this.$bksConfig.getKeybindings("context-menu", 'resultTable.openEditorModal');
+        keybind = Array.isArray(keybind) ? keybind[0] : keybind;
+        return {
+          label: createMenuItem(isReadOnly ? "View in modal" : "Edit in modal", keybind),
+          action: () => {
+            this.openCellEditorModal(cell, isReadOnly)
+          }
+        }
+      },
+      openCellEditorModal(cell: CellComponent, isReadOnly: boolean) {
+        const eventParams = { cell, isReadOnly };
+        this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
+      },
+      onSaveEditorModal(content: string, _l: any, cell: CellComponent){
+        const editData = this.editData?.get(cell.getField());
+        const isBinary = editData?.bksField?.bksType === 'BINARY' || _.isTypedArray(cell.getValue());
+
+        let value = content;
+        if (isBinary) {
+          value = stringToTypedArray(content);
+        }
+
+        cell.setValue(value);
+      },
       createColumnFromProps(column: FieldDescriptor, index: number) {
         const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
@@ -331,13 +404,28 @@
           }
         }
 
-        const cellMenu = (_e, cell) => {
+        const cellMenu = (_e, cell: CellComponent) => {
+          const ranges = cell.getRanges();
+          const range = _.last(ranges);
+
           return [
+            this.openEditorMenu(cell),
+            this.setAsNullMenuItem(range),
+            { separator: true },
             ...copyActionsMenu({
               ranges: cell.getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
             }),
+            { separator: true },
+            {
+              label: createMenuItem("Paste", "Control+V"),
+              action: () => {
+                this.globalAllowTablePopup = false;
+                pasteRange(range);
+                this.globalAllowTablePopup = true;
+              },
+            },
             { separator: true },
             filterMenuItem,
             ...this.getExtraPopupMenu('results.cell', { transform: "tabulator" }),
@@ -402,21 +490,8 @@
         if (editData) {
           headerTooltip = escapeHtml(`${editData?.generated ? '[Generated]' : ''}${editData?.columnName ?? column.name} ${editData?.dataType ?? ''}`);
 
-          if (!editData.editable) {
-            switch (editData.readOnlyReason) {
-              case FieldReadOnlyReason.NoLinkedTable:
-                headerTooltip += ' -> Could not find a table to link this column to within the query.';
-                break;
-              case FieldReadOnlyReason.MissingPK:
-                headerTooltip += ' -> Could not find all required Primary Keys for this column within the query.';
-                break;
-              case FieldReadOnlyReason.ImproperMapping:
-                headerTooltip == ' -> Could not map field to an existing table column.';
-                break;
-              case FieldReadOnlyReason.IsGenerated:
-                headerTooltip += ' -> Cannot edit generated columns.';
-                break;
-            }
+          if (!editData.editable && !_.isNil(editData.readOnlyReason)) {
+            headerTooltip += ` -> Read-Only: ${FieldReadOnlyReasonStr[editData.readOnlyReason]}`
           }
         }
 
@@ -509,7 +584,7 @@
           default: return ne
         }
       },
-      cellEditCheck(cell: CellComponent): boolean {
+      cellEditCheck(cell: CellComponent, allowPopup: boolean = true): boolean {
         if (!this.editingData) return false
 
         const fieldEditData: FieldEditData = this.editData?.get(cell.getField());
@@ -517,6 +592,9 @@
           return false;
         }
 
+        if (this.globalAllowTablePopup && allowPopup && !fieldEditData.editable && !_.isNil(fieldEditData.readOnlyReason)) {
+          cell.popup(`Read-Only: ${FieldReadOnlyReasonStr[fieldEditData.readOnlyReason]}`, "bottom")
+        }
         return fieldEditData.editable;
       },
       cellEdited(cell: CellComponent) {
@@ -675,10 +753,12 @@
       },
       discardChanges() {
         this.saveError = null;
+        this.globalAllowTablePopup = false;
 
         this.pendingChanges.updates.forEach((edit: TableUpdatePayload) => this.discardUpdate(edit));
 
         this.resetPendingChanges();
+        this.globalAllowTablePopup = true;
       },
       discardUpdate(pendingUpdate: TableUpdatePayload) {
         const filters = this.propogatedChangesFilters.get(pendingUpdate.key);
@@ -766,6 +846,8 @@
       async copyToSql() {
         this.saveError = null;
 
+        if (!this.editingData) return;
+
         try {
           const changes = {
             inserts: [],
@@ -809,6 +891,8 @@
       },
       async saveChanges() {
         this.saveError = null;
+
+        if (!this.editingData) return;
 
         try {
           const payload = {
