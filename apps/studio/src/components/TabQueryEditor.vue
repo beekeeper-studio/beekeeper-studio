@@ -34,7 +34,7 @@
       <component
         :is="editorComponent"
         :value="unsavedText"
-        :read-only="editor.readOnly"
+        :read-only="readOnly"
         :is-focused="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
@@ -567,7 +567,6 @@
         editor: {
           height: 100,
           selection: null,
-          readOnly: false,
           cursorIndex: 0,
           cursorIndexAnchor: 0,
           initialized: false,
@@ -635,6 +634,12 @@
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      readOnly() {
+        if (this.remoteDeleted) {
+          return true;
+        }
+        return false;
+      },
       queryTabTitle() {
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title;
@@ -930,11 +935,8 @@
       },
       remoteDeleted() {
         if (this.remoteDeleted) {
-          this.editor.readOnly = 'nocursor'
           this.tab.unsavedChanges = false
           this.tab.alert = true
-        } else {
-          this.editor.readOnly = false
         }
       },
       unsavedChanges() {
@@ -1665,6 +1667,12 @@
         this.timerInterval = null;
       },
       editorContextMenu(_event, _context, items) {
+        if (this.readOnly) {
+          return [
+            ...items,
+            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+          ]
+        }
         return [
           ...items,
           {

@@ -70,11 +70,7 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    contextMenuItemsModifier(
-      _event,
-      items: InternalContextItem<unknown>[],
-      context: TextEditorMenuContext
-    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
+    addFormatItemsToContextMenu(items: InternalContextItem<unknown>[]) {
       const formatItem: InternalContextItem<unknown> = {
         label: `Format Query`,
         id: "text-format",
@@ -100,13 +96,23 @@ export default Vue.extend({
           }))
         ];
       }
-      
-      const modifiedItems = [
+
+      return [
         ...items,
         formatItem
       ];
+    },
+    contextMenuItemsModifier(
+      _event,
+      items: InternalContextItem<unknown>[],
+      context: TextEditorMenuContext
+    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
+      if (!this.readOnly) {
+        items = this.addFormatItemsToContextMenu(items);
+      }
+
       return {
-        items: modifiedItems,
+        items,
         context: {
           ...context,
           selectedQuery: this.selectedQuery,
