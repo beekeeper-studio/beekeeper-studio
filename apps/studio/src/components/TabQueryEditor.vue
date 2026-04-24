@@ -1,6 +1,7 @@
 <template>
   <div
     class="query-editor"
+    :class="{ 'editing-result': editingResult }"
     ref="container"
     v-hotkey="keymap"
   >
@@ -183,12 +184,6 @@
               v-model="dryRun"
             >
           </x-button>
-          <!-- <x-button -->
-          <!--   @click.prevent="formatterPreset" -->
-          <!--   class="btn btn-flat btn-small" -->
-          <!-- > -->
-          <!--   Open Query Formatter -->
-          <!-- </x-button> -->
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -543,6 +538,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+  import { wait } from '@/shared/lib/wait'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -1195,6 +1191,7 @@
           }
         }
         this.editingResult = true;
+        wait(800).then(() => this.$tour.start("startedEditingResult"));
       },
       async saveChanges() {
         // This covers the instance where someone runs a query, toggles manual commit on, and then makes edits and tries to save them. This ensures it will then be inside a transaction
@@ -1502,6 +1499,7 @@
           if (found) {
             this.$store.dispatch('updateTables')
           }
+          wait(1200).then(() => this.$tour.start("ranQuerySuccessfully"));
         } catch (ex) {
           log.error(ex)
           if(this.running) {
@@ -1854,6 +1852,28 @@
     100% {
       box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
     }
+  }
+
+  .top-panel {
+    position: relative;
+  }
+
+  .top-panel-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background-color: rgba(from var(--theme-bg) r g b / 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  // Hide the dot on the range highlight when not editing result
+  .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
+    visibility: hidden;
   }
 </style>
 
