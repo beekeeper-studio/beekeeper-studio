@@ -374,6 +374,9 @@ declare interface IBksConfig {
             selectDown: string[];
             selectUp: string[];
         };
+        resultTable: {
+            openEditorModal: string;
+        };
         tab: {
             closeTab: string;
             forceCloseTab: string;

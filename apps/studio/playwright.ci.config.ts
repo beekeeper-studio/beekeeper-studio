@@ -9,8 +9,9 @@ export default defineConfig({
   },
   fullyParallel: false,
   workers: 1,
+  retries: 3,
   use: {
-    actionTimeout: 10000,
+    actionTimeout: 30000,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   }

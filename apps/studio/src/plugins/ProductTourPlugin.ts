@@ -9,11 +9,11 @@ type Context = {
   utility: UtilityConnection;
 };
 
-type FlowId = "connectedScreen";
+type FlowId = "connectedScreen" | "ranQuerySuccessfully" | "startedEditingResult";
 
 type FlowStep = DriveStep & {
-  shouldShow: (context: Context) => boolean | Promise<boolean>;
-  onFinished: (context: Context) => void | Promise<void>;
+  shouldShow?: (context: Context) => boolean | Promise<boolean>;
+  onFinished?: (context: Context) => void | Promise<void>;
   onRender?: (popover: PopoverDOM, context: Context) => void;
 };
 
@@ -48,6 +48,10 @@ const flows: Record<
           }
         },
         async shouldShow(context: Context) {
+          if (window.platformInfo.testMode) {
+            return false;
+          }
+
           if (context.store.getters.isCommunity) {
             return false;
           }
@@ -76,6 +80,75 @@ const flows: Record<
         },
         onFinished(context) {
           context.store.dispatch("setAiShellHintShown");
+        },
+      },
+    ],
+  },
+
+  /**
+   * This is triggered after the user runs their first successful query.
+   **/
+  ranQuerySuccessfully: {
+    steps: [
+      {
+        element: ".global-status-bar #edit-data-btn",
+        popover: {
+          title: `<div class="main-title"><i class="material-icons">edit</i> Edit Query Results</div>`,
+          description: `Click <strong>Edit Data</strong> to change rows directly from your query results.`,
+          side: "top",
+          showButtons: ["next"],
+          doneBtnText: "Okay",
+        },
+        shouldShow(context) {
+          if (window.platformInfo.testMode) {
+            return false;
+          }
+
+          if (context.store.getters.isCommunity) {
+            return false;
+          }
+
+          if (context.store.getters["settings/editResultsHintShown"]) {
+            return false;
+          }
+
+          return true;
+        },
+        onFinished(context) {
+          context.store.dispatch("settings/setEditResultsHintShown");
+        },
+      },
+    ],
+  },
+
+  startedEditingResult: {
+    steps: [
+      {
+        element: ".tab-pane.active .result-table .tabulator-tableholder",
+        popover: {
+          title: `<div class="main-title">Edit Cells</div>`,
+          description: `Double-click a cell to change its value.`,
+          side: "top",
+          showButtons: ["next"],
+          doneBtnText: "Okay",
+        },
+        shouldShow(context) {
+          if (window.platformInfo.testMode) {
+            return false;
+          }
+
+          if (context.store.getters.isCommunity) {
+            return false;
+          }
+
+          if (context.store.getters["settings/startedEditingResult"]) {
+            return false;
+          }
+
+          return true;
+        },
+        onFinished(context) {
+          context.store.dispatch("settings/setStartedEditingResult");
         },
       },
     ],
@@ -121,7 +194,7 @@ const tour = {
       overlayOpacity: 0.25,
       onNextClick(_el, _step, { state, driver }) {
         const step = steps[state.activeIndex];
-        step.onFinished(context);
+        step.onFinished?.(context);
         finishedSteps.push(step);
         driver.moveNext();
       },
@@ -132,7 +205,7 @@ const tour = {
           if (finishedSteps.includes(step)) {
             continue;
           }
-          steps[i].onFinished(context);
+          steps[i].onFinished?.(context);
         }
         delete document.body.dataset.driverStepElement;
         driver.destroy();
