@@ -88,7 +88,7 @@
     >
       Reset
     </x-button>
-    <x-buttons v-show="canEdit && editing && changesCount > 0" class="pending-changes">
+    <x-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
       <x-button
         class="btn btn-primary btn-badge btn-icon"
         @click.prevent="saveChanges"
@@ -135,7 +135,7 @@
     </span>
     <x-button
       v-if="canEdit && editing && changesCount <= 0"
-      class="btn btn-primary"
+      class="btn btn-flat"
       @click.prevent="stopEditing"
     >
       Stop Editing
@@ -411,10 +411,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.global-status-bar x-button.btn.btn-primary {
-  background-color: var(--theme-base);
-  color: rgb(from var(--theme-bg) r g b / 87%);
-}
-</style>
