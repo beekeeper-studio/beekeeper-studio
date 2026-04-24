@@ -25,6 +25,8 @@ module.exports = {
   // support the same @ -> src alias mapping in source code
   moduleNameMapper: {
     '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
+    '^@marimo-team/codemirror-languageserver$':
+      '<rootDir>/tests/__mocks__/marimo-codemirror-languageserver.js',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared(.*)$': '<rootDir>/src/shared/$1',
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',
