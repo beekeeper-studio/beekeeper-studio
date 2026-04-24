@@ -335,6 +335,7 @@ import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
+import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
@@ -395,6 +396,10 @@ export default Vue.extend({
       selectedRowPosition: -1,
       selectedRowData: {},
       expandablePaths: [],
+
+      // Tabulator persistence cache (keyed by persistence type, e.g. "columns").
+      // Populated by loadPersistence() and read synchronously by persistenceReader.
+      persistenceCache: new Map(),
     };
   },
   computed: {
@@ -743,6 +748,51 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    async loadPersistence() {
+      if (!this.tableId) return;
+      try {
+        const rows: TransportTabulatorPersistence[] = await this.$util.send(
+          "appdb/tabulatorPersistence/find",
+          { options: { where: { persistenceID: this.tableId } } }
+        );
+        const cache = new Map<string, { id?: number; data: string }>();
+        for (const r of rows ?? []) {
+          cache.set(r.type, { id: r.id ?? undefined, data: r.data });
+        }
+        this.persistenceCache = cache;
+      } catch (e) {
+        log.warn("tabulator persistence load failed", e);
+        this.persistenceCache = new Map();
+      }
+    },
+    persistenceReader(_id: string, type: string) {
+      const row = this.persistenceCache.get(type);
+      if (!row) return false;
+      try {
+        return JSON.parse(row.data);
+      } catch {
+        return false;
+      }
+    },
+    persistenceWriter(id: string, type: string, data: unknown) {
+      const existing = this.persistenceCache.get(type);
+      const serialized = JSON.stringify(data);
+      const row = { id: existing?.id, data: serialized };
+      this.persistenceCache.set(type, row);
+      this.$util
+        .send("appdb/tabulatorPersistence/save", {
+          obj: { id: row.id, persistenceID: id, type, data: serialized },
+        })
+        .then((saved: TransportTabulatorPersistence) => {
+          if (saved?.id != null) {
+            const current = this.persistenceCache.get(type);
+            if (current && current.id == null) current.id = saved.id;
+          }
+        })
+        .catch((e: unknown) => {
+          log.warn("tabulator persistence save failed", e);
+        });
+    },
     createColumnFromProps(column) {
       // 1. add a column for a real column
       // if a FK, add another column with the link
@@ -1022,11 +1072,14 @@ export default Vue.extend({
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
       await this.getTableKeys();
+      await this.loadPersistence();
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
         schema: this.table.schema,
         persistenceID: this.tableId,
+        persistenceReaderFunc: this.persistenceReader,
+        persistenceWriterFunc: this.persistenceWriter,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
             const ranges = cell.getRanges();
