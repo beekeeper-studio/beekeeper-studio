@@ -9,8 +9,6 @@ icon: material/database
 
 GreengageDB is **PostgreSQL-compatible** (it speaks the PostgreSQL wire protocol), so the basics — host, port, database, user, password, SSL, and SSH tunneling — work the same way as a Postgres connection.
 
-In Beekeeper Studio, GreengageDB uses the same connection form as PostgreSQL.
-
 ## Basic connection
 
 1. Create a new connection in Beekeeper Studio.
@@ -24,28 +22,11 @@ In Beekeeper Studio, GreengageDB uses the same connection form as PostgreSQL.
 4. (Optional) Configure **SSL/TLS** and/or **SSH Tunnel**.
 5. Click **Test Connection**, then **Connect**.
 
-## Docker quick start (for local testing)
+## GreengageDB docs
 
-If you're running GreengageDB via Docker, you can use the official images and connect from Beekeeper Studio after the cluster finishes initializing.
+To learn more about GreengageDB and how to set up your environment (including Docker), see the official documentation:
 
-### GreengageDB 7
-
-- Host: `localhost`
-- Port: `5439`
-- Database: `postgres`
-- User: `gpadmin`
-- Password: empty (common when the container is configured with `trust`), or use the image's default if it requires one
-
-### GreengageDB 6
-
-- Host: `localhost`
-- Port: `5438`
-- Database: `postgres`
-- User: `gpadmin`
-- Password: empty (common when the container is configured with `trust`), or use the image's default if it requires one
-
-For Docker-specific details, see the GreengageDB docs:
-https://greengagedb.org/en/docs-gg/current/use_docker.html
+[GreengageDB documentation](https://greengagedb.org/en/docs-gg/current/intro.html)
 
 ## GreengageDB 6 vs 7
 
@@ -61,15 +42,4 @@ Known example:
 ### GreengageDB 7
 
 GreengageDB 7 is generally recommended when you have a choice.
-
-## Troubleshooting
-
-### Connection works from `psql` but fails in Beekeeper
-
-- Verify **host/port** and any **SSL mode**.
-- For Docker, confirm the container allows external connections (for PostgreSQL-compatible servers this is commonly controlled by `pg_hba.conf` and `listen_addresses`).
-
-### “Connection terminated unexpectedly”
-
-This typically indicates a server-side disconnect (restart/crash/resource pressure). Check the GreengageDB server logs and ensure the server has enough CPU/RAM, especially when running inside Docker.
 
