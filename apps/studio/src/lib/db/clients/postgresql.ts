@@ -141,7 +141,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', wrapIdentifier);
 
     let sql = `
       SELECT
@@ -202,7 +202,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listViews(filter: FilterOptions = { schema: 'public' }): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', wrapIdentifier);
     const sql = `
       SELECT
         table_schema as schema,
@@ -218,7 +218,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema', wrapIdentifier);
     const sql = `
       SELECT
         r.specific_name as id,
@@ -456,7 +456,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
-    const schemaFilter = buildSchemaFilter(filter);
+    const schemaFilter = buildSchemaFilter(filter, 'schema_name', wrapIdentifier);
     const sql = `
       SELECT schema_name
       FROM information_schema.schemata
@@ -744,7 +744,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
-    const databaseFilter = buildDatabaseFilter(filter, 'datname');
+    const databaseFilter = buildDatabaseFilter(filter, 'datname', wrapIdentifier);
     const sql = `
       SELECT datname
       FROM pg_database
@@ -963,7 +963,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       return []
     }
 
-    const schemaFilter = buildSchemaFilter(filter, 'schemaname')
+    const schemaFilter = buildSchemaFilter(filter, 'schemaname', wrapIdentifier)
     const sql = `
       SELECT
         schemaname as schema,

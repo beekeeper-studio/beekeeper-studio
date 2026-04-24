@@ -13136,10 +13136,10 @@ sql-formatter@*:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
-sql-formatter@15.6.10:
-  version "15.6.10"
-  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.6.10.tgz#90dcdc2759735d987e2af3758939e7559adb7256"
-  integrity sha512-0bJOPQrRO/JkjQhiThVayq0hOKnI1tHI+2OTkmT7TGtc6kqS+V7kveeMzRW+RNQGxofmTmet9ILvztyuxv0cJQ==
+sql-formatter@15.7.3:
+  version "15.7.3"
+  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.7.3.tgz#b62d7de5ca5b24ab6bdfb7568c11b5dcde74c114"
+  integrity sha512-5+zl9Nqg5aNjss0tb1G+StpC4dJKbjv3+g8CL/+V+00PfZop+2RKGyi53ScFl0dr+Dkx1LjmUO54Q3N7K3EtMw==
   dependencies:
     argparse "^2.0.1"
     nearley "^2.20.1"

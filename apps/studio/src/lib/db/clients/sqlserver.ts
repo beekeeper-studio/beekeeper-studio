@@ -123,7 +123,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   }
 
   async listTables(filter: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -600,7 +600,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   }
 
   async listDatabases(filter: DatabaseFilterOptions) {
-    const databaseFilter = buildDatabaseFilter(filter, 'name');
+    const databaseFilter = buildDatabaseFilter(filter, 'name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT name
       FROM sys.databases
@@ -778,7 +778,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -803,7 +803,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         r.specific_name as id,
@@ -865,7 +865,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   }
 
   async listSchemas(filter: FilterOptions) {
-    const schemaFilter = buildSchemaFilter(filter);
+    const schemaFilter = buildSchemaFilter(filter, 'schema_name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT schema_name
       FROM INFORMATION_SCHEMA.SCHEMATA
