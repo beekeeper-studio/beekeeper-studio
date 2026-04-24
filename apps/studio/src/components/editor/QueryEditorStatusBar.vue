@@ -88,11 +88,7 @@
     >
       Reset
     </x-button>
-    <x-buttons
-      v-show="canEdit && editing && changesCount > 0"
-      id="apply-changes-btn"
-      class="pending-changes"
-    >
+    <x-buttons v-show="canEdit && editing && changesCount > 0" class="pending-changes">
       <x-button
         class="btn btn-primary btn-badge btn-icon"
         @click.prevent="saveChanges"
@@ -257,7 +253,7 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable', 'showApplyForcefully'],
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable'],
   components: { Statusbar },
   data() {
     return {
@@ -420,8 +416,5 @@ export default {
 .global-status-bar x-button.btn.btn-primary {
   background-color: var(--theme-base);
   color: rgb(from var(--theme-bg) r g b / 87%);
-}
-#apply-changes-btn.force-show {
-  display: flex !important;
 }
 </style>

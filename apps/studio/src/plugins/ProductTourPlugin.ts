@@ -91,7 +91,7 @@ const flows: Record<
   ranQuerySuccessfully: {
     steps: [
       {
-        element: ".tab-pane.active #edit-data-btn",
+        element: ".global-status-bar #edit-data-btn",
         popover: {
           title: `<div class="main-title"><i class="material-icons">edit</i> Edit Query Results</div>`,
           description: `Click <strong>Edit Data</strong> to change rows directly from your query results.`,

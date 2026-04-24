@@ -1862,6 +1862,7 @@
     gap: 1rem;
   }
 
+  // Hide the dot on the range highlight when not editing result
   .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
     visibility: hidden;
   }
