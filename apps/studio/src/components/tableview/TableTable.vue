@@ -1133,7 +1133,13 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: createMenuItem('See details'),
+          label: createMenuItem(
+            'See details',
+            this.$bksConfig.getKeybindings(
+              'context-menu',
+              'general.jsonViewerSidebar'
+            )
+          ),
           action: () => {
             this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
             this.trigger(AppEvent.toggleSecondarySidebar, true)
