@@ -81,6 +81,13 @@
         { "key": "firstPage", "label": "First Page" },
         { "key": "lastPage", "label": "Last Page" }
       ]
+    },
+    {
+      "key": "keybindings.resultTable",
+      "label": "Result Table",
+      "properties": [
+        { "key": "openEditorModal", "label": "Open Editor Modal" }
+      ]
     }
   ]
 }
