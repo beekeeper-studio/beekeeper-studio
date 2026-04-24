@@ -119,7 +119,7 @@ export default {
       return this.savedConnection ? this.savedConnection.labelColor : 'default'
     },
     label() {
-      if (this.savedConnection) {
+      if (this.savedConnection && this.savedConnection.name && this.savedConnection.name.trim()) {
         return this.savedConnection.name
       } else if ((this.config.connectionType === 'sqlite' || this.config.connectionType === 'libsql') && this.config.defaultDatabase) {
         return window.main.basename(this.config.defaultDatabase)
