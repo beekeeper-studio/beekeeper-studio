@@ -296,9 +296,6 @@ const store = new Vuex.Store<State>({
     aiShellHintShown(_state, getters) {
       return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
     },
-    editResultsHintShown(_state, getters) {
-      return !_.isEmpty(getters["settings/settings"]["editResultsHintShown"]?.value);
-    },
     aiShellAvailable(_state, getters) {
       return getters["tabs/newTabDropdownItems"].some(
         ({ config }) => config.pluginId === "bks-ai-shell"
@@ -735,12 +732,6 @@ const store = new Vuex.Store<State>({
     setAiShellHintShown(context) {
       context.dispatch("settings/save", {
         key: "tabDropdownAIShellHintShown",
-        value: new Date(),
-      });
-    },
-    setEditResultsHintShown(context) {
-      context.dispatch("settings/save", {
-        key: "editResultsHintShown",
         value: new Date(),
       });
     },

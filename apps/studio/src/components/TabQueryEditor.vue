@@ -1189,6 +1189,7 @@
           }
         }
         this.editingResult = true;
+        wait(800).then(() => this.$tour.start("startedEditingResult"));
       },
       async saveChanges() {
         // This covers the instance where someone runs a query, toggles manual commit on, and then makes edits and tries to save them. This ensures it will then be inside a transaction
@@ -1495,7 +1496,7 @@
           if (found) {
             this.$store.dispatch('updateTables')
           }
-          wait(1200).then(() => this.$tour.start("ranFirstSuccessfulQuery"));
+          wait(1200).then(() => this.$tour.start("ranQuerySuccessfully"));
         } catch (ex) {
           log.error(ex)
           if(this.running) {

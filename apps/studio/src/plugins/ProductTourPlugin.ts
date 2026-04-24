@@ -9,7 +9,7 @@ type Context = {
   utility: UtilityConnection;
 };
 
-type FlowId = "connectedScreen" | "ranFirstSuccessfulQuery";
+type FlowId = "connectedScreen" | "ranQuerySuccessfully" | "startedEditingResult";
 
 type FlowStep = DriveStep & {
   shouldShow?: (context: Context) => boolean | Promise<boolean>;
@@ -20,8 +20,6 @@ type FlowStep = DriveStep & {
 const flows: Record<
   FlowId,
   {
-    canStart?: (context: Context) => boolean | Promise<boolean>;
-    cleanup?: () => void;
     steps: FlowStep[];
   }
 > = {
@@ -90,64 +88,67 @@ const flows: Record<
   /**
    * This is triggered after the user runs their first successful query.
    **/
-  ranFirstSuccessfulQuery: {
-    canStart(context) {
-      if (window.platformInfo.testMode) {
-        return false;
-      }
-
-      if (context.store.getters.isCommunity) {
-        return false;
-      }
-
-      if (context.store.getters.editResultsHintShown) {
-        return false;
-      }
-
-      return true;
-    },
-    cleanup() {
-      document
-        .querySelector(".global-status-bar #apply-changes-btn")
-        .classList
-        .remove("force-show");
-    },
+  ranQuerySuccessfully: {
     steps: [
       {
-        element: "#edit-data-btn",
+        element: ".tab-pane.active #edit-data-btn",
         popover: {
-          title: `<div class="main-title">Edit query results</div>`,
+          title: `<div class="main-title"><i class="material-icons">edit</i> Edit Query Results</div>`,
           description: `Click <strong>Edit Data</strong> to change rows directly from your query results.`,
           side: "top",
           showButtons: ["next"],
+          doneBtnText: "Okay",
+        },
+        shouldShow(context) {
+          if (window.platformInfo.testMode) {
+            return false;
+          }
+
+          if (context.store.getters.isCommunity) {
+            return false;
+          }
+
+          if (context.store.getters["settings/editResultsHintShown"]) {
+            return false;
+          }
+
+          return true;
+        },
+        onFinished(context) {
+          context.store.dispatch("settings/setEditResultsHintShown");
         },
       },
+    ],
+  },
+
+  startedEditingResult: {
+    steps: [
       {
-        element: ".result-table",
+        element: ".tab-pane.active .result-table .tabulator-tableholder",
         popover: {
-          title: `<div class="main-title">Edit any cell</div>`,
+          title: `<div class="main-title">Edit Cells</div>`,
           description: `Double-click a cell to change its value.`,
           side: "top",
           showButtons: ["next"],
+          doneBtnText: "Okay",
         },
-      },
-      {
-        element: "#apply-changes-btn",
-        popover: {
-          title: `<div class="main-title">Apply your changes</div>`,
-          description: `When you're done editing, click <strong>Apply</strong> to save your changes to the database.`,
-          side: "top",
-          showButtons: ["next"],
-          doneBtnText: "Got it",
-        },
-        onHighlightStarted() {
-          document
-            .querySelector(".global-status-bar #apply-changes-btn")
-            .classList
-            .add("force-show");
+        shouldShow(context) {
+          if (window.platformInfo.testMode) {
+            return false;
+          }
+
+          if (context.store.getters.isCommunity) {
+            return false;
+          }
+
+          if (context.store.getters["settings/startedEditingResult"]) {
+            return false;
+          }
+
+          return true;
         },
         onFinished(context) {
-          context.store.dispatch("setEditResultsHintShown");
+          context.store.dispatch("settings/setStartedEditingResult");
         },
       },
     ],
@@ -156,16 +157,12 @@ const flows: Record<
 
 const tour = {
   async start(context: Context, flow: FlowId) {
-    if (!flows[flow].canStart(context)) {
-      return;
-    }
-
     const allSteps = flows[flow].steps;
     const steps: FlowStep[] = [];
     const finishedSteps: FlowStep[] = [];
 
     for (const step of allSteps) {
-      if (typeof step.shouldShow === 'undefined' || await step.shouldShow(context)) {
+      if (await step.shouldShow(context)) {
         steps.push({
           ...step,
           popover: {
@@ -211,7 +208,6 @@ const tour = {
           steps[i].onFinished?.(context);
         }
         delete document.body.dataset.driverStepElement;
-        flows[flow].cleanup?.();
         driver.destroy();
       },
     }).drive();
