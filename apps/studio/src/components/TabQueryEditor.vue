@@ -635,7 +635,7 @@
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
       readOnly() {
-        if (this.remoteDeleted || this.editingResult) {
+        if (this.remoteDeleted) {
           return true;
         }
         return false;
