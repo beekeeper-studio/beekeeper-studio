@@ -2,7 +2,16 @@ import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
-import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
+import ini from "ini";
+import {
+  existsSync,
+  readFileSync,
+  copyFileSync,
+  accessSync,
+  constants,
+  mkdirSync,
+  writeFileSync,
+} from "fs";
 import { parseIni, processRawConfig } from "@/config/helpers";
 import {
   BksConfigProvider,
@@ -190,6 +199,35 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
   return readConfig(filePath);
 }
 
+function resolveConfigPathByType(type: "user"): string {
+  const file = platformInfo.isDevelopment
+    ? "local.config.ini"
+    : "user.config.ini";
+  return path.join(resolveConfigDir(), file);
+}
+
+export function getConfigContent(_type: "user"): string {
+  const filePath = resolveConfigPathByType("user");
+  if (!existsSync(filePath)) {
+    return "";
+  }
+  return readFileSync(filePath, "utf-8");
+}
+
+export function overwriteConfig(_type: "user", content: string): void {
+  const filePath = resolveConfigPathByType("user");
+
+  log.debug(`Saving config ${filePath}.`);
+
+  const parentDir = path.dirname(filePath);
+
+  if (!existsSync(parentDir)) {
+    mkdirSync(parentDir, { recursive: true });
+  }
+
+  writeFileSync(filePath, content, "utf-8");
+}
+
 function resolveConfigDir() {
   const dirpath = path.resolve(__dirname);
 
@@ -269,5 +307,10 @@ export function mainBksConfig(): BksConfig {
   log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
   log.info(`User config: ${JSON.stringify(userConfig, null, 2)}`);
 
-  return BksConfigProvider.create(source, platformInfo);
+  return BksConfigProvider.create({
+    source,
+    platformInfo,
+    onOverwrite: async (type, content) => overwriteConfig(type, content),
+    onGetContent: async (type) => getConfigContent(type),
+  });
 }
