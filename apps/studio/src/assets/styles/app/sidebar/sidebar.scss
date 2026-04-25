@@ -39,7 +39,9 @@
       flex: 0 1 100%;
       color: $text-dark;
       font-weight: 500;
-      letter-spacing: 0.05rem;
+      // NOTE: This was probably ok when we still use Roboto as a font.
+      // Now we use system font. So at least in mac, this isn't good.
+      // letter-spacing: 0.05rem;
       padding: 0 $gutter-h;
       // box-shadow: 0 1px darken($theme-bg, 6%);
       box-shadow: 0 1px $border-color;
