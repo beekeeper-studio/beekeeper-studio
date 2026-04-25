@@ -84,3 +84,9 @@ export type ConfigMetadata = {
   sections: ConfigMetadataSection[];
 };
 
+export interface SharedQueryLink {
+  databaseId: Nullable<string|number>,
+  queryId: Nullable<string|number>,
+  workspaceId: Nullable<string|number>
+}
+
