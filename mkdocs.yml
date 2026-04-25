@@ -141,6 +141,7 @@ nav:
     - user_guide/connecting/duckdb.md
     - user_guide/connecting/firebird.md
     - user_guide/connecting/google-bigquery.md
+    - GreengageDB: user_guide/connecting/greengage.md
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
     - user_guide/connecting/redis.md

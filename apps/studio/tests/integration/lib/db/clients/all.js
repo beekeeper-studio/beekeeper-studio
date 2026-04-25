@@ -65,6 +65,41 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().listTableTests()
     })
 
+    // Regression guard for buildSchemaFilter: before the wrapIdentifier fix,
+    // calling listTables with a schema filter crashed inside the helper for
+    // PG / SQL Server / Trino / SQL Anywhere / DuckDB. This test validates
+    // both that the filter branch runs and that it actually narrows output.
+    test("list tables with a schema filter should return only that schema's tables", async () => {
+      const util = getUtil()
+      if (!util.defaultSchema) return
+
+      const matching = await util.connection.listTables({ schema: util.defaultSchema })
+      const names = matching.map((t) => t.name)
+      // Known seeded tables must be present
+      expect(names).toContain('people')
+      // Any returned row carrying schema metadata must match the filter
+      for (const t of matching) {
+        if (t.schema) expect(t.schema).toBe(util.defaultSchema)
+      }
+
+      // Filter must actually restrict: a nonexistent schema yields no seeded tables
+      const bogus = await util.connection.listTables({ schema: '__bks_missing_schema_xyz__' })
+      expect(bogus.map((t) => t.name)).not.toContain('people')
+    })
+
+    // Regression guard for buildSchemaFilter `only` branch — specifically
+    // exercises the path DuckDB hits in listSchemas().
+    test("list schemas with an 'only' filter should return only that schema", async () => {
+      const util = getUtil()
+      if (!util.defaultSchema) return
+      if (typeof util.connection.listSchemas !== 'function') return
+
+      const schemas = await util.connection.listSchemas({ only: [util.defaultSchema] })
+      expect(schemas).toContain(util.defaultSchema)
+      // Anything outside the `only` list must be excluded
+      expect(schemas.filter((s) => s !== util.defaultSchema)).toEqual([])
+    })
+
     test("list indexes should work", async () => {
       if (getUtil().data.disabledFeatures?.createIndex) return
       await getUtil().listIndexTests()
