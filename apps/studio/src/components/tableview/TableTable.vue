@@ -344,6 +344,25 @@ const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
+const DEFAULT_COLUMN_SORT_KEY = 'defaultColumnSort';
+
+function parseSortConfig(raw: unknown): Record<string, 'asc' | 'desc'> {
+  if (!raw || typeof raw !== 'string') return {}
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return {}
+    const result: Record<string, 'asc' | 'desc'> = {}
+    for (const [col, dir] of Object.entries(parsed)) {
+      if (typeof col === 'string' && (dir === 'asc' || dir === 'desc')) {
+        result[col] = dir
+      }
+    }
+    return result
+  } catch {
+    return {}
+  }
+}
+
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
   mixins: [data_converter, DataMutators, FkLinkMixin],
@@ -395,6 +414,9 @@ export default Vue.extend({
       selectedRowPosition: -1,
       selectedRowData: {},
       expandablePaths: [],
+
+      defaultSortConfig: {} as Record<string, 'asc' | 'desc'>,
+      defaultSortConfigLoaded: false,
     };
   },
   computed: {
@@ -577,6 +599,18 @@ export default Vue.extend({
       if (!this.usedConfig.id) return null;
       return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
     },
+    defaultSorters(): { field: string; dir: 'asc' | 'desc' }[] {
+      if (!this.table?.columns?.length) return []
+      const { disallowedSortColumns = [] } = this.dialectData
+      const sorters: { field: string; dir: 'asc' | 'desc' }[] = []
+      for (const col of this.table.columns) {
+        const dir = this.defaultSortConfig[col.columnName]
+        if (dir && !disallowedSortColumns.includes(col.dataType?.toLowerCase())) {
+          sorters.push({ field: col.columnName, dir })
+        }
+      }
+      return sorters
+    },
     initialSort() {
       // FIXME: Don't specify an initial sort order
       // because it can slow down some databases.
@@ -590,10 +624,13 @@ export default Vue.extend({
         return [];
       }
 
+      if (this.defaultSorters.length) {
+        return this.defaultSorters.map(({ field, dir }) => ({ column: field, dir }))
+      }
       return [{ column: this.table.columns[0].columnName, dir: "asc" }];
     },
     shouldInitialize() {
-      return this.tablesInitialLoaded && this.active && !this.initialized
+      return this.tablesInitialLoaded && this.active && !this.initialized && this.defaultSortConfigLoaded
     },
     columnFilterModalName() {
       return `column-filter-modal-${this.tableId}`
@@ -732,6 +769,13 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   async mounted() {
+    try {
+      await this.loadDefaultSortConfig()
+    } catch (e) {
+      log.error('Failed to load default sort config', e)
+      this.defaultSortConfig = {}
+    }
+    this.defaultSortConfigLoaded = true
     if (this.shouldInitialize) {
       await this.$nextTick(async() => {
         await this.initialize()
@@ -743,6 +787,50 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    async loadDefaultSortConfig() {
+      const connId = this.usedConfig?.id
+      if (!connId) {
+        this.defaultSortConfig = {}
+        return
+      }
+      const raw = await this.$settings.get(`${DEFAULT_COLUMN_SORT_KEY}.${connId}`, '{}')
+      this.defaultSortConfig = parseSortConfig(typeof raw === 'string' ? raw : JSON.stringify(raw))
+    },
+    async setCurrentSortAsDefault() {
+      if (!this.tabulator || !this.table || !this.usedConfig?.id) return
+      const key = `${DEFAULT_COLUMN_SORT_KEY}.${this.usedConfig.id}`
+      const sorters = this.tabulator.getSorters()
+      const { disallowedSortColumns = [] } = this.dialectData
+      const config: Record<string, 'asc' | 'desc'> = {}
+      for (const { field, dir } of sorters) {
+        if (field === this.internalIndexColumn) continue
+        const col = this.table.columns.find((c) => c.columnName === field)
+        if (col && !disallowedSortColumns.includes(col.dataType?.toLowerCase())) {
+          config[field] = dir as 'asc' | 'desc'
+        }
+      }
+      await this.$settings.set(key, JSON.stringify(config))
+      await this.loadDefaultSortConfig()
+    },
+    async resetDefaultSort() {
+      if (!this.usedConfig?.id) return
+      const key = `${DEFAULT_COLUMN_SORT_KEY}.${this.usedConfig.id}`
+      await this.$settings.set(key, JSON.stringify({}))
+      await this.loadDefaultSortConfig()
+    },
+    isCurrentSortDefault(): boolean {
+      if (!this.tabulator || !this.table?.columns?.length) return true
+      const expected = this.defaultSorters.length
+        ? this.defaultSorters
+        : [{ field: this.table.columns[0].columnName, dir: 'asc' }]
+      const currentSorters = this.tabulator.getSorters()
+        .filter((s) => s.field !== this.internalIndexColumn)
+        .map((s) => ({ field: s.field, dir: s.dir }))
+      if (expected.length !== currentSorters.length) return false
+      return expected.every((d, i) =>
+        d.field === currentSorters[i]?.field && d.dir === currentSorters[i]?.dir
+      )
+    },
     createColumnFromProps(column) {
       // 1. add a column for a real column
       // if a FK, add another column with the link
@@ -795,6 +883,26 @@ export default Vue.extend({
           hideColumnLabel = hideColumnLabel.slice(0, 30) + '...'
         }
 
+        const hasConnectionId = !!this.usedConfig?.id
+        const hasDefaultSort = Object.keys(this.defaultSortConfig).length > 0
+        const isCurrentDefault = this.isCurrentSortDefault()
+
+        const defaultSortMenuItems: any[] = []
+        if (hasConnectionId) {
+          if (!isCurrentDefault) {
+            defaultSortMenuItems.push({
+              label: createMenuItem("Set current sort as default"),
+              action: () => this.setCurrentSortAsDefault(),
+            })
+          }
+          if (hasDefaultSort) {
+            defaultSortMenuItems.push({
+              label: createMenuItem("Reset default sort"),
+              action: () => this.resetDefaultSort(),
+            })
+          }
+        }
+
         return [
           this.setAsNullMenuItem(range),
           { separator: true },
@@ -805,6 +913,7 @@ export default Vue.extend({
           }),
           { separator: true },
           ...commonColumnMenu,
+          ...(defaultSortMenuItems.length ? [{ separator: true }, ...defaultSortMenuItems] : []),
           { separator: true },
           {
             label: createMenuItem(hideColumnLabel),
