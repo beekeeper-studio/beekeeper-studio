@@ -8,9 +8,10 @@ From time to time, we may update configuration keys, and thus need to deprecate 
 
 ## v5.7.0
 We have changed how query actions are defined in the app to allow for the ability to change the default run method in the editor. As such, four keys have been renamed.
-    - submitTabQuery -> primaryQueryAction
-    - submitCurrentQuery -> secondaryQueryAction
-    - submitQueryToFile -> primaryQueryToFileAction
-    - submitCurrentQueryToFile -> secondaryQueryToFileAction
+
+- submitTabQuery -> primaryQueryAction
+- submitCurrentQuery -> secondaryQueryAction
+- submitQueryToFile -> primaryQueryToFileAction
+- submitCurrentQueryToFile -> secondaryQueryToFileAction
 
 The default behaviour for this has not changed as of yet, but you can now change the primary and secondary actions using the `primaryQueryAction` and `secondaryQueryAction` options under the `settings.queryEditor` section found in the [config file](../user_guide/configuration.md).
