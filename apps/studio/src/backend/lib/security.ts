@@ -20,8 +20,13 @@ const trackedContents = new WeakSet<WebContents>();
 function trackInput(contents: WebContents) {
   if (trackedContents.has(contents) || contents.isDestroyed()) return;
   trackedContents.add(contents);
+  // input-event fires at the OS input rate (mouseMove can be 60-120Hz). The
+  // idle check only needs ~1s granularity, so throttle the timestamp update.
   contents.on("input-event", () => {
-    lastAppInputAt = Date.now();
+    const now = Date.now();
+    if (now - lastAppInputAt > 1000) {
+      lastAppInputAt = now;
+    }
   });
 }
 
