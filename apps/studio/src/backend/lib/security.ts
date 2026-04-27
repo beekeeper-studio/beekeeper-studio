@@ -3,6 +3,7 @@ import { AppEvent } from "@/common/AppEvent";
 import bksConfig from "@/common/bksConfig";
 import rawLog from "@bksLogger";
 import { app, powerMonitor, webContents, WebContents } from "electron";
+import _ from "lodash";
 
 const log = rawLog.scope("security");
 
@@ -17,15 +18,16 @@ let initialized = false;
 let lastAppInputAt = Date.now();
 const trackedContents = new WeakSet<WebContents>();
 
+const recordInput = _.throttle(() => {
+  lastAppInputAt = Date.now();
+}, 1000);
+
 function trackInput(contents: WebContents) {
   if (trackedContents.has(contents) || contents.isDestroyed()) return;
   trackedContents.add(contents);
-  // input-event fires at the OS input rate (mouseMove can be 60-120Hz). The
-  // idle check only needs ~1s granularity, so throttle the timestamp update.
-  contents.on("input-event", () => {
-    const now = Date.now();
-    if (now - lastAppInputAt > 1000) {
-      lastAppInputAt = now;
+  contents.on("input-event", (_event, input) => {
+    if (input.type === "keyDown" || input.type === "mouseDown") {
+      recordInput();
     }
   });
 }
