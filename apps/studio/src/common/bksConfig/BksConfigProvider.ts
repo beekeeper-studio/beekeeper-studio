@@ -17,7 +17,7 @@ export type IniArray = {
 };
 
 export interface ConfigEntryDetailWarning {
-  type: "unrecognized-key" | "system-user-conflict" | "unknown-allow-plugin";
+  type: "unrecognized-key" | "system-user-conflict" | "unknown-allow-plugin" | "deprecated-key";
   sourceName: "system" | "user";
   section: string;
   path: string;

@@ -59,6 +59,25 @@
               {{ bundledPluginIds }}.
             </span>
           </template>
+          <template v-if="'deprecated-key' in groupedWarnings">
+            <span>Deprecated keys</span>
+            <ul>
+              <li
+                v-for="warning in groupedWarnings['deprecated-key']"
+                :key="`${warning.sourceName}-${warning.path}-${warning.section}`"
+              >
+                <template v-if="warning.section === warning.path">
+                  <span style="font-weight: bold">[{{ warning.section }}]</span>
+                </template>
+                <template v-else>
+                  <span style="font-weight: bold">{{ warning.path }}</span> at
+                  <span style="font-weight: bold">[{{ warning.section }}]</span>
+                </template>
+                in {{ warning.sourceName }} config:
+                <span style="font-weight: bold">{{ warning.value }}</span>
+              </li>
+            </ul>
+          </template>
         </div>
       </div>
       <div class="vue-dialog-buttons">
