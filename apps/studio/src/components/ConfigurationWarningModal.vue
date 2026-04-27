@@ -77,6 +77,9 @@
                 <span style="font-weight: bold">{{ warning.value }}</span>
               </li>
             </ul>
+            <span>
+              <a href="https://www.beekeeperstudio.io/support/deprecated-configs">Learn more</a>
+            </span>
           </template>
         </div>
       </div>
