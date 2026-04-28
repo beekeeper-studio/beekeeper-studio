@@ -28,6 +28,7 @@ export interface TransportLicenseKey extends Transport {
   licenseType: 'TrialLicense' | 'PersonalLicense' | 'BusinessLicense',
   active: boolean
   maxAllowedAppRelease: { tagName: string } | null
+  invalidatedAt: Date | null
 }
 
 export interface TransportPinnedConn extends Transport {

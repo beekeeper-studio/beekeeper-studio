@@ -27,6 +27,25 @@ describe("Saved Connection", () => {
 
   })
 
+  it("should reject a connection with an empty-string name via class-validator", async () => {
+    const { validate } = require('class-validator')
+    const conn = new SavedConnection()
+    conn.connectionType = 'sqlite'
+    conn.defaultDatabase = ':memory:'
+    conn.name = ""
+    const errors = await validate(conn)
+    expect(errors.some(e => e.property === 'name')).toBe(true)
+  })
+
+  it("should reject a connection with no name via class-validator", async () => {
+    const { validate } = require('class-validator')
+    const conn = new SavedConnection()
+    conn.connectionType = 'sqlite'
+    conn.defaultDatabase = ':memory:'
+    const errors = await validate(conn)
+    expect(errors.some(e => e.property === 'name')).toBe(true)
+  })
+
   const urls = [
     { t: 'sqlite', p: '/a/b/c/database.sqlite3'},
     { t: 'sqlite', p: '/a/b/c/database.sqlite'},

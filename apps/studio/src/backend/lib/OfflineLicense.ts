@@ -33,6 +33,7 @@ let _cachedLicense = null
 }
  */
 
+const filename = platformInfo.isDevelopment ? 'license-dev.json' : 'license.json'
 
 export interface LicenseOptions {
   licensePath?: string
@@ -46,7 +47,7 @@ export class OfflineLicense {
     return _cachedLicense
   }
 
-  defaultPath = path.join(platformInfo.userDirectory, 'license.json')
+  defaultPath = path.join(platformInfo.userDirectory, filename)
   defaultKeyPath = path.join(platformInfo.resourcesPath, 'production_pub.pem')
   path: string
   publicKeyPath: string

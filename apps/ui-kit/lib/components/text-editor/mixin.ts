@@ -280,7 +280,7 @@ export default {
           },
           divider,
           {
-            label: "Find & Replace",
+            label: this.readOnly ? "Find" : "Find & Replace",
             id: "text-find",
             handler: () => {
               this.textEditor.execCommand("findAndReplace");
