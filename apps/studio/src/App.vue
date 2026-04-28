@@ -6,6 +6,7 @@
       :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }"
     >
       <titlebar />
+      <keychain-warning />
       <template v-if="storeInitialized">
         <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
         <connection-interface v-if="!connected" />
@@ -87,6 +88,7 @@ import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
+import KeychainWarning from '@/components/common/KeychainWarning.vue'
 import InputJwtModal from "@/components/common/modals/InputJwtModal.vue";
 
 import rawLog from '@bksLogger'
@@ -103,7 +105,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
-    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal, KeychainWarning,
     InputJwtModal,
   },
   data() {

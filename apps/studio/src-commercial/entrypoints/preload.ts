@@ -37,6 +37,10 @@ export const api = {
     const bksConfigSource = await ipcRenderer.invoke('bksConfigSource')
     contextBridge.exposeInMainWorld('bksConfigSource', bksConfigSource);
   },
+  async requestKeychainInsecure() {
+    const insecure = await ipcRenderer.invoke('keychainInsecure')
+    contextBridge.exposeInMainWorld('keychainInsecure', insecure)
+  },
   isReady() {
     ipcRenderer.send('ready');
   },

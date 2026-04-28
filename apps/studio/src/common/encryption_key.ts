@@ -1,40 +1,35 @@
-import crypto from 'crypto'
-import Encryptor from 'simple-encryptor'
-import fs from 'fs'
-import path from 'path'
-import platformInfo from './platform_info'
-
-function initUserDirectory(d: string) {
-  if (!fs.existsSync(d)) {
-    fs.mkdirSync(d, { recursive: true })
-  }
-}
-const userDirectory = platformInfo.userDirectory
-
-const defaultEncryptionKey = "38782F413F442A472D4B6150645367566B59703373367639792442264529482B"
-const keyFile = path.join(userDirectory, '.key')
+/**
+ * Encryption key cache for the utility process and model files.
+ * The key is set once via setEncryptionKey() after receiving it from the main process over IPC,
+ * then retrieved by model files via loadEncryptionKey().
+ */
 
 let _encryptionKey: Nullable<string> = null
+let _insecure = false
 
+/**
+ * Stores the encryption key received from the main process.
+ * Must be called before any ORM models are loaded.
+ */
+export function setEncryptionKey(key: string, insecure: boolean): void {
+  _encryptionKey = key
+  _insecure = insecure
+}
+
+/**
+ * Returns the cached encryption key.
+ * Throws if setEncryptionKey() has not been called yet.
+ */
 export function loadEncryptionKey(): string {
-  if (_encryptionKey) {
-    return _encryptionKey
+  if (!_encryptionKey) {
+    throw new Error('loadEncryptionKey() called before setEncryptionKey() — the encryption key has not been received from the main process yet')
   }
-  const encryptor = Encryptor(defaultEncryptionKey)
-
-  initUserDirectory(userDirectory)
-
-  if (!fs.existsSync(keyFile)) {
-    const generatedKey = crypto.randomBytes(32)
-    const newKey = generatedKey.toString('hex')
-    const result = {
-      'encryptionKey': newKey
-    }
-    fs.writeFileSync(keyFile, encryptor.encrypt(result), 'UTF8')
-  }
-
-  const encryptedData = fs.readFileSync(keyFile, 'UTF8')
-  const data = encryptor.decrypt(encryptedData)
-  _encryptionKey = data['encryptionKey'] as string
   return _encryptionKey
+}
+
+export function isEncryptionKeyInsecure(): boolean {
+  if (_encryptionKey === null) {
+    return false
+  }
+  return _insecure
 }

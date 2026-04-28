@@ -8,13 +8,28 @@ import rawLog from '@bksLogger'
 const log = rawLog.scope("Transformers")
 
 
-export class EncryptTransformer implements ValueTransformer {
-  private encryptor: SimpleEncryptor
+/**
+ * Base class for encryption transformers. Holds a lazy-initialized encryptor
+ * keyed off a provider function — this lets subclasses defer key resolution
+ * until the first encrypt/decrypt call (after safeStorage is ready).
+ */
+abstract class BaseEncryptTransformer {
+  private _encryptor: SimpleEncryptor | null = null
+  private keyProvider: () => string
 
-  constructor(key: string) {
-    this.encryptor = Encryptor(key)
+  constructor(keyProvider: () => string) {
+    this.keyProvider = keyProvider
   }
 
+  protected get encryptor(): SimpleEncryptor {
+    if (!this._encryptor) {
+      this._encryptor = Encryptor(this.keyProvider())
+    }
+    return this._encryptor
+  }
+}
+
+export class EncryptTransformer extends BaseEncryptTransformer implements ValueTransformer {
   to(entityValue: Nullable<string>): Nullable<string> {
     if( !entityValue ) return null
     return this.encryptor.encrypt(entityValue)
@@ -25,13 +40,7 @@ export class EncryptTransformer implements ValueTransformer {
   }
 }
 
-export class SurrealDbEncryptTransformer implements ValueTransformer {
-  private encryptor: SimpleEncryptor;
-
-  constructor(key: string) {
-    this.encryptor = Encryptor(key);
-  }
-
+export class SurrealDbEncryptTransformer extends BaseEncryptTransformer implements ValueTransformer {
   to(value: SurrealDBOptions): SurrealDBOptions {
     const newVal = _.cloneDeep(value)
     if (newVal?.token) {
@@ -51,13 +60,7 @@ export class SurrealDbEncryptTransformer implements ValueTransformer {
 
 }
 
-export class AzureCredsEncryptTransformer implements ValueTransformer {
-  private encryptor: SimpleEncryptor;
-
-  constructor(key: string) {
-    this.encryptor = Encryptor(key);
-  }
-
+export class AzureCredsEncryptTransformer extends BaseEncryptTransformer implements ValueTransformer {
   to(value: AzureAuthOptions): AzureAuthOptions {
     const newVal = _.cloneDeep(value);
     if (newVal?.tenantId) {

@@ -3,7 +3,7 @@ import { Column, Entity } from "typeorm";
 import { EncryptTransformer } from "../transformers/Transformers";
 import { ApplicationEntity } from "./application_entity";
 
-const encrypt = new EncryptTransformer(loadEncryptionKey());
+const encrypt = new EncryptTransformer(() => loadEncryptionKey());
 
 @Entity({ name: 'token_cache' })
 export class TokenCache extends ApplicationEntity {
