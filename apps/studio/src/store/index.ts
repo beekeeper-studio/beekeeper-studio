@@ -39,6 +39,7 @@ import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
+import { AiServerStoreModule } from './modules/aiServer/AiServerStoreModule'
 
 
 const log = RawLog.scope('store/index')
@@ -134,6 +135,7 @@ const store = new Vuex.Store<State>({
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
     plugins: PluginsModule,
+    aiServer: AiServerStoreModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),

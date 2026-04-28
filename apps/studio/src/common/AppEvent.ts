@@ -79,6 +79,12 @@ export enum AppEvent {
   changedTheme = 'changedTheme',
   /** A plugin menu item was clicked in the native/client menu under the tools. */
   pluginMenuClicked = 'pluginMenuClicked',
+  /** AI Server appended a query log entry. Argument is the entry. */
+  aiServerLogAppend = 'aiServerLogAppend',
+  /** AI Server status changed (started/stopped). Argument is the status payload. */
+  aiServerStatusChanged = 'aiServerStatusChanged',
+  /** Open the AI Server panel/tab. */
+  openAiServerPanel = 'openAiServerPanel',
 }
 
 export interface RootBinding {

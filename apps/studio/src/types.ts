@@ -11,9 +11,22 @@ interface UtilProcOpenExternalMessage {
   url: string;
 }
 
+export interface AiServerStatusPayload {
+  running: boolean;
+  host: string;
+  port: number;
+  startedAt: string | null;
+}
+
+interface UtilProcAiServerStatusMessage {
+  type: "aiServerStatus";
+  payload: AiServerStatusPayload;
+}
+
 export type UtilProcMessage =
   | UtilProcReadyMessage
-  | UtilProcOpenExternalMessage;
+  | UtilProcOpenExternalMessage
+  | UtilProcAiServerStatusMessage;
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 

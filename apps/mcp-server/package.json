@@ -1,0 +1,56 @@
+{
+  "name": "@beekeeperstudio/mcp-server",
+  "description": "MCP server that exposes Beekeeper Studio's local AI server as Claude Code / MCP tools.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": {
+    "name": "Beekeeper Studio Team",
+    "email": "support@beekeeperstudio.io",
+    "url": "https://beekeeperstudio.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beekeeper-studio/beekeeper-studio.git",
+    "directory": "apps/mcp-server"
+  },
+  "bugs": {
+    "url": "https://github.com/beekeeper-studio/beekeeper-studio/issues"
+  },
+  "homepage": "https://beekeeperstudio.io",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "beekeeper-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "build:types": "tsc -p tsconfig.json --emitDeclarationOnly",
+    "dev": "node ./scripts/build.mjs --watch",
+    "start": "node dist/index.js",
+    "test:unit": "node --test --experimental-strip-types tests/*.test.ts || true"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "claude-code",
+    "beekeeper-studio",
+    "sql"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5",
+    "typescript": "^5.4.5"
+  }
+}

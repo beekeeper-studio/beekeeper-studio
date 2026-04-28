@@ -28,6 +28,8 @@ import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
+import { TrayManager } from '@/background/TrayManager'
+import type { AiServerStatusPayload } from '@/types'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -41,6 +43,50 @@ function initUserDirectory(d: string) {
 
 let utilityProcess: Electron.UtilityProcess
 let newWindows: number[] = [];
+let trayManager: TrayManager | null = null;
+let aiServerStatus: AiServerStatusPayload | null = null;
+let isAppQuitting = false;
+
+function ensureTrayManager(): TrayManager {
+  if (!trayManager) {
+    trayManager = new TrayManager({
+      onShowWindow: () => {
+        const win = getActiveWindows()[0];
+        if (win?.win) {
+          win.win.show();
+          win.win.focus();
+        } else if (settings) {
+          buildWindow(settings).catch((e) => log.error('failed to build window from tray', e));
+        }
+      },
+      onStopServer: () => {
+        utilityProcess?.postMessage({ type: 'aiServer/stop' });
+      },
+      onOpenAiServer: () => {
+        const win = getActiveWindows()[0];
+        if (win?.win) {
+          win.win.show();
+          win.win.focus();
+          win.send(AppEvent.openAiServerPanel);
+        } else if (settings) {
+          buildWindow(settings).then(() => {
+            const w = getActiveWindows()[0];
+            w?.send(AppEvent.openAiServerPanel);
+          }).catch((e) => log.error('failed to open AI server window', e));
+        }
+      },
+      onQuit: () => {
+        isAppQuitting = true;
+        app.quit();
+      },
+    });
+  }
+  return trayManager;
+}
+
+function aiServerKeepsAppAlive(): boolean {
+  return !!aiServerStatus?.running && !!bksConfig.aiServer.minimizeToTrayWhenActive;
+}
 
 async function createUtilityProcess() {
   if (utilityProcess) {
@@ -77,6 +123,14 @@ async function createUtilityProcess() {
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       electron.shell.openExternal(msg.url)
+    } else if (msg.type === 'aiServerStatus') {
+      aiServerStatus = msg.payload;
+      const tray = ensureTrayManager();
+      tray.setStatus(msg.payload);
+      if (!msg.payload.running && getActiveWindows().length === 0) {
+        // Server stopped and no windows — drop the tray and let normal quit flow run.
+        tray.hide();
+      }
     }
   })
 
@@ -167,9 +221,24 @@ app.on('window-all-closed', () => {
   // to stay active until the user quits explicitly with Cmd + Q
   ipcMain.emit("disable-connection-menu-items");
 
+  if (isAppQuitting) {
+    app.quit()
+    return
+  }
+
+  if (aiServerKeepsAppAlive()) {
+    log.info('AI server is running; keeping process alive in tray')
+    return
+  }
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  isAppQuitting = true;
+  trayManager?.destroy();
 })
 
 ipcMain.handle('platformInfo', () => {

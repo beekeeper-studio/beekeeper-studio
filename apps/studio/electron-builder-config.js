@@ -69,6 +69,10 @@ module.exports = {
       to: 'public'
     },
     {
+      from: './skills',
+      to: 'skills'
+    },
+    {
       from: ".",
       to: ".",
       filter: ["user.config.ini", "system.config.ini", "default.config.ini"],

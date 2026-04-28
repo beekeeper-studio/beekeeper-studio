@@ -380,6 +380,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Manage Plugins',
       click: actionHandler.managePlugins,
     },
+    aiServer: {
+      id: 'ai-server',
+      label: 'AI Server...',
+      click: actionHandler.openAiServer,
+    },
     keyboardShortcuts: {
       id: 'keyboard-shortcuts',
       label: 'Keyboard Shortcuts',
