@@ -160,21 +160,14 @@
 
             <h4>Recommended: MCP server</h4>
             <p class="muted">
-              An MCP server gives Claude first-class tools (no per-call <code>Bash</code>/<code>Read</code> permission prompts). One-line install using the copy bundled with Beekeeper Studio:
-            </p>
-            <code class="curl-snippet">{{ mcpInstallCommandLocal }}</code>
-            <button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandLocal)">
-              <i class="material-icons">content_copy</i> Copy
-            </button>
-            <p class="muted" style="margin-top:.75rem">
-              Once <code>@beekeeperstudio/mcp-server</code> is published you'll also be able to use:
+              <code>@beekeeperstudio/mcp-server</code> is published separately on npm. Add it to Claude Code with one command — it'll <code>npx</code> the latest version each session:
             </p>
             <code class="curl-snippet">{{ mcpInstallCommandNpm }}</code>
             <button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandNpm)">
               <i class="material-icons">content_copy</i> Copy
             </button>
             <p class="muted" style="margin-top:.5rem">
-              After running the command, restart Claude Code and check <code>/mcp</code> — you should see <code>beekeeper</code> connected.
+              After running it, restart Claude Code and check <code>/mcp</code> — you should see <code>beekeeper</code> connected. Tool calls go directly through MCP with no per-call <code>Bash</code> permission prompts.
             </p>
 
             <h4>Alternative: Claude Code skill</h4>
@@ -262,13 +255,6 @@ export default Vue.extend({
     bundledSkillPath(): string {
       const dir = this.$config?.resourcesPath || "<resources>";
       return `${dir}/skills/beekeeper`;
-    },
-    bundledMcpPath(): string {
-      const dir = this.$config?.resourcesPath || "<resources>";
-      return `${dir}/mcp-server/dist/index.js`;
-    },
-    mcpInstallCommandLocal(): string {
-      return `claude mcp add --scope user beekeeper -- node "${this.bundledMcpPath}"`;
     },
     mcpInstallCommandNpm(): string {
       return "claude mcp add --scope user beekeeper -- npx -y @beekeeperstudio/mcp-server";

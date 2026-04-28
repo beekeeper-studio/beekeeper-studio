@@ -73,14 +73,6 @@ module.exports = {
       to: 'skills'
     },
     {
-      from: '../mcp-server/dist',
-      to: 'mcp-server/dist'
-    },
-    {
-      from: '../mcp-server/README.md',
-      to: 'mcp-server/README.md'
-    },
-    {
       from: ".",
       to: ".",
       filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
