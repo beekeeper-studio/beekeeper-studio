@@ -71,7 +71,7 @@ module.exports = {
     {
       from: ".",
       to: ".",
-      filter: ["user.config.ini", "system.config.ini", "default.config.ini"],
+      filter: ["user.config.ini", "system.config.ini", "default.config.ini", "deprecated.config.ini"],
     },
     {
       from: "node_modules/ws",
