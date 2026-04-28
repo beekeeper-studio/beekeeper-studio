@@ -228,7 +228,9 @@ export default Vue.extend({
   margin: 0;
   padding-block: 0.75rem;
   font-size: 0.85rem;
-  letter-spacing: 0.05rem;
+  /* NOTE: This was probably ok when we still use Roboto as a font. */
+  /* Now we use system font. So at least in mac, this isn't good. */
+  /* letter-spacing: 0.05rem; */
   text-transform: uppercase;
   font-weight: bold;
   text-transform: uppercase;
