@@ -21,10 +21,10 @@
         @submit="triggerFilter"
       />
       <div
-        v-show="isEmpty"
+        v-show="loading || isEmpty"
         class="empty-placeholder"
       >
-        No Data
+        {{ loading ? 'Loading...' : 'No Data' }}
       </div>
       <div
         class="table-view-wrapper"
@@ -356,7 +356,7 @@ export default Vue.extend({
       headerFilter: true,
       columnsSet: false,
       tabulator: null,
-      loading: false,
+      loading: true,
       hasNextPage: false,
 
       // table data
@@ -1730,6 +1730,7 @@ export default Vue.extend({
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
+      this.loading = true
       const { usesOffsetPagination, disallowedSortColumns = [] } = this.dialectData
       log.info("fetch params", params)
       let offset = 0;
@@ -1839,6 +1840,7 @@ export default Vue.extend({
             })
             reject(error.message);
           } finally {
+            this.loading = false
             if (!this.active) {
               this.forceRedraw = true
             }
