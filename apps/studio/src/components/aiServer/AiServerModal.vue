@@ -166,8 +166,20 @@
             <button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandNpm)">
               <i class="material-icons">content_copy</i> Copy
             </button>
+            <p class="muted" style="margin-top:.75rem">
+              Claude Code prompts before each new MCP tool. To pre-approve every Beekeeper tool in one rule, add <code>mcp__beekeeper</code> to <code>permissions.allow</code> in <code>~/.claude/settings.json</code>:
+            </p>
+            <code class="curl-snippet">{{ mcpPermissionRule }}</code>
+            <button class="btn btn-flat btn-icon" @click="copy(mcpPermissionRule)">
+              <i class="material-icons">content_copy</i> Copy rule
+            </button>
+            <p class="muted" style="margin-top:.5rem">Or, with <code>jq</code>:</p>
+            <code class="curl-snippet">{{ mcpPermissionJqCommand }}</code>
+            <button class="btn btn-flat btn-icon" @click="copy(mcpPermissionJqCommand)">
+              <i class="material-icons">content_copy</i> Copy command
+            </button>
             <p class="muted" style="margin-top:.5rem">
-              After running it, restart Claude Code and check <code>/mcp</code> — you should see <code>beekeeper</code> connected. Tool calls go directly through MCP with no per-call <code>Bash</code> permission prompts.
+              After installing and pre-approving, restart Claude Code and check <code>/mcp</code> — you should see <code>beekeeper</code> connected with no further prompts.
             </p>
 
             <h4>Alternative: Claude Code skill</h4>
@@ -258,6 +270,12 @@ export default Vue.extend({
     },
     mcpInstallCommandNpm(): string {
       return "claude mcp add --scope user beekeeper -- npx -y @beekeeperstudio/mcp-server";
+    },
+    mcpPermissionRule(): string {
+      return "mcp__beekeeper";
+    },
+    mcpPermissionJqCommand(): string {
+      return `jq '.permissions = (.permissions // {}) | .permissions.allow = ((.permissions.allow // []) + ["mcp__beekeeper"] | unique)' ~/.claude/settings.json > /tmp/s.json && mv /tmp/s.json ~/.claude/settings.json`;
     },
     permissionRule(): string {
       return "Bash(python3 ~/.claude/skills/beekeeper/beekeeper.py:*)";
