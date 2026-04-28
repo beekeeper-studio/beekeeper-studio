@@ -39,7 +39,7 @@
     "@azure/msal-node": "^2.12.0",
     "@babel/core": "^7.29.0",
     "@babel/plugin-transform-class-static-block": "^7.26.0",
-    "@beekeeperstudio/bks-ai-shell": "^3.0.8",
+    "@beekeeperstudio/bks-ai-shell": "^3.0.9",
     "@beekeeperstudio/bks-er-diagram": "^1.0.9",
     "@beekeeperstudio/plugin": "^1.6.0",
     "@cleverbrush/async": "^1.1.10",
