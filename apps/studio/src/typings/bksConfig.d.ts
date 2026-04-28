@@ -404,7 +404,7 @@ declare interface IBksConfig {
         };
     };
     pluginSystem: {
-        allow: any[];
+        allow: string[];
         communityDisabled: boolean;
         disabled: boolean;
     };
