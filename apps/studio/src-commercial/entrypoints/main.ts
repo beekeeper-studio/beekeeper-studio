@@ -42,6 +42,24 @@ function initUserDirectory(d: string) {
 let utilityProcess: Electron.UtilityProcess
 let newWindows: number[] = [];
 
+// Only http(s) URLs may be passed to shell.openExternal — other protocols
+// (file:, javascript:, etc.) can launch local programs and lead to RCE.
+function safeOpenExternal(url: unknown): void {
+  if (typeof url !== 'string' || !url) return
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    log.warn('Refusing to open external URL — invalid URL:', url)
+    return
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    log.warn('Refusing to open external URL — disallowed protocol:', parsed.protocol)
+    return
+  }
+  electron.shell.openExternal(parsed.toString())
+}
+
 async function createUtilityProcess() {
   if (utilityProcess) {
     return;
@@ -76,7 +94,7 @@ async function createUtilityProcess() {
 
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
-      electron.shell.openExternal(msg.url)
+      safeOpenExternal(msg.url)
     }
   })
 
@@ -154,9 +172,7 @@ async function initBasics() {
   log.debug("managing updates")
   manageUpdates(settings.useBeta.valueAsBool)
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
-    const url = args[0]
-    if (!url) return
-    electron.shell.openExternal(url)
+    safeOpenExternal(args?.[0])
   })
   return settings
 }
