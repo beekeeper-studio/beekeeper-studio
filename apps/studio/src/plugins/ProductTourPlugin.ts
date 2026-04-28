@@ -104,6 +104,10 @@ const flows: Record<
             return false;
           }
 
+          if (context.store.state.usedConfig.readOnlyMode) {
+            return false;
+          }
+
           if (context.store.getters.isCommunity) {
             return false;
           }
