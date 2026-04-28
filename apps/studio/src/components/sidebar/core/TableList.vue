@@ -193,7 +193,7 @@
   import { AppEvent } from '@/common/AppEvent'
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
-import { matches } from '@/common/transport/TransportPinnedEntity'
+  import { matches } from '@/common/transport/TransportPinnedEntity'
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
@@ -213,8 +213,16 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
       }
     },
     computed: {
-      ...mapGetters(['dialectData', 'dialect']),
+      ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData', 'dialect']),
       ...mapState({currentDatabase: 'database', 'usedConfig': 'usedConfig'}),
+      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures', 'connectionType']),
+      ...mapGetters({
+          pinnedEntities: 'pins/pinnedEntities',
+          orderedPins: 'pins/orderedPins',
+          totalHiddenEntities: 'hideEntities/totalEntities',
+          hiddenEntities: 'hideEntities/databaseEntities',
+          hiddenSchemas: 'hideEntities/databaseSchemas'
+      }),
       createDisabled() {
         return !!this.dialectData.disabledFeatures.createTable
       },
@@ -287,16 +295,7 @@ import { matches } from '@/common/transport/TransportPinnedEntity'
         return [
           { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
         ]
-      },
-      ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures', 'connectionType']),
-      ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData']),
-      ...mapGetters({
-          pinnedEntities: 'pins/pinnedEntities',
-          orderedPins: 'pins/orderedPins',
-          totalHiddenEntities: 'hideEntities/totalEntities',
-          hiddenEntities: 'hideEntities/databaseEntities',
-          hiddenSchemas: 'hideEntities/databaseSchemas',
-      }),
+      }
     },
     watch: {
       currentDatabase(){

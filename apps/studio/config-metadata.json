@@ -9,6 +9,7 @@
         { "key": "save", "label": "Save" },
         { "key": "openInSqlEditor", "label": "Open in SQL Editor" },
         { "key": "openQuickSearch", "label": "Open Quick Search" },
+        { "key": "jsonViewerSidebar", "label": "Open Json Viewer" },
         { "key": "copySelection", "label": "Copy Selection" },
         { "key": "pasteSelection", "label": "Paste Selection" },
         { "key": "cloneSelection", "label": "Clone Selection" },
@@ -80,6 +81,13 @@
         { "key": "openEditorModal", "label": "Open Editor Modal" },
         { "key": "firstPage", "label": "First Page" },
         { "key": "lastPage", "label": "Last Page" }
+      ]
+    },
+    {
+      "key": "keybindings.resultTable",
+      "label": "Result Table",
+      "properties": [
+        { "key": "openEditorModal", "label": "Open Editor Modal" }
       ]
     }
   ]

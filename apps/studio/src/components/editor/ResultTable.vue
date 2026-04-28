@@ -4,6 +4,11 @@
     :class="{ 'hidden-filter': hiddenFilter }"
     v-hotkey="keymap"
   >
+    <editor-modal
+      ref="editorModal"
+      :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+      @save="onSaveEditorModal"
+    />
     <form
       class="table-search-wrapper table-filter"
       @submit.prevent="searchHandler"
@@ -53,7 +58,7 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
-  import { escapeHtml } from '@shared/lib/tabulator'
+  import { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
   import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
@@ -62,19 +67,21 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
+  import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
   import rawLog from '@bksLogger';
-  import { FieldDescriptor, FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
-  import { CellComponent, RowComponent } from 'tabulator-tables'
+  import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
+  import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { format } from 'sql-formatter'
   import pluralize from 'pluralize'
+import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -95,6 +102,7 @@
   }
 
   export default {
+    components: { EditorModal },
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
@@ -111,7 +119,7 @@
         internalClassTrackerColumn: "__beekeeper_internal_class_tracker",
         propogatedChangesFilters: new Map<string, Filter[]>(),
         fieldOriginalClassMap: new Map<string, string>(),
-        saveError: null
+        saveError: null,
       }
     },
     props: {
@@ -163,6 +171,9 @@
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
           'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
+          'general.save': this.saveChanges.bind(this),
+          'general.openInSqlEditor': this.copyToSql.bind(this),
+          'resultTable.openEditorModal': this.openEditorMenuByShortcut.bind(this)
         });
       },
       tableFilterKeymap() {
@@ -321,6 +332,55 @@
           element.classList.add(classToAdd);
         }
       },
+      setAsNullMenuItem(range: RangeComponent) {
+        const areAllCellsReadOnly = range
+          .getColumns()
+          .every((col) => !this.cellEditCheck(col));
+        return {
+          label: createMenuItem("Set as NULL"),
+          action: () => {
+            range.getCells().flat().forEach((cell) => {
+              if (this.cellEditCheck(cell)) cell.setValue(null);
+            });
+          },
+          disabled: areAllCellsReadOnly || !this.editingData,
+        }
+      },
+      openEditorMenuByShortcut() {
+        const range: RangeComponent = _.last(this.tabulator.getRanges())
+        const cell = range.getCells().flat()[0];
+        // (copied from TableTable.vue)
+        // FIXME maybe we can avoid calling child methods directly like this?
+        // it should be done by calling an event using this.$modal.show(modalName)
+        // or this.$trigger(AppEvent.something) if possible
+        this.openCellEditorModal(cell, !this.cellEditCheck(cell))
+      },
+      openEditorMenu(cell: CellComponent) {
+        const isReadOnly = !this.cellEditCheck(cell);
+        let keybind = this.$bksConfig.getKeybindings("context-menu", 'resultTable.openEditorModal');
+        keybind = Array.isArray(keybind) ? keybind[0] : keybind;
+        return {
+          label: createMenuItem(isReadOnly ? "View in modal" : "Edit in modal", keybind),
+          action: () => {
+            this.openCellEditorModal(cell, isReadOnly)
+          }
+        }
+      },
+      openCellEditorModal(cell: CellComponent, isReadOnly: boolean) {
+        const eventParams = { cell, isReadOnly };
+        this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
+      },
+      onSaveEditorModal(content: string, _l: any, cell: CellComponent){
+        const editData = this.editData?.get(cell.getField());
+        const isBinary = editData?.bksField?.bksType === 'BINARY' || _.isTypedArray(cell.getValue());
+
+        let value = content;
+        if (isBinary) {
+          value = stringToTypedArray(content);
+        }
+
+        cell.setValue(value);
+      },
       createColumnFromProps(column: FieldDescriptor, index: number) {
         const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
 
@@ -331,13 +391,26 @@
           }
         }
 
-        const cellMenu = (_e, cell) => {
+        const cellMenu = (_e, cell: CellComponent) => {
+          const ranges = cell.getRanges();
+          const range = _.last(ranges);
+
           return [
+            this.openEditorMenu(cell),
+            this.setAsNullMenuItem(range),
+            { separator: true },
             ...copyActionsMenu({
               ranges: cell.getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
             }),
+            { separator: true },
+            {
+              label: createMenuItem("Paste", "Control+V"),
+              action: () => {
+                pasteRange(range);
+              },
+            },
             { separator: true },
             filterMenuItem,
             ...this.getExtraPopupMenu('results.cell', { transform: "tabulator" }),
@@ -377,50 +450,89 @@
           cssClass += ' generated-column';
         }
 
+        if (this.editData && !editData?.editable && !editData?.isPK) {
+          cssClass += ` read-only-field`;
+        }
+
         if (magic.formatterParams?.fk) {
           magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
         }
 
         const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
-        const defaults = {
-          formatter: this.cellFormatter,
-          formatterParams: {
-            binaryEncoding: this.binaryEncoding,
-          },
-        }
 
         const editorType = this.editorType(editData?.dataType);
+        const useVerticalNavigation = editorType === 'textarea'
+
+        const formatterParams: FormatterParams = {
+          fk: false,
+          fkOnClick: undefined,
+          isPK: editData?.isPK,
+          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+        }
+
+        let headerTooltip = escapeHtml(column.name);
+
+        if (editData) {
+          headerTooltip = escapeHtml(`${editData?.generated ? '[Generated]' : ''}${editData?.columnName ?? column.name} ${editData?.dataType ?? ''}`);
+
+          if (!editData.editable && !_.isNil(editData.readOnlyReason)) {
+            headerTooltip += ` -> Read-Only: ${FieldReadOnlyReasonStr[editData.readOnlyReason]}`
+          }
+        }
 
         const result = {
-          ...defaults,
           title,
+          field: column.id,
           titleFormatter: this.headerFormatter,
           titleFormatterParams: {
             columnName: title,
             dataType: editData?.dataType,
             generated: editData?.generated
           },
-          field: column.id,
           titleDownload: escapeHtml(column.name),
           dataType: editData?.dataType,
           width: columnWidth,
           mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-          formatter: this.cellFormatter,
           maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
           tooltip: this.cellTooltip,
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
           headerMenu: columnMenu,
+          headerTooltip,
           resizable: 'header',
           cssClass,
           editable: this.cellEditCheck,
           editor: editorType,
+          cellEditCancelled: (cell: CellComponent) => cell.getRow().normalizeHeight(),
+          formatter: this.cellFormatter,
+          formatterParams,
+          editorParams: {
+            verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+            dataType: editData?.dataType,
+            search: true,
+            allowEmpty: true,
+            preserveObject: editData?.array,
+            onPreserveObjectFail: (value: unknown) => {
+              log.error('Failed to preserve object for', value)
+              return true
+            },
+            typeHint: editData?.dataType?.toLowerCase(),
+            bksField: editData?.bksField,
+            binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+          },
           ...magicStuff
         }
 
         if (column.dataType === 'INTERVAL') {
           // add interval sorter
           result['sorter'] = this.intervalSorter;
+        } else if (editData?.dataType && /^(bool|boolean)$/i.test(editData?.dataType)) {
+          const values = [
+            { label: 'false', value: this.dialectData.boolean?.false ?? false },
+            { label: 'true', value: this.dialectData.boolean?.true ?? true },
+          ];
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
         }
 
         const results = [];
@@ -714,6 +826,8 @@
       async copyToSql() {
         this.saveError = null;
 
+        if (!this.editingData) return;
+
         try {
           const changes = {
             inserts: [],
@@ -757,6 +871,8 @@
       },
       async saveChanges() {
         this.saveError = null;
+
+        if (!this.editingData) return;
 
         try {
           const payload = {
