@@ -154,21 +154,40 @@
 
           <div v-if="activeTab === 'install'" class="ai-server-pane">
             <p>
-              The Beekeeper AI skill lets Claude Code discover this server automatically by reading the port file at:
+              Claude Code (and any MCP-aware agent) finds this server through the discovery file:
             </p>
             <code class="path">{{ portFilePath }}</code>
-            <h4>One-line install</h4>
-            <p class="muted">Run this in a terminal to install the skill into <code>~/.claude/skills/beekeeper</code> and pre-approve its helper:</p>
+
+            <h4>Recommended: MCP server</h4>
+            <p class="muted">
+              An MCP server gives Claude first-class tools (no per-call <code>Bash</code>/<code>Read</code> permission prompts). One-line install using the copy bundled with Beekeeper Studio:
+            </p>
+            <code class="curl-snippet">{{ mcpInstallCommandLocal }}</code>
+            <button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandLocal)">
+              <i class="material-icons">content_copy</i> Copy
+            </button>
+            <p class="muted" style="margin-top:.75rem">
+              Once <code>@beekeeperstudio/mcp-server</code> is published you'll also be able to use:
+            </p>
+            <code class="curl-snippet">{{ mcpInstallCommandNpm }}</code>
+            <button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandNpm)">
+              <i class="material-icons">content_copy</i> Copy
+            </button>
+            <p class="muted" style="margin-top:.5rem">
+              After running the command, restart Claude Code and check <code>/mcp</code> — you should see <code>beekeeper</code> connected.
+            </p>
+
+            <h4>Alternative: Claude Code skill</h4>
+            <p class="muted">
+              The skill is a thinner wrapper that shells out via <code>Bash</code>. It works, but Claude Code may prompt before each invocation.
+            </p>
             <code class="curl-snippet">{{ installCommand }}</code>
             <button class="btn btn-flat btn-icon" @click="copy(installCommand)">
               <i class="material-icons">content_copy</i> Copy
             </button>
-            <h4>Local skill source</h4>
-            <p class="muted">If you'd rather install from the bundled copy, point Claude Code at:</p>
-            <code class="path">{{ bundledSkillPath }}</code>
-            <h4>Skip the permission prompt</h4>
+            <p class="muted" style="margin-top:.5rem">Bundled skill source: <code class="path">{{ bundledSkillPath }}</code></p>
             <p class="muted">
-              Claude Code prompts before running the helper unless this rule is in <code>~/.claude/settings.json</code> under <code>permissions.allow</code> (the install script does this for you):
+              To suppress the permission prompt, add this to <code>permissions.allow</code> in <code>~/.claude/settings.json</code> (<code>install.sh</code> does this for you when <code>jq</code> is present):
             </p>
             <code class="curl-snippet">{{ permissionRule }}</code>
             <button class="btn btn-flat btn-icon" @click="copy(permissionRule)">
@@ -243,6 +262,16 @@ export default Vue.extend({
     bundledSkillPath(): string {
       const dir = this.$config?.resourcesPath || "<resources>";
       return `${dir}/skills/beekeeper`;
+    },
+    bundledMcpPath(): string {
+      const dir = this.$config?.resourcesPath || "<resources>";
+      return `${dir}/mcp-server/dist/index.js`;
+    },
+    mcpInstallCommandLocal(): string {
+      return `claude mcp add --scope user beekeeper -- node "${this.bundledMcpPath}"`;
+    },
+    mcpInstallCommandNpm(): string {
+      return "claude mcp add --scope user beekeeper -- npx -y @beekeeperstudio/mcp-server";
     },
     permissionRule(): string {
       return "Bash(python3 ~/.claude/skills/beekeeper/beekeeper.py:*)";
