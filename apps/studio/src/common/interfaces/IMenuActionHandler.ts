@@ -51,6 +51,7 @@ export interface IMenuActionHandler {
   simulatePlatform: (menuItem: Electron.MenuItem, win: ElectronWindow, platform: string) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  openAiServer: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   keyboardShortcuts: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   /** `handleAction` is used by menus that are defined at runtime (unlike other

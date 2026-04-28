@@ -154,6 +154,7 @@ export default class extends DefaultMenu {
           ...(this.bksConfig.security.lockMode === "pin" ? [this.menuItems.updatePin] : []),
           { type: 'separator' },
           this.menuItems.managePlugins,
+          this.menuItems.aiServer,
         ]
       },
       ...windowMenu,

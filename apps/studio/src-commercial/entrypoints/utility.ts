@@ -25,6 +25,16 @@ import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
+import {
+  AiServerHandlers,
+  registerAiServerSubscriber,
+  unregisterAiServerSubscriber,
+} from '@/handlers/aiServerHandlers';
+import {
+  initAiServer,
+  shutdownAiServer,
+  onStatusChange as onAiServerStatusChange,
+} from '@commercial/backend/ai-server';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import _ from 'lodash';
@@ -75,6 +85,7 @@ export const handlers: Handlers = {
   ...TabHistoryHandlers,
   ...LockHandlers,
   ...FormatterPresetHandlers,
+  ...AiServerHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 
@@ -114,8 +125,17 @@ process.parentPort.on('message', async ({ data, ports }) => {
       break;
     case 'close':
       log.info('REMOVING STATE FOR: ', sId);
+      unregisterAiServerSubscriber(sId);
       state(sId).port.close();
       removeState(sId);
+      break;
+    case 'aiServer/stop':
+      try {
+        const { stopAiServer } = await import('@commercial/backend/ai-server');
+        await stopAiServer();
+      } catch (e) {
+        log.error('aiServer/stop failed', e);
+      }
       break;
     default:
       log.error('UNRECOGNIZED MESSAGE TYPE RECEIVED FROM MAIN PROCESS');
@@ -170,6 +190,8 @@ async function initState(sId: string, port: MessagePortMain) {
   })
 
   state(sId).port.start();
+
+  registerAiServerSubscriber(sId);
 }
 
 async function init() {
@@ -178,6 +200,30 @@ async function init() {
 
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
+  });
+
+  onAiServerStatusChange((status) => {
+    try {
+      process.parentPort.postMessage({
+        type: 'aiServerStatus',
+        payload: {
+          running: status.running,
+          host: status.host,
+          port: status.port,
+          startedAt: status.startedAt,
+        },
+      });
+    } catch (e) {
+      log.warn('failed to forward AI server status', e);
+    }
+  });
+
+  initAiServer().catch((e) => {
+    log.error('AI server init failed', e);
+  });
+
+  process.on('exit', () => {
+    shutdownAiServer().catch(() => undefined);
   });
 
   process.parentPort.postMessage({ type: 'ready' });
