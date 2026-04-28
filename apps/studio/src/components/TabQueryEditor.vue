@@ -1184,7 +1184,13 @@
           this.$refs.table.rebuildColumns()
 
           if (!resultEditData.some((e) => e.editable)) {
-            this.$noty.warning("There is not enough information in the result set to generate an update query. Make sure all primary keys are present.")
+            this.$noty.warning("There is not enough information in the result set to generate an update query. Make sure all primary keys are present.", {
+              buttons: [
+                Noty.button('Learn More', 'btn btn-primary', () => {
+                  window.main.openExternally('https://beekeeperstudio.io/user_guide_sql_editor/editing-data.md')
+                })
+              ]
+            })
             this.$set(this.resultEditableMap, this.selectedResult, false)
             await this.$nextTick();
             return;
