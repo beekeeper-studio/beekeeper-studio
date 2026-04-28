@@ -1,6 +1,7 @@
 ---
 name: beekeeper
 description: Read schema and run read-only SQL against databases configured in Beekeeper Studio. Auto-discovers the local Beekeeper Studio AI server.
+allowed-tools: Bash(python3 ~/.claude/skills/beekeeper/beekeeper.py:*), Read(~/.config/beekeeper-studio/ai-server.json), Read(~/Library/Application Support/beekeeper-studio/ai-server.json)
 ---
 
 # Beekeeper Studio skill
@@ -76,3 +77,14 @@ statement. Don't try to bypass it.
 A Python helper is bundled next to this file (`beekeeper.py`) that wraps the
 discovery file, auth header and JSON parsing for you. Prefer it over hand-rolled
 HTTP calls.
+
+**Always invoke it via this exact path** so the `allowed-tools` rule in the
+skill frontmatter matches and the user is not prompted to approve every call:
+
+```
+python3 ~/.claude/skills/beekeeper/beekeeper.py <subcommand> [args]
+```
+
+Subcommands: `info`, `connections`, `queries`, `connect <id>`, `disconnect <id>`,
+`databases <id>`, `schemas <id>`, `tables <id>`, `columns <id> <table>`,
+`sample <id> <table>`, `query <id> --sql "..."`, `log`.

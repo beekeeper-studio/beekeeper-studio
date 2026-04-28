@@ -30,6 +30,27 @@ Beekeeper Studio writes `ai-server.json` to its config dir whenever the AI
 server is running. The skill reads it to find the host, port, and bearer
 token. If the file is missing, ask the user to start the server.
 
+## Pre-approving the helper
+
+Claude Code prompts before running any `Bash` command unless the command is on
+its allow list. The `install.sh` script adds the rule for you. To do it
+manually, add this to the `permissions.allow` array in `~/.claude/settings.json`:
+
+```
+Bash(python3 ~/.claude/skills/beekeeper/beekeeper.py:*)
+```
+
+Or, with `jq`:
+
+```sh
+jq '.permissions = (.permissions // {}) |
+    .permissions.allow = ((.permissions.allow // []) +
+      ["Bash(python3 ~/.claude/skills/beekeeper/beekeeper.py:*)"] | unique)' \
+   ~/.claude/settings.json > /tmp/s.json && mv /tmp/s.json ~/.claude/settings.json
+```
+
+Restart Claude Code after editing settings.
+
 ## Security
 
 - Loopback only. The server never binds beyond `127.0.0.1`.

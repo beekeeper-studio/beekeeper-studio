@@ -137,18 +137,10 @@ export async function regenerateToken(): Promise<AiServerStatus> {
 }
 
 export async function initAiServer(): Promise<void> {
-  // Always remove a stale port file from a previous run.
+  // Remove any stale port file from a previous run. Do NOT auto-start —
+  // the server only runs when the user clicks Start in the AI Server panel.
   removePortFile();
-  if (bksConfig.aiServer.disabled) {
-    log.info("AI server disabled by config, skipping start");
-    emitStatus();
-    return;
-  }
-  try {
-    await startAiServer();
-  } catch (e) {
-    log.error("failed to start AI server", e);
-  }
+  emitStatus();
 }
 
 export async function shutdownAiServer(): Promise<void> {

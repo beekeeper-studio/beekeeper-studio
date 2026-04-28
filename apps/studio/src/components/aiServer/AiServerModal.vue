@@ -154,11 +154,11 @@
 
           <div v-if="activeTab === 'install'" class="ai-server-pane">
             <p>
-              The Beekeeper AI skill lets Claude Code (and any MCP-aware agent) discover this server automatically by reading the port file at:
+              The Beekeeper AI skill lets Claude Code discover this server automatically by reading the port file at:
             </p>
             <code class="path">{{ portFilePath }}</code>
             <h4>One-line install</h4>
-            <p class="muted">Run this in a terminal to install the skill into <code>~/.claude/skills/beekeeper</code>:</p>
+            <p class="muted">Run this in a terminal to install the skill into <code>~/.claude/skills/beekeeper</code> and pre-approve its helper:</p>
             <code class="curl-snippet">{{ installCommand }}</code>
             <button class="btn btn-flat btn-icon" @click="copy(installCommand)">
               <i class="material-icons">content_copy</i> Copy
@@ -166,6 +166,14 @@
             <h4>Local skill source</h4>
             <p class="muted">If you'd rather install from the bundled copy, point Claude Code at:</p>
             <code class="path">{{ bundledSkillPath }}</code>
+            <h4>Skip the permission prompt</h4>
+            <p class="muted">
+              Claude Code prompts before running the helper unless this rule is in <code>~/.claude/settings.json</code> under <code>permissions.allow</code> (the install script does this for you):
+            </p>
+            <code class="curl-snippet">{{ permissionRule }}</code>
+            <button class="btn btn-flat btn-icon" @click="copy(permissionRule)">
+              <i class="material-icons">content_copy</i> Copy
+            </button>
           </div>
         </div>
       </div>
@@ -235,6 +243,9 @@ export default Vue.extend({
     bundledSkillPath(): string {
       const dir = this.$config?.resourcesPath || "<resources>";
       return `${dir}/skills/beekeeper`;
+    },
+    permissionRule(): string {
+      return "Bash(python3 ~/.claude/skills/beekeeper/beekeeper.py:*)";
     },
     reversedLog(): AiServerLogEntry[] {
       return [...this.log].reverse();
@@ -355,11 +366,36 @@ export default Vue.extend({
 
 <style scoped>
 .ai-server-modal { width: 880px; max-width: 95vw; }
-.ai-server-content { padding: 0 1rem 1rem; }
-.ai-server-tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--border-color, #444); margin-bottom: 1rem; }
+.ai-server-modal .dialog-content {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  max-height: 720px;
+}
+.ai-server-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 1rem 1rem;
+}
+.ai-server-tabs {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border-color, #444);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
 .ai-server-tabs .tab-link { padding: .5rem 0; border-bottom: 2px solid transparent; color: var(--text-light); }
 .ai-server-tabs .tab-link.active { color: var(--text); border-bottom-color: var(--theme-primary, #5e94e6); }
-.ai-server-pane { padding: .5rem 0; }
+.alerts { display: block; flex-shrink: 0; margin-bottom: 1rem; }
+.alerts .alert { display: block; }
+.ai-server-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: .5rem 0;
+}
 .status-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; }
 .status-pill { padding: .25rem .75rem; border-radius: 999px; background: rgba(255,80,80,.2); color: #d33; font-size: .85em; }
 .status-pill.running { background: rgba(80,180,90,.2); color: #2a8d3a; }
@@ -379,5 +415,4 @@ export default Vue.extend({
 .badge.error { background: rgba(255,80,80,.2); color: #d33; }
 .badge.truncated { background: rgba(255,180,40,.25); color: #b27500; margin-left: .25rem; }
 .muted { color: var(--text-light); font-size: .9em; }
-.alerts { margin-bottom: 1rem; }
 </style>
