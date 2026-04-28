@@ -28,18 +28,6 @@ function fileExistsSync(filename: string): boolean {
   }
 }
 
-// Only http(s) URLs may be passed to shell.openExternal — other protocols
-// (file:, javascript:, etc.) can launch local programs and lead to RCE.
-function isSafeExternalUrl(link: unknown): link is string {
-  if (typeof link !== 'string' || !link) return false;
-  try {
-    const parsed = new URL(link);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
 export const api = {
   async requestPlatformInfo() {
     const platformInfo = await ipcRenderer.invoke('platformInfo')
@@ -84,7 +72,7 @@ export const api = {
     ipcRenderer.send('install-update');
   },
   openExternally(link: string) {
-    if (!isSafeExternalUrl(link)) return;
+    // URL protocol is validated in the main process by safeOpenExternal.
     ipcRenderer.send(AppEvent.openExternally, [link]);
   },
   resolve(toResolve: string) {
@@ -116,8 +104,9 @@ export const api = {
     return electron.dialog.showSaveDialogSync(args);
   },
   openLink(link: string) {
-    if (!isSafeExternalUrl(link)) return;
-    return electron.shell.openExternal(link);
+    // Route through the main process so safeOpenExternal validates the
+    // protocol — never call shell.openExternal directly from preload.
+    ipcRenderer.send(AppEvent.openExternally, [link]);
   },
   onMaximize(func: any, sId: string) {
     ipcRenderer.on(`maximize-${sId}`, func);

@@ -28,6 +28,7 @@ import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
+import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -41,24 +42,6 @@ function initUserDirectory(d: string) {
 
 let utilityProcess: Electron.UtilityProcess
 let newWindows: number[] = [];
-
-// Only http(s) URLs may be passed to shell.openExternal — other protocols
-// (file:, javascript:, etc.) can launch local programs and lead to RCE.
-function safeOpenExternal(url: unknown): void {
-  if (typeof url !== 'string' || !url) return
-  let parsed: URL
-  try {
-    parsed = new URL(url)
-  } catch {
-    log.warn('Refusing to open external URL — invalid URL:', url)
-    return
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    log.warn('Refusing to open external URL — disallowed protocol:', parsed.protocol)
-    return
-  }
-  electron.shell.openExternal(parsed.toString())
-}
 
 async function createUtilityProcess() {
   if (utilityProcess) {

@@ -25,7 +25,17 @@ module.exports = {
     "vue/require-prop-types": "off",
     "vue/require-default-prop": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
-    "vue/max-attributes-per-line": "off"
+    "vue/max-attributes-per-line": "off",
+    // Block plugin RCE via file:// URLs (CVE — see safeOpenExternal.ts).
+    // shell.openExternal must only be reached via safeOpenExternal so the
+    // http(s)-only protocol allowlist is enforced.
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[property.name='openExternal']",
+        "message": "Do not call shell.openExternal directly. Use safeOpenExternal() from @/background/lib/electron/safeOpenExternal so the URL protocol allowlist is enforced."
+      }
+    ]
   },
   "parser": "vue-eslint-parser",
   "parserOptions": {
@@ -41,6 +51,15 @@ module.exports = {
       ],
       "env": {
         "jest": true
+      }
+    },
+    {
+      // The single trusted entry point that wraps shell.openExternal.
+      "files": [
+        "apps/studio/src/background/lib/electron/safeOpenExternal.ts"
+      ],
+      "rules": {
+        "no-restricted-syntax": "off"
       }
     }
   ]
