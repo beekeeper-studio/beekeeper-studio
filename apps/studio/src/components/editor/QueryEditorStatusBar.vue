@@ -287,6 +287,7 @@ export default {
   computed: {
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState('settings', ['settings']),
+    ...mapState('usedConfig'),
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;
@@ -351,7 +352,16 @@ export default {
       })
     },
     canEdit() {
-      return !this.dialectData?.disabledFeatures?.resultEditing;
+      return !this.dialectData?.disabledFeatures?.resultEditing && !this.usedConfig?.readOnlyMode;
+    },
+    editButtonTooltip() {
+      if (this.usedConfig.readOnlyMode) {
+        return "Read Only Mode is enabled for this connection. Editing is disabled.";
+      } else if (this.resultEditable) {
+        return "Edit table data directly from query results";
+      } else {
+        return "There is not enough information in the result set to generate an update query.";
+      }
     }
   },
   methods: {
