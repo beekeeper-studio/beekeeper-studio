@@ -59,10 +59,18 @@
     <div class="shortcut-item">
       <div>Find</div>
       <div
+        v-if="$config.isMac"
         class="shortcut"
       >
         <span>⌘</span><span>F</span>
       </div>
+      <div
+        v-else
+        class="shortcut"
+      >
+        <span>Ctrl</span><span>F</span>
+      </div>
+
     </div>
     <div v-if="!isMongo" class="shortcut-item">
       <div>Find and Replace</div>
@@ -72,7 +80,7 @@
       >
         <span>⌘</span><span>R</span>
       </div>
-      <div 
+      <div
         class="shortcut"
         v-else
       >
