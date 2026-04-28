@@ -339,9 +339,16 @@ import { stringToTypedArray } from '@/common/utils'
         return {
           label: createMenuItem("Set as NULL"),
           action: () => {
-            range.getCells().flat().forEach((cell) => {
+            const targets = range.getCells().flat().map((cell) => ({
+              row: cell.getRow(),
+              field: cell.getField()
+            }));
+
+            for (const { row, field } of targets) {
+              const cell = row.getCell(field);
+              if (!cell) continue;
               if (this.cellEditCheck(cell)) cell.setValue(null);
-            });
+            }
           },
           disabled: areAllCellsReadOnly || !this.editingData,
         }
