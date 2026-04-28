@@ -1206,7 +1206,6 @@
         }
 
         await this.$refs.table.saveChanges();
-        this.editingResult = false;
       },
       copyToSql() {
         this.$refs.table.copyToSql();
