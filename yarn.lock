@@ -1752,10 +1752,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@beekeeperstudio/bks-ai-shell@^3.0.8":
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.8.tgz#77a2142fe52f71be61eb91642934d043c44a1d49"
-  integrity sha512-pz14TlCwbH8f3skcAT0bkqs5Ad3ZLhiqC94H1GDbe7J++C2wM6Qrrne5vOKlZyFiB+49Im+qLaB1gFLKEKUT2Q==
+"@beekeeperstudio/bks-ai-shell@^3.0.9":
+  version "3.0.9"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.9.tgz#298bbeaab0578b4a164f4777f3e27edc5379c583"
+  integrity sha512-YhQ5VjqNlv359VfUdYuOPK1bhHgu6GgCRD6FBBomFeDK6CrHI15Z7ZxFMXEYf1LGW4oJOVELfaR0q25+uNgbZA==
 
 "@beekeeperstudio/bks-er-diagram@^1.0.9":
   version "1.0.9"
