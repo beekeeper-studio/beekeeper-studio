@@ -9,7 +9,7 @@ export class QueryTab {
   constructor(page: Page) {
     this.page = page;
     this.queryTabTextArea = this.page.locator('#tab-0').getByRole('textbox');
-    this.runQueryButton = this.page.getByRole('button', { name: 'Run Current' });
+    this.runQueryButton = this.page.getByRole('button', { name: 'Run' });
     this.openNewTabButton = this.page.locator('#add-tab-group a').filter({ hasText: 'add' });
   }
 
@@ -20,7 +20,7 @@ export class QueryTab {
 
   async tabRunQueryButton(tabNumber?: string) {
     const tab = tabNumber ? tabNumber : '0';
-    return await this.page.locator(`#tab-${tab}`).getByRole('button', { name: 'Run Current' });
+    return await this.page.locator(`#tab-${tab}`).getByRole('button', { name: 'Run' });
   }
 
 
