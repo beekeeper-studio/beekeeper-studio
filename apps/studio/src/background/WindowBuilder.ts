@@ -6,6 +6,7 @@ import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from '@bksLogger'
 import querystring from 'query-string'
+import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 
 
 // eslint-disable-next-line
@@ -79,9 +80,15 @@ class BeekeeperWindow {
       if (url === this.appUrl) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
-      const u = new URL(url)
+      let u: URL
+      try {
+        u = new URL(url)
+      } catch {
+        log.warn('will-navigate: ignoring invalid URL', url)
+        return
+      }
       u.searchParams.append('ref', 'bks-app')
-      electron.shell.openExternal(u.toString());
+      safeOpenExternal(u.toString());
     })
 
     this.win.webContents.setWindowOpenHandler(({ url }) => {

@@ -1,7 +1,8 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
-import { app , shell } from 'electron'
+import { app } from 'electron'
+import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import platformInfo from '../common/platform_info'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -112,15 +113,15 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   opendocs(): void {
-    shell.openExternal("https://docs.beekeeperstudio.io/")
+    safeOpenExternal("https://docs.beekeeperstudio.io/")
   }
 
   contactSupport(): void {
-    shell.openExternal("https://docs.beekeeperstudio.io/support/contact-support/")
+    safeOpenExternal("https://docs.beekeeperstudio.io/support/contact-support/")
   }
 
   openGettingStarted(): void {
-    shell.openExternal("https://docs.beekeeperstudio.io/getting-started-guide/")
+    safeOpenExternal("https://docs.beekeeperstudio.io/getting-started-guide/")
   }
 
   checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {
