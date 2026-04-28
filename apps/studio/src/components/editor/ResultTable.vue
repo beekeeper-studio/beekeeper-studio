@@ -67,7 +67,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteActionsMenu, pasteRange } from '@/lib/menu/tableMenu';
+  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
@@ -120,7 +120,6 @@ import { stringToTypedArray } from '@/common/utils'
         propogatedChangesFilters: new Map<string, Filter[]>(),
         fieldOriginalClassMap: new Map<string, string>(),
         saveError: null,
-        globalAllowTablePopup: true
       }
     },
     props: {
@@ -336,25 +335,13 @@ import { stringToTypedArray } from '@/common/utils'
       setAsNullMenuItem(range: RangeComponent) {
         const areAllCellsReadOnly = range
           .getColumns()
-          .every((col) => !this.cellEditCheck(col, false));
+          .every((col) => !this.cellEditCheck(col));
         return {
           label: createMenuItem("Set as NULL"),
           action: () => {
-            // we have to globally disable the popups because for some reason
-            // when setting the value, the edit check is run for every cell in a the row
-            this.globalAllowTablePopup = false;
-            const targets = range.getCells().flat().map((cell) => ({
-              row: cell.getRow(),
-              field: cell.getField()
-            }));
-
-            for (const { row, field } of targets) {
-              const cell = row.getCell(field);
-              if (!cell) continue;
+            range.getCells().flat().forEach((cell) => {
               if (this.cellEditCheck(cell)) cell.setValue(null);
-            }
-
-            this.globalAllowTablePopup = true;
+            });
           },
           disabled: areAllCellsReadOnly || !this.editingData,
         }
@@ -366,10 +353,10 @@ import { stringToTypedArray } from '@/common/utils'
         // FIXME maybe we can avoid calling child methods directly like this?
         // it should be done by calling an event using this.$modal.show(modalName)
         // or this.$trigger(AppEvent.something) if possible
-        this.openCellEditorModal(cell, !this.cellEditCheck(cell, false))
+        this.openCellEditorModal(cell, !this.cellEditCheck(cell))
       },
       openEditorMenu(cell: CellComponent) {
-        const isReadOnly = !this.cellEditCheck(cell, false);
+        const isReadOnly = !this.cellEditCheck(cell);
         let keybind = this.$bksConfig.getKeybindings("context-menu", 'resultTable.openEditorModal');
         keybind = Array.isArray(keybind) ? keybind[0] : keybind;
         return {
@@ -421,9 +408,7 @@ import { stringToTypedArray } from '@/common/utils'
             {
               label: createMenuItem("Paste", "Control+V"),
               action: () => {
-                this.globalAllowTablePopup = false;
                 pasteRange(range);
-                this.globalAllowTablePopup = true;
               },
             },
             { separator: true },
@@ -584,7 +569,7 @@ import { stringToTypedArray } from '@/common/utils'
           default: return ne
         }
       },
-      cellEditCheck(cell: CellComponent, allowPopup: boolean = true): boolean {
+      cellEditCheck(cell: CellComponent): boolean {
         if (!this.editingData) return false
 
         const fieldEditData: FieldEditData = this.editData?.get(cell.getField());
@@ -592,9 +577,6 @@ import { stringToTypedArray } from '@/common/utils'
           return false;
         }
 
-        if (this.globalAllowTablePopup && allowPopup && !fieldEditData.editable && !_.isNil(fieldEditData.readOnlyReason)) {
-          cell.popup(`Read-Only: ${FieldReadOnlyReasonStr[fieldEditData.readOnlyReason]}`, "bottom")
-        }
         return fieldEditData.editable;
       },
       cellEdited(cell: CellComponent) {
@@ -753,12 +735,10 @@ import { stringToTypedArray } from '@/common/utils'
       },
       discardChanges() {
         this.saveError = null;
-        this.globalAllowTablePopup = false;
 
         this.pendingChanges.updates.forEach((edit: TableUpdatePayload) => this.discardUpdate(edit));
 
         this.resetPendingChanges();
-        this.globalAllowTablePopup = true;
       },
       discardUpdate(pendingUpdate: TableUpdatePayload) {
         const filters = this.propogatedChangesFilters.get(pendingUpdate.key);
