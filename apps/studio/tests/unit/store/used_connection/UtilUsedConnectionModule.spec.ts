@@ -22,15 +22,17 @@ function buildSavedConnection(overrides: Partial<SavedConnection> = {}): SavedCo
   return c
 }
 
-// Build a plain object that mirrors the saved connection. We can't just spread
-// `saved` because `connectionType` is implemented as a getter/setter backed by
-// `_connectionType`, which a spread would copy as `_connectionType` only.
-function asConfig(saved: SavedConnection, workspaceId: number) {
-  return {
-    ...saved,
-    connectionType: saved.connectionType,
-    workspaceId,
-  }
+// Build a plain object that mirrors what the renderer receives for a saved
+// connection. We can't just spread `saved` because several fields (e.g.
+// `connectionType`, `port`, `socketPath`) are implemented as getter/setters
+// backed by underscored fields - a raw spread would only copy the underscored
+// versions. Round-tripping through the find handler matches production, where
+// the renderer gets a plain object via `transformConn`.
+async function asConfig(saved: SavedConnection, workspaceId: number) {
+  const fetched = await AppDbHandlers['appdb/saved/findOneBy']({
+    options: { id: saved.id }
+  })
+  return { ...fetched, workspaceId }
 }
 
 function buildStore() {
@@ -69,7 +71,7 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     await saved.save()
 
     await store.dispatch('data/usedconnections/recordUsed',
-      asConfig(saved, WORKSPACE_ID))
+      await asConfig(saved, WORKSPACE_ID))
 
     const all = await UsedConnection.find()
     expect(all).toHaveLength(1)
@@ -83,7 +85,7 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     await saved.save()
 
     await store.dispatch('data/usedconnections/recordUsed',
-      asConfig(saved, WORKSPACE_ID))
+      await asConfig(saved, WORKSPACE_ID))
 
     // Reload the store's items so the second recordUsed call sees the
     // existing used_connection (mirrors what `data/usedconnections/load`
@@ -98,7 +100,7 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
 
     // Connect again with the updated config
     await store.dispatch('data/usedconnections/recordUsed',
-      asConfig(saved, WORKSPACE_ID))
+      await asConfig(saved, WORKSPACE_ID))
 
     // There should still be exactly one used_connection, and it should
     // reflect the *new* connection details.
