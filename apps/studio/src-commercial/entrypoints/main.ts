@@ -42,6 +42,16 @@ function initUserDirectory(d: string) {
 let utilityProcess: Electron.UtilityProcess
 let newWindows: number[] = [];
 
+function isSafeExternalUrl(url: unknown): url is string {
+  if (typeof url !== 'string') return false
+  try {
+    const protocol = new URL(url).protocol
+    return protocol === 'http:' || protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 async function createUtilityProcess() {
   if (utilityProcess) {
     return;
@@ -76,6 +86,10 @@ async function createUtilityProcess() {
 
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
+      if (!isSafeExternalUrl(msg.url)) {
+        log.warn('Blocked openExternal from utility process: unsafe URL', msg.url)
+        return
+      }
       electron.shell.openExternal(msg.url)
     }
   })
