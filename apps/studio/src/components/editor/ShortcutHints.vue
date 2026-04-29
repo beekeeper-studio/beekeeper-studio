@@ -99,15 +99,14 @@ import ShortcutDisplayHelper from './ShortcutDisplayHelper.vue';
     },
     methods : {
       isPrimaryRunCurrentQuery() {
-        const { settings: configSettings } = this.$bksConfig
-        return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
+        return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
       },
       queryActionText(getPrimaryText) {
         if (getPrimaryText) {
-          return this.isPrimaryRunCurrentQuery() ? 'Run Current' : 'Run All/Selection'
+          return this.isPrimaryRunCurrentQuery() ? 'Run Current' : 'Run All'
         }
 
-        return this.isPrimaryRunCurrentQuery() ? 'Run All/Selection' : 'Run Current'
+        return this.isPrimaryRunCurrentQuery() ? 'Run All' : 'Run Current'
       }
     }
   }
