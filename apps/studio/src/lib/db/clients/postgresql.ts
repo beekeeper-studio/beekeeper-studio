@@ -125,7 +125,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
       transactions: true,
-      filterTypes: ['standard', 'ilike']
+      filterTypes: ['standard', 'ilike', 'contains']
     };
   }
 
@@ -1431,6 +1431,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
           })
           paramIdx += values.length
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
+        } else if (item.type === 'contains') {
+          const value = options.inlineParams
+            ? knex.raw('?', [item.value]).toQuery()
+            : `$${paramIdx}`
+          paramIdx += 1
+          const field = wrapIdentifier(item.field)
+          return `(CASE WHEN jsonb_typeof(to_jsonb(${field})) = 'array' THEN EXISTS (SELECT 1 FROM jsonb_array_elements_text(to_jsonb(${field})) AS element(value) WHERE element.value = ${value}) ELSE ${field}::text ILIKE '%' || ${value} || '%' END)`
         } else if (item.type.includes('is')) {
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
@@ -1773,17 +1780,20 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     })
   }
 
-
-
-
-
-  // If a type starts with an underscore - it's an array
+    // If a type starts with an underscore - it's an array
   // so we need to turn the string representation back to an array
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
-      return JSON.parse(value)
+      const trimmedValue = value.trim();
+      if (trimmedValue.startsWith("{")) {
+        // Array enum values are entered as postgres literals ({a,b}).
+        return value;
+      }
+      if (trimmedValue.startsWith("[")) {
+        return JSON.parse(value);
+      }
     }
-    return value
+    return value;
   }
 
   private async getSchema() {

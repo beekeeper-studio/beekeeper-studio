@@ -236,7 +236,7 @@ export interface Routine extends DatabaseEntity {
   type: RoutineType;
 }
 
-export type IncludedFilterTypes = 'standard' | 'ilike'
+export type IncludedFilterTypes = 'standard' | 'ilike' | 'contains'
 
 // NOTE (day): note sure if this is really where we want to put edit partitions?
 export interface SupportedFeatures {

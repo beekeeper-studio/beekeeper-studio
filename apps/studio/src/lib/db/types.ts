@@ -51,7 +51,8 @@ export const TableFilterSymbols = [
     { value: ">=", label: "greater than or equal", type: 'standard' },
     { value: "in", label: 'in', arrayInput: true, type: 'standard' },
     { value: "is", label: "is null", nullOnly: true, type: 'standard' },
-    { value: "is not", label: "is not null", nullOnly: true, type: 'standard' }
+    { value: "is not", label: "is not null", nullOnly: true, type: 'standard' },
+    { value: 'contains', label: 'contains', type: 'contains' }
 ]
 
 export enum AzureAuthType {
