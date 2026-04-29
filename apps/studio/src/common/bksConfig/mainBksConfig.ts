@@ -212,6 +212,10 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
     return readConfig(path.join(bundledConfigPath, file));
   }
 
+  if (!isDev && file === "deprecated.config.ini") {
+    return readConfig(path.join(bundledConfigPath, file));
+  }
+
   if (!existsSync(filePath)) {
     if (isDev) {
       throw new Error(`Failed loading config. File not found: ${filePath}`);
