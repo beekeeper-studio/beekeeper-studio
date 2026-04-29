@@ -356,13 +356,13 @@ declare interface IBksConfig {
             manualCommit: string;
             manualRollback: string;
             openTableFilter: string;
+            primaryQueryAction: string[];
+            primaryQueryToFileAction: string;
+            secondaryQueryAction: string[];
+            secondaryQueryToFileAction: string;
             selectEditor: string;
             selectNextResult: string;
             selectPreviousResult: string;
-            submitCurrentQuery: string[];
-            submitCurrentQueryToFile: string;
-            submitQueryToFile: string;
-            submitTabQuery: string[];
             switchPaneFocus: string;
         };
         quickSearch: {
@@ -440,6 +440,8 @@ declare interface IBksConfig {
         queryEditor: {
             defaultFormatter: string;
             maxResults: number;
+            primaryQueryAction: string;
+            secondaryQueryAction: string;
         };
         tableList: {
             itemHeight: number;
