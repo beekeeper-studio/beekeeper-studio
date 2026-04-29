@@ -194,11 +194,11 @@
           <x-buttons class="" v-tooltip="runButtonTooltip">
             <x-button
               class="btn btn-primary btn-small"
-              v-tooltip="'Ctrl+Enter'"
-              @click.prevent="submitTabQuery"
+              :v-tooltip="displayShortcut('queryEditor.primaryQueryAction')"
+              @click.prevent="queryFunctions.primaryRead"
               :disabled="runButtonDisabled"
             >
-              <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
+              <x-label>{{ runPrimaryText() }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
@@ -207,35 +207,37 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="submitTabQuery">
-                  <x-label>{{ hasSelectedText ? 'Run Selection' : 'Run' }}</x-label>
-                  <x-shortcut value="Control+Enter" />
+                <x-menuitem @click.prevent="queryFunctions.primaryRead">
+                  <x-label>{{ runPrimaryText() }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="submitCurrentQuery">
-                  <x-label>Run Current</x-label>
-                  <x-shortcut value="Control+Shift+Enter" />
+                <x-menuitem @click.prevent="queryFunctions.secondaryRead">
+                  <x-label>{{ runSecondaryText() }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
-                  @click.prevent="submitQueryToFile"
+                  @click.prevent="queryFunctions.primaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ hasSelectedText ? 'Run Selection to File' : 'Run to File' }}</x-label>
+                  <x-label>{{ runPrimaryText(true) }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
                   <i
                     v-if="isCommunity"
-                    class="material-icons menu-icon"
+                    class="material-icons menu-icon "
                   >
                     stars
                   </i>
                 </x-menuitem>
                 <x-menuitem
-                  @click.prevent="submitCurrentQueryToFile"
+                  @click.prevent="queryFunctions.secondaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>Run Current to File</x-label>
+                  <x-label>{{ runSecondaryText(true) }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
                   <i
                     v-if="isCommunity"
-                    class="material-icons menu-icon "
+                    class="material-icons menu-icon"
                   >
                     stars
                   </i>
@@ -538,6 +540,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
 
   const log = rawlog.scope('query-editor')
@@ -557,7 +560,7 @@
         results: [],
         running: false,
         runningCount: 1,
-        runningType: 'all queries',
+        runningType: 'current',
         selectedResult: 0,
         unsavedText: editorDefault,
         editor: {
@@ -613,6 +616,12 @@
         warningNoty: null,
         showTransactionActiveTooltip: false,
         enteredTransactionFromIdent: false,
+        queryFunctions: {} as {
+          primaryRead: () => Promise<void>,
+          secondaryRead: () => Promise<void>,
+          primaryWrite: () => Promise<void>,
+          secondaryWrite: () => Promise<void>,
+        },
         editingResult: false,
         resultsEditData: [],
         resultEditableMap: []
@@ -640,6 +649,8 @@
         if (this.tab.query && this.tab.query.title) {
           return this.tab.query.title;
         }
+
+        return ''
       },
       canManageTransactions() {
         return !this.dialectData?.disabledFeatures?.manualCommit;
@@ -762,8 +773,8 @@
         return this.$vHotkeyKeymap({
           'queryEditor.switchPaneFocus': this.switchPaneFocus,
           'queryEditor.selectEditor': this.selectEditor,
-          'queryEditor.submitQueryToFile': this.submitQueryToFile,
-          'queryEditor.submitCurrentQueryToFile': this.submitCurrentQueryToFile,
+          'queryEditor.primaryQueryToFileAction': this.queryFunctions.primaryWrite,
+          'queryEditor.secondaryQueryToFileAction': this.queryFunctions.secondaryWrite,
           'queryEditor.manualCommit': this.manualCommit,
           'queryEditor.manualRollback': this.manualRollback,
         })
@@ -815,8 +826,8 @@
       keybindings() {
         const keybindings = this.$CMKeymap({
           'general.save': this.triggerSave,
-          'queryEditor.submitCurrentQuery': this.submitCurrentQuery,
-          'queryEditor.submitTabQuery': this.submitTabQuery,
+          'queryEditor.primaryQueryAction': this.queryFunctions.primaryRead,
+          'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
         })
 
         if(this.userKeymap === "vim") {
@@ -899,6 +910,12 @@
           ]
         }
       },
+      primaryIsTab() {
+        return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery';
+      },
+      primaryIsCurrent() {
+        return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
+      },
     },
     watch: {
       selectedResult() {
@@ -979,6 +996,52 @@
           this.$modal.show(this.superFormatterId)
         } else {
           this.$modal.hide(this.superFormatterId)
+        }
+      },
+      runPrimaryText(isWrite = false) {
+        const writeText = isWrite ? ' to File' : '';
+
+        let runText: string;
+        if (this.hasSelectedText) {
+          runText = 'Run Selection';
+        } else if (this.primaryIsTab) {
+          runText = 'Run All';
+        } else {
+          runText = 'Run Current';
+        }
+
+        return `${runText}${writeText}`
+      },
+      runSecondaryText(isWrite = false) {
+        const writeText = isWrite ? ' to File' : '';
+
+        let runText: string;
+        if (this.primaryIsCurrent) {
+          runText = 'Run All';
+        } else {
+          runText = 'Run Current';
+        }
+
+        return `${runText}${writeText}`
+      },
+      getQueryActions() {
+        let primaryFunc = this.submitCurrentQuery
+        let secondaryFunc = this.submitTabQuery
+        let primaryWriteFunction = this.submitCurrentQueryToFile
+        let secondaryWriteFunc = this.submitQueryToFile
+
+        if (this.primaryIsTab) {
+          primaryFunc = this.submitTabQuery
+          secondaryFunc = this.submitCurrentQuery
+          primaryWriteFunction = this.submitQueryToFile
+          secondaryWriteFunc = this.submitCurrentQueryToFile
+        }
+
+        return {
+          primaryFunc,
+          secondaryFunc,
+          primaryWriteFunction,
+          secondaryWriteFunc
         }
       },
       getPresets(presetId) {
@@ -1134,7 +1197,7 @@
           this.updateEditorHeight()
         })
       },
-      handleEditorInitialized(detail) {
+      handleEditorInitialized() {
         this.editor.initialized = true
 
         // Setup query magic data providers
@@ -1184,7 +1247,13 @@
           this.$refs.table.rebuildColumns()
 
           if (!resultEditData.some((e) => e.editable)) {
-            this.$noty.warning("There is not enough information in the result set to generate an update query. Make sure all primary keys are present.")
+            this.$noty.warning("Editing results cannot be enabled because no primary keys are included in the query", {
+              buttons: [
+                Noty.button('Learn More', 'btn btn-primary', () => {
+                  window.main.openExternally('https://beekeeperstudio.io/user_guide_sql_editor/editing-data.md')
+                })
+              ]
+            })
             this.$set(this.resultEditableMap, this.selectedResult, false)
             await this.$nextTick();
             return;
@@ -1200,7 +1269,6 @@
         }
 
         await this.$refs.table.saveChanges();
-        this.editingResult = false;
       },
       copyToSql() {
         this.$refs.table.copyToSql();
@@ -1320,10 +1388,10 @@
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
-        if (this.runButtonDisabled) return;
 
-        // run the currently hilighted text (if any) to a file, else all sql
-        const query_sql = this.hasSelectedText ? this.editor.selection : this.unsavedText
+        // run the currently highlighted text (if any) to a file, else all sql
+        const query_sql = this.hasSelectedText && this.primaryIsTab ? this.editor.selection : this.unsavedText;
+        if (this.runButtonDisabled) return;
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
@@ -1335,19 +1403,39 @@
           return;
         }
         if (this.runButtonDisabled) return;
+        // run the currently selected query or highlighted (if there are multiple) to a file, else all sql
+        let query_sql = ''
 
-        // run the currently selected query (if there are multiple) to a file, else all sql
-        const query_sql = this.currentlySelectedQuery ? this.currentlySelectedQuery.text : this.unsavedText
+        if ( this.hasSelectedText && this.primaryIsCurrent) {
+          query_sql = this.editor.selection
+        } else if (this.currentlySelectedQuery) {
+          query_sql = this.currentlySelectedQuery.text
+        } else {
+          query_sql = this.unsavedText
+        }
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if (this.runButtonDisabled) return;
+        if(this.runButtonDisabled) return;
+        this.runningType = 'current'
+
+        if (this.hasSelectedText && this.primaryIsCurrent) {
+          this.runningType = 'selection'
+          return await this.submitQuery(this.editor.selection)
+        }
+
         if (this.currentlySelectedQuery) {
-          this.runningType = 'current'
-          await this.submitQuery(this.currentlySelectedQuery.text)
+          return await this.submitQuery(this.currentlySelectedQuery.text)
+        }
+
+        const queries = identify(this.unsavedText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        if (queries.length > 0) {
+          this.individualQueries = queries
+          this.currentlySelectedQuery = queries[0]
+          return await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
           this.results = []
           this.error = 'No query to run'
@@ -1355,8 +1443,17 @@
       },
       async submitTabQuery() {
         if (this.runButtonDisabled) return;
-        const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
-        this.runningType = this.hasSelectedText ? 'selection' : 'everything'
+
+        let text = '';
+
+        if (this.hasSelectedText && this.primaryIsTab) {
+          text = this.editor.selection;
+          this.runningType = 'selection';
+        } else {
+          text = this.unsavedText;
+          this.runningType = 'everything';
+        }
+
         if (text.trim()) {
           this.submitQuery(text)
         } else {
@@ -1516,6 +1613,12 @@
         }
         const originalText = this.query?.text || this.tab.unsavedQueryText
         if (originalText) {
+          const queries = identify(originalText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          if (queries.length > 0) {
+            this.individualQueries = queries
+            this.currentlySelectedQuery = queries[0]
+          }
+
           this.originalText = originalText
           this.unsavedText = originalText
         }
@@ -1665,6 +1768,11 @@
         clearInterval(this.timerInterval);
         this.timerInterval = null;
       },
+      displayShortcut(shortcutPath: KeybindingPath) {
+        const keybindings = this.$bksConfig.getKeybindings('context-menu', shortcutPath)
+        const displayKeybinding: string = Array.isArray(keybindings) ? keybindings[0] : keybindings;
+        return displayKeybinding;
+      },
       editorContextMenu(_event, _context, items) {
         if (this.readOnly) {
           return [
@@ -1729,6 +1837,20 @@
       }
     },
     async mounted() {
+      const {
+        primaryFunc,
+        secondaryFunc,
+        primaryWriteFunction,
+        secondaryWriteFunc
+      } = this.getQueryActions()
+
+      this.queryFunctions = {
+        primaryRead: primaryFunc,
+        secondaryRead: secondaryFunc,
+        primaryWrite: primaryWriteFunction,
+        secondaryWrite: secondaryWriteFunc
+      }
+
       if (this.tab.queryId) {
         this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
       } else if (this.tab.usedQueryId) {

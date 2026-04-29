@@ -118,13 +118,11 @@
       </x-button>
     </x-buttons>
     <span
-      v-tooltip="resultEditable ?
-        'Edit table data directly from query results' :
-        'There is not enough information in the result set to generate an update query.'"
+      v-tooltip="editButtonTooltip"
     >
       <x-button
         v-if="canEdit && !editing"
-        :disabled="results?.length === 0 || !resultEditable"
+        :disabled="results?.length === 0 || !resultEditable || usedConfig.readOnlyMode"
         class="btn btn-flat btn-icon"
         id="edit-data-btn"
         @click.prevent="editResults"
@@ -287,6 +285,7 @@ export default {
   computed: {
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState('settings', ['settings']),
+    ...mapState(['usedConfig']),
     userKeymap: {
       get() {
         const value = this.settings?.keymap.value;
@@ -352,6 +351,15 @@ export default {
     },
     canEdit() {
       return !this.dialectData?.disabledFeatures?.resultEditing;
+    },
+    editButtonTooltip() {
+      if (this.usedConfig.readOnlyMode) {
+        return "Read Only Mode is enabled for this connection. Editing is disabled.";
+      } else if (this.resultEditable) {
+        return "Edit table data directly from query results";
+      } else {
+        return "There is not enough information in the result set to generate an update query.";
+      }
     }
   },
   methods: {
