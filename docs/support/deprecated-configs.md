@@ -14,4 +14,4 @@ We have changed how query actions are defined in the app to allow for the abilit
 - submitQueryToFile -> primaryQueryToFileAction
 - submitCurrentQueryToFile -> secondaryQueryToFileAction
 
-The default behaviour for this has not changed as of yet, but you can now change the primary and secondary actions using the `primaryQueryAction` and `secondaryQueryAction` options under the `settings.queryEditor` section found in the [config file](../user_guide/configuration.md).
+The default behaviour for this has not changed as of yet, but you can now change the primary and secondary actions using the `primaryQueryAction` and `secondaryQueryAction` options under the `ui.queryEditor` section found in the [config file](../user_guide/configuration.md).

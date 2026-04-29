@@ -682,10 +682,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       showDryRun() {
         return this.dialect == 'bigquery'
       },
-      isPrimaryRunCurrentQuery() {
-        const { settings: configSettings } = this.$bksConfig
-        return configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
-      },
       identifyDialect() {
         // dialect for sql-query-identifier
         const mappings = {
@@ -915,10 +911,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
       },
       primaryIsTab() {
-        return this.$bksConfig.settings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery';
+        return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery';
       },
       primaryIsCurrent() {
-        return this.$bksConfig.settings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
+        return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
       },
     },
     watch: {

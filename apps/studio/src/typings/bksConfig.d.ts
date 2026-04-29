@@ -425,12 +425,6 @@ declare interface IBksConfig {
         lockMode: string;
         minPinLength: number;
     };
-    settings: {
-        queryEditor: {
-            primaryQueryAction: string;
-            secondaryQueryAction: string;
-        };
-    };
     ui: {
         export: {
             errorNoticeTimeout: number;
@@ -446,6 +440,8 @@ declare interface IBksConfig {
         queryEditor: {
             defaultFormatter: string;
             maxResults: number;
+            primaryQueryAction: string;
+            secondaryQueryAction: string;
         };
         tableList: {
             itemHeight: number;
