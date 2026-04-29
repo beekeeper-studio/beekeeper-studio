@@ -198,7 +198,7 @@
               @click.prevent="queryFunctions.primaryRead"
               :disabled="runButtonDisabled"
             >
-              <x-label>{{ runQueryText(true, false) }}</x-label>
+              <x-label>{{ runPrimaryText() }}</x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
@@ -208,11 +208,11 @@
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
                 <x-menuitem @click.prevent="queryFunctions.primaryRead">
-                  <x-label>{{ runQueryText(true, false) }}</x-label>
+                  <x-label>{{ runPrimaryText() }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
                 </x-menuitem>
                 <x-menuitem @click.prevent="queryFunctions.secondaryRead">
-                  <x-label>{{ runQueryText(false, false) }}</x-label>
+                  <x-label>{{ runSecondaryText() }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
                 </x-menuitem>
                 <hr>
@@ -220,7 +220,8 @@
                   @click.prevent="queryFunctions.primaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ runQueryText(true, true) }}</x-label>
+                  <x-label>{{ runPrimaryText(true) }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
@@ -232,7 +233,8 @@
                   @click.prevent="queryFunctions.secondaryWrite"
                   :disabled="disableRunToFile"
                 >
-                  <x-label>{{ runQueryText(false, true) }}</x-label>
+                  <x-label>{{ runSecondaryText(true) }}</x-label>
+                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
@@ -911,7 +913,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             this.queryMagic.extensions,
           ]
         }
-      }
+      },
+      primaryIsTab() {
+        return this.$bksConfig.settings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery';
+      },
+      primaryIsCurrent() {
+        return this.$bksConfig.settings.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
+      },
     },
     watch: {
       selectedResult() {
@@ -994,22 +1002,31 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$modal.hide(this.superFormatterId)
         }
       },
-      runQueryText(isPrimary: boolean, isWrite: boolean): string{
-        const writeText = ' to File'
-        const { settings: configSettings } = this.$bksConfig
-        let runSelect = this.hasSelectedText ? 'Run Selection' : 'Run Current'
-        let runAll = 'Run All'
+      runPrimaryText(isWrite = false) {
+        const writeText = isWrite ? ' to File' : '';
 
-        if (isWrite) {
-          runSelect += writeText
-          runAll += writeText
+        let runText: string;
+        if (this.hasSelectedText) {
+          runText = 'Run Selection';
+        } else if (this.primaryIsTab) {
+          runText = 'Run All';
+        } else {
+          runText = 'Run Current';
         }
 
-        if (configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery') {
-          return isPrimary ? runAll : runSelect
+        return `${runText}${writeText}`
+      },
+      runSecondaryText(isWrite = false) {
+        const writeText = isWrite ? ' to File' : '';
+
+        let runText: string;
+        if (this.primaryIsCurrent) {
+          runText = 'Run All';
+        } else {
+          runText = 'Run Current';
         }
 
-        return isPrimary ? runSelect : runAll
+        return `${runText}${writeText}`
       },
       getQueryActions() {
         const { settings: configSettings } = this.$bksConfig
@@ -1377,7 +1394,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal)
           return;
         }
-        const query_sql = this.unsavedText
+
+        // run the currently highlighted text (if any) to a file, else all sql
+        const query_sql = this.hasSelectedText && this.primaryIsTab ? this.editor.selection : this.unsavedText;
         if (this.runButtonDisabled) return;
         const saved_name = this.hasTitle ? this.query.title : null
         const tab_title = this.tab.title // e.g. "Query #1"
@@ -1390,10 +1409,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return;
         }
         if (this.runButtonDisabled) return;
-        // run the currently selected query or higlighted (if there are multiple) to a file, else all sql
+        // run the currently selected query or highlighted (if there are multiple) to a file, else all sql
         let query_sql = ''
 
-        if ( this.hasSelectedText ) {
+        if ( this.hasSelectedText && this.primaryIsCurrent) {
           query_sql = this.editor.selection
         } else if (this.currentlySelectedQuery) {
           query_sql = this.currentlySelectedQuery.text
@@ -1409,7 +1428,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if(this.runButtonDisabled) return;
         this.runningType = 'current'
 
-        if (this.hasSelectedText) {
+        if (this.hasSelectedText && this.primaryIsCurrent) {
           this.runningType = 'selection'
           return await this.submitQuery(this.editor.selection)
         }
@@ -1429,9 +1448,18 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
       },
       async submitTabQuery() {
-        if(this.runButtonDisabled) return;
-        const text = this.unsavedText
-        this.runningType = 'everything'
+        if (this.runButtonDisabled) return;
+
+        let text = '';
+
+        if (this.hasSelectedText && this.primaryIsTab) {
+          text = this.editor.selection;
+          this.runningType = 'selection';
+        } else {
+          text = this.unsavedText;
+          this.runningType = 'everything';
+        }
+
         if (text.trim()) {
           this.submitQuery(text)
         } else {
@@ -1747,11 +1775,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.timerInterval = null;
       },
       displayShortcut(shortcutPath: KeybindingPath) {
-        const keybindings = this.$bksConfig.getKeybindings('ui', shortcutPath)
-        const displayKeybinding: string[] = Array.isArray(keybindings[0]) ? keybindings[0] : keybindings
-        return displayKeybinding.join('')
-        
-        // return this.$getUiKeybind(shortcut).join('')
+        const keybindings = this.$bksConfig.getKeybindings('context-menu', shortcutPath)
+        const displayKeybinding: string = Array.isArray(keybindings) ? keybindings[0] : keybindings;
+        return displayKeybinding;
       },
       editorContextMenu(_event, _context, items) {
         if (this.readOnly) {
