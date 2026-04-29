@@ -1025,13 +1025,12 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return `${runText}${writeText}`
       },
       getQueryActions() {
-        const { settings: configSettings } = this.$bksConfig
         let primaryFunc = this.submitCurrentQuery
         let secondaryFunc = this.submitTabQuery
         let primaryWriteFunction = this.submitCurrentQueryToFile
         let secondaryWriteFunc = this.submitQueryToFile
 
-        if (configSettings.queryEditor?.primaryQueryAction.toLowerCase() === 'submittabquery') {
+        if (this.primaryIsTab) {
           primaryFunc = this.submitTabQuery
           secondaryFunc = this.submitCurrentQuery
           primaryWriteFunction = this.submitQueryToFile
