@@ -131,7 +131,7 @@ If you type a `Host` alias from your SSH config into either host field, Beekeepe
 | `HostName`      | The actual hostname/IP to connect to      |
 | `Port`          | The SSH port                              |
 | `User`          | The SSH username                          |
-| `IdentityFile`  | The private key file (Key File / SSH Agent modes only) |
+| `IdentityFile`  | The private key file (Key File mode only — in SSH Agent mode the agent provides the key) |
 
 For example, given this entry in `~/.ssh/config`:
 

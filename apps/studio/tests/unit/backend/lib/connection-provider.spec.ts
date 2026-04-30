@@ -163,6 +163,47 @@ Host jump
     });
   });
 
+  it("does not pull identityFile for agent mode (the agent supplies the key)", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/should_be_ignored
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "alias",
+        sshMode: "agent",
+        sshUsername: "u",
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.privateKey).toBeNull();
+    expect(result.ssh.useAgent).toBe(true);
+    expect(result.ssh.host).toBe("real.example.com");
+  });
+
+  it("does not pull identityFile for bastion agent mode", () => {
+    writeSshConfig(`
+Host jump
+  HostName jump.example.com
+  IdentityFile /keys/should_be_ignored
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "host",
+        sshMode: "userpass",
+        sshPassword: "x",
+        sshBastionHost: "jump",
+        sshBastionMode: "agent",
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.bastionPrivateKey).toBeNull();
+    expect(result.ssh.bastionHost).toBe("jump.example.com");
+  });
+
   it("does not pull identityFile for userpass mode", () => {
     writeSshConfig(`
 Host alias

@@ -29,9 +29,9 @@ export default {
     // Merge values from ~/.ssh/config for ANY auth mode. The user-entered
     // value always wins; ssh config only fills in missing fields. The
     // resolved hostname always replaces the alias (that's the whole point
-    // of an alias). Identity files are only consulted for modes that use
-    // a key file (keyfile, agent), and never overwrite a user-supplied
-    // keyfile.
+    // of an alias). IdentityFile is only consulted for keyfile mode; in
+    // agent mode the agent supplies the key, in userpass mode it isn't
+    // used at all.
     if (ssh && config.sshHost) {
       const fileConfig = readSshConfig(config.sshHost.trim())
       if (fileConfig.host) {
@@ -46,7 +46,7 @@ export default {
       if (
         fileConfig.identityFile &&
         !ssh.privateKey &&
-        (config.sshMode === 'keyfile' || config.sshMode === 'agent')
+        config.sshMode === 'keyfile'
       ) {
         ssh.privateKey = fileConfig.identityFile
       }
@@ -66,7 +66,7 @@ export default {
       if (
         fileConfig.identityFile &&
         !ssh.bastionPrivateKey &&
-        (config.sshBastionMode === 'keyfile' || config.sshBastionMode === 'agent')
+        config.sshBastionMode === 'keyfile'
       ) {
         ssh.bastionPrivateKey = fileConfig.identityFile
       }
