@@ -1762,10 +1762,10 @@
   resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.9.tgz#78730e8d841ddeab04193e22eff90f5804607703"
   integrity sha512-cnSL+9gnmmUptD26gJ1IPHBEUWdXFGRnlSnuMtOfRPhtR83v2pXGPVv3CCNpg3QaGT/cDLl7EKqfjieyzyXL+w==
 
-"@beekeeperstudio/plugin@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.6.0.tgz#7ba0cd3ca01cd1bc463434c7e75b905081fb8df6"
-  integrity sha512-it+Wbg5zUFfK8yDUY81Rq5c1jRzMat/eBXnu5vjpqSscniGPZXfY5YB3PWdZstWBM40sFo+aKEWOd7DvHNesvw==
+"@beekeeperstudio/plugin@^1.7.1-beta.1":
+  version "1.7.1-beta.2"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.7.1-beta.2.tgz#6f73ca4ccb1a0fef99f57df7fef7f39eb546f1ea"
+  integrity sha512-pEh8vWMB14ZQ/QIOBMjMZslDFNT1KHpM0/MeGcWSxMmblMV3foMc6LRoxHsbdH/TSlSUwk5Vx2iTx5L+IceUSQ==
 
 "@bufbuild/protobuf@^2.5.0":
   version "2.11.0"
