@@ -16,6 +16,23 @@
           <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
         </div>
       </div>
+      <div class="row gutter alert-row">
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">info</i>
+          <div>
+            <strong>Using <code>~/.ssh/config</code>:</strong>
+            you can type a <code>Host</code> alias from your SSH config in any host field below.
+            We'll resolve <code>HostName</code>, <code>Port</code>, <code>User</code>, and <code>IdentityFile</code> from your config.
+            <br>
+            <strong>Precedence (first match wins):</strong>
+            <ol class="ssh-precedence">
+              <li>Values you enter in the fields below.</li>
+              <li>Matching entry in <code>~/.ssh/config</code>.</li>
+              <li>SSH defaults (e.g. port 22, current OS user).</li>
+            </ol>
+          </div>
+        </div>
+      </div>
 
       <!-- Bastion -->
 
@@ -30,6 +47,7 @@
               :value="config.sshBastionHost"
               @input="val => config.sshBastionHost = val"
             />
+            <small class="form-help">Hostname or <code>~/.ssh/config</code> Host alias.</small>
           </div>
           <div class="col s3 form-group">
             <label for="sshBastionHostPort">Port</label>
@@ -37,6 +55,7 @@
               :value="config.sshBastionHostPort"
               @input="val => config.sshBastionHostPort = val"
             />
+            <small class="form-help">Falls back to <code>Port</code> from <code>~/.ssh/config</code>, then 22.</small>
           </div>
         </div>
 
@@ -61,11 +80,27 @@
           class="agent flex-col"
         >
           <div class="form-group">
-            <label>Bastion Username</label>
+            <label>Bastion Username <span class="hint">(Optional)</span></label>
             <masked-input
               :value="config.sshBastionUsername"
               @input="val => config.sshBastionUsername = val"
             />
+            <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>, then your OS username.</small>
+          </div>
+          <platform-warning location="ssh-agent" />
+          <div
+            v-if="$config.isWindows && !$config.sshAuthSock"
+            class="alert alert-info"
+          >
+            <i class="material-icons-outlined">info</i>
+            <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
+          </div>
+          <div
+            v-else-if="!$config.sshAuthSock && !$config.isWindows"
+            class="alert alert-warning"
+          >
+            <i class="material-icons">error_outline</i>
+            <div>You don't seem to have an SSH agent running.</div>
           </div>
         </div>
 
@@ -76,22 +111,24 @@
           <div class="row">
             <div class="col">
               <div class="form-group">
-                <label>Bastion Username</label>
+                <label>Bastion Username <span class="hint">(Optional)</span></label>
                 <masked-input
                   :value="config.sshBastionUsername"
                   @input="val => config.sshBastionUsername = val"
                 />
+                <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
               </div>
             </div>
           </div>
           <div class="row gutter">
             <div class="col s6 form-group">
-              <label>Private Key File</label>
+              <label>Private Key File <span class="hint">(Optional)</span></label>
               <file-picker
                 v-model="config.sshBastionKeyfile"
                 :show-hidden-files="true"
                 :default-path="filePickerDefaultPath"
               />
+              <small class="form-help">If blank, we use <code>IdentityFile</code> from <code>~/.ssh/config</code>.</small>
             </div>
             <div class="col s6 form-group">
               <label>Key File PassPhrase <span class="hint">(Optional)</span></label>
@@ -110,11 +147,12 @@
         >
           <div class="col s6">
             <div class="form-group">
-              <label>Bastion Username</label>
+              <label>Bastion Username <span class="hint">(Optional)</span></label>
               <masked-input
                 :value="config.sshBastionUsername"
                 @input="val => config.sshBastionUsername = val"
               />
+              <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
             </div>
           </div>
           <div class="col s6">
@@ -139,6 +177,7 @@
             :value="config.sshHost"
             @input="val => config.sshHost = val"
           />
+          <small class="form-help">Hostname or <code>~/.ssh/config</code> Host alias.</small>
         </div>
         <div class="col s3 form-group">
           <label for="sshPort">Port</label>
@@ -146,6 +185,7 @@
             :value="config.sshPort"
             @input="val => config.sshPort = val"
           />
+          <small class="form-help">Falls back to <code>Port</code> from <code>~/.ssh/config</code>, then 22.</small>
         </div>
       </div>
       <div class="form-group">
@@ -169,11 +209,12 @@
         class="agent flex-col"
       >
         <div class="form-group">
-          <label for="sshUsername">SSH Username</label>
+          <label for="sshUsername">SSH Username <span class="hint">(Optional)</span></label>
           <masked-input
             :value="config.sshUsername"
             @input="val => config.sshUsername = val"
           />
+          <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>, then your OS username.</small>
         </div>
         <platform-warning location="ssh-agent" />
         <div
@@ -199,23 +240,25 @@
         <div class="row">
           <div class="col">
             <div class="form-group">
-              <label for="sshUsername">SSH Username</label>
+              <label for="sshUsername">SSH Username <span class="hint">(Optional)</span></label>
               <masked-input
                 :value="config.sshUsername"
                 @input="val => config.sshUsername = val"
               />
+              <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
             </div>
           </div>
         </div>
         <platform-warning location="ssh-keyfile" />
         <div class="row gutter">
           <div class="col s6 form-group">
-            <label for="sshKeyfile">Private Key File</label>
+            <label for="sshKeyfile">Private Key File <span class="hint">(Optional)</span></label>
             <file-picker
               v-model="config.sshKeyfile"
               :show-hidden-files="true"
               :default-path="filePickerDefaultPath"
             />
+            <small class="form-help">If blank, we use <code>IdentityFile</code> from <code>~/.ssh/config</code>.</small>
           </div>
           <div class="col s6 form-group">
             <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
@@ -233,11 +276,12 @@
       >
         <div class="col s6">
           <div class="form-group">
-            <label for="sshUsername">SSH Username</label>
+            <label for="sshUsername">SSH Username <span class="hint">(Optional)</span></label>
             <masked-input
               :value="config.sshUsername"
               @input="val => config.sshUsername = val"
             />
+            <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
           </div>
         </div>
         <div class="col s6">
@@ -307,5 +351,21 @@ export default {
 <style scoped>
 .alert-row {
   margin-inline: 0;
+}
+.form-help {
+  display: block;
+  margin-top: 0.25rem;
+  opacity: 0.7;
+  font-size: 0.85em;
+}
+.form-help code {
+  font-size: 0.95em;
+}
+.ssh-precedence {
+  margin: 0.4rem 0 0;
+  padding-inline-start: 1.25rem;
+}
+.ssh-precedence li {
+  margin-bottom: 0.1rem;
 }
 </style>

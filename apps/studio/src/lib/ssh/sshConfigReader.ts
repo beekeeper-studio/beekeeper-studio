@@ -38,7 +38,9 @@ export function readSshConfig(host: string, configPath?: string): SshConfigResul
         result.identityfile[0]
       );
     }
-    endResult.user = result.user as string | undefined;
+    if (result.user) {
+      endResult.user = result.user as string;
+    }
   } catch (err) {
     log.error("Failed to read or parse ~/.ssh/config:", err);
   }

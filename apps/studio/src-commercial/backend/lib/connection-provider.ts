@@ -15,9 +15,9 @@ export default {
       password: config.sshMode === 'userpass' ? config.sshPassword : null,
       privateKey: config.sshMode === 'keyfile' ? config.sshKeyfile : null,
       passphrase: config.sshMode === 'keyfile' ? config.sshKeyfilePassword : null,
-      bastionHost: config.sshBastionHost,
+      bastionHost: config.sshBastionHost ? config.sshBastionHost.trim() : null,
       bastionPort: config.sshBastionHostPort,
-      bastionUser: config.sshBastionUsername,
+      bastionUser: config.sshBastionUsername ? config.sshBastionUsername.trim() : null,
       bastionPassword: config.sshBastionMode === 'userpass' ? config.sshBastionPassword : null,
       bastionPrivateKey: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfile : null,
       bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
@@ -26,35 +26,49 @@ export default {
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
 
-    if (ssh && config.sshMode === 'agent' && config.sshHost) {
+    // Merge values from ~/.ssh/config for ANY auth mode. The user-entered
+    // value always wins; ssh config only fills in missing fields. The
+    // resolved hostname always replaces the alias (that's the whole point
+    // of an alias). Identity files are only consulted for modes that use
+    // a key file (keyfile, agent), and never overwrite a user-supplied
+    // keyfile.
+    if (ssh && config.sshHost) {
       const fileConfig = readSshConfig(config.sshHost.trim())
-      if (fileConfig.port && !ssh.port) {
-        ssh.port = fileConfig.port
-      }
-      if (fileConfig.identityFile) {
-        ssh.privateKey = fileConfig.identityFile
-      }
       if (fileConfig.host) {
         ssh.host = fileConfig.host
+      }
+      if (fileConfig.port && !ssh.port) {
+        ssh.port = fileConfig.port
       }
       if (fileConfig.user && !ssh.user) {
         ssh.user = fileConfig.user
       }
+      if (
+        fileConfig.identityFile &&
+        !ssh.privateKey &&
+        (config.sshMode === 'keyfile' || config.sshMode === 'agent')
+      ) {
+        ssh.privateKey = fileConfig.identityFile
+      }
     }
 
-    if (ssh && config.sshBastionMode === 'agent' && config.sshBastionHost) {
+    if (ssh && config.sshBastionHost) {
       const fileConfig = readSshConfig(config.sshBastionHost.trim())
-      if (fileConfig.port && !ssh.bastionPort) {
-        ssh.bastionPort = fileConfig.port
-      }
-      if (fileConfig.identityFile) {
-        ssh.bastionPrivateKey = fileConfig.identityFile
-      }
       if (fileConfig.host) {
         ssh.bastionHost = fileConfig.host
       }
+      if (fileConfig.port && !ssh.bastionPort) {
+        ssh.bastionPort = fileConfig.port
+      }
       if (fileConfig.user && !ssh.bastionUser) {
         ssh.bastionUser = fileConfig.user
+      }
+      if (
+        fileConfig.identityFile &&
+        !ssh.bastionPrivateKey &&
+        (config.sshBastionMode === 'keyfile' || config.sshBastionMode === 'agent')
+      ) {
+        ssh.bastionPrivateKey = fileConfig.identityFile
       }
     }
 
