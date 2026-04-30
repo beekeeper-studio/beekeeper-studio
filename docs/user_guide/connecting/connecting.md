@@ -120,6 +120,45 @@ Beekeeper supports tunneling your connection via SSH. To connect to a remote dat
 
 8. **Press the Connect button** to access your database!
 
+### Using `~/.ssh/config`
+
+Beekeeper Studio reads your `~/.ssh/config` file (the same file `ssh` itself uses) to look up connection details. This works for **both the SSH Hostname and the Bastion Host fields**, and for **all three authentication methods** (SSH Agent, Key File, Username and Password).
+
+If you type a `Host` alias from your SSH config into either host field, Beekeeper will resolve the following options from the matching entry:
+
+| SSH config key  | What Beekeeper uses it for                |
+| --------------- | ----------------------------------------- |
+| `HostName`      | The actual hostname/IP to connect to      |
+| `Port`          | The SSH port                              |
+| `User`          | The SSH username                          |
+| `IdentityFile`  | The private key file (Key File / SSH Agent modes only) |
+
+For example, given this entry in `~/.ssh/config`:
+
+```
+Host production
+  HostName db.internal.example.com
+  Port 22022
+  User admin
+  IdentityFile ~/.ssh/prod_ed25519
+```
+
+You can simply type `production` into the **SSH Hostname** field, leave the other fields blank, and Beekeeper will fill in the rest.
+
+#### Order of Precedence
+
+When deciding which value to use for the hostname, port, username, or key file, Beekeeper picks the **first** match in this order:
+
+1. **What you typed in the connection form.** Anything you enter in Beekeeper always wins. The exception is the hostname itself: if you typed an alias (e.g. `production`), Beekeeper resolves it to the real `HostName` from `~/.ssh/config` so the connection can actually be made.
+2. **The matching entry in `~/.ssh/config`.** Used to fill in any field you left blank.
+3. **SSH defaults.** Port `22`, your OS username, and (in SSH Agent mode) the agent advertised by `SSH_AUTH_SOCK` (or PuTTY's pageant on Windows).
+
+This precedence applies independently to the target host and the bastion host, so you can mix and match: for example, type a real hostname for the target while using a `~/.ssh/config` alias for the bastion (or vice versa).
+
+#### What is *not* read from `~/.ssh/config`
+
+To keep things predictable, Beekeeper Studio only reads the four keys above. Other directives in your config file (`ProxyJump`, `ProxyCommand`, `ForwardAgent`, `LocalForward`, `RemoteForward`, `Match` blocks, included files, etc.) are **ignored**. If you rely on `ProxyJump`, configure the bastion host explicitly in the connection form.
+
 ## File Associations
 
 Beekeeper Studio provides file associations so you can do the following things without opening the app:
