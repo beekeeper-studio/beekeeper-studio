@@ -159,12 +159,17 @@ async function loadColumnsFromQueryContext(
  * Check if cursor is at a position where column completion makes sense
  */
 function isColumnCompletionPosition(textBeforeCursor: string): boolean {
+  // After FROM, JOIN, UPDATE, INTO should suggest tables, not columns
+  if (/\b(FROM|JOIN|UPDATE|INTO)\s+[a-zA-Z0-9_]*$/i.test(textBeforeCursor)) {
+    return false;
+  }
+
   const completionPatterns = [
-    /\bSELECT\s+/i, // After SELECT (with or without trailing content)
-    /\bSELECT.+,\s*/i, // After comma in SELECT
-    /\b(WHERE|AND|OR)\s+/i, // After WHERE/AND/OR
-    /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+/i, // After ORDER BY/GROUP BY/HAVING
-    /\bJOIN.+\bON\s+/i, // After JOIN...ON
+    /\bSELECT\s+[^]*$/i, // Inside SELECT list
+    /\b(WHERE|AND|OR)\s+[^]*$/i, // Inside WHERE/AND/OR conditions
+    /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+[^]*$/i, // Inside aggregations/ordering
+    /\bON\s+[^]*$/i, // Inside JOIN ... ON conditions
+    /\bSET\s+[^]*$/i, // Inside UPDATE ... SET
   ];
 
   return completionPatterns.some((pattern) => pattern.test(textBeforeCursor));
