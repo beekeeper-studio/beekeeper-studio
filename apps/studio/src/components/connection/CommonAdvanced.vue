@@ -352,8 +352,8 @@ export default {
       filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh'),
       sshConfigPath: window.main.join(platformInfo.homeDirectory, '.ssh', 'config'),
       homeDirectory: platformInfo.homeDirectory,
-      hostTooltip: "Hostname or IP. You can also use a <code>Host</code> alias from your <code>~/.ssh/config</code>; we'll resolve <code>HostName</code>, <code>Port</code>, and <code>User</code> from the matching entry.",
-      usernameTooltip: "If blank, we use <code>User</code> from your <code>~/.ssh/config</code> entry, then your OS username.",
+      hostTooltip: "Hostname or IP. A <code>Host</code> alias from <code>~/.ssh/config</code> resolves to <code>HostName</code>, <code>Port</code>, and <code>User</code> from the matching entry.",
+      usernameTooltip: "If blank, falls back to <code>User</code> from <code>~/.ssh/config</code>, then your OS username.",
     }
   },
   methods: {

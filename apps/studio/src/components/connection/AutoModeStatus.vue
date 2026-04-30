@@ -43,28 +43,28 @@ export default {
   },
   computed: {
     agentAvailable() {
-      // On Windows we'll fall back to PuTTY's pageant when SSH_AUTH_SOCK
-      // is not set, so agent is effectively always available there.
+      // On Windows ssh2 falls back to PuTTY's pageant when SSH_AUTH_SOCK
+      // is not set, so the agent is effectively always available there.
       return !!this.sshAuthSock || this.isWindows
     },
     agentTooltip() {
       if (this.sshAuthSock) {
-        return `We found your ssh-agent socket: ${this.sshAuthSock}`
+        return `ssh-agent socket: ${this.sshAuthSock}`
       }
       if (this.isWindows) {
-        return "We didn't find SSH_AUTH_SOCK, so we'll use PuTTY's pageant if it's running."
+        return "SSH_AUTH_SOCK is not set. PuTTY's pageant will be used if it's running."
       }
-      return "We couldn't find a running ssh-agent to use."
+      return "No running ssh-agent found."
     },
     configTooltip() {
       if (this.sshConfigExists) {
         return `Config found at ${this.sshConfigPath}`
       }
-      return `We couldn't find an ssh config at ${this.sshConfigPath}`
+      return `No ssh config at ${this.sshConfigPath}`
     },
     defaultKeyTooltip() {
       if (this.defaultSshIdentityFile) {
-        return `Default key found at ${this.defaultSshIdentityFile}`
+        return `Default key: ${this.defaultSshIdentityFile}`
       }
       const sshDir = this.homeDirectory
         ? window.main.join(this.homeDirectory, '.ssh')
@@ -72,7 +72,7 @@ export default {
       const candidates = DEFAULT_KEY_NAMES
         .map((name) => `${sshDir}/${name}`)
         .join('<br>')
-      return `No default key found. We looked for:<br>${candidates}`
+      return `No default key found. Paths checked:<br>${candidates}`
     },
   },
 }
