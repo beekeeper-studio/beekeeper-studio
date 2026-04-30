@@ -153,10 +153,20 @@
             >
               {{ conn.name }}
             </button>
+            <div
+              v-if="!displayedConnections.length"
+              class="quick-switcher-empty"
+            >
+              No {{ showingMore ? 'saved' : 'recent' }} connections
+            </div>
           </div>
         </div>
         <div class="quick-switcher-footer">
-          <button class="quick-switcher-item more" @click.stop="toggleMore">
+          <button
+            class="quick-switcher-item more"
+            :disabled="moreDisabled"
+            @click.stop="toggleMore"
+          >
             <span class="label">{{ showingMore ? 'less' : 'more' }}</span>
             <span style="font-size: 22px;">
               {{ showingMore ? '‹' : '›' }}
@@ -220,6 +230,12 @@ export default {
       return connections.filter(conn =>
         conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
       );
+    },
+    moreDisabled() {
+      const otherConnections = this.showingMore ? this.recentConnections : this.savedConnections;
+      return !otherConnections.filter(conn =>
+        conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
+      ).length;
     },
     classes() {
       const result = {
