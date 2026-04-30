@@ -19,6 +19,7 @@
     "test:e2e:ci": "cross-env TEST_MODE=1 yarn playwright test --config=playwright.ci.config.ts",
     "test:e2e:smoke": "cross-env TEST_MODE=1 yarn playwright test --config=playwright.smoke.config.ts",
     "lint": "eslint",
+    "generate:nsis-protocols": "node build/win/generate-nsis-protocols.js",
     "electron:build": "yarn build && yarn electron-builder --config ./electron-builder-config.js",
     "electron:serve": "concurrently -c blue,green -n esbuild,vite \"yarn dev:esbuild\" \"yarn dev:vite\"",
     "config:build": "CLI_MODE=1 tsx ./src/config/typesGenerator.ts",
