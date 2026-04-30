@@ -1787,6 +1787,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             id: "formatter",
             handler: this.formatterPreset
           },
+          ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
+            ? [
+                { type: "divider" },
+                {
+                  label: "[DEV] Make Fake Remote Change",
+                  id: "fake-remote-change",
+                  handler: this.fakeRemoteChange,
+                },
+              ]
+            : []),
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
       },
