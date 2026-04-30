@@ -103,10 +103,10 @@ export default {
   font-size: 16px;
 }
 .status-item.ok .material-icons {
-  color: var(--text-success, #4caf50);
+  color: var(--brand-success);
 }
 .status-item.missing .material-icons {
-  color: var(--text-error, #e57373);
+  color: var(--brand-danger);
 }
 .sep {
   font-size: 16px;
