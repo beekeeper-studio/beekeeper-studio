@@ -1,21 +1,26 @@
 <template>
-  <div class="auto-mode-status">
-    <span
-      class="status-item"
-      :class="{ ok: agentAvailable, missing: !agentAvailable }"
-      v-tooltip="agentTooltip"
-    >
-      <i class="material-icons">{{ agentAvailable ? 'check_circle' : 'cancel' }}</i>
-      <span>SSH agent</span>
-    </span>
-    <span
-      class="status-item"
-      :class="{ ok: sshConfigExists, missing: !sshConfigExists }"
-      v-tooltip="configTooltip"
-    >
-      <i class="material-icons">{{ sshConfigExists ? 'check_circle' : 'cancel' }}</i>
-      <span>SSH config</span>
-    </span>
+  <div class="auto-mode-status-wrap">
+    <div class="auto-mode-status">
+      <span
+        class="status-item"
+        :class="{ ok: agentAvailable, missing: !agentAvailable }"
+        v-tooltip="agentTooltip"
+      >
+        <i class="material-icons">{{ agentAvailable ? 'check_circle' : 'cancel' }}</i>
+        <span>SSH agent</span>
+      </span>
+      <span
+        class="status-item"
+        :class="{ ok: sshConfigExists, missing: !sshConfigExists }"
+        v-tooltip="configTooltip"
+      >
+        <i class="material-icons">{{ sshConfigExists ? 'check_circle' : 'cancel' }}</i>
+        <span>SSH config</span>
+      </span>
+    </div>
+    <div class="auto-order">
+      Tries in order: SSH agent &rsaquo; <code>IdentityFile</code> from <code>~/.ssh/config</code> &rsaquo; default key (e.g. <code>~/.ssh/id_ed25519</code>)
+    </div>
   </div>
 </template>
 
@@ -53,11 +58,18 @@ export default {
 </script>
 
 <style scoped>
+.auto-mode-status-wrap {
+  margin-top: 0.5rem;
+}
 .auto-mode-status {
   display: flex;
   gap: 1rem;
-  margin-top: 0.5rem;
   font-size: 0.85em;
+}
+.auto-order {
+  margin-top: 0.35rem;
+  font-size: 0.8em;
+  opacity: 0.7;
 }
 .status-item {
   display: inline-flex;
