@@ -16,6 +16,7 @@ export interface IPlatformInfo {
   isDevelopment: boolean,
   isAppImage: boolean,
   sshAuthSock: string,
+  sshConfigExists: boolean,
   environment: string,
   resourcesPath: string,
   env: {

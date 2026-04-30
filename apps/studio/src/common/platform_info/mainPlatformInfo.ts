@@ -85,6 +85,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     isDevelopment: isDevEnv,
     isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
     sshAuthSock: p.env.SSH_AUTH_SOCK,
+    sshConfigExists: existsSync(join(homeDirectory, '.ssh', 'config')),
     environment: p.env.NODE_ENV,
     resourcesPath,
     env: {
