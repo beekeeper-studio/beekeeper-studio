@@ -1,14 +1,14 @@
 import { IGroupedUserSettings } from '@/common/appdb/models/user_setting'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
-import { IDbConnectionServerConfig } from '@/lib/db/types'
+import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
 import { readSshConfig } from '@/lib/ssh/sshConfigReader'
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
-    const ssh = config.sshEnabled ? {
+    const ssh: IDbConnectionServerSSHConfig | null = config.sshEnabled ? {
       host: config.sshHost ? config.sshHost.trim() : null,
       port: config.sshPort,
       user: config.sshUsername ? config.sshUsername.trim() : null,
@@ -29,9 +29,14 @@ export default {
     // Merge values from ~/.ssh/config for ANY auth mode. The user-entered
     // value always wins; ssh config only fills in missing fields. The
     // resolved hostname always replaces the alias (that's the whole point
-    // of an alias). IdentityFile is only consulted for keyfile mode; in
-    // agent mode the agent supplies the key, in userpass mode it isn't
-    // used at all.
+    // of an alias).
+    //
+    // IdentityFile is consulted in keyfile mode (as a fallback when no
+    // private key is selected) and in agent mode (where ssh CLI also tries
+    // IdentityFile keys after the agent). It's not used in userpass mode.
+    //
+    // IdentitiesOnly is only meaningful in agent mode — it filters which
+    // agent identities are offered.
     if (ssh && config.sshHost) {
       const fileConfig = readSshConfig(config.sshHost.trim())
       if (fileConfig.host) {
@@ -46,9 +51,13 @@ export default {
       if (
         fileConfig.identityFile &&
         !ssh.privateKey &&
-        config.sshMode === 'keyfile'
+        (config.sshMode === 'keyfile' || config.sshMode === 'agent')
       ) {
         ssh.privateKey = fileConfig.identityFile
+      }
+      if (config.sshMode === 'agent') {
+        ssh.identityFiles = fileConfig.identityFiles
+        ssh.identitiesOnly = fileConfig.identitiesOnly === true
       }
     }
 
@@ -66,9 +75,13 @@ export default {
       if (
         fileConfig.identityFile &&
         !ssh.bastionPrivateKey &&
-        config.sshBastionMode === 'keyfile'
+        (config.sshBastionMode === 'keyfile' || config.sshBastionMode === 'agent')
       ) {
         ssh.bastionPrivateKey = fileConfig.identityFile
+      }
+      if (config.sshBastionMode === 'agent') {
+        ssh.bastionIdentityFiles = fileConfig.identityFiles
+        ssh.bastionIdentitiesOnly = fileConfig.identitiesOnly === true
       }
     }
 

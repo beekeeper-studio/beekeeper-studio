@@ -6,9 +6,40 @@ import { Options, SSHConnection } from '../../vendor/node-ssh-forward/index'
 import appConfig from '@/common/platform_info'
 import pf from 'portfinder'
 
-import { IDbConnectionServerConfig } from './types';
+import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from './types';
 import { resolveHomePathToAbsolute } from '@/handlers/utils';
 import { IDbSshTunnel } from './backendTypes';
+import { loadAllowedPublicKeys } from '@/lib/ssh/sshKeyUtils';
+import { createFilteringAgent } from '@/lib/ssh/identitiesOnlyAgent';
+import type { AuthenticationType, BaseAgent } from 'ssh2';
+
+const isWindows = process.platform === 'win32';
+
+function buildAuthHandler(opts: { useAgent: boolean; hasPrivateKey: boolean; hasPassword: boolean }): AuthenticationType[] {
+  const methods: AuthenticationType[] = [];
+  if (opts.useAgent) methods.push('agent');
+  if (opts.hasPrivateKey) methods.push('publickey');
+  if (opts.hasPassword) methods.push('password');
+  return methods;
+}
+
+function maybeBuildFilteringAgent(
+  identityFiles: string[] | undefined,
+  identitiesOnly: boolean | undefined,
+  socketPath: string | undefined,
+  passphrase: string | undefined,
+): BaseAgent | string | undefined {
+  if (!socketPath) return undefined;
+  if (!identitiesOnly || !identityFiles?.length) {
+    return socketPath;
+  }
+  const allowed = loadAllowedPublicKeys(identityFiles, passphrase);
+  return createFilteringAgent({
+    socketPath,
+    isWindows,
+    allowedPublicKeys: allowed,
+  });
+}
 
 const log = rawLog.scope('db:tunnel');
 const logger = () => log;
@@ -27,37 +58,65 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         // So we need to make sure we're consistent with what hostname we return
         // localhost can be 127.0.0.1:port (ipv4), or :::port (ipv6) by default, depending.
 
+        const ssh: IDbConnectionServerSSHConfig = config.ssh
+
         const sshConfig: Options = {
-          endHost: config.ssh.host || '',
-          endPort: config.ssh.port || undefined,
-          bastionHost: config.ssh.bastionHost || '',
-          bastionPort: config.ssh.bastionPort || undefined,
-          bastionUsername: config.ssh.bastionUser || undefined,
-          bastionPassword: config.ssh.bastionPassword || undefined,
-          bastionPassphrase: config.ssh.bastionPassphrase || undefined,
-          bastionAgentForward: config.ssh.bastionMode === 'agent',
-          agentForward: config.ssh.useAgent,
-          passphrase: config.ssh.passphrase || undefined,
-          username: config.ssh.user || undefined,
-          password: config.ssh.password || undefined,
+          endHost: ssh.host || '',
+          endPort: ssh.port || undefined,
+          bastionHost: ssh.bastionHost || '',
+          bastionPort: ssh.bastionPort || undefined,
+          bastionUsername: ssh.bastionUser || undefined,
+          bastionPassword: ssh.bastionPassword || undefined,
+          bastionPassphrase: ssh.bastionPassphrase || undefined,
+          bastionAgentForward: ssh.bastionMode === 'agent',
+          agentForward: ssh.useAgent,
+          passphrase: ssh.passphrase || undefined,
+          username: ssh.user || undefined,
+          password: ssh.password || undefined,
           skipAutoPrivateKey: true,
           noReadline: true,
-          keepaliveInterval: config.ssh.keepaliveInterval,
+          keepaliveInterval: ssh.keepaliveInterval,
           // TODO: Move this to configuration defaults in the ini file
           bindHost: '127.0.0.1'
         }
 
-        if ((config.ssh.useAgent || config.ssh.bastionMode === 'agent') && appConfig.sshAuthSock) {
-          sshConfig.agentSocket = appConfig.sshAuthSock
+        const socketPath = appConfig.sshAuthSock || undefined
+
+        if (ssh.privateKey) {
+          sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(ssh.privateKey)))
         }
 
-        if (config.ssh.privateKey) {
-          sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
+        if (ssh.bastionPrivateKey) {
+          sshConfig.bastionPrivateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(ssh.bastionPrivateKey)))
         }
 
-        if (config.ssh.bastionPrivateKey) {
-          sshConfig.bastionPrivateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.bastionPrivateKey)))
+        if (ssh.useAgent) {
+          sshConfig.agent = maybeBuildFilteringAgent(
+            ssh.identityFiles,
+            ssh.identitiesOnly,
+            socketPath,
+            ssh.passphrase || undefined,
+          )
         }
+        if (ssh.bastionMode === 'agent') {
+          sshConfig.bastionAgent = maybeBuildFilteringAgent(
+            ssh.bastionIdentityFiles,
+            ssh.bastionIdentitiesOnly,
+            socketPath,
+            ssh.bastionPassphrase || undefined,
+          )
+        }
+
+        sshConfig.authHandler = buildAuthHandler({
+          useAgent: ssh.useAgent,
+          hasPrivateKey: !!sshConfig.privateKey,
+          hasPassword: !!ssh.password,
+        })
+        sshConfig.bastionAuthHandler = buildAuthHandler({
+          useAgent: ssh.bastionMode === 'agent',
+          hasPrivateKey: !!sshConfig.bastionPrivateKey,
+          hasPassword: !!ssh.bastionPassword,
+        })
 
         // if (config.ssh.privateKey && !config.ssh.useAgent) {
         //   sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))

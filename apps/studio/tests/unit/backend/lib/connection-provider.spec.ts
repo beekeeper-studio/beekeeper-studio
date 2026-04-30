@@ -163,11 +163,11 @@ Host jump
     });
   });
 
-  it("does not pull identityFile for agent mode (the agent supplies the key)", () => {
+  it("agent mode pulls IdentityFile as fallback (matching ssh CLI behavior)", () => {
     writeSshConfig(`
 Host alias
   HostName real.example.com
-  IdentityFile /keys/should_be_ignored
+  IdentityFile /keys/agent_fallback
 `);
     const result = connectionProvider.convertConfig(
       makeConfig({
@@ -178,16 +178,59 @@ Host alias
       "osuser",
       {} as any
     );
-    expect(result.ssh.privateKey).toBeNull();
     expect(result.ssh.useAgent).toBe(true);
+    expect(result.ssh.privateKey).toBe("/keys/agent_fallback");
+    expect(result.ssh.identityFiles).toEqual(["/keys/agent_fallback"]);
+    expect(result.ssh.identitiesOnly).toBe(false);
     expect(result.ssh.host).toBe("real.example.com");
   });
 
-  it("does not pull identityFile for bastion agent mode", () => {
+  it("agent mode propagates IdentitiesOnly yes", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/strict
+  IdentitiesOnly yes
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "alias",
+        sshMode: "agent",
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.useAgent).toBe(true);
+    expect(result.ssh.identitiesOnly).toBe(true);
+    expect(result.ssh.privateKey).toBe("/keys/strict");
+    expect(result.ssh.identityFiles).toEqual(["/keys/strict"]);
+  });
+
+  it("agent mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "alias",
+        sshMode: "agent",
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.useAgent).toBe(true);
+    expect(result.ssh.privateKey).toBeNull();
+    expect(result.ssh.identitiesOnly).toBe(false);
+    expect(result.ssh.identityFiles).toBeUndefined();
+  });
+
+  it("bastion agent mode pulls IdentityFile as fallback", () => {
     writeSshConfig(`
 Host jump
   HostName jump.example.com
-  IdentityFile /keys/should_be_ignored
+  IdentityFile /keys/jump_fallback
+  IdentitiesOnly yes
 `);
     const result = connectionProvider.convertConfig(
       makeConfig({
@@ -200,8 +243,30 @@ Host jump
       "osuser",
       {} as any
     );
-    expect(result.ssh.bastionPrivateKey).toBeNull();
+    expect(result.ssh.bastionPrivateKey).toBe("/keys/jump_fallback");
+    expect(result.ssh.bastionIdentityFiles).toEqual(["/keys/jump_fallback"]);
+    expect(result.ssh.bastionIdentitiesOnly).toBe(true);
     expect(result.ssh.bastionHost).toBe("jump.example.com");
+  });
+
+  it("keyfile mode ignores IdentitiesOnly (no agent involved)", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/k
+  IdentitiesOnly yes
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "alias",
+        sshMode: "keyfile",
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.privateKey).toBe("/keys/k");
+    expect(result.ssh.identitiesOnly).toBeUndefined();
+    expect(result.ssh.identityFiles).toBeUndefined();
   });
 
   it("does not pull identityFile for userpass mode", () => {

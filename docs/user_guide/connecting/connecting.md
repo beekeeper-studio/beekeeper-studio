@@ -126,12 +126,13 @@ Beekeeper Studio reads your `~/.ssh/config` file (the same file `ssh` itself use
 
 If you type a `Host` alias from your SSH config into either host field, Beekeeper will resolve the following options from the matching entry:
 
-| SSH config key  | What Beekeeper uses it for                |
-| --------------- | ----------------------------------------- |
-| `HostName`      | The actual hostname/IP to connect to      |
-| `Port`          | The SSH port                              |
-| `User`          | The SSH username                          |
-| `IdentityFile`  | The private key file (Key File mode only — in SSH Agent mode the agent provides the key) |
+| SSH config key    | What Beekeeper uses it for                |
+| ----------------- | ----------------------------------------- |
+| `HostName`        | The actual hostname/IP to connect to      |
+| `Port`            | The SSH port                              |
+| `User`            | The SSH username                          |
+| `IdentityFile`    | The private key file. In Key File mode it's used when you leave the picker blank. In SSH Agent mode it's tried as a fallback after the agent (matching `ssh`'s behavior). |
+| `IdentitiesOnly`  | If `yes`, restricts the agent to identities that match your `IdentityFile` entries (Agent mode only). |
 
 For example, given this entry in `~/.ssh/config`:
 
@@ -155,9 +156,21 @@ When deciding which value to use for the hostname, port, username, or key file, 
 
 This precedence applies independently to the target host and the bastion host, so you can mix and match: for example, type a real hostname for the target while using a `~/.ssh/config` alias for the bastion (or vice versa).
 
+#### Authentication path per mode
+
+The selected authentication mode in the form decides which credentials are tried. `~/.ssh/config` can supply additional credentials within that mode but cannot pull in a method you didn't pick:
+
+| Mode | Agent | `IdentityFile` from `~/.ssh/config` | `IdentitiesOnly=yes` |
+| ---- | ----- | ----------------------------------- | -------------------- |
+| **SSH Agent** | Tried first | Tried as fallback after the agent | Wraps the agent so it only offers identities matching your `IdentityFile`. The IdentityFile keys are still tried. |
+| **Key File** | Not used | Tried only if you leave the form's Private Key picker empty | Ignored (no agent involved) |
+| **Username & Password** | Not used | Ignored | Ignored |
+
+Picking "Key File" deliberately doesn't engage the agent, even if `~/.ssh/config` would. If you want both, pick **SSH Agent** and rely on the IdentityFile fallback.
+
 #### What is *not* read from `~/.ssh/config`
 
-To keep things predictable, Beekeeper Studio only reads the four keys above. Other directives in your config file (`ProxyJump`, `ProxyCommand`, `ForwardAgent`, `LocalForward`, `RemoteForward`, `Match` blocks, included files, etc.) are **ignored**. If you rely on `ProxyJump`, configure the bastion host explicitly in the connection form.
+To keep things predictable, Beekeeper Studio only reads the keys listed above. Other directives in your config file (`ProxyJump`, `ProxyCommand`, `ForwardAgent`, `LocalForward`, `RemoteForward`, `Match` blocks, included files, etc.) are **ignored**. If you rely on `ProxyJump`, configure the bastion host explicitly in the connection form.
 
 ## File Associations
 

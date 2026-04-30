@@ -185,12 +185,16 @@ export interface IDbConnectionServerSSHConfig {
   password: Nullable<string>
   privateKey: Nullable<string>
   passphrase: Nullable<string>
+  identityFiles?: string[]
+  identitiesOnly?: boolean
   bastionHost: Nullable<string>
   bastionPort: Nullable<number>
   bastionUser: Nullable<string>
   bastionPassword: Nullable<string>
   bastionPrivateKey: Nullable<string>
   bastionPassphrase: Nullable<string>
+  bastionIdentityFiles?: string[]
+  bastionIdentitiesOnly?: boolean
   bastionMode: Nullable<SshMode>
   keepaliveInterval: number
   useAgent: boolean

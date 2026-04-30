@@ -22,7 +22,7 @@
           <div>
             <strong>Using <code>~/.ssh/config</code>:</strong>
             you can type a <code>Host</code> alias from your SSH config in any host field below.
-            We'll resolve <code>HostName</code>, <code>Port</code>, <code>User</code>, and <code>IdentityFile</code> from your config.
+            We'll resolve <code>HostName</code>, <code>Port</code>, <code>User</code>, <code>IdentityFile</code>, and <code>IdentitiesOnly</code> from your config.
             <br>
             <strong>Precedence (first match wins):</strong>
             <ol class="ssh-precedence">
@@ -73,6 +73,10 @@
               {{ option.label }}
             </option>
           </select>
+          <small
+            class="form-help"
+            v-html="modeHelpText(config.sshBastionMode)"
+          />
         </div>
 
         <div
@@ -202,6 +206,10 @@
             {{ option.label }}
           </option>
         </select>
+        <small
+          class="form-help"
+          v-html="modeHelpText(config.sshMode)"
+        />
       </div>
 
       <div
@@ -343,6 +351,18 @@ export default {
   methods: {
     setMode(option) {
       this.config.sshMode = option.mode
+    },
+    modeHelpText(mode) {
+      switch (mode) {
+        case 'agent':
+          return "Tries your SSH agent first, then any <code>IdentityFile</code> from <code>~/.ssh/config</code> as fallback (matching <code>ssh</code>). With <code>IdentitiesOnly yes</code> set in <code>~/.ssh/config</code>, the agent only offers identities that match your <code>IdentityFile</code>."
+        case 'keyfile':
+          return "Authenticates with the private key file you've selected. Falls back to <code>IdentityFile</code> from <code>~/.ssh/config</code> if you leave the picker empty."
+        case 'userpass':
+          return 'Authenticates with the username and password entered above.'
+        default:
+          return ''
+      }
     }
   }
 }

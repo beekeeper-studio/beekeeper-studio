@@ -4,7 +4,6 @@ import os from "os";
 import SSHConfig from "ssh-config";
 import rawLog from "@bksLogger";
 import { resolveHomePathToAbsolute } from "@/handlers/utils";
-import _ from "lodash";
 
 const log = rawLog.scope("ssh:config-reader");
 
@@ -12,6 +11,8 @@ export interface SshConfigResult {
   host: string;
   port?: number;
   identityFile?: string;
+  identityFiles?: string[];
+  identitiesOnly?: boolean;
   user?: string;
 }
 
@@ -33,10 +34,16 @@ export function readSshConfig(host: string, configPath?: string): SshConfigResul
     if (result.port) {
       endResult.port = Number(result.port);
     }
-    if (result.identityfile?.[0]) {
-      endResult.identityFile = resolveHomePathToAbsolute(
-        result.identityfile[0]
+    if (Array.isArray(result.identityfile) && result.identityfile.length) {
+      const resolved = result.identityfile.map((p: string) =>
+        resolveHomePathToAbsolute(p)
       );
+      endResult.identityFiles = resolved;
+      endResult.identityFile = resolved[0];
+    }
+    if (typeof result.identitiesonly === "string") {
+      endResult.identitiesOnly =
+        result.identitiesonly.toLowerCase() === "yes";
     }
     if (result.user) {
       endResult.user = result.user as string;
