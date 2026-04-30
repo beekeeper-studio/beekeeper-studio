@@ -1,0 +1,33 @@
+name: RDS Janitor
+
+on:
+  schedule:
+    # Every 2 hours.
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-2
+
+jobs:
+  sweep:
+    name: Sweep orphaned RDS instances
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run cleanup
+        env:
+          MAX_AGE_HOURS: 2
+        run: bin/rds/cleanup-orphans.sh

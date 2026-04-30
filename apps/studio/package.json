@@ -26,6 +26,8 @@
     "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
     "test:integration:macos": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.macos.config.js",
+    "internal:rds": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.rds.config.js",
+    "test:rds": "../../bin/rds-tests.sh",
     "dev:esbuild": "node ./esbuild.mjs watch",
     "dev:vite": "vite dev"
   },
