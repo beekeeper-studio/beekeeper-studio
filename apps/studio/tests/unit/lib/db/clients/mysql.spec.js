@@ -1,4 +1,5 @@
 import { testOnly } from '../../../../../src/lib/db/clients/mysql'
+import { preprocessDelimiters } from '../../../../../src/lib/db/clients/mysql/delimiter'
 import { parseIndexColumn } from '../../../../../src/common/utils'
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder"
 
@@ -34,6 +35,128 @@ describe("MySQL UNIT tests (no connection required)", () => {
     for (const [input, output] of Object.entries(samples)) {
       expect(parseIndexColumn(input)).toMatchObject(output)
     }
+  })
+})
+
+describe("preprocessDelimiters", () => {
+  it("returns input unchanged when no DELIMITER directive is present", () => {
+    const sql = "SELECT 1;\nSELECT 2;"
+    expect(preprocessDelimiters(sql)).toBe(sql)
+  })
+
+  it("handles the classic DELIMITER $$ ... END$$ DELIMITER ; pattern", () => {
+    const input = [
+      "DELIMITER $$",
+      "CREATE PROCEDURE p()",
+      "BEGIN",
+      "  SELECT 1;",
+      "  SELECT 2;",
+      "END$$",
+      "DELIMITER ;",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).not.toMatch(/DELIMITER/i)
+    expect(result).toContain("BEGIN")
+    expect(result).toContain("  SELECT 1;")
+    expect(result).toContain("  SELECT 2;")
+    expect(result).toContain("END;")
+    expect(result).not.toContain("$$")
+  })
+
+  it("supports // delimiter and preserves nested BEGIN/END", () => {
+    const input = [
+      "DELIMITER //",
+      "CREATE PROCEDURE outer_proc()",
+      "BEGIN",
+      "  BEGIN",
+      "    SELECT 1;",
+      "  END;",
+      "  SELECT 2;",
+      "END//",
+      "DELIMITER ;",
+      "SELECT 3;",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).not.toContain("//")
+    expect(result).toContain("END;")
+    expect(result).toContain("SELECT 3;")
+  })
+
+  it("ignores the delimiter literal inside a single-quoted string", () => {
+    const input = [
+      "DELIMITER //",
+      "SELECT 'hello // world'//",
+      "DELIMITER ;",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).toContain("SELECT 'hello // world';")
+  })
+
+  it("ignores the delimiter literal inside a block comment", () => {
+    const input = [
+      "DELIMITER //",
+      "/* comment with // inside */ SELECT 1//",
+      "DELIMITER ;",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).toContain("/* comment with // inside */ SELECT 1;")
+  })
+
+  it("preserves -- and # line comments inside a procedure body", () => {
+    const input = [
+      "DELIMITER $$",
+      "CREATE PROCEDURE p()",
+      "BEGIN",
+      "  -- a line comment",
+      "  # another line comment",
+      "  SELECT 1;",
+      "END$$",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).toContain("-- a line comment")
+    expect(result).toContain("# another line comment")
+  })
+
+  it("ignores the delimiter inside backtick-quoted identifiers", () => {
+    const input = [
+      "DELIMITER //",
+      "SELECT `col//name` FROM t//",
+      "DELIMITER ;",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).toContain("`col//name`")
+  })
+
+  it("handles unterminated DELIMITER session without error", () => {
+    const input = [
+      "DELIMITER $$",
+      "CREATE PROCEDURE p() BEGIN SELECT 1; END$$",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).not.toMatch(/DELIMITER/i)
+    expect(result).toContain("END;")
+  })
+
+  it("recognises lowercase 'delimiter' keyword", () => {
+    const input = "delimiter $$\nSELECT 1$$"
+    const result = preprocessDelimiters(input)
+    expect(result).toContain("SELECT 1;")
+    expect(result).not.toContain("$$")
+  })
+
+  it("does not touch a DELIMITER keyword embedded mid-line", () => {
+    const sql = "SELECT 'DELIMITER' AS name;"
+    expect(preprocessDelimiters(sql)).toBe(sql)
+  })
+
+  it("leaves backslash-escaped quotes intact", () => {
+    const input = [
+      "DELIMITER //",
+      "SELECT 'it\\'s fine'//",
+      "DELIMITER ;",
+    ].join("\n")
+    const result = preprocessDelimiters(input)
+    expect(result).toContain("SELECT 'it\\'s fine';")
   })
 })
 

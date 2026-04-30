@@ -66,35 +66,6 @@ If you edit your indexes in Beekeeper Studio and create a `DESC` index it will s
 
 As of version 8.0 this issue has been solved.
 
-### I get a SQL syntax error when trying to create a stored procedure
-
-When using the `mysql` command line client you need to remap delimiters using `DELIMITER`, however this syntax isn't supported by MySQL server itself, so it errors when run through Beekeeper Studio.
-
-You'll likely get an error like `You have an error in your SQL syntax`. Simply remove the delimiter statements to fix it.
-
-For example, change this:
-```sql
-DELIMITER //
-
-CREATE PROCEDURE simpleproc (OUT param1 INT)
- BEGIN
-  SELECT COUNT(*) INTO param1 FROM t;
- END;
-//
-
-DELIMITER ;
-```
-
-To this:
-
-```sql
-CREATE PROCEDURE simpleproc (OUT param1 INT)
- BEGIN
-  SELECT COUNT(*) INTO param1 FROM t;
- END;
-```
-
-
 ### Access denied for user (using password: YES)
 
 If you get an `Access denied for user 'xxx' (using password: YES)` error when connecting, try toggling **Enable SSL** on in the connection settings.

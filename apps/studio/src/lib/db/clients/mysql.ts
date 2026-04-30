@@ -17,7 +17,7 @@ import {
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError, refreshTokenIfNeeded,
+  refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
 import {
@@ -25,6 +25,7 @@ import {
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
+import { preprocessDelimiters } from "./mysql/delimiter";
 import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
@@ -1101,6 +1102,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async query(queryText: string, tabId: number): Promise<CancelableQuery> {
+    const preparedQuery = preprocessDelimiters(queryText);
     let pid = null;
     let canceling = false;
     const cancelable = createCancelablePromise({
@@ -1123,7 +1125,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
           try {
             const data: QueryResult = await Promise.race([
               cancelable.wait(),
-              this.executeQuery(queryText, { rowsAsArray: true, connection }),
+              this.executeQuery(preparedQuery, { rowsAsArray: true, connection }),
             ]);
 
             pid = null;
@@ -1133,18 +1135,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
               canceling = false;
               err.sqlectronError = "CANCELED_BY_USER";
               throw err;
-            } else if (
-              queryText &&
-              _.trim(queryText).toUpperCase().startsWith("DELIMITER")
-            ) {
-              const nuError = new ClientError(
-                `DELIMITER is only supported in the command line client, ${err.message}`,
-                "https://docs.beekeeperstudio.io/support/troubleshooting/#mysql"
-              );
-              throw nuError;
-            } else {
-              throw err;
             }
+            throw err;
           } finally {
             cancelable.discard();
           }
