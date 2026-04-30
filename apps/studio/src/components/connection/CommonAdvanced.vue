@@ -38,10 +38,11 @@
             />
           </div>
           <div class="col s3 form-group">
-            <label for="sshBastionHostPort">Port</label>
+            <label for="sshBastionHostPort">Port <span class="hint">(Optional)</span></label>
             <masked-input
               :value="config.sshBastionHostPort"
               @input="val => config.sshBastionHostPort = val"
+              placeholder="22"
             />
           </div>
         </div>
@@ -179,10 +180,11 @@
           />
         </div>
         <div class="col s3 form-group">
-          <label for="sshPort">Port</label>
+          <label for="sshPort">Port <span class="hint">(Optional)</span></label>
           <masked-input
             :value="config.sshPort"
             @input="val => config.sshPort = val"
+            placeholder="22"
           />
         </div>
       </div>
