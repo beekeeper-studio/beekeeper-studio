@@ -16,14 +16,6 @@
           <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
         </div>
       </div>
-      <div class="row gutter alert-row">
-        <div class="alert alert-info">
-          <i class="material-icons-outlined">info</i>
-          <div>
-            Type a <code>Host</code> alias from your <code>~/.ssh/config</code> in any host field below and we'll resolve the <code>HostName</code>, <code>Port</code>, and <code>User</code>. Anything you enter in the form takes precedence.
-          </div>
-        </div>
-      </div>
 
       <!-- Bastion -->
 
@@ -38,7 +30,6 @@
               :value="config.sshBastionHost"
               @input="val => config.sshBastionHost = val"
             />
-            <small class="form-help">Hostname or <code>~/.ssh/config</code> Host alias.</small>
           </div>
           <div class="col s3 form-group">
             <label for="sshBastionHostPort">Port</label>
@@ -46,7 +37,6 @@
               :value="config.sshBastionHostPort"
               @input="val => config.sshBastionHostPort = val"
             />
-            <small class="form-help">Falls back to <code>Port</code> from <code>~/.ssh/config</code>, then 22.</small>
           </div>
         </div>
 
@@ -72,17 +62,7 @@
         >
           <div class="alert alert-info auto-alert">
             <i class="material-icons-outlined">info</i>
-            <div>
-              <div>Tries your SSH agent, then your <code>~/.ssh/config</code> <code>IdentityFile</code>, then a default key like <code>~/.ssh/id_ed25519</code>.</div>
-              <details class="auto-details">
-                <summary>How it works</summary>
-                <ol class="auto-order">
-                  <li><strong>SSH agent.</strong> Whatever your <code>SSH_AUTH_SOCK</code> (or PuTTY's pageant on Windows) is advertising. Honors <code>IdentitiesOnly yes</code>.</li>
-                  <li><strong><code>IdentityFile</code> from <code>~/.ssh/config</code>.</strong> Used if the matching <code>Host</code> entry has one.</li>
-                  <li><strong>Default key.</strong> The first of <code>~/.ssh/id_ed25519</code>, <code>id_ecdsa</code>, <code>id_rsa</code>, or <code>id_dsa</code> that exists.</li>
-                </ol>
-              </details>
-            </div>
+            <div>Tries your SSH agent, then your <code>~/.ssh/config</code> <code>IdentityFile</code>, then a default key (e.g. <code>~/.ssh/id_ed25519</code>).</div>
           </div>
           <div class="form-group">
             <label>Bastion Username <span class="hint">(Optional)</span></label>
@@ -90,16 +70,8 @@
               :value="config.sshBastionUsername"
               @input="val => config.sshBastionUsername = val"
             />
-            <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>, then your OS username.</small>
           </div>
           <platform-warning location="ssh-agent" />
-          <div
-            v-if="$config.isWindows && !$config.sshAuthSock"
-            class="alert alert-info"
-          >
-            <i class="material-icons-outlined">info</i>
-            <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
-          </div>
         </div>
 
         <div
@@ -114,7 +86,6 @@
                   :value="config.sshBastionUsername"
                   @input="val => config.sshBastionUsername = val"
                 />
-                <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
               </div>
             </div>
           </div>
@@ -149,7 +120,6 @@
                 :value="config.sshBastionUsername"
                 @input="val => config.sshBastionUsername = val"
               />
-              <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
             </div>
           </div>
           <div class="col s6">
@@ -174,7 +144,6 @@
             :value="config.sshHost"
             @input="val => config.sshHost = val"
           />
-          <small class="form-help">Hostname or <code>~/.ssh/config</code> Host alias.</small>
         </div>
         <div class="col s3 form-group">
           <label for="sshPort">Port</label>
@@ -182,7 +151,6 @@
             :value="config.sshPort"
             @input="val => config.sshPort = val"
           />
-          <small class="form-help">Falls back to <code>Port</code> from <code>~/.ssh/config</code>, then 22.</small>
         </div>
       </div>
       <div class="form-group">
@@ -207,17 +175,7 @@
       >
         <div class="alert alert-info auto-alert">
           <i class="material-icons-outlined">info</i>
-          <div>
-            <div>Tries your SSH agent, then your <code>~/.ssh/config</code> <code>IdentityFile</code>, then a default key like <code>~/.ssh/id_ed25519</code>.</div>
-            <details class="auto-details">
-              <summary>How it works</summary>
-              <ol class="auto-order">
-                <li><strong>SSH agent.</strong> Whatever your <code>SSH_AUTH_SOCK</code> (or PuTTY's pageant on Windows) is advertising. Honors <code>IdentitiesOnly yes</code>.</li>
-                <li><strong><code>IdentityFile</code> from <code>~/.ssh/config</code>.</strong> Used if the matching <code>Host</code> entry has one.</li>
-                <li><strong>Default key.</strong> The first of <code>~/.ssh/id_ed25519</code>, <code>id_ecdsa</code>, <code>id_rsa</code>, or <code>id_dsa</code> that exists.</li>
-              </ol>
-            </details>
-          </div>
+          <div>Tries your SSH agent, then your <code>~/.ssh/config</code> <code>IdentityFile</code>, then a default key (e.g. <code>~/.ssh/id_ed25519</code>).</div>
         </div>
         <div class="form-group">
           <label for="sshUsername">SSH Username <span class="hint">(Optional)</span></label>
@@ -225,16 +183,8 @@
             :value="config.sshUsername"
             @input="val => config.sshUsername = val"
           />
-          <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>, then your OS username.</small>
         </div>
         <platform-warning location="ssh-agent" />
-        <div
-          v-if="$config.isWindows && !$config.sshAuthSock"
-          class="alert alert-info"
-        >
-          <i class="material-icons-outlined">info</i>
-          <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
-        </div>
       </div>
 
       <div
@@ -249,7 +199,6 @@
                 :value="config.sshUsername"
                 @input="val => config.sshUsername = val"
               />
-              <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
             </div>
           </div>
         </div>
@@ -284,7 +233,6 @@
               :value="config.sshUsername"
               @input="val => config.sshUsername = val"
             />
-            <small class="form-help">If blank, we use <code>User</code> from <code>~/.ssh/config</code>.</small>
           </div>
         </div>
         <div class="col s6">
@@ -355,30 +303,7 @@ export default {
 .alert-row {
   margin-inline: 0;
 }
-.form-help {
-  display: block;
-  margin-top: 0.25rem;
-  opacity: 0.7;
-  font-size: 0.85em;
-}
-.form-help code {
-  font-size: 0.95em;
-}
 .auto-alert {
   margin-bottom: 0.75rem;
-}
-.auto-details {
-  margin-top: 0.5rem;
-}
-.auto-details > summary {
-  cursor: pointer;
-  opacity: 0.85;
-}
-.auto-order {
-  margin: 0.4rem 0 0;
-  padding-inline-start: 1.25rem;
-}
-.auto-order li {
-  margin-bottom: 0.25rem;
 }
 </style>
