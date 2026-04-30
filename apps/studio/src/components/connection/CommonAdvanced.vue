@@ -67,6 +67,7 @@
             :is-windows="$config.isWindows"
             :ssh-config-exists="$config.sshConfigExists"
             :ssh-config-path="sshConfigPath"
+            :default-ssh-identity-file="$config.defaultSshIdentityFile"
           />
         </div>
 
@@ -208,6 +209,7 @@
           :is-windows="$config.isWindows"
           :ssh-config-exists="$config.sshConfigExists"
           :ssh-config-path="sshConfigPath"
+          :default-ssh-identity-file="$config.defaultSshIdentityFile"
         />
       </div>
 

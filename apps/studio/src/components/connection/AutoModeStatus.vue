@@ -1,26 +1,31 @@
 <template>
-  <div class="auto-mode-status-wrap">
-    <div class="auto-mode-status">
-      <span
-        class="status-item"
-        :class="{ ok: agentAvailable, missing: !agentAvailable }"
-        v-tooltip="agentTooltip"
-      >
-        <i class="material-icons">{{ agentAvailable ? 'check_circle' : 'cancel' }}</i>
-        <span>SSH agent</span>
-      </span>
-      <span
-        class="status-item"
-        :class="{ ok: sshConfigExists, missing: !sshConfigExists }"
-        v-tooltip="configTooltip"
-      >
-        <i class="material-icons">{{ sshConfigExists ? 'check_circle' : 'cancel' }}</i>
-        <span>SSH config</span>
-      </span>
-    </div>
-    <div class="auto-order">
-      Tries in order: SSH agent &rsaquo; <code>IdentityFile</code> from <code>~/.ssh/config</code> &rsaquo; default key (e.g. <code>~/.ssh/id_ed25519</code>)
-    </div>
+  <div class="auto-mode-status">
+    <span
+      class="status-item"
+      :class="{ ok: agentAvailable, missing: !agentAvailable }"
+      v-tooltip="agentTooltip"
+    >
+      <i class="material-icons">{{ agentAvailable ? 'check_circle' : 'cancel' }}</i>
+      <span>SSH agent</span>
+    </span>
+    <i class="material-icons sep">chevron_right</i>
+    <span
+      class="status-item"
+      :class="{ ok: sshConfigExists, missing: !sshConfigExists }"
+      v-tooltip="configTooltip"
+    >
+      <i class="material-icons">{{ sshConfigExists ? 'check_circle' : 'cancel' }}</i>
+      <span>SSH config</span>
+    </span>
+    <i class="material-icons sep">chevron_right</i>
+    <span
+      class="status-item"
+      :class="{ ok: !!defaultSshIdentityFile, missing: !defaultSshIdentityFile }"
+      v-tooltip="defaultKeyTooltip"
+    >
+      <i class="material-icons">{{ defaultSshIdentityFile ? 'check_circle' : 'cancel' }}</i>
+      <span>Default key</span>
+    </span>
   </div>
 </template>
 
@@ -31,6 +36,7 @@ export default {
     isWindows: { type: Boolean, default: false },
     sshConfigExists: { type: Boolean, default: false },
     sshConfigPath: { type: String, default: '' },
+    defaultSshIdentityFile: { type: String, default: '' },
   },
   computed: {
     agentAvailable() {
@@ -53,23 +59,24 @@ export default {
       }
       return `We couldn't find an ssh config at ${this.sshConfigPath}`
     },
+    defaultKeyTooltip() {
+      if (this.defaultSshIdentityFile) {
+        return `Default key found at ${this.defaultSshIdentityFile}`
+      }
+      return "No default key (e.g. ~/.ssh/id_ed25519) found."
+    },
   },
 }
 </script>
 
 <style scoped>
-.auto-mode-status-wrap {
-  margin-top: 0.5rem;
-}
 .auto-mode-status {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
   font-size: 0.85em;
-}
-.auto-order {
-  margin-top: 0.35rem;
-  font-size: 0.8em;
-  opacity: 0.7;
+  flex-wrap: wrap;
 }
 .status-item {
   display: inline-flex;
@@ -91,5 +98,9 @@ export default {
 }
 .status-item.missing .material-icons {
   color: var(--text-error, #e57373);
+}
+.sep {
+  font-size: 16px;
+  opacity: 0.4;
 }
 </style>

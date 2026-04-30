@@ -86,6 +86,9 @@ export function mainPlatformInfo(): IPlatformInfo {
     isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
     sshAuthSock: p.env.SSH_AUTH_SOCK,
     sshConfigExists: existsSync(join(homeDirectory, '.ssh', 'config')),
+    defaultSshIdentityFile: ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa']
+      .map((name) => join(homeDirectory, '.ssh', name))
+      .find((path) => existsSync(path)) || '',
     environment: p.env.NODE_ENV,
     resourcesPath,
     env: {
