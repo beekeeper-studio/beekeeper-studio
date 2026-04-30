@@ -186,8 +186,8 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'int', nullable: true })
   sshBastionHostPort: Nullable<number> = null
 
-  @Column({ type: 'varchar', length: 8, nullable: false, default: 'auto' })
-  sshBastionMode: SshMode = 'auto'
+  @Column({ type: 'varchar', length: 8, nullable: false, default: 'agent' })
+  sshBastionMode: SshMode = 'agent'
 
   @Column({ type: 'varchar', nullable: true })
   sshBastionUsername: Nullable<string> = null
@@ -330,9 +330,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshBastionKeyfilePassword: Nullable<string> = null
 
-  _sshMode: SshMode = "auto"
+  _sshMode: SshMode = "agent"
 
-  @Column({ name: "sshMode", type: "varchar", length: "8", nullable: false, default: "auto" })
+  @Column({ name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent" })
   set sshMode(value: SshMode) {
     this._sshMode = value
     if (this._sshMode !== 'userpass') {

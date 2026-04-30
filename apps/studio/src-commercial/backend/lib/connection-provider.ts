@@ -22,7 +22,7 @@ export default {
       bastionPrivateKey: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfile : null,
       bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
       bastionMode: config.sshBastionMode,
-      useAgent: config.sshMode == 'auto',
+      useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
 
@@ -41,7 +41,7 @@ export default {
       if (fileConfig.user && !ssh.user) {
         ssh.user = fileConfig.user
       }
-      if (config.sshMode === 'auto') {
+      if (config.sshMode === 'agent') {
         if (fileConfig.identityFile && !ssh.privateKey) {
           ssh.privateKey = fileConfig.identityFile
         }
@@ -61,7 +61,7 @@ export default {
       if (fileConfig.user && !ssh.bastionUser) {
         ssh.bastionUser = fileConfig.user
       }
-      if (config.sshBastionMode === 'auto') {
+      if (config.sshBastionMode === 'agent') {
         if (fileConfig.identityFile && !ssh.bastionPrivateKey) {
           ssh.bastionPrivateKey = fileConfig.identityFile
         }

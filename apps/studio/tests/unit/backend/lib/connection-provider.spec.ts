@@ -18,7 +18,7 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     sshKeyfile: null,
     sshKeyfilePassword: null,
     sshPassword: null,
-    sshMode: "auto",
+    sshMode: "agent",
     sshKeepaliveInterval: null,
     sshBastionHost: "",
     sshBastionHostPort: null,
@@ -185,7 +185,7 @@ Host jump
     });
   });
 
-  it("auto mode pulls IdentityFile from ssh config", () => {
+  it("agent (Automatic) mode pulls IdentityFile from ssh config", () => {
     writeSshConfig(`
 Host alias
   HostName real.example.com
@@ -194,7 +194,7 @@ Host alias
     const result = connectionProvider.convertConfig(
       makeConfig({
         sshHost: "alias",
-        sshMode: "auto",
+        sshMode: "agent",
         sshUsername: "u",
       }),
       "osuser",
@@ -207,7 +207,7 @@ Host alias
     expect(result.ssh.host).toBe("real.example.com");
   });
 
-  it("auto mode propagates IdentitiesOnly yes", () => {
+  it("agent (Automatic) mode propagates IdentitiesOnly yes", () => {
     writeSshConfig(`
 Host alias
   HostName real.example.com
@@ -217,7 +217,7 @@ Host alias
     const result = connectionProvider.convertConfig(
       makeConfig({
         sshHost: "alias",
-        sshMode: "auto",
+        sshMode: "agent",
       }),
       "osuser",
       {} as any
@@ -228,7 +228,7 @@ Host alias
     expect(result.ssh.identityFiles).toEqual(["/keys/strict"]);
   });
 
-  it("auto mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {
+  it("agent (Automatic) mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {
     writeSshConfig(`
 Host alias
   HostName real.example.com
@@ -236,7 +236,7 @@ Host alias
     const result = connectionProvider.convertConfig(
       makeConfig({
         sshHost: "alias",
-        sshMode: "auto",
+        sshMode: "agent",
       }),
       "osuser",
       {} as any
@@ -247,7 +247,7 @@ Host alias
     expect(result.ssh.identityFiles).toBeUndefined();
   });
 
-  it("bastion auto mode pulls IdentityFile and IdentitiesOnly", () => {
+  it("bastion agent (Automatic) mode pulls IdentityFile and IdentitiesOnly", () => {
     writeSshConfig(`
 Host jump
   HostName jump.example.com
@@ -260,7 +260,7 @@ Host jump
         sshMode: "userpass",
         sshPassword: "x",
         sshBastionHost: "jump",
-        sshBastionMode: "auto",
+        sshBastionMode: "agent",
       }),
       "osuser",
       {} as any

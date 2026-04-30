@@ -62,7 +62,7 @@
             </option>
           </select>
           <auto-mode-status
-            v-if="config.sshBastionMode === 'auto'"
+            v-if="config.sshBastionMode === 'agent'"
             :ssh-auth-sock="$config.sshAuthSock"
             :is-windows="$config.isWindows"
             :ssh-config-exists="$config.sshConfigExists"
@@ -73,7 +73,7 @@
         </div>
 
         <div
-          v-if="config.sshBastionMode === 'auto'"
+          v-if="config.sshBastionMode === 'agent'"
           class="agent flex-col"
         >
           <div class="form-group">
@@ -205,7 +205,7 @@
           </option>
         </select>
         <auto-mode-status
-          v-if="config.sshMode === 'auto'"
+          v-if="config.sshMode === 'agent'"
           :ssh-auth-sock="$config.sshAuthSock"
           :is-windows="$config.isWindows"
           :ssh-config-exists="$config.sshConfigExists"
@@ -216,7 +216,7 @@
       </div>
 
       <div
-        v-if="config.sshMode === 'auto'"
+        v-if="config.sshMode === 'agent'"
         class="agent flex-col"
       >
         <div class="form-group">
@@ -345,7 +345,7 @@ export default {
   data() {
     return {
       sshModeOptions: [
-        { label: "Automatic", mode: "auto" },
+        { label: "Automatic", mode: "agent" },
         { label: "Key File", mode: 'keyfile' },
         { label: "Username & Password", mode: "userpass" },
       ],

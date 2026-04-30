@@ -80,7 +80,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
 
         const socketPath = appConfig.sshAuthSock || undefined
         const haveAgent = ssh.useAgent && !!socketPath
-        const bastionHaveAgent = ssh.bastionMode === 'auto' && !!socketPath
+        const bastionHaveAgent = ssh.bastionMode === 'agent' && !!socketPath
 
         // Automatic mode: when neither the form nor ~/.ssh/config supplied a
         // private key, fall back to the OpenSSH default identity files. This
@@ -90,7 +90,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           privateKeyPath = findDefaultIdentityFile()
         }
         let bastionPrivateKeyPath = ssh.bastionPrivateKey || undefined
-        if (!bastionPrivateKeyPath && ssh.bastionMode === 'auto') {
+        if (!bastionPrivateKeyPath && ssh.bastionMode === 'agent') {
           bastionPrivateKeyPath = findDefaultIdentityFile()
         }
 
