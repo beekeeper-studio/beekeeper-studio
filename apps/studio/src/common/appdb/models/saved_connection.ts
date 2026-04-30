@@ -231,6 +231,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false })
   bigQueryOptions: BigQueryOptions = {}
 
+  @Column({ type: 'boolean', nullable: false })
+  windowsAuthEnabled: boolean = false
+
   @Column({ type: 'simple-json', nullable: false, transformer: [azureEncrypt]})
   azureAuthOptions: AzureAuthOptions = {}
 

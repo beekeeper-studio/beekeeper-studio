@@ -159,6 +159,9 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yargs-parser": "^21.0.0"
   },
+  "optionalDependencies": {
+    "msnodesqlv8": "^5.1.5"
+  },
   "devDependencies": {
     "@aws-sdk/types": "^3.127.0",
     "@babel/core": "^7.29.0",

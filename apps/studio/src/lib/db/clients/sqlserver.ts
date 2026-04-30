@@ -1078,7 +1078,78 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     await super.connect();
 
     this.dbConfig = await this.configDatabase(this.server, this.database, signal)
-    this.pool = await new ConnectionPool(this.dbConfig).connect();
+
+    if (this.server.config.windowsAuthEnabled) {
+      if (process.platform !== 'win32') {
+        throw new Error('Windows Authentication is only supported on Windows.')
+      }
+      // msnodesqlv8 is a Windows-only optional native module that supports
+      // SSPI passthrough (true Windows Integrated Authentication).
+      // The default mssql/tedious driver cannot do this.
+      let sqlWindows: any
+      try {
+        sqlWindows = require('mssql/msnodesqlv8')
+      } catch {
+        // msnodesqlv8 is bundled with Beekeeper Studio on Windows. This error means
+        // the native binary failed to load. Try reinstalling the application.
+        throw new Error('Windows Authentication is not available: the msnodesqlv8 native module could not be loaded. Try reinstalling Beekeeper Studio.')
+      }
+
+      // Probe for a working ODBC driver with msnodesqlv8 directly.
+      const { driver, legacy } = await this.findWindowsAuthDriver()
+
+      if (legacy) {
+        log.warn('Windows Authentication is using the legacy "{SQL Server}" ODBC driver, ' +
+          'which does not support TLS 1.2. For improved security, install ' +
+          '"ODBC Driver 17 for SQL Server" or "ODBC Driver 18 for SQL Server" from Microsoft.')
+      }
+
+      // Use beforeConnect to patch mssql v11's connection string before msnodesqlv8
+      // uses it. mssql v11's buildConnectionString ignores driver config property
+      // defaulting to "SQL Server Native Client 11.0"), passes
+      // Trusted_Connection as a boolean (should be yes/no), and doesn't include TrustServerCertificate.
+      // beforeConnect also preserves mssql's instance name and SSH tunnel server handling.
+      const trustCert = this.dbConfig.options?.trustServerCertificate
+      // Overall login timeout for the msnodesqlv8 pool. We set this at msnodesqlv8's
+      // *native* layer (cfg.conn_timeout, in seconds) inside beforeConnect below --
+      // the ODBC "Connection Timeout" + mssql's connectionTimeout options both get
+      // stuck silently when SSPI/Kerberos negotiation stalls, but conn_timeout is
+      // honoured by the native driver and actually fires the callback so the handle
+      // is released instead of leaking and hanging the process at exit.
+      const CONNECT_TIMEOUT_S = 15
+      const server = this.dbConfig.server
+      const port = this.dbConfig.port || 1433
+      try {
+        this.pool = await new sqlWindows.ConnectionPool({
+          ...this.dbConfig,
+          connectionTimeout: CONNECT_TIMEOUT_S * 1000,
+          beforeConnect: (cfg: any) => {
+            cfg.conn_str = cfg.conn_str
+              .replace(/Driver=[^;]*/i, `Driver={${driver}}`)
+              .replace(/Trusted_Connection=[^;]*/i, 'Trusted_Connection=yes')
+            if (trustCert) cfg.conn_str += ';TrustServerCertificate=yes'
+            // conn_timeout is honoured by the msnodesqlv8 native layer. This is
+            // the only timeout that reliably cancels a stuck SSPI handshake.
+            cfg.conn_timeout = CONNECT_TIMEOUT_S
+          }
+        }).connect()
+      } catch (err: any) {
+        const raw = err?.message || String(err)
+        if (/timeout|timed? out/i.test(raw)) {
+          throw new Error(
+            `Windows Authentication connection timed out after ${CONNECT_TIMEOUT_S}s ` +
+            `opening the msnodesqlv8 pool to ${server},${port} with Driver={${driver}}. ` +
+            `The ODBC probe succeeded earlier, so the server is reachable, but the ` +
+            `full SSPI login handshake did not complete in time. Check SPN registration ` +
+            `on the SQL Server and that the current Windows user's Kerberos ticket / ` +
+            `NTLM fallback can reach a domain controller. Underlying driver error: ${raw}`
+          )
+        }
+        throw err
+      }
+    } else {
+      this.pool = await new ConnectionPool(this.dbConfig).connect()
+    }
 
     this.pool.on('error', (err) => {
       if (err instanceof ConnectionError) {
@@ -1239,6 +1310,76 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
+  // I couldn't get mssql to surface real error messages when Windows Auth connections
+  // fail. It wraps native msnodesqlv8 errors into '[object Object]' strings. So we
+  // probe directly via msnodesqlv8 first, which gives actionable errors (wrong server,
+  // auth failure, etc.) and also tells us which ODBC driver is installed.
+  private async findWindowsAuthDriver(): Promise<{ driver: string, legacy: boolean }> {
+    const rawSql = require('msnodesqlv8')
+    const server = this.dbConfig.server
+    const port = this.dbConfig.port || 1433
+    const database = this.dbConfig.database || 'master'
+    const trustCert = this.dbConfig.options?.trustServerCertificate ? 'yes' : 'no'
+
+    // Prefer modern ODBC drivers (TLS 1.2 support). Fall back to the legacy
+    // built-in Windows driver ({SQL Server} / sqlsrv32.dll) as a last resort.
+    // It works for basic connectivity but does not support TLS 1.2.
+    const candidates = [
+      { driver: 'ODBC Driver 17 for SQL Server', legacy: false },
+      { driver: 'ODBC Driver 18 for SQL Server', legacy: false },
+      { driver: 'SQL Server', legacy: true },
+    ]
+
+    // Probe timeout at the msnodesqlv8 *native* layer (seconds). This is the
+    // only timeout that reliably cancels a stuck SSPI/Kerberos handshake --
+    // the ODBC "Connection Timeout" conn-string property and a JS setTimeout
+    // outside the callback both leave the native socket held open, which
+    // hangs Node at exit. Native conn_timeout actually fires our callback
+    // with a TimeoutError and releases the handle.
+    const PROBE_TIMEOUT_S = 10
+
+    for (const candidate of candidates) {
+      const connStr =
+        `Driver={${candidate.driver}};Server=${server},${port};Database=${database};` +
+        `Trusted_Connection=yes;TrustServerCertificate=${trustCert};`
+      const result: { ok: boolean, error?: string } = await new Promise((resolve) => {
+        rawSql.open({ conn_str: connStr, conn_timeout: PROBE_TIMEOUT_S }, (err: any, conn: any) => {
+          if (err) {
+            const msgs = (Array.isArray(err) ? err : [err])
+              .map((e: any) => (typeof e?.message === 'string' ? e.message : String(e)))
+              .filter(Boolean).join('; ')
+            resolve({ ok: false, error: msgs })
+          } else {
+            conn.close(() => resolve({ ok: true }))
+          }
+        })
+      })
+
+      if (result.ok) return candidate
+
+      const isDriverMissing = result.error?.includes('Data source name not found') || result.error?.includes('IM002')
+      if (isDriverMissing) continue
+
+      // Real error (auth failure, server unreachable, timeout, etc). If it
+      // looks like a timeout, wrap the terse native message with our diagnostic
+      // so the user knows exactly what timed out, where, and what to check.
+      if (/timeout|timed? out/i.test(result.error || '')) {
+        throw new Error(
+          `Windows Authentication probe timed out after ${PROBE_TIMEOUT_S}s ` +
+          `using Driver={${candidate.driver}} against Server=${server},${port}. ` +
+          `TCP is reachable but ODBC's SSPI/Kerberos negotiation did not return. ` +
+          `This usually means an SPN/Kerberos issue on the SQL Server or a blocked ` +
+          `path to the domain controller. Try connecting the same server from the ` +
+          `same machine with SSMS to confirm. Underlying driver error: ${result.error}`
+        )
+      }
+      throw new Error(result.error)
+    }
+
+    throw new Error('Windows Authentication requires an ODBC Driver for SQL Server to be installed. ' +
+      'Download "ODBC Driver 17 for SQL Server" or "ODBC Driver 18 for SQL Server" from Microsoft.')
+  }
+
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
     const config: any = {
       server: server.config.host,
@@ -1260,6 +1401,23 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
       config.options = {
         encrypt: true
+      };
+
+      return config;
+    }
+
+    if (server.config.windowsAuthEnabled) {
+      config.port = Number(server.config.port);
+
+      if (server.sshTunnel) {
+        config.server = server.config.localHost;
+        config.port = server.config.localPort;
+      }
+
+      // trustedConnection delegates authentication to Windows SSPI via msnodesqlv8
+      config.options = {
+        trustedConnection: true,
+        trustServerCertificate: server.config.trustServerCertificate,
       };
 
       return config;
