@@ -22,21 +22,14 @@ export default {
       bastionPrivateKey: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfile : null,
       bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
       bastionMode: config.sshBastionMode,
-      useAgent: config.sshMode == 'agent',
+      useAgent: config.sshMode == 'auto',
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
 
-    // Merge values from ~/.ssh/config for ANY auth mode. The user-entered
-    // value always wins; ssh config only fills in missing fields. The
-    // resolved hostname always replaces the alias (that's the whole point
-    // of an alias).
-    //
-    // IdentityFile is consulted in keyfile mode (as a fallback when no
-    // private key is selected) and in agent mode (where ssh CLI also tries
-    // IdentityFile keys after the agent). It's not used in userpass mode.
-    //
-    // IdentitiesOnly is only meaningful in agent mode — it filters which
-    // agent identities are offered.
+    // Resolve aliases via ~/.ssh/config for all modes: HostName, Port, and
+    // User are filled in when the user typed an alias and left fields blank.
+    // The chosen authentication mode is never overridden — only Automatic
+    // mode pulls credentials from ~/.ssh/config (IdentityFile / IdentitiesOnly).
     if (ssh && config.sshHost) {
       const fileConfig = readSshConfig(config.sshHost.trim())
       if (fileConfig.host) {
@@ -48,14 +41,10 @@ export default {
       if (fileConfig.user && !ssh.user) {
         ssh.user = fileConfig.user
       }
-      if (
-        fileConfig.identityFile &&
-        !ssh.privateKey &&
-        (config.sshMode === 'keyfile' || config.sshMode === 'agent')
-      ) {
-        ssh.privateKey = fileConfig.identityFile
-      }
-      if (config.sshMode === 'agent') {
+      if (config.sshMode === 'auto') {
+        if (fileConfig.identityFile && !ssh.privateKey) {
+          ssh.privateKey = fileConfig.identityFile
+        }
         ssh.identityFiles = fileConfig.identityFiles
         ssh.identitiesOnly = fileConfig.identitiesOnly === true
       }
@@ -72,14 +61,10 @@ export default {
       if (fileConfig.user && !ssh.bastionUser) {
         ssh.bastionUser = fileConfig.user
       }
-      if (
-        fileConfig.identityFile &&
-        !ssh.bastionPrivateKey &&
-        (config.sshBastionMode === 'keyfile' || config.sshBastionMode === 'agent')
-      ) {
-        ssh.bastionPrivateKey = fileConfig.identityFile
-      }
-      if (config.sshBastionMode === 'agent') {
+      if (config.sshBastionMode === 'auto') {
+        if (fileConfig.identityFile && !ssh.bastionPrivateKey) {
+          ssh.bastionPrivateKey = fileConfig.identityFile
+        }
         ssh.bastionIdentityFiles = fileConfig.identityFiles
         ssh.bastionIdentitiesOnly = fileConfig.identitiesOnly === true
       }

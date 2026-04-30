@@ -110,31 +110,37 @@ Beekeeper supports tunneling your connection via SSH. To connect to a remote dat
 
 6. **Select your SSH Authentication method**:
 
-    * `SSH Agent` if your local machine is running an SSH Agent, you only need to provide the remote **SSH Username** of your ssh account on the server
+    * `Automatic` (default) — Beekeeper picks the right key for you, in the same order `ssh` itself does. See below.
 
-    * `Username and Password` to enter both your **SSH Username** and **SSH Password** (also see the _Save Passwords_ option, below)
+    * `Key File` — pick a specific **SSH Private key File** (and optionally enter the **Key File PassPhrase**). Use this when you want to override Automatic and authenticate with one specific key.
 
-    * `Key File` Select your **SSH Private key File** (and optionally enter your **Key File PassPhrase**) if you use your [SSH Public Key](https://stackoverflow.com/questions/7260/how-do-i-setup-public-key-authentication#answers-header) on the server for authentication
+    * `Username and Password` — enter both your **SSH Username** and **SSH Password**.
 
 7. **Enter a name for your Connection** (optionally check the **Save Passwords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
 
 8. **Press the Connect button** to access your database!
 
+### Automatic authentication
+
+In **Automatic** mode, Beekeeper tries the same things `ssh` does, in this order, and uses the first one that works:
+
+1. **SSH agent.** Whatever your `SSH_AUTH_SOCK` (or PuTTY's pageant on Windows) is advertising. If your `~/.ssh/config` has `IdentitiesOnly yes`, the agent is restricted to keys matching the `IdentityFile` for that host.
+2. **`IdentityFile` from `~/.ssh/config`.** Used if the matching `Host` entry has one.
+3. **Default key.** The first of `~/.ssh/id_ed25519`, `~/.ssh/id_ecdsa`, `~/.ssh/id_rsa`, or `~/.ssh/id_dsa` that exists.
+
+If you'd rather skip Automatic and pick a key explicitly, choose **Key File** and select the key yourself.
+
 ### Using `~/.ssh/config`
 
-Beekeeper Studio reads your `~/.ssh/config` file (the same file `ssh` itself uses) to look up connection details. This works for **both the SSH Hostname and the Bastion Host fields**, and for **all three authentication methods** (SSH Agent, Key File, Username and Password).
+You can type a `Host` alias from your `~/.ssh/config` into the SSH Hostname or Bastion Host field. Beekeeper resolves the following keys from the matching entry, regardless of which authentication mode you picked:
 
-If you type a `Host` alias from your SSH config into either host field, Beekeeper will resolve the following options from the matching entry:
+| SSH config key | What Beekeeper uses it for           |
+| -------------- | ------------------------------------ |
+| `HostName`     | The actual hostname/IP to connect to |
+| `Port`         | The SSH port                         |
+| `User`         | The SSH username                     |
 
-| SSH config key    | What Beekeeper uses it for                |
-| ----------------- | ----------------------------------------- |
-| `HostName`        | The actual hostname/IP to connect to      |
-| `Port`            | The SSH port                              |
-| `User`            | The SSH username                          |
-| `IdentityFile`    | The private key file. In Key File mode it's used when you leave the picker blank. In SSH Agent mode it's tried as a fallback after the agent (matching `ssh`'s behavior). |
-| `IdentitiesOnly`  | If `yes`, restricts the agent to identities that match your `IdentityFile` entries (Agent mode only). |
-
-For example, given this entry in `~/.ssh/config`:
+For example, given this entry:
 
 ```
 Host production
@@ -144,33 +150,13 @@ Host production
   IdentityFile ~/.ssh/prod_ed25519
 ```
 
-You can simply type `production` into the **SSH Hostname** field, leave the other fields blank, and Beekeeper will fill in the rest.
+You can type `production` into the **SSH Hostname** field, leave the other fields blank, and Beekeeper will fill in the rest. In **Automatic** mode, the `IdentityFile` (and `IdentitiesOnly`, if set) is also picked up; in the other auth modes the form's selected key or password is used as-is.
 
-#### Order of Precedence
-
-When deciding which value to use for the hostname, port, username, or key file, Beekeeper picks the **first** match in this order:
-
-1. **What you typed in the connection form.** Anything you enter in Beekeeper always wins. The exception is the hostname itself: if you typed an alias (e.g. `production`), Beekeeper resolves it to the real `HostName` from `~/.ssh/config` so the connection can actually be made.
-2. **The matching entry in `~/.ssh/config`.** Used to fill in any field you left blank.
-3. **SSH defaults.** Port `22`, your OS username, and (in SSH Agent mode) the agent advertised by `SSH_AUTH_SOCK` (or PuTTY's pageant on Windows).
-
-This precedence applies independently to the target host and the bastion host, so you can mix and match: for example, type a real hostname for the target while using a `~/.ssh/config` alias for the bastion (or vice versa).
-
-#### Authentication path per mode
-
-The selected authentication mode in the form decides which credentials are tried. `~/.ssh/config` can supply additional credentials within that mode but cannot pull in a method you didn't pick:
-
-| Mode | Agent | `IdentityFile` from `~/.ssh/config` | `IdentitiesOnly=yes` |
-| ---- | ----- | ----------------------------------- | -------------------- |
-| **SSH Agent** | Tried first | Tried as fallback after the agent | Wraps the agent so it only offers identities matching your `IdentityFile`. The IdentityFile keys are still tried. |
-| **Key File** | Not used | Tried only if you leave the form's Private Key picker empty | Ignored (no agent involved) |
-| **Username & Password** | Not used | Ignored | Ignored |
-
-Picking "Key File" deliberately doesn't engage the agent, even if `~/.ssh/config` would. If you want both, pick **SSH Agent** and rely on the IdentityFile fallback.
+When you also enter a value in the form, the form value wins — `~/.ssh/config` only fills in the fields you leave blank. The hostname itself is the one exception: an alias is always resolved to its real `HostName` so the connection can be made.
 
 #### What is *not* read from `~/.ssh/config`
 
-To keep things predictable, Beekeeper Studio only reads the keys listed above. Other directives in your config file (`ProxyJump`, `ProxyCommand`, `ForwardAgent`, `LocalForward`, `RemoteForward`, `Match` blocks, included files, etc.) are **ignored**. If you rely on `ProxyJump`, configure the bastion host explicitly in the connection form.
+To keep things predictable, Beekeeper Studio only reads the keys listed above plus `IdentityFile`/`IdentitiesOnly` for Automatic mode. Other directives (`ProxyJump`, `ProxyCommand`, `ForwardAgent`, `LocalForward`, `RemoteForward`, `Match` blocks, included files, etc.) are **ignored**. If you rely on `ProxyJump`, configure the bastion host explicitly in the connection form.
 
 ## File Associations
 

@@ -9,11 +9,29 @@ import pf from 'portfinder'
 import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from './types';
 import { resolveHomePathToAbsolute } from '@/handlers/utils';
 import { IDbSshTunnel } from './backendTypes';
+import os from 'os';
 import { loadAllowedPublicKeys } from '@/lib/ssh/sshKeyUtils';
 import { createFilteringAgent } from '@/lib/ssh/identitiesOnlyAgent';
 import type { AuthenticationType, BaseAgent } from 'ssh2';
 
 const isWindows = process.platform === 'win32';
+
+// Default OpenSSH identity files, in the same priority order ssh(1) uses.
+const DEFAULT_IDENTITY_FILES = [
+  'id_ed25519',
+  'id_ecdsa',
+  'id_rsa',
+  'id_dsa',
+];
+
+function findDefaultIdentityFile(): string | undefined {
+  const sshDir = path.join(os.homedir(), '.ssh');
+  for (const name of DEFAULT_IDENTITY_FILES) {
+    const candidate = path.join(sshDir, name);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
 
 function buildAuthHandler(opts: { useAgent: boolean; hasPrivateKey: boolean; hasPassword: boolean }): AuthenticationType[] {
   const methods: AuthenticationType[] = [];
@@ -60,6 +78,22 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
 
         const ssh: IDbConnectionServerSSHConfig = config.ssh
 
+        const socketPath = appConfig.sshAuthSock || undefined
+        const haveAgent = ssh.useAgent && !!socketPath
+        const bastionHaveAgent = ssh.bastionMode === 'auto' && !!socketPath
+
+        // Automatic mode: when neither the form nor ~/.ssh/config supplied a
+        // private key, fall back to the OpenSSH default identity files. This
+        // mirrors `ssh`'s behaviour of trying ~/.ssh/id_ed25519 etc.
+        let privateKeyPath = ssh.privateKey || undefined
+        if (!privateKeyPath && ssh.useAgent) {
+          privateKeyPath = findDefaultIdentityFile()
+        }
+        let bastionPrivateKeyPath = ssh.bastionPrivateKey || undefined
+        if (!bastionPrivateKeyPath && ssh.bastionMode === 'auto') {
+          bastionPrivateKeyPath = findDefaultIdentityFile()
+        }
+
         const sshConfig: Options = {
           endHost: ssh.host || '',
           endPort: ssh.port || undefined,
@@ -68,8 +102,8 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           bastionUsername: ssh.bastionUser || undefined,
           bastionPassword: ssh.bastionPassword || undefined,
           bastionPassphrase: ssh.bastionPassphrase || undefined,
-          bastionAgentForward: ssh.bastionMode === 'agent',
-          agentForward: ssh.useAgent,
+          bastionAgentForward: bastionHaveAgent,
+          agentForward: haveAgent,
           passphrase: ssh.passphrase || undefined,
           username: ssh.user || undefined,
           password: ssh.password || undefined,
@@ -80,17 +114,15 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           bindHost: '127.0.0.1'
         }
 
-        const socketPath = appConfig.sshAuthSock || undefined
-
-        if (ssh.privateKey) {
-          sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(ssh.privateKey)))
+        if (privateKeyPath) {
+          sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(privateKeyPath)))
         }
 
-        if (ssh.bastionPrivateKey) {
-          sshConfig.bastionPrivateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(ssh.bastionPrivateKey)))
+        if (bastionPrivateKeyPath) {
+          sshConfig.bastionPrivateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(bastionPrivateKeyPath)))
         }
 
-        if (ssh.useAgent) {
+        if (haveAgent) {
           sshConfig.agent = maybeBuildFilteringAgent(
             ssh.identityFiles,
             ssh.identitiesOnly,
@@ -98,7 +130,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
             ssh.passphrase || undefined,
           )
         }
-        if (ssh.bastionMode === 'agent') {
+        if (bastionHaveAgent) {
           sshConfig.bastionAgent = maybeBuildFilteringAgent(
             ssh.bastionIdentityFiles,
             ssh.bastionIdentitiesOnly,
@@ -108,12 +140,12 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         }
 
         sshConfig.authHandler = buildAuthHandler({
-          useAgent: ssh.useAgent,
+          useAgent: haveAgent,
           hasPrivateKey: !!sshConfig.privateKey,
           hasPassword: !!ssh.password,
         })
         sshConfig.bastionAuthHandler = buildAuthHandler({
-          useAgent: ssh.bastionMode === 'agent',
+          useAgent: bastionHaveAgent,
           hasPrivateKey: !!sshConfig.bastionPrivateKey,
           hasPassword: !!ssh.bastionPassword,
         })

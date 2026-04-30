@@ -20,16 +20,7 @@
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>
-            <strong>Using <code>~/.ssh/config</code>:</strong>
-            you can type a <code>Host</code> alias from your SSH config in any host field below.
-            We'll resolve <code>HostName</code>, <code>Port</code>, <code>User</code>, <code>IdentityFile</code>, and <code>IdentitiesOnly</code> from your config.
-            <br>
-            <strong>Precedence (first match wins):</strong>
-            <ol class="ssh-precedence">
-              <li>Values you enter in the fields below.</li>
-              <li>Matching entry in <code>~/.ssh/config</code>.</li>
-              <li>SSH defaults (e.g. port 22, current OS user).</li>
-            </ol>
+            Type a <code>Host</code> alias from your <code>~/.ssh/config</code> in any host field below and we'll resolve the <code>HostName</code>, <code>Port</code>, and <code>User</code>. Anything you enter in the form takes precedence.
           </div>
         </div>
       </div>
@@ -73,16 +64,26 @@
               {{ option.label }}
             </option>
           </select>
-          <small
-            class="form-help"
-            v-html="modeHelpText(config.sshBastionMode)"
-          />
         </div>
 
         <div
-          v-if="config.sshBastionMode === 'agent'"
+          v-if="config.sshBastionMode === 'auto'"
           class="agent flex-col"
         >
+          <div class="alert alert-info auto-alert">
+            <i class="material-icons-outlined">info</i>
+            <div>
+              <div>Tries your SSH agent, then your <code>~/.ssh/config</code> <code>IdentityFile</code>, then a default key like <code>~/.ssh/id_ed25519</code>.</div>
+              <details class="auto-details">
+                <summary>How it works</summary>
+                <ol class="auto-order">
+                  <li><strong>SSH agent.</strong> Whatever your <code>SSH_AUTH_SOCK</code> (or PuTTY's pageant on Windows) is advertising. Honors <code>IdentitiesOnly yes</code>.</li>
+                  <li><strong><code>IdentityFile</code> from <code>~/.ssh/config</code>.</strong> Used if the matching <code>Host</code> entry has one.</li>
+                  <li><strong>Default key.</strong> The first of <code>~/.ssh/id_ed25519</code>, <code>id_ecdsa</code>, <code>id_rsa</code>, or <code>id_dsa</code> that exists.</li>
+                </ol>
+              </details>
+            </div>
+          </div>
           <div class="form-group">
             <label>Bastion Username <span class="hint">(Optional)</span></label>
             <masked-input
@@ -98,13 +99,6 @@
           >
             <i class="material-icons-outlined">info</i>
             <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
-          </div>
-          <div
-            v-else-if="!$config.sshAuthSock && !$config.isWindows"
-            class="alert alert-warning"
-          >
-            <i class="material-icons">error_outline</i>
-            <div>You don't seem to have an SSH agent running.</div>
           </div>
         </div>
 
@@ -126,13 +120,12 @@
           </div>
           <div class="row gutter">
             <div class="col s6 form-group">
-              <label>Private Key File <span class="hint">(Optional)</span></label>
+              <label>Private Key File</label>
               <file-picker
                 v-model="config.sshBastionKeyfile"
                 :show-hidden-files="true"
                 :default-path="filePickerDefaultPath"
               />
-              <small class="form-help">If blank, we use <code>IdentityFile</code> from <code>~/.ssh/config</code>.</small>
             </div>
             <div class="col s6 form-group">
               <label>Key File PassPhrase <span class="hint">(Optional)</span></label>
@@ -206,16 +199,26 @@
             {{ option.label }}
           </option>
         </select>
-        <small
-          class="form-help"
-          v-html="modeHelpText(config.sshMode)"
-        />
       </div>
 
       <div
-        v-if="config.sshMode === 'agent'"
+        v-if="config.sshMode === 'auto'"
         class="agent flex-col"
       >
+        <div class="alert alert-info auto-alert">
+          <i class="material-icons-outlined">info</i>
+          <div>
+            <div>Tries your SSH agent, then your <code>~/.ssh/config</code> <code>IdentityFile</code>, then a default key like <code>~/.ssh/id_ed25519</code>.</div>
+            <details class="auto-details">
+              <summary>How it works</summary>
+              <ol class="auto-order">
+                <li><strong>SSH agent.</strong> Whatever your <code>SSH_AUTH_SOCK</code> (or PuTTY's pageant on Windows) is advertising. Honors <code>IdentitiesOnly yes</code>.</li>
+                <li><strong><code>IdentityFile</code> from <code>~/.ssh/config</code>.</strong> Used if the matching <code>Host</code> entry has one.</li>
+                <li><strong>Default key.</strong> The first of <code>~/.ssh/id_ed25519</code>, <code>id_ecdsa</code>, <code>id_rsa</code>, or <code>id_dsa</code> that exists.</li>
+              </ol>
+            </details>
+          </div>
+        </div>
         <div class="form-group">
           <label for="sshUsername">SSH Username <span class="hint">(Optional)</span></label>
           <masked-input
@@ -231,13 +234,6 @@
         >
           <i class="material-icons-outlined">info</i>
           <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
-        </div>
-        <div
-          v-else-if="!$config.sshAuthSock && !$config.isWindows"
-          class="alert alert-warning"
-        >
-          <i class="material-icons">error_outline</i>
-          <div>You don't seem to have an SSH agent running.</div>
         </div>
       </div>
 
@@ -260,13 +256,12 @@
         <platform-warning location="ssh-keyfile" />
         <div class="row gutter">
           <div class="col s6 form-group">
-            <label for="sshKeyfile">Private Key File <span class="hint">(Optional)</span></label>
+            <label for="sshKeyfile">Private Key File</label>
             <file-picker
               v-model="config.sshKeyfile"
               :show-hidden-files="true"
               :default-path="filePickerDefaultPath"
             />
-            <small class="form-help">If blank, we use <code>IdentityFile</code> from <code>~/.ssh/config</code>.</small>
           </div>
           <div class="col s6 form-group">
             <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
@@ -341,9 +336,9 @@ export default {
   data() {
     return {
       sshModeOptions: [
+        { label: "Automatic", mode: "auto" },
         { label: "Key File", mode: 'keyfile' },
         { label: "Username & Password", mode: "userpass" },
-        { label: "SSH Agent", mode: "agent" }
       ],
       filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh')
     }
@@ -351,18 +346,6 @@ export default {
   methods: {
     setMode(option) {
       this.config.sshMode = option.mode
-    },
-    modeHelpText(mode) {
-      switch (mode) {
-        case 'agent':
-          return "Tries your SSH agent first, then any <code>IdentityFile</code> from <code>~/.ssh/config</code> as fallback (matching <code>ssh</code>). With <code>IdentitiesOnly yes</code> set in <code>~/.ssh/config</code>, the agent only offers identities that match your <code>IdentityFile</code>."
-        case 'keyfile':
-          return "Authenticates with the private key file you've selected. Falls back to <code>IdentityFile</code> from <code>~/.ssh/config</code> if you leave the picker empty."
-        case 'userpass':
-          return 'Authenticates with the username and password entered above.'
-        default:
-          return ''
-      }
     }
   }
 }
@@ -381,11 +364,21 @@ export default {
 .form-help code {
   font-size: 0.95em;
 }
-.ssh-precedence {
+.auto-alert {
+  margin-bottom: 0.75rem;
+}
+.auto-details {
+  margin-top: 0.5rem;
+}
+.auto-details > summary {
+  cursor: pointer;
+  opacity: 0.85;
+}
+.auto-order {
   margin: 0.4rem 0 0;
   padding-inline-start: 1.25rem;
 }
-.ssh-precedence li {
-  margin-bottom: 0.1rem;
+.auto-order li {
+  margin-bottom: 0.25rem;
 }
 </style>

@@ -1,7 +1,7 @@
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
 
-export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
+export type SshMode = null | 'auto' | 'userpass' | 'keyfile'
 
 export function isUltimateType(s: ConnectionType) {
   const types: ConnectionType[] = [

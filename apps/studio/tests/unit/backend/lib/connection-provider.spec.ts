@@ -18,7 +18,7 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     sshKeyfile: null,
     sshKeyfilePassword: null,
     sshPassword: null,
-    sshMode: "keyfile",
+    sshMode: "auto",
     sshKeepaliveInterval: null,
     sshBastionHost: "",
     sshBastionHostPort: null,
@@ -59,7 +59,7 @@ describe("connection-provider SSH config merging", () => {
     fs.writeFileSync(path.join(tmpHome.name, ".ssh", "config"), content, "utf-8");
   }
 
-  it("resolves ssh config alias for keyfile mode (not just agent)", () => {
+  it("resolves alias hostname/port/user for keyfile mode", () => {
     writeSshConfig(`
 Host production
   HostName db.example.com
@@ -71,7 +71,7 @@ Host production
       makeConfig({
         sshHost: "production",
         sshMode: "keyfile",
-        // user did not pick a keyfile or username
+        sshKeyfile: "/keys/explicit",
       }),
       "osuser",
       {} as any
@@ -80,8 +80,29 @@ Host production
       host: "db.example.com",
       port: 22022,
       user: "admin",
-      privateKey: "/keys/prod_key",
+      privateKey: "/keys/explicit",
     });
+  });
+
+  it("keyfile mode does not pull IdentityFile from ssh config", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/should_be_ignored
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "alias",
+        sshMode: "keyfile",
+        // no sshKeyfile selected — must NOT auto-fill from ssh config
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.privateKey).toBeNull();
+    expect(result.ssh.host).toBe("real.example.com");
+    expect(result.ssh.identityFiles).toBeUndefined();
+    expect(result.ssh.identitiesOnly).toBeUndefined();
   });
 
   it("resolves ssh config alias for userpass mode", () => {
@@ -105,7 +126,7 @@ Host stage
       port: 2200,
       user: "stageuser",
       password: "secret",
-      privateKey: null, // never set for userpass mode
+      privateKey: null,
     });
   });
 
@@ -129,7 +150,7 @@ Host production
       {} as any
     );
     expect(result.ssh).toMatchObject({
-      host: "db.example.com", // alias still resolves to real hostname
+      host: "db.example.com",
       port: 4242,
       user: "explicit",
       privateKey: "/keys/explicit",
@@ -151,6 +172,7 @@ Host jump
         sshPassword: "x",
         sshBastionHost: "jump",
         sshBastionMode: "keyfile",
+        sshBastionKeyfile: "/keys/explicit_bastion",
       }),
       "osuser",
       {} as any
@@ -159,33 +181,33 @@ Host jump
       bastionHost: "jump.example.com",
       bastionPort: 2222,
       bastionUser: "jumper",
-      bastionPrivateKey: "/keys/jump_key",
+      bastionPrivateKey: "/keys/explicit_bastion",
     });
   });
 
-  it("agent mode pulls IdentityFile as fallback (matching ssh CLI behavior)", () => {
+  it("auto mode pulls IdentityFile from ssh config", () => {
     writeSshConfig(`
 Host alias
   HostName real.example.com
-  IdentityFile /keys/agent_fallback
+  IdentityFile /keys/auto_key
 `);
     const result = connectionProvider.convertConfig(
       makeConfig({
         sshHost: "alias",
-        sshMode: "agent",
+        sshMode: "auto",
         sshUsername: "u",
       }),
       "osuser",
       {} as any
     );
     expect(result.ssh.useAgent).toBe(true);
-    expect(result.ssh.privateKey).toBe("/keys/agent_fallback");
-    expect(result.ssh.identityFiles).toEqual(["/keys/agent_fallback"]);
+    expect(result.ssh.privateKey).toBe("/keys/auto_key");
+    expect(result.ssh.identityFiles).toEqual(["/keys/auto_key"]);
     expect(result.ssh.identitiesOnly).toBe(false);
     expect(result.ssh.host).toBe("real.example.com");
   });
 
-  it("agent mode propagates IdentitiesOnly yes", () => {
+  it("auto mode propagates IdentitiesOnly yes", () => {
     writeSshConfig(`
 Host alias
   HostName real.example.com
@@ -195,7 +217,7 @@ Host alias
     const result = connectionProvider.convertConfig(
       makeConfig({
         sshHost: "alias",
-        sshMode: "agent",
+        sshMode: "auto",
       }),
       "osuser",
       {} as any
@@ -206,7 +228,7 @@ Host alias
     expect(result.ssh.identityFiles).toEqual(["/keys/strict"]);
   });
 
-  it("agent mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {
+  it("auto mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {
     writeSshConfig(`
 Host alias
   HostName real.example.com
@@ -214,7 +236,7 @@ Host alias
     const result = connectionProvider.convertConfig(
       makeConfig({
         sshHost: "alias",
-        sshMode: "agent",
+        sshMode: "auto",
       }),
       "osuser",
       {} as any
@@ -225,7 +247,7 @@ Host alias
     expect(result.ssh.identityFiles).toBeUndefined();
   });
 
-  it("bastion agent mode pulls IdentityFile as fallback", () => {
+  it("bastion auto mode pulls IdentityFile and IdentitiesOnly", () => {
     writeSshConfig(`
 Host jump
   HostName jump.example.com
@@ -238,7 +260,7 @@ Host jump
         sshMode: "userpass",
         sshPassword: "x",
         sshBastionHost: "jump",
-        sshBastionMode: "agent",
+        sshBastionMode: "auto",
       }),
       "osuser",
       {} as any
@@ -247,26 +269,6 @@ Host jump
     expect(result.ssh.bastionIdentityFiles).toEqual(["/keys/jump_fallback"]);
     expect(result.ssh.bastionIdentitiesOnly).toBe(true);
     expect(result.ssh.bastionHost).toBe("jump.example.com");
-  });
-
-  it("keyfile mode ignores IdentitiesOnly (no agent involved)", () => {
-    writeSshConfig(`
-Host alias
-  HostName real.example.com
-  IdentityFile /keys/k
-  IdentitiesOnly yes
-`);
-    const result = connectionProvider.convertConfig(
-      makeConfig({
-        sshHost: "alias",
-        sshMode: "keyfile",
-      }),
-      "osuser",
-      {} as any
-    );
-    expect(result.ssh.privateKey).toBe("/keys/k");
-    expect(result.ssh.identitiesOnly).toBeUndefined();
-    expect(result.ssh.identityFiles).toBeUndefined();
   });
 
   it("does not pull identityFile for userpass mode", () => {

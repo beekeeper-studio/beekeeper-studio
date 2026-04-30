@@ -88,6 +88,7 @@ import addPositionToItems from './20260227_add_position_to_items'
 import addBastionAuth from './20260324_add_bastion_auth'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
+import renameSshAgentToAuto from './20260430_rename_ssh_agent_to_auto'
 
 import ultimate from './ultimate/index'
 
@@ -137,6 +138,7 @@ const realMigrations = [
   addOnboardingNotyShown,
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,
+  renameSshAgentToAuto,
 ]
 
 // fixtures require the models
