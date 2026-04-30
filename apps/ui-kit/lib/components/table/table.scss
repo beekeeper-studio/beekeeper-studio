@@ -163,7 +163,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         background: $row-add;
         border: 0;
         .tabulator-cell {
-          &.primary-key {
+          &.primary-key, &.read-only-field {
             &:hover {
               background: rgba($theme-base,0.05);
               cursor: pointer;
@@ -442,7 +442,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   .tabulator-row {
     .tabulator-cell {
       cursor: pointer;
-      &.primary-key {
+      &.primary-key, &.read-only-field {
         cursor: default;
         & > * {
           opacity: 0.5;
@@ -462,7 +462,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     width: 100%;
     .tabulator-headers {
       .tabulator-col:first-of-type {
-        &.foreign-key, &.primary-key {
+        &.foreign-key, &.primary-key, &.read-only-field {
           &:before{
             left: $gutter-w * 0.8;
           }
@@ -529,13 +529,12 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           margin: 0 0 0 0.3rem;
         }
 
-        &.foreign-key, &.primary-key {
+        &.foreign-key, &.primary-key, &.read-only-field {
           .tabulator-col-content {
             width: calc(100% - #{$foreign-key-width});
           }
           &:before{
             $font-size: 13px;
-            content: 'vpn_key';
             font-family: 'Material Icons';
             font-size: $font-size;
             color: $theme-primary;
@@ -543,6 +542,15 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
             display: inline-flex;
             align-items: center;
           }
+        }
+        &.foreign-key, &.primary-key {
+          &:before {
+            content: 'vpn_key'
+          }
+        }
+        &.read-only-field:before {
+          color: $text-disabled;
+          content: 'edit_off';
         }
         &.primary-key:before {
           color: $theme-secondary;
@@ -776,7 +784,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     .tabulator-col {
 
       &.tabulator-range-selected {
-        &.primary-key:before {
+        &.primary-key:before, &.read-only-field:before {
           color: black;
         }
         &.foreign-key:before {

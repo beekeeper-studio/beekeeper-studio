@@ -126,4 +126,73 @@ describe('ConnectionFolder', () => {
     expect(foundChild).not.toBeNull()
     expect(foundChild.parentId).toBeNull()
   })
+
+  it('prevents creating a duplicate folder at the root', async () => {
+    const a = new ConnectionFolder()
+    a.name = 'Work'
+    await a.save()
+
+    const b = new ConnectionFolder()
+    b.name = 'Work'
+    await expect(b.save()).rejects.toThrow('A folder named "Work" already exists in this location.')
+    expect(await ConnectionFolder.count()).toBe(1)
+  })
+
+  it('prevents creating a duplicate subfolder within the same parent', async () => {
+    const parent = new ConnectionFolder()
+    parent.name = 'Parent'
+    await parent.save()
+
+    const a = new ConnectionFolder()
+    a.name = 'Shared'
+    a.parentId = parent.id
+    await a.save()
+
+    const b = new ConnectionFolder()
+    b.name = 'Shared'
+    b.parentId = parent.id
+    await expect(b.save()).rejects.toThrow('A folder named "Shared" already exists in this location.')
+  })
+
+  it('allows the same folder name in different parents', async () => {
+    const root = new ConnectionFolder()
+    root.name = 'Shared'
+    await root.save()
+
+    const parent = new ConnectionFolder()
+    parent.name = 'Parent'
+    await parent.save()
+
+    const child = new ConnectionFolder()
+    child.name = 'Shared'
+    child.parentId = parent.id
+    await child.save()
+
+    expect(await ConnectionFolder.count()).toBe(3)
+  })
+
+  it('allows updating a folder without renaming', async () => {
+    const folder = new ConnectionFolder()
+    folder.name = 'Folder'
+    await folder.save()
+
+    folder.expanded = false
+    await folder.save()
+
+    const found = await ConnectionFolder.findOneBy({ id: folder.id })
+    expect(found.expanded).toBe(false)
+  })
+
+  it('prevents renaming a folder to collide with a sibling', async () => {
+    const a = new ConnectionFolder()
+    a.name = 'Alpha'
+    await a.save()
+
+    const b = new ConnectionFolder()
+    b.name = 'Beta'
+    await b.save()
+
+    b.name = 'Alpha'
+    await expect(b.save()).rejects.toThrow('A folder named "Alpha" already exists in this location.')
+  })
 })

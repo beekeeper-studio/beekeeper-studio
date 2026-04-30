@@ -129,4 +129,73 @@ describe('QueryFolder', () => {
     expect(foundChild).not.toBeNull()
     expect(foundChild.parentId).toBeNull()
   })
+
+  it('prevents creating a duplicate folder at the root', async () => {
+    const a = new QueryFolder()
+    a.name = 'Reports'
+    await a.save()
+
+    const b = new QueryFolder()
+    b.name = 'Reports'
+    await expect(b.save()).rejects.toThrow('A folder named "Reports" already exists in this location.')
+    expect(await QueryFolder.count()).toBe(1)
+  })
+
+  it('prevents creating a duplicate subfolder within the same parent', async () => {
+    const parent = new QueryFolder()
+    parent.name = 'Parent'
+    await parent.save()
+
+    const a = new QueryFolder()
+    a.name = 'Shared'
+    a.parentId = parent.id
+    await a.save()
+
+    const b = new QueryFolder()
+    b.name = 'Shared'
+    b.parentId = parent.id
+    await expect(b.save()).rejects.toThrow('A folder named "Shared" already exists in this location.')
+  })
+
+  it('allows the same folder name in different parents', async () => {
+    const root = new QueryFolder()
+    root.name = 'Shared'
+    await root.save()
+
+    const parent = new QueryFolder()
+    parent.name = 'Parent'
+    await parent.save()
+
+    const child = new QueryFolder()
+    child.name = 'Shared'
+    child.parentId = parent.id
+    await child.save()
+
+    expect(await QueryFolder.count()).toBe(3)
+  })
+
+  it('allows updating a folder without renaming', async () => {
+    const folder = new QueryFolder()
+    folder.name = 'Folder'
+    await folder.save()
+
+    folder.expanded = false
+    await folder.save()
+
+    const found = await QueryFolder.findOneBy({ id: folder.id })
+    expect(found.expanded).toBe(false)
+  })
+
+  it('prevents renaming a folder to collide with a sibling', async () => {
+    const a = new QueryFolder()
+    a.name = 'Alpha'
+    await a.save()
+
+    const b = new QueryFolder()
+    b.name = 'Beta'
+    await b.save()
+
+    b.name = 'Alpha'
+    await expect(b.save()).rejects.toThrow('A folder named "Alpha" already exists in this location.')
+  })
 })

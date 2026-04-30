@@ -1133,7 +1133,13 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: createMenuItem('See details'),
+          label: createMenuItem(
+            'See details',
+            this.$bksConfig.getKeybindings(
+              'context-menu',
+              'general.jsonViewerSidebar'
+            )
+          ),
           action: () => {
             this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
             this.trigger(AppEvent.toggleSecondarySidebar, true)
@@ -1426,6 +1432,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
+      if (!this.editable) return;
       const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
@@ -1462,9 +1469,10 @@ export default Vue.extend({
       })
     },
     cellAddRow() {
-      if (this.dialectData.disabledFeatures?.tableTable) {
+      if (!this.editable) {
         return;
       }
+
       this.tabulator.addRow({}, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
@@ -1598,6 +1606,9 @@ export default Vue.extend({
     },
     async saveChanges() {
         this.saveError = null
+
+        // guard to make sure we don't do anything in readonly mode
+        if (!this.editable) return;
 
         let replaceData = false
 
