@@ -68,6 +68,7 @@
             :ssh-config-exists="$config.sshConfigExists"
             :ssh-config-path="sshConfigPath"
             :default-ssh-identity-file="$config.defaultSshIdentityFile"
+            :home-directory="homeDirectory"
           />
         </div>
 
@@ -210,6 +211,7 @@
           :ssh-config-exists="$config.sshConfigExists"
           :ssh-config-path="sshConfigPath"
           :default-ssh-identity-file="$config.defaultSshIdentityFile"
+          :home-directory="homeDirectory"
         />
       </div>
 
@@ -349,6 +351,7 @@ export default {
       ],
       filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh'),
       sshConfigPath: window.main.join(platformInfo.homeDirectory, '.ssh', 'config'),
+      homeDirectory: platformInfo.homeDirectory,
       hostTooltip: "Hostname or IP. You can also use a <code>Host</code> alias from your <code>~/.ssh/config</code>; we'll resolve <code>HostName</code>, <code>Port</code>, and <code>User</code> from the matching entry.",
       usernameTooltip: "If blank, we use <code>User</code> from your <code>~/.ssh/config</code> entry, then your OS username.",
     }

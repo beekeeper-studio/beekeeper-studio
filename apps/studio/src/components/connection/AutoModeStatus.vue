@@ -21,7 +21,7 @@
     <span
       class="status-item"
       :class="{ ok: !!defaultSshIdentityFile, missing: !defaultSshIdentityFile }"
-      v-tooltip="defaultKeyTooltip"
+      v-tooltip="{ content: defaultKeyTooltip, html: true }"
     >
       <i class="material-icons">{{ defaultSshIdentityFile ? 'check_circle' : 'cancel' }}</i>
       <span>Default key</span>
@@ -30,6 +30,8 @@
 </template>
 
 <script>
+const DEFAULT_KEY_NAMES = ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa']
+
 export default {
   props: {
     sshAuthSock: { type: String, default: '' },
@@ -37,6 +39,7 @@ export default {
     sshConfigExists: { type: Boolean, default: false },
     sshConfigPath: { type: String, default: '' },
     defaultSshIdentityFile: { type: String, default: '' },
+    homeDirectory: { type: String, default: '' },
   },
   computed: {
     agentAvailable() {
@@ -63,7 +66,13 @@ export default {
       if (this.defaultSshIdentityFile) {
         return `Default key found at ${this.defaultSshIdentityFile}`
       }
-      return "No default key (e.g. ~/.ssh/id_ed25519) found."
+      const sshDir = this.homeDirectory
+        ? window.main.join(this.homeDirectory, '.ssh')
+        : '~/.ssh'
+      const candidates = DEFAULT_KEY_NAMES
+        .map((name) => `${sshDir}/${name}`)
+        .join('<br>')
+      return `No default key found. We looked for:<br>${candidates}`
     },
   },
 }
