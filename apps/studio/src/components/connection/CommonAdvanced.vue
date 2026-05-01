@@ -308,4 +308,8 @@ export default {
 .alert-row {
   margin-inline: 0;
 }
+
+body.theme-dark .bastion-host {
+  background-color: rgb(from var(--theme-base) r g b / 3.5%);
+}
 </style>
