@@ -67,6 +67,24 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     }).join(';')
   }
 
+  // CHARACTER SET / COLLATE are only valid on string/enum types in MySQL.
+  // Attaching them to numeric, date, binary, or json columns produces
+  // syntactically invalid ALTER TABLE statements.
+  private static readonly CHARSET_TYPES = new Set([
+    'char', 'varchar', 'tinytext', 'text', 'mediumtext', 'longtext',
+    'enum', 'set', 'nchar', 'nvarchar', 'national char', 'national varchar',
+  ])
+
+  private supportsCharset(dataType: string): boolean {
+    if (!dataType) return false
+    const stripped = dataType.toLowerCase().replace(/\(.*\)/, '').trim()
+    if (MySqlChangeBuilder.CHARSET_TYPES.has(stripped)) return true
+    const firstWord = stripped.split(/\s+/)[0]
+    if (MySqlChangeBuilder.CHARSET_TYPES.has(firstWord)) return true
+    const firstTwoWords = stripped.split(/\s+/).slice(0, 2).join(' ')
+    return MySqlChangeBuilder.CHARSET_TYPES.has(firstTwoWords)
+  }
+
   ddl(existing: ExtendedTableColumn, updated: SchemaItem): string {
     const column = existing.columnName
     const newName = updated.columnName
@@ -76,13 +94,15 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     // mysql 8 allows literal values PLUS expressions like ('foo')
     // https://dev.mysql.com/doc/refman/8.0/en/data-type-defaults.html
     // it's very confusing.
+    const keepCharset = this.supportsCharset(updated.dataType)
+
     let characterSet = null;
-    if (existing.characterSet) {
+    if (keepCharset && existing.characterSet) {
       characterSet = `CHARACTER SET ${existing.characterSet}`;
     }
 
     let collation = null;
-    if (existing.collation) {
+    if (keepCharset && existing.collation) {
       collation = `COLLATE ${existing.collation}`;
     }
 

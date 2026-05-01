@@ -123,7 +123,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         t.table_name,
@@ -145,7 +145,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         t.table_name,
@@ -167,7 +167,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'u.user_name');
+    const schemaFilter = buildSchemaFilter(filter, 'u.user_name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         p.proc_id               AS id,
@@ -722,7 +722,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         t.table_name,

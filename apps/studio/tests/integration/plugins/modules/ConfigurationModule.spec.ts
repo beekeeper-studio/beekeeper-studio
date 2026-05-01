@@ -118,6 +118,7 @@ describe("Plugin Configuration Module", () => {
   describe("Disable community plugins", () => {
     const config = createConfig(`
       [pluginSystem]
+      disabled = false
       communityDisabled = true
     `);
 

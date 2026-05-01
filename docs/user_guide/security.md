@@ -71,13 +71,9 @@ This forces all users to set a PIN on first load of the app, requires pin entry 
 
 Beekeeper Studio provides a Privacy Mode that hides sensitive data when you're sharing your screen, so you can keep private information private.
 
-While hovering the Sidebar, you can see the "Toggle Privacy Mode" button, represented with an eye.
-Clicking this button will toggle the Privacy Mode On/Off.
+Go to View in the app menu and select the option to "Toggle Privacy Mode".
 
-| Privacy Mode Off | Privacy Mode On |
-| - | - |
-|![image](../assets/images/privacy/privacy-mode-1.png)|![image](../assets/images/privacy/privacy-mode-2.png) |
-| Fig.1 Button Off | Fig.2 Button On |
+![image](../assets/images/privacy/privacy-mode-menu.png)
 
 ### What Gets Hidden?
 

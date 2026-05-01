@@ -44,44 +44,57 @@ jobs:
           node-version-file: '.nvmrc'
           cache: yarn
 
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
         env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Install xvfb-maybe
+        run: npm install -g xvfb-maybe
 
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium
 
-      - name: Serve + Run Tests (Linux/macOS)
+      - name: Build UI Kit
+        run: yarn lib:build
+
+      - name: Build App
+        run: yarn workspace beekeeper-studio build
+
+      - name: Run Tests (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
-            yarn run electron:serve > server.log 2>&1 &
-              sleep 15
-              cat server.log
-              yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
-            '
-          else
-            yarn run electron:serve > server.log 2>&1 &
-            sleep 15
-            cat server.log
-            yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
-          fi
+          xvfb-maybe -a -s "-screen 0 1024x768x24" -- bash -c '
+            yarn workspace beekeeper-studio test:e2e:smoke
+          '
         env:
           ELECTRON_ENABLE_LOGGING: 1
           ELECTRON_DISABLE_SANDBOX: 1
           ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
 
-      - name: Serve + Run Tests (Windows)
+      - name: Run Tests (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          yarn run electron:serve > server.log 2>&1 &
-          sleep 30
-          cat server.log
-          yarn workspace beekeeper-studio test:e2e e2e/tests/appLaunch.test.ts
+          yarn workspace beekeeper-studio test:e2e:smoke
         env:
           ELECTRON_ENABLE_LOGGING: 1
 

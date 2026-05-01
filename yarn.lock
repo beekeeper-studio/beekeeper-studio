@@ -1752,10 +1752,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@beekeeperstudio/bks-ai-shell@^3.0.8":
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.8.tgz#77a2142fe52f71be61eb91642934d043c44a1d49"
-  integrity sha512-pz14TlCwbH8f3skcAT0bkqs5Ad3ZLhiqC94H1GDbe7J++C2wM6Qrrne5vOKlZyFiB+49Im+qLaB1gFLKEKUT2Q==
+"@beekeeperstudio/bks-ai-shell@^3.0.9":
+  version "3.0.9"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.0.9.tgz#298bbeaab0578b4a164f4777f3e27edc5379c583"
+  integrity sha512-YhQ5VjqNlv359VfUdYuOPK1bhHgu6GgCRD6FBBomFeDK6CrHI15Z7ZxFMXEYf1LGW4oJOVELfaR0q25+uNgbZA==
 
 "@beekeeperstudio/bks-er-diagram@^1.0.9":
   version "1.0.9"
@@ -5205,9 +5205,9 @@
   resolved "https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95"
 
 "@xmldom/xmldom@^0.8.8":
-  version "0.8.12"
-  resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.8.12.tgz#cf488a5435fa06c7374ad1449c69cea0f823624b"
-  integrity sha512-9k/gHF6n/pAi/9tqr3m3aqkuiNosYTurLLUtc7xQ9sxB/wm7WPygCv8GYa6mS0fLJEHhqMC1ATYhz++U/lRHqg==
+  version "0.8.13"
+  resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.8.13.tgz#00d1dd940b218dff2e49309d410d8bb212159225"
+  integrity sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==
 
 abab@^2.0.6:
   version "2.0.6"
@@ -8090,9 +8090,9 @@ flatted@^2.0.0:
   integrity sha512-r5wGx7YeOwNWNlCA0wQ86zKyDLMQr+/RB8xy74M4hTphfmjlijTSSXGuH8rnvKZnfT9i+75zmd8jcKdMR4O6jA==
 
 follow-redirects@^1.15.11, follow-redirects@^1.15.6:
-  version "1.15.11"
-  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.11.tgz#777d73d72a92f8ec4d2e410eb47352a56b8e8340"
-  integrity sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==
+  version "1.16.0"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.16.0.tgz#28474a159d3b9d11ef62050a14ed60e4df6d61bc"
+  integrity sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==
 
 for-each@^0.3.3, for-each@^0.3.5:
   version "0.3.5"
@@ -13136,10 +13136,10 @@ sql-formatter@*:
     argparse "^2.0.1"
     nearley "^2.20.1"
 
-sql-formatter@15.6.10:
-  version "15.6.10"
-  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.6.10.tgz#90dcdc2759735d987e2af3758939e7559adb7256"
-  integrity sha512-0bJOPQrRO/JkjQhiThVayq0hOKnI1tHI+2OTkmT7TGtc6kqS+V7kveeMzRW+RNQGxofmTmet9ILvztyuxv0cJQ==
+sql-formatter@15.7.3:
+  version "15.7.3"
+  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.7.3.tgz#b62d7de5ca5b24ab6bdfb7568c11b5dcde74c114"
+  integrity sha512-5+zl9Nqg5aNjss0tb1G+StpC4dJKbjv3+g8CL/+V+00PfZop+2RKGyi53ScFl0dr+Dkx1LjmUO54Q3N7K3EtMw==
   dependencies:
     argparse "^2.0.1"
     nearley "^2.20.1"

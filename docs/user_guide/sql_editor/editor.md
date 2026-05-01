@@ -46,6 +46,10 @@ There is also a [Manual Transaction Mode](./manual-transaction-management.md) th
 
 This functionality is currently only available for Postgres, CockroachDB, Redshift, MySQL, MariaDB, SQLServer, Firebird, and Oracle.
 
+## Editing Query Results
+
+After running your queries, you may want to make some quick changes to the data that you have selected. This can be done directly in the result table as long as the necessary data to generate an update query is present. Just hit `Edit Data` in the bottom right and go nuts! Learn more about this feature [here](./editing-data.md)
+
 ## Query Parameters
 
 You can parameterize your queries and Beekeeper will prompt you for values when you run it.

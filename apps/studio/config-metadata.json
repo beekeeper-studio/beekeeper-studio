@@ -9,6 +9,7 @@
         { "key": "save", "label": "Save" },
         { "key": "openInSqlEditor", "label": "Open in SQL Editor" },
         { "key": "openQuickSearch", "label": "Open Quick Search" },
+        { "key": "jsonViewerSidebar", "label": "Open Json Viewer" },
         { "key": "copySelection", "label": "Copy Selection" },
         { "key": "pasteSelection", "label": "Paste Selection" },
         { "key": "cloneSelection", "label": "Clone Selection" },
@@ -56,10 +57,10 @@
       "label": "Query Editor",
       "properties": [
         { "key": "selectEditor", "label": "Focus Editor" },
-        { "key": "submitTabQuery", "label": "Run All Queries" },
-        { "key": "submitCurrentQuery", "label": "Run Current Query" },
-        { "key": "submitQueryToFile", "label": "Run All Queries to File" },
-        { "key": "submitCurrentQueryToFile", "label": "Run Current Query to File" },
+        { "key": "primaryQueryAction", "label": "Run Only the Selected Query (Formerly Run All Queries)" },
+        { "key": "secondaryQueryAction", "label": "Run All Queries (Formerly Run Select Queries)" },
+        { "key": "primaryQueryToFileAction", "label": "Run Current Query to File" },
+        { "key": "secondaryQueryToFileAction", "label": "Run All Queries to File" },
         { "key": "selectNextResult", "label": "Select Next Result" },
         { "key": "selectPreviousResult", "label": "Select Previous Result" },
         { "key": "copyResultSelection", "label": "Copy Result Selection" },
@@ -80,6 +81,13 @@
         { "key": "openEditorModal", "label": "Open Editor Modal" },
         { "key": "firstPage", "label": "First Page" },
         { "key": "lastPage", "label": "Last Page" }
+      ]
+    },
+    {
+      "key": "keybindings.resultTable",
+      "label": "Result Table",
+      "properties": [
+        { "key": "openEditorModal", "label": "Open Editor Modal" }
       ]
     }
   ]

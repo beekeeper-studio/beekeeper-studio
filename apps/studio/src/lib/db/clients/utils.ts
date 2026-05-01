@@ -43,48 +43,63 @@ export function joinQueries(queries) {
   return results.join("")
 }
 
-export function buildSchemaFilter(filter, schemaField = 'schema_name') {
+export function buildSchemaFilter(filter, schemaField, wrapIdentifier: (s: string) => string = ansiWrapIdentifier) {
   if (!filter) return null
   const { schema, only, ignore } = filter
+  const field = wrapIdentifierPath(schemaField, wrapIdentifier);
 
   if (schema) {
-    return `${schemaField} = '${escapeString(schema)}'`;
+    return `${field} = '${escapeString(schema)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${schemaField} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
+    where.push(`${field} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${schemaField} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
+    where.push(`${field} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');
 }
 
-export function buildDatabaseFilter(filter, databaseField) {
+export function buildDatabaseFilter(filter, databaseField, wrapIdentifier: (s: string) => string = ansiWrapIdentifier) {
   if (!filter) {
     return null
   }
   const { only, ignore, database } = filter
+  const field = wrapIdentifierPath(databaseField, wrapIdentifier);
 
   if (database) {
-    return `${databaseField} = '${database}'`;
+    return `${field} = '${escapeString(database)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${databaseField} IN (${only.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${field} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${databaseField} NOT IN (${ignore.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${field} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');
+}
+
+// Wraps a dotted identifier path (e.g. "r.routine_schema") by applying
+// `wrap` to each segment. Single-segment paths pass through one wrap call.
+function wrapIdentifierPath(path: string, wrap: (s: string) => string): string {
+  return path.split('.').map(wrap).join('.');
+}
+
+// ANSI SQL identifier quoting. Safe default: every dialect that currently
+// calls the filter helpers (PG, SQL Server, Trino, DuckDB, SQL Anywhere)
+// accepts double-quoted identifiers.
+function ansiWrapIdentifier(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
 }
 
 function wrapIdentifier(value) {

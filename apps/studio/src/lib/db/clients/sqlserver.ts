@@ -122,7 +122,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listTables(filter: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -264,7 +264,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   async listTableTriggers(table: string, schema: string) {
     // SQL Server does not have information_schema for triggers, so other way around
     // is using sp_helptrigger stored procedure to fetch triggers related to table
-    const sql = `EXEC sp_helptrigger '${escapeString(schema)}.${escapeString(table)}'`;
+    const qualified = `${D.wrapIdentifier(schema)}.${D.wrapIdentifier(table)}`;
+    const sql = `EXEC sp_helptrigger '${escapeString(qualified)}'`;
 
     const { data } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
 
@@ -371,7 +372,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     const triggers = await this.listTableTriggers(table, schema)
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
-    const sizeQuery = `EXEC sp_spaceused N'${escapeString(schema)}.${escapeString(table)}'; `
+    const qualified = `${D.wrapIdentifier(schema)}.${D.wrapIdentifier(table)}`;
+    const sizeQuery = `EXEC sp_spaceused N'${escapeString(qualified)}'; `
     const { data }  = await this.driverExecuteSingle(sizeQuery, { overrideReadonly: true })
     const row = data.recordset ? data.recordset[0] || {} : {}
     const relations = await this.getTableKeys(table, schema)
@@ -585,7 +587,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       return ''
     }
 
-    elementName = this.wrapValue(schema + '.' + elementName)
+    elementName = this.wrapValue(`${D.wrapIdentifier(schema)}.${D.wrapIdentifier(elementName)}`)
     newElementName = this.wrapValue(newElementName)
 
     return `EXEC sp_rename ${elementName}, ${newElementName};`
@@ -597,7 +599,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listDatabases(filter: DatabaseFilterOptions) {
-    const databaseFilter = buildDatabaseFilter(filter, 'name');
+    const databaseFilter = buildDatabaseFilter(filter, 'name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT name
       FROM sys.databases
@@ -775,7 +777,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -800,7 +802,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         r.specific_name as id,
@@ -862,7 +864,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listSchemas(filter: FilterOptions) {
-    const schemaFilter = buildSchemaFilter(filter);
+    const schemaFilter = buildSchemaFilter(filter, 'schema_name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT schema_name
       FROM INFORMATION_SCHEMA.SCHEMATA
