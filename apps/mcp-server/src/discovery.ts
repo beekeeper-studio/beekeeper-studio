@@ -6,10 +6,11 @@ export interface DiscoveryFile {
   version: 1;
   host: string;
   port: number;
-  token: string;
   pid: number;
   appVersion: string;
   startedAt: string;
+  /** True when the Beekeeper server expects a Bearer token. */
+  requireToken: boolean;
 }
 
 export class DiscoveryError extends Error {
@@ -20,7 +21,6 @@ export class DiscoveryError extends Error {
 }
 
 export function discoveryPath(): string {
-  // Allow override for development / containerized testing.
   const explicit = process.env.BEEKEEPER_AI_SERVER_FILE;
   if (explicit) return explicit;
 
@@ -49,14 +49,22 @@ export function readDiscovery(): DiscoveryFile {
       `Open Beekeeper Studio -> Tools -> AI Server… and click Start server.`
     );
   }
-  let parsed: DiscoveryFile;
+  let parsed: any;
   try {
     parsed = JSON.parse(raw);
   } catch (e: any) {
     throw new DiscoveryError(`Could not parse ${path}: ${e.message}`);
   }
-  if (parsed?.version !== 1 || !parsed.token || !parsed.port) {
+  if (parsed?.version !== 1 || !parsed.port || !parsed.host) {
     throw new DiscoveryError(`${path} is malformed or from an incompatible version.`);
   }
-  return parsed;
+  return {
+    version: 1,
+    host: parsed.host,
+    port: parsed.port,
+    pid: parsed.pid ?? 0,
+    appVersion: parsed.appVersion ?? "unknown",
+    startedAt: parsed.startedAt ?? "",
+    requireToken: parsed.requireToken !== false,
+  };
 }

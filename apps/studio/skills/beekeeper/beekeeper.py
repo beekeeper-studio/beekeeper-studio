@@ -61,7 +61,15 @@ def call(method: str, path: str, body: dict | None = None, query: dict | None = 
         url += "?" + urllib.parse.urlencode({k: v for k, v in query.items() if v is not None})
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {disc['token']}")
+    if disc.get("requireToken", True):
+        token = os.environ.get("BEEKEEPER_AI_SERVER_TOKEN")
+        if not token:
+            raise SystemExit(
+                "Beekeeper AI server requires a token but BEEKEEPER_AI_SERVER_TOKEN is not set.\n"
+                "Open Beekeeper Studio -> Tools -> AI Server, copy the token from the Overview tab, then run:\n"
+                "  export BEEKEEPER_AI_SERVER_TOKEN=<token>"
+            )
+        req.add_header("Authorization", f"Bearer {token}")
     if data is not None:
         req.add_header("Content-Type", "application/json")
     try:

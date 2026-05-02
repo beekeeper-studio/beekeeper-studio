@@ -13,7 +13,8 @@ export interface HttpServerOptions {
   host: string;
   port: number;
   portScanRange: number;
-  token: string;
+  /** When null, the server skips bearer-token verification. */
+  token: string | null;
 }
 
 export interface RunningHttpServer {
@@ -93,10 +94,12 @@ export async function startHttpServer(opts: HttpServerOptions): Promise<RunningH
         return;
       }
 
-      const presented = extractBearer(req.headers["authorization"] as string | undefined);
-      if (!verifyToken(presented, opts.token)) {
-        writeJson(res, 401, { error: "unauthorized", message: "Bearer token required" });
-        return;
+      if (opts.token !== null) {
+        const presented = extractBearer(req.headers["authorization"] as string | undefined);
+        if (!verifyToken(presented, opts.token)) {
+          writeJson(res, 401, { error: "unauthorized", message: "Bearer token required" });
+          return;
+        }
       }
 
       let body: unknown = null;
@@ -109,7 +112,10 @@ export async function startHttpServer(opts: HttpServerOptions): Promise<RunningH
         }
       }
 
-      const tokenPrefix = opts.token.slice(0, 8);
+      // When auth is disabled there's no token to derive a session prefix from;
+      // use a stable per-process prefix so per-(token, connection) sessions
+      // remain consistent within a single server run.
+      const tokenPrefix = opts.token ? opts.token.slice(0, 8) : "anon";
       const result = await dispatch(method, pathname, url, req, body, { tokenPrefix });
       writeJson(res, result.status, result.body);
     } catch (e) {

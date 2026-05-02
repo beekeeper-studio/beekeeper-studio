@@ -19,10 +19,12 @@ export interface ApiClientOptions {
 export class ApiClient {
   private cached: DiscoveryFile | null = null;
   private opts: ApiClientOptions;
+  private token: string | null;
 
   constructor(opts: ApiClientOptions = {}) {
     this.opts = opts;
     if (opts.discovery) this.cached = opts.discovery;
+    this.token = process.env.BEEKEEPER_AI_SERVER_TOKEN ?? null;
   }
 
   private discovery(): DiscoveryFile {
@@ -36,6 +38,18 @@ export class ApiClient {
     if (!this.opts.discovery) this.cached = null;
   }
 
+  setToken(token: string | null): void {
+    this.token = token && token.length > 0 ? token : null;
+  }
+
+  hasToken(): boolean {
+    return !!this.token;
+  }
+
+  requiresToken(): boolean {
+    return this.discovery().requireToken;
+  }
+
   async request<T = unknown>(method: string, path: string, body?: unknown, query?: Record<string, string | number | undefined>): Promise<T> {
     const d = this.discovery();
     const url = new URL(`http://${d.host}:${d.port}${path}`);
@@ -44,13 +58,15 @@ export class ApiClient {
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
       }
     }
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+    };
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (d.requireToken && this.token) headers["Authorization"] = `Bearer ${this.token}`;
+
     const init: RequestInit = {
       method,
-      headers: {
-        Authorization: `Bearer ${d.token}`,
-        Accept: "application/json",
-        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      },
+      headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     };
     let res: Response;

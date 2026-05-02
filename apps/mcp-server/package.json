@@ -1,7 +1,7 @@
 {
   "name": "@beekeeperstudio/mcp-server",
   "description": "MCP server that exposes Beekeeper Studio's local AI server as Claude Code / MCP tools.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "author": {
     "name": "Beekeeper Studio Team",

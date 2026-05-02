@@ -15,10 +15,10 @@ const fixture = {
   version: 1 as const,
   host: "127.0.0.1",
   port: 21737,
-  token: "abcd",
   pid: process.pid,
   appVersion: "0.0.0-test",
   startedAt: new Date().toISOString(),
+  requireToken: true,
 };
 
 describe("ai-server/portFile", () => {
@@ -28,6 +28,13 @@ describe("ai-server/portFile", () => {
     writePortFile(fixture);
     expect(fs.existsSync(portFilePath())).toBe(true);
     expect(portFilePath()).toContain(mockTmpDir);
+  });
+
+  it("never persists a token field", () => {
+    writePortFile(fixture);
+    const raw = JSON.parse(fs.readFileSync(portFilePath(), "utf8"));
+    expect(raw).not.toHaveProperty("token");
+    expect(raw.requireToken).toBe(true);
   });
 
   it("file mode is 0600 on POSIX", () => {
@@ -62,5 +69,10 @@ describe("ai-server/portFile", () => {
 
   it("removePortFile is idempotent", () => {
     expect(() => { removePortFile(); removePortFile(); }).not.toThrow();
+  });
+
+  it("requireToken=false round-trips", () => {
+    writePortFile({ ...fixture, requireToken: false });
+    expect(readPortFile()?.requireToken).toBe(false);
   });
 });

@@ -4,13 +4,16 @@ import { State as RootState } from "../../index";
 import {
   AiServerGrants,
   AiServerLogEntry,
+  AiServerOptions,
   AiServerStatusWithToken,
+  DEFAULT_OPTIONS,
   EMPTY_GRANTS,
 } from "@/common/interfaces/IAiServer";
 
 interface State {
   status: AiServerStatusWithToken;
   grants: AiServerGrants;
+  options: AiServerOptions;
   log: AiServerLogEntry[];
   loaded: boolean;
 }
@@ -22,16 +25,21 @@ const initialStatus = (): AiServerStatusWithToken => ({
   port: 21737,
   startedAt: null,
   pid: null,
+  requireToken: true,
+  bindLocal: false,
+  lanAddresses: [],
   token: null,
 });
 
 const initialGrants = (): AiServerGrants => ({ ...EMPTY_GRANTS, connections: [], queries: [], workspaceIds: [] });
+const initialOptions = (): AiServerOptions => ({ ...DEFAULT_OPTIONS });
 
 export const AiServerStoreModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
     status: initialStatus(),
     grants: initialGrants(),
+    options: initialOptions(),
     log: [],
     loaded: false,
   }),
@@ -42,6 +50,10 @@ export const AiServerStoreModule: Module<State, RootState> = {
     enabled(state): boolean {
       return !state.status.configDisabled;
     },
+    primaryLanUrl(state): string | null {
+      const addr = state.status.lanAddresses?.[0];
+      return addr ? `http://${addr}:${state.status.port}` : null;
+    },
   },
   mutations: {
     setStatus(state, status: AiServerStatusWithToken) {
@@ -49,6 +61,9 @@ export const AiServerStoreModule: Module<State, RootState> = {
     },
     setGrants(state, grants: AiServerGrants) {
       state.grants = grants;
+    },
+    setOptions(state, options: AiServerOptions) {
+      state.options = options;
     },
     setLog(state, log: AiServerLogEntry[]) {
       state.log = log.slice(-500);
@@ -89,6 +104,16 @@ export const AiServerStoreModule: Module<State, RootState> = {
       const saved = await Vue.prototype.$util.send("ai-server/grants/set", { grants });
       context.commit("setGrants", saved);
     },
+    async loadOptions(context) {
+      const options = await Vue.prototype.$util.send("ai-server/options/get");
+      context.commit("setOptions", options);
+    },
+    async saveOptions(context, options: AiServerOptions) {
+      const saved = await Vue.prototype.$util.send("ai-server/options/set", { options });
+      context.commit("setOptions", saved);
+      // Server may have been restarted to pick up the new options — refresh status.
+      await context.dispatch("refreshStatus");
+    },
     async loadLog(context, payload: { limit?: number; since?: number } = {}) {
       const entries = await Vue.prototype.$util.send("ai-server/log/list", payload);
       context.commit("setLog", entries ?? []);
@@ -99,7 +124,12 @@ export const AiServerStoreModule: Module<State, RootState> = {
     },
     async initialize(context) {
       if (context.state.loaded) return;
-      await Promise.all([context.dispatch("refreshStatus"), context.dispatch("loadGrants"), context.dispatch("loadLog")]);
+      await Promise.all([
+        context.dispatch("refreshStatus"),
+        context.dispatch("loadGrants"),
+        context.dispatch("loadOptions"),
+        context.dispatch("loadLog"),
+      ]);
       context.commit("markLoaded");
     },
     receiveStatusPush(context, status: AiServerStatusWithToken) {

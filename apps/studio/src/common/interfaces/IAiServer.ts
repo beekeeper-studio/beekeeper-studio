@@ -16,6 +16,16 @@ export const EMPTY_GRANTS: AiServerGrants = Object.freeze({
   workspaceIds: [],
 }) as AiServerGrants;
 
+export interface AiServerOptions {
+  requireToken: boolean;
+  bindLocal: boolean;
+}
+
+export const DEFAULT_OPTIONS: AiServerOptions = Object.freeze({
+  requireToken: true,
+  bindLocal: false,
+}) as AiServerOptions;
+
 export interface AiServerStatus {
   running: boolean;
   configDisabled: boolean;
@@ -23,6 +33,9 @@ export interface AiServerStatus {
   port: number;
   startedAt: string | null;
   pid: number | null;
+  requireToken: boolean;
+  bindLocal: boolean;
+  lanAddresses: string[];
 }
 
 export interface AiServerStatusWithToken extends AiServerStatus {
@@ -33,10 +46,10 @@ export interface AiServerPortFileV1 {
   version: 1;
   host: string;
   port: number;
-  token: string;
   pid: number;
   appVersion: string;
   startedAt: string;
+  requireToken: boolean;
 }
 
 export interface AiServerLogEntry {

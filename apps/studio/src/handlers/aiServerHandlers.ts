@@ -6,10 +6,13 @@ import {
   regenerateToken,
   onLogAppend,
   onStatusChange,
+  getOptions,
+  refreshOptions,
 } from "@commercial/backend/ai-server";
 import { loadGrants, saveGrants } from "@commercial/backend/ai-server/grants";
 import { recent as recentLog, clear as clearLog } from "@commercial/backend/ai-server/queryLog";
-import { AiServerGrants, AiServerLogEntry, AiServerStatus } from "@commercial/backend/ai-server/types";
+import { loadOptions, saveOptions } from "@commercial/backend/ai-server/options";
+import { AiServerGrants, AiServerLogEntry, AiServerStatus, AiServerOptions } from "@commercial/backend/ai-server/types";
 import { state } from "@/handlers/handlerState";
 import bksConfig from "@/common/bksConfig";
 
@@ -20,6 +23,8 @@ export interface IAiServerHandlers {
   "ai-server/regenerateToken": (args: { sId?: string }) => Promise<AiServerStatus & { token: string | null }>;
   "ai-server/grants/get": (args: { sId?: string }) => Promise<AiServerGrants>;
   "ai-server/grants/set": (args: { grants: AiServerGrants; sId?: string }) => Promise<AiServerGrants>;
+  "ai-server/options/get": (args: { sId?: string }) => Promise<AiServerOptions>;
+  "ai-server/options/set": (args: { options: AiServerOptions; sId?: string }) => Promise<AiServerOptions>;
   "ai-server/log/list": (args: { limit?: number; since?: number; sId?: string }) => Promise<AiServerLogEntry[]>;
   "ai-server/log/clear": (args: { sId?: string }) => Promise<{ ok: true }>;
 }
@@ -41,6 +46,23 @@ export const AiServerHandlers: IAiServerHandlers = {
   },
   "ai-server/grants/get": async () => loadGrants(),
   "ai-server/grants/set": async ({ grants }) => saveGrants(grants),
+  "ai-server/options/get": async () => {
+    // The runtime cache may not be populated yet (e.g. before first start),
+    // so always go to the persistent setting.
+    return loadOptions();
+  },
+  "ai-server/options/set": async ({ options }) => {
+    const before = getOptions();
+    const saved = await saveOptions(options);
+    await refreshOptions();
+    const running = getStatus().running;
+    const changed = before.requireToken !== saved.requireToken || before.bindLocal !== saved.bindLocal;
+    if (running && changed) {
+      // regenerateToken stops + starts, picking up the new bind host / token policy.
+      await regenerateToken();
+    }
+    return saved;
+  },
   "ai-server/log/list": async ({ limit, since }) => recentLog({ limit, since }),
   "ai-server/log/clear": async () => {
     clearLog();

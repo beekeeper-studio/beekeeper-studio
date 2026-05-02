@@ -14,6 +14,35 @@ const connectionIdProp = {
 } as const;
 
 export const TOOLS: Record<string, ToolDef> = {
+  set_token: {
+    tool: {
+      name: "set_token",
+      description:
+        "Provide the bearer token shown in Beekeeper Studio's AI Server panel. Required when the server has 'Require token' enabled and the user did not pass BEEKEEPER_AI_SERVER_TOKEN as an env var. The token is held in this MCP process only — it is never written to disk.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          token: { type: "string", description: "Token from Beekeeper Studio → Tools → AI Server (Overview tab)." },
+        },
+        required: ["token"],
+        additionalProperties: false,
+      },
+    },
+    call: async (args, api) => {
+      const t = (args.token as string | undefined)?.trim();
+      if (!t) return { ok: false, message: "token is empty" };
+      api.setToken(t);
+      // Validate immediately so the user gets feedback.
+      try {
+        await api.request("GET", "/v1/health");
+        return { ok: true, message: "Token accepted." };
+      } catch (e: any) {
+        api.setToken(null);
+        return { ok: false, message: `Token rejected: ${e?.message ?? e}` };
+      }
+    },
+  },
+
   server_info: {
     tool: {
       name: "server_info",

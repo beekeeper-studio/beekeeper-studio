@@ -1,3 +1,4 @@
+import os from "os";
 import bksConfig from "@/common/bksConfig";
 import platformInfo from "@/common/platform_info";
 import rawLog from "@bksLogger";
@@ -6,14 +7,19 @@ import { startHttpServer, RunningHttpServer } from "./HttpServer";
 import { writePortFile, removePortFile } from "./portFile";
 import { configure as configureLog, shutdown as shutdownLog, subscribe as subscribeLog } from "./queryLog";
 import { forgetAll } from "./sessionRegistry";
-import { AiServerStatus, AiServerLogEntry } from "./types";
+import { loadOptions } from "./options";
+import { AiServerStatus, AiServerLogEntry, AiServerOptions, DEFAULT_OPTIONS } from "./types";
 
 const log = rawLog.scope("ai-server");
+
+const LOOPBACK = "127.0.0.1";
+const ALL_INTERFACES = "0.0.0.0";
 
 interface RuntimeState {
   running: RunningHttpServer | null;
   token: string | null;
   startedAt: string | null;
+  options: AiServerOptions;
   unsubscribeLog: (() => void) | null;
 }
 
@@ -21,6 +27,7 @@ const runtime: RuntimeState = {
   running: null,
   token: null,
   startedAt: null,
+  options: { ...DEFAULT_OPTIONS },
   unsubscribeLog: null,
 };
 
@@ -40,19 +47,43 @@ export function onLogAppend(fn: LogListener): () => void {
   return () => logListeners.delete(fn);
 }
 
+function lanAddresses(): string[] {
+  const out: string[] = [];
+  const ifaces = os.networkInterfaces();
+  for (const list of Object.values(ifaces)) {
+    for (const i of list ?? []) {
+      if (!i.internal && i.family === "IPv4") out.push(i.address);
+    }
+  }
+  return out;
+}
+
 export function getStatus(): AiServerStatus {
+  const running = !!runtime.running;
   return {
-    running: !!runtime.running,
+    running,
     configDisabled: !!bksConfig.aiServer.disabled,
-    host: runtime.running?.host ?? bksConfig.aiServer.host,
+    host: runtime.running?.host ?? (runtime.options.bindLocal ? ALL_INTERFACES : LOOPBACK),
     port: runtime.running?.port ?? bksConfig.aiServer.port,
     startedAt: runtime.startedAt,
-    pid: runtime.running ? process.pid : null,
+    pid: running ? process.pid : null,
+    requireToken: runtime.options.requireToken,
+    bindLocal: runtime.options.bindLocal,
+    lanAddresses: running && runtime.options.bindLocal ? lanAddresses() : [],
   };
 }
 
 export function getToken(): string | null {
   return runtime.token;
+}
+
+export function getOptions(): AiServerOptions {
+  return { ...runtime.options };
+}
+
+export async function refreshOptions(): Promise<AiServerOptions> {
+  runtime.options = await loadOptions();
+  return runtime.options;
 }
 
 function emitStatus(): void {
@@ -68,14 +99,18 @@ export async function startAiServer(): Promise<AiServerStatus> {
     throw new Error("AI server is disabled by config (aiServer.disabled = true)");
   }
 
+  await refreshOptions();
+
   configureLog({
     ringBufferSize: bksConfig.aiServer.logRingBufferSize,
     persist: bksConfig.aiServer.logQueries,
   });
 
-  const token = generateToken();
+  const host = runtime.options.bindLocal ? ALL_INTERFACES : LOOPBACK;
+  const token = runtime.options.requireToken ? generateToken() : null;
+
   const running = await startHttpServer({
-    host: bksConfig.aiServer.host,
+    host,
     port: bksConfig.aiServer.port,
     portScanRange: bksConfig.aiServer.portScanRange,
     token,
@@ -89,10 +124,10 @@ export async function startAiServer(): Promise<AiServerStatus> {
     version: 1,
     host: running.host,
     port: running.port,
-    token,
     pid: process.pid,
     appVersion: platformInfo.appVersion,
     startedAt: runtime.startedAt,
+    requireToken: runtime.options.requireToken,
   });
 
   runtime.unsubscribeLog = subscribeLog((entry) => {
@@ -101,7 +136,7 @@ export async function startAiServer(): Promise<AiServerStatus> {
     }
   });
 
-  log.info("AI server started", running.host, running.port);
+  log.info("AI server started", running.host, running.port, "token-required:", runtime.options.requireToken);
   emitStatus();
   return getStatus();
 }
@@ -140,6 +175,7 @@ export async function initAiServer(): Promise<void> {
   // Remove any stale port file from a previous run. Do NOT auto-start —
   // the server only runs when the user clicks Start in the AI Server panel.
   removePortFile();
+  await refreshOptions();
   emitStatus();
 }
 
