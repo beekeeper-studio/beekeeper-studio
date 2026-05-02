@@ -140,7 +140,12 @@ async function loadColumnsFromQueryContext(
 ): Promise<string[]> {
   const doc = state.doc;
   const line = doc.lineAt(cursor);
-  const textBeforeCursor = line.text.substring(0, cursor - line.from);
+
+  // Look back up to 5 lines so the position check sees keywords like
+  // SELECT/WHERE/ORDER BY even when the cursor is on a different line.
+  const lookbackLine = Math.max(1, line.number - 5);
+  const lookbackStart = doc.line(lookbackLine).from;
+  const textBeforeCursor = doc.sliceString(lookbackStart, cursor);
 
   if (!isColumnCompletionPosition(textBeforeCursor)) {
     return [];
@@ -174,10 +179,10 @@ function isColumnCompletionPosition(textBeforeCursor: string): boolean {
 
   const completionPatterns = [
     /\bSELECT\s+/i, // After SELECT (with or without trailing content)
-    /\bSELECT.+,\s*/i, // After comma in SELECT
+    /\bSELECT[\s\S]+,\s*/i, // After comma in SELECT (may span lines)
     /\b(WHERE|AND|OR)\s+/i, // After WHERE/AND/OR
     /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+/i, // After ORDER BY/GROUP BY/HAVING
-    /\bJOIN.+\bON\s+/i, // After JOIN...ON
+    /\bJOIN[\s\S]+\bON\s+/i, // After JOIN...ON (may span lines)
   ];
 
   return completionPatterns.some((pattern) => pattern.test(textBeforeCursor));
