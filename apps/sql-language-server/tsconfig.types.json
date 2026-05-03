@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist",
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true,
+    "noEmitOnError": false
+  },
+  "include": [
+    "lib/index.ts",
+    "lib/client/types.ts",
+    "lib/server/schema/SchemaProvider.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "tests/**"
+  ]
+}

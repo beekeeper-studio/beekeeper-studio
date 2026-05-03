@@ -1,0 +1,176 @@
+import {
+  CompletionItem,
+  CompletionItemKind,
+  Position,
+  TextDocumentPositionParams,
+} from "vscode-languageserver/browser";
+import { TextDocument } from "vscode-languageserver-textdocument";
+import { LiveParser } from "../parsing/LiveParser";
+import { Dialect } from "../parsing/dialects";
+import { SchemaCache } from "../schema/SchemaCache";
+
+/**
+ * Produce completion items at a given document position.
+ *
+ * Drafted from joe-re/sql-language-server's completion logic
+ * (https://github.com/joe-re/sql-language-server, MIT) — specifically the
+ * approach of "find the most recent clause keyword, decide what kind of
+ * thing should appear here". The parser layer is replaced with our Lezer-
+ * based, error-tolerant context detector, but the dispatch shape is the
+ * same.
+ */
+export async function provideCompletion(
+  doc: TextDocument,
+  params: TextDocumentPositionParams,
+  parser: LiveParser,
+  dialect: Dialect,
+  schema: SchemaCache
+): Promise<CompletionItem[]> {
+  const text = doc.getText();
+  const offset = doc.offsetAt(params.position);
+  const tree = parser.parse(text, dialect);
+  const ctx = parser.contextAt(tree, text, offset);
+
+  // Qualified completion: `<alias|schema>.<partial>` — always columns or
+  // tables, regardless of clause.
+  if (ctx.afterDot && ctx.qualifier) {
+    return await qualifiedCompletion(ctx.qualifier, ctx.tablesInScope, schema);
+  }
+
+  switch (ctx.clause) {
+    case "from":
+    case "join":
+    case "delete":
+    case "update":
+    case "insert": {
+      // Tables (and schemas) are the natural completions.
+      const items = await tableCompletions(schema);
+      // Tables alone aren't enough — keywords like JOIN should still
+      // surface after a table name. Add them but rank lower.
+      items.push(...keywordCompletions(parser, dialect, /* boost */ false));
+      return items;
+    }
+    case "select":
+    case "where":
+    case "group-by":
+    case "order-by":
+    case "having":
+    case "join-on":
+    case "set":
+    case "values": {
+      // Columns from in-scope tables, plus keywords.
+      const cols = await columnsForScope(ctx.tablesInScope, schema);
+      const items: CompletionItem[] = cols;
+      items.push(...keywordCompletions(parser, dialect, /* boost */ false));
+      // It's also valid to reference tables here (e.g. `SELECT u.* FROM
+      // users u WHERE ...` — type "u" completes to alias). Add tables in
+      // scope too.
+      for (const t of ctx.tablesInScope) {
+        items.push({
+          label: t.name,
+          kind: CompletionItemKind.Reference,
+          detail: t.table && t.table !== t.name ? `alias for ${t.table}` : "table",
+        });
+      }
+      return items;
+    }
+    case "begin":
+    case "unknown":
+    default: {
+      // Beginning of statement — top-level keywords are the only useful
+      // completion.
+      return keywordCompletions(parser, dialect, /* boost */ true);
+    }
+  }
+}
+
+async function qualifiedCompletion(
+  qualifier: string,
+  tablesInScope: { name: string; table?: string; schema?: string }[],
+  schema: SchemaCache
+): Promise<CompletionItem[]> {
+  // First: is the qualifier an in-scope table or alias? → its columns.
+  const match = tablesInScope.find(
+    (t) => t.name.toLowerCase() === qualifier.toLowerCase()
+  );
+  if (match) {
+    const cols = await schema.getColumns(match.table ?? match.name, match.schema);
+    return cols.map((c) => ({
+      label: c.name,
+      kind: CompletionItemKind.Field,
+      detail: c.dataType,
+    }));
+  }
+
+  // Otherwise: treat as a schema name → its tables.
+  const tables = await schema.getTables(qualifier);
+  return tables.map((t) => ({
+    label: t.name,
+    kind: CompletionItemKind.Class,
+    detail: `${qualifier}.${t.name}`,
+  }));
+}
+
+async function tableCompletions(schema: SchemaCache): Promise<CompletionItem[]> {
+  const out: CompletionItem[] = [];
+  const defaultSchema = await schema.getDefaultSchema();
+  const tables = await schema.getTables(defaultSchema);
+  for (const t of tables) {
+    out.push({
+      label: t.name,
+      kind: CompletionItemKind.Class,
+      detail: t.kind ?? "table",
+    });
+  }
+  // Schema-qualified options too.
+  const schemas = await schema.getSchemas();
+  for (const s of schemas) {
+    if (s === defaultSchema) continue;
+    out.push({
+      label: s,
+      kind: CompletionItemKind.Module,
+      detail: "schema",
+    });
+  }
+  return out;
+}
+
+async function columnsForScope(
+  tablesInScope: { name: string; table?: string; schema?: string }[],
+  schema: SchemaCache
+): Promise<CompletionItem[]> {
+  const out: CompletionItem[] = [];
+  // Deduplicate by underlying (schema, table)
+  const seen = new Set<string>();
+  for (const ref of tablesInScope) {
+    const key = `${ref.schema ?? ""}::${ref.table ?? ref.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const cols = await schema.getColumns(ref.table ?? ref.name, ref.schema);
+    for (const c of cols) {
+      out.push({
+        label: c.name,
+        kind: CompletionItemKind.Field,
+        detail: ref.name + (c.dataType ? ` : ${c.dataType}` : ""),
+      });
+    }
+  }
+  return out;
+}
+
+function keywordCompletions(
+  parser: LiveParser,
+  dialect: Dialect,
+  boost: boolean
+): CompletionItem[] {
+  return parser.keywords(dialect).map((kw) => ({
+    label: kw,
+    kind: CompletionItemKind.Keyword,
+    sortText: boost ? `0${kw}` : `9${kw}`,
+  }));
+}
+
+// Re-export for tests to use a stable position helper.
+export function _positionAt(doc: TextDocument, offset: number): Position {
+  return doc.positionAt(offset);
+}

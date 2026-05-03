@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["lib/**/*"],
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "webworker"
+    ],
+    "declaration": true,
+    "declarationDir": "dist",
+    "sourceMap": true,
+    "emitDeclarationOnly": false,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "@/*": ["./lib/*"]
+    }
+  }
+}
