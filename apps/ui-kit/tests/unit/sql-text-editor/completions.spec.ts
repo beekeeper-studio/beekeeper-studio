@@ -271,4 +271,325 @@ describe("SQL completion", () => {
   it("can transform keyword completions", async () => {
     ist((await get("s|", {keywords: true, keywordCompletion: l => ({label: l, type: "x"})}))!.options.every(c => c.type == "x"))
   })
+
+  // ---------------------------------------------------------------------------
+  // Regression tests for issue #3567:
+  // "The autocomplete does not suggest columns if the table is quoted"
+  // and related context-based completion bugs (JOIN extraction,
+  // schema-qualified parents).
+  // ---------------------------------------------------------------------------
+
+  it("completes column names when double-quoted table is specified after from (#3567)", async () => {
+    const list = get('select | from "users"', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) => entity.name === "users" ? ["apple", "banana"] : [],
+    })
+    ist(await str(list), "apple, banana, products, users")
+  })
+
+  it("completes column names when backtick-quoted table is specified after from", async () => {
+    const list = get('select | from `users`', {
+      schema: schema1,
+      dialect: MySQL,
+      explicit: true,
+      columnsGetter: (entity) => entity.name === "users" ? ["apple", "banana"] : [],
+    })
+    // Tables/columns are simple lowercase words, so MySQL doesn't add backticks
+    // (see nameCompletion -- only quotes labels with non-word chars).
+    ist(await str(list), "apple, banana, products, users")
+  })
+
+  it("completes column names when bracket-quoted table is specified after from", async () => {
+    const list = get('select | from [users]', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) => entity.name === "users" ? ["apple", "banana"] : [],
+    })
+    const result = await str(list)
+    ist(result.includes("apple"))
+    ist(result.includes("banana"))
+  })
+
+  it("completes column names from joined tables (unaliased)", async () => {
+    const list = get(
+      "select | from users join orders on users.id = orders.user_id",
+      {
+        schema: schema1,
+        explicit: true,
+        columnsGetter: (entity) => {
+          if (entity.name === "users") return ["user_apple"]
+          if (entity.name === "orders") return ["order_x"]
+          return []
+        },
+      }
+    )
+    const result = await str(list)
+    ist(result.includes("user_apple"))
+    ist(result.includes("order_x"))
+  })
+
+  it("completes column names from joined quoted tables (unaliased)", async () => {
+    const list = get(
+      'select | from "users" join "orders" on "users".id = "orders".user_id',
+      {
+        schema: schema1,
+        explicit: true,
+        columnsGetter: (entity) => {
+          if (entity.name === "users") return ["user_apple"]
+          if (entity.name === "orders") return ["order_x"]
+          return []
+        },
+      }
+    )
+    const result = await str(list)
+    ist(result.includes("user_apple"))
+    ist(result.includes("order_x"))
+  })
+
+  it("completes column names with case-insensitive FROM keyword and quoted table", async () => {
+    const list = get('select | FROM "users"', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) => entity.name === "users" ? ["cherry"] : [],
+    })
+    ist((await str(list)).includes("cherry"))
+  })
+
+  it("preserves schema in entity passed to columnsGetter for schema-qualified table without alias", async () => {
+    const seenEntities: Array<{schema?: string, name: string}> = []
+    const list = get('select public.users.|', {
+      schema: schema2,
+      columnsGetter: (entity) => {
+        seenEntities.push({ schema: entity.schema, name: entity.name })
+        return entity.schema === "public" && entity.name === "users"
+          ? ["dynamic_a", "dynamic_b"]
+          : []
+      },
+    })
+    ist(await str(list), "dynamic_a, dynamic_b, email, id")
+    ist(seenEntities.some((e) => e.schema === "public" && e.name === "users"))
+  })
+
+  it("preserves schema in entity passed to columnsGetter for schema-qualified quoted table", async () => {
+    const list = get('select "public"."users".|', {
+      schema: schema2,
+      columnsGetter: (entity) => {
+        return entity.schema === "public" && entity.name === "users"
+          ? ["dynamic_a", "dynamic_b"]
+          : []
+      },
+    })
+    ist(await str(list), "dynamic_a, dynamic_b, email, id")
+  })
+
+  it("uses alias resolution for aliased schema-qualified table", async () => {
+    const list = get("select u.| from public.users u", {
+      schema: schema2,
+      columnsGetter: (entity) =>
+        entity.schema === "public" && entity.name === "users"
+          ? ["dynamic_a"]
+          : [],
+    })
+    ist((await str(list)).includes("dynamic_a"))
+  })
+
+  it("does not break existing aliased quoted table completion", async () => {
+    // Regression: ensure the FROM-regex change didn't disturb the alias path.
+    const list = get('select u.| from "users" u', {
+      schema: schema1,
+      columnsGetter: (entity) =>
+        entity.name === "users" ? ["dynamic_x"] : [],
+    })
+    const result = await str(list)
+    ist(result.includes("dynamic_x"))
+    ist(result.includes("address"))
+  })
+
+  it("returns no extra columns when cursor is not at a column completion position", async () => {
+    let calls = 0
+    const list = get('select * from "us|"', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => {
+        calls++
+        return ["should_not_appear"]
+      },
+    })
+    const result = await str(list)
+    // We're typing a table name (after FROM), not a column position.
+    // The columnsGetter may still be invoked by the completion machinery
+    // with the table-name lookup, but the dynamic-context path
+    // (loadColumnsFromQueryContext) must not inject column completions.
+    ist(!result.includes("should_not_appear"))
+  })
+
+  it("extracts multiple distinct tables across FROM and JOIN", async () => {
+    const list = get(
+      'select | from "a" join b join `c` on true',
+      {
+        schema: schema1,
+        explicit: true,
+        dialect: MySQL,
+        columnsGetter: (entity) => {
+          if (entity.name === "a") return ["col_a"]
+          if (entity.name === "b") return ["col_b"]
+          if (entity.name === "c") return ["col_c"]
+          return []
+        },
+      }
+    )
+    const result = await str(list)
+    ist(result.includes("col_a"))
+    ist(result.includes("col_b"))
+    ist(result.includes("col_c"))
+  })
+
+  // ---------------------------------------------------------------------------
+  // Column completion in WHERE / ORDER BY / GROUP BY / HAVING / JOIN ON
+  // ---------------------------------------------------------------------------
+
+  it("suggests columns in WHERE clause for quoted FROM table", async () => {
+    const list = get('select * from "users" where |', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) =>
+        entity.name === "users" ? ["where_col"] : [],
+    })
+    ist((await str(list)).includes("where_col"))
+  })
+
+  it("suggests columns in ORDER BY for quoted FROM table", async () => {
+    const list = get('select * from "users" order by |', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) =>
+        entity.name === "users" ? ["order_col"] : [],
+    })
+    ist((await str(list)).includes("order_col"))
+  })
+
+  it("suggests columns in GROUP BY for quoted FROM table", async () => {
+    const list = get('select * from "users" group by |', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) =>
+        entity.name === "users" ? ["group_col"] : [],
+    })
+    ist((await str(list)).includes("group_col"))
+  })
+
+  it("suggests columns in HAVING for quoted FROM table", async () => {
+    const list = get('select count(*) from "users" group by id having |', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) =>
+        entity.name === "users" ? ["having_col"] : [],
+    })
+    ist((await str(list)).includes("having_col"))
+  })
+
+  it("suggests columns in JOIN...ON for both quoted tables", async () => {
+    const list = get(
+      'select * from "users" join "orders" on |',
+      {
+        schema: schema1,
+        explicit: true,
+        columnsGetter: (entity) => {
+          if (entity.name === "users") return ["uid"]
+          if (entity.name === "orders") return ["oid"]
+          return []
+        },
+      }
+    )
+    const result = await str(list)
+    ist(result.includes("uid"))
+    ist(result.includes("oid"))
+  })
+
+  it("suggests columns after a comma in SELECT with quoted FROM", async () => {
+    const list = get('select id, | from "users"', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: (entity) =>
+        entity.name === "users" ? ["second_col"] : [],
+    })
+    ist((await str(list)).includes("second_col"))
+  })
+
+  // ---------------------------------------------------------------------------
+  // Negative tests for the table-name-position guard
+  // ---------------------------------------------------------------------------
+
+  it("does not suggest columns when cursor is right after FROM (no table yet)", async () => {
+    const list = get('select * from |', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => ["should_not_appear_after_from"],
+    })
+    ist(!(await str(list)).includes("should_not_appear_after_from"))
+  })
+
+  it("does not suggest columns when cursor is inside an unquoted table name", async () => {
+    const list = get('select * from us|', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => ["should_not_appear_inside_unquoted"],
+    })
+    ist(!(await str(list)).includes("should_not_appear_inside_unquoted"))
+  })
+
+  it("does not suggest columns when cursor is inside a backtick-quoted table name", async () => {
+    const list = get('select * from `us|`', {
+      schema: schema1,
+      dialect: MySQL,
+      explicit: true,
+      columnsGetter: () => ["should_not_appear_inside_backtick"],
+    })
+    ist(!(await str(list)).includes("should_not_appear_inside_backtick"))
+  })
+
+  it("does not suggest columns when cursor is right after JOIN (no table yet)", async () => {
+    const list = get('select * from users join |', {
+      schema: schema1,
+      explicit: true,
+      columnsGetter: () => ["should_not_appear_after_join"],
+    })
+    ist(!(await str(list)).includes("should_not_appear_after_join"))
+  })
+
+  // ---------------------------------------------------------------------------
+  // Multi-line queries (the context window is +/- 5 lines around the cursor)
+  // ---------------------------------------------------------------------------
+
+  it("extracts a quoted table from FROM on a previous line", async () => {
+    const list = get(
+      'select\n  |\nfrom "users"',
+      {
+        schema: schema1,
+        explicit: true,
+        columnsGetter: (entity) =>
+          entity.name === "users" ? ["multi_line_col"] : [],
+      }
+    )
+    ist((await str(list)).includes("multi_line_col"))
+  })
+
+  it("extracts FROM and JOIN tables across multiple lines", async () => {
+    const list = get(
+      'select\n  |\nfrom "users"\njoin "orders" on "users".id = "orders".user_id',
+      {
+        schema: schema1,
+        explicit: true,
+        columnsGetter: (entity) => {
+          if (entity.name === "users") return ["u_col"]
+          if (entity.name === "orders") return ["o_col"]
+          return []
+        },
+      }
+    )
+    const result = await str(list)
+    ist(result.includes("u_col"))
+    ist(result.includes("o_col"))
+  })
 })

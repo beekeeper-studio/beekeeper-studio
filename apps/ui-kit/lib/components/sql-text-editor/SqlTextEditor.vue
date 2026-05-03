@@ -57,7 +57,12 @@ export default Vue.extend({
           this.$emit("bks-query-selection-change", params)
         },
         columnsGetter: (entity: Entity) => {
-          return this.columnsGetter?.(entity.name) || [];
+          // Pass the schema-qualified name when schema is known, so consumers
+          // can disambiguate between e.g. "public.users" and "other.users".
+          const tableName = entity.schema
+            ? `${entity.schema}.${entity.name}`
+            : entity.name;
+          return this.columnsGetter?.(tableName) || [];
         },
       });
     },
