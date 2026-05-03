@@ -213,17 +213,38 @@
             <h4>Recommended: MCP server</h4>
             <p class="muted">
               <code>@beekeeperstudio/mcp-server</code> is published separately on npm.
-              <span v-if="status.requireToken">
-                Pass the token from above as an env var so the MCP process picks it up:
-              </span>
-              <span v-else>
-                The Beekeeper server has no token, so just add it directly:
-              </span>
             </p>
-            <code class="curl-snippet">{{ mcpInstallCommand }}</code>
-            <x-button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommand)">
-              <i class="material-icons">content_copy</i> Copy
-            </x-button>
+
+            <template v-if="status.requireToken">
+              <h5>Option A — paste the token in chat (one prompt, no env var)</h5>
+              <p class="muted">
+                Add the server with no token. The first time Claude calls a tool it will ask you for the value below. Token lives only in that Claude session.
+              </p>
+              <code class="curl-snippet">{{ mcpInstallCommandPrompt }}</code>
+              <x-button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandPrompt)">
+                <i class="material-icons">content_copy</i> Copy
+              </x-button>
+
+              <h5 style="margin-top:1rem">Option B — pass the token as an env var (no prompts)</h5>
+              <p class="muted">
+                The MCP process picks the token up at startup. Re-run this whenever you regenerate the token.
+              </p>
+              <code class="curl-snippet">{{ mcpInstallCommandEnv }}</code>
+              <x-button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandEnv)">
+                <i class="material-icons">content_copy</i> Copy
+              </x-button>
+            </template>
+
+            <template v-else>
+              <p class="muted">
+                The Beekeeper server has no token, so just add it directly:
+              </p>
+              <code class="curl-snippet">{{ mcpInstallCommandNoToken }}</code>
+              <x-button class="btn btn-flat btn-icon" @click="copy(mcpInstallCommandNoToken)">
+                <i class="material-icons">content_copy</i> Copy
+              </x-button>
+            </template>
+
             <p class="muted" style="margin-top:.75rem">
               Pre-approve every Beekeeper tool with one rule under <code>permissions.allow</code> in <code>~/.claude/settings.json</code>:
             </p>
@@ -355,15 +376,19 @@ export default Vue.extend({
       const dir = this.$config?.userDirectory || "~/.config/beekeeper-studio";
       return `${dir}/ai-server.json`;
     },
-    mcpInstallCommand(): string {
-      const t = (this.status as AiServerStatusWithToken).token;
-      if (this.status.requireToken && t) {
-        return `BEEKEEPER_AI_SERVER_TOKEN='${t}' claude mcp add --scope user beekeeper --env BEEKEEPER_AI_SERVER_TOKEN -- npx -y @beekeeperstudio/mcp-server`;
-      }
-      if (this.status.requireToken) {
-        return `BEEKEEPER_AI_SERVER_TOKEN=<paste from above> claude mcp add --scope user beekeeper --env BEEKEEPER_AI_SERVER_TOKEN -- npx -y @beekeeperstudio/mcp-server`;
-      }
+    mcpInstallCommandNoToken(): string {
+      // Server has no token; nothing extra to pass.
       return "claude mcp add --scope user beekeeper -- npx -y @beekeeperstudio/mcp-server";
+    },
+    mcpInstallCommandPrompt(): string {
+      // Token required, but installed without one — Claude will prompt at first call.
+      return "claude mcp add --scope user beekeeper -- npx -y @beekeeperstudio/mcp-server";
+    },
+    mcpInstallCommandEnv(): string {
+      // Token required, embedded as env var so no prompts ever.
+      const t = (this.status as AiServerStatusWithToken).token;
+      const value = t ? `'${t}'` : "<paste from above>";
+      return `BEEKEEPER_AI_SERVER_TOKEN=${value} claude mcp add --scope user beekeeper --env BEEKEEPER_AI_SERVER_TOKEN -- npx -y @beekeeperstudio/mcp-server`;
     },
     mcpPermissionRule(): string {
       return "mcp__beekeeper";
