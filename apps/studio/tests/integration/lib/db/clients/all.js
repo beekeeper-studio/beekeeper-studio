@@ -43,6 +43,39 @@ export function runReadOnlyTests(getUtil) {
     test("Attempt to apply all types of changes", async () => {
       await expect(itShouldApplyAllTypesOfChangesCompositePK(getUtil())).rejects.toThrow(errorMessages.readOnly)
     })
+
+    // A2 — additional read-only enforcement coverage. These methods used to
+    // bypass the read-only check before the audit; if a refactor reintroduces
+    // that, these tests will catch it.
+    test("Read Only can't setTableDescription (A2)", async () => {
+      const features = await getUtil().connection.supportedFeatures()
+      if (!features.comments) return
+      if (getUtil().data.disabledFeatures?.comments) return
+      await expect(
+        getUtil().connection.setTableDescription('group_table', 'nope', getUtil().defaultSchema)
+      ).rejects.toThrow(errorMessages.readOnly)
+    })
+
+    test("Read Only can't alterRelation (A2)", async () => {
+      if (getUtil().data.disabledFeatures?.alter?.addConstraint) return
+      if (getUtil().data.disabledFeatures?.foreignKeys) return
+      if (['cassandra', 'scylladb', 'mongodb', 'redis', 'bigquery', 'clickhouse'].includes(getUtil().dialect)) return
+      await expect(
+        getUtil().connection.alterRelation({
+          table: 'group_table',
+          schema: getUtil().defaultSchema,
+          additions: [],
+          drops: ['nonexistent_fk'],
+        })
+      ).rejects.toThrow(errorMessages.readOnly)
+    })
+
+    test("Read Only can't duplicateTable (A2)", async () => {
+      if (getUtil().dbType === 'firebird') return // no internal duplicate
+      await expect(
+        getUtil().connection.duplicateTable('group_table', 'group_table_dup', getUtil().defaultSchema)
+      ).rejects.toThrow(errorMessages.readOnly)
+    })
   })
 }
 
@@ -210,6 +243,36 @@ export function runCommonTests(getUtil, opts = {}) {
       test("should list generated columns", async () => {
         if (getUtil().data.disabledFeatures?.generatedColumns || getUtil().options.skipGeneratedColumns) return
         await getUtil().generatedColumnsTests()
+      })
+    })
+
+    describe("Coverage gaps (Part A)", () => {
+      test("supportedFeatures() flags should be self-consistent (A7)", async () => {
+        await getUtil().featureFlagConsistencyTests()
+      })
+
+      test("create scripts should be non-empty for tables/views/MVs/routines (A1.6)", async () => {
+        await getUtil().createScriptCoverageTests()
+      })
+
+      test("listCharsets / getDefaultCharset / listCollations should not throw (A1.7)", async () => {
+        await getUtil().charsetCollationListingTests()
+      })
+
+      test("queryStream should stream arbitrary query results (A1.1)", async () => {
+        if (getUtil().data.disabledFeatures?.queryStream) return
+        if (['cassandra', 'scylladb', 'bigquery', 'mongodb', 'redis', 'surrealdb', 'trino'].includes(getUtil().dialect)) return
+        await getUtil().queryStreamTests()
+      })
+
+      test("selectTop on an empty table returns predictable shape (A6)", async () => {
+        if (['cassandra', 'scylladb', 'mongodb', 'redis'].includes(getUtil().dialect)) return
+        await getUtil().emptyStateTests()
+      })
+
+      test("getResultEditData should mark single-table SELECT fields editable (A1.2)", async () => {
+        if (dbReadOnlyMode) return
+        await getUtil().getResultEditDataTests()
       })
     })
 
@@ -402,6 +465,30 @@ export function runCommonTests(getUtil, opts = {}) {
         } else {
           await itShouldNotCommitOnChangeError(getUtil())
         }
+      })
+
+      test("NULL and DB-side defaults should round-trip via applyChanges (A4)", async () => {
+        if (['cassandra', 'scylladb', 'mongodb', 'redis', 'bigquery'].includes(getUtil().dialect)) return
+        await getUtil().nullAndDefaultRoundTripTests()
+      })
+    })
+
+    describe("Coverage gaps RW (Part A)", () => {
+      test("setTableDescription should round-trip via getTableProperties (A1.4)", async () => {
+        await getUtil().tableCommentRoundTripTests()
+      })
+
+      test("alterRelation should add and drop a foreign key (A1.3)", async () => {
+        if (getUtil().data.disabledFeatures?.alter?.addConstraint) return
+        if (getUtil().data.disabledFeatures?.foreignKeys) return
+        if (['cassandra', 'scylladb', 'mongodb', 'redis', 'bigquery', 'clickhouse'].includes(getUtil().dialect)) return
+        await getUtil().alterRelationTests()
+      })
+
+      test("query.cancel() should terminate a long-running query (A1.9)", async () => {
+        // Skip dialects without a portable sleep — the test util returns
+        // a non-null sleep query only for those that can cancel meaningfully.
+        await getUtil().cancelQueryTests()
       })
     })
   })
