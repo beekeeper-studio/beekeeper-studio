@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@beekeeperstudio/sql-language-server — examples</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        max-width: 720px;
+        margin: 64px auto;
+        padding: 0 16px;
+        color: #1f2937;
+        line-height: 1.6;
+      }
+      h1 { margin-bottom: 8px; }
+      .subtitle { color: #6b7280; margin-top: 0; }
+      .demo {
+        display: block;
+        padding: 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        margin: 12px 0;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .demo:hover {
+        border-color: #2563eb;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      }
+      .demo strong { color: #2563eb; }
+      .demo p { margin: 6px 0 0; color: #4b5563; }
+      code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <h1>@beekeeperstudio/sql-language-server</h1>
+    <p class="subtitle">Demos of the SQL language server running in a Web Worker, driving CodeMirror 6.</p>
+
+    <a class="demo" href="./sqlite-demo/">
+      <strong>SQLite demo</strong>
+      <p>
+        Real <code>sql.js</code> SQLite database, real schema queries via
+        <code>sqlite_master</code> and <code>PRAGMA table_info()</code>, full
+        autocomplete and diagnostics. Try typing <code>SELECT * FROM </code>
+        and watching the table names appear, or <code>SELECT bogus FROM users</code>
+        to see the unknown-column warning.
+      </p>
+    </a>
+
+    <p style="color: #6b7280; font-size: 0.9em; margin-top: 32px;">
+      The worker bundle is <code>dist/worker.js</code>. The host wires it to
+      CodeMirror via a <code>WorkerTransport</code> that also answers the
+      worker's <code>bks/schema/*</code> requests with a host-supplied
+      <code>SchemaProvider</code>.
+    </p>
+  </body>
+</html>

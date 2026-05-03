@@ -1804,6 +1804,16 @@
     "@codemirror/view" "^6.17.0"
     "@lezer/common" "^1.0.0"
 
+"@codemirror/autocomplete@^6.20.0":
+  version "6.20.1"
+  resolved "https://registry.yarnpkg.com/@codemirror/autocomplete/-/autocomplete-6.20.1.tgz#4cfbc8b2e1e25f890ec34a081037e58b4e44143e"
+  integrity sha512-1cvg3Vz1dSSToCNlJfRA2WSI4ht3K+WplO0UMOgmUYPivCyy2oueZY6Lx7M9wThm7SDUBViRmuT+OG/i8+ON9A==
+  dependencies:
+    "@codemirror/language" "^6.0.0"
+    "@codemirror/state" "^6.0.0"
+    "@codemirror/view" "^6.17.0"
+    "@lezer/common" "^1.0.0"
+
 "@codemirror/commands@^6.8.1":
   version "6.10.1"
   resolved "https://registry.yarnpkg.com/@codemirror/commands/-/commands-6.10.1.tgz#a17a48f846947f48150b9670a3de8c4352b69256"
@@ -1893,6 +1903,29 @@
     "@codemirror/state" "^6.0.0"
     "@codemirror/view" "^6.35.0"
     crelt "^1.0.5"
+
+"@codemirror/lint@^6.8.5":
+  version "6.9.5"
+  resolved "https://registry.yarnpkg.com/@codemirror/lint/-/lint-6.9.5.tgz#c7da006f3335a33014799a7375c82df558e89f90"
+  integrity sha512-GElsbU9G7QT9xXhpUg1zWGmftA/7jamh+7+ydKRuT0ORpWS3wOSP0yT1FOlIZa7mIJjpVPipErsyvVqB9cfTFA==
+  dependencies:
+    "@codemirror/state" "^6.0.0"
+    "@codemirror/view" "^6.35.0"
+    crelt "^1.0.5"
+
+"@codemirror/lsp-client@^6.0.0":
+  version "6.2.3"
+  resolved "https://registry.yarnpkg.com/@codemirror/lsp-client/-/lsp-client-6.2.3.tgz#08fbac2042c731fc81bdc57ebfe9feb8044887d4"
+  integrity sha512-tDGoLzOU8npz5TadVFtZEU0oRbJXEEM+HpRBfW4w/lWvIjQDkDAmqUtAlP04io1HMmWcGnTBoSwXVOTH+80otw==
+  dependencies:
+    "@codemirror/autocomplete" "^6.20.0"
+    "@codemirror/language" "^6.11.0"
+    "@codemirror/lint" "^6.8.5"
+    "@codemirror/state" "^6.5.2"
+    "@codemirror/view" "^6.37.0"
+    "@lezer/highlight" "^1.2.1"
+    marked "^15.0.12"
+    vscode-languageserver-protocol "^3.17.5"
 
 "@codemirror/search@^6.5.10":
   version "6.6.0"
@@ -4419,6 +4452,11 @@
   resolved "https://registry.yarnpkg.com/@types/electron-devtools-installer/-/electron-devtools-installer-2.2.5.tgz#33572d0edee2510a6c293d0d5c858ee09f07cd19"
   integrity sha512-DhH8z0dadKuDolvH4TiW40Vp7H3VyZbOoZv98hhBaUfnxmvvcXTjkZjzw/54xvAmuG4KFzExOGAiVLg3jM2ojQ==
 
+"@types/emscripten@*":
+  version "1.41.5"
+  resolved "https://registry.yarnpkg.com/@types/emscripten/-/emscripten-1.41.5.tgz#5670e4b52b098691cb844b84ee48c9176699b68d"
+  integrity sha512-cMQm7pxu6BxtHyqJ7mQZ2kXWV5SLmugybFdHCBbJ5eHzOo6VhBckEgAT3//rP5FwPHNPeEiq4SmQ5ucBwsOo4Q==
+
 "@types/estree@*", "@types/estree@1.0.8", "@types/estree@^1.0.0":
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-1.0.8.tgz#958b91c991b1867ced318bedea0e215ee050726e"
@@ -4648,6 +4686,14 @@
   integrity sha512-WLSHjarjiUz4GtQivyaDbagqJNHcFA1XOAvrgXmWLl1OeTCP0RuiFB1PtUIH4ArOqZX1Hk6ANzABWe6nw9nKpg==
   dependencies:
     sql-formatter "*"
+
+"@types/sql.js@^1.4.9":
+  version "1.4.11"
+  resolved "https://registry.yarnpkg.com/@types/sql.js/-/sql.js-1.4.11.tgz#1c435899fe33248e7ec99d9becbdff86ede96e07"
+  integrity sha512-QXIx38p2ZThJaK9vP5ZdqdlRe1FG9I8SmCZOS7FHfB/2qPAjZwkL7/vlfPg6N/oWHuuOaGg/P/IRwfP2W0kWVQ==
+  dependencies:
+    "@types/emscripten" "*"
+    "@types/node" "*"
 
 "@types/ssh2-streams@*":
   version "0.1.13"
@@ -10456,7 +10502,7 @@ markdown-table@^3.0.2:
   resolved "https://registry.yarnpkg.com/markdown-table/-/markdown-table-3.0.4.tgz#fe44d6d410ff9d6f2ea1797a3f60aa4d2b631c2a"
   integrity sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==
 
-marked@^15.0.6, marked@^15.0.7:
+marked@^15.0.12, marked@^15.0.6, marked@^15.0.7:
   version "15.0.12"
   resolved "https://registry.yarnpkg.com/marked/-/marked-15.0.12.tgz#30722c7346e12d0a2d0207ab9b0c4f0102d86c4e"
   integrity sha512-8dD6FusOQSrpv9Z1rdNMdlSgQOIP880DHqnohobOmYLElGEqAL/JvxvuxZO16r4HtjTlfPRDC1hbvxC9dPN2nA==
@@ -13171,6 +13217,11 @@ sql-query-identifier@^2.10.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.10.0.tgz#ee46e7ffb941a5f03a4f1b297d47d438dc6c14e1"
   integrity sha512-SBYnk1PPIDJ4M1+O3YXKfc4L++RyntcJAGhEWqBv0xrOzzp2k7lTeM7Ow//IfmDsfyh7dVas03UJWoL2P+nPEQ==
+
+sql.js@^1.10.3:
+  version "1.14.1"
+  resolved "https://registry.yarnpkg.com/sql.js/-/sql.js-1.14.1.tgz#89b6bd5d7fa8c8fa8df6c449e0a351c38dca7404"
+  integrity sha512-gcj8zBWU5cFsi9WUP+4bFNXAyF1iRpA3LLyS/DP5xlrNzGmPIizUeBggKa8DbDwdqaKwUcTEnChtd2grWo/x/A==
 
 sqlanywhere@beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d:
   version "2.0.4"

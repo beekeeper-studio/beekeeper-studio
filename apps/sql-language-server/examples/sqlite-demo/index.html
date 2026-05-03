@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQLite demo — sql-language-server</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>SQLite demo</h1>
+      <p>
+        A real <code>sql.js</code> SQLite database is loaded with three
+        tables: <code>users</code>, <code>orders</code>, <code>order_items</code>.
+        Type queries below — completion fetches columns from the live database
+        via <code>PRAGMA table_info()</code>; diagnostics flag unknown tables
+        and columns.
+      </p>
+      <div id="status">Loading…</div>
+    </header>
+
+    <main>
+      <div class="editor-wrap">
+        <h2>Editor</h2>
+        <div id="editor"></div>
+        <p class="hints">
+          Try: <code>SELECT * FROM </code> · <code>SELECT u. FROM users u</code>
+          · <code>SELECT bogus FROM users</code>
+          · <code>SELECT * FROM users JOIN orders ON </code>
+        </p>
+      </div>
+
+      <aside>
+        <h2>Schema</h2>
+        <pre id="schema-display"></pre>
+      </aside>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

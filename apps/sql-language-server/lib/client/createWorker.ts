@@ -33,19 +33,17 @@ export interface SqlLanguageServerHandle {
  * Set up the host-side bridge between a SQL language server worker and a
  * host-supplied SchemaProvider. **Does not** instantiate the LSP client —
  * that's the caller's job (and varies between @codemirror/lsp-client,
- * @marimo-team/codemirror-languageserver, etc.). The caller's LSP client
- * should be configured to use the same `worker` as its transport.
+ * @marimo-team/codemirror-languageserver, etc.).
  *
- * v1 caveat: the LSP client and this bridge attach independent message
- * listeners to the worker. Both receive every message; each ignores ones
- * it doesn't recognise. JSON-RPC method-based dispatch makes this safe in
- * practice. v2 will refactor to a single shared transport with method-
- * prefix routing.
+ * The returned `bridge.connection` is the single shared MessageConnection
+ * for this worker. Wire your LSP client to it (most clients accept a
+ * pre-built MessageConnection). Do NOT create a separate connection on
+ * the same Worker — JSON-RPC dispatch will conflict.
  */
 export function createSqlLanguageServer(
   opts: CreateSqlLanguageServerOptions
 ): SqlLanguageServerHandle {
-  const bridge = new HostSchemaBridge(opts.worker, opts.schemaProvider);
+  const bridge = HostSchemaBridge.fromWorker(opts.worker, opts.schemaProvider);
   return {
     worker: opts.worker,
     bridge,

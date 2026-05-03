@@ -37,7 +37,9 @@
     "lib:types": "tsc -p ./tsconfig.types.json",
     "test": "vitest run",
     "test:unit": "vitest run",
+    "test:integration": "vitest run tests/integration",
     "build": "vite build -c vite.config.ts --mode production && yarn lib:types",
+    "examples:dev": "yarn build && vite -c examples/vite.config.ts",
     "lint": "eslint 'lib/**/*.ts' --no-error-on-unmatched-pattern"
   },
   "dependencies": {
@@ -51,7 +53,17 @@
     "vscode-jsonrpc": "^8.2.1"
   },
   "devDependencies": {
+    "@codemirror/autocomplete": "^6.18.4",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-sql": "^6.8.0",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/lint": "^6.8.4",
+    "@codemirror/lsp-client": "^6.0.0",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.2",
     "happy-dom": "^20.8.9",
+    "sql.js": "^1.10.3",
+    "@types/sql.js": "^1.4.9",
     "typescript": "~5.8.3",
     "vite": "~5.4.19",
     "vitest": "~3.0.5"
