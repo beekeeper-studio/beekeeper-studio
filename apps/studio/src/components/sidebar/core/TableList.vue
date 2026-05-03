@@ -10,7 +10,7 @@
           <input
             class="filter-input"
             type="text"
-            placeholder="Filter"
+            :placeholder="fieldSearchLoading ? 'Loading fields…' : 'Filter'"
             v-model="filterQuery"
           >
           <x-buttons class="filter-actions">
@@ -49,6 +49,13 @@
                     v-model="showRoutines"
                   >
                   <span>Routines</span>
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    v-model="showFields"
+                  >
+                  <span>Fields</span>
                 </label>
                 <x-menuitem />
               </x-menu>
@@ -242,7 +249,7 @@
         return this.totalEntities - this.shownEntities
       },
       entitiesHidden() {
-        return !this.showTables || !this.showViews || !this.showRoutines
+        return !this.showTables || !this.showViews || !this.showRoutines || this.showFields
       },
       filterQuery: {
         get() {
@@ -250,6 +257,9 @@
         },
         set(newFilter) {
           this.$store.dispatch('setFilterQuery', newFilter)
+          if (newFilter && newFilter.startsWith('.') && newFilter.length > 1) {
+            this.$store.dispatch('ensureFieldSearchLoaded')
+          }
         }
       },
       showTables: {
@@ -275,6 +285,20 @@
         set() {
           this.$store.commit('showRoutines')
         }
+      },
+      showFields: {
+        get() {
+          return this.$store.state.entityFilter.showFields
+        },
+        set() {
+          this.$store.commit('showFields')
+          if (this.$store.state.entityFilter.showFields) {
+            this.$store.dispatch('ensureFieldSearchLoaded')
+          }
+        }
+      },
+      fieldSearchLoading() {
+        return this.$store.state.fieldSearchLoading
       },
       components() {
         return [
