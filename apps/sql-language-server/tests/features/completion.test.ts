@@ -121,6 +121,66 @@ describe("provideCompletion", () => {
     expect(labels).toEqual(expect.arrayContaining(["SELECT", "INSERT INTO"]));
   });
 
+  it("offers ONLY SELECT-relevant keywords after `SELECT |` with no FROM", async () => {
+    // The bug we're regression-testing: previously this dumped ALTER TABLE,
+    // AND, AS, ATTACH, etc. — irrelevant noise. Now should be tight.
+    const { doc, position } = docAndOffset("SELECT |");
+    const items = await provideCompletion(
+      doc,
+      { textDocument: { uri: doc.uri }, position },
+      parser,
+      "ansi",
+      schema as any
+    );
+    const labels = items.map((i) => i.label);
+
+    // These ARE relevant after SELECT.
+    expect(labels).toEqual(
+      expect.arrayContaining(["DISTINCT", "ALL", "*", "FROM", "COUNT", "CASE"])
+    );
+
+    // These are NOT relevant after SELECT and used to leak.
+    expect(labels).not.toContain("ALTER TABLE");
+    expect(labels).not.toContain("ATTACH");
+    expect(labels).not.toContain("DELETE FROM");
+    expect(labels).not.toContain("DROP TABLE");
+    expect(labels).not.toContain("CREATE TABLE");
+  });
+
+  it("does not surface columns when no FROM is present (conservative path)", async () => {
+    // Without a FROM clause, no table is in scope — no real columns to
+    // suggest. Match Supabase postgres-language-server's conservative
+    // behavior; DataGrip-style "all columns prefixed" is a future v2 mode.
+    const { doc, position } = docAndOffset("SELECT |");
+    const items = await provideCompletion(
+      doc,
+      { textDocument: { uri: doc.uri }, position },
+      parser,
+      "ansi",
+      schema as any
+    );
+    const fields = items.filter(
+      (i) => i.kind && i.kind === 5 // CompletionItemKind.Field
+    );
+    expect(fields).toHaveLength(0);
+  });
+
+  it("offers ORDER BY-relevant keywords after `ORDER BY |`", async () => {
+    const { doc, position } = docAndOffset(
+      "SELECT * FROM users ORDER BY name |"
+    );
+    const items = await provideCompletion(
+      doc,
+      { textDocument: { uri: doc.uri }, position },
+      parser,
+      "ansi",
+      schema as any
+    );
+    const labels = items.map((i) => i.label);
+    expect(labels).toEqual(expect.arrayContaining(["ASC", "DESC", "LIMIT"]));
+    expect(labels).not.toContain("ALTER TABLE");
+  });
+
   it("offers WHERE-clause columns from joined tables", async () => {
     const { doc, position } = docAndOffset(
       "SELECT * FROM users u JOIN orders o ON u.id = o.user_id WHERE |"

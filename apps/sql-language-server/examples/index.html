@@ -39,13 +39,23 @@
     <p class="subtitle">Demos of the SQL language server running in a Web Worker, driving CodeMirror 6.</p>
 
     <a class="demo" href="./sqlite-demo/">
-      <strong>SQLite demo</strong>
+      <strong>SQLite + CodeMirror 6 demo</strong>
       <p>
         Real <code>sql.js</code> SQLite database, real schema queries via
         <code>sqlite_master</code> and <code>PRAGMA table_info()</code>, full
         autocomplete and diagnostics. Try typing <code>SELECT * FROM </code>
         and watching the table names appear, or <code>SELECT bogus FROM users</code>
         to see the unknown-column warning.
+      </p>
+    </a>
+
+    <a class="demo" href="./raw-demo/">
+      <strong>Raw LSP demo (no editor)</strong>
+      <p>
+        Just a textarea and "Get suggestions" / "Get diagnostics" buttons.
+        See the exact LSP request and response, plus a log of every JSON-RPC
+        message on the wire. Useful when something looks wrong in the
+        editor demo — verifies the server in isolation.
       </p>
     </a>
 

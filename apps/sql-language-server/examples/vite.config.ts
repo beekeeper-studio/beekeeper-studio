@@ -25,6 +25,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, "index.html"),
         "sqlite-demo": resolve(__dirname, "sqlite-demo/index.html"),
+        "raw-demo": resolve(__dirname, "raw-demo/index.html"),
       },
     },
   },

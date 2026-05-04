@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raw LSP demo — sql-language-server</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Raw LSP demo</h1>
+      <p>
+        No CodeMirror — just a textarea and buttons that send raw LSP requests
+        to the worker and show what comes back. Useful for verifying the
+        server in isolation.
+      </p>
+      <div id="status">Loading…</div>
+    </header>
+
+    <main>
+      <section>
+        <h2>1. Document</h2>
+        <p class="hint">
+          Place the cursor where you want suggestions and click the buttons.
+          Position is reported below.
+        </p>
+        <textarea id="doc" spellcheck="false">SELECT </textarea>
+        <div class="bar">
+          <span class="position-label">Cursor:
+            <code id="position">line 0, column 7 (offset 7)</code>
+          </span>
+          <select id="dialect">
+            <option value="sqlite" selected>SQLite</option>
+            <option value="postgres">PostgreSQL</option>
+            <option value="mysql">MySQL</option>
+            <option value="ansi">ANSI</option>
+          </select>
+          <button id="suggest">Get suggestions</button>
+          <button id="diagnose">Get diagnostics</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>2. Schema (sql.js)</h2>
+        <pre id="schema"></pre>
+      </section>
+
+      <section>
+        <h2>3. LSP request</h2>
+        <pre id="request">(click a button)</pre>
+      </section>
+
+      <section>
+        <h2>4. Server response</h2>
+        <div id="response-summary"></div>
+        <pre id="response">(click a button)</pre>
+      </section>
+
+      <section>
+        <h2>5. Message log</h2>
+        <p class="hint">
+          Every JSON-RPC message that crosses the wire, in order. The first
+          column shows direction: <code>→</code> client to worker,
+          <code>←</code> worker to client.
+        </p>
+        <pre id="log"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -5,19 +5,25 @@ import {
   TextDocumentPositionParams,
 } from "vscode-languageserver/browser";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { LiveParser } from "../parsing/LiveParser";
+import { ClauseContext, CursorContext, LiveParser } from "../parsing/LiveParser";
 import { Dialect } from "../parsing/dialects";
 import { SchemaCache } from "../schema/SchemaCache";
 
 /**
  * Produce completion items at a given document position.
  *
- * Drafted from joe-re/sql-language-server's completion logic
- * (https://github.com/joe-re/sql-language-server, MIT) — specifically the
- * approach of "find the most recent clause keyword, decide what kind of
- * thing should appear here". The parser layer is replaced with our Lezer-
- * based, error-tolerant context detector, but the dispatch shape is the
- * same.
+ * The dispatch shape (clause → kind of completion) is drafted from
+ * joe-re/sql-language-server's MIT TypeScript completion code. Our parser
+ * layer (Lezer-based, error-tolerant) replaces its hand-written PEG parser.
+ *
+ * # Behavior on `SELECT |` with no FROM yet
+ *
+ * Empty tables-in-scope → no columns. We surface only the small set of
+ * keywords/functions that are actually valid here (DISTINCT, ALL, *, FROM,
+ * CASE, NOT, COUNT, SUM, AVG, ...). This is the conservative path and
+ * matches Supabase postgres-language-server's behavior. Tools like DataGrip
+ * take the aggressive path and surface every column from every table,
+ * prefixed by table name — that's noisier and is left as a future v2 mode.
  */
 export async function provideCompletion(
   doc: TextDocument,
@@ -42,14 +48,12 @@ export async function provideCompletion(
     case "join":
     case "delete":
     case "update":
-    case "insert": {
-      // Tables (and schemas) are the natural completions.
-      const items = await tableCompletions(schema);
-      // Tables alone aren't enough — keywords like JOIN should still
-      // surface after a table name. Add them but rank lower.
-      items.push(...keywordCompletions(parser, dialect, /* boost */ false));
-      return items;
-    }
+    case "insert":
+      return [
+        ...(await tableCompletions(schema)),
+        ...keywordsForClause(ctx.clause, dialect),
+      ];
+
     case "select":
     case "where":
     case "group-by":
@@ -58,29 +62,28 @@ export async function provideCompletion(
     case "join-on":
     case "set":
     case "values": {
-      // Columns from in-scope tables, plus keywords.
-      const cols = await columnsForScope(ctx.tablesInScope, schema);
-      const items: CompletionItem[] = cols;
-      items.push(...keywordCompletions(parser, dialect, /* boost */ false));
-      // It's also valid to reference tables here (e.g. `SELECT u.* FROM
-      // users u WHERE ...` — type "u" completes to alias). Add tables in
-      // scope too.
+      const items: CompletionItem[] = [
+        ...(await columnsForScope(ctx.tablesInScope, schema)),
+        ...keywordsForClause(ctx.clause, dialect),
+      ];
+      // Aliases / table refs as columns-of-aliases hint.
       for (const t of ctx.tablesInScope) {
         items.push({
           label: t.name,
           kind: CompletionItemKind.Reference,
-          detail: t.table && t.table !== t.name ? `alias for ${t.table}` : "table",
+          detail:
+            t.table && t.table !== t.name
+              ? `alias for ${t.table}`
+              : "table",
         });
       }
       return items;
     }
+
     case "begin":
     case "unknown":
-    default: {
-      // Beginning of statement — top-level keywords are the only useful
-      // completion.
-      return keywordCompletions(parser, dialect, /* boost */ true);
-    }
+    default:
+      return keywordsForClause(ctx.clause, dialect);
   }
 }
 
@@ -89,7 +92,7 @@ async function qualifiedCompletion(
   tablesInScope: { name: string; table?: string; schema?: string }[],
   schema: SchemaCache
 ): Promise<CompletionItem[]> {
-  // First: is the qualifier an in-scope table or alias? → its columns.
+  // Is the qualifier an in-scope table or alias? → its columns.
   const match = tablesInScope.find(
     (t) => t.name.toLowerCase() === qualifier.toLowerCase()
   );
@@ -140,7 +143,6 @@ async function columnsForScope(
   schema: SchemaCache
 ): Promise<CompletionItem[]> {
   const out: CompletionItem[] = [];
-  // Deduplicate by underlying (schema, table)
   const seen = new Set<string>();
   for (const ref of tablesInScope) {
     const key = `${ref.schema ?? ""}::${ref.table ?? ref.name}`;
@@ -158,16 +160,187 @@ async function columnsForScope(
   return out;
 }
 
-function keywordCompletions(
-  parser: LiveParser,
-  dialect: Dialect,
-  boost: boolean
+// --- clause-specific keyword sets -------------------------------------------
+
+const COMMON_OPS = ["AND", "OR", "NOT", "IS NULL", "IS NOT NULL"];
+const PREDICATE_OPS = [
+  "BETWEEN",
+  "IN",
+  "LIKE",
+  "EXISTS",
+  "AND",
+  "OR",
+  "NOT",
+  "IS NULL",
+  "IS NOT NULL",
+];
+
+const AGG_FUNCTIONS = ["COUNT", "SUM", "AVG", "MIN", "MAX"];
+const SCALAR_FUNCTIONS = [
+  "COALESCE",
+  "NULLIF",
+  "CAST",
+  "LENGTH",
+  "LOWER",
+  "UPPER",
+  "TRIM",
+  "SUBSTRING",
+  "ABS",
+  "ROUND",
+];
+
+const KEYWORDS_BY_CLAUSE: Partial<Record<ClauseContext, string[]>> = {
+  // Top-level statement starters.
+  begin: [
+    "SELECT",
+    "WITH",
+    "INSERT INTO",
+    "UPDATE",
+    "DELETE FROM",
+    "CREATE TABLE",
+    "CREATE INDEX",
+    "CREATE VIEW",
+    "ALTER TABLE",
+    "DROP TABLE",
+    "EXPLAIN",
+  ],
+  unknown: [
+    "SELECT",
+    "WITH",
+    "INSERT INTO",
+    "UPDATE",
+    "DELETE FROM",
+  ],
+  // Inside the SELECT projection: aggregates, scalar functions, modifiers,
+  // CASE, plus the natural transition keyword FROM.
+  select: [
+    "DISTINCT",
+    "ALL",
+    "*",
+    "AS",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+    "NOT",
+    "NULL",
+    "TRUE",
+    "FALSE",
+    "FROM",
+    ...AGG_FUNCTIONS,
+    ...SCALAR_FUNCTIONS,
+  ],
+  // FROM/JOIN clauses: tables come from schema; keywords are JOIN family +
+  // transitions out of the clause.
+  from: [
+    "INNER JOIN",
+    "LEFT JOIN",
+    "RIGHT JOIN",
+    "FULL JOIN",
+    "CROSS JOIN",
+    "JOIN",
+    "WHERE",
+    "GROUP BY",
+    "ORDER BY",
+    "LIMIT",
+    "AS",
+  ],
+  join: [
+    "AS",
+    "ON",
+    "USING",
+  ],
+  "join-on": [
+    "AND",
+    "OR",
+    "NOT",
+    "EXISTS",
+    ...AGG_FUNCTIONS,
+  ],
+  // WHERE-family clauses: predicate operators + transitions to following
+  // clauses.
+  where: [
+    ...PREDICATE_OPS,
+    "GROUP BY",
+    "ORDER BY",
+    "LIMIT",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+    ...AGG_FUNCTIONS,
+    ...SCALAR_FUNCTIONS,
+  ],
+  having: [
+    ...PREDICATE_OPS,
+    "ORDER BY",
+    "LIMIT",
+    ...AGG_FUNCTIONS,
+  ],
+  "group-by": [
+    "HAVING",
+    "ORDER BY",
+    "LIMIT",
+    "ASC",
+    "DESC",
+  ],
+  "order-by": [
+    "ASC",
+    "DESC",
+    "NULLS FIRST",
+    "NULLS LAST",
+    "LIMIT",
+  ],
+  // SET in UPDATE: just columns + WHERE transition.
+  set: ["WHERE", ...COMMON_OPS],
+  // VALUES: literal-like things.
+  values: ["NULL", "DEFAULT", "TRUE", "FALSE", ...SCALAR_FUNCTIONS],
+  // After UPDATE/INSERT/DELETE keyword, before the table name.
+  update: [],
+  insert: [],
+  delete: [],
+};
+
+const DIALECT_EXTRA: Partial<Record<Dialect, Partial<Record<ClauseContext, string[]>>>> = {
+  postgres: {
+    select: ["RETURNING"],
+    where: ["RETURNING", "ILIKE"],
+    join: ["LATERAL"],
+  },
+  mysql: {
+    select: ["DUAL"],
+  },
+  sqlite: {
+    begin: ["ATTACH DATABASE", "DETACH DATABASE", "VACUUM", "PRAGMA"],
+  },
+};
+
+function keywordsForClause(
+  clause: ClauseContext,
+  dialect: Dialect
 ): CompletionItem[] {
-  return parser.keywords(dialect).map((kw) => ({
+  const base = KEYWORDS_BY_CLAUSE[clause] ?? [];
+  const extras = DIALECT_EXTRA[dialect]?.[clause] ?? [];
+  return dedupe([...base, ...extras]).map((kw) => ({
     label: kw,
     kind: CompletionItemKind.Keyword,
-    sortText: boost ? `0${kw}` : `9${kw}`,
+    // Sort keywords AFTER columns/tables — those are the user's actual data.
+    sortText: `8${kw}`,
   }));
+}
+
+function dedupe(arr: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of arr) {
+    if (!seen.has(item)) {
+      seen.add(item);
+      out.push(item);
+    }
+  }
+  return out;
 }
 
 // Re-export for tests to use a stable position helper.

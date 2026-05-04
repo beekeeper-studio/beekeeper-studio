@@ -7,7 +7,11 @@ import {
   completionKeymap,
 } from "@codemirror/autocomplete";
 import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
-import { LSPClient, languageServerSupport } from "@codemirror/lsp-client";
+import {
+  LSPClient,
+  languageServerSupport,
+  serverCompletionSource,
+} from "@codemirror/lsp-client";
 
 import initSqlJs from "sql.js/dist/sql-wasm.js";
 import sqlWasmUrl from "sql.js/dist/sql-wasm.wasm?url";
@@ -87,8 +91,16 @@ async function main(): Promise<void> {
       highlightActiveLine(),
       history(),
       syntaxHighlighting(defaultHighlightStyle),
+      // sql() ships syntax highlighting AND its own keyword/schema
+      // completion source. We keep the highlighting but bypass the
+      // completion by overriding autocompletion with ONLY the LSP
+      // server's source — otherwise both fire and you get two popups
+      // with overlapping (and clause-unaware) suggestions.
       sql({ dialect: SQLite }),
-      autocompletion({ activateOnTyping: true }),
+      autocompletion({
+        activateOnTyping: true,
+        override: [serverCompletionSource],
+      }),
       languageServerSupport(client, "file:///demo/query.sql", "sql"),
       keymap.of([...defaultKeymap, ...historyKeymap, ...completionKeymap]),
     ],
