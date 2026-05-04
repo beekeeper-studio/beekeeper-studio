@@ -28,8 +28,4 @@ export default defineConfig({
       },
     },
   },
-  optimizeDeps: {
-    // sql.js ships the WASM as an asset; let Vite handle it via ?url import.
-    exclude: ["sql.js"],
-  },
 });

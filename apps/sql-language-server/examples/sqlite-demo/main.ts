@@ -9,7 +9,7 @@ import {
 import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
 import { LSPClient, languageServerSupport } from "@codemirror/lsp-client";
 
-import initSqlJs from "sql.js";
+import initSqlJs from "sql.js/dist/sql-wasm.js";
 import sqlWasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 
 import { SqliteSchemaProvider } from "../_shared/SqliteSchemaProvider";
