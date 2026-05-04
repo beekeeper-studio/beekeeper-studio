@@ -11,6 +11,7 @@ export enum AppEvent {
   newCustomTab = 'nct',
   closeTab = 'ct',
   closeAllTabs = 'close_all_tabs',
+  reconnect = 'rc',
   disconnect = 'dc',
   beekeeperAdded = 'bkadd',
   openExternally = 'oe',
@@ -79,6 +80,8 @@ export enum AppEvent {
   changedTheme = 'changedTheme',
   /** A plugin menu item was clicked in the native/client menu under the tools. */
   pluginMenuClicked = 'pluginMenuClicked',
+  /** The database connection was lost unexpectedly. */
+  connectionLost = 'connectionLost',
 }
 
 export interface RootBinding {

@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { DatabaseElement } from '../../../../../src/lib/db/types';
+import { runCommonSshTests } from './ssh/commonSshTests'
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -711,6 +712,8 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 }
 
 TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
+
+runCommonSshTests('postgresql');
 
 describe(`Postgres (custom socket port connection)`, () => {
   jest.setTimeout(dbtimeout)

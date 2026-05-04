@@ -48,7 +48,7 @@ export default class NativeMenuBuilder {
       const pluginItemIds = this.pluginMenuItems.map((item) => item.id);
 
       const toggleMenuMap = {
-        File: ["new-query-menu", "go-to", "disconnect", "import-sql-files", "close-tab"],
+        File: ["new-query-menu", "go-to", "reconnect", "disconnect", "import-sql-files", "close-tab"],
         View: ["menu-toggle-sidebar", "menu-secondary-sidebar"],
         Tools: ["backup-database", "restore-database", "export-tables", ...pluginItemIds],
       };

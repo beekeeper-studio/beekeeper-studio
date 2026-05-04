@@ -7,6 +7,8 @@ import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import fs from 'fs';
 import path from 'path';
 import { identify } from 'sql-query-identifier';
+import { SshEnvironment } from './ssh/SshEnvironment';
+import { runCommonSshTests } from "./ssh/commonSshTests";
 
 const TEST_VERSIONS = [
   { tag: 'latest', readOnly: false, dropInformation: false },
@@ -225,3 +227,5 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
 }
 
 TEST_VERSIONS.forEach(testWith);
+
+runCommonSshTests("clickhouse");

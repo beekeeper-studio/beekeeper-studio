@@ -1,6 +1,8 @@
 import { DockerComposeEnvironment } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all';
+import { SshEnvironment } from './ssh/SshEnvironment';
+import { runCommonSshTests } from './ssh/commonSshTests';
 
 describe("CockroachDB Tests", () => {
   jest.setTimeout(dbtimeout)
@@ -69,3 +71,5 @@ describe("CockroachDB Tests", () => {
     expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
   })
 })
+
+runCommonSshTests("cockroachdb");

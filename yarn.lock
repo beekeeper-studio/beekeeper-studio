@@ -13191,7 +13191,7 @@ ssh-remote-port-forward@^1.0.4:
     "@types/ssh2" "^0.5.48"
     ssh2 "^1.4.0"
 
-ssh2@^1.14.0, ssh2@^1.15.0, ssh2@^1.17.0, ssh2@^1.4.0:
+ssh2@^1.15.0, ssh2@^1.17.0, ssh2@^1.4.0:
   version "1.17.0"
   resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.17.0.tgz#dc686e8e3abdbd4ad95d46fa139615903c12258c"
   integrity sha512-wPldCk3asibAjQ/kziWQQt1Wh3PgDFpC0XpwclzKcdT1vql6KeYxf5LIt4nlFkUeR8WuphYMKqUA56X4rjbfgQ==

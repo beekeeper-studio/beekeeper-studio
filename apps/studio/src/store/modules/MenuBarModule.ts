@@ -24,6 +24,7 @@ export const MenuBarModule: Module<State, RootState> = {
       const result = [
         "new-query-menu",
         "go-to",
+        "reconnect",
         "disconnect",
         "import-sql-files",
         "close-tab",

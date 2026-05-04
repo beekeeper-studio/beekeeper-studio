@@ -13,6 +13,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
+import { DatabaseConnection, NoopConnection } from './DatabaseConnection';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 
 const log = rawLog.scope('BasicDatabaseClient');
@@ -86,6 +87,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   connErrHandler: (msg: string) => void = null;
   reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
+  connection: DatabaseConnection<Conn> | NoopConnection;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -94,6 +96,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
+    this.connection = new NoopConnection({ server, database });
   }
 
   async checkAllowReadOnly() {
@@ -126,7 +129,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   // ****************************************************************************
 
   // Connection *****************************************************************
-  async connect(_signal?: AbortSignal): Promise<void> {
+  async connect(signal?: AbortSignal): Promise<void> {
     /* eslint no-param-reassign: 0 */
     if (this.database.connecting) {
       throw new Error('There is already a connection in progress for this database. Aborting this new request.');
@@ -140,34 +143,22 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         await this.disconnect();
       }
 
-      // reuse existing tunnel
-      if (this.server.config.ssh && !this.server.sshTunnel) {
-        logger().debug('creating ssh tunnel');
-        this.server.sshTunnel = await connectTunnel(this.server.config);
-
-        this.server.config.localHost = this.server.sshTunnel.localHost
-        this.server.config.localPort = this.server.sshTunnel.localPort
-      }
-
+      await this.connection.connect({ signal });
     } catch (err) {
       logger().error('Connection error %j', err);
       // this.disconnect(this.server, this.database);
-      throw new Error('Database Connection Error: ' + err.message);
+      throw new Error('Database Connection Error: ' + err.message || String(err));
     } finally {
       this.database.connecting = false;
     }
   }
   async disconnect(): Promise<void> {
     this.database.connecting = false;
-
-    if (this.server.sshTunnel) {
-      await this.server.sshTunnel.connection.shutdown();
-    }
-
     if (this.server.db[this.database.database]) {
       // delete this.server.db[this.database.database]
     }
     await this.knex?.destroy();
+    await this.connection.disconnect();
   }
   // ****************************************************************************
 
