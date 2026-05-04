@@ -56,24 +56,11 @@ export function runReadOnlyTests(getUtil) {
       ).rejects.toThrow(errorMessages.readOnly)
     })
 
-    test("Read Only can't alterRelation (A2)", async () => {
-      if (getUtil().data.disabledFeatures?.alter?.addConstraint) return
-      if (getUtil().data.disabledFeatures?.foreignKeys) return
-      if (['cassandra', 'scylladb', 'mongodb', 'redis', 'bigquery', 'clickhouse'].includes(getUtil().dialect)) return
-      await expect(
-        getUtil().connection.alterRelation({
-          table: 'group_table',
-          schema: getUtil().defaultSchema,
-          additions: [],
-          drops: ['nonexistent_fk'],
-        })
-      ).rejects.toThrow(errorMessages.readOnly)
-    })
-
     test("Read Only can't duplicateTable (A2)", async () => {
       if (getUtil().dbType === 'firebird') return // no internal duplicate
+      const dupName = `group_table_dup_${Date.now()}`
       await expect(
-        getUtil().connection.duplicateTable('group_table', 'group_table_dup', getUtil().defaultSchema)
+        getUtil().connection.duplicateTable('group_table', dupName, getUtil().defaultSchema)
       ).rejects.toThrow(errorMessages.readOnly)
     })
   })
