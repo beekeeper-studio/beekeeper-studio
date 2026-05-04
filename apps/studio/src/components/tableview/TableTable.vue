@@ -21,10 +21,16 @@
         @submit="triggerFilter"
       />
       <div
-        v-show="isEmpty"
+        v-show="isEmpty && !dataLoading"
         class="empty-placeholder"
       >
         No Data
+      </div>
+      <div
+        v-show="dataLoading"
+        class="empty-placeholder"
+      >
+        <loading-spinner :size="20" /> Loading...
       </div>
       <div
         class="table-view-wrapper"
@@ -317,6 +323,7 @@ import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import EditorModal from './EditorModal.vue'
+import LoadingSpinner from "@/common/loading/LoadingSpinner.vue"
 import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -345,7 +352,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, LoadingSpinner },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -357,6 +364,7 @@ export default Vue.extend({
       columnsSet: false,
       tabulator: null,
       loading: false,
+      dataLoading: false,
       hasNextPage: false,
 
       // table data
@@ -1738,6 +1746,7 @@ export default Vue.extend({
       this.filters = filters
     },
     dataFetch(_url, _config, params) {
+      this.dataLoading = true
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
@@ -1804,6 +1813,7 @@ export default Vue.extend({
               response.result.pop()
             }
             this.data = response.result
+            this.dataLoading = false
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1849,6 +1859,7 @@ export default Vue.extend({
               this.tabulator.clearData()
             })
             reject(error.message);
+            this.dataLoading = false
           } finally {
             if (!this.active) {
               this.forceRedraw = true
