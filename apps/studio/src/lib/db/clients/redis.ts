@@ -23,7 +23,7 @@ import { getTransformReply } from "@redis/client/dist/lib/commander";
 import COMMANDS from "@redis/client/dist/lib/commands";
 import type { Command } from "@redis/client/dist/lib/RESP/types";
 import { IDbConnectionServer } from "../backendTypes";
-import { IDbConnectionDatabase } from "../types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import splitargs from "redis-splitargs";
 import _ from "lodash";
@@ -934,7 +934,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     throw new Error("Not supported");
   }
 
-  async dropElement(): Promise<void> {
+  async dropElement(_elementName?: string, _typeOfElement?: DatabaseElement, _schema?: string, _options?: DropElementOptions): Promise<void> {
     throw new Error("Not supported");
   }
 

@@ -5,6 +5,7 @@ import Firebird from "node-firebird";
 import { identify } from "sql-query-identifier";
 import {
   DatabaseElement,
+  DropElementOptions,
   IDbConnectionDatabase,
 } from "@/lib/db/types";
 import {
@@ -821,7 +822,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,
-    _schema?: string
+    _schema?: string,
+    _options?: DropElementOptions
   ): Promise<void> {
     await this.driverExecuteSingle(`DROP ${typeOfElement} ${elementName}`);
   }

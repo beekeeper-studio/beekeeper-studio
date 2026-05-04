@@ -2,7 +2,7 @@ import { AnyAuth, ConnectionStatus, RecordId, StringRecordId, Token } from "surr
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
-import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
 import rawLog from '@bksLogger';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
@@ -821,7 +821,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     throw new Error("Method not implemented.");
   }
 
-  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string, _options?: DropElementOptions): Promise<void> {
     throw new Error("Method not implemented.");
   }
 

@@ -94,7 +94,8 @@ export const CassandraData: DialectData = {
     filterWithOR: true,
     importFromFile: true,
     duplicateTable: true,
-    headerSort: true
+    headerSort: true,
+    dropCascade: true,
   },
   defaultColumnType: 'varchar',
   notices: {

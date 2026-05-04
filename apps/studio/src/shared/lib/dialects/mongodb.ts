@@ -44,6 +44,7 @@ export const MongoDBData: DialectData = {
       reorderColumn: true
     },
     triggers: true,
-    relations: true
+    relations: true,
+    dropCascade: true,
   }
 }

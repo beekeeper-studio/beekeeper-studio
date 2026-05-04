@@ -73,5 +73,6 @@ export const RedisData: DialectData = {
     sqlCreate: true,
     compositeKeys: true,
     schemaValidation: true,
+    dropCascade: true,
   }
 }

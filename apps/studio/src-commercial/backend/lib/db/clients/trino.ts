@@ -1,6 +1,6 @@
 import rawLog from "@bksLogger"
 import { readFileSync } from "fs"
-import { IDbConnectionDatabase } from "@/lib/db/types"
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "@/lib/db/types"
 import {
   Trino as TrinoNodeClient,
   BasicAuth,
@@ -282,7 +282,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     return null
   }
 
-  async dropElement(): Promise<void> {
+  async dropElement(_elementName?: string, _typeOfElement?: DatabaseElement, _schema?: string, _options?: DropElementOptions): Promise<void> {
     log.info("Trino doesn't support changing data")
     return null
   }

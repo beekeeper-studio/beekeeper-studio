@@ -1,5 +1,5 @@
 import rawLog from "@bksLogger";
-import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
+import { DatabaseElement, DropElementOptions, IDbConnectionDatabase } from "@/lib/db/types";
 import {
   BasicDatabaseClient,
   ExecutionContext,
@@ -565,7 +565,8 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,
-    _schema?: string
+    _schema?: string,
+    _options?: DropElementOptions
   ): Promise<void> {
     let sql = "DROP ";
 
