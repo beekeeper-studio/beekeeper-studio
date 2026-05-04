@@ -204,15 +204,16 @@
             {{ option.label }}
           </option>
         </select>
-        <auto-mode-status
-          v-if="config.sshMode === 'agent'"
-          :ssh-auth-sock="$config.sshAuthSock"
-          :is-windows="$config.isWindows"
-          :ssh-config-exists="$config.sshConfigExists"
-          :ssh-config-path="sshConfigPath"
-          :default-ssh-identity-file="$config.defaultSshIdentityFile"
-          :home-directory="homeDirectory"
-        />
+        <div class="hint" v-if="config.sshMode === 'agent'">
+          <auto-mode-status
+            :ssh-auth-sock="$config.sshAuthSock"
+            :is-windows="$config.isWindows"
+            :ssh-config-exists="$config.sshConfigExists"
+            :ssh-config-path="sshConfigPath"
+            :default-ssh-identity-file="$config.defaultSshIdentityFile"
+            :home-directory="homeDirectory"
+          />
+        </div>
       </div>
 
       <div
