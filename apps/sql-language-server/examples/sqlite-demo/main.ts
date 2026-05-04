@@ -2,15 +2,14 @@ import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers, keymap, highlightActiveLine } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { sql, SQLite } from "@codemirror/lang-sql";
-import {
-  autocompletion,
-  completionKeymap,
-} from "@codemirror/autocomplete";
+import { completionKeymap } from "@codemirror/autocomplete";
 import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
 import {
   LSPClient,
-  languageServerSupport,
-  serverCompletionSource,
+  LSPPlugin,
+  serverCompletion,
+  serverDiagnostics,
+  hoverTooltips,
 } from "@codemirror/lsp-client";
 
 import initSqlJs from "sql.js/dist/sql-wasm.js";
@@ -62,7 +61,6 @@ async function main(): Promise<void> {
   setStatus("Connecting to language server…");
   const client = new LSPClient({ rootUri: "file:///demo" }).connect(transport);
 
-  // Tell the server which dialect to use, once connected.
   client.initializing
     .then(() => {
       client.notification("workspace/didChangeConfiguration", {
@@ -91,17 +89,28 @@ async function main(): Promise<void> {
       highlightActiveLine(),
       history(),
       syntaxHighlighting(defaultHighlightStyle),
-      // sql() ships syntax highlighting AND its own keyword/schema
-      // completion source. We keep the highlighting but bypass the
-      // completion by overriding autocompletion with ONLY the LSP
-      // server's source — otherwise both fire and you get two popups
-      // with overlapping (and clause-unaware) suggestions.
+
+      // `sql()` provides Lezer-based syntax highlighting and contributes
+      // its own keyword/schema completion sources via `language.data`.
+      // We KEEP the highlighting but DON'T want a second autocomplete popup
+      // — see the LSP wiring below.
       sql({ dialect: SQLite }),
-      autocompletion({
-        activateOnTyping: true,
-        override: [serverCompletionSource],
-      }),
-      languageServerSupport(client, "file:///demo/query.sql", "sql"),
+
+      // The LSP wiring. We assemble it manually instead of using the
+      // (deprecated) `languageServerSupport` helper because that helper
+      // calls `serverCompletion()` without `override: true`, which adds a
+      // *second* `autocompletion()` extension on top of the one already
+      // contributed by `sql()`'s language data — producing two popups.
+      //
+      // `serverCompletion({ override: true })` configures a single
+      // `autocompletion({ override: [serverCompletionSource] })`,
+      // bypassing `sql()`'s sources entirely. Result: one popup, one
+      // source, the LSP server.
+      LSPPlugin.create(client, "file:///demo/query.sql", "sql"),
+      serverCompletion({ override: true }),
+      serverDiagnostics(),
+      hoverTooltips(),
+
       keymap.of([...defaultKeymap, ...historyKeymap, ...completionKeymap]),
     ],
   });
