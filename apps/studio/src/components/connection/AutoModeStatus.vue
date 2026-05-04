@@ -51,7 +51,7 @@
                 <i v-if="sshAuthSock" class="material-icons">check</i>
               </div>
               <div class="list-item-body">
-                <code v-if="sshAuthSock">{{ sshAuthSock }}</code>
+                <code v-if="sshAuthSock">{{ privacyMode ? '******' : sshAuthSock }}</code>
                 <span v-else-if="isWindows">Not set — PuTTY's pageant will be used if it's running.</span>
                 <span v-else>Not detected — skipped.</span>
               </div>
@@ -62,7 +62,7 @@
                 <i v-if="sshConfigExists" class="material-icons">check</i>
               </div>
               <div class="list-item-body">
-                <code v-if="sshConfigExists">{{ sshConfigPath }}</code>
+                <code v-if="sshConfigExists">{{ privacyMode ? '******' : sshConfigPath }}</code>
                 <span v-else>Not detected — skipped.</span>
               </div>
             </li>
@@ -72,7 +72,7 @@
                 <i v-if="defaultSshIdentityFile" class="material-icons">check</i>
               </div>
               <div class="list-item-body">
-                <code v-if="defaultSshIdentityFile">{{ defaultSshIdentityFile }}</code>
+                <code v-if="defaultSshIdentityFile">{{ privacyMode ? '******' : defaultSshIdentityFile }}</code>
                 <span v-else>Not detected — skipped.</span>
               </div>
             </li>
@@ -99,6 +99,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 const DEFAULT_KEY_NAMES = ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa']
 
 export default {
@@ -111,6 +113,7 @@ export default {
     homeDirectory: { type: String, default: '' },
   },
   computed: {
+    ...mapGetters('settings', ['privacyMode']),
     docsUrl() {
       return 'https://docs.beekeeperstudio.io/user_guide/connecting/connecting/#automatic-authentication-default'
     },
