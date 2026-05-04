@@ -184,6 +184,13 @@
         color: var(--text);
       }
     }
+
+    .advanced-body {
+      border-inline-start: 2px solid rgba($theme-base, 0.12);
+      padding-inline-start: $gutter-w;
+      margin-inline-start: 0.5rem;
+      margin-top: 0.25rem;
+    }
   }
 }
 .advanced-heading {
