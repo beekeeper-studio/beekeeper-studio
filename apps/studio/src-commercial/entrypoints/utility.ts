@@ -55,6 +55,8 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
+  errorName?: string
+  errorCode?: number
   stack?: string
 }
 
@@ -138,6 +140,8 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.type = 'error';
         replyArgs.stack = e?.stack;
         replyArgs.error = e?.message ?? e;
+        replyArgs.errorName = e?.name;
+        replyArgs.errorCode = e?.code;
         log.error("HANDLER: ERROR", e)
       })
       .finally(() => {

@@ -13,7 +13,7 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
+import { PluginSystemError } from "@/lib/errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
 
@@ -91,14 +91,18 @@ export default class PluginManager extends Hookable {
   viewEntrypointExists(pluginId: string, viewId: string): boolean {
     const manifest = this.manifests.find((manifest) => manifest.id === pluginId);
     if (!manifest) {
-      throw new NotFoundPluginError(`Plugin "${pluginId}" not found.`);
+      throw new PluginSystemError(
+        "PLUGIN_NOT_FOUND",
+        `Plugin "${pluginId}" not found.`
+      );
     }
     const { views } = isManifestV0(manifest)
       ? mapViewsAndMenuFromV0ToV1(manifest)
       : manifest.capabilities;
     const view = views.find((v) => v.id === viewId);
     if (!view) {
-      throw new NotFoundPluginViewError(
+      throw new PluginSystemError(
+        "PLUGIN_VIEW_NOT_FOUND",
         `View "${viewId}" not found in plugin "${pluginId}".`
       );
     }
@@ -125,7 +129,7 @@ export default class PluginManager extends Hookable {
         const found = await this.registry.findEntry(manifest.id);
         origin = found.origin;
       } catch (e) {
-        if (e instanceof NotFoundPluginError) {
+        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
           // There's nothing wrong if the plugin is not found in the registry.
           // It may be a local plugin.
         } else {
@@ -170,11 +174,15 @@ export default class PluginManager extends Hookable {
     return await this.withPluginLock(id, async () => {
       const info = await this.registry.getRepository(id);
       if (!info) {
-        throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
+        throw new PluginSystemError(
+          "PLUGIN_NOT_FOUND",
+          `Plugin "${id}" not found in registry.`
+        );
       }
 
       if (!this.isPluginLoadable(info.latestRelease.manifest)) {
-        throw new NotSupportedPluginError(
+        throw new PluginSystemError(
+          "PLUGIN_NOT_SUPPORTED",
           `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
         );
       }

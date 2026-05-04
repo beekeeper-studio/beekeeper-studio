@@ -62,6 +62,7 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import { PluginSystemError } from "@/lib/errors";
 import type { PluginSnapshot, PluginRegistryEntry } from "@/services/plugin";
 import { mapGetters, mapState } from "vuex";
 
@@ -218,6 +219,20 @@ export default Vue.extend({
       }
     },
     async openPluginPage({ id }) {
+      try {
+        const info = await this.$util.send("plugin/repository", { id });
+        this.selectedPluginReadme = info.readme;
+      } catch (e) {
+        log.error(e);
+
+        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
+          // FIXME use error alert box
+          this.selectedPluginReadme = "We can't find the repository for this plugin.";
+        } else {
+          this.selectedPluginReadme = "Something went wrong.";
+          this.$noty.error(`Error opening plugin page: ${e.message}`);
+        }
+      }
       this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
       this.selectedPluginReadme = "";
       this.loadingPluginReadme = true;

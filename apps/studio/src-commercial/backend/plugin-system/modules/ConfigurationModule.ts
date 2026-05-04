@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { PluginSnapshot } from "@/services/plugin";
 import { Module, ModuleOptions } from "@/services/plugin/Module";
-import { PluginSystemDisabledError } from "@/services/plugin/errors";
+import { PluginSystemError } from "@/lib/errors";
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 type ConfigurationOptions = {
@@ -51,7 +51,7 @@ export class ConfigurationModule extends Module {
 
   private validatePluginInstall(): void {
     if (this.options.config.pluginSystem.disabled) {
-      throw new PluginSystemDisabledError();
+      throw new PluginSystemError("PLUGIN_SYSTEM_DISABLED");
     }
   }
 
