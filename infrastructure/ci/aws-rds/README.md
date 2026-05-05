@@ -61,7 +61,12 @@ Three steps. No OIDC, no Terraform state backend, no custom VPC.
            "rds:AddTagsToResource",
            "rds:ListTagsForResource"
          ],
-         "Resource": "arn:aws:rds:us-east-2:*:db:bks-ci-*"
+         "Resource": [
+           "arn:aws:rds:us-east-2:*:db:bks-ci-*",
+           "arn:aws:rds:us-east-2:*:subgrp:*",
+           "arn:aws:rds:us-east-2:*:pg:*",
+           "arn:aws:rds:us-east-2:*:og:*"
+         ]
        },
        {
          "Sid": "RDSReadSubnetGroups",
