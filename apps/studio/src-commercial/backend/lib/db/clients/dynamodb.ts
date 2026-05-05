@@ -651,10 +651,8 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   }
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
-    // Use sql-query-identifier with generic dialect to split statements and identify types.
-    // PartiQL follows similar syntax rules to ANSI SQL (single-quoted strings, semicolon
-    // terminators) so the generic dialect works for basic parsing.
-    const identified = identify(queryText, { strict: false, dialect: 'generic' });
+    // Use sql-query-identifier with native DynamoDB/PartiQL dialect support (v2.11.0+)
+    const identified = identify(queryText, { strict: false, dialect: 'dynamodb' });
     const results: NgQueryResult[] = [];
 
     for (const stmt of identified) {
