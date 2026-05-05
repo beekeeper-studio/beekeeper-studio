@@ -1,0 +1,14 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:16
+    container_name: test_ipv6_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: integration_test
+    ports:
+      # Bind only to the IPv6 loopback. Connections to 127.0.0.1 will be
+      # refused, so the only way to reach this postgres from the host is via
+      # an IPv6 address (::1) or a hostname that resolves to it.
+      - "[::1]:54399:5432"
