@@ -82,7 +82,14 @@ function inferTypeFromValue(value: any): string {
   if (typeof value === 'string') return 'S';
   if (value instanceof Uint8Array || Buffer.isBuffer?.(value)) return 'B';
   if (Array.isArray(value)) return 'L';
-  if (value instanceof Set) return 'SS';
+  if (value instanceof Set) {
+    // Determine Set type based on first element
+    const first = value.values().next().value;
+    if (first === undefined) return 'SS'; // Empty set defaults to string set
+    if (typeof first === 'number') return 'NS';
+    if (first instanceof Uint8Array || Buffer.isBuffer?.(first)) return 'BS';
+    return 'SS';
+  }
   if (typeof value === 'object') return 'M';
   return 'UNKNOWN';
 }
@@ -117,8 +124,11 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     if (this.endpoint) clientConfig.endpoint = this.endpoint;
 
     if (iam.authType === IamAuthType.Key) {
-      if (!iam.accessKeyId || !iam.secretAccessKey) {
-        throw new Error('DynamoDB IAM key authentication requires both Access Key ID and Secret Access Key.');
+      if (!iam.accessKeyId || typeof iam.accessKeyId !== 'string' || !iam.accessKeyId.trim()) {
+        throw new Error('DynamoDB IAM key authentication requires a non-empty Access Key ID.');
+      }
+      if (!iam.secretAccessKey || typeof iam.secretAccessKey !== 'string' || !iam.secretAccessKey.trim()) {
+        throw new Error('DynamoDB IAM key authentication requires a non-empty Secret Access Key.');
       }
       clientConfig.credentials = {
         accessKeyId: iam.accessKeyId,
@@ -133,15 +143,26 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         accessKeyId: iam.accessKeyId || 'local',
         secretAccessKey: iam.secretAccessKey || 'local',
       };
+    } else {
+      // No auth type specified and no endpoint — this is likely a misconfiguration
+      throw new Error('DynamoDB connection requires either an authentication type (IAM Key, File, or CLI) or a local endpoint.');
     }
 
-    this.raw = new AWSDynamoDBClient(clientConfig);
-    this.doc = DynamoDBDocumentClient.from(this.raw, {
-      marshallOptions: { removeUndefinedValues: true, convertClassInstanceToMap: true },
-    });
+    try {
+      this.raw = new AWSDynamoDBClient(clientConfig);
+      this.doc = DynamoDBDocumentClient.from(this.raw, {
+        marshallOptions: { removeUndefinedValues: true, convertClassInstanceToMap: true },
+      });
 
-    // ping — a ListTables call is the cheapest validation; empty result is fine.
-    await this.raw.send(new ListTablesCommand({ Limit: 1 }));
+      // ping — a ListTables call is the cheapest validation; empty result is fine.
+      await this.raw.send(new ListTablesCommand({ Limit: 1 }));
+    } catch (err) {
+      // Clean up clients on connection failure
+      if (this.doc) this.doc.destroy();
+      this.raw = null;
+      this.doc = null;
+      throw err;
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -254,7 +275,12 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       const tables = await this.listTables();
       const all: ExtendedTableColumn[] = [];
       for (const t of tables) {
-        all.push(...(await this.listTableColumns(t.name)));
+        try {
+          all.push(...(await this.listTableColumns(t.name)));
+        } catch (err) {
+          log.warn(`Failed to list columns for table ${t.name}:`, err);
+          // Continue with other tables rather than failing the entire operation
+        }
       }
       return all;
     }
@@ -505,23 +531,35 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     let lastKey: Record<string, any> | undefined;
     const hasOrder = orderBy && orderBy.length > 0;
     const target = (offset || 0) + (limit || 0);
+    // Memory protection: limit items buffered for ORDER BY operations
+    const MAX_ORDER_BY_ITEMS = 100000;
     // Scan page-by-page. DynamoDB has no SQL-style offset and no server-side
     // ORDER BY for Scan, so:
     //   - without orderBy: stop once we've buffered enough to satisfy offset+limit
     //   - with orderBy: we must scan the full result set so the in-memory sort
     //     produces a globally-correct slice
     do {
-      const result = await this.doc.send(new ScanCommand({
-        TableName: table,
-        FilterExpression: expr,
-        ExpressionAttributeNames: Object.keys(projNames).length ? projNames : undefined,
-        ExpressionAttributeValues: values,
-        ProjectionExpression: projection,
-        ExclusiveStartKey: lastKey,
-      }));
-      items.push(...(result.Items || []));
-      lastKey = result.LastEvaluatedKey;
-      if (!hasOrder && target > 0 && items.length >= target) break;
+      try {
+        const result = await this.doc.send(new ScanCommand({
+          TableName: table,
+          FilterExpression: expr,
+          ExpressionAttributeNames: Object.keys(projNames).length ? projNames : undefined,
+          ExpressionAttributeValues: values,
+          ProjectionExpression: projection,
+          ExclusiveStartKey: lastKey,
+        }));
+        items.push(...(result.Items || []));
+        lastKey = result.LastEvaluatedKey;
+        if (!hasOrder && target > 0 && items.length >= target) break;
+        // Memory protection for ORDER BY: stop if we exceed the limit
+        if (hasOrder && items.length >= MAX_ORDER_BY_ITEMS) {
+          log.warn(`DynamoDB selectTop: ORDER BY scan exceeded ${MAX_ORDER_BY_ITEMS} items, results may be incomplete`);
+          break;
+        }
+      } catch (err) {
+        log.error('DynamoDB selectTop scan error:', err);
+        throw new Error(`Failed to scan table ${table}: ${err.message}`);
+      }
     } while (lastKey);
 
     let rows = items;
@@ -561,7 +599,8 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     table: string,
     _orderBy: OrderBy[],
     filters: string | TableFilter[],
-    chunkSize: number
+    chunkSize: number,
+    _schema?: string
   ): Promise<StreamResults> {
     const filterInput = Array.isArray(filters) ? filters : [];
     const { expr, names, values } = this.buildFilter(filterInput);
@@ -595,7 +634,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     }
   }
 
-  async executeQuery(queryText: string): Promise<NgQueryResult[]> {
+  async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
     // Split on ';' that sit outside of single-quoted strings. PartiQL strings use
     // single quotes, so any ';' inside them should be preserved.
     const statements = splitPartiQL(queryText).filter((s) => s.trim().length > 0);
@@ -643,7 +682,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     return this.executeQuery(text);
   }
 
-  async query(queryText: string): Promise<CancelableQuery> {
+  async query(queryText: string, _tabId?: number, _options?: any): Promise<CancelableQuery> {
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
     let canceling = false;
     return {

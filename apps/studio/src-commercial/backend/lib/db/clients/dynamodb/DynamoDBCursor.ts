@@ -1,5 +1,11 @@
 import { BeeCursor } from "@/lib/db/models";
 import { DynamoDBDocumentClient, ScanCommand, ExecuteStatementCommand } from "@aws-sdk/lib-dynamodb";
+import rawLog from '@bksLogger';
+
+const log = rawLog.scope('dynamodb-cursor');
+
+// Default timeout for cursor fetch operations (30 seconds)
+const CURSOR_FETCH_TIMEOUT_MS = 30000;
 
 interface ScanCursorOptions {
   kind: 'scan';
@@ -45,31 +51,44 @@ export class DynamoDBCursor extends BeeCursor {
   private async fetchNextPage(): Promise<void> {
     if (this.exhausted) return;
 
-    if (this.options.kind === 'scan') {
-      const result = await this.options.client.send(new ScanCommand({
-        TableName: this.options.table,
-        FilterExpression: this.options.filterExpression,
-        ExpressionAttributeNames: this.options.expressionAttributeNames,
-        ExpressionAttributeValues: this.options.expressionAttributeValues,
-        ExclusiveStartKey: this.lastEvaluatedKey,
-        Limit: this.chunkSize,
-      }));
-      this.buffer.push(...(result.Items || []));
-      this.lastEvaluatedKey = result.LastEvaluatedKey;
-      if (!this.lastEvaluatedKey) {
-        this.exhausted = true;
+    const fetchWithTimeout = async <T>(promise: Promise<T>): Promise<T> => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('DynamoDB cursor fetch timed out')), CURSOR_FETCH_TIMEOUT_MS);
+      });
+      return Promise.race([promise, timeoutPromise]);
+    };
+
+    try {
+      if (this.options.kind === 'scan') {
+        const result = await fetchWithTimeout(this.options.client.send(new ScanCommand({
+          TableName: this.options.table,
+          FilterExpression: this.options.filterExpression,
+          ExpressionAttributeNames: this.options.expressionAttributeNames,
+          ExpressionAttributeValues: this.options.expressionAttributeValues,
+          ExclusiveStartKey: this.lastEvaluatedKey,
+          Limit: this.chunkSize,
+        })));
+        this.buffer.push(...(result.Items || []));
+        this.lastEvaluatedKey = result.LastEvaluatedKey;
+        if (!this.lastEvaluatedKey) {
+          this.exhausted = true;
+        }
+      } else {
+        const result = await fetchWithTimeout(this.options.client.send(new ExecuteStatementCommand({
+          Statement: this.options.statement,
+          NextToken: this.nextToken,
+          Limit: this.chunkSize,
+        })));
+        this.buffer.push(...(result.Items || []));
+        this.nextToken = result.NextToken;
+        if (!this.nextToken) {
+          this.exhausted = true;
+        }
       }
-    } else {
-      const result = await this.options.client.send(new ExecuteStatementCommand({
-        Statement: this.options.statement,
-        NextToken: this.nextToken,
-        Limit: this.chunkSize,
-      }));
-      this.buffer.push(...(result.Items || []));
-      this.nextToken = result.NextToken;
-      if (!this.nextToken) {
-        this.exhausted = true;
-      }
+    } catch (err) {
+      log.error('DynamoDB cursor fetch error:', err);
+      this.exhausted = true;
+      throw err;
     }
   }
 

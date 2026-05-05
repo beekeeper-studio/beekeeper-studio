@@ -133,16 +133,18 @@
             <i class="material-icons">arrow_drop_down</i>
             <x-menu>
               <x-menuitem
-                :disabled="tablesLoading"
+                :disabled="tablesLoading || createDisabled"
                 @click.prevent="newTable"
+                :title="createDisabled ? `Creating tables is not supported for ${dialect}` : ''"
               >
                 <x-label>
                   {{ newTableOrCollection }}
                 </x-label>
               </x-menuitem>
               <x-menuitem
-                :disabled="tablesLoading"
+                :disabled="tablesLoading || createDisabled"
                 @click.prevent="newTableFromFile"
+                :title="createDisabled ? `Creating tables is not supported for ${dialect}` : ''"
               >
                 <x-label>
                   {{ newTableOrCollection }} from File

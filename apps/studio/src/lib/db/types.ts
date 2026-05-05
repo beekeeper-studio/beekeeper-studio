@@ -101,6 +101,7 @@ export interface DynamoDBOptions {
 
 export interface IamAuthOptions {
   awsProfile?: string
+  profiles?: string[];
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;

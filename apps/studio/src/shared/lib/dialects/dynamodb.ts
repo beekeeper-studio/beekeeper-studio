@@ -17,6 +17,7 @@ export const DynamoDBData: DialectData = {
     rawFilters: true,
     truncateElement: true,
     sqlCreate: true,
+    createTable: true,
     importFromFile: true,
     nullable: true,
     defaultValue: true,
@@ -26,6 +27,7 @@ export const DynamoDBData: DialectData = {
       extra: true
     },
     alter: {
+      everything: true,
       addColumn: true,
       dropColumn: true,
       renameColumn: true,
@@ -46,5 +48,14 @@ export const DynamoDBData: DialectData = {
     },
     schema: true,
     generatedColumns: true,
+    duplicateTable: true,
+    erd: true,
+    multipleDatabases: true,
+  },
+  notices: {
+    infoSchema: 'DynamoDB is schemaless. Columns shown are discovered from sampled data.',
+    infoCreateTable: 'DynamoDB tables are created with a single "id" partition key. Use the AWS Console for more complex table configurations.',
+    infoRelations: 'DynamoDB does not support foreign key relationships.',
+    infoIndexes: 'Index management is available through the AWS Console.',
   }
 }

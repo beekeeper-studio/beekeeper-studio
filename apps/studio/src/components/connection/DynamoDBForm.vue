@@ -51,6 +51,31 @@ export default {
       authTypes: IamAuthTypes,
     }
   },
+  watch: {
+    config: {
+      immediate: true,
+      handler() {
+        this.initializeConfig()
+      }
+    }
+  },
+  methods: {
+    initializeConfig() {
+      if (!this.config.iamAuthOptions) {
+        this.$set(this.config, 'iamAuthOptions', {})
+      }
+      if (!this.config.iamAuthOptions.authType) {
+        this.$set(this.config.iamAuthOptions, 'authType', IamAuthType.Key)
+      }
+      // DynamoDB always needs IAM enabled so CommonIam renders the key/profile/CLI UI.
+      if (!this.config.iamAuthOptions.iamAuthenticationEnabled) {
+        this.$set(this.config.iamAuthOptions, 'iamAuthenticationEnabled', true)
+      }
+      if (!this.config.dynamoDbOptions) {
+        this.$set(this.config, 'dynamoDbOptions', {})
+      }
+    }
+  },
   computed: {
     authType: {
       get() {
@@ -76,20 +101,6 @@ export default {
       }
     }
   },
-  mounted() {
-    if (!this.config.iamAuthOptions) {
-      this.$set(this.config, 'iamAuthOptions', {})
-    }
-    if (!this.config.iamAuthOptions.authType) {
-      this.$set(this.config.iamAuthOptions, 'authType', IamAuthType.Key)
-    }
-    // DynamoDB always needs IAM enabled so CommonIam renders the key/profile/CLI UI.
-    if (!this.config.iamAuthOptions.iamAuthenticationEnabled) {
-      this.$set(this.config.iamAuthOptions, 'iamAuthenticationEnabled', true)
-    }
-    if (!this.config.dynamoDbOptions) {
-      this.$set(this.config, 'dynamoDbOptions', {})
-    }
-  }
+  // Config initialization is handled by the config watcher with immediate: true
 }
 </script>

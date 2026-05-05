@@ -11,9 +11,10 @@ export interface ContextOption {
   slug: string
   type?: 'divider'
   handler: (...any) => void
-  class?: string
+  class?: string | ((...args: any[]) => string)
   shortcut?: string
   ultimate?: boolean
+  title?: string | ((...args: any[]) => string)
 }
 
 interface MenuProps {

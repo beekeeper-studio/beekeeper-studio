@@ -223,12 +223,14 @@ export interface DialectData {
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
     readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
+    erd?: boolean              // Whether ERD view is disabled
   },
   notices?: {
     infoSchema?: string
     infoIndexes?: string
     infoRelations?: string
     infoTriggers?: string
+    infoCreateTable?: string
     tableTable?: string
     query?: string
   },
