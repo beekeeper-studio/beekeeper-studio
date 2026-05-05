@@ -1,26 +1,18 @@
 #! /bin/bash
-# Tears down the RDS instances + security group + IAM policy created by
-# provision.sh for $RUN_ID. Safe to re-run; each step tolerates the
-# resource already being absent. Exits non-zero only if the security
-# group can't be deleted at the end (the meaningful "RDS hasn't released
-# its ENI yet" signal).
+# Tears down the RDS instances + security group created by provision.sh
+# for $RUN_ID. Safe to re-run; each step tolerates the resource already
+# being absent. Exits non-zero only if the security group can't be
+# deleted at the end (the meaningful "RDS hasn't released its ENI yet"
+# signal).
 
 set -uo pipefail
 
 : "${RUN_ID:?RUN_ID must be set}"
 : "${AWS_REGION:?AWS_REGION must be set}"
 
-IAM_TEST_USER="${IAM_TEST_USER:-bks-ci-tests}"
-
 PG_ID="bks-ci-pg-${RUN_ID}"
 MYSQL_ID="bks-ci-mysql-${RUN_ID}"
 SG_NAME="bks-ci-rds-${RUN_ID}"
-POLICY_NAME="bks-ci-rds-connect-${RUN_ID}"
-
-echo "Removing IAM policy $POLICY_NAME from $IAM_TEST_USER..."
-aws iam delete-user-policy \
-  --user-name "$IAM_TEST_USER" \
-  --policy-name "$POLICY_NAME" 2>/dev/null || echo "  (policy already absent)"
 
 delete_instance() {
   local id="$1"

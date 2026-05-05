@@ -9,10 +9,10 @@ one-time bootstrap or local debugging.
 ## Layout
 
 ```
-provision.sh      Create per-run resources, seed databases, attach IAM
-                  policy to the test user, emit endpoints to $GITHUB_OUTPUT.
-destroy.sh        Symmetric teardown by RUN_ID. Idempotent.
-seed/pg-seed.sql  Creates `bks_iam_user` with `rds_iam` role.
+provision.sh         Create per-run resources, seed databases, emit
+                     endpoints to $GITHUB_OUTPUT.
+destroy.sh           Symmetric teardown by RUN_ID. Idempotent.
+seed/pg-seed.sql     Creates `bks_iam_user` with `rds_iam` role.
 seed/mysql-seed.sql  Creates `bks_iam_user` with AWSAuthenticationPlugin.
 ```
 
@@ -28,44 +28,88 @@ The janitor (`.github/workflows/rds-janitor.yml`) and
 - `bks-ci-mysql-<RUN_ID>` — same shape, MySQL 8.0.
 - `bks-ci-rds-<RUN_ID>` — security group in the default VPC, ingress
   restricted to the runner's public IP on 5432 + 3306.
-- `bks-ci-rds-connect-<RUN_ID>` — inline IAM policy on `bks-ci-tests`
-  granting `rds-db:connect` scoped to the two `DbiResourceId/bks_iam_user`
-  ARNs. Inline (not managed) so a single delete-user-policy removes it.
+
+`rds-db:connect` is granted permanently on the `bks-ci-tests` IAM user
+via the policy below — scoped to any DB user named `bks_iam_user`, which
+is acceptable in a CI-only AWS account.
 
 ## One-time bootstrap (out-of-band)
 
-Four steps. None of them require Terraform / S3 / DynamoDB.
+Three steps. No OIDC, no Terraform state backend, no custom VPC.
 
-1. **Test IAM user.** Create IAM user `bks-ci-tests` with one access key.
-   Save the credentials as repo secrets:
+1. **IAM user `bks-ci-tests` with the policy below.** Attach as inline or
+   managed; either works. Generate one access key and save the credentials
+   as repo secrets:
    - `BKS_TEST_ACCESS_KEY_ID`
    - `BKS_TEST_SECRET_ACCESS_KEY`
 
-   Don't attach any inline policies — `provision.sh` puts and removes the
-   per-run `rds-db:connect` grant itself.
+   These keys do double duty: the workflow uses them to provision/destroy
+   instances (via the policy below), and the test suite uses them to
+   exercise the Key / File / CLI auth code paths.
 
-2. **OIDC role for the workflow.** If the GitHub OIDC provider
-   (`token.actions.githubusercontent.com`) doesn't already exist in this
-   account, create it. Then create role `bks-ci-oidc-provisioner` with a
-   trust policy restricted to
-   `repo:beekeeper-studio/beekeeper-studio:ref:refs/heads/master` plus
-   the `workflow_dispatch` variant. Permissions:
-
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "RDSManagePrefixed",
+         "Effect": "Allow",
+         "Action": [
+           "rds:CreateDBInstance",
+           "rds:DeleteDBInstance",
+           "rds:DescribeDBInstances",
+           "rds:AddTagsToResource",
+           "rds:ListTagsForResource"
+         ],
+         "Resource": "arn:aws:rds:us-east-2:*:db:bks-ci-*"
+       },
+       {
+         "Sid": "RDSReadSubnetGroups",
+         "Effect": "Allow",
+         "Action": "rds:DescribeDBSubnetGroups",
+         "Resource": "*"
+       },
+       {
+         "Sid": "EC2ReadAndCreate",
+         "Effect": "Allow",
+         "Action": [
+           "ec2:DescribeVpcs",
+           "ec2:DescribeSecurityGroups",
+           "ec2:CreateSecurityGroup",
+           "ec2:CreateTags"
+         ],
+         "Resource": "*",
+         "Condition": {
+           "StringEquals": { "aws:RequestedRegion": "us-east-2" }
+         }
+       },
+       {
+         "Sid": "EC2ModifyOurSGs",
+         "Effect": "Allow",
+         "Action": [
+           "ec2:DeleteSecurityGroup",
+           "ec2:AuthorizeSecurityGroupIngress",
+           "ec2:RevokeSecurityGroupIngress"
+         ],
+         "Resource": "*",
+         "Condition": {
+           "StringEquals": {
+             "aws:RequestedRegion": "us-east-2",
+             "ec2:ResourceTag/bks-ci-integration": "true"
+           }
+         }
+       },
+       {
+         "Sid": "RDSConnect",
+         "Effect": "Allow",
+         "Action": "rds-db:connect",
+         "Resource": "arn:aws:rds-db:*:*:dbuser:*/bks_iam_user"
+       }
+     ]
+   }
    ```
-   rds:*                                          (in-region)
-   ec2:CreateSecurityGroup                        (in default VPC)
-   ec2:DeleteSecurityGroup
-   ec2:AuthorizeSecurityGroupIngress
-   ec2:RevokeSecurityGroupIngress
-   ec2:DescribeSecurityGroups
-   ec2:DescribeVpcs
-   sts:GetCallerIdentity
-   iam:PutUserPolicy / iam:DeleteUserPolicy       (on bks-ci-tests only)
-   ```
 
-   Save the role ARN as repo secret `AWS_ROLE_TO_ASSUME`.
-
-3. **Default DB subnet group.** RDS needs a subnet group covering at
+2. **Default DB subnet group.** RDS needs a subnet group covering at
    least two AZs. Most accounts already have one called `default`; verify
    with:
    ```bash
@@ -79,7 +123,7 @@ Four steps. None of them require Terraform / S3 / DynamoDB.
      --subnet-ids subnet-xxx subnet-yyy
    ```
 
-4. **(Recommended)** Add a CloudWatch billing alarm at $5/day on RDS in
+3. **(Recommended)** Add a CloudWatch billing alarm at $5/day on RDS in
    this account as a cost guardrail.
 
 ## Local dry run
@@ -87,7 +131,8 @@ Four steps. None of them require Terraform / S3 / DynamoDB.
 ```bash
 export RUN_ID="local-$(date +%s)"
 export AWS_REGION=us-east-2
-# AWS credentials must already be in the environment (aws sso, env vars, etc.)
+export AWS_ACCESS_KEY_ID=...        # bks-ci-tests
+export AWS_SECRET_ACCESS_KEY=...
 
 ./infrastructure/ci/aws-rds/provision.sh
 # Script prints pg_host=..., mysql_host=... at the end.
@@ -96,10 +141,8 @@ export AWS_REGION=us-east-2
 export BKS_RDS_AWS_REGION=$AWS_REGION
 export BKS_RDS_PG_HOST=...        BKS_RDS_PG_PORT=5432    BKS_RDS_PG_IAM_USER=bks_iam_user
 export BKS_RDS_MYSQL_HOST=...     BKS_RDS_MYSQL_PORT=3306 BKS_RDS_MYSQL_IAM_USER=bks_iam_user
-export BKS_TEST_ACCESS_KEY_ID=...
-export BKS_TEST_SECRET_ACCESS_KEY=...
-export AWS_ACCESS_KEY_ID="$BKS_TEST_ACCESS_KEY_ID"
-export AWS_SECRET_ACCESS_KEY="$BKS_TEST_SECRET_ACCESS_KEY"
+export BKS_TEST_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+export BKS_TEST_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 
 yarn test:rds
 

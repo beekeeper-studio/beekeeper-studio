@@ -5,22 +5,19 @@
 # RUN_ID will fail loudly on the first CreateDBInstance — that's deliberate
 # to surface unexpected leftovers rather than silently reuse them.
 #
-# Required env: RUN_ID, AWS_REGION, IAM_TEST_USER (default bks-ci-tests),
-# DB_IAM_USER (default bks_iam_user). AWS credentials must already be
-# configured in the environment (the workflow uses OIDC role assumption).
+# Required env: RUN_ID, AWS_REGION. AWS credentials must already be
+# configured (the workflow uses bks-ci-tests static keys; the policy
+# attached to that user grants rds-db:connect on */bks_iam_user, so no
+# per-run IAM grant is needed here).
 
 set -euo pipefail
 
 : "${RUN_ID:?RUN_ID must be set}"
 : "${AWS_REGION:?AWS_REGION must be set}"
 
-IAM_TEST_USER="${IAM_TEST_USER:-bks-ci-tests}"
-DB_IAM_USER="${DB_IAM_USER:-bks_iam_user}"
-
 PG_ID="bks-ci-pg-${RUN_ID}"
 MYSQL_ID="bks-ci-mysql-${RUN_ID}"
 SG_NAME="bks-ci-rds-${RUN_ID}"
-POLICY_NAME="bks-ci-rds-connect-${RUN_ID}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SEED_DIR="$SCRIPT_DIR/seed"
@@ -98,15 +95,13 @@ echo "Waiting for instances to become available (this typically takes 5-8 min)..
 aws rds wait db-instance-available --db-instance-identifier "$PG_ID"
 aws rds wait db-instance-available --db-instance-identifier "$MYSQL_ID"
 
-read -r PG_HOST PG_RESOURCE_ID < <(aws rds describe-db-instances \
+PG_HOST="$(aws rds describe-db-instances \
   --db-instance-identifier "$PG_ID" \
-  --query 'DBInstances[0].[Endpoint.Address,DbiResourceId]' \
-  --output text)
+  --query 'DBInstances[0].Endpoint.Address' --output text)"
 
-read -r MYSQL_HOST MYSQL_RESOURCE_ID < <(aws rds describe-db-instances \
+MYSQL_HOST="$(aws rds describe-db-instances \
   --db-instance-identifier "$MYSQL_ID" \
-  --query 'DBInstances[0].[Endpoint.Address,DbiResourceId]' \
-  --output text)
+  --query 'DBInstances[0].Endpoint.Address' --output text)"
 
 echo "::add-mask::$PG_HOST"
 echo "::add-mask::$MYSQL_HOST"
@@ -122,33 +117,10 @@ mysql --host "$MYSQL_HOST" --port 3306 --user bks_master \
   --password="$MYSQL_PASSWORD" --ssl-mode=REQUIRED \
   banana < "$SEED_DIR/mysql-seed.sql"
 
-echo "Attaching rds-db:connect policy to $IAM_TEST_USER..."
-ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-
-POLICY_DOC="$(cat <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": "rds-db:connect",
-    "Resource": [
-      "arn:aws:rds-db:${AWS_REGION}:${ACCOUNT_ID}:dbuser:${PG_RESOURCE_ID}/${DB_IAM_USER}",
-      "arn:aws:rds-db:${AWS_REGION}:${ACCOUNT_ID}:dbuser:${MYSQL_RESOURCE_ID}/${DB_IAM_USER}"
-    ]
-  }]
-}
-EOF
-)"
-
-aws iam put-user-policy \
-  --user-name "$IAM_TEST_USER" \
-  --policy-name "$POLICY_NAME" \
-  --policy-document "$POLICY_DOC"
-
 echo "Provision complete."
-emit pg_host       "$PG_HOST"
-emit pg_port       "5432"
-emit pg_iam_user   "$DB_IAM_USER"
-emit mysql_host    "$MYSQL_HOST"
-emit mysql_port    "3306"
-emit mysql_iam_user "$DB_IAM_USER"
+emit pg_host        "$PG_HOST"
+emit pg_port        "5432"
+emit pg_iam_user    "bks_iam_user"
+emit mysql_host     "$MYSQL_HOST"
+emit mysql_port     "3306"
+emit mysql_iam_user "bks_iam_user"

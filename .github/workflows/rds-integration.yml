@@ -2,7 +2,12 @@ name: RDS Integration Tests
 
 on:
   push:
-    branches: [master, main]
+    branches:
+      - master
+      - main
+      # Temporary: keep this branch in the trigger list while we validate
+      # the end-to-end flow against real AWS. Drop before merge.
+      - claude/rds-iam-integration-tests-DkaBi
     paths:
       - apps/studio/src/lib/db/clients/postgresql.ts
       - apps/studio/src/lib/db/clients/mysql.ts
@@ -23,7 +28,6 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  id-token: write
   contents: read
 
 env:
@@ -44,10 +48,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-access-key-id: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Provision RDS instances
@@ -129,10 +134,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-access-key-id: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Destroy RDS instances
