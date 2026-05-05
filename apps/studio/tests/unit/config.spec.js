@@ -4,7 +4,7 @@ import {
 } from "@/common/bksConfig/BksConfigProvider";
 import { parseIni, processRawConfig } from "@/config/helpers";
 import _ from "lodash";
-import { checkConflicts, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
+import { checkConflicts, checkUnrecognized, checkDeprecations } from "@/common/bksConfig/mainBksConfig";
 
 describe("Config", () => {
   it("should parse ini file correctly", () => {
@@ -78,7 +78,7 @@ superiorkey = ctrlOrCmd+c
 minRes = 10
     `);
 
-    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    const warnings = checkUnrecognized(defaultConfig, userConfig, {}, "user");
     const expectedWarnings = [
       {
         sourceName: "user",
@@ -116,7 +116,7 @@ minRes = 10
 enabled = true
     `);
 
-    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    const warnings = checkUnrecognized(defaultConfig, userConfig, {}, "user");
     expect(warnings).toEqual([]);
   })
 
@@ -131,7 +131,7 @@ allow[] =
 allow[] = "bks-er-diagram"
     `);
 
-    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    const warnings = checkUnrecognized(defaultConfig, userConfig, {}, "user");
     expect(warnings).toEqual([]);
   });
 
@@ -147,8 +147,171 @@ allow[] = "bks-er-diagram"
 allow[] = "bks-ai-shell"
     `);
 
-    const warnings = checkUnrecognized(defaultConfig, userConfig, "user");
+    const warnings = checkUnrecognized(defaultConfig, userConfig, {}, "user");
     expect(warnings).toEqual([]);
+  });
+
+  it("should not flag deprecated keys as unrecognized", () => {
+    const defaultConfig = parseIni(`
+[general]
+maxResults = 10
+    `);
+
+    const deprecatedConfig = parseIni(`
+[general]
+oldSetting = 'Replaced by maxResults'
+
+[legacy]
+removedOption = 'No longer supported'
+    `);
+
+    const userConfig = parseIni(`
+[general]
+maxResults = 20
+oldSetting = 5
+
+[legacy]
+removedOption = true
+    `);
+
+    const warnings = checkUnrecognized(defaultConfig, userConfig, deprecatedConfig, "user");
+    expect(warnings).toEqual([]);
+  });
+
+  it("should flag truly unrecognized keys even when deprecated config is provided", () => {
+    const defaultConfig = parseIni(`
+[general]
+maxResults = 10
+    `);
+
+    const deprecatedConfig = parseIni(`
+[general]
+oldSetting = 'Replaced by maxResults'
+    `);
+
+    const userConfig = parseIni(`
+[general]
+maxResults = 20
+oldSetting = 5
+unknownKey = true
+    `);
+
+    const warnings = checkUnrecognized(defaultConfig, userConfig, deprecatedConfig, "user");
+    expect(warnings).toEqual([
+      {
+        sourceName: "user",
+        type: "unrecognized-key",
+        section: "general",
+        path: "general.unknownKey",
+      },
+    ]);
+  });
+
+  it("should detect deprecated keys used in config", () => {
+    const deprecatedConfig = parseIni(`
+[keybindings.queryEditor]
+submitTabQuery = 'Replaced by primaryQueryAction'
+submitCurrentQuery = 'Replaced by secondaryQueryAction'
+    `);
+
+    const userConfig = parseIni(`
+[keybindings.queryEditor]
+submitTabQuery = ctrlOrCmd+enter
+    `);
+
+    const warnings = checkDeprecations(userConfig, deprecatedConfig, "user");
+    expect(warnings).toEqual([
+      {
+        type: "deprecated-key",
+        sourceName: "user",
+        section: "keybindings.queryEditor",
+        path: "keybindings.queryEditor.submitTabQuery",
+        value: "Replaced by primaryQueryAction",
+      },
+    ]);
+  });
+
+  it("should not flag non-deprecated keys as deprecated", () => {
+    const deprecatedConfig = parseIni(`
+[keybindings.queryEditor]
+submitTabQuery = 'Replaced by primaryQueryAction'
+    `);
+
+    const userConfig = parseIni(`
+[keybindings.queryEditor]
+primaryQueryAction = ctrlOrCmd+enter
+    `);
+
+    const warnings = checkDeprecations(userConfig, deprecatedConfig, "user");
+    expect(warnings).toEqual([]);
+  });
+
+  it("should detect multiple deprecated keys across sections", () => {
+    const deprecatedConfig = parseIni(`
+[keybindings.queryEditor]
+submitTabQuery = 'Replaced by primaryQueryAction'
+submitCurrentQuery = 'Replaced by secondaryQueryAction'
+
+[general]
+oldOption = 'Use newOption instead'
+    `);
+
+    const userConfig = parseIni(`
+[keybindings.queryEditor]
+submitTabQuery = ctrlOrCmd+enter
+submitCurrentQuery = ctrlOrCmd+shift+enter
+
+[general]
+oldOption = true
+    `);
+
+    const warnings = checkDeprecations(userConfig, deprecatedConfig, "user");
+    expect(warnings).toEqual([
+      {
+        type: "deprecated-key",
+        sourceName: "user",
+        section: "general",
+        path: "general.oldOption",
+        value: "Use newOption instead",
+      },
+      {
+        type: "deprecated-key",
+        sourceName: "user",
+        section: "keybindings.queryEditor",
+        path: "keybindings.queryEditor.submitTabQuery",
+        value: "Replaced by primaryQueryAction",
+      },
+      {
+        type: "deprecated-key",
+        sourceName: "user",
+        section: "keybindings.queryEditor",
+        path: "keybindings.queryEditor.submitCurrentQuery",
+        value: "Replaced by secondaryQueryAction",
+      },
+    ]);
+  });
+
+  it("should detect deprecated keys for system source", () => {
+    const deprecatedConfig = parseIni(`
+[general]
+oldOption = 'Use newOption instead'
+    `);
+
+    const systemConfig = parseIni(`
+[general]
+oldOption = 42
+    `);
+
+    const warnings = checkDeprecations(systemConfig, deprecatedConfig, "system");
+    expect(warnings).toEqual([
+      {
+        type: "deprecated-key",
+        sourceName: "system",
+        section: "general",
+        path: "general.oldOption",
+        value: "Use newOption instead",
+      },
+    ]);
   });
 
   it("should detect conflicts between user and system keys", () => {

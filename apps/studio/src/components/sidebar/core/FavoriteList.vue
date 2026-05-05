@@ -191,7 +191,7 @@
       <modal
         class="vue-dialog beekeeper-modal"
         name="query-folder-modal"
-        @closed="folderModalName = ''; folderModalItem = null"
+        @closed="folderModalName = ''; folderModalItem = null; folderModalError = null"
         @opened="$nextTick(() => $refs.folderNameInput && $refs.folderNameInput.focus())"
         height="auto"
         :scrollable="true"
@@ -206,21 +206,23 @@
                 v-model="folderModalName"
                 type="text"
                 placeholder="Folder name"
+                @input="folderModalError = null"
                 @keydown.esc.prevent="$modal.hide('query-folder-modal')"
               >
             </div>
             <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
               <label>Parent Folder</label>
-              <select v-model="folderModalParentId">
+              <select v-model="folderModalParentId" @change="folderModalError = null">
                 <option v-for="f in rootFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
               </select>
             </div>
+            <error-alert v-if="folderModalError" :error="folderModalError" />
           </div>
           <div class="vue-dialog-buttons flex-between">
             <span class="left" />
             <span class="right">
               <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('query-folder-modal')">Cancel</button>
-              <button class="btn btn-primary" type="submit" :disabled="!folderModalName.trim()">
+              <button class="btn btn-primary" type="submit" :disabled="!folderModalName.trim() || folderModalSubmitting">
                 {{ folderModalItem ? 'Rename' : 'Create' }}
               </button>
             </span>
@@ -273,6 +275,8 @@ export default {
       folderModalName: '',
       folderModalItem: null,
       folderModalParentId: null,
+      folderModalError: null,
+      folderModalSubmitting: false,
       folderExpandedState: {},
       draggingQuery: null
     }
@@ -393,6 +397,7 @@ export default {
       }
       this.folderModalName = ''
       this.folderModalItem = null
+      this.folderModalError = null
       this.folderModalParentId = (this.isCloud && this.rootFolders.length > 0)
         ? this.rootFolders[0].id
         : null
@@ -422,6 +427,7 @@ export default {
       }
       this.folderModalName = ''
       this.folderModalItem = null
+      this.folderModalError = null
       this.folderModalParentId = parentFolder.id
       this.$modal.show('query-folder-modal')
     },
@@ -441,6 +447,7 @@ export default {
     renameQueryFolder(folder) {
       this.folderModalName = folder.name
       this.folderModalItem = folder
+      this.folderModalError = null
       this.$modal.show('query-folder-modal')
     },
     async moveFolderToParent(folder, newParent) {
@@ -503,12 +510,20 @@ export default {
     async submitFolderModal() {
       const name = this.folderModalName.trim()
       if (!name) return
-      if (this.folderModalItem) {
-        await this.$store.dispatch('data/queryFolders/save', { ...this.folderModalItem, name })
-      } else {
-        await this.$store.dispatch('data/queryFolders/save', { id: null, name, parentId: this.folderModalParentId ?? null })
+      this.folderModalError = null
+      this.folderModalSubmitting = true
+      try {
+        if (this.folderModalItem) {
+          await this.$store.dispatch('data/queryFolders/save', { ...this.folderModalItem, name })
+        } else {
+          await this.$store.dispatch('data/queryFolders/save', { id: null, name, parentId: this.folderModalParentId ?? null })
+        }
+        this.$modal.hide('query-folder-modal')
+      } catch (e) {
+        this.folderModalError = e.userMessage ?? e.message ?? 'Failed to save folder'
+      } finally {
+        this.folderModalSubmitting = false
       }
-      this.$modal.hide('query-folder-modal')
     },
   }
 }

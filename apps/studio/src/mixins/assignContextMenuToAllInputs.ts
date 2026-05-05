@@ -21,10 +21,7 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
 
   methods: {
     ctxMenu_showContextMenu(event: MouseEvent) {
-      if (
-        !(event.target instanceof HTMLInputElement) &&
-        !(event.target instanceof HTMLTextAreaElement)
-      ) {
+      if (!this.ctxMenu_isTextInput(event.target)) {
         return;
       }
 
@@ -100,13 +97,32 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
       });
     },
 
+    ctxMenu_isTextInput(
+      target: EventTarget | null
+    ): target is HTMLInputElement | HTMLTextAreaElement {
+      if (target instanceof HTMLTextAreaElement) return true;
+      if (target instanceof HTMLInputElement) {
+        // Only text-like inputs support text selection / clipboard ops
+        const textTypes = [
+          "text",
+          "password",
+          "email",
+          "url",
+          "tel",
+          "search",
+          "number",
+        ];
+        return textTypes.includes(target.type);
+      }
+      return false;
+    },
+
     ctxMenu_isEditable(el: HTMLElement) {
       if (!el) return false;
-      if (el instanceof HTMLInputElement) return !el.readOnly && !el.disabled;
-      if (el instanceof HTMLTextAreaElement)
-        return !el.readOnly && !el.disabled;
-      if (el.isContentEditable) return true;
-      return false;
+      if (!this.ctxMenu_isTextInput(el)) {
+        return el.isContentEditable;
+      }
+      return !el.readOnly && !el.disabled;
     },
 
     ctxMenu_hasSelectedText(target: HTMLInputElement | HTMLTextAreaElement) {

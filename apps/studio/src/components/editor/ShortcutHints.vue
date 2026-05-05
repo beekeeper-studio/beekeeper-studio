@@ -2,18 +2,7 @@
   <div class="shortcuts">
     <div class="shortcut-item">
       <div>Quick Search</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>P</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>P</span>
-      </div>
+      <shortcut-display-helper shortcut-path="general.openQuickSearch" />
     </div>
     <div class="shortcut-item">
       <div>Autocomplete</div>
@@ -22,34 +11,12 @@
       </div>
     </div>
     <div class="shortcut-item">
-      <div>Run</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>Enter</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>Enter</span>
-      </div>
+      <div>{{ queryActionText(true) }}</div>
+      <shortcut-display-helper shortcut-path="queryEditor.primaryQueryAction" />
     </div>
     <div class="shortcut-item">
-      <div>Run Current</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>⇧</span><span>Enter</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>Shift</span><span>Enter</span>
-      </div>
+      <div>{{ queryActionText(false) }}</div>
+      <shortcut-display-helper shortcut-path="queryEditor.secondaryQueryAction" />
     </div>
     <div class="shortcut-item">
       <div>New Window</div>
@@ -83,48 +50,27 @@
     </div>
     <div class="shortcut-item">
       <div>Reopen Closed Tabs</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>⇧</span><span>T</span>
-      </div>
-      <div 
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>⇧</span><span>T</span>
-      </div>
+      <shortcut-display-helper shortcut-path="tab.reopenLastClosedTab" />
     </div>
     <div class="shortcut-item">
       <div>Close Tab</div>
-      <div
-        class="shortcut"
-        v-if="$config.isMac"
-      >
-        <span>⌘</span><span>W</span>
-      </div>
-      <div
-        class="shortcut"
-        v-else
-      >
-        <span>Ctrl</span><span>W</span>
-      </div>
+      <shortcut-display-helper shortcut-path="tab.closeTab" />
     </div>
     <div class="shortcut-item">
       <div>Find</div>
       <div
-        class="shortcut"
         v-if="$config.isMac"
+        class="shortcut"
       >
         <span>⌘</span><span>F</span>
       </div>
       <div
-        class="shortcut"
         v-else
+        class="shortcut"
       >
         <span>Ctrl</span><span>F</span>
       </div>
+
     </div>
     <div v-if="!isMongo" class="shortcut-item">
       <div>Find and Replace</div>
@@ -134,7 +80,7 @@
       >
         <span>⌘</span><span>R</span>
       </div>
-      <div 
+      <div
         class="shortcut"
         v-else
       >
@@ -144,12 +90,24 @@
   </div>
 </template>
 <script type="text/javascript">
+import ShortcutDisplayHelper from './ShortcutDisplayHelper.vue';
+
   export default {
     props: ['isMongo'],
-    data() {
-      return {
-
-      }
+    components: {
+      ShortcutDisplayHelper
     },
+    methods : {
+      isPrimaryRunCurrentQuery() {
+        return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery'
+      },
+      queryActionText(getPrimaryText) {
+        if (getPrimaryText) {
+          return this.isPrimaryRunCurrentQuery() ? 'Run Current' : 'Run All'
+        }
+
+        return this.isPrimaryRunCurrentQuery() ? 'Run All' : 'Run Current'
+      }
+    }
   }
 </script>

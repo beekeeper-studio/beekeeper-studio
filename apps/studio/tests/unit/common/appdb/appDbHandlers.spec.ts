@@ -76,4 +76,51 @@ describe('AppDbHandlers - appdb/saved/save', () => {
     const fromDb = await SavedConnection.findOneBy({ id: conn.id })
     expect(fromDb.connectionFolderId).toBe(folderB.id)
   })
+
+  it('rejects saving a new connection with no name', async () => {
+    const conn = buildConnection()
+    delete conn.name
+
+    await expect(
+      AppDbHandlers['appdb/saved/save']({ obj: conn, options: undefined })
+    ).rejects.toThrow(/name/i)
+
+    expect(await SavedConnection.count()).toBe(0)
+  })
+
+  it('rejects saving a new connection with an empty-string name', async () => {
+    const conn = buildConnection({ name: '' })
+
+    await expect(
+      AppDbHandlers['appdb/saved/save']({ obj: conn, options: undefined })
+    ).rejects.toThrow(/name/i)
+
+    expect(await SavedConnection.count()).toBe(0)
+  })
+
+  it('rejects updating an existing connection to have no name', async () => {
+    const conn = buildConnection()
+    await conn.save()
+
+    await expect(
+      AppDbHandlers['appdb/saved/save']({
+        obj: { ...conn, name: '' },
+        options: undefined
+      })
+    ).rejects.toThrow(/name/i)
+
+    const fromDb = await SavedConnection.findOneBy({ id: conn.id })
+    expect(fromDb.name).toBe('Test Connection')
+  })
+
+  it('rejects saving a batch when any connection has no name', async () => {
+    const good = buildConnection({ name: 'Good One' })
+    const bad = buildConnection({ name: '' })
+
+    await expect(
+      AppDbHandlers['appdb/saved/save']({ obj: [good, bad], options: undefined })
+    ).rejects.toThrow(/name/i)
+
+    expect(await SavedConnection.count()).toBe(0)
+  })
 })
