@@ -1,128 +1,120 @@
 # AWS RDS CI Infrastructure
 
-Terraform module that stands up short-lived RDS Postgres + MySQL instances
-against which the RDS IAM integration suite (`apps/studio/tests/integration/rds/`)
-runs. The `rds-integration.yml` workflow drives this module; a human only
-touches it for one-time bootstrap or local debugging.
+Two shell scripts that stand up short-lived RDS Postgres + MySQL
+instances for the IAM integration suite
+(`apps/studio/tests/integration/rds/`) and tear them down after. Driven by
+the `rds-integration.yml` workflow; a human only touches them for
+one-time bootstrap or local debugging.
 
-## What it creates per run
+## Layout
 
-- `aws_db_instance.pg` — Postgres 16, `db.t4g.micro`, 20 GB gp3, publicly
-  accessible, IAM auth enabled, `skip_final_snapshot = true`.
-- `aws_db_instance.mysql` — MySQL 8.0, same shape.
-- `aws_security_group.db` — ingress restricted to `var.runner_ip/32` on
-  ports 5432 and 3306.
-- `aws_iam_policy.rds_connect` — `rds-db:connect` scoped to the two
-  instance-specific `dbuser` ARNs, attached to the `bks-ci-tests` IAM user.
+```
+provision.sh      Create per-run resources, seed databases, attach IAM
+                  policy to the test user, emit endpoints to $GITHUB_OUTPUT.
+destroy.sh        Symmetric teardown by RUN_ID. Idempotent.
+seed/pg-seed.sql  Creates `bks_iam_user` with `rds_iam` role.
+seed/mysql-seed.sql  Creates `bks_iam_user` with AWSAuthenticationPlugin.
+```
 
-All resources carry `bks-ci-integration=true` and `bks-run-id=<run_id>`
-tags. The janitor (`.github/workflows/rds-janitor.yml`) and
+All resources tagged `bks-ci-integration=true` and `bks-run-id=<RUN_ID>`.
+Resource names derive from `RUN_ID` so destroy needs no shared state.
+The janitor (`.github/workflows/rds-janitor.yml`) and
 `bin/rds/cleanup-orphans.sh` rely on the first tag.
+
+## What `provision.sh` creates per run
+
+- `bks-ci-pg-<RUN_ID>` — Postgres 16, `db.t4g.micro`, 20 GB gp3,
+  IAM auth on, publicly accessible, `--skip-final-snapshot` at delete time.
+- `bks-ci-mysql-<RUN_ID>` — same shape, MySQL 8.0.
+- `bks-ci-rds-<RUN_ID>` — security group in the default VPC, ingress
+  restricted to the runner's public IP on 5432 + 3306.
+- `bks-ci-rds-connect-<RUN_ID>` — inline IAM policy on `bks-ci-tests`
+  granting `rds-db:connect` scoped to the two `DbiResourceId/bks_iam_user`
+  ARNs. Inline (not managed) so a single delete-user-policy removes it.
 
 ## One-time bootstrap (out-of-band)
 
-These resources live outside Terraform state because they predate any
-single run and are shared across all runs.
+Four steps. None of them require Terraform / S3 / DynamoDB.
 
-1. **Pick a region.** The workflow uses `us-east-2`. If you change it,
-   update `env.AWS_REGION` in both `.github/workflows/rds-integration.yml`
-   and `.github/workflows/rds-janitor.yml`, plus the `region` default in
-   `variables.tf` and the S3 backend's `region` in `backend.tf`.
+1. **Test IAM user.** Create IAM user `bks-ci-tests` with one access key.
+   Save the credentials as repo secrets:
+   - `BKS_TEST_ACCESS_KEY_ID`
+   - `BKS_TEST_SECRET_ACCESS_KEY`
 
-2. **Create the Terraform state backend.**
-   - S3 bucket: `bks-ci-tfstate` with versioning enabled and public access
-     fully blocked.
-   - DynamoDB table: `bks-ci-tflock`, partition key `LockID` (string), on-demand
-     billing.
+   Don't attach any inline policies — `provision.sh` puts and removes the
+   per-run `rds-db:connect` grant itself.
 
-3. **Create the VPC for the CI databases.**
-   - VPC tagged `bks-ci=true`.
-   - Two public subnets in different AZs with `map_public_ip_on_launch = true`.
-   - Internet gateway + route to `0.0.0.0/0` on both subnets.
-   - `aws_db_subnet_group` named `bks-ci` covering the two subnets,
-     tagged `bks-ci=true`.
+2. **OIDC role for the workflow.** If the GitHub OIDC provider
+   (`token.actions.githubusercontent.com`) doesn't already exist in this
+   account, create it. Then create role `bks-ci-oidc-provisioner` with a
+   trust policy restricted to
+   `repo:beekeeper-studio/beekeeper-studio:ref:refs/heads/master` plus
+   the `workflow_dispatch` variant. Permissions:
 
-4. **Create the test IAM user.** IAM user `bks-ci-tests`, no inline
-   policies (Terraform attaches `rds-db:connect` at apply time). Generate
-   one access key.
+   ```
+   rds:*                                          (in-region)
+   ec2:CreateSecurityGroup                        (in default VPC)
+   ec2:DeleteSecurityGroup
+   ec2:AuthorizeSecurityGroupIngress
+   ec2:RevokeSecurityGroupIngress
+   ec2:DescribeSecurityGroups
+   ec2:DescribeVpcs
+   sts:GetCallerIdentity
+   iam:PutUserPolicy / iam:DeleteUserPolicy       (on bks-ci-tests only)
+   ```
 
-5. **Wire up GitHub OIDC.** In AWS IAM, create (or reuse) the
-   `token.actions.githubusercontent.com` OIDC provider. Create role
-   `bks-ci-oidc-provisioner` with a trust policy restricted to
-   `repo:beekeeper-studio/beekeeper-studio:ref:refs/heads/master` and
-   the matching `workflow_dispatch` variant. The role needs permissions
-   to: manage RDS instances and subnet groups; create/destroy VPC
-   security groups; create/attach/detach IAM policies; read the
-   `bks-ci-tests` user; read/write S3 and DynamoDB for state.
+   Save the role ARN as repo secret `AWS_ROLE_TO_ASSUME`.
 
-6. **Set GitHub Actions secrets** on
-   `beekeeper-studio/beekeeper-studio`:
-   - `AWS_ROLE_TO_ASSUME` — ARN of `bks-ci-oidc-provisioner`.
-   - `BKS_TEST_ACCESS_KEY_ID` / `BKS_TEST_SECRET_ACCESS_KEY` — the
-     `bks-ci-tests` access key. These are read by the IAM signer (Key
-     method), written into a tmp credentials file in-process (File
-     method), and exported as `AWS_ACCESS_KEY_ID` /
-     `AWS_SECRET_ACCESS_KEY` for `/usr/bin/aws` (CLI method).
+3. **Default DB subnet group.** RDS needs a subnet group covering at
+   least two AZs. Most accounts already have one called `default`; verify
+   with:
+   ```bash
+   aws rds describe-db-subnet-groups --db-subnet-group-name default
+   ```
+   If that 404s, create it once against the default VPC's public subnets:
+   ```bash
+   aws rds create-db-subnet-group \
+     --db-subnet-group-name default \
+     --db-subnet-group-description default \
+     --subnet-ids subnet-xxx subnet-yyy
+   ```
 
-7. **(Recommended)** Add a CloudWatch billing alarm at $5/day on the RDS
-   service in the CI account as a cost guardrail.
+4. **(Recommended)** Add a CloudWatch billing alarm at $5/day on RDS in
+   this account as a cost guardrail.
 
 ## Local dry run
 
 ```bash
-cd infrastructure/ci/aws-rds
+export RUN_ID="local-$(date +%s)"
+export AWS_REGION=us-east-2
+# AWS credentials must already be in the environment (aws sso, env vars, etc.)
 
-terraform init \
-  -backend-config=key=local-$(whoami).tfstate
+./infrastructure/ci/aws-rds/provision.sh
+# Script prints pg_host=..., mysql_host=... at the end.
 
-terraform apply \
-  -var="run_id=local-$(date +%s)" \
-  -var="runner_ip=$(curl -s https://api.ipify.org)" \
-  -var="region=us-east-2"
-
-# Pull outputs into the environment the seed + tests expect.
-eval "$(terraform output -json | jq -r '
-  "export BKS_RDS_PG_HOST=\(.pg_host.value)",
-  "export BKS_RDS_PG_PORT=\(.pg_port.value)",
-  "export BKS_RDS_PG_MASTER_USER=\(.pg_master_user.value)",
-  "export BKS_RDS_PG_MASTER_PASSWORD=\(.pg_master_password.value)",
-  "export BKS_RDS_PG_IAM_USER=\(.pg_iam_user.value)",
-  "export BKS_RDS_MYSQL_HOST=\(.mysql_host.value)",
-  "export BKS_RDS_MYSQL_PORT=\(.mysql_port.value)",
-  "export BKS_RDS_MYSQL_MASTER_USER=\(.mysql_master_user.value)",
-  "export BKS_RDS_MYSQL_MASTER_PASSWORD=\(.mysql_master_password.value)",
-  "export BKS_RDS_MYSQL_IAM_USER=\(.mysql_iam_user.value)"
-' | paste -sd' ' -)"
-
-../../../bin/rds/seed-rds.sh
-
-export BKS_RDS_AWS_REGION=us-east-2
+# Wire those into the test driver:
+export BKS_RDS_AWS_REGION=$AWS_REGION
+export BKS_RDS_PG_HOST=...        BKS_RDS_PG_PORT=5432    BKS_RDS_PG_IAM_USER=bks_iam_user
+export BKS_RDS_MYSQL_HOST=...     BKS_RDS_MYSQL_PORT=3306 BKS_RDS_MYSQL_IAM_USER=bks_iam_user
 export BKS_TEST_ACCESS_KEY_ID=...
 export BKS_TEST_SECRET_ACCESS_KEY=...
 export AWS_ACCESS_KEY_ID="$BKS_TEST_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="$BKS_TEST_SECRET_ACCESS_KEY"
-export AWS_DEFAULT_REGION=us-east-2
 
-cd ../../..
 yarn test:rds
 
-cd infrastructure/ci/aws-rds
-terraform destroy -auto-approve \
-  -var="run_id=local-..." \
-  -var="runner_ip=$(curl -s https://api.ipify.org)" \
-  -var="region=us-east-2"
-```
+./infrastructure/ci/aws-rds/destroy.sh
 
-Double-check nothing was left behind:
-
-```bash
+# Confirm nothing's left:
 aws rds describe-db-instances \
-  --query "DBInstances[?contains(TagList[?Key=='bks-ci-integration'].Value, 'true')].DBInstanceIdentifier"
+  --query "DBInstances[?contains(TagList[?Key=='bks-run-id'].Value, '$RUN_ID')].DBInstanceIdentifier"
 ```
 
-## Adding another cloud (Azure SQL, Cloud SQL, ...)
+## Adding another cloud (Snowflake, BigQuery, Cloud SQL, Azure SQL)
 
-Clone `infrastructure/ci/aws-rds/` to the sibling directory, swap the
-provider + resources, and add a new workflow modeled on
-`rds-integration.yml`. The test layer (`RdsTestDriver`, `runCommonTests`)
-is engine-agnostic and can be reused by passing different env vars.
+Clone this directory to a sibling — e.g. `infrastructure/ci/gcp-cloudsql/`
+— and replace `provision.sh` / `destroy.sh` with the equivalent
+`gcloud` commands. Then add a workflow modeled on
+`rds-integration.yml` that calls them. The test layer
+(`RdsTestDriver`, `runCommonTests`) doesn't care which cloud the
+endpoints point at — it just reads `BKS_RDS_*` env vars.
