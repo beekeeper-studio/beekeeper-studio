@@ -75,33 +75,20 @@ Three steps. No OIDC, no Terraform state backend, no custom VPC.
          "Resource": "*"
        },
        {
-         "Sid": "EC2ReadAndCreate",
+         "Sid": "EC2ManageSGs",
          "Effect": "Allow",
          "Action": [
            "ec2:DescribeVpcs",
            "ec2:DescribeSecurityGroups",
            "ec2:CreateSecurityGroup",
+           "ec2:DeleteSecurityGroup",
+           "ec2:AuthorizeSecurityGroupIngress",
+           "ec2:RevokeSecurityGroupIngress",
            "ec2:CreateTags"
          ],
          "Resource": "*",
          "Condition": {
            "StringEquals": { "aws:RequestedRegion": "us-east-2" }
-         }
-       },
-       {
-         "Sid": "EC2ModifyOurSGs",
-         "Effect": "Allow",
-         "Action": [
-           "ec2:DeleteSecurityGroup",
-           "ec2:AuthorizeSecurityGroupIngress",
-           "ec2:RevokeSecurityGroupIngress"
-         ],
-         "Resource": "*",
-         "Condition": {
-           "StringEquals": {
-             "aws:RequestedRegion": "us-east-2",
-             "ec2:ResourceTag/bks-ci-integration": "true"
-           }
          }
        },
        {
