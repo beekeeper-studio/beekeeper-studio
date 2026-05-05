@@ -1,11 +1,9 @@
 import { BeeCursor } from "@/lib/db/models";
 import { DynamoDBDocumentClient, ScanCommand, ExecuteStatementCommand } from "@aws-sdk/lib-dynamodb";
 import rawLog from '@bksLogger';
+import BksConfig from '@/common/bksConfig';
 
 const log = rawLog.scope('dynamodb-cursor');
-
-// Default timeout for cursor fetch operations (30 seconds)
-const CURSOR_FETCH_TIMEOUT_MS = 30000;
 
 interface ScanCursorOptions {
   kind: 'scan';
@@ -52,8 +50,9 @@ export class DynamoDBCursor extends BeeCursor {
     if (this.exhausted) return;
 
     const fetchWithTimeout = async <T>(promise: Promise<T>): Promise<T> => {
+      const timeoutMs = BksConfig.db.dynamodb.cursorFetchTimeout;
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('DynamoDB cursor fetch timed out')), CURSOR_FETCH_TIMEOUT_MS);
+        setTimeout(() => reject(new Error('DynamoDB cursor fetch timed out')), timeoutMs);
       });
       return Promise.race([promise, timeoutPromise]);
     };

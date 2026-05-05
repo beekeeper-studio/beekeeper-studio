@@ -98,6 +98,22 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        dynamodb: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            cursorFetchTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxOrderByItems: number;
+            maxReservedConnections: number;
+            maxSortableTableSize: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         firebird: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;

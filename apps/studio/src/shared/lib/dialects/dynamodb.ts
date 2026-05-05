@@ -51,11 +51,16 @@ export const DynamoDBData: DialectData = {
     duplicateTable: true,
     erd: true,
     multipleDatabases: true,
+    // DynamoDB does not support server-side ORDER BY. Custom sorting would require
+    // a full table scan which is expensive and disabled by default.
+    headerSort: true,
+    initialSort: true,
   },
   notices: {
     infoSchema: 'DynamoDB is schemaless. Columns shown are discovered from sampled data.',
     infoCreateTable: 'DynamoDB tables are created with a single "id" partition key. Use the AWS Console for more complex table configurations.',
     infoRelations: 'DynamoDB does not support foreign key relationships.',
     infoIndexes: 'Index management is available through the AWS Console.',
+    infoSorting: 'DynamoDB does not support server-side sorting. Column sorting is disabled to avoid full table scans.',
   }
 }

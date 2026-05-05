@@ -56,6 +56,8 @@ import { resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { DynamoDBCursor } from './dynamodb/DynamoDBCursor';
+import BksConfig from '@/common/bksConfig';
+import { identify } from 'sql-query-identifier';
 
 const log = rawLog.scope('dynamodb');
 
@@ -529,15 +531,29 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
 
     const items: any[] = [];
     let lastKey: Record<string, any> | undefined;
-    const hasOrder = orderBy && orderBy.length > 0;
     const target = (offset || 0) + (limit || 0);
-    // Memory protection: limit items buffered for ORDER BY operations
-    const MAX_ORDER_BY_ITEMS = 100000;
+    const maxOrderByItems = BksConfig.db.dynamodb.maxOrderByItems;
+    const maxSortableTableSize = BksConfig.db.dynamodb.maxSortableTableSize;
+
+    // DynamoDB does not support server-side ORDER BY for Scan operations.
+    // Custom sorting requires a full table scan which is expensive and can cause
+    // memory/performance issues on large tables. Sorting is disabled by default
+    // (maxSortableTableSize = 0) and can optionally be enabled for small tables.
+    let hasOrder = orderBy && orderBy.length > 0;
+    if (hasOrder && maxSortableTableSize > 0) {
+      const tableSize = await this.getTableLength(table);
+      if (tableSize > maxSortableTableSize) {
+        log.warn(`DynamoDB selectTop: Sorting disabled for table ${table} (${tableSize} items exceeds maxSortableTableSize ${maxSortableTableSize})`);
+        hasOrder = false;
+      }
+    } else if (hasOrder && maxSortableTableSize === 0) {
+      // Sorting is disabled entirely
+      hasOrder = false;
+    }
+
     // Scan page-by-page. DynamoDB has no SQL-style offset and no server-side
-    // ORDER BY for Scan, so:
-    //   - without orderBy: stop once we've buffered enough to satisfy offset+limit
-    //   - with orderBy: we must scan the full result set so the in-memory sort
-    //     produces a globally-correct slice
+    // ORDER BY for Scan, so without sorting we stop once we've buffered enough
+    // to satisfy offset+limit.
     do {
       try {
         const result = await this.doc.send(new ScanCommand({
@@ -552,8 +568,8 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         lastKey = result.LastEvaluatedKey;
         if (!hasOrder && target > 0 && items.length >= target) break;
         // Memory protection for ORDER BY: stop if we exceed the limit
-        if (hasOrder && items.length >= MAX_ORDER_BY_ITEMS) {
-          log.warn(`DynamoDB selectTop: ORDER BY scan exceeded ${MAX_ORDER_BY_ITEMS} items, results may be incomplete`);
+        if (hasOrder && items.length >= maxOrderByItems) {
+          log.warn(`DynamoDB selectTop: ORDER BY scan exceeded ${maxOrderByItems} items, results may be incomplete`);
           break;
         }
       } catch (err) {
@@ -635,15 +651,18 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   }
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
-    // Split on ';' that sit outside of single-quoted strings. PartiQL strings use
-    // single quotes, so any ';' inside them should be preserved.
-    const statements = splitPartiQL(queryText).filter((s) => s.trim().length > 0);
+    // Use sql-query-identifier with generic dialect to split statements and identify types.
+    // PartiQL follows similar syntax rules to ANSI SQL (single-quoted strings, semicolon
+    // terminators) so the generic dialect works for basic parsing.
+    const identified = identify(queryText, { strict: false, dialect: 'generic' });
     const results: NgQueryResult[] = [];
 
-    for (const raw of statements) {
-      const statement = raw.trim();
+    for (const stmt of identified) {
+      const statement = stmt.text.trim();
       if (!statement) continue;
-      if (this.readOnlyMode && isMutation(statement)) {
+
+      const isMutation = stmt.executionType === 'MODIFICATION';
+      if (this.readOnlyMode && isMutation) {
         throw new Error('Write action(s) not allowed in Read-Only Mode.');
       }
       try {
@@ -664,9 +683,9 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         results.push({
           rows: items,
           rowCount: items.length,
-          affectedRows: isMutation(statement) ? items.length : 0,
+          affectedRows: isMutation ? items.length : 0,
           fields: fieldNames.map((n) => ({ name: n, id: n })),
-          command: firstWord(statement),
+          command: stmt.type,
           text: statement,
         });
       } catch (err) {
@@ -938,33 +957,4 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     // Not used — executeQuery goes through the PartiQL SDK directly.
     throw new Error('DynamoDB does not support rawExecuteQuery');
   }
-}
-
-// Split a PartiQL string on ';' boundaries but ignore semicolons inside single
-// quotes. `sql-query-identifier` doesn't speak PartiQL, so we do it by hand.
-function splitPartiQL(text: string): string[] {
-  const out: string[] = [];
-  let buf = '';
-  let inQuote = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (c === "'" && text[i - 1] !== '\\') inQuote = !inQuote;
-    if (c === ';' && !inQuote) {
-      out.push(buf);
-      buf = '';
-    } else {
-      buf += c;
-    }
-  }
-  if (buf.trim()) out.push(buf);
-  return out;
-}
-
-function firstWord(s: string): string {
-  return (s.trim().split(/\s+/, 1)[0] || '').toUpperCase();
-}
-
-function isMutation(s: string): boolean {
-  const w = firstWord(s);
-  return w === 'INSERT' || w === 'UPDATE' || w === 'DELETE';
 }
