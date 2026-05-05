@@ -103,6 +103,10 @@ jobs:
             type: macos
     steps:
 
+      - name: setup LXD
+        uses: canonical/setup-lxd@main
+        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
+
       - name: Check out Git repository
         uses: actions/checkout@v1
 

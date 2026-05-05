@@ -17,6 +17,10 @@ on:
     paths-ignore:
       - apps/sqltools/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prep:
     runs-on: ubuntu-24.04
@@ -101,6 +105,9 @@ jobs:
       - name: Check for missing lodash imports
         run: bin/check-lodash.sh
 
+      - name: Build UI Kit
+        run: yarn lib:build
+
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
@@ -180,56 +187,3 @@ jobs:
   #       max_attempts: 2
   #       on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
   #       command: yarn workspace beekeeper-studio run test:codemirror --runInBand --ci
-
-  e2e:
-    name: E2E tests
-    runs-on: ubuntu-24.04
-    needs: [prep]
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            node_modules
-            apps/studio/node_modules
-            apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
-          fail-on-cache-miss: true
-
-      - name: Start postgres container
-        run: docker compose up psql15 -d
-
-      - name: Serve + Run Tests
-        run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
-          yarn run electron:serve > server.log 2>&1 &
-            sleep 15
-            cat server.log  # (Optional: see if it launched correctly)
-            yarn workspace beekeeper-studio test:e2e:ci
-          '
-        env:
-          ELECTRON_ENABLE_LOGGING: 1
-          ELECTRON_DISABLE_SANDBOX: 1
-          ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
-
-
-      # - name: Run E2E Tests
-      #   run: yarn test:e2e:ci
-      #   continue-on-error: true
-
-      - name: Upload test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: apps/studio/test-results
-          retention-days: 30

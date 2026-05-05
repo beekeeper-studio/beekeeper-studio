@@ -107,6 +107,7 @@ export const SurrealDBData: DialectData = {
   defaultColumnType: 'any',
   disabledFeatures: {
     manualCommit: true,
+    resultEditing: true,
     shell: true,
     alter: {
       everything: true

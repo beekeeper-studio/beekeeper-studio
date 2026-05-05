@@ -20,7 +20,6 @@ export interface SearchResult extends IndexItem {
 const uf = new uFuzzy({
   intraMode: 0,
   intraIns: Infinity,
-  intraChars: ".",
 });
 
 export function searchItems(

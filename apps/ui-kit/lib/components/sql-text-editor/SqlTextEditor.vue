@@ -57,7 +57,12 @@ export default Vue.extend({
           this.$emit("bks-query-selection-change", params)
         },
         columnsGetter: (entity: Entity) => {
-          return this.columnsGetter?.(entity.name) || [];
+          // Pass the schema-qualified name when schema is known, so consumers
+          // can disambiguate between e.g. "public.users" and "other.users".
+          const tableName = entity.schema
+            ? `${entity.schema}.${entity.name}`
+            : entity.name;
+          return this.columnsGetter?.(tableName) || [];
         },
       });
     },
@@ -70,11 +75,7 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    contextMenuItemsModifier(
-      _event,
-      items: InternalContextItem<unknown>[],
-      context: TextEditorMenuContext
-    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
+    addFormatItemsToContextMenu(items: InternalContextItem<unknown>[]) {
       const formatItem: InternalContextItem<unknown> = {
         label: `Format Query`,
         id: "text-format",
@@ -100,13 +101,23 @@ export default Vue.extend({
           }))
         ];
       }
-      
-      const modifiedItems = [
+
+      return [
         ...items,
         formatItem
       ];
+    },
+    contextMenuItemsModifier(
+      _event,
+      items: InternalContextItem<unknown>[],
+      context: TextEditorMenuContext
+    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
+      if (!this.readOnly) {
+        items = this.addFormatItemsToContextMenu(items);
+      }
+
       return {
-        items: modifiedItems,
+        items,
         context: {
           ...context,
           selectedQuery: this.selectedQuery,

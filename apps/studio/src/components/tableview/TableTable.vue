@@ -21,10 +21,16 @@
         @submit="triggerFilter"
       />
       <div
-        v-show="isEmpty"
+        v-show="isEmpty && !dataLoading"
         class="empty-placeholder"
       >
         No Data
+      </div>
+      <div
+        v-show="dataLoading"
+        class="empty-placeholder"
+      >
+        <loading-spinner :size="20" /> Loading...
       </div>
       <div
         class="table-view-wrapper"
@@ -317,6 +323,7 @@ import Statusbar from '../common/StatusBar.vue'
 import RowFilterBuilder from './RowFilterBuilder.vue'
 import ColumnFilterModal from './ColumnFilterModal.vue'
 import EditorModal from './EditorModal.vue'
+import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue"
 import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
@@ -345,7 +352,7 @@ const log = rawLog.scope('TableTable')
 let draftFilters: TableFilter[] | string | null;
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, LoadingSpinner },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
@@ -357,6 +364,7 @@ export default Vue.extend({
       columnsSet: false,
       tabulator: null,
       loading: false,
+      dataLoading: false,
       hasNextPage: false,
 
       // table data
@@ -412,7 +420,7 @@ export default Vue.extend({
       return _.isEmpty(this.data);
     },
     isCassandra() {
-      return this.connectionType === 'cassandra'
+      return ['cassandra', 'scylladb'].includes(this.connectionType)
     },
     queryDialect() {
       return this.dialectData?.queryDialectOverride ?? this.dialect;
@@ -947,9 +955,15 @@ export default Vue.extend({
       log.debug('tab pressed')
 
     },
+    isFocusingEditableElement() {
+      const el = document.activeElement
+      if (!el) return false
+      const tag = (el as HTMLElement).tagName.toLowerCase()
+      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).getAttribute('contenteditable') === 'true'
+    },
     async navigatePage (dir: 'next' | 'prev' | 'first' | 'last') {
       const focusingTable = this.tabulator.element.contains(document.activeElement)
-      if (!focusingTable) {
+      if (!focusingTable && !this.isFocusingEditableElement()) {
         if (dir === 'next') {
           this.page++
         } else if (dir === 'prev') {
@@ -1133,7 +1147,13 @@ export default Vue.extend({
         },
         { separator: true },
         {
-          label: createMenuItem('See details'),
+          label: createMenuItem(
+            'See details',
+            this.$bksConfig.getKeybindings(
+              'context-menu',
+              'general.jsonViewerSidebar'
+            )
+          ),
           action: () => {
             this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
             this.trigger(AppEvent.toggleSecondarySidebar, true)
@@ -1426,6 +1446,7 @@ export default Vue.extend({
       }
     },
     cloneSelection(range?: RangeComponent) {
+      if (!this.editable) return;
       const rows = range && range.getRows ? range.getRows() : this.getSelectedRows()
       rows.forEach((row) => {
         const data = { ...row.getData() }
@@ -1462,9 +1483,10 @@ export default Vue.extend({
       })
     },
     cellAddRow() {
-      if (this.dialectData.disabledFeatures?.tableTable) {
+      if (!this.editable) {
         return;
       }
+
       this.tabulator.addRow({}, true).then(row => {
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
@@ -1599,6 +1621,9 @@ export default Vue.extend({
     async saveChanges() {
         this.saveError = null
 
+        // guard to make sure we don't do anything in readonly mode
+        if (!this.editable) return;
+
         let replaceData = false
 
         try {
@@ -1727,6 +1752,7 @@ export default Vue.extend({
       this.filters = filters
     },
     dataFetch(_url, _config, params) {
+      this.dataLoading = true
       // this conforms to the Tabulator API
       // for ajax requests. Except we're just calling the database.
       // we're using paging so requires page info
@@ -1793,6 +1819,7 @@ export default Vue.extend({
               response.result.pop()
             }
             this.data = response.result
+            this.dataLoading = false
 
             if (_.xor(response.fields, this.table.columns.map(c => c.columnName)).length > 0) {
               log.debug('table has changed, updating')
@@ -1838,6 +1865,7 @@ export default Vue.extend({
               this.tabulator.clearData()
             })
             reject(error.message);
+            this.dataLoading = false
           } finally {
             if (!this.active) {
               this.forceRedraw = true

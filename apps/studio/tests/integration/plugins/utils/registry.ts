@@ -1,4 +1,4 @@
-import { Manifest, PluginOrigin, PluginRegistryEntry, Release } from "@/services/plugin";
+import { Manifest, PluginOrigin, PluginRegistryEntry } from "@/services/plugin";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
 
@@ -34,82 +34,175 @@ export type Plugin = {
  */
 export class MockPluginRepositoryService extends PluginRepositoryService {
   plugins: Plugin[] = [];
+  private server: MockPluginServer;
 
-  constructor(private server: MockPluginServer) {
-    super();
+  constructor(server: MockPluginServer) {
+    super({
+      octokitOptions: {
+        request: {
+          fetch: (...args: Parameters<typeof fetch>) =>
+            this.mockFetch(...args),
+        },
+      },
+    });
+    this.server = server;
   }
 
-  protected async fetchJson(_owner: string, _repo: string, path: string): Promise<PluginRegistryEntry[]> {
+  mockFetch(
+    input: Parameters<typeof fetch>[0],
+    _init?: Parameters<typeof fetch>[1]
+  ): Promise<Response> {
+    const url = typeof input === "string" ? input : input.toString();
+
+    // GET /repos/{owner}/{repo}/contents/{path} — used by fetchJson
+    const contentsMatch = url.match(
+      /\/repos\/([^/]+)\/([^/]+)\/contents\/(.+)/
+    );
+    if (contentsMatch) {
+      return this.handleContents(contentsMatch[3]);
+    }
+
+    // GET /repos/{owner}/{repo}/readme — used by fetchReadme
+    const readmeMatch = url.match(/\/repos\/([^/]+)\/([^/]+)\/readme/);
+    if (readmeMatch) {
+      return this.handleReadme(readmeMatch[1], readmeMatch[2]);
+    }
+
+    // GET /repos/{owner}/{repo}/releases/assets/{asset_id} — used by
+    // fetchLatestRelease (second request, fetches manifest.json content)
+    const assetMatch = url.match(
+      /\/repos\/([^/]+)\/([^/]+)\/releases\/assets\/(\d+)/
+    );
+    if (assetMatch) {
+      return this.handleReleaseAsset(assetMatch[1], assetMatch[2]);
+    }
+
+    // GET /repos/{owner}/{repo}/releases/latest — used by fetchLatestRelease
+    const latestMatch = url.match(
+      /\/repos\/([^/]+)\/([^/]+)\/releases\/latest/
+    );
+    if (latestMatch) {
+      return this.handleLatestRelease(latestMatch[1], latestMatch[2]);
+    }
+
+    return Promise.resolve(
+      new Response("Not Found", { status: 404 })
+    );
+  }
+
+  private handleContents(path: string): Promise<Response> {
     const plugins = this.plugins.filter((p) =>
       path === "plugins.json"
         ? p.origin === "official"
         : p.origin === "community"
     );
-    return plugins.map((p) => ({
+    const entries: PluginRegistryEntry[] = plugins.map((p) => ({
       id: p.id,
       name: p.name,
-      repo: this.repoStr(p),
-      author: this.authorStr(p),
-      description: this.descriptionStr(p),
+      repo: repoStr(p),
+      author: authorStr(p),
+      description: descriptionStr(p),
     }));
+    const content = Buffer.from(JSON.stringify(entries)).toString("base64");
+    return Promise.resolve(
+      new Response(JSON.stringify({ content }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
   }
 
-  async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
+  private handleReadme(owner: string, repo: string): Promise<Response> {
+    const plugin = this.findPlugin(owner, repo);
+    const content = Buffer.from(plugin.readme).toString("base64");
+    return Promise.resolve(
+      new Response(JSON.stringify({ content }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+  }
+
+  private handleLatestRelease(
+    owner: string,
+    repo: string
+  ): Promise<Response> {
+    const plugin = this.findPlugin(owner, repo);
+    const manifest = this.buildManifest(plugin);
+    const zipName = `${manifest.id}-${manifest.version}.zip`;
+    const body = {
+      assets: [
+        {
+          id: 1,
+          name: "manifest.json",
+        },
+        {
+          id: 2,
+          name: zipName,
+          browser_download_url: this.server.formatUrl(manifest),
+        },
+      ],
+    };
+    return Promise.resolve(
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+  }
+
+  private handleReleaseAsset(
+    owner: string,
+    repo: string,
+  ): Promise<Response> {
+    const plugin = this.findPlugin(owner, repo);
+    const manifest = this.buildManifest(plugin);
+    const buf = Buffer.from(JSON.stringify(manifest));
+    return Promise.resolve(
+      new Response(buf, {
+        status: 200,
+        headers: { "Content-Type": "application/octet-stream" },
+      })
+    );
+  }
+
+  private findPlugin(owner: string, repo: string): Plugin {
     const plugin = this.plugins.find(
-      (p) => this.repoStr(p) === this.repoStr(owner, repo)
+      (p) => repoStr(p) === `${owner}/${repo}`
     );
     if (!plugin) {
       throw new Error(
         `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin?`
       );
     }
-    return this.createLatestRelease(plugin);
+    return plugin;
   }
 
-  protected async fetchReadme(owner: string, repo: string): Promise<string> {
-    const plugin = this.plugins.find(
-      (p) => this.repoStr(p) === this.repoStr(owner, repo)
-    );
-    if (!plugin) {
-      throw new Error(
-        `Plugin "${owner}/${repo}" not found in registry. Have you registered the plugin?`
-      );
-    }
-    return plugin.readme;
-  }
-
-  private createLatestRelease(plugin: Plugin) {
-    const manifest = {
+  private buildManifest(plugin: Plugin): Manifest {
+    return {
       id: plugin.id,
       name: plugin.name,
       version: plugin.latestRelease.version,
       minAppVersion: plugin.latestRelease.minAppVersion,
-      author: this.authorStr(plugin),
-      description: this.descriptionStr(plugin),
+      author: authorStr(plugin),
+      description: descriptionStr(plugin),
       capabilities: {
         views: [],
+        menu: [],
       },
-    };
-    return {
-      manifest,
-      sourceArchiveUrl: this.server.formatUrl(manifest),
+      manifestVersion: 1,
     };
   }
+}
 
-  private repoStr(plugin: Plugin): string;
-  private repoStr(owner: string, repo: string): string;
-  private repoStr(owner: string | Plugin, repo?: string): string {
-    if (typeof owner === "object") {
-      return this.repoStr(owner.id, owner.id);
-    }
-    return `${owner}/${repo}`;
-  }
+function repoStr(plugin: Plugin): string {
+  return `${plugin.id}/${plugin.id}`;
+}
 
-  private authorStr(plugin: Plugin) {
-    return `${plugin.id}-author`;
-  }
+function authorStr(plugin: Plugin) {
+  return `${plugin.id}-author`;
+}
 
-  private descriptionStr(plugin: Plugin) {
-    return `${plugin.name} description`;
-  }
+function descriptionStr(plugin: Plugin) {
+  return `${plugin.name} description`;
 }

@@ -7,33 +7,7 @@
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
-      <div
-        v-if="pluginManagerStatus !== 'ready'"
-        class="plugin-status"
-        :class="pluginManagerStatus"
-      >
-        <template v-if="pluginManagerStatus === 'initializing'">
-          Initializing plugins ...
-        </template>
-        <template v-else-if="pluginManagerStatus === 'failed-to-initialize'">
-          Failed to initialize plugin manager.
-        </template>
-      </div>
-      <div v-else-if="plugin && !plugin.loadable" class="plugin-status">
-        <p>
-          Plugin "{{ plugin.manifest.name }}" isn’t compatible with this version of Beekeeper Studio.
-          It requires version {{ plugin.manifest.minAppVersion }} or newer.
-        </p>
-
-        <p>To fix this:</p>
-
-        <ol>
-          <li>Upgrade your Beekeeper Studio.</li>
-          <li>Or install an older plugin version manually (see <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">instructions</a>).</li>
-        </ol>
-      </div>
       <isolated-plugin-view
-        v-else
         :visible="active"
         :plugin-id="tab.context.pluginId"
         :view-id="tab.context.pluginTabTypeId"
@@ -113,9 +87,9 @@ import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { mapState, mapGetters } from "vuex";
+import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
-import type { OnViewRequestListenerParams, PluginContext } from "@/services/plugin/types";
+import type { OnViewRequestListenerParams } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import rawLog from '@bksLogger'
 
@@ -158,16 +132,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["pluginManagerStatus"]),
     ...mapGetters(["isCommunity"]),
-    plugin(): PluginContext {
-      try {
-        return this.$plugin.pluginOf(this.tab.context.pluginId);
-      } catch (e) {
-        log.error(e);
-        return null;
-      }
-    },
     shouldInitialize() {
       return !this.isCommunity && this.active && !this.initialized;
     },

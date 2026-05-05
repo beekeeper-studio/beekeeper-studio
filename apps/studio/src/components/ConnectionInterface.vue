@@ -1,5 +1,6 @@
 <template>
   <div class="interface connection-interface">
+    <privacy-banner class="privacyBanner" :privacy-mode="privacyMode" />
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar
@@ -62,6 +63,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <bedrock-form
+                  v-else-if="config.connectionType === 'bedrock'"
+                  :config="config"
+                  :testing="testing"
+                />
                 <postgres-form
                   v-else-if="['postgresql', 'greengage'].includes(config.connectionType)"
                   :config="config"
@@ -98,7 +104,7 @@
                   :testing="testing"
                 />
                 <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && isUltimate"
+                  v-if="['cassandra', 'scylladb'].includes(config.connectionType) && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
@@ -232,6 +238,7 @@
 <script lang="ts">
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
 import MysqlForm from './connection/MysqlForm.vue'
+import BedrockForm from './connection/BedrockForm.vue'
 import PostgresForm from './connection/PostgresForm.vue'
 import RedshiftForm from './connection/RedshiftForm.vue'
 import Sidebar from './common/Sidebar.vue'
@@ -267,13 +274,13 @@ import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
+import PrivacyBanner from './PrivacyBanner.vue'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
-    ContentPlaceholderHeading, SurrealDbForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner
   },
 
   data() {
@@ -303,6 +310,7 @@ export default Vue.extend({
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
       'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
+      privacyMode: 'settings/privacyMode'
     }),
     communityConnectionTypes() {
       return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
@@ -520,7 +528,8 @@ export default Vue.extend({
       try {
         this.testing = true
         this.connectionError = null
-        await this.$store.dispatch('test', this.config)
+        const connected = await this.$store.dispatch('test', this.config)
+        if (!connected) return false
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {

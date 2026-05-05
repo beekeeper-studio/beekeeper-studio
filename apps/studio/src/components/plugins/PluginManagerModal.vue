@@ -15,7 +15,20 @@
             <div class="description">
               Manage and install plugins in Beekeeper Studio.
             </div>
-            <error-alert :error="errors" />
+            <div class="alerts">
+              <div
+                class="alert alert-warning"
+                v-if="$bksConfig.pluginSystem.disabled"
+              >
+                <template v-if="allowedPluginsText">
+                  The plugin system is disabled. Installing and updating plugins is not available. Only the following bundled plugins are allowed to run: {{ allowedPluginsText }}.
+                </template>
+                <template v-else>
+                  The plugin system is disabled. Installing and updating plugins is not available, and no plugins are allowed to run.
+                </template>
+              </div>
+              <error-alert :error="errors" />
+            </div>
             <plugin-list
               :plugins="plugins"
               @install="install"
@@ -49,7 +62,7 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
-import type { PluginContext, PluginRegistryEntry } from "@/services/plugin";
+import type { PluginSnapshot, PluginRegistryEntry } from "@/services/plugin";
 import { mapGetters, mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
@@ -79,14 +92,25 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["pluginManagerStatus"]),
+    ...mapState("plugins/snapshots", {
+      snapshots: "all",
+    }),
     ...mapGetters("plugins/entries", {
       entries: "all",
     }),
+    ...mapGetters("plugins", ["findPluginOrigin"]),
+    ...mapGetters("plugins/snapshots", ['snapshotsById']),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
     },
     selectedPlugin() {
       return this.plugins[this.selectedPluginIdx];
+    },
+    allowedPluginsText() {
+      return window.bksConfig.pluginSystem.allow
+        .map((id) => this.snapshotsById[id]?.manifest.name)
+        .filter(Boolean)
+        .join(", ");
     },
   },
   watch: {
@@ -207,7 +231,7 @@ export default Vue.extend({
     },
     async buildPluginListData() {
       const entries: PluginRegistryEntry[] = this.entries;
-      const installedPlugins: PluginContext[] = await this.$plugin.plugins;
+      const installedPlugins: PluginSnapshot[] = this.snapshots;
       const list: PluginRegistryEntry[] = [];
 
       for (const { manifest, loadable } of installedPlugins) {
@@ -251,7 +275,10 @@ export default Vue.extend({
         }
       }
 
-      return list;
+      return list.map((item) => ({
+        ...item,
+        origin: this.findPluginOrigin(item.id),
+      }));
     },
     open() {
       this.$modal.show(this.modalName);
@@ -262,3 +289,9 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.alerts {
+  margin-inline: 1.25rem;
+}
+</style>

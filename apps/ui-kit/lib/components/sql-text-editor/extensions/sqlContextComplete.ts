@@ -109,6 +109,10 @@ function sqlCompletionSource(columnsGetter: ColumnsGetter) {
         } else {
           table = path[0];
         }
+      } else if (parents.length >= 2) {
+        // Schema-qualified table without an alias (e.g. `public.users.|`)
+        // The segment before `last` is the schema.
+        schema = parents[parents.length - 2];
       }
 
       const entity = getEntity(context.state, table, schema);
@@ -136,7 +140,12 @@ async function loadColumnsFromQueryContext(
 ): Promise<string[]> {
   const doc = state.doc;
   const line = doc.lineAt(cursor);
-  const textBeforeCursor = line.text.substring(0, cursor - line.from);
+
+  // Look back up to 5 lines so the position check sees keywords like
+  // SELECT/WHERE/ORDER BY even when the cursor is on a different line.
+  const lookbackLine = Math.max(1, line.number - 5);
+  const lookbackStart = doc.line(lookbackLine).from;
+  const textBeforeCursor = doc.sliceString(lookbackStart, cursor);
 
   if (!isColumnCompletionPosition(textBeforeCursor)) {
     return [];
@@ -159,12 +168,21 @@ async function loadColumnsFromQueryContext(
  * Check if cursor is at a position where column completion makes sense
  */
 function isColumnCompletionPosition(textBeforeCursor: string): boolean {
+  // If we're directly after FROM/JOIN (i.e. in a table-name position),
+  // the cursor is not on a column — bail out so we don't suggest columns
+  // while the user is typing a table identifier.
+  // Matches FROM/JOIN followed by whitespace and an optional partial
+  // identifier (including an opening quote/bracket) at end of input.
+  if (/\b(?:FROM|JOIN)\s+["`\[]?[a-zA-Z0-9_]*$/i.test(textBeforeCursor)) {
+    return false;
+  }
+
   const completionPatterns = [
     /\bSELECT\s+/i, // After SELECT (with or without trailing content)
-    /\bSELECT.+,\s*/i, // After comma in SELECT
+    /\bSELECT[\s\S]+,\s*/i, // After comma in SELECT (may span lines)
     /\b(WHERE|AND|OR)\s+/i, // After WHERE/AND/OR
     /\b(ORDER\s+BY|GROUP\s+BY|HAVING)\s+/i, // After ORDER BY/GROUP BY/HAVING
-    /\bJOIN.+\bON\s+/i, // After JOIN...ON
+    /\bJOIN[\s\S]+\bON\s+/i, // After JOIN...ON (may span lines)
   ];
 
   return completionPatterns.some((pattern) => pattern.test(textBeforeCursor));
@@ -200,12 +218,13 @@ function getTablesFromContext(
     }
   }
 
-  // Add tables from FROM clauses
-  const fromMatches = contextText.match(/\bFROM\s+([a-zA-Z0-9_]+)/gi);
-  if (fromMatches) {
-    for (const match of fromMatches) {
-      tables.add(match.replace(/\bFROM\s+/i, "").trim());
-    }
+  // Add tables from FROM and JOIN clauses
+  // Supports unquoted, "double quotes", `backticks`, and [brackets]
+  const tableRegex = /\b(?:FROM|JOIN)\s+(?:"([^"]+)"|`([^`]+)`|\[([^\]]+)\]|([a-zA-Z0-9_]+))/gi;
+  let m: RegExpExecArray | null;
+  while ((m = tableRegex.exec(contextText)) !== null) {
+    const tableName = m[1] || m[2] || m[3] || m[4];
+    if (tableName) tables.add(tableName);
   }
 
   return tables;

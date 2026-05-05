@@ -1,28 +1,28 @@
-import { _electron as electron } from 'playwright';
-import { test, expect, beforeEach, afterEach } from '@playwright/test';
+import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from 'e2e/helpers/launchElectron';
 
-let electronApp;
-let window;
-let queryTab;
-let resultPane;
-let userAttemptsTo;
+let electronApp: ElectronApplication;
+let window: Page;
+let queryTab: QueryTab;
+let resultPane: QueryResultPane;
+let userAttemptsTo: any;
 const testQueryPrefix = `SELECT * FROM actor`;
 
 test.describe("Postgres query execution", () => {
 
-    beforeEach(async () => {
-        electronApp = await electron.launch({ args: ['dist/main.js'] });
+    test.beforeEach(async () => {
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
         userAttemptsTo = userActions(window);
     });
 
-    afterEach(async () => {
+    test.afterEach(async () => {
         if (electronApp) {
             await electronApp.close();
         }

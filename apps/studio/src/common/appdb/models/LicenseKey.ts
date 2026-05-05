@@ -87,6 +87,9 @@ export class LicenseKey extends ApplicationEntity {
   @Column({ type: 'json', nullable: true })
   maxAllowedAppRelease: { tagName: string }
 
+  @Column({ type: 'datetime', nullable: true })
+  invalidatedAt: Date | null
+
   /** Get all licenses except trial */
   static async all() {
     return await LicenseKey.findBy({ licenseType: Not("TrialLicense" as const) });

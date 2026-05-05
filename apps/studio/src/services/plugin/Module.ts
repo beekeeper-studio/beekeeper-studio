@@ -1,7 +1,18 @@
 import type PluginManager from "./PluginManager";
+import type { PluginSnapshot } from "./types";
+
+export type PluginSourcePathParams = {
+  sourceDir: string;
+  id: string;
+  removeSourceDir: boolean;
+};
 
 export interface ModuleHookMap {
   "before-initialize": () => void | Promise<void>;
+  "before-install-plugin": (pluginId: string) => void | Promise<void>;
+  "plugin-snapshots": (
+    snapshots: PluginSnapshot[]
+  ) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
 }
 
 export type ModuleHook = {
@@ -28,7 +39,7 @@ export abstract class Module {
    */
   protected hook<K extends keyof ModuleHookMap>(
     name: K,
-    handler: ModuleHookMap[K],
+    handler: ModuleHookMap[K]
   ) {
     this._hooks.push({ name, handler: handler.bind(this) } as ModuleHook);
   }

@@ -254,6 +254,35 @@ export interface SupportedFeatures {
   filterTypes: IncludedFilterTypes[];
 }
 
+export enum FieldReadOnlyReason {
+  NoLinkedTable,
+  MissingPK,
+  ImproperMapping,
+  IsGenerated
+}
+
+export const FieldReadOnlyReasonStr = {
+  [FieldReadOnlyReason.NoLinkedTable]: 'Could not find a table to link this column to within the query',
+  [FieldReadOnlyReason.MissingPK]: `Could not find all primary keys for this column's linked table`,
+  [FieldReadOnlyReason.ImproperMapping]: 'Could not map field to an existing table column',
+  [FieldReadOnlyReason.IsGenerated]: 'Cannot edit generated columns',
+}
+
+export interface FieldEditData {
+  editable: boolean;
+  id?: string; // this is what the field is referred to as in the object
+  columnName?: string;
+  linkedTable?: string;
+  linkedSchema?: string;
+  isPK?: boolean;
+  generated?: boolean;
+  nullable?: boolean;
+  array?: boolean;
+  readOnlyReason?: FieldReadOnlyReason;
+  dataType?: string;
+  bksField?: BksField;
+}
+
 export interface FieldDescriptor {
   name: string;
   id: string;
@@ -269,6 +298,7 @@ export interface NgQueryResult {
   totalRowCount?: number;
   affectedRows?: number;
   command?: any;
+  text?: string;
 }
 
 export type QueryResult = NgQueryResult[];

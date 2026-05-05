@@ -187,7 +187,7 @@ export type PluginSettings = {
 
 
 export type WebPluginContext = {
-  manifest: Manifest;
+  manifest: ManifestV1;
   store: PluginStoreService;
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
@@ -202,10 +202,13 @@ export type WebPluginContext = {
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
 }
 
-export type PluginContext = {
-  manifest: Manifest;
+export type PluginSnapshot = {
+  manifest: ManifestV1;
+  /** Is this compatible with the current app version? */
   loadable: boolean;
-}
+  origin: PluginOrigin;
+  disableState: DisableState;
+};
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
@@ -220,6 +223,20 @@ export type CreatePluginTabOptions = {
   params?: JsonValue;
   command: string;
 };
+
+/**
+ * By default, `disabled` is `false`.
+ * This value may be modified by other modules (e.g. {@link ConfigurationModule}).
+ */
+type DisableState =
+  | { disabled: false }
+  | {
+      disabled: true;
+      reason:
+        | "plugin-system-disabled"
+        | "community-plugins-disabled"
+        | "disabled-by-config";
+    };
 
 /**
  * Indicates where a plugin originates from:

@@ -1,3 +1,4 @@
+import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
 import { RequestError } from "@octokit/request-error";
 import { Manifest, PluginRepository, Release, PluginRegistryEntry } from "./types";
@@ -8,12 +9,13 @@ const log = rawLog.scope("PluginRepositoryService");
 export default class PluginRepositoryService {
   private octokit: Octokit;
 
-  constructor() {
+  constructor(options?: { octokitOptions?: OctokitOptions }) {
     this.octokit = new Octokit({
       baseUrl: process.env.BKS_PLUGIN_GITHUB_API_BASE_URL,
       userAgent: "Beekeeper Studio",
       auth: process.env.BKS_PLUGIN_GITHUB_TOKEN,
       log,
+      ...options?.octokitOptions,
     });
   }
 

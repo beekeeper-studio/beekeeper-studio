@@ -41,6 +41,7 @@
     <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
     <lock-manager />
+    <input-jwt-modal />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
@@ -86,6 +87,7 @@ import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
+import InputJwtModal from "@/components/common/modals/InputJwtModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -102,6 +104,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    InputJwtModal,
   },
   data() {
     return {
@@ -158,7 +161,10 @@ export default Vue.extend({
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');
     this.licenseInterval = setInterval(
-      () => this.$store.dispatch('licenses/updateAll'),
+      () => {
+        log.debug('license check - interval')
+        this.$store.dispatch('licenses/updateAll')
+      },
       globals.licenseCheckInterval
     )
     const query = querystring.parse(window.location.search, { parseBooleans: true })
