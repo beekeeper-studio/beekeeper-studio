@@ -105,6 +105,9 @@ jobs:
       - name: Check for missing lodash imports
         run: bin/check-lodash.sh
 
+      - name: Build UI Kit
+        run: yarn lib:build
+
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 

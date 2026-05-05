@@ -28,6 +28,7 @@ import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
+import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -76,7 +77,7 @@ async function createUtilityProcess() {
 
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
-      electron.shell.openExternal(msg.url)
+      safeOpenExternal(msg.url)
     }
   })
 
@@ -154,9 +155,7 @@ async function initBasics() {
   log.debug("managing updates")
   manageUpdates(settings.useBeta.valueAsBool)
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
-    const url = args[0]
-    if (!url) return
-    electron.shell.openExternal(url)
+    safeOpenExternal(args?.[0])
   })
   return settings
 }

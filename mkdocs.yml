@@ -141,6 +141,7 @@ nav:
     - user_guide/connecting/duckdb.md
     - user_guide/connecting/firebird.md
     - user_guide/connecting/google-bigquery.md
+    - GreengageDB: user_guide/connecting/greengage.md
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
     - user_guide/connecting/redis.md
@@ -153,6 +154,7 @@ nav:
     - user_guide/sql_editor/editor.md
     - user_guide/sql-query-formatter.md
     - user_guide/sql_editor/manual-transaction-management.md
+    - user_guide/sql_editor/editing-data.md
     - user_guide/sql-ai-shell.md
     - user_guide/editing-data.md
     - user_guide/modify-tables.md
@@ -183,3 +185,4 @@ nav:
     - support/open-source.md
     - support/troubleshooting.md
     - support/data-location.md
+    - support/deprecated-configs.md
