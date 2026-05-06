@@ -83,7 +83,7 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import { mapGetters, mapState } from "vuex";
-import MergeTextEditor from "../../../../ui-kit/lib/components/merge-text-editor/MergeTextEditor.vue";
+import MergeTextEditor from "@beekeeperstudio/ui-kit/vue/merge-text-editor";
 import {
   IQueryAudit,
   IQueryAuditDetail,
@@ -91,7 +91,7 @@ import {
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableOrView } from "@/lib/db/models";
 import { Entity } from "@beekeeperstudio/ui-kit";
-import { Extension } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 import rawLog from "@bksLogger";
 
