@@ -29,7 +29,6 @@ emit() {
   if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "$1=$2" >> "$GITHUB_OUTPUT"
   fi
-  echo "::add-mask::$2" || true
   echo "$1=$2"
 }
 
@@ -122,9 +121,6 @@ PG_HOST="$(aws rds describe-db-instances \
 MYSQL_HOST="$(aws rds describe-db-instances \
   --db-instance-identifier "$MYSQL_ID" \
   --query 'DBInstances[0].Endpoint.Address' --output text)"
-
-echo "::add-mask::$PG_HOST"
-echo "::add-mask::$MYSQL_HOST"
 
 echo "Seeding Postgres..."
 PGPASSWORD="$PG_PASSWORD" psql \
