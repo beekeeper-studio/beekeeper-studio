@@ -154,6 +154,9 @@ export class RdsTestDriver {
       return {
         dialect: 'postgresql',
         defaultSchema: 'public',
+        // RDS IAM users don't get CREATEDB by default; runCommonTests'
+        // 'Should create database' assumes that privilege.
+        skipCreateDatabase: true,
         knexConnectionOptions: {
           ssl: { rejectUnauthorized: false },
         },
@@ -162,6 +165,8 @@ export class RdsTestDriver {
     return {
       dialect: 'mysql',
       skipGeneratedColumns: true,
+      // Same story for MySQL — bks_iam_user is granted on banana_%.* only.
+      skipCreateDatabase: true,
       knexConnectionOptions: {
         ssl: { rejectUnauthorized: false },
       },

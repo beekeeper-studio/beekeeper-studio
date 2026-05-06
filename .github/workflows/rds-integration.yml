@@ -128,6 +128,32 @@ jobs:
               "IpProtocol=tcp,FromPort=5432,ToPort=5432,IpRanges=[{CidrIp=$IP/32}]" \
               "IpProtocol=tcp,FromPort=3306,ToPort=3306,IpRanges=[{CidrIp=$IP/32}]"
 
+      # SG rule additions sometimes propagate a few seconds after the API
+      # returns; we've seen the first jest connection time out as a result.
+      # Probe both ports until reachable so jest's first connect doesn't
+      # land in the propagation window.
+      - name: Wait for RDS reachability
+        env:
+          PG_HOST: ${{ needs.provision.outputs.pg_host }}
+          PG_PORT: ${{ needs.provision.outputs.pg_port }}
+          MYSQL_HOST: ${{ needs.provision.outputs.mysql_host }}
+          MYSQL_PORT: ${{ needs.provision.outputs.mysql_port }}
+        run: |
+          set -euo pipefail
+          probe() {
+            timeout 5 bash -c "echo > /dev/tcp/$1/$2" 2>/dev/null
+          }
+          for attempt in 1 2 3 4 5 6; do
+            if probe "$PG_HOST" "$PG_PORT" && probe "$MYSQL_HOST" "$MYSQL_PORT"; then
+              echo "Both engines reachable on attempt $attempt"
+              exit 0
+            fi
+            echo "Not reachable on attempt $attempt, sleeping 5s..."
+            sleep 5
+          done
+          echo "Failed to reach RDS after 30s" >&2
+          exit 1
+
       - name: Run RDS integration tests
         env:
           BKS_RDS_AWS_REGION: ${{ env.AWS_REGION }}
