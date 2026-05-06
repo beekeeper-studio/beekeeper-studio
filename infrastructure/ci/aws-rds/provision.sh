@@ -108,8 +108,8 @@ create_instance() {
     >/dev/null
 }
 
-create_instance "$PG_ID"    postgres 16.4 5432 "$PG_PASSWORD"
-create_instance "$MYSQL_ID" mysql    8.0  3306 "$MYSQL_PASSWORD"
+create_instance "$PG_ID"    postgres 16  5432 "$PG_PASSWORD"
+create_instance "$MYSQL_ID" mysql    8.0 3306 "$MYSQL_PASSWORD"
 
 echo "Waiting for instances to become available (this typically takes 5-8 min)..."
 aws rds wait db-instance-available --db-instance-identifier "$PG_ID"
