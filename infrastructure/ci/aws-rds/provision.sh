@@ -18,6 +18,7 @@ set -euo pipefail
 PG_ID="bks-ci-pg-${RUN_ID}"
 MYSQL_ID="bks-ci-mysql-${RUN_ID}"
 SG_NAME="bks-ci-rds-${RUN_ID}"
+SUBNET_GROUP_NAME="bks-ci-default"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SEED_DIR="$SCRIPT_DIR/seed"
@@ -42,6 +43,25 @@ VPC_ID="$(aws ec2 describe-vpcs \
   --filters Name=is-default,Values=true \
   --query 'Vpcs[0].VpcId' --output text)"
 [[ "$VPC_ID" == "None" || -z "$VPC_ID" ]] && { echo "No default VPC found" >&2; exit 1; }
+
+# Create-once / reuse-thereafter: a DB subnet group covering the default
+# VPC's per-AZ default subnets. Filtering on `default-for-az` guarantees
+# the picked subnets are in distinct AZs (RDS requires ≥2).
+if aws rds describe-db-subnet-groups \
+     --db-subnet-group-name "$SUBNET_GROUP_NAME" >/dev/null 2>&1; then
+  echo "DB subnet group $SUBNET_GROUP_NAME already exists."
+else
+  echo "Creating DB subnet group $SUBNET_GROUP_NAME..."
+  SUBNET_IDS="$(aws ec2 describe-subnets \
+    --filters "Name=vpc-id,Values=$VPC_ID" "Name=default-for-az,Values=true" \
+    --query 'Subnets[*].SubnetId' --output text)"
+  [[ -z "$SUBNET_IDS" ]] && { echo "No default-for-az subnets in $VPC_ID" >&2; exit 1; }
+  aws rds create-db-subnet-group \
+    --db-subnet-group-name "$SUBNET_GROUP_NAME" \
+    --db-subnet-group-description "Shared subnet group for bks CI RDS instances" \
+    --subnet-ids $SUBNET_IDS \
+    >/dev/null
+fi
 
 echo "Creating security group $SG_NAME in $VPC_ID..."
 SG_ID="$(aws ec2 create-security-group \
@@ -83,7 +103,7 @@ create_instance() {
     --no-deletion-protection \
     --no-multi-az \
     --vpc-security-group-ids "$SG_ID" \
-    --db-subnet-group-name default \
+    --db-subnet-group-name "$SUBNET_GROUP_NAME" \
     --tags $TAGS \
     >/dev/null
 }

@@ -63,22 +63,26 @@ Three steps. No OIDC, no Terraform state backend, no custom VPC.
          ],
          "Resource": [
            "arn:aws:rds:us-east-2:*:db:bks-ci-*",
-           "arn:aws:rds:us-east-2:*:subgrp:*",
+           "arn:aws:rds:us-east-2:*:subgrp:bks-ci-default",
            "arn:aws:rds:us-east-2:*:pg:*",
            "arn:aws:rds:us-east-2:*:og:*"
          ]
        },
        {
-         "Sid": "RDSReadSubnetGroups",
+         "Sid": "RDSManageSubnetGroup",
          "Effect": "Allow",
-         "Action": "rds:DescribeDBSubnetGroups",
-         "Resource": "*"
+         "Action": [
+           "rds:CreateDBSubnetGroup",
+           "rds:DescribeDBSubnetGroups"
+         ],
+         "Resource": "arn:aws:rds:us-east-2:*:subgrp:bks-ci-default"
        },
        {
          "Sid": "EC2ManageSGs",
          "Effect": "Allow",
          "Action": [
            "ec2:DescribeVpcs",
+           "ec2:DescribeSubnets",
            "ec2:DescribeSecurityGroups",
            "ec2:CreateSecurityGroup",
            "ec2:DeleteSecurityGroup",
@@ -101,22 +105,12 @@ Three steps. No OIDC, no Terraform state backend, no custom VPC.
    }
    ```
 
-2. **Default DB subnet group.** RDS needs a subnet group covering at
-   least two AZs. Most accounts already have one called `default`; verify
-   with:
-   ```bash
-   aws rds describe-db-subnet-groups --db-subnet-group-name default
-   ```
-   If that 404s, create it once against the default VPC's public subnets:
-   ```bash
-   aws rds create-db-subnet-group \
-     --db-subnet-group-name default \
-     --db-subnet-group-description default \
-     --subnet-ids subnet-xxx subnet-yyy
-   ```
-
-3. **(Recommended)** Add a CloudWatch billing alarm at $5/day on RDS in
+2. **(Recommended)** Add a CloudWatch billing alarm at $5/day on RDS in
    this account as a cost guardrail.
+
+`provision.sh` creates the shared `bks-ci-default` DB subnet group (covering
+the default VPC's per-AZ default subnets) on first run if it doesn't already
+exist, then reuses it on subsequent runs.
 
 ## Local dry run
 
