@@ -336,6 +336,13 @@
       />
     </div>
 
+    <query-edit-history
+      :open="editHistoryOpen"
+      :query-id="query?.id ?? null"
+      @close="editHistoryOpen = false"
+      @restore="handleEditHistoryRestore"
+    />
+
     <!-- Super-Formatter Modal -->
     <portal to="modals">
       <modal
@@ -522,9 +529,10 @@
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
-  import type { Entity } from "@beekeeperstudio/ui-kit";
+  import { divider, type Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
+  import QueryEditHistory from '@/components/editor/QueryEditHistory.vue'
   import rawlog from '@bksLogger'
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
@@ -550,7 +558,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -595,6 +603,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         vimKeymaps: [],
         formatterPresets: [],
         selectedFormatter: null,
+        editHistoryOpen: false,
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
          * if we want to switch focus. Why two states? We need a feedback from
@@ -1785,8 +1794,19 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           {
             label: "Open Query Formatter",
             id: "formatter",
-            handler: this.formatterPreset
+            handler: this.formatterPreset,
           },
+          ...(this.query?.id && this.isCloud
+            ? [
+                divider,
+                {
+                  label: "View Edit History",
+                  id: "view-edit-history",
+                  handler: this.viewEditHistory,
+                },
+              ]
+            : []),
+          divider,
           ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
             ? [
                 { type: "divider" },
@@ -1799,6 +1819,18 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             : []),
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
+      },
+      viewEditHistory() {
+        if (!this.query?.id) {
+          return;
+        }
+        this.editHistoryOpen = true;
+      },
+      handleEditHistoryRestore(restored) {
+        this.fullQuery = restored;
+        this.unsavedText = restored.text;
+        this.originalText = restored.text;
+        this.editHistoryOpen = false;
       },
       getCommitModeVTooltip(options: {
         title: string;
@@ -1903,6 +1935,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 <style lang="scss" scoped>
   @use "sass:color";
   @import '../assets/styles/app/_variables';
+
+  .query-editor {
+    position: relative;
+  }
+
 
   label[for="commit-mode"] {
     color: var(--text);
