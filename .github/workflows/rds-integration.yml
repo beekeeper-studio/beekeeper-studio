@@ -141,7 +141,7 @@ jobs:
           BKS_TEST_ACCESS_KEY_ID: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
           BKS_TEST_SECRET_ACCESS_KEY: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
           BKS_TEST_AWS_PROFILE: bks-ci
-          # CLI method shells out to /usr/bin/aws which reads these.
+          # CLI method shells out to /usr/local/bin/aws which reads these.
           AWS_ACCESS_KEY_ID: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}

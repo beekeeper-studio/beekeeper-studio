@@ -9,7 +9,7 @@ interface RdsTestDriverOptions {
   authType: IamAuthType
 }
 
-const DEFAULT_CLI_PATH = '/usr/bin/aws'
+const DEFAULT_CLI_PATH = '/usr/local/bin/aws'
 
 function requireEnv(name: string): string {
   const value = process.env[name]
