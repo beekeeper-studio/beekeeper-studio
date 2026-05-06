@@ -45,6 +45,7 @@ jobs:
       mysql_host: ${{ steps.provision.outputs.mysql_host }}
       mysql_port: ${{ steps.provision.outputs.mysql_port }}
       mysql_iam_user: ${{ steps.provision.outputs.mysql_iam_user }}
+      sg_id: ${{ steps.provision.outputs.sg_id }}
     steps:
       - uses: actions/checkout@v4
 
@@ -105,6 +106,27 @@ jobs:
 
       - name: Symlink libaio v1
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1 || true
+
+      # Each matrix runner has a different public IP than the provision
+      # runner, so we authorize this runner onto the per-run SG. Idempotent
+      # because the rule's CIDR is unique per matrix job.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Authorize this runner onto the RDS SG
+        run: |
+          set -euo pipefail
+          IP="$(curl --silent --fail --max-time 10 https://api.ipify.org)"
+          echo "Adding $IP/32 to ${{ needs.provision.outputs.sg_id }}"
+          aws ec2 authorize-security-group-ingress \
+            --group-id "${{ needs.provision.outputs.sg_id }}" \
+            --ip-permissions \
+              "IpProtocol=tcp,FromPort=5432,ToPort=5432,IpRanges=[{CidrIp=$IP/32}]" \
+              "IpProtocol=tcp,FromPort=3306,ToPort=3306,IpRanges=[{CidrIp=$IP/32}]"
 
       - name: Run RDS integration tests
         env:
