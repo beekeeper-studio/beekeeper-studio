@@ -411,9 +411,6 @@ export default Vue.extend({
 
 <style scoped>
 .query-edit-history {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
   background-color: var(--query-editor-bg);
   display: flex;
   overflow: hidden;

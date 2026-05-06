@@ -1806,7 +1806,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
                 },
               ]
             : []),
-          divider,
           ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
             ? [
                 { type: "divider" },
@@ -1938,8 +1937,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   .query-editor {
     position: relative;
-  }
 
+    & ::v-deep .query-edit-history {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+  }
 
   label[for="commit-mode"] {
     color: var(--text);
