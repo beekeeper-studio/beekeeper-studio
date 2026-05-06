@@ -108,8 +108,9 @@ jobs:
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1 || true
 
       # Each matrix runner has a different public IP than the provision
-      # runner, so we authorize this runner onto the per-run SG. Idempotent
-      # because the rule's CIDR is unique per matrix job.
+      # runner. prepare-runner.sh authorizes this runner onto the per-run
+      # SG and waits until both engines are TCP-reachable, so jest's
+      # first connection doesn't race the SG propagation.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -117,42 +118,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Authorize this runner onto the RDS SG
-        run: |
-          set -euo pipefail
-          IP="$(curl --silent --fail --max-time 10 https://api.ipify.org)"
-          echo "Adding $IP/32 to ${{ needs.provision.outputs.sg_id }}"
-          aws ec2 authorize-security-group-ingress \
-            --group-id "${{ needs.provision.outputs.sg_id }}" \
-            --ip-permissions \
-              "IpProtocol=tcp,FromPort=5432,ToPort=5432,IpRanges=[{CidrIp=$IP/32}]" \
-              "IpProtocol=tcp,FromPort=3306,ToPort=3306,IpRanges=[{CidrIp=$IP/32}]"
-
-      # SG rule additions sometimes propagate a few seconds after the API
-      # returns; we've seen the first jest connection time out as a result.
-      # Probe both ports until reachable so jest's first connect doesn't
-      # land in the propagation window.
-      - name: Wait for RDS reachability
+      - name: Prepare runner for RDS access
         env:
+          SG_ID: ${{ needs.provision.outputs.sg_id }}
           PG_HOST: ${{ needs.provision.outputs.pg_host }}
           PG_PORT: ${{ needs.provision.outputs.pg_port }}
           MYSQL_HOST: ${{ needs.provision.outputs.mysql_host }}
           MYSQL_PORT: ${{ needs.provision.outputs.mysql_port }}
-        run: |
-          set -euo pipefail
-          probe() {
-            timeout 5 bash -c "echo > /dev/tcp/$1/$2" 2>/dev/null
-          }
-          for attempt in 1 2 3 4 5 6; do
-            if probe "$PG_HOST" "$PG_PORT" && probe "$MYSQL_HOST" "$MYSQL_PORT"; then
-              echo "Both engines reachable on attempt $attempt"
-              exit 0
-            fi
-            echo "Not reachable on attempt $attempt, sleeping 5s..."
-            sleep 5
-          done
-          echo "Failed to reach RDS after 30s" >&2
-          exit 1
+        run: infrastructure/ci/aws-rds/prepare-runner.sh
 
       - name: Run RDS integration tests
         env:
