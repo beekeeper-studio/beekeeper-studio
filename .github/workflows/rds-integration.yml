@@ -69,7 +69,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        engine: [pg, mysql]
+        engine: [postgres, mysql]
     steps:
       - uses: actions/checkout@v4
 
