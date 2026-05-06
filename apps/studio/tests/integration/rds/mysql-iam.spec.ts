@@ -3,7 +3,6 @@ import { runCommonTests } from '../lib/db/clients/all'
 import { IamAuthType } from '@/lib/db/types'
 import { RdsTestDriver } from './_shared/driver'
 import { setupCredentialsFile, teardownCredentialsFile } from './_shared/credentials-file'
-import { resetSchema } from './_shared/reset'
 
 const AUTH_METHODS: IamAuthType[] = [
   IamAuthType.Key,
@@ -25,8 +24,6 @@ function testWith(authType: IamAuthType) {
       await driver.init()
 
       util = new DBTestUtil(driver.config, driver.database, driver.utilOptions)
-      // Wipe leftovers from any prior describe block on the shared DB.
-      await resetSchema(util.knex, 'mysql')
       await util.setupdb()
     })
 

@@ -23,6 +23,19 @@ function requireEnv(name: string): string {
   return value
 }
 
+// Each auth method gets its own database on the shared RDS instance so the
+// three describe blocks can't collide on table names. The seed
+// (infrastructure/ci/aws-rds/seed/{pg-seed,mysql-seed}.sql) creates these
+// up front and grants bks_iam_user access.
+function dbForAuth(authType: IamAuthType): string {
+  switch (authType) {
+    case IamAuthType.Key:  return 'banana_key'
+    case IamAuthType.File: return 'banana_file'
+    case IamAuthType.CLI:  return 'banana_cli'
+    default: throw new Error(`Unsupported IAM auth type: ${authType}`)
+  }
+}
+
 // IAM auth tokens expire after 15 minutes. DBTestUtil's knex pool is built
 // eagerly in the constructor using whatever `config.password` holds, so we
 // generate a fresh token up front via the same auth path under test and plant
@@ -45,7 +58,7 @@ export class RdsTestDriver {
   constructor({ engine, authType }: RdsTestDriverOptions) {
     this.engine = engine
     this.authType = authType
-    this.database = 'banana'
+    this.database = dbForAuth(authType)
 
     const region = requireEnv('BKS_RDS_AWS_REGION')
 

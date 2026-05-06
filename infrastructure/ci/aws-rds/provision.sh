@@ -94,7 +94,6 @@ create_instance() {
     --storage-encrypted \
     --master-username bks_master \
     --master-user-password "$pw" \
-    --db-name banana \
     --port "$port" \
     --enable-iam-database-authentication \
     --publicly-accessible \
@@ -123,15 +122,18 @@ MYSQL_HOST="$(aws rds describe-db-instances \
   --query 'DBInstances[0].Endpoint.Address' --output text)"
 
 echo "Seeding Postgres..."
+# Connect to the default `postgres` DB to run CREATE DATABASE; the seed
+# uses \connect to switch to each new DB for schema-level grants.
 PGPASSWORD="$PG_PASSWORD" psql \
   --host "$PG_HOST" --port 5432 --username bks_master \
-  --dbname banana --set ON_ERROR_STOP=1 \
+  --dbname postgres --set ON_ERROR_STOP=1 \
   -f "$SEED_DIR/pg-seed.sql"
 
 echo "Seeding MySQL..."
+# No --database — the seed creates the per-auth-method DBs itself.
 mysql --host "$MYSQL_HOST" --port 3306 --user bks_master \
   --password="$MYSQL_PASSWORD" --ssl-mode=REQUIRED \
-  banana < "$SEED_DIR/mysql-seed.sql"
+  < "$SEED_DIR/mysql-seed.sql"
 
 echo "Provision complete."
 emit pg_host        "$PG_HOST"
