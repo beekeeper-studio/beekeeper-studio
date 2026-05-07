@@ -33,6 +33,7 @@ export default defineConfig({
         "@codemirror/lint",
         "@codemirror/lang-sql",
         "@codemirror/autocomplete",
+        "@codemirror/merge",
         "@replit/codemirror-emacs",
         "@replit/codemirror-vim",
         "@marimo-team/codemirror-languageserver",
