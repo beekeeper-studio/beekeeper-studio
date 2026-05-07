@@ -20,7 +20,17 @@
       />
     </section>
     <section class="audit-list" ref="auditList">
-      <header class="sub">Query Edit History</header>
+      <header class="sub">
+        <span>Query Edit History</span>
+        <button
+          class="close-btn btn btn-flat btn-fab"
+          type="button"
+          aria-label="Close"
+          @click="$emit('close')"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </header>
       <div class="audit-groups">
         <x-progressbar v-show="loadingList" />
         <section v-if="dirty" class="audit-group">
@@ -88,7 +98,7 @@
             type="button"
             @click="confirmRestore"
             :disabled="
-              isCurrentVersion() || restoring || selectedAuditId === 'unsaved'
+              isCurrentVersion() || restoring || selectedAuditId === 'unsaved' || loadingList
             "
           >
             Restore this version
@@ -108,8 +118,6 @@ import {
   IQueryAuditDetail,
 } from "@/common/interfaces/IQueryAudit";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { TableOrView } from "@/lib/db/models";
-import { Entity } from "@beekeeperstudio/ui-kit";
 import type { Extension } from "@codemirror/state";
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 import rawLog from "@bksLogger";
@@ -514,8 +522,20 @@ export default Vue.extend({
   }
 
   header {
-    padding: 0.75rem 1rem 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
     color: var(--text-dark);
+  }
+
+  .close-btn {
+    color: var(--text-light);
+
+    .material-icons {
+      font-size: 1.145rem;
+    }
   }
 }
 
@@ -524,11 +544,14 @@ export default Vue.extend({
   overflow: auto;
 }
 
+.audit-group:not(:first-of-type) {
+  margin-top: 0.5rem;
+}
+
 .group-heading {
   margin: 0;
   margin-inline: 1rem;
   padding-block: 0.25rem;
-  margin-top: 0.5rem;
   font-size: 1rem;
   font-weight: normal;
   color: var(--text-light);
