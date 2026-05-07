@@ -1,9 +1,9 @@
 import { _electron as electron } from 'playwright';
 
-export async function launchElectron() {
+export async function launchElectron(opts: { args?: string[] } = {}) {
 
   const app = await electron.launch({
-    args: ['dist/main.js'],
+    args: ['dist/main.js', ...(opts.args ?? [])],
     env: process.env
   });
 

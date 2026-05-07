@@ -65,7 +65,11 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
-  const slice = isDevEnv ? 2 : 1
+  // Strip the electron binary path (and the main.js entry when running unpacked)
+  // before parsing user-supplied positional args. Test mode runs unpacked
+  // (`electron dist/main.js ...`) so it needs the same slice as dev.
+  const isPackaged = !testMode && e.app.isPackaged
+  const slice = isPackaged ? 1 : 2
   const parsedArgs = yargs(p.argv.slice(slice))
   const appVersion = testMode ? '0.0.0' : e.app.getVersion()
 

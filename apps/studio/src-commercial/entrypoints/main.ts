@@ -109,55 +109,79 @@ log.debug("####################################")
 
 log.debug("Platform Information (Electron)")
 log.debug(JSON.stringify(platformInfo, null, 2))
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let settings: IGroupedUserSettings
 let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
-let initialized = false
 
-async function initBasics() {
+// Memoised init promises so concurrent callers (open-url firing alongside ready)
+// observe the same fully-resolved state instead of a partially-initialised one.
+let basicsPromise: Promise<IGroupedUserSettings> | null = null
+let runtimePromise: Promise<void> | null = null
+
+// Pre-ready queue: open-file/open-url can fire before the ready event on macOS
+// cold start; stash the URLs until ready has finished initial setup, then drain.
+let appReady = false
+const pendingOpens: string[] = []
+
+function initBasics(): Promise<IGroupedUserSettings> {
   // this creates the app:// protocol we use for loading assets
   ProtocolBuilder.createAppProtocol()
   // this creates the plugin:// protocol we use for loading plugins
   ProtocolBuilder.createPluginProtocol()
-  if (initialized) return settings
-  initialized = true
-  await ormConnection.connect()
-  console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
-  log.info("running migrations!!")
-  const migrator = new Migration(ormConnection, process.env.NODE_ENV)
-  await migrator.run()
+  if (basicsPromise) return basicsPromise
+  basicsPromise = (async () => {
+    await ormConnection.connect()
+    console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
+    log.info("running migrations!!")
+    const migrator = new Migration(ormConnection, process.env.NODE_ENV)
+    await migrator.run()
 
 
-  log.debug("getting settings")
-  settings = await UserSetting.all()
+    log.debug("getting settings")
+    const settings = await UserSetting.all()
 
-  if (settings.oracleInstantClient) {
-    process.env['LD_LIBRARY_PATH'] = `${process.env.LD_LIBRARY_PATH}:${settings.oracleInstantClient.value}`
-  }
+    if (settings.oracleInstantClient) {
+      process.env['LD_LIBRARY_PATH'] = `${process.env.LD_LIBRARY_PATH}:${settings.oracleInstantClient.value}`
+    }
 
-  const defaultChannel = settings.useBeta.defaultValue === 'true' ? 'beta' : 'stable'
-  // we should change the default channel based on the current app channel
-  if (platformInfo.parsedAppVersion.channel !== defaultChannel) {
-    settings.useBeta.defaultValue = platformInfo.parsedAppVersion.channel === 'beta' ? 'true' : 'false'
-    log.debug("Updating the default channel to", platformInfo.parsedAppVersion.channel)
-    await settings.useBeta.save()
-  }
+    const defaultChannel = settings.useBeta.defaultValue === 'true' ? 'beta' : 'stable'
+    // we should change the default channel based on the current app channel
+    if (platformInfo.parsedAppVersion.channel !== defaultChannel) {
+      settings.useBeta.defaultValue = platformInfo.parsedAppVersion.channel === 'beta' ? 'true' : 'false'
+      log.debug("Updating the default channel to", platformInfo.parsedAppVersion.channel)
+      await settings.useBeta.save()
+    }
 
-  log.debug("setting up the menu")
-  menuHandler = new MenuHandler(electron, settings, bksConfig)
-  menuHandler.initialize()
-  log.debug("Building the window")
-  log.debug("managing updates")
-  manageUpdates(settings.useBeta.valueAsBool)
-  ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
-    safeOpenExternal(args?.[0])
-  })
-  return settings
+    log.debug("setting up the menu")
+    menuHandler = new MenuHandler(electron, settings, bksConfig)
+    menuHandler.initialize()
+    log.debug("Building the window")
+    log.debug("managing updates")
+    manageUpdates(settings.useBeta.valueAsBool)
+    ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
+      safeOpenExternal(args?.[0])
+    })
+    return settings
+  })()
+  return basicsPromise
+}
+
+function initRuntime(): Promise<void> {
+  if (runtimePromise) return runtimePromise
+  runtimePromise = (async () => {
+    initializeSecurity(app)
+    initializeFileHelpers()
+    await createUtilityProcess()
+  })()
+  return runtimePromise
+}
+
+async function openUrlOrFile(url: string): Promise<void> {
+  const settings = await initBasics()
+  await initRuntime()
+  buildWindow(settings, { url })
 }
 
 // Quit when all windows are closed.
@@ -182,12 +206,10 @@ ipcMain.handle('bksConfigSource', () => {
 app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (!hasVisibleWindows) {
-    if (!settings) throw "No settings initialized!"
-    await createUtilityProcess()
-
-    buildWindow(settings)
-  }
+  if (hasVisibleWindows) return
+  const settings = await initBasics()
+  await initRuntime()
+  buildWindow(settings)
 })
 
 // for sending ports to new windows
@@ -217,24 +239,26 @@ app.on('ready', async () => {
 
   }
 
-  // this gets positional arguments
-  const options = platformInfo.parsedArgs._.map((url: string) => ({ url }))
   const settings = await initBasics()
+  await initRuntime()
 
-  if (options.length > 0) {
+  // Positional arguments (Linux/Windows shell-open path).
+  const argvUrls: string[] = platformInfo.parsedArgs._.map(String)
 
-    await Promise.all(options.map((option) => buildWindow(settings, option)))
-  } else {
-    if (getActiveWindows().length === 0) {
-      const settings = await initBasics()
-      initializeSecurity(app);
-      initializeFileHelpers();
-      await createUtilityProcess()
+  // From this point on, open-file/open-url events route directly through
+  // openUrlOrFile instead of being queued.
+  appReady = true
+  const queued = pendingOpens.splice(0)
+  const allOpens = [...argvUrls, ...queued]
 
-      await buildWindow(settings)
-    }
+  if (allOpens.length > 0) {
+    await Promise.all(allOpens.map((url) => openUrlOrFile(url)))
   }
 
+  // Fallback: only show the empty connection screen if nothing else built a window.
+  if (getActiveWindows().length === 0) {
+    buildWindow(settings)
+  }
 })
 
 function createAndSendPorts(filter: boolean, utilDied = false) {
@@ -271,19 +295,26 @@ ipcMain.handle('requestPorts', async () => {
   }
 })
 
-// Open a connection from a file (e.g. ./sqlite.db)
-app.on('open-file', async (event, file) => {
+// Open a connection from a file (e.g. ./sqlite.db).
+// preventDefault must run synchronously, before any await, for Electron to
+// honour our handling of the event.
+app.on('open-file', (event, file) => {
   event.preventDefault();
-  const settings = await initBasics()
-  await buildWindow(settings, { url: file })
+  if (!appReady) {
+    pendingOpens.push(file);
+    return;
+  }
+  openUrlOrFile(file).catch((err) => log.error("open-file failed", err));
 });
 
 // Open a connection from a url (e.g. postgres://host)
-app.on('open-url', async (event, url) => {
+app.on('open-url', (event, url) => {
   event.preventDefault();
-  const settings = await initBasics()
-
-  await buildWindow(settings, { url })
+  if (!appReady) {
+    pendingOpens.push(url);
+    return;
+  }
+  openUrlOrFile(url).catch((err) => log.error("open-url failed", err));
 });
 
 ipcMain.handle('isMaximized', () => {
