@@ -13,13 +13,19 @@ export interface IQueryAudit {
   user: IQueryAuditUser
 }
 
-export interface IQueryAuditSnapshot {
+export interface IQueryAuditValues {
   title: string
   text: string
-  queryFolderId: number | null
+}
+
+export interface IQueryAuditChangeSize {
+  added: number
+  removed: number
 }
 
 export interface IQueryAuditDetail extends IQueryAudit {
-  snapshot: IQueryAuditSnapshot
-  changes: Record<string, unknown>
+  previousAuditId: number | null
+  values: IQueryAuditValues
+  changedFields: string[]
+  changes: Record<string, IQueryAuditChangeSize>
 }

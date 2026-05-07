@@ -1,32 +1,43 @@
 <template>
   <div v-if="open" class="query-edit-history">
-    <section class="preview">
-      <div v-if="loadingDetail && !selectedAudit" class="empty-state">
-        Loading...
-      </div>
-      <div v-else-if="!selectedAudit && !loading" class="empty-state">
+    <section class="preview" ref="preview">
+      <x-progressbar v-show="loadingPreview" />
+      <div
+        v-if="selectedAuditId == null && !loadingList && !loadingPreview"
+        class="empty-state"
+      >
         No history yet.
       </div>
       <merge-text-editor
-        v-else
+        v-else-if="hasPreviewContent"
         :type="connectionType === 'surrealdb' ? 'surrealdb' : 'sql'"
         :current-version="currentText"
         :previous-version="previousText"
         :language-id="languageId"
-        :default-schema="defaultSchema"
-        :entities="entities"
         :show-diff="showDiff"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
       />
     </section>
-    <section class="audit-list">
+    <section class="audit-list" ref="auditList">
       <header class="sub">Query Edit History</header>
-      <div v-if="error" v-text="errorMessage" class="alert alert-danger" />
-      <div v-if="loading && audits.length === 0" class="empty-state">
-        Loading...
-      </div>
-      <div v-else class="audit-groups">
+      <div class="audit-groups">
+        <x-progressbar v-show="loadingList" />
+        <section v-if="dirty" class="audit-group">
+          <ul>
+            <li class="item-wrapper">
+              <button
+                type="button"
+                class="item unsaved-version"
+                :aria-current="selectedAuditId === 'unsaved' ? 'true' : 'false'"
+                @click="selectAudit('unsaved')"
+              >
+                <span class="current-version-badge">Current version</span>
+                <span class="title">Currently unsaved changes</span>
+              </button>
+            </li>
+          </ul>
+        </section>
         <section
           v-for="group in groupedAudits"
           :key="group.heading"
@@ -36,26 +47,32 @@
           <ul>
             <li
               v-for="audit in group.items"
-              :key="audit.id"
+              :key="audit.queryAudit.id"
               class="item-wrapper"
             >
               <button
                 type="button"
                 class="item"
-                :aria-current="audit.id === selectedAuditId ? 'true' : 'false'"
-                @click="selectAudit(audit.id)"
+                :aria-current="
+                  audit.queryAudit.id === selectedAuditId ? 'true' : 'false'
+                "
+                @click="selectAudit(audit.queryAudit.id)"
               >
-                <time v-text="formatTime(audit.createdAt)" />
-                <span class="editor-label">{{ userLabel(audit) }}</span>
-                <span class="badge badge-info" v-if="isCurrentVersion(audit)">
+                <span
+                  class="current-version-badge"
+                  v-if="audit.isCurrentVersion"
+                >
                   Current version
                 </span>
+                <time class="title" v-text="audit.time" />
+                <span class="editor-label">{{ audit.user }}</span>
               </button>
             </li>
           </ul>
         </section>
       </div>
-      <footer class="footer">
+      <div v-if="error" v-text="errorMessage" class="alert alert-danger" />
+      <footer>
         <div>
           <label class="checkbox-group">
             <input type="checkbox" v-model="showDiff" class="form-control" />
@@ -70,7 +87,9 @@
             class="btn btn-primary"
             type="button"
             @click="confirmRestore"
-            :disabled="isCurrentVersion() || restoring"
+            :disabled="
+              isCurrentVersion() || restoring || selectedAuditId === 'unsaved'
+            "
           >
             Restore this version
           </button>
@@ -94,67 +113,21 @@ import { Entity } from "@beekeeperstudio/ui-kit";
 import type { Extension } from "@codemirror/state";
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 import rawLog from "@bksLogger";
+import { relativeDateGroup } from "@/common/date";
+import Split from "split.js";
 
 const log = rawLog.scope("QueryEditHistory");
 
 interface AuditGroup {
   heading: string;
-  items: IQueryAudit[];
+  items: Audit[];
 }
 
-function startOfDay(d: Date): Date {
-  const r = new Date(d);
-  r.setHours(0, 0, 0, 0);
-  return r;
-}
-
-// ISO-style: weeks start on Monday.
-function startOfWeek(d: Date): Date {
-  const r = startOfDay(d);
-  const day = r.getDay();
-  const offset = day === 0 ? -6 : 1 - day;
-  r.setDate(r.getDate() + offset);
-  return r;
-}
-
-function startOfMonth(d: Date): Date {
-  const r = startOfDay(d);
-  r.setDate(1);
-  return r;
-}
-
-function startOfYear(d: Date): Date {
-  const r = startOfDay(d);
-  r.setMonth(0, 1);
-  return r;
-}
-
-function bucketLabel(when: Date, now: Date): string {
-  const today = startOfDay(now);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (when >= today) return "Today";
-  if (when >= yesterday) return "Yesterday";
-  if (when >= startOfWeek(now)) {
-    return when.toLocaleString("en-US", { weekday: "long" });
-  }
-
-  const thisMonth = startOfMonth(now);
-  if (when >= thisMonth) return "This month";
-
-  const lastMonth = new Date(thisMonth);
-  lastMonth.setMonth(lastMonth.getMonth() - 1);
-  if (when >= lastMonth) return "Last month";
-
-  const thisYear = startOfYear(now);
-  if (when >= thisYear) return when.toLocaleString("en-US", { month: "long" });
-
-  const lastYear = new Date(thisYear);
-  lastYear.setFullYear(lastYear.getFullYear() - 1);
-  if (when >= lastYear) return "Last year";
-
-  return "Older";
+interface Audit {
+  time: string;
+  user: string;
+  isCurrentVersion: boolean;
+  queryAudit: IQueryAudit;
 }
 
 export default Vue.extend({
@@ -168,27 +141,35 @@ export default Vue.extend({
       type: Number as PropType<number | null>,
       default: null,
     },
+    unsavedText: {
+      type: String as PropType<string | null>,
+      default: null,
+    },
   },
   data() {
     return {
-      audits: [] as IQueryAudit[],
-      selectedAuditId: null as number | null,
+      queryAudits: [] as IQueryAudit[],
+      selectedAuditId: null as number | "unsaved" | null,
       selectedAudit: null as IQueryAuditDetail | null,
       previousAudit: null as IQueryAuditDetail | null,
-      loading: false,
-      loadingDetail: false,
+      loadingList: false,
+      loadingPreview: false,
       restoring: false,
       error: null as unknown,
       showDiff: true,
+      split: null as ReturnType<typeof Split> | null,
     };
   },
   watch: {
     open: {
       immediate: true,
-      handler(isOpen: boolean) {
+      async handler(isOpen: boolean) {
         if (isOpen) {
           this.loadHistory();
+          await this.$nextTick();
+          this.initSplit();
         } else {
+          this.destroySplit();
           this.resetState();
         }
       },
@@ -201,36 +182,55 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["connectionType", "tables"]),
-    ...mapGetters(["dialectData", "defaultSchema", "cloudClient"]),
+    ...mapGetters(["dialectData", "cloudClient", "workspaceEmail"]),
+    dirty(): boolean {
+      return this.unsavedText !== null;
+    },
     currentText(): string {
-      return this.selectedAudit?.snapshot?.text ?? "";
+      if (this.selectedAuditId === "unsaved") {
+        return this.unsavedText ?? "";
+      }
+      return this.selectedAudit?.values?.text ?? "";
+    },
+    hasPreviewContent(): boolean {
+      // Only mount the merge editor once we have content to render —
+      // mounting it with empty strings causes the inner CodeMirror to
+      // initialize blank and ignore subsequent prop updates.
+      if (this.selectedAuditId === "unsaved") {
+        return this.previousAudit !== null;
+      }
+      return this.selectedAudit !== null;
     },
     previousText(): string {
-      return this.previousAudit?.snapshot?.text ?? "";
+      return this.previousAudit?.values?.text ?? "";
     },
     languageId(): string | undefined {
       const mode = this.dialectData?.textEditorMode;
       return mode === "text/x-redis" ? "redis" : mode;
     },
-    entities(): Entity[] {
-      const tables: TableOrView[] = this.tables || [];
-      return tables.map(
-        (t) =>
-          ({
-            schema: t.schema,
-            name: t.name,
-            entityType: t.entityType,
-          } as Entity)
-      );
+    audits(): Audit[] {
+      // The top entry of the saved list is the "current version" only when
+      // the editor isn't dirty — when dirty, the synthetic unsaved row above
+      // the list takes that role.
+      return this.queryAudits.map((queryAudit: IQueryAudit, i: number) => ({
+        queryAudit,
+        time: this.formatTime(queryAudit.createdAt),
+        user: this.userLabel(queryAudit),
+        isCurrentVersion: !this.dirty && i === 0,
+      }));
     },
     groupedAudits(): AuditGroup[] {
       const now = new Date();
       const groups: AuditGroup[] = [];
       let current: AuditGroup | null = null;
       // `audits` is sorted newest-first by the API, so single-pass grouping
-      // also yields chronological group order (Today → Older).
+      // also yields chronological group order (Today → Years ago).
       for (const audit of this.audits) {
-        const heading = bucketLabel(new Date(audit.createdAt * 1000), now);
+        // createdAt is float seconds since epoch (cloud API convention).
+        const heading = relativeDateGroup(
+          new Date(audit.queryAudit.createdAt * 1000),
+          now
+        );
         if (!current || current.heading !== heading) {
           current = { heading, items: [] };
           groups.push(current);
@@ -255,7 +255,34 @@ export default Vue.extend({
       return (err as Error).message ?? String(err);
     },
   },
+  beforeDestroy() {
+    this.destroySplit();
+  },
   methods: {
+    initSplit() {
+      if (this.split) {
+        return;
+      }
+      const preview = this.$refs.preview as HTMLElement | undefined;
+      const auditList = this.$refs.auditList as HTMLElement | undefined;
+      if (!preview || !auditList) {
+        return;
+      }
+      this.split = Split([preview, auditList], {
+        sizes: [70, 30],
+        minSize: [200, 200],
+        gutterSize: 5,
+        elementStyle: (_dim, size) => ({
+          "flex-basis": `calc(${size}%)`,
+        }),
+      });
+    },
+    destroySplit() {
+      if (this.split) {
+        this.split.destroy();
+        this.split = null;
+      }
+    },
     async loadHistory(): Promise<void> {
       this.resetState();
       if (this.queryId == null) {
@@ -264,22 +291,27 @@ export default Vue.extend({
       await this.loadAudits();
     },
     resetState(): void {
-      this.audits = [];
+      this.queryAudits = [];
       this.selectedAuditId = null;
       this.selectedAudit = null;
       this.previousAudit = null;
-      this.loading = false;
-      this.loadingDetail = false;
+      this.loadingList = false;
+      this.loadingPreview = false;
       this.restoring = false;
       this.error = null;
       this.showDiff = true;
     },
     isCurrentVersion(audit?: IQueryAudit): boolean {
-      const target = audit ?? this.selectedAudit;
-      if (!target || this.audits.length === 0) {
+      // When the editor is dirty, no saved audit reflects what's in the
+      // editor, so restoring any of them is a meaningful action.
+      if (this.dirty || this.queryAudits.length === 0) {
         return false;
       }
-      return target.version === this.audits[0].version;
+      const target = audit ?? this.selectedAudit;
+      if (!target) {
+        return false;
+      }
+      return target.id === this.queryAudits[0].id;
     },
     formatTime(createdAt: number): string {
       // createdAt is float seconds since epoch (cloud API convention).
@@ -305,29 +337,31 @@ export default Vue.extend({
       if (queryId == null) {
         return;
       }
-      this.loading = true;
+      this.loadingList = true;
       this.error = null;
       try {
         const cli = this.cloudClient;
         if (!cli) {
           throw new Error("You are not logged in");
         }
-        const audits: IQueryAudit[] = await cli.queryAudits.list(queryId);
-        this.audits = audits;
-        if (audits.length > 0) {
-          await this.selectAudit(audits[0].id);
-        } else {
+        const queryAudits: IQueryAudit[] = await cli.queryAudits.list(queryId);
+        this.queryAudits = queryAudits;
+        if (queryAudits.length === 0) {
           this.previousAudit = null;
           this.selectedAuditId = null;
           this.selectedAudit = null;
+        } else if (this.dirty) {
+          await this.selectAudit("unsaved");
+        } else {
+          await this.selectAudit(queryAudits[0].id);
         }
       } catch (e) {
         this.error = e;
       } finally {
-        this.loading = false;
+        this.loadingList = false;
       }
     },
-    async selectAudit(auditId: number): Promise<void> {
+    async selectAudit(auditId: number | "unsaved"): Promise<void> {
       const queryId = this.queryId;
       if (queryId == null) {
         return;
@@ -336,23 +370,33 @@ export default Vue.extend({
         return;
       }
       this.selectedAuditId = auditId;
-      this.loadingDetail = true;
+      this.loadingPreview = true;
       this.error = null;
       try {
         const cli = this.cloudClient;
         if (!cli) {
           throw new Error("You are not logged in");
         }
-        const audits = this.audits;
-        const idx = audits.findIndex((a) => a.id === auditId);
-        const previousId =
-          idx >= 0 && idx + 1 < audits.length ? audits[idx + 1].id : null;
-        const [detail, previous] = await Promise.all([
-          cli.queryAudits.get(queryId, auditId),
-          previousId != null
-            ? cli.queryAudits.get(queryId, previousId)
-            : Promise.resolve(null),
-        ]);
+        if (auditId === "unsaved") {
+          // Show editor text vs the latest saved snapshot. Reuse the
+          // already-fetched detail when possible.
+          const latest = this.queryAudits[0];
+          const previous = latest
+            ? this.previousAudit?.id === latest.id
+              ? this.previousAudit
+              : await cli.queryAudits.get(queryId, latest.id)
+            : null;
+          if (this.selectedAuditId === auditId) {
+            this.selectedAudit = null;
+            this.previousAudit = previous;
+          }
+          return;
+        }
+        const detail = await cli.queryAudits.get(queryId, auditId);
+        const previous =
+          detail.previousAuditId != null
+            ? await cli.queryAudits.get(queryId, detail.previousAuditId)
+            : null;
         // Guard against a stale response if the user clicked another row in flight.
         if (this.selectedAuditId === auditId) {
           this.selectedAudit = detail;
@@ -361,7 +405,7 @@ export default Vue.extend({
       } catch (e) {
         this.error = e;
       } finally {
-        this.loadingDetail = false;
+        this.loadingPreview = false;
       }
     },
     async confirmRestore(): Promise<void> {
@@ -416,17 +460,36 @@ export default Vue.extend({
   overflow: hidden;
 }
 
-.query-edit-history .preview {
-  flex-grow: 1;
+.preview {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
+
+  > x-progressbar {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
 }
 
 /* ::v-deep needed: merge editor renders inside a child component's scope. */
 .query-edit-history ::v-deep .BksMergeTextEditor {
   min-height: 0;
   flex-grow: 1;
+  padding-bottom: 0;
+}
+
+/* ::v-deep needed: split.js inserts the gutter at runtime. */
+.query-edit-history ::v-deep .gutter.gutter-horizontal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background-color: var(--border-color);
+  transform: translateX(-50%);
 }
 
 .query-edit-history .empty-state {
@@ -441,10 +504,17 @@ export default Vue.extend({
 .audit-list {
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  min-width: 0;
+  position: relative;
+
+  > x-progressbar {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
 
   header {
-    padding: 0.5rem 1rem 0.25rem;
+    padding: 0.75rem 1rem 0.5rem;
     color: var(--text-dark);
   }
 }
@@ -464,7 +534,32 @@ export default Vue.extend({
   color: var(--text-light);
 }
 
+.unsaved-version .title {
+  display: flex;
+  align-items: center;
+  font-style: italic;
+}
+
+.current-version-badge {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text);
+
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: hsl(from var(--bks-theme-primary) h s calc(l - 2));
+  }
+}
+
 .audit-list {
+  min-width: 20rem;
+
   .alert {
     margin-inline: 1rem;
     margin-bottom: 0.5rem;
@@ -481,15 +576,6 @@ export default Vue.extend({
     font-size: 0.8rem;
   }
 
-  .badge {
-    text-transform: none;
-    display: flex;
-    align-items: center;
-    margin-inline: 0;
-    margin-top: 0.25rem;
-    font-size: 0.8rem;
-  }
-
   .item {
     border: none;
     background-color: transparent;
@@ -500,6 +586,7 @@ export default Vue.extend({
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.15rem;
     padding: 0.4rem 1rem;
     font-size: 1rem;
   }
@@ -513,17 +600,20 @@ export default Vue.extend({
   background-color: rgb(from var(--theme-base) r g b / 10%);
 }
 
-.query-edit-history .footer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-}
+.query-edit-history {
+  footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    padding-top: 0.75rem;
 
-.query-edit-history .footer > div:last-child {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
+    > div:last-child {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+  }
 }
 
 .query-edit-history label.checkbox-group {

@@ -339,6 +339,7 @@
     <query-edit-history
       :open="editHistoryOpen"
       :query-id="query?.id ?? null"
+      :unsaved-text="unsavedChanges ? unsavedText : null"
       @close="editHistoryOpen = false"
       @restore="handleEditHistoryRestore"
     />
@@ -1941,7 +1942,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     & ::v-deep .query-edit-history {
       position: absolute;
       inset: 0;
-      z-index: 1;
+      // must do this to win over the split.js gutter
+      z-index: 21;
     }
   }
 
