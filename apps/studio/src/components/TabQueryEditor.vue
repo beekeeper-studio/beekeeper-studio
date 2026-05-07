@@ -312,6 +312,7 @@
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
       <query-editor-status-bar
+        v-if="!editHistoryOpen"
         v-model="selectedResult"
         :results="results"
         :running="running"
