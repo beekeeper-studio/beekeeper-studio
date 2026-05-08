@@ -55,6 +55,10 @@ const codeMirrorModifierMap = {
   COMMANDORCONTROL: "Mod",
   SHIFT: "Shift",
   ALT: "Alt",
+  ALTORCMD: "Alt",
+  CMDORALT: "Alt",
+  ALTORCOMMAND: "Alt",
+  COMMANDORALT: "Alt",
   OPTION: "Option",
   ALTGR: "AltGraph",
   SUPER: "Meta",
@@ -75,6 +79,10 @@ const electronModifierMap = {
   COMMANDORCONTROL: "CommandOrControl",
   SHIFT: "Shift",
   ALT: "Alt",
+  ALTORCMD: "CommandOrAlt",
+  CMDORALT: "CommandOrAlt",
+  ALTORCOMMAND: "CommandOrAlt",
+  COMMANDORALT: "CommandOrAlt",
   OPTION: "Option",
   ALTGR: "AltGr",
   SUPER: "Super",
@@ -93,6 +101,10 @@ const vHotkeyModifierMap: ModifierMap = {
   COMMANDORCONTROL: "ctrlOrCmd",
   SHIFT: "shift",
   ALT: "alt",
+  ALTORCMD: "altOrCmd",
+  CMDORALT: "altOrCmd",
+  ALTORCOMMAND: "altOrCmd",
+  COMMANDORALT: "altOrCmd",
   OPTION: "option",
   ALTGR: "altgr",
   SUPER: "super",
@@ -111,6 +123,10 @@ export const tabulatorModifierMap = {
   COMMANDORCONTROL: "ctrl",
   SHIFT: "shift",
   ALT: "alt",
+  ALTORCMD: "alt",
+  CMDORALT: "alt",
+  ALTORCOMMAND: "alt",
+  COMMANDORALT: "alt",
   OPTION: "18",
   ALTGR: "225",
   SUPER: "91",
@@ -129,6 +145,10 @@ const uiModifierMap: ModifierMap = {
   COMMANDORCONTROL: (isMac) => (isMac ? "⌘" : "Ctrl"),
   SHIFT: (isMac) => (isMac ? "⇧" : "Shift"),
   ALT: (isMac) => (isMac ? "⌥" : "Alt"),
+  ALTORCMD: (isMac) => (isMac ? "⌘" : "Alt"),
+  CMDORALT: (isMac) => (isMac ? "⌘" : "Alt"),
+  ALTORCOMMAND: (isMac) => (isMac ? "⌘" : "Alt"),
+  COMMANDORALT: (isMac) => (isMac ? "⌘" : "Alt"),
   OPTION: (isMac) => (isMac ? "⌥" : "Alt"),
   ALTGR: "AltGr",
   SUPER: (isMac) => (isMac ? "⌘" : "Super"),
@@ -215,6 +235,8 @@ export function convertKeybinding(
       mod = mod.toLowerCase();
       if (mod === "ctrlorcmd") {
         mod = platform === "mac" ? "meta" : "ctrl";
+      } else if (mod === "altorcmd") {
+        mod = platform === "mac" ? "meta" : "alt";
       }
 
       if (mod === "delete" && platform === "mac") {
