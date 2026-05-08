@@ -824,8 +824,8 @@ export default Vue.extend({
         error: false,
       }))
 
-      if (!files.every(({ file }) => file.name.endsWith('.sql'))) {
-        this.$noty.error('Only .sql files are supported')
+      if (!files.every(({ file }) => /\.(sql|txt)$/i.test(file.name))) {
+        this.$noty.error('Only .sql and .txt files are supported')
         return
       }
 

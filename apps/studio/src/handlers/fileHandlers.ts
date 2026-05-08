@@ -4,6 +4,7 @@ import platformInfo from '@/common/platform_info';
 
 const VIMRC_FILENAME = '.beekeeper.vimrc';
 const MAX_SQL_FILE_BYTES = 50 * 1024 * 1024; // 50 MB — sanity cap on a single saved query.
+const SQL_FILE_EXTENSIONS = new Set(['.sql', '.txt']);
 
 export interface IFileHandlers {
   /**
@@ -13,9 +14,10 @@ export interface IFileHandlers {
    */
   "config/readVimrc": () => Promise<string | null>;
   /**
-   * Read a `.sql` file the user picked through a native open dialog. The
-   * path is validated to (a) end in `.sql` and (b) point at a regular file
-   * the user already has access to. Content is returned as utf-8.
+   * Read a query file the user picked through a native open dialog. The
+   * path is validated to (a) end in one of the allowed text extensions
+   * (.sql, .txt) and (b) point at a regular file the user already has
+   * access to. Content is returned as utf-8.
    */
   "file/readSqlFile": ({ path }: { path: string }) => Promise<string>;
 }
@@ -36,8 +38,11 @@ export const FileHandlers: IFileHandlers = {
       throw new Error('readSqlFile requires a path');
     }
     const ext = path.extname(targetPath).toLowerCase();
-    if (ext !== '.sql') {
-      throw new Error(`readSqlFile only accepts .sql files, got "${ext || '(none)'}"`);
+    if (!SQL_FILE_EXTENSIONS.has(ext)) {
+      const allowed = [...SQL_FILE_EXTENSIONS].join(', ');
+      throw new Error(
+        `readSqlFile only accepts ${allowed} files, got "${ext || '(none)'}"`
+      );
     }
     const stat = await fs.stat(targetPath);
     if (!stat.isFile()) {
