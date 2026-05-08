@@ -46,6 +46,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
     send('switchTheme', label.toLowerCase().replaceAll(" ", "-"))
   }
   reload = () => send('reload')
+  reconnect = () => send('reconnect')
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
   togglePrimarySidebar = () => send('togglePrimarySidebar')

@@ -35,6 +35,7 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/l
 import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
+import { SqlServerConnection } from './sqlserver/SqlServerConnection';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 const log = logRaw.scope('sql-server')
 
@@ -87,7 +88,7 @@ knex.client._escapeBinding = function (value: any, context: any) {
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
-export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
+export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Request | Transaction> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -95,8 +96,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   dbConfig: any
   readOnlyMode: boolean
   logger: any
-  pool: ConnectionPool;
-  authService: AzureAuthService;
+  connection: SqlServerConnection;
   transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -106,6 +106,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     this.defaultSchema = async (): Promise<string> => 'dbo'
     this.logger = () => log
     this.createUpsertFunc = this.createUpsertSQL
+    this.connection = new SqlServerConnection({ server, database })
   }
 
   async getVersion(): Promise<SQLServerVersion> {
@@ -211,7 +212,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
   async query(queryText: string, tabId: number) {
     const hasReserved = this.reservedConnections.has(tabId);
-    const queryRequest: Request = hasReserved ? this.reservedConnections.get(tabId).request() : this.pool.request();
+    const queryRequest: Request = hasReserved ? (this.reservedConnections.get(tabId) as Transaction).request() : await this.connection.request();
     log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
     return {
       execute: async(): Promise<NgQueryResult[]> => {
@@ -569,7 +570,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize)
+      cursor: new SqlServerCursor(await this.connection.request(), query, chunkSize)
     }
   }
 
@@ -673,7 +674,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
-    return runQuery(options.connection ? options.connection : this.pool.request());
+    return runQuery(options.connection ? options.connection : await this.connection.request());
   }
 
   async truncateAllTables() {
@@ -894,7 +895,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return {
       totalRows,
       columns,
-      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize),
+      cursor: new SqlServerCursor(await this.connection.request(), query, chunkSize),
     }
   }
 
@@ -1036,7 +1037,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async importStepZero(table: TableOrView): Promise<any> {
-    const transaction = new sql.Transaction(this.pool)
+    const transaction = await this.connection.transaction();
 
     return {
       transaction,
@@ -1075,28 +1076,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   /* helper functions and settings below! */
 
   async connect(signal?: AbortSignal): Promise<void> {
-    await super.connect();
-
-    this.dbConfig = await this.configDatabase(this.server, this.database, signal)
-    this.pool = await new ConnectionPool(this.dbConfig).connect();
-
-    this.pool.on('error', (err) => {
-      if (err instanceof ConnectionError) {
-        log.error('Pool ConnectionError', err.message)
-      }
-      log.error("Pool event: connection error:", err.name, err.message);
-    });
-
-
-    this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
+    await super.connect(signal);
     this.version = await this.getVersion()
     return
-  }
-
-  async disconnect(): Promise<void> {
-    await this.pool.close();
-
-    await super.disconnect();
   }
 
   async listCharsets() {
@@ -1159,12 +1141,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = this.pool.transaction();
+    const conn = await this.connection.transaction();
     this.pushConnection(tabId, conn);
   }
 
   async releaseConnection(tabId: number): Promise<void> {
-    const conn = this.popConnection(tabId);
+    const conn = this.popConnection(tabId) as Transaction | undefined;
     if (conn) {
       try {
         // This may throw if the connection hasn't been begun yet, so just to be safe we'll catch
@@ -1174,19 +1156,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async startTransaction(tabId: number): Promise<void> {
-    const conn = this.peekConnection(tabId);
+    const conn = this.peekConnection(tabId) as Transaction;
     await conn.begin();
   }
 
   async commitTransaction(tabId: number): Promise<void> {
-    const conn = this.popConnection(tabId);
+    const conn = this.popConnection(tabId) as Transaction;
     await conn.commit();
     // commit releases the connection annoyingly so we have to re reserve one
     await this.reserveConnection(tabId);
   }
 
   async rollbackTransaction(tabId: number): Promise<void> {
-    const conn = this.popConnection(tabId);
+    const conn = this.popConnection(tabId) as Transaction;
     await conn.rollback();
     // rollback also releases the connection so we have to re reserve the connection
     await this.reserveConnection(tabId);
@@ -1237,79 +1219,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     } catch (err) {
       return [];
     }
-  }
-
-  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
-    const config: any = {
-      server: server.config.host,
-      database: database.database,
-      requestTimeout: Infinity,
-      appName: 'beekeeperstudio',
-      pool: {
-        max: BksConfig.db.sqlserver.maxConnections
-      }
-    };
-
-    if (server.config.azureAuthOptions?.azureAuthEnabled) {
-      this.authService = new AzureAuthService();
-      await this.authService.init(server.config.authId)
-
-      const options = getEntraOptions(server, { signal })
-
-      config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
-
-      config.options = {
-        encrypt: true
-      };
-
-      return config;
-    }
-
-    config.user = server.config.user;
-    config.password = server.config.password;
-    config.port = Number(server.config.port);
-
-    if (server.config.domain) {
-      config.domain = server.config.domain
-    }
-
-    if (server.sshTunnel) {
-      config.server = server.config.localHost;
-      config.port = server.config.localPort;
-    }
-
-    config.options = { trustServerCertificate: server.config.trustServerCertificate }
-
-    if (server.config.ssl) {
-      const options: any = {
-        encrypt: server.config.ssl,
-        cryptoCredentialsDetails: {}
-      }
-
-      if (server.config.sslCaFile) {
-        options.cryptoCredentialsDetails.ca = readFileSync(server.config.sslCaFile);
-      }
-
-      if (server.config.sslCertFile) {
-        options.cryptoCredentialsDetails.cert = readFileSync(server.config.sslCertFile);
-      }
-
-      if (server.config.sslKeyFile) {
-        options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
-      }
-
-
-      if (server.config.sslCaFile && server.config.sslCertFile && server.config.sslKeyFile) {
-        // trust = !reject
-        // mssql driver reverses this setting for no obvious reason
-        // other drivers simply pass through to the SSL library.
-        options.trustServerCertificate = !server.config.sslRejectUnauthorized
-      }
-
-      config.options = options;
-    }
-
-    return config;
   }
 
   private genSelectOld(table: string,

@@ -543,16 +543,54 @@ const store = new Vuex.Store<State>({
         }
       }
     },
-    async reconnect(context) {
-      if (context.state.connection) {
-        if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
-          return await context.dispatch('connect', { config: context.state.usedConfig });
-        }
+    async reconnect(context, options?: { silent?: boolean }) {
+      if (!context.state.connection) return false;
 
-        await context.state.connection.connect();
-        return true;
+      if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
+        return await context.dispatch('connect', { config: context.state.usedConfig });
       }
-      return false;
+
+      let notyClosed = false;
+      const noty: Nullable<Noty> = options?.silent
+        ? null
+        : Vue.prototype.$noty.info('Reconnecting...', {
+          timeout: false,
+          killer: 'reconnecting',
+          queue: 'reconnecting',
+          callbacks: {
+            onClose: () => (notyClosed = true),
+          },
+        })
+
+      try {
+        await context.state.connection.connect();
+        if (notyClosed) {
+          Vue.prototype.$noty.success('Connected')
+        } else {
+          noty?.setText('Connected')
+          noty?.setType('success')
+          noty?.setTimeout(2000)
+        }
+        return true;
+      } catch (err) {
+        noty?.close()
+        if (!options?.silent) {
+          Vue.prototype.$noty.error('Reconnection failed. Would you like to try again?', {
+            timeout: false,
+            closeWith: ['button'],
+            killer: 'reconnecting',
+            queue: 'reconnecting',
+            buttons: [
+              Noty.button('Close', 'btn btn-flat', (noty) => noty.close()),
+              Noty.button('Reconnect', 'btn btn-primary', (noty) => {
+                noty.close()
+                context.dispatch('reconnect')
+              }),
+            ],
+          })
+        }
+        throw err
+      }
     },
     async disconnect(context) {
       if (context.state.connection) {

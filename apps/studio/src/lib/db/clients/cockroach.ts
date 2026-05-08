@@ -1,13 +1,14 @@
-import pg, { PoolConfig } from "pg";
+import pg from "pg";
 import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
-import BksConfig from '@/common/bksConfig';
-import { IDbConnectionServer } from "../backendTypes";
+import { CockroachConnection } from "./cockroach/CockroachConnection";
 
 
 export class CockroachClient extends PostgresClient {
+  connection: CockroachConnection;
+
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {
       customRoutines: true,
@@ -174,38 +175,6 @@ export class CockroachClient extends PostgresClient {
 
   protected countQuery(_options: STQOptions, baseSQL: string): string {
     return `SELECT count(*) as total ${baseSQL}`;
-  }
-
-  protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
-    const optionsParts: string[] = [];
-    const password = server.config.options?.jwtAuthEnabled
-      ? server.config.password?.replace(/\s+/g, '')
-      : server.config.password;
-    const cluster = server.config.options?.cluster || undefined;
-    if (cluster) {
-      optionsParts.push(`--cluster=${cluster}`);
-    }
-
-    if (server.config.options?.jwtAuthEnabled) {
-      optionsParts.push('--crdb:jwt_auth_enabled=true');
-    }
-
-    const optionsString = optionsParts.length > 0 ? optionsParts.join(' ') : undefined;
-
-    const config: PoolConfig = {
-      host: server.config.host,
-      port: server.config.port || undefined,
-      password: password || undefined,
-      database: database.database,
-      max: BksConfig.db.cockroachdb.maxConnections, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: BksConfig.db.cockroachdb.connectionTimeout,
-      idleTimeoutMillis: BksConfig.db.cockroachdb.idleTimeout,
-      // not in the typings, but works.
-      // @ts-ignore
-      options: optionsString
-    };
-
-    return this.configurePool(config, server, null);
   }
 
   protected async getTypes(): Promise<any> {

@@ -8,16 +8,14 @@ import {
 } from "./BasicDatabaseClient";
 import mysql, { Connection } from "mysql2";
 import rawLog from "@bksLogger";
-import ed25519AuthPlugin from "@coresql/mysql2-auth-ed25519";
 import knexlib from "knex";
-import { readFileSync } from "fs";
 import _ from "lodash";
 import {
   buildDeleteQueries,
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError, refreshTokenIfNeeded,
+  ClientError,
   errorMessages
 } from "./utils";
 import {
@@ -62,12 +60,10 @@ import {
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import BksConfig from "@/common/bksConfig";
-import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
-import globals from '../../../common/globals';
-import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { MySqlConnection } from "./mysql/MySqlConnection";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
 type ResultType = {
@@ -100,15 +96,6 @@ const mysqlErrors = {
 
 const knex = knexlib({ client: "mysql2" });
 
-function getRealError(conn, err) {
-  /* eslint no-underscore-dangle:0 */
-  if (conn && conn._protocol && conn._protocol._fatalError) {
-    logger().warn("Query error", err, conn._protocol._fatalError);
-    return conn._protocol._fatalError;
-  }
-  return err;
-}
-
 const binaryTypes = [
   mysql.Types.STRING, // aka CHAR or BINARY
   mysql.Types.VAR_STRING, // aka VARCHAR or VARBINARY
@@ -131,94 +118,6 @@ const binaryDataTypes = [
 const FieldFlags = {
   BINARY: 128,
 };
-
-async function configDatabase(
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-): Promise<mysql.PoolOptions> {
-
-  let iamToken = undefined;
-  if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
-  }
-
-  const config: mysql.PoolOptions = {
-    authPlugins: {
-      'client_ed25519': ed25519AuthPlugin(),
-    },
-    host: server.config.host,
-    port: server.config.port,
-    user: server.config.user,
-    password: iamToken || server.config.password || undefined,
-    database: database.database,
-    multipleStatements: true,
-    dateStrings: true,
-    supportBigNumbers: true,
-    bigNumberStrings: true,
-    connectionLimit: BksConfig.db.mysql.maxConnections,
-    connectTimeout: BksConfig.db.mysql.connectTimeout,
-  };
-
-  if (server.config.azureAuthOptions?.azureAuthEnabled) {
-    const authService = new AzureAuthService();
-    return authService.configDB(server, config)
-  }
-
-  if (server.config.socketPathEnabled) {
-    config.socketPath = server.config.socketPath;
-    config.host = null;
-    config.port = null;
-    return config;
-  }
-
-  if (server.sshTunnel) {
-    config.host = server.config.localHost;
-    config.port = server.config.localPort;
-  }
-
-  if (
-    server.config.iamAuthOptions?.iamAuthenticationEnabled
-  ){
-    server.config.ssl = true
-  }
-
-  if (server.config.ssl) {
-    config.ssl = {};
-
-    if (server.config.sslCaFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.ca = readFileSync(server.config.sslCaFile);
-    }
-
-    if (server.config.sslCertFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.cert = readFileSync(server.config.sslCertFile);
-    }
-
-    if (server.config.sslKeyFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.key = readFileSync(server.config.sslKeyFile);
-    }
-
-    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
-      // TODO: provide this as an option in settings
-      // or per-connection as 'reject self-signed certs'
-      // How it works:
-      // if false, cert can be self-signed
-      // if true, has to be from a public CA
-      // Heroku certs are self-signed.
-      // if you provide ca/cert/key files, it overrides this
-      config.ssl.rejectUnauthorized = false;
-    } else {
-      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
-    }
-  }
-
-  return config;
-}
 
 function identifyCommands(queryText: string) {
   try {
@@ -303,65 +202,23 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     versionString: string;
     version: number;
   };
-  conn: {
-    pool: mysql.Pool;
-  };
+  connection: MySqlConnection;
   transcoders = [GenericBinaryTranscoder];
-
-  interval: NodeJS.Timeout
-
-  clientId: string
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context, server, database);
-    this.clientId = uuidv4();
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
+    this.connection = new MySqlConnection({ server, database });
   }
 
   async connect() {
     await super.connect();
-    const dbConfig = await configDatabase(this.server, this.database);
-    logger().debug("create driver client for mysql with config %j", dbConfig);
-
-    this.conn = {
-      pool: mysql.createPool(dbConfig),
-    };
-
-    if(this.server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      this.interval = setInterval(async () => {
-        try {
-          this.conn.pool.getConnection(async (err, connection) => {
-            if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 3306)
-            connection.release();
-            log.info('Token refreshed successfully.')
-          });
-        } catch (err) {
-          log.error('Could not refresh token!')
-        }
-      }, globals.iamRefreshTime);
-    }
-
-    this.conn.pool.on('acquire', (connection) => {
-      log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
-    });
-
-    this.conn.pool.on('release', (connection) => {
-      log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
-    });
-
-
     this.versionInfo = await this.getVersion();
   }
 
   async disconnect() {
-    if(this.interval){
-      clearInterval(this.interval);
-    }
-    this.conn?.pool.end();
-
     await super.disconnect();
   }
 
@@ -689,7 +546,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return {
       totalRows: Number(rowCount.rows[0].total),
       columns,
-      cursor: new MysqlCursor(this.conn, query, params, chunkSize),
+      cursor: new MysqlCursor(this.connection, query, params, chunkSize),
     };
   }
 
@@ -1208,59 +1065,35 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       params?: any;
     }
   ): Promise<ResultType | ResultType[]> {
-    const runQuery = (connection: mysql.PoolConnection) =>
-      new Promise<ResultType>((resolve, reject) => {
-        const params =
-          !options.params || _.isEmpty(options.params)
-            ? undefined
-            : options.params;
-        logger().info(`Running Query`, query, params);
-        connection.query(
-          {
-            sql: query,
-            values: params,
-            rowsAsArray: options.rowsAsArray,
-          },
-          (err, data, fields) => {
-            if (err && err.code === mysqlErrors.EMPTY_QUERY) {
-              return resolve({ rows: [], columns: [], arrayMode: undefined });
-            }
-
-            if (err) {
-              return reject(getRealError(connection, err));
-            }
-
-            logger().info(`Running Query Finished`);
-            resolve({ rows: data as any[], columns: fields, arrayMode: options.rowsAsArray });
-          }
-        );
+    if (options.connection) {
+      return await this.connection.runQuery(query, {
+        ...options,
+        connection: options.connection,
       });
-
-    return options.connection
-      ? runQuery(options.connection)
-      : this.runWithConnection(runQuery);
+    }
+    return await this.runWithConnection(
+      async (connection) =>
+        await this.connection.runQuery(query, {
+          ...options,
+          connection,
+        })
+    );
   }
 
   async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>, tabId?: number): Promise<T> {
-    const { pool } = this.conn;
     const hasReserved = this.reservedConnections.has(tabId);
     let conn: mysql.PoolConnection;
     if (hasReserved) {
       conn = this.reservedConnections.get(tabId);
     } else {
-      conn = await new Promise((resolve, reject) => {
-        pool.getConnection((err, connection) => {
-          if (err) {
-            reject(err);
-          }
-          resolve(connection);
-        })
-      });
+      conn = await this.connection.getClient();
     }
 
-    conn.on("error", (error) => {
+    function handleError(error: any) {
       logger().error("Connection fatal error %j", error);
-    });
+    }
+
+    conn.on("error", handleError);
 
     try {
       return await run(conn);
@@ -1268,6 +1101,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       if (!hasReserved) {
         conn.release();
       }
+      conn.off("error", handleError);
     }
   }
 
@@ -1436,7 +1270,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     query: string,
     chunkSize: number
   ): Promise<StreamResults> {
-    const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
+    const theCursor = new MysqlCursor(this.connection, query, [], chunkSize);
     log.debug("results", theCursor);
 
     const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
@@ -1536,19 +1370,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    return new Promise((resolve, reject) => {
-      this.conn.pool.getConnection((err, conn) => {
-        if (!err) {
-          try {
-            this.pushConnection(tabId, conn);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        }
-        reject(err);
-      })
-    })
+    this.pushConnection(tabId, await this.connection.getClient());
   }
 
   async releaseConnection(tabId: number): Promise<void> {
