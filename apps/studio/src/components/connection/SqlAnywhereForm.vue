@@ -3,11 +3,15 @@
     <div class="form-group col">
       <label for="connectionMethod">Connection Method</label>
       <select name="connectionMethod" id="" v-model="config.sqlAnywhereOptions.mode">
-        <option value="server">Server</option>
-        <option value="file">File</option>
+        <option value="server">
+          Server
+        </option>
+        <option value="file">
+          File
+        </option>
       </select>
     </div>
-    <common-server-inputs :supportComplexSSL="false" :config="config" v-show="isServer">
+    <common-server-inputs :support-complex-s-s-l="false" :config="config" v-show="isServer">
       <div class="form-group expand">
         <label for="serverName">Server Name</label>
         <masked-input

@@ -39,7 +39,7 @@ const state = StateField.define<State>({
     };
   },
   update(value, tr) {
-    for (let e of tr.effects) {
+    for (const e of tr.effects) {
       if (e.is(setFoldedPaths)) {
         return { ...value, foldedPaths: e.value };
       }

@@ -3,7 +3,9 @@
     <modal :name="name" class="base-modal-root">
       <div v-kbd-trap="true" class="base-modal">
         <div class="base-modal-header">
-          <div class="base-modal-title"><slot name="title" :close="close" /></div>
+          <div class="base-modal-title">
+            <slot name="title" :close="close" />
+          </div>
           <a
             href="#"
             class="base-modal-close"

@@ -12,8 +12,7 @@
         refer to our
         <a
           href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
-          >Beekeeper Docs</a
-        >
+        >Beekeeper Docs</a>
         for more information
       </div>
     </div>
@@ -21,17 +20,15 @@
       <div v-show="showCli" class="form-group">
         <label for="cliPath">
           Azure CLI Path (az)
-          </label
-        >
-        <file-picker v-model="config.azureAuthOptions.cliPath"/>
+        </label>
+        <file-picker v-model="config.azureAuthOptions.cliPath" />
         <div class="alert alert-danger" v-show="!cliFound">
           <i class="material-icons-outlined">warning</i>
           <div>
             NO CLI FOUND, Please refer to our
             <a
               href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
-              >Beekeeper Docs</a
-            >
+            >Beekeeper Docs</a>
             for more information
           </div>
         </div>
@@ -47,8 +44,7 @@
                 'This is the <code>\'Server name\'</code> field on your database in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
               html: true,
             }"
-            >help_outlined</i
-          >
+          >help_outlined</i>
         </label>
         <masked-input :value="config.host" @input="val => config.host = val" />
       </div>
@@ -59,16 +55,14 @@
           type="text"
           class="form-control"
           v-model="config.defaultDatabase"
-        />
+        >
       </div>
       <div
         class="advanced-connection-settings signed-in-as"
         v-if="hasAccessTokenCache"
       >
         <div class="advanced-body">
-          <span class="info"
-            >Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span
-          >
+          <span class="info">Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span>
           <button
             class="btn btn-flat btn-icon"
             type="button"
@@ -100,8 +94,7 @@
                 'This can be found in the <code>\'Microsoft Entra ID\'</code> section of Azure, <br/> in the Overview labelled <code>\'Tenant ID\'</code>',
               html: true,
             }"
-            >help_outlined</i
-          >
+          >help_outlined</i>
         </label>
         <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
