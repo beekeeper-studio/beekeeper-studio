@@ -44,7 +44,14 @@ interface IBksConfigDebugInfo {
 
 const log = rawLog.scope("BksConfigProvider");
 
-const codeMirrorModifierMap = {
+const codeMirrorAltOrCmd = (isMac: boolean) => (isMac ? "Cmd" : "Alt");
+const electronAltOrCmd = (isMac: boolean) => (isMac ? "Command" : "Alt");
+const vHotkeyAltOrCmd = (isMac: boolean) => (isMac ? "meta" : "alt");
+const tabulatorAltOrCmd = (isMac: boolean) => (isMac ? "ctrl" : "alt");
+const uiAltOrCmd = (isMac: boolean) => (isMac ? "⌘" : "Alt");
+const contextMenuAltOrCmd = (isMac: boolean) => (isMac ? "Meta" : "Alt");
+
+const codeMirrorModifierMap: ModifierMap = {
   CTRL: "Ctrl",
   CMD: "Cmd",
   CTRLORCMD: "Mod",
@@ -53,6 +60,10 @@ const codeMirrorModifierMap = {
   COMMAND: "Cmd",
   CONTROLORCOMMAND: "Mod",
   COMMANDORCONTROL: "Mod",
+  ALTORCMD: codeMirrorAltOrCmd,
+  CMDORALT: codeMirrorAltOrCmd,
+  ALTORCOMMAND: codeMirrorAltOrCmd,
+  COMMANDORALT: codeMirrorAltOrCmd,
   SHIFT: "Shift",
   ALT: "Alt",
   OPTION: "Option",
@@ -61,10 +72,10 @@ const codeMirrorModifierMap = {
   META: "Meta",
   WINDOWS: "Meta",
   ENTER: "Enter",
-  F5: "F5"
-} as const;
+  F5: "F5",
+};
 
-const electronModifierMap = {
+const electronModifierMap: ModifierMap = {
   CTRL: "Control",
   CMD: "Command",
   CTRLORCMD: "CommandOrControl",
@@ -73,6 +84,10 @@ const electronModifierMap = {
   COMMAND: "Command",
   CONTROLORCOMMAND: "CommandOrControl",
   COMMANDORCONTROL: "CommandOrControl",
+  ALTORCMD: electronAltOrCmd,
+  CMDORALT: electronAltOrCmd,
+  ALTORCOMMAND: electronAltOrCmd,
+  COMMANDORALT: electronAltOrCmd,
   SHIFT: "Shift",
   ALT: "Alt",
   OPTION: "Option",
@@ -80,7 +95,7 @@ const electronModifierMap = {
   SUPER: "Super",
   META: "Meta",
   WINDOWS: "Meta",
-} as const;
+};
 
 const vHotkeyModifierMap: ModifierMap = {
   CTRL: "ctrl",
@@ -91,6 +106,10 @@ const vHotkeyModifierMap: ModifierMap = {
   COMMAND: "cmd",
   CONTROLORCOMMAND: "ctrlOrCmd",
   COMMANDORCONTROL: "ctrlOrCmd",
+  ALTORCMD: vHotkeyAltOrCmd,
+  CMDORALT: vHotkeyAltOrCmd,
+  ALTORCOMMAND: vHotkeyAltOrCmd,
+  COMMANDORALT: vHotkeyAltOrCmd,
   SHIFT: "shift",
   ALT: "alt",
   OPTION: "option",
@@ -98,9 +117,9 @@ const vHotkeyModifierMap: ModifierMap = {
   SUPER: "super",
   META: "meta",
   WINDOWS: "windows",
-} as const;
+};
 
-export const tabulatorModifierMap = {
+export const tabulatorModifierMap: ModifierMap = {
   CTRL: "ctrl",
   CMD: "ctrl",
   CTRLORCMD: "ctrl",
@@ -109,6 +128,10 @@ export const tabulatorModifierMap = {
   COMMAND: "ctrl",
   CONTROLORCOMMAND: "ctrl",
   COMMANDORCONTROL: "ctrl",
+  ALTORCMD: tabulatorAltOrCmd,
+  CMDORALT: tabulatorAltOrCmd,
+  ALTORCOMMAND: tabulatorAltOrCmd,
+  COMMANDORALT: tabulatorAltOrCmd,
   SHIFT: "shift",
   ALT: "alt",
   OPTION: "18",
@@ -116,7 +139,7 @@ export const tabulatorModifierMap = {
   SUPER: "91",
   META: "224",
   WINDOWS: "91",
-} as const;
+};
 
 const uiModifierMap: ModifierMap = {
   CTRL: (isMac) => (isMac ? "⌘" : "Ctrl"),
@@ -127,6 +150,10 @@ const uiModifierMap: ModifierMap = {
   COMMAND: (isMac) => (isMac ? "⌘" : "Ctrl"),
   CONTROLORCOMMAND: (isMac) => (isMac ? "⌘" : "Ctrl"),
   COMMANDORCONTROL: (isMac) => (isMac ? "⌘" : "Ctrl"),
+  ALTORCMD: uiAltOrCmd,
+  CMDORALT: uiAltOrCmd,
+  ALTORCOMMAND: uiAltOrCmd,
+  COMMANDORALT: uiAltOrCmd,
   SHIFT: (isMac) => (isMac ? "⇧" : "Shift"),
   ALT: (isMac) => (isMac ? "⌥" : "Alt"),
   OPTION: (isMac) => (isMac ? "⌥" : "Alt"),
@@ -145,6 +172,10 @@ const contextMenuModifierMap: ModifierMap = {
   COMMAND: "Control",
   CONTROLORCOMMAND: "Control",
   COMMANDORCONTROL: "Control",
+  ALTORCMD: contextMenuAltOrCmd,
+  CMDORALT: contextMenuAltOrCmd,
+  ALTORCOMMAND: contextMenuAltOrCmd,
+  COMMANDORALT: contextMenuAltOrCmd,
   SHIFT: "Shift",
   ALT: "Alt",
   OPTION: "Alt",
@@ -189,6 +220,7 @@ export function convertKeybinding(
     case "tabulator":
       modifierMap = tabulatorModifierMap;
       joinChar = ' + ';
+      break;
     case "ui":
       modifierMap = uiModifierMap;
       break;
