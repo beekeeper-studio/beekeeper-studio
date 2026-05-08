@@ -139,6 +139,7 @@ nav:
     - ClickHouse: user_guide/connecting/clickhouse.md
     - user_guide/connecting/cockroachdb.md
     - user_guide/connecting/duckdb.md
+    - DynamoDB: user_guide/connecting/dynamodb.md
     - user_guide/connecting/firebird.md
     - user_guide/connecting/google-bigquery.md
     - GreengageDB: user_guide/connecting/greengage.md

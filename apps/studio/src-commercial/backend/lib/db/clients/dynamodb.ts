@@ -52,6 +52,7 @@ import {
 import { CreateTableSpec, IndexAlterations, TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import { DynamoDBChangeBuilder } from '@/shared/lib/sql/change_builder/DynamoDBChangeBuilder';
+import { DynamoDBData } from '@/shared/lib/dialects/dynamodb';
 import { resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
@@ -297,7 +298,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     // types for indexed attributes, so the schema is otherwise implicit.
     const sample = await this.doc.send(new ScanCommand({
       TableName: table,
-      Limit: 50,
+      Limit: BksConfig.db.dynamodb.columnSampleSize,
       ConsistentRead: false,
     }));
     const discovered: Map<string, string> = new Map();
@@ -431,6 +432,11 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   }
 
   // Map a subset of the BKS TableFilter vocabulary to a DynamoDB FilterExpression.
+  // Field names and values both round-trip through ExpressionAttributeNames /
+  // ExpressionAttributeValues, so user-supplied strings are never interpolated
+  // into the expression directly — the SDK treats them as opaque parameters.
+  // The only piece interpolated as a token is the boolean joiner (`AND`/`OR`),
+  // which we normalize defensively in case a malformed `op` slips through.
   private buildFilter(filters: TableFilter[]) {
     if (!filters?.length) return { expr: undefined, names: undefined, values: undefined };
     const names: Record<string, string> = {};
@@ -488,7 +494,8 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       }
 
       if (clause) {
-        const joiner = parts.length === 0 ? '' : ` ${(f.op || 'AND')} `;
+        const op = f.op === 'OR' ? 'OR' : 'AND';
+        const joiner = parts.length === 0 ? '' : ` ${op} `;
         parts.push(`${joiner}${clause}`);
       }
     });
@@ -532,28 +539,31 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     const items: any[] = [];
     let lastKey: Record<string, any> | undefined;
     const target = (offset || 0) + (limit || 0);
-    const maxOrderByItems = BksConfig.db.dynamodb.maxOrderByItems;
     const maxSortableTableSize = BksConfig.db.dynamodb.maxSortableTableSize;
 
-    // DynamoDB does not support server-side ORDER BY for Scan operations.
-    // Custom sorting requires a full table scan which is expensive and can cause
-    // memory/performance issues on large tables. Sorting is disabled by default
-    // (maxSortableTableSize = 0) and can optionally be enabled for small tables.
+    // The dialect (DynamoDBData) disables header/initial sort, so this is
+    // mostly defensive — sorting orderBy clauses shouldn't reach this client
+    // through the table view in normal use. ORDER BY against DynamoDB requires
+    // pulling the full table into memory and sorting locally; we only allow it
+    // when the table is small enough per `maxSortableTableSize` (0 = never).
+    // getTableLength reads the cached ItemCount from DescribeTable, so it's O(1).
     let hasOrder = orderBy && orderBy.length > 0;
-    if (hasOrder && maxSortableTableSize > 0) {
-      const tableSize = await this.getTableLength(table);
-      if (tableSize > maxSortableTableSize) {
-        log.warn(`DynamoDB selectTop: Sorting disabled for table ${table} (${tableSize} items exceeds maxSortableTableSize ${maxSortableTableSize})`);
+    if (hasOrder) {
+      if (maxSortableTableSize <= 0) {
         hasOrder = false;
+      } else {
+        const tableSize = await this.getTableLength(table);
+        if (tableSize > maxSortableTableSize) {
+          log.warn(`DynamoDB selectTop: sorting skipped for ${table} (${tableSize} items exceeds maxSortableTableSize ${maxSortableTableSize})`);
+          hasOrder = false;
+        }
       }
-    } else if (hasOrder && maxSortableTableSize === 0) {
-      // Sorting is disabled entirely
-      hasOrder = false;
     }
 
     // Scan page-by-page. DynamoDB has no SQL-style offset and no server-side
-    // ORDER BY for Scan, so without sorting we stop once we've buffered enough
-    // to satisfy offset+limit.
+    // ORDER BY for Scan. Without sorting we stop as soon as we have enough rows
+    // to satisfy offset+limit; with sorting we have to drain the whole table
+    // (gated above by maxSortableTableSize so this only runs for small tables).
     do {
       try {
         const result = await this.doc.send(new ScanCommand({
@@ -567,11 +577,6 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         items.push(...(result.Items || []));
         lastKey = result.LastEvaluatedKey;
         if (!hasOrder && target > 0 && items.length >= target) break;
-        // Memory protection for ORDER BY: stop if we exceed the limit
-        if (hasOrder && items.length >= maxOrderByItems) {
-          log.warn(`DynamoDB selectTop: ORDER BY scan exceeded ${maxOrderByItems} items, results may be incomplete`);
-          break;
-        }
       } catch (err) {
         log.error('DynamoDB selectTop scan error:', err);
         throw new Error(`Failed to scan table ${table}: ${err.message}`);
@@ -944,7 +949,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   }
 
   wrapIdentifier(value: string): string {
-    return `"${value}"`;
+    return DynamoDBData.wrapIdentifier!(value);
   }
 
   protected parseTableColumn(column: { field: string }): BksField {

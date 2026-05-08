@@ -12,6 +12,8 @@ export const DynamoDBData: DialectData = {
   columnTypes: types.map((t) => new ColumnType(t)),
   usesOffsetPagination: true,
   textEditorMode: 'text/x-partiql',
+  wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
+  unwrapIdentifier: (s) => s,
   disabledFeatures: {
     manualCommit: true,
     rawFilters: true,

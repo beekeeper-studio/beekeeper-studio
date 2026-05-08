@@ -101,10 +101,10 @@ declare interface IBksConfig {
         dynamodb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            columnSampleSize: number;
             cursorFetchTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
-            maxOrderByItems: number;
             maxReservedConnections: number;
             maxSortableTableSize: number;
             paramTypes: {
