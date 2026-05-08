@@ -28,6 +28,31 @@ function fileExistsSync(filename: string): boolean {
   }
 }
 
+const UNSAFE_OPEN_PATH_EXTENSIONS = new Set([
+  // Windows executables / script formats
+  '.exe', '.bat', '.cmd', '.com', '.lnk', '.scr', '.pif',
+  '.msi', '.msp', '.mst', '.vbs', '.vbe', '.js', '.jse',
+  '.wsf', '.wsh', '.ps1', '.psm1', '.psc1', '.cpl', '.hta',
+  // Cross-platform danger
+  '.sh', '.app', '.command',
+]);
+
+function isSafeOpenPath(targetPath: string): boolean {
+  if (typeof targetPath !== 'string' || targetPath.length === 0) return false;
+  let resolved: string;
+  try {
+    resolved = path.resolve(targetPath);
+  } catch {
+    return false;
+  }
+  if (!fileExistsSync(resolved) && !fs.existsSync(resolved)) {
+    return false;
+  }
+  const ext = path.extname(resolved).toLowerCase();
+  if (UNSAFE_OPEN_PATH_EXTENSIONS.has(ext)) return false;
+  return true;
+}
+
 export const api = {
   async requestPlatformInfo() {
     const platformInfo = await ipcRenderer.invoke('platformInfo')
@@ -151,6 +176,9 @@ export const api = {
     return electron.clipboard.readText();
   },
   openPath(path: string) {
+    if (!isSafeOpenPath(path)) {
+      return Promise.resolve(`Refused to open unsafe path: ${path}`);
+    }
     return electron.shell.openPath(path);
   },
   showItemInFolder(path: string) {

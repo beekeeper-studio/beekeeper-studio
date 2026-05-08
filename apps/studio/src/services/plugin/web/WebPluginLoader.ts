@@ -405,7 +405,7 @@ export default class WebPluginLoader {
   }
 
   postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | ResponsePayload) {
-    iframe.contentWindow.postMessage(data, "*");
+    iframe.contentWindow.postMessage(data, `plugin://${this.manifest.id}`);
   }
 
   broadcast(data: PluginNotificationData) {

@@ -18,6 +18,7 @@ import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 import rawLog from '@bksLogger'
+import bksConfig from '@/common/bksConfig';
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -628,12 +629,28 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     log.info("Extensions: ", this.server.config.runtimeExtensions)
     if (this.server.config.runtimeExtensions && this.server.config.runtimeExtensions.length > 0) {
-      for (const extension of this.server.config.runtimeExtensions) {
-        try {
-          connection.loadExtension(extension)
-        } catch (err) {
-          log.error(`Unable to load extension file ${extension}`)
-          throw err
+      // Loading SQLite runtime extensions executes arbitrary native code from
+      // the extension path via dlopen()/LoadLibrary. Require the user to
+      // explicitly opt in through bksConfig.security.allowRuntimeExtensions
+      // before honouring any extension paths from the connection config.
+      const allowRuntimeExtensions = !!_.get(
+        bksConfig,
+        "security.allowRuntimeExtensions",
+        false
+      );
+      if (!allowRuntimeExtensions) {
+        log.warn(
+          "Refusing to load SQLite runtime extensions: " +
+            "set [security] allowRuntimeExtensions = true in user.config.ini to opt in."
+        );
+      } else {
+        for (const extension of this.server.config.runtimeExtensions) {
+          try {
+            connection.loadExtension(extension)
+          } catch (err) {
+            log.error(`Unable to load extension file ${extension}`)
+            throw err
+          }
         }
       }
     }
