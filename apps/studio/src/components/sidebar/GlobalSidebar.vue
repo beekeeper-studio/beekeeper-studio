@@ -28,14 +28,16 @@
       <span class="material-icons">history</span>
     </a>
     <span class="expand" />
+    <ai-server-status-button />
     <core-account-button v-if="$store.state.workspaceId > 0" />
   </div>
 </template>
 
 <script>
   import CoreAccountButton from './core/CoreAccountButton.vue'
+  import AiServerStatusButton from '@/components/aiServer/AiServerStatusButton.vue'
   export default {
     props: ['activeItem'],
-    components: { CoreAccountButton },
+    components: { CoreAccountButton, AiServerStatusButton },
   }
 </script>

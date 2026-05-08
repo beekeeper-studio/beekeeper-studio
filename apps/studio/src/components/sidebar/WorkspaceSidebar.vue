@@ -30,6 +30,7 @@
       </content-placeholder>
     </div>
     <span class="expand" />
+    <ai-server-status-button />
     <a
       @click.prevent="refresh"
       class="nav-item refresh"
@@ -47,6 +48,7 @@ import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.v
 import ContentPlaceholderImg from '@/components/common/loading/ContentPlaceholderImg.vue'
 import WorkspaceAvatar from '@/components/common/WorkspaceAvatar.vue'
 import AccountStatusButton from '@/components/sidebar/connection/AccountStatusButton.vue'
+import AiServerStatusButton from '@/components/aiServer/AiServerStatusButton.vue'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { WSWithClient } from '@/store/modules/CredentialsModule'
 import Vue from 'vue'
@@ -55,7 +57,7 @@ import NewWorkspaceButton from './connection/NewWorkspaceButton.vue'
 import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
-components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentPlaceholderImg, ContentPlaceholder },
+components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, AiServerStatusButton, ContentPlaceholderImg, ContentPlaceholder },
   props: ['activeItem'],
   computed: {
     ...mapState('credentials', ['credentials', 'loading']),

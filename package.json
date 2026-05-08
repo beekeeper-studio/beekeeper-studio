@@ -14,6 +14,8 @@
     "bks:config:build": "yarn workspace beekeeper-studio config:build",
     "lib:dev": "yarn workspace @beekeeperstudio/ui-kit lib:dev",
     "lib:build": "yarn workspace @beekeeperstudio/ui-kit build",
+    "mcp:build": "yarn workspace @beekeeperstudio/mcp-server build",
+    "mcp:dev": "yarn workspace @beekeeperstudio/mcp-server dev",
     "sqltools:build": "yarn workspace sqltools build",
     "sqltools:dev": "yarn workspace sqltools serve",
     "electron:build": "yarn bks:build",
