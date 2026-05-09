@@ -96,9 +96,9 @@
   },
   "devDependencies": {
     "@open-rpc/client-js": "^1.8.1",
-    "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
+    "@types/sortablejs": "^1.15.8",
     "@types/tabulator-tables": "^6.2.0",
     "@vitejs/plugin-vue2": "^2.3.1",
     "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#635e4b427b90e199c273b194cf9db6b744d63e95",
@@ -113,6 +113,7 @@
     "rimraf": "^6.0.1",
     "sass": "~1.77.1",
     "scrollyfills": "^1.0.0",
+    "sortablejs": "^1.15.2",
     "split.js": "^1.5.11",
     "sql-formatter": "15.7.3",
     "sql-query-identifier": "^2.10.0",
@@ -126,7 +127,6 @@
     "vue-js-modal": "^2.0.1",
     "vue-tsc": "^2.1.10",
     "vue-virtual-scroll-list": "^2.3.5",
-    "vue2-teleport": "^1.1.4",
-    "vuedraggable": "^2.24.2"
+    "vue2-teleport": "^1.1.4"
   }
 }

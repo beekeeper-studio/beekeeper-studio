@@ -352,7 +352,7 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import Draggable from 'vuedraggable'
+import Draggable from '@/components/Draggable.vue'
 import Noty from 'noty'
 
 const log = rawLog.scope('connection-sidebar');

@@ -308,7 +308,7 @@ import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
 import { mapGetters, mapState } from 'vuex'
-import Draggable from 'vuedraggable'
+import Draggable from '@/components/Draggable.vue'
 import ShortcutHints from './editor/ShortcutHints.vue'
 import { FormatterDialect } from '@shared/lib/dialects/models'
 import Vue from 'vue';

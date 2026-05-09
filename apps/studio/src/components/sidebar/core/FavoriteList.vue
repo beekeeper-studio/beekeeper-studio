@@ -263,7 +263,7 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
-import Draggable from 'vuedraggable'
+import Draggable from '@/components/Draggable.vue'
 
 export default {
   components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm, Draggable },

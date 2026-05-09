@@ -23,7 +23,7 @@ import AppEventHandler from '@/lib/events/AppEventHandler'
 import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
-import VueClipboard from 'vue-clipboard2'
+import ClipboardPlugin from '@/plugins/ClipboardPlugin'
 import { AppEventMixin } from '@/common/AppEvent'
 import BeekeeperPlugin from '@/plugins/BeekeeperPlugin'
 import _ from 'lodash'
@@ -34,7 +34,7 @@ import rawLog from '@bksLogger'
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
-import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
+import KeyboardTrapPlugin from '@/plugins/KeyboardTrapPlugin'
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
 import { WebPluginManager } from '@/services/plugin/web'
@@ -161,7 +161,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     })
     Vue.use(VTooltip, { defaultHtml: false, })
     Vue.use(VModal)
-    Vue.use(VueClipboard)
+    Vue.use(ClipboardPlugin)
     Vue.use(ConfigPlugin)
     Vue.use(BeekeeperPlugin)
     Vue.use(SettingsPlugin)
@@ -174,7 +174,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
       theme: 'mint',
       closeWith: ['button', 'click'],
     })
-    Vue.use(VueKeyboardTrapDirectivePlugin)
+    Vue.use(KeyboardTrapPlugin)
     Vue.use(ProductTourPlugin, { store, utility })
 
     const app = new Vue({

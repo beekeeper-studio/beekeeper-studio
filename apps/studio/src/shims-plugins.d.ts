@@ -28,6 +28,7 @@ declare module 'vue/types/vue' {
     }
     $confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>
     $confirmById(id: string): Promise<boolean>
+    $copyText(text: string): Promise<{ action: 'copy', text: string }>
     $vHotkeyKeymap: typeof createVHotkeyKeymap
     $CMKeymap: typeof createCodemirrorKeymap
 

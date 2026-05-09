@@ -52,7 +52,7 @@
 </template>
 <script lang="ts">
 import _ from 'lodash'
-import Draggable from 'vuedraggable'
+import Draggable from '@/components/Draggable.vue'
 import RoutineListItem from '@/components/sidebar/core/table_list/RoutineListItem.vue'
 import TableListItem from '@/components/sidebar/core/table_list/TableListItem.vue'
 import Vue from 'vue'

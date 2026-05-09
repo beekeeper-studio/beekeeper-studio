@@ -63,7 +63,7 @@
 
 <script lang="ts">
 import _ from "lodash";
-import Draggable from "vuedraggable";
+import Draggable from "../Draggable.vue";
 import StatelessTableListItem from "./StatelessTableListItem.vue";
 import StatelessRoutineListItem from "./StatelessRoutineListItem.vue";
 import Vue, { PropType } from "vue";
