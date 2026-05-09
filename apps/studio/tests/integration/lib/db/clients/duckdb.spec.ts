@@ -204,6 +204,71 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await util.paramTest(['?']);
       })
     })
+
+    describe("TIMESTAMPTZ and UUID display tests", () => {
+      beforeAll(async () => {
+        await util.knex.raw(`
+          CREATE TABLE tz_uuid_types (
+            id INT PRIMARY KEY,
+            ts TIMESTAMPTZ,
+            uid UUID
+          )
+        `);
+        await util.knex.raw(`
+          INSERT INTO tz_uuid_types VALUES (
+            1,
+            TIMESTAMPTZ '2023-06-23 20:30:17.170+00',
+            UUID '550e8400-e29b-41d4-a716-446655440000'
+          )
+        `);
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.dropTableIfExists("tz_uuid_types");
+      });
+
+      it("should return TIMESTAMPTZ as a readable string, not an object", async () => {
+        const { result: rows, fields } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+
+        const tsField = fields.find(f => f.name === 'ts');
+        expect(tsField?.bksType).toBe('DUCKDB_TIMESTAMP_TZ');
+
+        const row = rows[0];
+        expect(typeof row['ts']).toBe('string');
+        // Should look like a timestamp string, not {"micros":...}
+        expect(row['ts']).toMatch(/\d{4}-\d{2}-\d{2}/);
+        expect(row['ts']).not.toHaveProperty('micros');
+      });
+
+      it("should return UUID as a readable UUID string, not an object", async () => {
+        const { result: rows, fields } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+
+        const uuidField = fields.find(f => f.name === 'uid');
+        expect(uuidField?.bksType).toBe('DUCKDB_UUID');
+
+        const row = rows[0];
+        expect(typeof row['uid']).toBe('string');
+        // Should be formatted as a proper UUID
+        expect(row['uid']).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        expect(row['uid']).toBe('550e8400-e29b-41d4-a716-446655440000');
+      });
+
+      it("should handle NULL TIMESTAMPTZ and UUID values", async () => {
+        await util.knex.raw(`INSERT INTO tz_uuid_types VALUES (2, NULL, NULL)`);
+
+        const { result: rows } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+
+        const nullRow = rows.find((r: any) => r['id'] === 2);
+        expect(nullRow['ts']).toBeNull();
+        expect(nullRow['uid']).toBeNull();
+      });
+    });
   });
 }
 
