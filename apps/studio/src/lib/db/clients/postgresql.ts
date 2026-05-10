@@ -1781,7 +1781,13 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // so we need to turn the string representation back to an array
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
-      return JSON.parse(value)
+      try {
+        return JSON.parse(value)
+      } catch {
+        // pg returns custom enum arrays as PostgreSQL array literals (e.g. {sad,happy})
+        // rather than JSON. Pass the string through so PostgreSQL can parse it on assignment.
+        return value
+      }
     }
     return value
   }
