@@ -120,7 +120,7 @@ const clickhouseContext = {
 const knex = knexlib({ client: ClickhouseKnexClient });
 
 const RE_NULLABLE = /^Nullable\((.*)\)$/;
-const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/i;
+const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/is;
 
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
@@ -820,7 +820,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         columns = data.meta;
       } else {
         const result = await this.client.exec({
-          query,
+          query: statement.text,
           query_params: options.params,
           query_id: options.queryId,
 
