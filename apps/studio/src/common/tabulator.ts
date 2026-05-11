@@ -12,6 +12,9 @@ import {
 } from "@/lib/menu/tableMenu";
 import { rowHeaderField } from "@/common/utils";
 import _ from "lodash";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("common/tabulator");
 
 interface Options extends TabulatorOptions {
   table?: string;
@@ -31,11 +34,24 @@ export function tabulatorForTableData(
   options: Options
 ): TabulatorFull {
   const { table, schema, ...tabulatorOptions } = options;
+  // Suppress the build-time save burst that clobbers persisted column
+  // widths on cold start.
+  let persistenceReady = false;
   const defaultOptions: Options = {
     persistence: {
       columns: ["width", "visible"],
     },
     persistenceMode: "local",
+    persistenceWriterFunc: (id: string, type: string, data: unknown) => {
+      if (!persistenceReady) {
+        return;
+      }
+      try {
+        localStorage.setItem(`${id}-${type}`, JSON.stringify(data));
+      } catch (e) {
+        log.warn(e);
+      }
+    },
     renderHorizontal: "virtual",
     autoResize: false,
     nestedFieldSeparator: false,
@@ -90,7 +106,22 @@ export function tabulatorForTableData(
     },
   };
   const mergedOptions = _.merge(defaultOptions, tabulatorOptions);
+  if (tabulatorOptions.persistenceWriterFunc) {
+    mergedOptions.persistenceWriterFunc = (...args) => {
+      if (!persistenceReady) {
+        return;
+      }
+      tabulatorOptions.persistenceWriterFunc(...args);
+    }
+  }
   const tabulator = new TabulatorFull(el, mergedOptions);
+
+  const onFirstLayout = () => {
+    tabulator.off("layout-refreshed", onFirstLayout);
+    persistenceReady = true;
+  };
+  tabulator.on("layout-refreshed", onFirstLayout);
+
   if (options.onRangeChange) {
     function onRangeChange() {
       options.onRangeChange(tabulator.getRanges());

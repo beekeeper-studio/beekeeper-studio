@@ -374,4 +374,8 @@ export default {
   opacity: 0.6;
   vertical-align: middle;
 }
+
+body.theme-dark .bastion-host {
+  background-color: rgb(from var(--theme-base) r g b / 3.5%);
+}
 </style>

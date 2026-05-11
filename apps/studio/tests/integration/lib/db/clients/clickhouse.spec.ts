@@ -220,6 +220,96 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         `)
         );
       });
+
+      // Regression: multiline SELECT with FORMAT clause must be routed
+      // through client.exec() (raw stream), not client.query() (structured
+      // JSON). Before the `s` flag fix on RE_SELECT_FORMAT the `.+` in the
+      // regex did not match newlines, so a query like:
+      //   SELECT\n  'a'\nFORMAT JSON
+      // was incorrectly treated as a normal SELECT (structured path).
+      it("queries with FORMAT clause in a multiline SELECT", async () => {
+        const sql = "SELECT\n  'a' AS first,\n  2 AS second\nFORMAT JSON";
+        const query = await util.connection.query(sql);
+        const result = (await query.execute())[0];
+        // When FORMAT is detected the query goes through the exec/stream
+        // path and returns a single "Result" field with the raw response.
+        expect(result.fields).toStrictEqual([{ id: "c0", name: "Result" }]);
+        const parsed = JSON.parse(result.rows[0].c0);
+        expect(parsed.data).toStrictEqual([{ first: "a", second: 2 }]);
+      });
+
+      it("queries with FORMAT clause in a multiline SELECT (CSV)", async () => {
+        const sql = "SELECT\n  1 AS num,\n  'hello' AS word\nFORMAT CSV";
+        const query = await util.connection.query(sql);
+        const result = (await query.execute())[0];
+        expect(result.fields).toStrictEqual([{ id: "c0", name: "Result" }]);
+        // CSV output should contain the values but not be structured JSON
+        expect(result.rows[0].c0).toContain("hello");
+      });
+    });
+
+    // Regression: rawExecuteQuery previously passed the full multi-statement
+    // `query` string to client.exec() instead of the individual
+    // `statement.text`. ClickHouse does not support multi-statement
+    // queries, so sending the unsplit string caused exec() to fail.
+    // The fix ensures each parsed statement is sent individually.
+    describe("rawExecuteQuery uses statement.text not query", () => {
+      if (!options.readOnly) {
+        it("should successfully execute a non-SELECT statement that was parsed from a multi-statement string", async () => {
+          // Non-SELECT statements go through the exec() path. Before the
+          // fix, exec() received the full multi-statement `query` string
+          // which ClickHouse rejects. After the fix it receives just the
+          // individual `statement.text`.
+          const tableName = "raw_exec_regression";
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS ${tableName}`);
+
+          const sql = `CREATE TABLE ${tableName} (id UInt32) ENGINE = MergeTree ORDER BY id; INSERT INTO ${tableName} VALUES (1)`;
+          const query = await util.connection.query(sql);
+          await expect(query.execute()).resolves.toBeDefined();
+
+          const countQuery = await util.connection.query(`SELECT count() AS cnt FROM ${tableName}`);
+          const countResult = (await countQuery.execute())[0];
+          expect(Number(countResult.rows[0].c0)).toBe(1);
+
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS ${tableName}`);
+        });
+
+        it("should successfully execute an INSERT parsed from a multi-statement string", async () => {
+          await util.knex.schema.raw(`
+            CREATE TABLE IF NOT EXISTS raw_exec_insert_test (val UInt32)
+            ENGINE = MergeTree ORDER BY val
+          `);
+          await util.knex.schema.raw("TRUNCATE TABLE raw_exec_insert_test");
+
+          // Two INSERTs — both go through exec(). Before the fix the
+          // full string "INSERT ...;INSERT ..." was sent, which ClickHouse
+          // would reject.
+          const sql = "INSERT INTO raw_exec_insert_test VALUES (1); INSERT INTO raw_exec_insert_test VALUES (2)";
+          const query = await util.connection.query(sql);
+          await expect(query.execute()).resolves.toBeDefined();
+
+          const countQuery = await util.connection.query("SELECT count() AS cnt FROM raw_exec_insert_test");
+          const countResult = (await countQuery.execute())[0];
+          expect(Number(countResult.rows[0].c0)).toBe(2);
+        });
+      }
+
+      it("should successfully execute a SELECT with FORMAT parsed from a multi-statement string", async () => {
+        // A SELECT with FORMAT goes through the exec() path (not the
+        // query() path). Before the fix, exec() received the full
+        // multi-statement string, causing ClickHouse to error.
+        const sql = "SELECT 1 AS a FORMAT JSON; SELECT 2 AS b FORMAT CSV";
+        const query = await util.connection.query(sql);
+        const results = await query.execute();
+        expect(results).toHaveLength(2);
+
+        // First result: FORMAT JSON — should be raw JSON string
+        const parsed = JSON.parse(results[0].rows[0].c0);
+        expect(parsed.data).toStrictEqual([{ a: 1 }]);
+
+        // Second result: FORMAT CSV — should contain the value
+        expect(results[1].rows[0].c0).toContain("2");
+      });
     });
   });
 }

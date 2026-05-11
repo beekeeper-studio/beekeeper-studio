@@ -150,12 +150,6 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           hasPassword: !!ssh.bastionPassword,
         })
 
-        // if (config.ssh.privateKey && !config.ssh.useAgent) {
-        //   sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(config.ssh.privateKey)))
-        // } else {
-        //   sshConfig.privateKey = undefined
-        // }
-
         const connection = new SSHConnection(sshConfig)
         logger().debug("connection created!")
 
