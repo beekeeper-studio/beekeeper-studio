@@ -281,9 +281,9 @@ describe('DynamoDB', () => {
     })
 
     it('slices a large dataset by offset', async () => {
-      // Note: DynamoDB sorting is disabled by default (maxSortableTableSize = 0).
-      // This test verifies pagination (offset/limit) works correctly without
-      // relying on sorted output.
+      // Note: DynamoDB has no server-side ORDER BY, so column sorting is not
+      // supported. This test verifies pagination (offset/limit) works correctly
+      // without relying on sorted output.
       const first = await connection.selectTop(tableName, 0, 25, [], [])
       const second = await connection.selectTop(tableName, 25, 25, [], [])
       const third = await connection.selectTop(tableName, 50, 25, [], [])

@@ -25,9 +25,7 @@ DynamoDB is not a relational database and many table-view features are mapped on
 
 ### Sorting
 
-DynamoDB has no server-side `ORDER BY` for `Scan`, so column sorting in the table view is **disabled by default**. Sorting would require pulling the entire table into memory and sorting locally.
-
-If you have small tables and want to opt in, set `db.dynamodb.maxSortableTableSize` in your config to the maximum item count for which sorting is allowed (e.g. `50000`). When the cached `ItemCount` is below that threshold, Beekeeper Studio performs a full table scan and sorts client-side; above it, sorting is silently skipped.
+DynamoDB has no server-side `ORDER BY` for `Scan`, so column sorting in the table view is **not available**. Sorting would require pulling the entire table into memory and sorting locally, which is too expensive to do while browsing.
 
 ### Filtering
 

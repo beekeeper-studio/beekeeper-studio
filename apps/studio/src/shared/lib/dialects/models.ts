@@ -201,6 +201,7 @@ export interface DialectData {
     truncateElement?: boolean
     exportTable?: boolean
     createTable?: boolean
+    createDatabase?: boolean
     dropTable?: boolean
     dropSchema?: boolean
     collations?: boolean
@@ -223,7 +224,6 @@ export interface DialectData {
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
     readOnlyPrimaryKeys?: boolean  // Whether primary keys are read-only
-    erd?: boolean              // Whether ERD view is disabled
   },
   notices?: {
     infoSchema?: string

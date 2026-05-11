@@ -57,6 +57,12 @@ export default {
       handler() {
         this.initializeConfig()
       }
+    },
+    'config.iamAuthOptions.awsRegion': {
+      immediate: true,
+      handler() {
+        this.syncDatabaseLabel()
+      }
     }
   },
   methods: {
@@ -73,6 +79,15 @@ export default {
       }
       if (!this.config.dynamoDbOptions) {
         this.$set(this.config, 'dynamoDbOptions', {})
+      }
+      this.syncDatabaseLabel()
+    },
+    // DynamoDB has no "database" — but the connected UI (database dropdown, status
+    // bar) keys off `defaultDatabase`, so mirror the AWS region into it.
+    syncDatabaseLabel() {
+      const region = this.config.iamAuthOptions?.awsRegion || 'us-east-1'
+      if (this.config.defaultDatabase !== region) {
+        this.$set(this.config, 'defaultDatabase', region)
       }
     }
   },

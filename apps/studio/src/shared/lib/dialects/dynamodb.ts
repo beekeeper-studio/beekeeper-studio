@@ -1,15 +1,34 @@
 import { ColumnType, DialectData } from "./models";
 
-// DynamoDB attribute types. B = binary, S = string, N = number, plus document
-// types (M, L) and scalar types that PartiQL surfaces. These are shown in the
-// column-type picker when creating/editing schema elements.
-const types = [
-  'S', 'N', 'B', 'BOOL', 'NULL', 'L', 'M', 'SS', 'NS', 'BS'
-]
+// DynamoDB attribute types keyed by the short code the SDK uses, mapped to a
+// readable label for the UI (column type picker, structure view, etc).
+//   S/N/B  — scalar string / number / binary
+//   SS/NS/BS — sets of those
+//   M/L    — document map / list
+//   BOOL/NULL — boolean / null
+export const DYNAMO_TYPE_LABELS: Record<string, string> = {
+  S: 'String',
+  N: 'Number',
+  B: 'Binary',
+  BOOL: 'Boolean',
+  NULL: 'Null',
+  L: 'List',
+  M: 'Map',
+  SS: 'String Set',
+  NS: 'Number Set',
+  BS: 'Binary Set',
+}
+
+// Map a raw DynamoDB attribute-type code to its readable label. Unknown codes
+// (shouldn't happen) pass through unchanged.
+export function dynamoTypeLabel(code: string | undefined | null): string {
+  if (!code) return 'String'
+  return DYNAMO_TYPE_LABELS[code] || code
+}
 
 export const DynamoDBData: DialectData = {
   sqlLabel: "code",
-  columnTypes: types.map((t) => new ColumnType(t)),
+  columnTypes: Object.values(DYNAMO_TYPE_LABELS).map((t) => new ColumnType(t)),
   usesOffsetPagination: true,
   textEditorMode: 'text/x-partiql',
   wrapIdentifier: (id: string) => id ? `"${id.replaceAll(/"/g, '""')}"` : null,
@@ -20,11 +39,13 @@ export const DynamoDBData: DialectData = {
     truncateElement: true,
     sqlCreate: true,
     createTable: true,
+    createDatabase: true,
     importFromFile: true,
     nullable: true,
     defaultValue: true,
     comments: true,
     compositeKeys: true,
+    shell: true,
     informationSchema: {
       extra: true
     },
@@ -51,10 +72,9 @@ export const DynamoDBData: DialectData = {
     schema: true,
     generatedColumns: true,
     duplicateTable: true,
-    erd: true,
     multipleDatabases: true,
-    // DynamoDB does not support server-side ORDER BY. Custom sorting would require
-    // a full table scan which is expensive and disabled by default.
+    // DynamoDB has no server-side ORDER BY for Scan, so column sorting in the
+    // table view isn't available.
     headerSort: true,
     initialSort: true,
   },
@@ -63,6 +83,5 @@ export const DynamoDBData: DialectData = {
     infoCreateTable: 'DynamoDB tables are created with a single "id" partition key. Use the AWS Console for more complex table configurations.',
     infoRelations: 'DynamoDB does not support foreign key relationships.',
     infoIndexes: 'Index management is available through the AWS Console.',
-    infoSorting: 'DynamoDB does not support server-side sorting. Column sorting is disabled to avoid full table scans.',
   }
 }

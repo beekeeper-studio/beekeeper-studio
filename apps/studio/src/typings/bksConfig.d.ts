@@ -106,7 +106,6 @@ declare interface IBksConfig {
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
-            maxSortableTableSize: number;
             paramTypes: {
                 named: any[];
                 numbered: any[];

@@ -52,7 +52,7 @@ import {
 import { CreateTableSpec, IndexAlterations, TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import { DynamoDBChangeBuilder } from '@/shared/lib/sql/change_builder/DynamoDBChangeBuilder';
-import { DynamoDBData } from '@/shared/lib/dialects/dynamodb';
+import { DynamoDBData, dynamoTypeLabel } from '@/shared/lib/dialects/dynamodb';
 import { resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
@@ -329,7 +329,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       schemaName: null,
       tableName: table,
       columnName: name,
-      dataType: declared.get(name) || discovered.get(name) || 'S',
+      dataType: dynamoTypeLabel(declared.get(name) || discovered.get(name)),
       primaryKey: keyNames.has(name),
       hasDefault: false,
       nullable: !keyNames.has(name),
@@ -514,7 +514,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     table: string,
     offset: number,
     limit: number,
-    orderBy: OrderBy[],
+    _orderBy: OrderBy[],
     filters: string | TableFilter[],
     _schema?: string,
     selects?: string[]
@@ -539,31 +539,11 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     const items: any[] = [];
     let lastKey: Record<string, any> | undefined;
     const target = (offset || 0) + (limit || 0);
-    const maxSortableTableSize = BksConfig.db.dynamodb.maxSortableTableSize;
-
-    // The dialect (DynamoDBData) disables header/initial sort, so this is
-    // mostly defensive — sorting orderBy clauses shouldn't reach this client
-    // through the table view in normal use. ORDER BY against DynamoDB requires
-    // pulling the full table into memory and sorting locally; we only allow it
-    // when the table is small enough per `maxSortableTableSize` (0 = never).
-    // getTableLength reads the cached ItemCount from DescribeTable, so it's O(1).
-    let hasOrder = orderBy && orderBy.length > 0;
-    if (hasOrder) {
-      if (maxSortableTableSize <= 0) {
-        hasOrder = false;
-      } else {
-        const tableSize = await this.getTableLength(table);
-        if (tableSize > maxSortableTableSize) {
-          log.warn(`DynamoDB selectTop: sorting skipped for ${table} (${tableSize} items exceeds maxSortableTableSize ${maxSortableTableSize})`);
-          hasOrder = false;
-        }
-      }
-    }
 
     // Scan page-by-page. DynamoDB has no SQL-style offset and no server-side
-    // ORDER BY for Scan. Without sorting we stop as soon as we have enough rows
-    // to satisfy offset+limit; with sorting we have to drain the whole table
-    // (gated above by maxSortableTableSize so this only runs for small tables).
+    // ORDER BY for Scan, so `orderBy` is ignored here (the dialect disables
+    // column sorting in the table view to avoid full table scans). We stop as
+    // soon as we have enough rows to satisfy offset+limit.
     do {
       try {
         const result = await this.doc.send(new ScanCommand({
@@ -576,24 +556,16 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         }));
         items.push(...(result.Items || []));
         lastKey = result.LastEvaluatedKey;
-        if (!hasOrder && target > 0 && items.length >= target) break;
+        if (target > 0 && items.length >= target) break;
       } catch (err) {
         log.error('DynamoDB selectTop scan error:', err);
         throw new Error(`Failed to scan table ${table}: ${err.message}`);
       }
     } while (lastKey);
 
-    let rows = items;
-    if (hasOrder) {
-      rows = _.orderBy(
-        rows,
-        orderBy.map((o) => o.field),
-        orderBy.map((o) => (o.dir.toLowerCase() === 'desc' ? 'desc' : 'asc')) as ('asc' | 'desc')[]
-      );
-    }
-    rows = offset > 0
-      ? rows.slice(offset, offset + (limit || rows.length))
-      : rows.slice(0, limit || rows.length);
+    const rows = offset > 0
+      ? items.slice(offset, offset + (limit || items.length))
+      : items.slice(0, limit || items.length);
 
     const fields: BksField[] = rows.length
       ? Object.keys(rows[0]).map((k) => ({ name: k, bksType: 'UNKNOWN' as BksFieldType }))
@@ -612,8 +584,10 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     selects?: string[]
   ): Promise<string> {
     // Render an approximate PartiQL statement for the query editor display.
-    const cols = selects && selects.length && !selects.includes('*') ? selects.map((s) => `"${s}"`).join(', ') : '*';
-    return `SELECT ${cols} FROM "${table}"`;
+    const cols = selects && selects.length && !selects.includes('*')
+      ? selects.map((s) => this.wrapIdentifier(s)).join(', ')
+      : '*';
+    return `SELECT ${cols} FROM ${this.wrapIdentifier(table)}`;
   }
 
   async selectTopStream(
@@ -646,7 +620,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   }
 
   async getQuerySelectTop(table: string, _limit: number): Promise<string> {
-    return `SELECT * FROM "${table}"`;
+    return `SELECT * FROM ${this.wrapIdentifier(table)}`;
   }
 
   private ensureWritable(): void {
