@@ -268,6 +268,50 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         expect(nullRow['ts']).toBeNull();
         expect(nullRow['uid']).toBeNull();
       });
+
+      it("should round-trip TIMESTAMPTZ and UUID values through applyChanges", async () => {
+        // Read the serialised strings from the DB
+        const { result: rows } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+        const originalRow = rows.find((r: any) => r['id'] === 1);
+        const tsString = originalRow['ts'] as string;
+        const uuidString = originalRow['uid'] as string;
+
+        expect(typeof tsString).toBe('string');
+        expect(typeof uuidString).toBe('string');
+
+        // Write the strings back via applyChanges (simulates what the UI does)
+        await util.connection.applyChanges({
+          inserts: [],
+          updates: [
+            {
+              table: 'tz_uuid_types',
+              schema: util.defaultSchema,
+              primaryKeys: [{ column: 'id', value: 1 }],
+              column: 'ts',
+              value: tsString,
+            },
+            {
+              table: 'tz_uuid_types',
+              schema: util.defaultSchema,
+              primaryKeys: [{ column: 'id', value: 1 }],
+              column: 'uid',
+              value: uuidString,
+            },
+          ],
+          deletes: [],
+        });
+
+        // Re-read and verify values survived the round-trip
+        const { result: updated } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+        const updatedRow = updated.find((r: any) => r['id'] === 1);
+        expect(typeof updatedRow['ts']).toBe('string');
+        expect(typeof updatedRow['uid']).toBe('string');
+        expect(updatedRow['uid']).toBe('550e8400-e29b-41d4-a716-446655440000');
+      });
     });
   });
 }
