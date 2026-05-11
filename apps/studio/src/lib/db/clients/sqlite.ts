@@ -633,12 +633,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       // the extension path via dlopen()/LoadLibrary. Require the user to
       // explicitly opt in through bksConfig.security.allowRuntimeExtensions
       // before honouring any extension paths from the connection config.
-      const allowRuntimeExtensions = !!_.get(
-        bksConfig,
-        "security.allowRuntimeExtensions",
-        false
-      );
-      if (!allowRuntimeExtensions) {
+      if (!bksConfig.security.allowRuntimeExtensions) {
         log.warn(
           "Refusing to load SQLite runtime extensions: " +
             "set [security] allowRuntimeExtensions = true in user.config.ini to opt in."

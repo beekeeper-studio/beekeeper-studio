@@ -92,7 +92,7 @@ export const ProtocolBuilder = {
       const url = new URL(request.url);
       const pluginId = url.host;
       const pathName = path.join(pluginId, url.pathname);
-      const pluginsRoot = path.resolve(path.join(platformInfo.userDirectory, "plugins"))
+      const pluginsRoot = path.resolve(platformInfo.pluginsDirectory)
       const pluginRoot = path.resolve(path.join(pluginsRoot, pluginId))
       const fullPath = path.resolve(path.join(pluginsRoot, pathName))
       log.debug("resolving", pathName, 'to', fullPath)
