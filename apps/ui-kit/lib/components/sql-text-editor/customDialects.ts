@@ -27,9 +27,11 @@ const PARTIQL_KEYWORDS = [
   "contains", "begins_with", "attribute_exists", "attribute_not_exists", "size",
 ].join(" ");
 
+// DynamoDB attribute type names, written out in full (String, Number, Binary,
+// Boolean, Null, Map, List, String Set, Number Set, Binary Set). `set` is
+// included so the "… Set" forms highlight as type tokens.
 const PARTIQL_TYPES = [
-  "s", "n", "b", "bool", "null", "l", "m", "ss", "ns", "bs",
-  "string", "number", "binary", "list", "map", "boolean",
+  "string", "number", "binary", "boolean", "null", "map", "list", "set",
 ].join(" ");
 
 export const PartiQL = SQLDialect.define({

@@ -1,19 +1,15 @@
 import { ColumnType, DialectData } from "./models";
 
-// DynamoDB attribute types keyed by the short code the SDK uses, mapped to a
-// readable label for the UI (column type picker, structure view, etc).
-//   S/N/B  — scalar string / number / binary
-//   SS/NS/BS — sets of those
-//   M/L    — document map / list
-//   BOOL/NULL — boolean / null
+// DynamoDB attribute types keyed by the short code the SDK uses, mapped to the
+// full readable name shown in the UI (column type picker, structure view, etc).
 export const DYNAMO_TYPE_LABELS: Record<string, string> = {
   S: 'String',
   N: 'Number',
   B: 'Binary',
   BOOL: 'Boolean',
   NULL: 'Null',
-  L: 'List',
   M: 'Map',
+  L: 'List',
   SS: 'String Set',
   NS: 'Number Set',
   BS: 'Binary Set',
