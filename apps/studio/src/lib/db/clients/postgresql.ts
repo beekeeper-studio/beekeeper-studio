@@ -1784,8 +1784,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       try {
         return JSON.parse(value)
       } catch {
-        // pg returns custom enum arrays as PostgreSQL array literals (e.g. {sad,happy})
-        // rather than JSON. Pass the string through so PostgreSQL can parse it on assignment.
+        // pg has no registered parser for custom enum array types (e.g. myenum[]) so it
+        // returns the raw PostgreSQL array literal like {val1,val2}. Reuse pg's built-in
+        // text-array parser (OID 1009) to decode it into a proper JS array, consistent
+        // with how pg handles built-in array types.
+        if (value.startsWith('{') && value.endsWith('}')) {
+          const parseTextArray = pg.types.getTypeParser(1009, 'text')
+          return parseTextArray(value)
+        }
         return value
       }
     }
