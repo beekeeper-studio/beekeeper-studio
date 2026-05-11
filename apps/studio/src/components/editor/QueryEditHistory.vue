@@ -121,7 +121,6 @@ import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import type { Extension } from "@codemirror/state";
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 import rawLog from "@bksLogger";
-import { relativeDateGroup } from "@/common/date";
 import Split from "split.js";
 
 const log = rawLog.scope("QueryEditHistory");
@@ -228,16 +227,14 @@ export default Vue.extend({
       }));
     },
     groupedAudits(): AuditGroup[] {
-      const now = new Date();
       const groups: AuditGroup[] = [];
       let current: AuditGroup | null = null;
       // `audits` is sorted newest-first by the API, so single-pass grouping
-      // also yields chronological group order (Today → Years ago).
+      // also yields chronological group order (newest → oldest).
       for (const audit of this.audits) {
         // createdAt is float seconds since epoch (cloud API convention).
-        const heading = relativeDateGroup(
-          new Date(audit.queryAudit.createdAt * 1000),
-          now
+        const heading = this.$bks.timeAgo(
+          new Date(audit.queryAudit.createdAt * 1000)
         );
         if (!current || current.heading !== heading) {
           current = { heading, items: [] };

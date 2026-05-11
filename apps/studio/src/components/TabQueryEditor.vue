@@ -650,6 +650,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      rootBindings() {
+        return [
+          { event: AppEvent.openQueryEditHistory, handler: this.handleOpenQueryEditHistory },
+        ];
+      },
       readOnly() {
         if (this.remoteDeleted) {
           return true;
@@ -1827,6 +1832,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
         this.editHistoryOpen = true;
       },
+      handleOpenQueryEditHistory(savedQueryId) {
+        if (this.tab.queryId === savedQueryId) {
+          this.editHistoryOpen = true;
+        }
+      },
       handleEditHistoryRestore(restored) {
         this.fullQuery = restored;
         this.unsavedText = restored.text;
@@ -1879,6 +1889,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         };
       }
     },
+    created() {
+      this.registerHandlers(this.rootBindings)
+    },
     async mounted() {
       const {
         primaryFunc,
@@ -1923,6 +1936,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.addTransactionTimeoutListener();
     },
     beforeDestroy() {
+      this.unregisterHandlers(this.rootBindings)
       if(this.split) {
         this.split.destroy()
       }
