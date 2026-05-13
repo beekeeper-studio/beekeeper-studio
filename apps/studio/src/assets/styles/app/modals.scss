@@ -14,51 +14,381 @@
   }
 
   &.upgrade-modal {
-    .dialog-content {
-      padding: 2rem 2rem 1rem;
+    $surface: #1d1d1d;
+    $surface-sunk: #161616;
+
+    .v--modal {
+      background: $surface;
+      border: 1px solid $border-color;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
     }
-    .dialog-c-title {
-      font-size: 1.2em;
+
+    .upgrade-modal-redesign {
+      padding: 0;
+      color: $text-dark;
+      display: flex;
+      flex-direction: column;
     }
-    .checkbox-wrapper {
+
+    // -- Header ------------------------------------------------------------
+    .um-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 20px 24px 18px;
+      border-bottom: 1px solid $border-color;
+      position: relative;
+    }
+    .um-logo {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      display: block;
+    }
+    .um-header-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .um-eyebrow {
+      font-size: 11.5px;
+      color: $text-lighter;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.4;
+      &.um-eyebrow-trigger {
+        color: $theme-primary;
+      }
+      .material-icons {
+        font-size: 13px;
+      }
+    }
+    .um-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+      color: $text-dark;
+      line-height: 1.25;
+      letter-spacing: -0.1px;
+    }
+    .um-subline {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: $text-light;
+      line-height: 1.45;
+    }
+    .um-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: $text;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid $border-color;
+      border-radius: 999px;
+      white-space: nowrap;
+      align-self: center;
+    }
+    .um-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: $brand-success;
+    }
+    .um-close {
+      background: transparent;
+      border: 0;
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: $text-light;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: flex-start;
+      text-decoration: none;
+      .material-icons { font-size: 20px; }
+      &:hover { color: $text-dark; }
+    }
+
+    // -- Body --------------------------------------------------------------
+    .um-body {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      background: $surface-sunk;
+      min-height: 320px;
+    }
+    .um-features {
+      padding: 14px 8px;
+      border-right: 1px solid $border-color;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .um-feature-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 0;
+      border-left: 2px solid transparent;
+      color: $text;
+      font: inherit;
+      font-size: 13.5px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: background 0.12s;
+      &:hover { background: rgba(255,255,255,0.03); }
+      &.active {
+        background: rgba(255,255,255,0.06);
+        color: $text-dark;
+      }
+      .material-icons { font-size: 18px; }
+      > span { flex: 1; }
+    }
+
+    .um-hero {
+      padding: 22px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .um-hero-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 500;
+      color: $text-dark;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      .material-icons { font-size: 22px; }
+    }
+    .um-hero-desc {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: $text;
+      max-width: 460px;
+    }
+    .um-bullets {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: $text-light;
+      li {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 0;
+        &:before { content: none; }
+        .material-icons { font-size: 14px; color: $brand-success; }
+      }
+    }
+
+    // -- Preview card ------------------------------------------------------
+    .um-preview-card {
+      background: $query-editor-bg;
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: var(--font-family-mono);
+      font-size: 12px;
+      color: $text;
+      min-height: 70px;
+      overflow: hidden;
+    }
+    .um-preview-eyebrow {
+      color: $text-lighter;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .um-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      &.tight { gap: 2px; }
+      &.compact { gap: 3px; margin-bottom: 8px; }
+      &.mono { font-family: var(--font-family-mono); }
+      font-family: inherit;
+      font-size: 12.5px;
+    }
+    .um-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      &.indent { padding-left: 18px; }
+      .material-icons { font-size: 14px; }
+      .material-icons.small { font-size: 12px; }
+      .material-icons.db { color: $brand-purple; }
+      .material-icons.ok { color: $brand-success; }
+      .muted-icon { color: $text-light; font-size: 12px; }
+      .muted-icon-light { color: $text-light; }
+    }
+    .um-rows .muted,
+    .um-row .muted { color: $text-light; }
+    .muted-xs { color: $text-lighter; font-size: 10.5px; }
+    .link { color: $theme-secondary; }
+    .sans { font-family: var(--font-family); color: $text; margin-top: 2px; }
+    .um-ai-prompt { color: $brand-pink; }
+    .um-ai-ok { color: $brand-success; }
+    .um-ok-row {
+      display: flex; align-items: center; gap: 6px; color: $brand-success;
+      .material-icons { font-size: 13px; }
+    }
+    .um-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding-top: 8px;
+      border-top: 1px solid $border-color;
+      font-family: var(--font-family);
+      span {
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: rgba(152,88,255,0.12);
+        color: $brand-purple;
+        border: 1px solid rgba(152,88,255,0.22);
+      }
+    }
+    .um-json {
+      margin: 0;
+      font-family: var(--font-family-mono);
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: $text;
+      white-space: pre;
+    }
+    .um-export-note { margin-top: 2px; }
+
+    // Editable table preview
+    .um-editable-table {
+      display: grid;
+      grid-template-columns: 40px 1fr 1fr 1.2fr;
+      font-family: var(--font-family-mono);
+      font-size: 11.5px;
+    }
+    .um-editable-header {
+      padding: 6px 8px;
+      color: $text-lighter;
+      background: $theme-bg;
+      border-bottom: 1px solid $border-color;
+    }
+    .um-cell {
+      padding: 5px 8px;
+      color: $text-dark;
+      &.num { color: $theme-secondary; }
+      &.muted { color: $text-light; }
+      &.strong { color: $text-dark; }
+    }
+    .um-cell-editing {
+      color: #000;
+      background: rgba(250,216,59,0.55);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .um-pencil {
       margin-left: auto;
-      margin-right: auto;
-      ul.check-list {
-        padding-left: 0;
-        li {
-          padding-bottom: 10px;
-          &:before {
-            font-family: "Material Icons";
-            content: "\e5ca";
-            margin-right: 0.5rem;
-            margin-bottom: -10px;
-            color: $brand-success;
-          }
-          list-style: none;
-        }
+      font-size: 10px;
+      color: rgba(0,0,0,0.6);
+    }
+    .um-preview-editable .um-preview-card,
+    .um-preview-card.um-preview-editable {
+      padding: 0;
+    }
+    // Inline-edit preview should be flush — override default padding
+    .um-preview-editable {
+      padding: 0;
+    }
+    .um-staged {
+      padding: 6px 10px;
+      background: rgba(250,216,59,0.08);
+      border-top: 1px solid $border-color;
+      font-family: var(--font-family);
+      font-size: 11.5px;
+      color: $text;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      .material-icons { font-size: 14px; }
+    }
+    .um-apply {
+      margin-left: auto;
+      color: $brand-success;
+      font-weight: 500;
+      cursor: default;
+    }
+
+    // -- Testimonial -------------------------------------------------------
+    .um-quote {
+      margin: 0;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      position: relative;
+      blockquote {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: $text;
+        font-style: italic;
       }
-      > p {
-        margin-bottom: 0;
+      figcaption {
+        margin-top: 6px;
+        padding-left: 18px;
+        font-size: 11.5px;
+        color: $text-light;
+        span { color: $text-dark; }
       }
     }
-    .check-list {
-      margin-bottom: 0;
+    .um-quote-mark {
+      position: absolute;
+      top: 2px;
+      left: 8px;
+      font-size: 28px;
+      line-height: 1;
+      opacity: 0.5;
+      font-family: Georgia, serif;
     }
-    .vue-dialog-buttons {
-      justify-content: stretch;
-      padding-left: 0;
-      padding-right: 0;
-      padding-top: 1rem;
-      & > div {
-        width: 100%;
+
+    // -- Footer / CTA ------------------------------------------------------
+    .um-footer {
+      padding: 18px 24px 22px;
+      border-top: 1px solid $border-color;
+      .upsell-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
       .actions {
+        display: flex;
         justify-content: flex-end;
+        gap: 8px;
       }
-    }
-    .close-btn {
-      top: 1.5rem;
-      right: 1.5rem;
+      .btn { white-space: nowrap; }
+      .help {
+        text-align: right;
+        margin-bottom: 0;
+        color: $text-light;
+      }
     }
   }
 
