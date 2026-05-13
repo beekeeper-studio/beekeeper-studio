@@ -77,31 +77,21 @@
           v-else-if="filteredQueries.length > 0"
           class="list-body"
           ref="wrapper"
+          @contextmenu.self.prevent="showLonelyContextMenu($event)"
         >
-          <sidebar-folder
-            v-for="({ folder, queries, subfolders }) in foldersWithQueries"
-            :key="`${folder.id}-${queries.length}`"
-            :title="`${folder.name} (${queries.length})`"
-            :expanded-initially="getFolderExpanded(folder.id)"
-            @toggle="onFolderToggle(folder.id, $event)"
-            @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
-            @header-drop="onQueryFolderHeaderDrop(folder)"
+          <BksTreeList
+            :list="tree"
+            @bks-folder-toggle="onTreeFolderToggle"
+            @bks-change="onTreeChange"
+            @bks-folder-drop="onTreeFolderDrop"
+            @bks-folder-contextmenu="showFolderContextMenu($event.event, $event.item.folder)"
           >
-            <Draggable
-              :list="queries"
-              group="queries"
-              ghost-class="drag-ghost"
-              @start="onQueryDragStart($event, queries)"
-              @end="draggingQuery = null"
-              @change="onQueryDrop($event, folder, queries)"
-            >
+            <template #item="{ item: node }">
               <favorite-list-item
-                v-for="item in queries"
-                :key="item.id"
-                :item="item"
-                :active="isActive(item)"
-                :selected="selected === item"
-                :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
+                :item="node.query"
+                :active="isActive(node.query)"
+                :selected="selected === node.query"
+                :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.query.id) }"
                 @remove="remove"
                 @select="select"
                 @open="open"
@@ -109,65 +99,8 @@
                 @export="exportTo"
                 @duplicate="duplicate"
               />
-            </Draggable>
-            <sidebar-folder
-              v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
-              :key="`${subfolder.id}-${subQueries.length}`"
-              :title="`${subfolder.name} (${subQueries.length})`"
-              :expanded-initially="getFolderExpanded(subfolder.id)"
-              @toggle="onFolderToggle(subfolder.id, $event)"
-              @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
-              @header-drop="onQueryFolderHeaderDrop(subfolder)"
-            >
-              <Draggable
-                :list="subQueries"
-                group="queries"
-                ghost-class="drag-ghost"
-                @start="onQueryDragStart($event, subQueries)"
-                @end="draggingQuery = null"
-                @change="onQueryDrop($event, subfolder, subQueries)"
-              >
-                <favorite-list-item
-                  v-for="item in subQueries"
-                  :key="item.id"
-                  :item="item"
-                  :active="isActive(item)"
-                  :selected="selected === item"
-                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
-                  @remove="remove"
-                  @select="select"
-                  @open="open"
-                  @rename="rename"
-                  @export="exportTo"
-                  @duplicate="duplicate"
-                />
-              </Draggable>
-            </sidebar-folder>
-          </sidebar-folder>
-          <Draggable
-            :list="lonelyQueries"
-            :group="isCloud ? { name: 'queries', put: false } : 'queries'"
-            ghost-class="drag-ghost"
-            @start="onQueryDragStart($event, lonelyQueries)"
-            @end="draggingQuery = null"
-            @change="onQueryDrop($event, null, lonelyQueries)"
-            @contextmenu.self.prevent="showLonelyContextMenu($event)"
-          >
-            <favorite-list-item
-              v-for="item in lonelyQueries"
-              :key="item.id"
-              :item="item"
-              :active="isActive(item)"
-              :selected="selected === item"
-              :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
-              @remove="remove"
-              @select="select"
-              @open="open"
-              @rename="rename"
-              @export="exportTo"
-              @duplicate="duplicate"
-            />
-          </Draggable>
+            </template>
+          </BksTreeList>
         </nav>
         <div
           class="empty"
@@ -256,17 +189,15 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { SmartLocalStorage } from '@/common/LocalStorage'
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
-import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
-import Draggable from 'vuedraggable'
+import BksTreeList from '@beekeeperstudio/ui-kit/vue/tree-list'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm, Draggable },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, QueryRenameForm, BksTreeList },
   data: function () {
     return {
       checkedFavorites: [],
@@ -277,12 +208,9 @@ export default {
       folderModalParentId: null,
       folderModalError: null,
       folderModalSubmitting: false,
-      folderExpandedState: {},
-      draggingQuery: null
     }
   },
   mounted() {
-    this.folderExpandedState = SmartLocalStorage.getJSON('queryFolderExpanded-v1', {})
     document.addEventListener('mousedown', this.maybeUnselect)
   },
   beforeDestroy() {
@@ -311,28 +239,17 @@ export default {
     error() {
       return this.queriesError || this.foldersError || null
     },
-    foldersWithQueries() {
-      return this.$store.getters['data/queryFolders/foldersWithQueries'](this.filteredQueries)
-    },
-    lonelyQueries() {
-      const folderIds = this.folders.map((f) => f.id)
-      return [...this.filteredQueries]
-        .filter((query) => !query.queryFolderId || !folderIds.includes(query.queryFolderId))
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    tree() {
+      return this.$store.getters['data/queryFolders/treeItems'](this.filteredQueries)
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
     }
   },
   methods: {
-    getFolderExpanded(folderId) {
-      const stored = this.folderExpandedState[folderId]
-      return stored !== undefined ? stored : true
-    },
-    onFolderToggle(folderId, expanded) {
-      this.$set(this.folderExpandedState, folderId, expanded)
-      SmartLocalStorage.addItem('queryFolderExpanded-v1', this.folderExpandedState)
-    },
+    ...mapMutations('data/queryFolders', {
+      setFolderExpanded: 'setFolderExpanded',
+    }),
     clearFilter() {
       this.filterQuery = null
     },
@@ -462,47 +379,70 @@ export default {
         }
       }
     },
-    onQueryDragStart(event, list) {
-      this.draggingQuery = list[event.oldIndex]
-    },
-    cloudRelativePosition(list, newIndex) {
-      const prev = list[newIndex - 1]
-      const next = list[newIndex + 1]
-      if (prev) return { after: prev.id }
+    relativeQueryPosition(siblings, newIndex) {
+      let previous = null
+      let next = null
+      for (let i = newIndex - 1; i >= 0; i--) {
+        if (siblings[i].type === 'item') {
+          previous = siblings[i].query
+          break
+        }
+      }
+      for (let i = newIndex + 1; i < siblings.length; i++) {
+        if (siblings[i].type === 'item') {
+          next = siblings[i].query
+          break
+        }
+      }
+      if (previous) return { after: previous.id }
       if (next) return { before: next.id }
       return { before: null }
     },
-    async onQueryFolderHeaderDrop(folder) {
-      if (!this.draggingQuery) return
+    onTreeFolderToggle({ folder: node, expanded }) {
+      if (!node.folder) return
+      this.setFolderExpanded({ folderId: node.folder.id, expanded })
+    },
+    async onTreeFolderDrop({ folder, draggedNode }) {
+      if (!draggedNode || draggedNode.type !== 'item') {
+        return
+      }
+      if (draggedNode.query.queryFolderId === folder.folder.id) {
+        return
+      }
       try {
-        // Use reorder action for both local and cloud workspaces
         await this.$store.dispatch('data/queries/reorder', {
-          item: this.draggingQuery,
-          queryFolderId: folder.id,
-          position: { before: null }
+          item: draggedNode.query,
+          queryFolderId: folder.folder.id,
+          position: { before: null },
         })
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
-    async onQueryDrop(event, folder, currentList) {
+    async onTreeChange({ event, parent }) {
+      const targetFolderId = parent?.folder?.id ?? null;
+      const siblings = parent?.children ?? this.tree;
+
+      if (!(event.added || event.moved)) {
+        return;
+      }
+
+      const node = event.added?.element || event.moved?.element;
+      const newIndex = event.added?.newIndex || event.moved?.newIndex;
+
+      if (node.type !== 'item') {
+        return;
+      }
+
       try {
-        if (event.added) {
-          const { element: item, newIndex } = event.added
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            queryFolderId: folder?.id ?? null,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        } else if (event.moved) {
-          const { element: item, newIndex } = event.moved
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
+        const payload = {
+          item: node.query,
+          position: this.relativeQueryPosition(siblings, newIndex),
         }
+        if (event.added) {
+          payload.queryFolderId = targetFolderId;
+        }
+        await this.$store.dispatch('data/queries/reorder', payload);
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
@@ -530,13 +470,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
-.drag-pending {
-  opacity: 0.5;
-}
-.folder-drop-zone {
-  min-height: 8px;
-}
+@import '../../../assets/styles/app/_variables';
+
 </style>
