@@ -104,9 +104,17 @@ export const Mutators = {
 
   },
 
-  /** Stringify json data for MySQL column */
+  /** Stringify json data for display in table cells.
+   * node-postgres returns JSONB scalar strings as JS strings (already parsed),
+   * so wrapping them in JSON.stringify preserves the JSON representation with outer quotes,
+   * making string scalars visually distinct from JSON objects.
+   */
   jsonMutator(value: any): JsonFriendly {
-    if(!_.isObject(value)) return value;
+    if (_.isNull(value)) return value
+    // A JS string means the driver already parsed the JSONB value and got a string scalar.
+    // Wrap it so the cell shows the JSON text representation (e.g. "hello", not hello).
+    if (_.isString(value)) return JSON.stringify(value)
+    if (!_.isObject(value)) return value
     try {
       return friendlyJsonObject(value)
     } catch (e) {
