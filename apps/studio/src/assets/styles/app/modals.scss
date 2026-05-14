@@ -421,46 +421,101 @@
       }
     }
 
-    // JSON sidebar preview --------------------------------------------------
+    // JSON sidebar preview — table on the left, JSON viewer on the right
+    // ------------------------------------------------------------------
     .um-preview-json {
       padding: 0;
     }
-    .ump-json-header {
-      padding: 6px 8px;
+    .ump-json-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      background: $theme-bg;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    // Result table — mirrors the real result grid colours
+    .ump-json-table {
+      border-right: 1px solid $border-color;
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      line-height: 1.4;
+      min-width: 0;
+    }
+    .ump-jt-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 0.6fr);
+      border-bottom: 1px solid rgba($theme-base, 0.04);
+      &.ump-jt-head {
+        background: rgba($theme-base, 0.04);
+        text-transform: uppercase;
+        color: $text-lighter;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        border-bottom: 1px solid $border-color;
+      }
+      &.selected {
+        background: rgba($theme-base, 0.08);
+      }
+    }
+    .ump-jt-cell {
+      padding: 5px 8px;
+      color: $text-dark;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      &.num { color: $text-lighter; }
+    }
+    // Right pane — the JSON sidebar itself
+    .ump-json-side {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .ump-json-side-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
       border-bottom: 1px solid $border-color;
       background: rgba($theme-base, 0.03);
     }
-    .ump-json-filter {
-      display: flex;
+    .ump-json-side-title {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 3px 6px;
-      background: $theme-bg;
-      border: 1px solid $border-color;
-      border-radius: 3px;
-      .material-icons { font-size: 13px; color: $text-lighter; }
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: $text-dark;
+      .material-icons { font-size: 14px; color: $brand-purple; }
     }
-    .ump-json-placeholder {
+    .ump-json-side-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       color: $text-lighter;
-      font-size: 11.5px;
+      .material-icons { font-size: 13px; }
     }
     .ump-json {
       margin: 0;
-      padding: 8px 12px;
-      background: $theme-bg;
+      padding: 8px 10px;
       font-family: var(--font-family-mono);
-      font-size: 11.5px;
+      font-size: 11px;
       line-height: 1.55;
       color: $text-dark;
       white-space: pre;
       overflow-x: auto;
       // Match the real JSON viewer (json-viewer.scss): property names use a
-      // darkened theme primary; string/number values stay text-dark.
+      // darkened theme primary; string values yellow; numbers stay text-dark.
       .k { color: color.adjust($theme-primary, $lightness: -20%); }
-      .v { color: $text-dark; }
+      .v { color: $theme-primary; }
+      .n { color: $text-dark; }
       .p { color: $text-lighter; }
       .muted { color: $text-light; }
       .caret { color: $text-light; }
+      .fk { color: $text-light; font-size: 10px; }
     }
 
     // Editable query results preview ----------------------------------------

@@ -62,25 +62,76 @@
       </div>
     </template>
 
-    <!-- JSON Sidebar: looks like the real sidebar header + json text -->
+    <!-- JSON Sidebar: shows a selected row in a table alongside the JSON viewer -->
     <template v-else-if="feature.id === 'json'">
-      <div class="ump-json-header">
-        <div class="ump-json-filter">
-          <i class="material-icons">search</i>
-          <span class="ump-json-placeholder">Filter keys by text or /regex/</span>
+      <div class="ump-json-split">
+        <div class="ump-json-table">
+          <div class="ump-jt-row ump-jt-head">
+            <div class="ump-jt-cell num">#</div>
+            <div class="ump-jt-cell">name</div>
+            <div class="ump-jt-cell">email</div>
+            <div class="ump-jt-cell">plan</div>
+          </div>
+          <div class="ump-jt-row">
+            <div class="ump-jt-cell num">1246</div>
+            <div class="ump-jt-cell">Globex</div>
+            <div class="ump-jt-cell">li@globex.io</div>
+            <div class="ump-jt-cell">indie</div>
+          </div>
+          <div class="ump-jt-row selected">
+            <div class="ump-jt-cell num">1247</div>
+            <div class="ump-jt-cell">Acme Inc</div>
+            <div class="ump-jt-cell">sara@acme.io</div>
+            <div class="ump-jt-cell">pro</div>
+          </div>
+          <div class="ump-jt-row">
+            <div class="ump-jt-cell num">1248</div>
+            <div class="ump-jt-cell">Initech</div>
+            <div class="ump-jt-cell">p@initech.com</div>
+            <div class="ump-jt-cell">free</div>
+          </div>
+          <div class="ump-jt-row">
+            <div class="ump-jt-cell num">1249</div>
+            <div class="ump-jt-cell">Hooli</div>
+            <div class="ump-jt-cell">b@hooli.xyz</div>
+            <div class="ump-jt-cell">team</div>
+          </div>
+          <div class="ump-jt-row">
+            <div class="ump-jt-cell num">1250</div>
+            <div class="ump-jt-cell">Stark</div>
+            <div class="ump-jt-cell">tony@stark</div>
+            <div class="ump-jt-cell">pro</div>
+          </div>
+        </div>
+        <div class="ump-json-side">
+          <div class="ump-json-side-header">
+            <span class="ump-json-side-title">
+              <i class="material-icons">data_object</i>
+              ROW.JSON
+            </span>
+            <span class="ump-json-side-actions">
+              <i class="material-icons">search</i>
+              <i class="material-icons">content_copy</i>
+            </span>
+          </div>
+          <pre class="ump-json"><span class="p">{</span>
+  <span class="k">"id"</span><span class="p">:</span> <span class="n">1247</span><span class="p">,</span>
+  <span class="k">"name"</span><span class="p">:</span> <span class="v">"Acme Inc"</span><span class="p">,</span>
+  <span class="k">"plan"</span><span class="p">:</span> <span class="v">"pro"</span><span class="p">,</span>
+  <span class="k">"owner_id"</span><span class="p">:</span> <span class="n">88</span> <span class="fk">→ users</span><span class="p">,</span>
+  <span class="k">"owner"</span><span class="p">:</span> <span class="caret">▾</span> <span class="p">{</span>
+    <span class="k">"id"</span><span class="p">:</span> <span class="n">88</span><span class="p">,</span>
+    <span class="k">"email"</span><span class="p">:</span> <span class="v">"sara@acme.io"</span><span class="p">,</span>
+    <span class="k">"team_id"</span><span class="p">:</span> <span class="n">3</span> <span class="fk">→ teams</span><span class="p">,</span>
+    <span class="k">"team"</span><span class="p">:</span> <span class="caret">▾</span> <span class="p">{</span>
+      <span class="k">"name"</span><span class="p">:</span> <span class="v">"Eng"</span><span class="p">,</span>
+      <span class="k">"seats"</span><span class="p">:</span> <span class="n">12</span>
+    <span class="p">}</span>
+  <span class="p">}</span><span class="p">,</span>
+  <span class="k">"metadata"</span><span class="p">:</span> <span class="caret">▸</span> <span class="muted">{…6}</span>
+<span class="p">}</span></pre>
         </div>
       </div>
-      <pre class="ump-json"><span class="p">{</span>
-  <span class="k">"id"</span><span class="p">:</span> <span class="v">1247</span><span class="p">,</span>
-  <span class="k">"name"</span><span class="p">:</span> <span class="v">"Acme Inc"</span><span class="p">,</span>
-  <span class="k">"owner_id"</span><span class="p">:</span> <span class="v">88</span><span class="p">,</span>
-  <span class="k">"owner"</span><span class="p">:</span> <span class="caret">▾</span> <span class="p">{</span>
-    <span class="k">"id"</span><span class="p">:</span> <span class="v">88</span><span class="p">,</span>
-    <span class="k">"email"</span><span class="p">:</span> <span class="v">"sara@acme.io"</span><span class="p">,</span>
-    <span class="k">"team"</span><span class="p">:</span> <span class="caret">▸</span> <span class="muted">{…3 fields}</span>
-  <span class="p">}</span><span class="p">,</span>
-  <span class="k">"plan"</span><span class="p">:</span> <span class="v">"professional"</span>
-<span class="p">}</span></pre>
     </template>
 
     <!-- Editable query results: spreadsheet with one edited cell -->
