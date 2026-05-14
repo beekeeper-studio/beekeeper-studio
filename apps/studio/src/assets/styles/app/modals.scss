@@ -216,6 +216,34 @@
       }
     }
 
+    // Inline pill row — matches the AI Shell upsell card. Used when a
+    // feature opts in via `pills: [...]` instead of `bullets: [...]`.
+    .um-pills {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 12px;
+      font-size: 13px;
+      color: $text-dark;
+      .pill-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        &:before { content: none; }
+        .material-icons { font-size: 16px; color: $brand-success; }
+        span { font-weight: 500; color: $text-dark; white-space: nowrap; }
+        & + .pill-row::before {
+          content: "\00b7";
+          color: $text-lighter;
+          margin-right: 6px;
+        }
+      }
+    }
+
     // -- Preview card ------------------------------------------------------
     // Box wraps tightly around its content; no global min-height. The hero
     // panel reserves the vertical space so the modal doesn't jump.

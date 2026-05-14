@@ -73,7 +73,18 @@
               <p class="um-hero-desc">{{ featured.short }}</p>
             </div>
 
-            <ul class="um-bullets">
+            <ul v-if="featured.pills" class="um-pills">
+              <li
+                v-for="p in featured.pills"
+                :key="p.label"
+                class="pill-row"
+                v-tooltip="p.tooltip"
+              >
+                <i class="material-icons">{{ p.icon }}</i>
+                <span>{{ p.label }}</span>
+              </li>
+            </ul>
+            <ul v-else-if="featured.bullets" class="um-bullets">
               <li v-for="b in featured.bullets" :key="b">
                 <i class="material-icons">check</i>
                 {{ b }}
@@ -114,6 +125,7 @@ import UpsellButtons from '../upsell/common/UpsellButtons.vue'
 import UpgradePreview from './UpgradePreview.vue'
 
 interface Testimonial { quote: string; author: string }
+interface Pill { icon: string; label: string; tooltip?: string }
 interface Feature {
   id: string
   icon: string
@@ -121,7 +133,8 @@ interface Feature {
   title: string
   triggerTitle?: string
   short: string
-  bullets: string[]
+  bullets?: string[]
+  pills?: Pill[]
   testimonial?: Testimonial
 }
 
@@ -163,7 +176,11 @@ const FEATURES: Feature[] = [
     title: 'SQL AI Shell',
     triggerTitle: 'SQL AI Shell',
     short: 'Explore data with the AI agent you already use. Bring your own model — no usage fees, no middlemen, runs on your machine.',
-    bullets: ['Claude, OpenAI, Gemini, or local', 'Asks before running SQL', 'Source code on GitHub'],
+    pills: [
+      { icon: 'vpn_key', label: 'Bring your own model', tooltip: 'Claude, ChatGPT, Gemini, and even local models work great.' },
+      { icon: 'paid', label: 'No usage fees or middlemen', tooltip: 'No proxies, no logging, no token fees. Beekeeper connects directly to your agent' },
+      { icon: 'verified_user', label: 'Asks before it runs SQL', tooltip: 'The AI shell can safely explore your database without you having to worry if it will do something destructive' }
+    ],
     testimonial: {
       quote: 'The AI feature is highly beneficial.',
       author: 'Özer Özdaş, Nuvo Code'
