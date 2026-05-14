@@ -23,6 +23,8 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+      max-width: 820px !important;
+      width: min(820px, 92vw) !important;
     }
 
     .upgrade-modal-redesign {
