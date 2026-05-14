@@ -245,8 +245,8 @@
     }
 
     // -- Preview card ------------------------------------------------------
-    // Box wraps tightly around its content; no global min-height. The hero
-    // panel reserves the vertical space so the modal doesn't jump.
+    // Box stretches to fill the hero column on every tab. Per-tab content
+    // is responsible for not growing too tall.
     .um-preview-card {
       background: $query-editor-bg;
       border: 1px solid $border-color;
@@ -256,8 +256,6 @@
       font-size: 12.5px;
       color: $text;
       overflow: hidden;
-      align-self: flex-start;
-      max-width: 100%;
     }
     // AI Shell preview renders its own card chrome — strip ours and clamp
     // its internal min-height so it fits the hero panel.
@@ -385,12 +383,20 @@
     }
 
     // Enterprise terminal + chips -------------------------------------------
+    // Enterprise: two-column split (auth terminal | databases) ---------------
+    .ump-enterprise {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .ump-ent-col {
+      min-width: 0;
+    }
     .ump-term {
       font-family: var(--font-family-mono);
       font-size: 11.5px;
       line-height: 1.55;
       color: $text;
-      margin-bottom: 8px;
     }
     .ump-prompt { color: $brand-success; }
     .ump-ok {
@@ -409,8 +415,6 @@
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
-      padding-top: 8px;
-      border-top: 1px solid $border-color;
       span {
         padding: 2px 8px;
         border-radius: 999px;
@@ -418,6 +422,16 @@
         background: rgba($brand-purple, 0.12);
         color: $brand-purple;
         border: 1px solid rgba($brand-purple, 0.22);
+      }
+    }
+    // Grid variant — used when chips sit beside another column rather than
+    // stacked under a sibling section.
+    .ump-chips-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      span {
+        text-align: center;
       }
     }
 
@@ -560,11 +574,17 @@
       cursor: default;
     }
 
-    // Import/Export preview --------------------------------------------------
+    // Import/Export preview — two-column split (tables | destination) -------
+    .ump-io {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .ump-io-col { min-width: 0; }
     .ump-export-list {
       list-style: none;
       padding: 0;
-      margin: 0 0 6px;
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -578,16 +598,20 @@
         .material-icons { font-size: 14px; color: $brand-success; }
       }
     }
-    .ump-meta { color: $text-lighter; font-size: 10.5px; margin-left: 4px; }
-    .ump-export-target {
+    .ump-meta { color: $text-lighter; font-size: 10.5px; margin-left: auto; }
+    .ump-io-row {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding-top: 6px;
-      border-top: 1px solid $border-color;
-      font-size: 12px;
+      gap: 8px;
+      font-size: 12.5px;
       color: $text;
+      line-height: 1.7;
       .material-icons { font-size: 14px; color: $brand-warning; }
+      &.muted { color: $text-light; font-size: 11.5px; }
+    }
+    .ump-io-key {
+      color: $text-lighter;
+      min-width: 50px;
     }
 
     // ER Diagrams preview — two connected entity boxes ---------------------
@@ -660,6 +684,12 @@
     }
 
     // Folders / Organize preview — mirrors the real sidebar ------------------
+    .ump-organize {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .ump-org-col { min-width: 0; }
     .ump-sidebar-tree {
       list-style: none;
       padding: 0;
@@ -720,6 +750,14 @@
             color: $theme-primary;
             font-size: 11px;
           }
+        }
+        // Saved-query items use the same `code` icon as FavoriteListItem.
+        li.item.query > .material-icons {
+          color: $brand-pink;
+          font-size: 13px;
+          margin-right: 6px;
+          margin-left: 1px;
+          flex-shrink: 0;
         }
       }
     }

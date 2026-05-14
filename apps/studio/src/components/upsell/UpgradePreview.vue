@@ -45,20 +45,27 @@
 
     <!-- Enterprise connectivity: SSO terminal + database chips -->
     <template v-else-if="feature.id === 'enterprise'">
-      <div class="ump-section-label">Authentication</div>
-      <div class="ump-term">
-        <div><span class="ump-prompt">$</span> aws sso login --profile prod</div>
-        <div class="ump-ok">
-          <i class="material-icons">check_circle</i>
-          Authenticated as alice@company.com
+      <div class="ump-enterprise">
+        <div class="ump-ent-col">
+          <div class="ump-section-label">Authentication</div>
+          <div class="ump-term">
+            <div><span class="ump-prompt">$</span> aws sso login --profile prod</div>
+            <div class="ump-ok">
+              <i class="material-icons">check_circle</i>
+              Authenticated as alice@company.com
+            </div>
+            <div class="ump-connect">
+              → Connecting to <span class="ump-link">rds-prod.us-east-1</span>
+              <span class="ump-muted-xs"> · no password required</span>
+            </div>
+          </div>
         </div>
-        <div class="ump-connect">
-          → Connecting to <span class="ump-link">rds-prod.us-east-1</span>
-          <span class="ump-muted-xs"> · no password required</span>
+        <div class="ump-ent-col">
+          <div class="ump-section-label">More databases</div>
+          <div class="ump-chips ump-chips-grid">
+            <span v-for="db in dbChips" :key="db">{{ db }}</span>
+          </div>
         </div>
-      </div>
-      <div class="ump-chips">
-        <span v-for="db in dbChips" :key="db">{{ db }}</span>
       </div>
     </template>
 
@@ -155,15 +162,24 @@
 
     <!-- Import / Export / Backup -->
     <template v-else-if="feature.id === 'io'">
-      <div class="ump-section-label">Export tables</div>
-      <ul class="ump-export-list">
-        <li><i class="material-icons">check_box</i>customers<span class="ump-meta">412 KB</span></li>
-        <li><i class="material-icons">check_box</i>orders<span class="ump-meta">2.1 MB</span></li>
-        <li><i class="material-icons">check_box</i>line_items<span class="ump-meta">8.4 MB</span></li>
-      </ul>
-      <div class="ump-export-target">
-        <i class="material-icons">save_alt</i>
-        Export 3 tables → <span :style="{ color: feature.color }">customers.xlsx</span>
+      <div class="ump-io">
+        <div class="ump-io-col">
+          <div class="ump-section-label">Tables</div>
+          <ul class="ump-export-list">
+            <li><i class="material-icons">check_box</i>customers<span class="ump-meta">412 KB</span></li>
+            <li><i class="material-icons">check_box</i>orders<span class="ump-meta">2.1 MB</span></li>
+            <li><i class="material-icons">check_box</i>line_items<span class="ump-meta">8.4 MB</span></li>
+          </ul>
+        </div>
+        <div class="ump-io-col">
+          <div class="ump-section-label">Destination</div>
+          <div class="ump-io-row">
+            <i class="material-icons">save_alt</i>
+            <span :style="{ color: feature.color }">customers.xlsx</span>
+          </div>
+          <div class="ump-io-row muted"><span class="ump-io-key">Format</span><span>XLSX</span></div>
+          <div class="ump-io-row muted"><span class="ump-io-key">Mode</span><span>Multi-table</span></div>
+        </div>
       </div>
     </template>
 
@@ -211,44 +227,69 @@
 
     <!-- Folders / Organization: mirrors the real sidebar structure -->
     <template v-else-if="feature.id === 'organize'">
-      <ul class="ump-sidebar-tree">
-        <li class="folder open">
-          <i class="material-icons arrow">keyboard_arrow_right</i>
-          <i class="material-icons fld">folder</i>
-          <span class="lbl">Production</span>
-        </li>
-        <li class="folder-children">
-          <ul>
-            <li class="item">
-              <span class="connection-label connection-label-color-blue"></span>
-              <span class="lbl">postgres-primary</span>
-              <i class="bk bk-pin pin"></i>
+      <div class="ump-organize">
+        <div class="ump-org-col">
+          <div class="ump-section-label">Connections</div>
+          <ul class="ump-sidebar-tree">
+            <li class="folder open">
+              <i class="material-icons arrow">keyboard_arrow_right</i>
+              <i class="material-icons fld">folder</i>
+              <span class="lbl">Production</span>
             </li>
-            <li class="item">
-              <span class="connection-label connection-label-color-blue"></span>
-              <span class="lbl">read-replica</span>
+            <li class="folder-children">
+              <ul>
+                <li class="item">
+                  <span class="connection-label connection-label-color-blue"></span>
+                  <span class="lbl">postgres-primary</span>
+                  <i class="bk bk-pin pin"></i>
+                </li>
+                <li class="item">
+                  <span class="connection-label connection-label-color-blue"></span>
+                  <span class="lbl">read-replica</span>
+                </li>
+              </ul>
+            </li>
+            <li class="folder">
+              <i class="material-icons arrow">keyboard_arrow_right</i>
+              <i class="material-icons fld">folder</i>
+              <span class="lbl">Staging</span>
+            </li>
+            <li class="folder">
+              <i class="material-icons arrow">keyboard_arrow_right</i>
+              <i class="material-icons fld">folder</i>
+              <span class="lbl">Local</span>
             </li>
           </ul>
-        </li>
-        <li class="folder open">
-          <i class="material-icons arrow">keyboard_arrow_right</i>
-          <i class="material-icons fld">folder</i>
-          <span class="lbl">Staging</span>
-        </li>
-        <li class="folder-children">
-          <ul>
-            <li class="item">
-              <span class="connection-label connection-label-color-orange"></span>
-              <span class="lbl">stage-pg</span>
+        </div>
+        <div class="ump-org-col">
+          <div class="ump-section-label">Saved queries</div>
+          <ul class="ump-sidebar-tree">
+            <li class="folder open">
+              <i class="material-icons arrow">keyboard_arrow_right</i>
+              <i class="material-icons fld">folder</i>
+              <span class="lbl">Reports</span>
+            </li>
+            <li class="folder-children">
+              <ul>
+                <li class="item query">
+                  <i class="material-icons">code</i>
+                  <span class="lbl">top customers</span>
+                  <i class="bk bk-pin pin"></i>
+                </li>
+                <li class="item query">
+                  <i class="material-icons">code</i>
+                  <span class="lbl">mrr by month</span>
+                </li>
+              </ul>
+            </li>
+            <li class="folder">
+              <i class="material-icons arrow">keyboard_arrow_right</i>
+              <i class="material-icons fld">folder</i>
+              <span class="lbl">Ad-hoc</span>
             </li>
           </ul>
-        </li>
-        <li class="folder">
-          <i class="material-icons arrow">keyboard_arrow_right</i>
-          <i class="material-icons fld">folder</i>
-          <span class="lbl">Local</span>
-        </li>
-      </ul>
+        </div>
+      </div>
     </template>
   </div>
 </template>
