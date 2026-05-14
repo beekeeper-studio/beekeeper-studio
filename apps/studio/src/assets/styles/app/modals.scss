@@ -164,8 +164,8 @@
       flex-direction: column;
       gap: 16px;
       // Reserve space for the tallest preview so the modal doesn't jump
-      // height when switching features.
-      min-height: 520px;
+      // height when switching features. Scales with viewport.
+      min-height: 55vh;
     }
     .um-hero-title {
       margin: 0 0 6px;
@@ -212,7 +212,7 @@
       font-family: var(--font-family-mono);
       font-size: 12px;
       color: $text;
-      min-height: 180px;
+      min-height: 18vh;
       overflow: hidden;
     }
     .um-preview-eyebrow {
@@ -376,23 +376,50 @@
 
     // -- Footer / CTA ------------------------------------------------------
     .um-footer {
-      padding: 18px 24px 22px;
+      padding: 10px 16px;
       border-top: 1px solid $border-color;
       .upsell-buttons {
         display: flex;
-        flex-direction: column;
-        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+      }
+      // Compact the license-invalid warning: strip card chrome, full-width row.
+      > .upsell-buttons > p.card {
+        flex: 1 1 100%;
+        order: 1;
+        margin: 0;
+        padding: 6px 0;
+        background: transparent;
+        box-shadow: none;
+        border: 0;
+        color: $text-light;
+        font-size: 11.5px;
+        line-height: 1.4;
+        .material-icons { font-size: 14px; color: $brand-warning; }
+      }
+      .help {
+        order: 2;
+        flex: 1;
+        text-align: left;
+        margin: 0;
+        color: $text-lighter;
+        font-size: 11.5px;
       }
       .actions {
+        order: 3;
+        margin-left: auto;
         display: flex;
         justify-content: flex-end;
-        gap: 8px;
+        gap: 6px;
       }
-      .btn { white-space: nowrap; }
-      .help {
-        text-align: right;
-        margin-bottom: 0;
-        color: $text-light;
+      .btn {
+        white-space: nowrap;
+        padding: 6px 14px;
+        font-size: 13px;
+        height: auto;
+        line-height: 1.3;
+        min-height: 0;
       }
     }
   }
