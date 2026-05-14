@@ -15,8 +15,8 @@
         <header class="um-header">
           <img class="um-logo" src="@/assets/logo.svg" alt="Beekeeper Studio">
           <div class="um-header-text">
-            <div class="um-eyebrow" :class="{ 'um-eyebrow-trigger': !!triggered }">
-              <template v-if="triggered">
+            <div class="um-eyebrow" :class="{ 'um-eyebrow-trigger': !!triggered || !!customTitle }">
+              <template v-if="triggered || customTitle">
                 <i class="material-icons">lock</i>
                 Ultimate feature
               </template>
@@ -25,10 +25,11 @@
               </template>
             </div>
             <h2 class="um-title">
-              <template v-if="triggered">Unlock {{ triggered.triggerTitle || triggered.title }}</template>
+              <template v-if="customTitle">{{ customTitle }}</template>
+              <template v-else-if="triggered">Unlock {{ triggered.triggerTitle || triggered.title }}</template>
               <template v-else>Upgrade to unlock these awesome features</template>
             </h2>
-            <p v-if="triggered" class="um-subline">
+            <p v-if="triggered || customTitle" class="um-subline">
               … plus a bunch of other intuitive and useful features.
             </p>
             <p v-else-if="message" class="um-subline">{{ message }}</p>
@@ -241,7 +242,6 @@ const MESSAGE_FEATURE_MATCHERS: { match: RegExp; feature: string }[] = [
   { match: /authentication/i, feature: 'enterprise' },
   { match: /folder|organize/i, feature: 'organize' },
   { match: /edit query result/i, feature: 'editable' },
-  { match: /filter/i, feature: 'editable' },
   { match: /workspace|cloud/i, feature: 'workspaces' },
   { match: /export|import|backup/i, feature: 'io' },
   { match: /ai|llm/i, feature: 'ai' },
@@ -263,6 +263,7 @@ export default Vue.extend({
     return {
       features: FEATURES,
       message: null as string | null,
+      customTitle: null as string | null,
       triggerFeature: null as string | null,
       active: 'workspaces',
       modalWidth: 820,
@@ -281,29 +282,43 @@ export default Vue.extend({
     }
   },
   methods: {
-    showModal(payload?: string | { message?: string; feature?: string }) {
+    showModal(payload?: string | { message?: string; feature?: string; title?: string }) {
       if (!this.$store.getters.isCommunity) return
 
       let message: string | null = null
       let feature: string | null = null
+      let title: string | null = null
       if (typeof payload === 'string') {
         message = payload
         feature = inferFeature(payload)
       } else if (payload && typeof payload === 'object') {
         message = payload.message ?? null
         feature = payload.feature ?? inferFeature(message)
+        title = payload.title ?? null
       }
 
       this.message = message
+      this.customTitle = title
       this.triggerFeature = feature
       this.active = feature || 'workspaces'
       this.$modal.show('upgrade-modal')
     },
     onOpened() {
       this.$root.$emit('upgradeModalOpened')
+      document.addEventListener('keydown', this.trapShortcuts, true)
     },
     onClosed() {
       this.$root.$emit('upgradeModalClosed')
+      document.removeEventListener('keydown', this.trapShortcuts, true)
+    },
+    trapShortcuts(e: KeyboardEvent) {
+      // Escape is handled by vue-js-modal to close. Everything else with a
+      // modifier (Ctrl/Cmd) gets swallowed so global tab shortcuts (Ctrl+Tab,
+      // Ctrl+W, Ctrl+T, Ctrl+1..9, etc.) don't fire underneath the modal.
+      if (e.key === 'Escape') return
+      if (e.ctrlKey || e.metaKey) {
+        e.stopImmediatePropagation()
+      }
     }
   },
   mounted() {

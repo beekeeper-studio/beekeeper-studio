@@ -23,9 +23,10 @@
       background: $surface;
       border: 1px solid $border-color;
       border-radius: 12px;
-      // Round content corners but let the body scroll vertically when the
-      // viewport is shorter than the modal.
-      overflow: hidden;
+      // Force a flex column so the inner body can be the sole scrolling
+      // region while header/footer/lifetime stay pinned.
+      display: flex !important;
+      flex-direction: column;
       box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
       max-width: 820px !important;
       width: min(820px, 92vw) !important;
@@ -37,8 +38,9 @@
       color: $text-dark;
       display: flex;
       flex-direction: column;
-      max-height: 90vh;
-      overflow-y: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
     }
 
     // -- Header ------------------------------------------------------------
@@ -49,6 +51,7 @@
       padding: 20px 24px 18px;
       border-bottom: 1px solid $border-color;
       position: relative;
+      flex-shrink: 0;
     }
     .um-logo {
       width: 40px;
@@ -127,11 +130,14 @@
     }
 
     // -- Body --------------------------------------------------------------
+    // Single scrolling region between the pinned header and footer.
     .um-body {
       display: grid;
       grid-template-columns: 230px 1fr;
       background: $surface-sunk;
-      min-height: 320px;
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow-y: auto;
     }
     .um-features {
       padding: 14px 8px;
@@ -684,6 +690,7 @@
     .um-footer {
       padding: 10px 16px;
       border-top: 1px solid $border-color;
+      flex-shrink: 0;
       .upsell-buttons {
         display: flex;
         flex-wrap: wrap;
@@ -741,6 +748,7 @@
       color: $text-dark;
       font-size: 11.5px;
       line-height: 1.35;
+      flex-shrink: 0;
       .material-icons {
         font-size: 15px;
         color: $theme-primary;
