@@ -725,19 +725,26 @@
         align-items: center;
         gap: 6px 12px;
       }
-      // Compact the license-invalid warning: strip card chrome, full-width row.
+      // Show the license-invalid notice with the same compact inline
+      // treatment as the trial-expired `.help` line — small muted text on
+      // the left of the action buttons, no separate card row.
       > .upsell-buttons > p.card {
-        flex: 1 1 100%;
-        order: 1;
+        order: 2;
+        flex: 1;
+        text-align: left;
         margin: 0;
-        padding: 6px 0;
+        padding: 0;
         background: transparent;
         box-shadow: none;
         border: 0;
-        color: $text-light;
+        color: $text-lighter;
         font-size: 11.5px;
         line-height: 1.4;
-        .material-icons { font-size: 14px; color: $brand-warning; }
+        min-width: 0;
+        // Drop the info-outline icon that UpsellButtons renders; the muted
+        // copy carries the meaning here.
+        .material-icons { display: none; }
+        a { color: $text-light; font-weight: 600; }
       }
       .help {
         order: 2;
