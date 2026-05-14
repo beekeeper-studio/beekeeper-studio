@@ -104,17 +104,8 @@
           </div>
         </div>
         <div class="ump-json-side">
-          <div class="ump-json-side-header">
-            <span class="ump-json-side-title">
-              <i class="material-icons">data_object</i>
-              ROW.JSON
-            </span>
-            <span class="ump-json-side-actions">
-              <i class="material-icons">search</i>
-              <i class="material-icons">content_copy</i>
-            </span>
-          </div>
-          <pre class="ump-json"><span class="p">{</span>
+          <div class="ump-json-side-inner">
+            <pre class="ump-json"><span class="p">{</span>
   <span class="k">"id"</span><span class="p">:</span> <span class="n">1247</span><span class="p">,</span>
   <span class="k">"name"</span><span class="p">:</span> <span class="v">"Acme Inc"</span><span class="p">,</span>
   <span class="k">"plan"</span><span class="p">:</span> <span class="v">"pro"</span><span class="p">,</span>
@@ -130,6 +121,7 @@
   <span class="p">}</span><span class="p">,</span>
   <span class="k">"metadata"</span><span class="p">:</span> <span class="caret">▸</span> <span class="muted">{…6}</span>
 <span class="p">}</span></pre>
+          </div>
         </div>
       </div>
     </template>

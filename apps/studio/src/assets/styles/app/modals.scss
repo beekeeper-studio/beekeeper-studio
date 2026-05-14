@@ -465,48 +465,34 @@
       text-overflow: ellipsis;
       &.num { color: $text-lighter; }
     }
-    // Right pane — the JSON sidebar itself
+    // Right pane — the JSON sidebar itself.
+    // The inner is absolutely-positioned so the JSON body's natural height
+    // doesn't drag the grid row taller than the table on the left. The row
+    // is sized by the table; we mask the JSON's bottom to suggest more
+    // content below the fold.
     .ump-json-side {
-      display: flex;
-      flex-direction: column;
+      position: relative;
       min-width: 0;
     }
-    .ump-json-side-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 6px 10px;
-      border-bottom: 1px solid $border-color;
-      background: rgba($theme-base, 0.03);
-    }
-    .ump-json-side-title {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 10.5px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: $text-dark;
-      .material-icons { font-size: 14px; color: $brand-purple; }
-    }
-    .ump-json-side-actions {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: $text-lighter;
-      .material-icons { font-size: 13px; }
+    .ump-json-side-inner {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
     }
     .ump-json {
       margin: 0;
-      padding: 8px 10px;
+      padding: 6px 10px;
       font-family: var(--font-family-mono);
       font-size: 11px;
       line-height: 1.55;
       color: $text-dark;
       white-space: pre;
-      overflow-x: auto;
+      overflow: hidden;
+      height: 100%;
+      box-sizing: border-box;
+      // Fade the bottom edge out — implies the JSON continues below.
+      mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
       // Match the real JSON viewer (json-viewer.scss): property names use a
       // darkened theme primary; string values yellow; numbers stay text-dark.
       .k { color: color.adjust($theme-primary, $lightness: -20%); }
