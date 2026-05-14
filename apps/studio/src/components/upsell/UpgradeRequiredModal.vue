@@ -18,7 +18,7 @@
             <div class="um-eyebrow" :class="{ 'um-eyebrow-trigger': !!triggered || !!customTitle }">
               <template v-if="triggered || customTitle">
                 <i class="material-icons">lock</i>
-                Ultimate feature
+                Upgrade Required
               </template>
               <template v-else>
                 Beekeeper Studio
