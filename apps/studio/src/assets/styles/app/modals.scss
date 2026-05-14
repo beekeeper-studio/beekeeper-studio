@@ -163,6 +163,9 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      // Reserve space for the tallest preview so the modal doesn't jump
+      // height when switching features.
+      min-height: 520px;
     }
     .um-hero-title {
       margin: 0 0 6px;
@@ -209,7 +212,7 @@
       font-family: var(--font-family-mono);
       font-size: 12px;
       color: $text;
-      min-height: 70px;
+      min-height: 180px;
       overflow: hidden;
     }
     .um-preview-eyebrow {
