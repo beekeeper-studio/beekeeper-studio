@@ -219,7 +219,14 @@ module.exports = {
     environment: {
       "ELECTRON_SNAP": "true"
     },
-    plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
+    plugs: ["default", "ssh-keys", "removable-media", "mount-observe"],
+    stagePackages: [
+      "default",
+      "fonts-noto",
+      "fonts-noto-cjk",
+      "fonts-noto-color-emoji",
+      "fonts-liberation",
+    ],
   },
   win: {
     icon: './public/icons/png/512x512.png',
