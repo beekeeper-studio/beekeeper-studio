@@ -176,11 +176,6 @@ const FEATURES: Feature[] = [
     title: 'SQL AI Shell',
     triggerTitle: 'SQL AI Shell',
     short: 'Explore data with the AI agent you already use. Bring your own model — no usage fees, no middlemen, runs on your machine.',
-    pills: [
-      { icon: 'vpn_key', label: 'Bring your own model', tooltip: 'Claude, ChatGPT, Gemini, and even local models work great.' },
-      { icon: 'paid', label: 'No usage fees or middlemen', tooltip: 'No proxies, no logging, no token fees. Beekeeper connects directly to your agent' },
-      { icon: 'verified_user', label: 'Asks before it runs SQL', tooltip: 'The AI shell can safely explore your database without you having to worry if it will do something destructive' }
-    ],
     testimonial: {
       quote: 'The AI feature is highly beneficial.',
       author: 'Özer Özdaş, Nuvo Code'
