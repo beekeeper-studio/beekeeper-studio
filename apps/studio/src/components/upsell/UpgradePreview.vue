@@ -1,6 +1,6 @@
 <template>
   <div class="um-preview-card" :class="`um-preview-${feature.id}`">
-    <!-- Cloud Workspaces: mirror the real workspace switcher avatars + list -->
+    <!-- Cloud Workspaces: mirror the real workspace switcher + connections -->
     <template v-if="feature.id === 'workspaces'">
       <div class="ump-workspaces">
         <ul class="ump-ws-avatars">
@@ -19,9 +19,20 @@
             <span class="ump-ws-tag">team · 12 members</span>
           </div>
           <ul class="ump-ws-list">
-            <li><i class="bk bk-database"></i>analytics-replica</li>
-            <li><i class="bk bk-database"></i>billing-prod</li>
-            <li><i class="material-icons sm">bookmark</i>top customers this month</li>
+            <li class="connection">
+              <span class="connection-label connection-label-color-blue"></span>
+              <span class="title">analytics-replica</span>
+              <span class="type">postgres</span>
+            </li>
+            <li class="connection">
+              <span class="connection-label connection-label-color-green"></span>
+              <span class="title">billing-prod</span>
+              <span class="type">mysql</span>
+            </li>
+            <li class="query">
+              <i class="material-icons">code</i>
+              <span class="title">top customers this month</span>
+            </li>
           </ul>
         </div>
       </div>
@@ -59,7 +70,17 @@
           <span class="ump-json-placeholder">Filter keys by text or /regex/</span>
         </div>
       </div>
-      <pre class="ump-json">{{ jsonSample }}</pre>
+      <pre class="ump-json"><span class="p">{</span>
+  <span class="k">"id"</span><span class="p">:</span> <span class="v">1247</span><span class="p">,</span>
+  <span class="k">"name"</span><span class="p">:</span> <span class="v">"Acme Inc"</span><span class="p">,</span>
+  <span class="k">"owner_id"</span><span class="p">:</span> <span class="v">88</span><span class="p">,</span>
+  <span class="k">"owner"</span><span class="p">:</span> <span class="caret">▾</span> <span class="p">{</span>
+    <span class="k">"id"</span><span class="p">:</span> <span class="v">88</span><span class="p">,</span>
+    <span class="k">"email"</span><span class="p">:</span> <span class="v">"sara@acme.io"</span><span class="p">,</span>
+    <span class="k">"team"</span><span class="p">:</span> <span class="caret">▸</span> <span class="muted">{…3 fields}</span>
+  <span class="p">}</span><span class="p">,</span>
+  <span class="k">"plan"</span><span class="p">:</span> <span class="v">"professional"</span>
+<span class="p">}</span></pre>
     </template>
 
     <!-- Editable query results: spreadsheet with one edited cell -->
@@ -155,8 +176,15 @@
         </li>
         <li class="folder-children">
           <ul>
-            <li class="item"><i class="bk bk-database"></i><span class="lbl">postgres-primary</span><i class="bk bk-pin pin"></i></li>
-            <li class="item"><i class="bk bk-database"></i><span class="lbl">read-replica</span></li>
+            <li class="item">
+              <span class="connection-label connection-label-color-blue"></span>
+              <span class="lbl">postgres-primary</span>
+              <i class="bk bk-pin pin"></i>
+            </li>
+            <li class="item">
+              <span class="connection-label connection-label-color-blue"></span>
+              <span class="lbl">read-replica</span>
+            </li>
           </ul>
         </li>
         <li class="folder open">
@@ -166,7 +194,10 @@
         </li>
         <li class="folder-children">
           <ul>
-            <li class="item"><i class="bk bk-database"></i><span class="lbl">stage-pg</span></li>
+            <li class="item">
+              <span class="connection-label connection-label-color-orange"></span>
+              <span class="lbl">stage-pg</span>
+            </li>
           </ul>
         </li>
         <li class="folder">
@@ -192,18 +223,7 @@ export default Vue.extend({
   },
   data() {
     return {
-      dbChips: ['Oracle', 'Cassandra', 'ClickHouse', 'DuckDB', 'Firebird', 'LibSQL', 'ScyllaDB'],
-      jsonSample: `{
-  "id": 1247,
-  "name": "Acme Inc",
-  "owner_id": 88,
-  "owner": ▾ {
-    "id": 88,
-    "email": "sara@acme.io",
-    "team": ▸ {…3 fields}
-  },
-  "plan": "professional"
-}`
+      dbChips: ['Oracle', 'Cassandra', 'ClickHouse', 'DuckDB', 'Firebird', 'LibSQL', 'ScyllaDB']
     }
   }
 })

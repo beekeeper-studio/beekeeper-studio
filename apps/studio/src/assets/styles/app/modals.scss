@@ -1,5 +1,7 @@
 
 
+@use "sass:color";
+
 .beekeeper-modal {
 
   .dialog-c-title {
@@ -21,10 +23,13 @@
       background: $surface;
       border: 1px solid $border-color;
       border-radius: 12px;
+      // Round content corners but let the body scroll vertically when the
+      // viewport is shorter than the modal.
       overflow: hidden;
       box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
       max-width: 820px !important;
       width: min(820px, 92vw) !important;
+      max-height: 90vh !important;
     }
 
     .upgrade-modal-redesign {
@@ -32,6 +37,8 @@
       color: $text-dark;
       display: flex;
       flex-direction: column;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     // -- Header ------------------------------------------------------------
@@ -303,13 +310,44 @@
       li {
         display: flex;
         align-items: center;
-        gap: 6px;
         font-size: 12px;
         color: $text;
-        line-height: 1.6;
+        line-height: 1.7;
+        padding: 1px 0;
+        .connection-label {
+          height: 14px;
+          width: 3px;
+          min-width: 3px;
+          border-radius: 2px;
+          margin-right: 8px;
+          flex-shrink: 0;
+        }
+        .title {
+          flex: 1;
+          min-width: 0;
+          color: $text-dark;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .type {
+          font-size: 10px;
+          color: $text-lighter;
+          padding: 1px 6px;
+          border-radius: 999px;
+          background: rgba($theme-base, 0.05);
+          margin-left: 6px;
+          flex-shrink: 0;
+        }
       }
-      .bk-database { color: $brand-purple; font-size: 12px; }
-      .material-icons.sm { font-size: 13px; color: $brand-pink; }
+      li.query {
+        .material-icons {
+          font-size: 13px;
+          color: $brand-pink;
+          margin-right: 6px;
+          margin-left: 1px;
+        }
+      }
     }
 
     // Enterprise terminal + chips -------------------------------------------
@@ -374,13 +412,21 @@
     }
     .ump-json {
       margin: 0;
-      padding: 8px 10px;
+      padding: 8px 12px;
+      background: $theme-bg;
       font-family: var(--font-family-mono);
       font-size: 11.5px;
       line-height: 1.55;
-      color: $text;
+      color: $text-dark;
       white-space: pre;
       overflow-x: auto;
+      // Match the real JSON viewer (json-viewer.scss): property names use a
+      // darkened theme primary; string/number values stay text-dark.
+      .k { color: color.adjust($theme-primary, $lightness: -20%); }
+      .v { color: $text-dark; }
+      .p { color: $text-lighter; }
+      .muted { color: $text-light; }
+      .caret { color: $text-light; }
     }
 
     // Editable query results preview ----------------------------------------
@@ -584,10 +630,16 @@
         li.item {
           display: flex;
           align-items: center;
-          gap: 6px;
           padding: 2px 6px;
           color: rgba($theme-base, 0.77);
-          .bk-database { color: $brand-purple; font-size: 13px; }
+          .connection-label {
+            height: 14px;
+            width: 3px;
+            min-width: 3px;
+            border-radius: 2px;
+            margin-right: 8px;
+            flex-shrink: 0;
+          }
           .lbl { flex: 1; line-height: 1.7; }
           .pin {
             color: $theme-primary;
@@ -597,11 +649,12 @@
       }
     }
 
-    // -- Testimonial (reuses AI Shell upsell style, single line) ------------
+    // -- Testimonial (reuses AI Shell upsell style; prefers single line) ----
     .um-testimonial {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 0.6rem;
+      gap: 4px 0.6rem;
       font-size: 11.5px;
       color: $text-light;
       padding: 8px 12px;
@@ -609,8 +662,6 @@
       border: 1px solid $border-color;
       border-radius: 6px;
       line-height: 1.4;
-      overflow: hidden;
-      white-space: nowrap;
       min-width: 0;
       .stars {
         color: $theme-primary;
@@ -620,9 +671,7 @@
       }
       .quote {
         color: $text-dark;
-        flex: 0 1 auto;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        flex: 1 1 auto;
         min-width: 0;
       }
       .attr {

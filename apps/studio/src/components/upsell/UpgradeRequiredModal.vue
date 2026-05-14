@@ -5,6 +5,8 @@
       name="upgrade-modal"
       height="auto"
       :width="modalWidth"
+      @opened="onOpened"
+      @closed="onClosed"
     >
       <div
         class="dialog-content upgrade-modal-redesign"
@@ -296,6 +298,12 @@ export default Vue.extend({
       this.triggerFeature = feature
       this.active = feature || 'workspaces'
       this.$modal.show('upgrade-modal')
+    },
+    onOpened() {
+      this.$root.$emit('upgradeModalOpened')
+    },
+    onClosed() {
+      this.$root.$emit('upgradeModalClosed')
     }
   },
   mounted() {
