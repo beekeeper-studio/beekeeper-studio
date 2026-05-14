@@ -204,126 +204,224 @@
     }
 
     // -- Preview card ------------------------------------------------------
+    // Box wraps tightly around its content; no global min-height. The hero
+    // panel reserves the vertical space so the modal doesn't jump.
     .um-preview-card {
       background: $query-editor-bg;
       border: 1px solid $border-color;
       border-radius: 6px;
-      padding: 12px;
-      font-family: var(--font-family-mono);
-      font-size: 12px;
+      padding: 10px 12px;
+      font-family: var(--font-family);
+      font-size: 12.5px;
       color: $text;
-      min-height: 18vh;
       overflow: hidden;
+      align-self: flex-start;
+      max-width: 100%;
     }
-    .um-preview-eyebrow {
+    // AI Shell preview renders its own card chrome — strip ours and clamp
+    // its internal min-height so it fits the hero panel.
+    .um-preview-ai {
+      padding: 0;
+      background: transparent;
+      border: 0;
+      .cc-preview { margin: 0; }
+      .cc-preview-body { min-height: 150px; padding: 8px 10px; gap: 0.35rem; }
+    }
+    .ump-section-label {
       color: $text-lighter;
       font-size: 10.5px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 6px;
+      font-weight: 600;
     }
-    .um-rows {
+
+    // Cloud Workspaces preview ------------------------------------------------
+    .ump-workspaces {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .ump-ws-avatars {
+      list-style: none;
+      padding: 0;
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: 4px;
-      &.tight { gap: 2px; }
-      &.compact { gap: 3px; margin-bottom: 8px; }
-      &.mono { font-family: var(--font-family-mono); }
-      font-family: inherit;
+    }
+    .ump-ws-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      background: rgba($theme-base, 0.06);
+      color: $text-light;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      &.acme { background: rgba($theme-secondary, 0.18); color: $theme-secondary; }
+      &.globex { background: rgba($brand-purple, 0.18); color: $brand-purple; }
+      &.active {
+        box-shadow: inset 0 0 0 1.5px $theme-primary;
+      }
+      &.add {
+        background: transparent;
+        border: 1px dashed $border-color;
+        color: $text-lighter;
+      }
+      .material-icons { font-size: 16px; }
+    }
+    .ump-ws-body {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ump-ws-head {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .ump-ws-name {
+      color: $text-dark;
+      font-weight: 600;
       font-size: 12.5px;
     }
-    .um-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      &.indent { padding-left: 18px; }
-      .material-icons { font-size: 14px; }
-      .material-icons.small { font-size: 12px; }
-      .material-icons.db { color: $brand-purple; }
-      .material-icons.ok { color: $brand-success; }
-      .muted-icon { color: $text-light; font-size: 12px; }
-      .muted-icon-light { color: $text-light; }
+    .ump-ws-tag {
+      color: $text-lighter;
+      font-size: 10.5px;
     }
-    .um-rows .muted,
-    .um-row .muted { color: $text-light; }
-    .muted-xs { color: $text-lighter; font-size: 10.5px; }
-    .link { color: $theme-secondary; }
-    .sans { font-family: var(--font-family); color: $text; margin-top: 2px; }
-    .um-ai-prompt { color: $brand-pink; }
-    .um-ai-ok { color: $brand-success; }
-    .um-ok-row {
-      display: flex; align-items: center; gap: 6px; color: $brand-success;
+    .ump-ws-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: $text;
+        line-height: 1.6;
+      }
+      .bk-database { color: $brand-purple; font-size: 12px; }
+      .material-icons.sm { font-size: 13px; color: $brand-pink; }
+    }
+
+    // Enterprise terminal + chips -------------------------------------------
+    .ump-term {
+      font-family: var(--font-family-mono);
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: $text;
+      margin-bottom: 8px;
+    }
+    .ump-prompt { color: $brand-success; }
+    .ump-ok {
+      display: flex; align-items: center; gap: 6px;
+      color: $brand-success;
       .material-icons { font-size: 13px; }
     }
-    .um-chips {
+    .ump-connect {
+      font-family: var(--font-family);
+      color: $text;
+      margin-top: 2px;
+    }
+    .ump-link { color: $theme-secondary; }
+    .ump-muted-xs { color: $text-lighter; font-size: 10.5px; }
+    .ump-chips {
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
       padding-top: 8px;
       border-top: 1px solid $border-color;
-      font-family: var(--font-family);
       span {
         padding: 2px 8px;
         border-radius: 999px;
         font-size: 11px;
-        background: rgba(152,88,255,0.12);
+        background: rgba($brand-purple, 0.12);
         color: $brand-purple;
-        border: 1px solid rgba(152,88,255,0.22);
+        border: 1px solid rgba($brand-purple, 0.22);
       }
     }
-    .um-json {
+
+    // JSON sidebar preview --------------------------------------------------
+    .um-preview-json {
+      padding: 0;
+    }
+    .ump-json-header {
+      padding: 6px 8px;
+      border-bottom: 1px solid $border-color;
+      background: rgba($theme-base, 0.03);
+    }
+    .ump-json-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 6px;
+      background: $theme-bg;
+      border: 1px solid $border-color;
+      border-radius: 3px;
+      .material-icons { font-size: 13px; color: $text-lighter; }
+    }
+    .ump-json-placeholder {
+      color: $text-lighter;
+      font-size: 11.5px;
+    }
+    .ump-json {
       margin: 0;
+      padding: 8px 10px;
       font-family: var(--font-family-mono);
       font-size: 11.5px;
       line-height: 1.55;
       color: $text;
       white-space: pre;
+      overflow-x: auto;
     }
-    .um-export-note { margin-top: 2px; }
 
-    // Editable table preview
-    .um-editable-table {
+    // Editable query results preview ----------------------------------------
+    .um-preview-editable {
+      padding: 0;
+    }
+    .ump-editable-table {
       display: grid;
-      grid-template-columns: 40px 1fr 1fr 1.2fr;
+      grid-template-columns: 36px 1fr 1fr 1.1fr;
       font-family: var(--font-family-mono);
       font-size: 11.5px;
     }
-    .um-editable-header {
-      padding: 6px 8px;
+    .ump-eth {
+      padding: 5px 8px;
       color: $text-lighter;
       background: $theme-bg;
       border-bottom: 1px solid $border-color;
+      font-weight: 600;
     }
-    .um-cell {
+    .ump-cell {
       padding: 5px 8px;
       color: $text-dark;
       &.num { color: $theme-secondary; }
       &.muted { color: $text-light; }
       &.strong { color: $text-dark; }
     }
-    .um-cell-editing {
+    .ump-cell-editing {
       color: #000;
-      background: rgba(250,216,59,0.55);
+      background: rgba($theme-primary, 0.55);
       display: flex;
       align-items: center;
       gap: 4px;
     }
-    .um-pencil {
+    .ump-pencil {
       margin-left: auto;
       font-size: 10px;
       color: rgba(0,0,0,0.6);
     }
-    .um-preview-editable .um-preview-card,
-    .um-preview-card.um-preview-editable {
-      padding: 0;
-    }
-    // Inline-edit preview should be flush — override default padding
-    .um-preview-editable {
-      padding: 0;
-    }
-    .um-staged {
-      padding: 6px 10px;
-      background: rgba(250,216,59,0.08);
+    .ump-staged {
+      padding: 5px 10px;
+      background: rgba($theme-primary, 0.08);
       border-top: 1px solid $border-color;
       font-family: var(--font-family);
       font-size: 11.5px;
@@ -332,46 +430,205 @@
       align-items: center;
       gap: 8px;
       .material-icons { font-size: 14px; }
+      .muted { color: $text-light; }
     }
-    .um-apply {
+    .ump-apply {
       margin-left: auto;
       color: $brand-success;
       font-weight: 500;
       cursor: default;
     }
 
-    // -- Testimonial -------------------------------------------------------
-    .um-quote {
-      margin: 0;
-      padding: 12px 14px;
-      background: rgba(255,255,255,0.025);
-      border: 1px solid $border-color;
-      border-radius: 6px;
-      position: relative;
-      blockquote {
-        margin: 0;
-        padding-left: 18px;
+    // Import/Export preview --------------------------------------------------
+    .ump-export-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         font-size: 12.5px;
-        line-height: 1.55;
-        color: $text;
-        font-style: italic;
-      }
-      figcaption {
-        margin-top: 6px;
-        padding-left: 18px;
-        font-size: 11.5px;
-        color: $text-light;
-        span { color: $text-dark; }
+        color: $text-dark;
+        line-height: 1.6;
+        .material-icons { font-size: 14px; color: $brand-success; }
       }
     }
-    .um-quote-mark {
-      position: absolute;
-      top: 2px;
-      left: 8px;
-      font-size: 28px;
-      line-height: 1;
-      opacity: 0.5;
-      font-family: Georgia, serif;
+    .ump-meta { color: $text-lighter; font-size: 10.5px; margin-left: 4px; }
+    .ump-export-target {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px solid $border-color;
+      font-size: 12px;
+      color: $text;
+      .material-icons { font-size: 14px; color: $brand-warning; }
+    }
+
+    // ER Diagrams preview — two connected entity boxes ---------------------
+    .um-preview-erd {
+      background: #0a0a0a;
+      // Subtle dot grid matching the real ERD canvas
+      background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 8px 8px;
+      padding: 14px 12px;
+    }
+    .ump-erd {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      align-items: center;
+      gap: 0;
+    }
+    .ump-erd-table {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 6px 0;
+      min-width: 0;
+      &.dashed {
+        border: 1px dashed rgba(255,255,255,0.25);
+      }
+      &.focused {
+        border: 1.5px solid $theme-primary;
+      }
+    }
+    .ump-erd-thead {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px 6px;
+      font-weight: 600;
+      font-size: 12px;
+      color: $text-dark;
+      .material-icons { font-size: 14px; color: $theme-secondary; }
+    }
+    .ump-erd-col {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: $text;
+      background: #141414;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .name.pad { padding-left: 18px; }
+      .type {
+        color: $text-lighter;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .material-icons {
+        font-size: 12px;
+        flex-shrink: 0;
+        transform: rotate(-45deg);
+      }
+      .material-icons.pk { color: $theme-secondary; }
+      .material-icons.fk { color: $theme-primary; }
+    }
+    .ump-erd-line {
+      width: 100%;
+      height: 80px;
+      color: rgba(255,255,255,0.35);
+      align-self: center;
+    }
+
+    // Folders / Organize preview — mirrors the real sidebar ------------------
+    .ump-sidebar-tree {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 12.5px;
+      color: $text;
+      li.folder {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        color: rgba($theme-base, 0.77);
+        cursor: default;
+        .arrow {
+          font-size: 16px;
+          color: $text-lighter;
+          transition: transform 0.15s;
+        }
+        &.open .arrow { transform: rotate(90deg); }
+        .fld {
+          font-size: 14px;
+          color: $text-light;
+        }
+        .lbl { line-height: 1.7; }
+      }
+      .folder-children {
+        position: relative;
+        margin-left: 10px;
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          border-left: 1px solid rgba($theme-base, 0.08);
+        }
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 0 12px;
+        }
+        li.item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 2px 6px;
+          color: rgba($theme-base, 0.77);
+          .bk-database { color: $brand-purple; font-size: 13px; }
+          .lbl { flex: 1; line-height: 1.7; }
+          .pin {
+            color: $theme-primary;
+            font-size: 11px;
+          }
+        }
+      }
+    }
+
+    // -- Testimonial (reuses AI Shell upsell style, single line) ------------
+    .um-testimonial {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 11.5px;
+      color: $text-light;
+      padding: 8px 12px;
+      background: rgba($theme-base, 0.025);
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      line-height: 1.4;
+      overflow: hidden;
+      white-space: nowrap;
+      min-width: 0;
+      .stars {
+        color: $theme-primary;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+      }
+      .quote {
+        color: $text-dark;
+        flex: 0 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .attr {
+        color: $text-lighter;
+        flex-shrink: 0;
+      }
     }
 
     // -- Footer / CTA ------------------------------------------------------
@@ -420,6 +677,29 @@
         height: auto;
         line-height: 1.3;
         min-height: 0;
+      }
+    }
+
+    // -- Lifetime-license band — flush at the modal's bottom edge ----------
+    .um-lifetime {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba($theme-primary, 0.10);
+      border-top: 1px solid rgba($theme-primary, 0.22);
+      color: $text-dark;
+      font-size: 11.5px;
+      line-height: 1.35;
+      .material-icons {
+        font-size: 15px;
+        color: $theme-primary;
+        flex-shrink: 0;
+      }
+      strong {
+        color: $text-dark;
+        font-weight: 600;
       }
     }
   }

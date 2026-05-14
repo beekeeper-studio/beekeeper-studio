@@ -1,117 +1,192 @@
 <template>
   <div class="um-preview-card" :class="`um-preview-${feature.id}`">
+    <!-- Cloud Workspaces: mirror the real workspace switcher avatars + list -->
     <template v-if="feature.id === 'workspaces'">
-      <div class="um-preview-eyebrow">Workspaces</div>
-      <div class="um-rows">
-        <div class="um-row">
-          <i class="material-icons" :style="{ color: feature.color }">cloud</i>
-          Team · Acme Inc <span class="muted-xs">· 12 members</span>
-        </div>
-        <div class="um-row indent">
-          <i class="material-icons muted-icon">folder</i>
-          <span class="muted">shared queries</span>
-        </div>
-        <div class="um-row">
-          <i class="material-icons muted-icon-light">person</i>
-          Personal <span class="muted-xs">· you</span>
+      <div class="ump-workspaces">
+        <ul class="ump-ws-avatars">
+          <li class="ump-ws-avatar local" title="Local Workspace">
+            <i class="material-icons">computer</i>
+          </li>
+          <li class="ump-ws-avatar acme active" title="Acme Inc">A</li>
+          <li class="ump-ws-avatar globex" title="Globex Corp">G</li>
+          <li class="ump-ws-avatar add" title="New Workspace">
+            <i class="material-icons">add</i>
+          </li>
+        </ul>
+        <div class="ump-ws-body">
+          <div class="ump-ws-head">
+            <span class="ump-ws-name">Acme Inc</span>
+            <span class="ump-ws-tag">team · 12 members</span>
+          </div>
+          <ul class="ump-ws-list">
+            <li><i class="bk bk-database"></i>analytics-replica</li>
+            <li><i class="bk bk-database"></i>billing-prod</li>
+            <li><i class="material-icons sm">bookmark</i>top customers this month</li>
+          </ul>
         </div>
       </div>
     </template>
 
+    <!-- SQL AI Shell: use the real animated upsell preview -->
     <template v-else-if="feature.id === 'ai'">
-      <div class="um-rows mono">
-        <div><span class="um-ai-prompt">&gt;</span> top customers by revenue last quarter</div>
-        <div class="muted">I'll check the schema for orders and customers first.</div>
-        <div :style="{ color: feature.color }">SELECT c.name, SUM(o.total) AS revenue</div>
-        <div :style="{ color: feature.color }">FROM customers c JOIN orders o ON o.customer_id = c.id</div>
-        <div class="muted-xs">-- Run this query? [y/n]</div>
-      </div>
+      <ai-shell-preview class="ump-ai-shell" />
     </template>
 
+    <!-- Enterprise connectivity: SSO terminal + database chips -->
     <template v-else-if="feature.id === 'enterprise'">
-      <div class="um-preview-eyebrow">Authentication</div>
-      <div class="um-rows mono compact">
-        <div><span class="um-ai-ok">$</span> aws sso login --profile prod</div>
-        <div class="um-ok-row">
+      <div class="ump-section-label">Authentication</div>
+      <div class="ump-term">
+        <div><span class="ump-prompt">$</span> aws sso login --profile prod</div>
+        <div class="ump-ok">
           <i class="material-icons">check_circle</i>
           Authenticated as alice@company.com
         </div>
-        <div class="sans">
-          → Connecting to <span class="link">rds-prod.us-east-1</span>
-          <span class="muted-xs"> · no password required</span>
+        <div class="ump-connect">
+          → Connecting to <span class="ump-link">rds-prod.us-east-1</span>
+          <span class="ump-muted-xs"> · no password required</span>
         </div>
       </div>
-      <div class="um-chips">
+      <div class="ump-chips">
         <span v-for="db in dbChips" :key="db">{{ db }}</span>
       </div>
     </template>
 
+    <!-- JSON Sidebar: looks like the real sidebar header + json text -->
     <template v-else-if="feature.id === 'json'">
-      <div class="um-preview-eyebrow">JSON Sidebar · row 1247</div>
-      <pre class="um-json">{{ jsonSample }}</pre>
+      <div class="ump-json-header">
+        <div class="ump-json-filter">
+          <i class="material-icons">search</i>
+          <span class="ump-json-placeholder">Filter keys by text or /regex/</span>
+        </div>
+      </div>
+      <pre class="ump-json">{{ jsonSample }}</pre>
     </template>
 
+    <!-- Editable query results: spreadsheet with one edited cell -->
     <template v-else-if="feature.id === 'editable'">
-      <div class="um-editable-table">
-        <div class="um-editable-header">id</div>
-        <div class="um-editable-header">name</div>
-        <div class="um-editable-header">plan</div>
-        <div class="um-editable-header">updated_at</div>
+      <div class="ump-editable-table">
+        <div class="ump-eth">id</div>
+        <div class="ump-eth">name</div>
+        <div class="ump-eth">plan</div>
+        <div class="ump-eth">updated_at</div>
 
-        <div class="um-cell num">12</div>
-        <div class="um-cell strong">Acme Inc</div>
-        <div class="um-cell um-cell-editing" :style="{ boxShadow: `inset 0 0 0 1.5px ${feature.color}` }">
-          professional<span class="um-pencil">✎</span>
+        <div class="ump-cell num">12</div>
+        <div class="ump-cell strong">Acme Inc</div>
+        <div class="ump-cell ump-cell-editing" :style="{ boxShadow: `inset 0 0 0 1.5px ${feature.color}` }">
+          professional<span class="ump-pencil">✎</span>
         </div>
-        <div class="um-cell muted">2024-08-12</div>
+        <div class="ump-cell muted">2024-08-12</div>
 
-        <div class="um-cell num">13</div>
-        <div class="um-cell strong">Globex Corp</div>
-        <div class="um-cell strong">indie</div>
-        <div class="um-cell muted">2024-08-09</div>
+        <div class="ump-cell num">13</div>
+        <div class="ump-cell strong">Globex Corp</div>
+        <div class="ump-cell strong">indie</div>
+        <div class="ump-cell muted">2024-08-09</div>
       </div>
-      <div class="um-staged">
+      <div class="ump-staged">
         <i class="material-icons" :style="{ color: feature.color }">edit</i>
         1 staged change · <span class="muted">customers.plan</span>
-        <span class="um-apply">Apply</span>
+        <span class="ump-apply">Apply</span>
       </div>
     </template>
 
+    <!-- Import / Export / Backup -->
     <template v-else-if="feature.id === 'io'">
-      <div class="um-rows">
-        <div class="um-row">
-          <i class="material-icons ok">check_box</i>customers <span class="muted-xs">· 412 KB</span>
+      <div class="ump-section-label">Export tables</div>
+      <ul class="ump-export-list">
+        <li><i class="material-icons">check_box</i>customers<span class="ump-meta">412 KB</span></li>
+        <li><i class="material-icons">check_box</i>orders<span class="ump-meta">2.1 MB</span></li>
+        <li><i class="material-icons">check_box</i>line_items<span class="ump-meta">8.4 MB</span></li>
+      </ul>
+      <div class="ump-export-target">
+        <i class="material-icons">save_alt</i>
+        Export 3 tables → <span :style="{ color: feature.color }">customers.xlsx</span>
+      </div>
+    </template>
+
+    <!-- ER Diagrams: miniature ERD with two connected entity boxes -->
+    <template v-else-if="feature.id === 'erd'">
+      <div class="ump-erd">
+        <div class="ump-erd-table dashed">
+          <div class="ump-erd-thead">
+            <i class="material-icons">grid_on</i>
+            <span>users</span>
+          </div>
+          <div class="ump-erd-col">
+            <i class="material-icons pk">key</i><span class="name">id</span><span class="type">INTEGER</span>
+          </div>
+          <div class="ump-erd-col">
+            <i class="material-icons fk">key</i><span class="name">org_id</span><span class="type">INTEGER</span>
+          </div>
+          <div class="ump-erd-col">
+            <span class="name pad">email</span><span class="type">TEXT</span>
+          </div>
         </div>
-        <div class="um-row">
-          <i class="material-icons ok">check_box</i>orders <span class="muted-xs">· 2.1 MB</span>
-        </div>
-        <div class="um-row">
-          <i class="material-icons ok">check_box</i>line_items <span class="muted-xs">· 8.4 MB</span>
-        </div>
-        <div class="muted-xs um-export-note">
-          Export 3 tables → <span :style="{ color: feature.color }">customers.xlsx</span>
+        <svg class="ump-erd-line" viewBox="0 0 60 80" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M 0 22 C 30 22, 30 40, 60 40" fill="none" stroke="currentColor" stroke-width="1.2" />
+          <path d="M 0 58 C 30 58, 30 40, 60 40" fill="none" stroke="currentColor" stroke-width="1.2" />
+          <path d="M 4 18 L 0 22 L 4 26 M 0 22 L 10 22" fill="none" stroke="currentColor" stroke-width="1.2" />
+          <path d="M 4 54 L 0 58 L 4 62 M 0 58 L 10 58" fill="none" stroke="currentColor" stroke-width="1.2" />
+        </svg>
+        <div class="ump-erd-table focused">
+          <div class="ump-erd-thead">
+            <i class="material-icons">grid_on</i>
+            <span>organizations</span>
+          </div>
+          <div class="ump-erd-col">
+            <i class="material-icons pk">key</i><span class="name">id</span><span class="type">INTEGER</span>
+          </div>
+          <div class="ump-erd-col">
+            <span class="name pad">name</span><span class="type">TEXT</span>
+          </div>
+          <div class="ump-erd-col">
+            <span class="name pad">plan</span><span class="type">TEXT</span>
+          </div>
         </div>
       </div>
     </template>
 
+    <!-- Folders / Organization: mirrors the real sidebar structure -->
     <template v-else-if="feature.id === 'organize'">
-      <div class="um-rows tight">
-        <div class="um-row"><i class="material-icons" :style="{ color: feature.color }">folder_open</i>Production</div>
-        <div class="um-row indent muted"><i class="material-icons small db">storage</i>postgres-primary</div>
-        <div class="um-row indent muted"><i class="material-icons small db">storage</i>read-replica</div>
-        <div class="um-row"><i class="material-icons" :style="{ color: feature.color }">folder</i>Staging</div>
-        <div class="um-row"><i class="material-icons" :style="{ color: feature.color }">folder</i>Local</div>
-      </div>
+      <ul class="ump-sidebar-tree">
+        <li class="folder open">
+          <i class="material-icons arrow">keyboard_arrow_right</i>
+          <i class="material-icons fld">folder</i>
+          <span class="lbl">Production</span>
+        </li>
+        <li class="folder-children">
+          <ul>
+            <li class="item"><i class="bk bk-database"></i><span class="lbl">postgres-primary</span><i class="bk bk-pin pin"></i></li>
+            <li class="item"><i class="bk bk-database"></i><span class="lbl">read-replica</span></li>
+          </ul>
+        </li>
+        <li class="folder open">
+          <i class="material-icons arrow">keyboard_arrow_right</i>
+          <i class="material-icons fld">folder</i>
+          <span class="lbl">Staging</span>
+        </li>
+        <li class="folder-children">
+          <ul>
+            <li class="item"><i class="bk bk-database"></i><span class="lbl">stage-pg</span></li>
+          </ul>
+        </li>
+        <li class="folder">
+          <i class="material-icons arrow">keyboard_arrow_right</i>
+          <i class="material-icons fld">folder</i>
+          <span class="lbl">Local</span>
+        </li>
+      </ul>
     </template>
   </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
+import AiShellPreview from './AiShellPreview.vue'
 
 interface Feature { id: string; color: string; icon?: string }
 
 export default Vue.extend({
+  components: { AiShellPreview },
   props: {
     feature: { type: Object as PropType<Feature>, required: true }
   },

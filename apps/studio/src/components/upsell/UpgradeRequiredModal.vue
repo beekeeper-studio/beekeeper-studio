@@ -83,17 +83,22 @@
               class="um-preview"
             />
 
-            <figure v-if="featured.testimonial" class="um-quote">
-              <span aria-hidden="true" class="um-quote-mark" :style="{ color: featured.color }">“</span>
-              <blockquote>{{ featured.testimonial.quote }}</blockquote>
-              <figcaption>— <span>{{ featured.testimonial.author }}</span></figcaption>
-            </figure>
+            <div v-if="featured.testimonial" class="um-testimonial">
+              <span class="stars" aria-label="5 out of 5">★★★★★</span>
+              <span class="quote">"{{ featured.testimonial.quote }}"</span>
+              <span class="attr">— {{ featured.testimonial.author }}</span>
+            </div>
           </section>
         </div>
 
         <footer class="um-footer">
           <UpsellButtons />
         </footer>
+
+        <div class="um-lifetime">
+          <i class="material-icons">all_inclusive</i>
+          <span v-tooltip="'Pay for 12 months to get lifetime access to any version of Beekeeper Studio released during your subscription period.'"><strong>Lifetime license.</strong>&nbsp;Included as part of every subscription.*</span>
+        </div>
       </div>
     </modal>
   </portal>
@@ -127,7 +132,7 @@ const FEATURES: Feature[] = [
     short: 'Sync connections & saved queries across devices. Share a Team folder with the rest of your team.',
     bullets: ['Personal & Team folders', 'Sync across all your machines', 'Encrypted at rest & in transit'],
     testimonial: {
-      quote: "The cloud workspace feature that lets me save my connections in different 'Teams' is actually huge — something almost no competitor has.",
+      quote: "Cloud workspaces let me save connections per team — almost no competitor has it.",
       author: 'Craig'
     }
   },
@@ -144,8 +149,8 @@ const FEATURES: Feature[] = [
       'Oracle, Cassandra, ClickHouse, DuckDB, Firebird, LibSQL, ScyllaDB'
     ],
     testimonial: {
-      quote: 'Beekeeper Studio feels like it was built by developers who actually use database tools. I used to juggle between DBeaver and Prisma Studio — now Beekeeper handles everything in one clean workspace.',
-      author: 'Saqib Hussain, Founder, Devinspect'
+      quote: 'Beekeeper handles everything in one clean workspace.',
+      author: 'Saqib Hussain, Devinspect'
     }
   },
   {
@@ -157,8 +162,8 @@ const FEATURES: Feature[] = [
     short: 'Explore data with the AI agent you already use. Bring your own model — no usage fees, no middlemen, runs on your machine.',
     bullets: ['Claude, OpenAI, Gemini, or local', 'Asks before running SQL', 'Source code on GitHub'],
     testimonial: {
-      quote: 'The user interface is exceptionally clear and user-friendly. The AI feature is highly beneficial. Overall, I am thoroughly satisfied with the application.',
-      author: 'Özer Özdaş, Founder, Nuvo Code'
+      quote: 'The AI feature is highly beneficial.',
+      author: 'Özer Özdaş, Nuvo Code'
     }
   },
   {
@@ -170,8 +175,8 @@ const FEATURES: Feature[] = [
     short: 'View any row as structured JSON, expand foreign keys inline, and follow relationships across tables without leaving the row.',
     bullets: ['Nested FK expansion', 'Regex search across rows', 'Auto-formats JSON stored as text'],
     testimonial: {
-      quote: "The recently added 'JSON view' feature solved my biggest problem of rows being hard to read — with this, it is a simple JSON to look at.",
-      author: 'Pixeluted, Self Employed @ Pixeluted LLC'
+      quote: 'JSON view solved my biggest problem of rows being hard to read.',
+      author: 'Pixeluted, Pixeluted LLC'
     }
   },
   {
@@ -183,7 +188,7 @@ const FEATURES: Feature[] = [
     short: "Fix a value straight from a SELECT — Beekeeper checks the SQL and maps each column back to its source table, so edits land in the right place.",
     bullets: ['Stage & review before commit', 'Works with manual commit mode', 'Same controls as table edits'],
     testimonial: {
-      quote: 'Beekeeper Studio is hands down one of the best SQL clients I’ve used. The tabbed interface, autocomplete, and instant results preview save so much time in daily tasks.',
+      quote: 'Hands down one of the best SQL clients I’ve used.',
       author: 'Caio Mendes'
     }
   },
@@ -196,8 +201,8 @@ const FEATURES: Feature[] = [
     short: 'Multi-table export, streamed query exports for giant results, CSV import with smart column mapping, and native backup & restore.',
     bullets: ['Multi-table export', 'Stream query results to file', 'CSV import & native backup'],
     testimonial: {
-      quote: 'It just works, no fuss at all. Imports and exports, especially, work flawlessly.',
-      author: 'Nahabi Wandera, Technologist, The TG Foundry'
+      quote: 'Imports and exports work flawlessly. No fuss at all.',
+      author: 'Nahabi Wandera, The TG Foundry'
     }
   },
   {
@@ -209,8 +214,21 @@ const FEATURES: Feature[] = [
     short: 'Folders & subfolders for connections and saved queries, drag-and-drop reordering, and pinned items that stick across restarts.',
     bullets: ['Nested folders', 'Drag-and-drop reordering', 'Persistent pinned items'],
     testimonial: {
-      quote: "It's a small detail, but it saves so much time and keeps your workflow fast and focused. Beekeeper Studio just works.",
-      author: 'Porya Ras, Backend Dev at Careberry'
+      quote: 'Beekeeper Studio just works — fast, focused, no fuss.',
+      author: 'Porya Ras, Careberry'
+    }
+  },
+  {
+    id: 'erd',
+    icon: 'schema',
+    color: 'var(--brand-info)',
+    title: 'ER Diagrams',
+    triggerTitle: 'Entity Relationship Diagrams',
+    short: 'Visualize your schema as an interactive diagram. See how tables connect — even across schemas — then export the layout as an image.',
+    bullets: ['Cross-schema relationships', 'Open from sidebar or Tools menu', 'Export or copy as image'],
+    testimonial: {
+      quote: 'I can finally see how the whole schema fits together at a glance.',
+      author: 'Joe S, DBA'
     }
   }
 ]
@@ -225,7 +243,8 @@ const MESSAGE_FEATURE_MATCHERS: { match: RegExp; feature: string }[] = [
   { match: /workspace|cloud/i, feature: 'workspaces' },
   { match: /export|import|backup/i, feature: 'io' },
   { match: /ai|llm/i, feature: 'ai' },
-  { match: /json/i, feature: 'json' }
+  { match: /json/i, feature: 'json' },
+  { match: /erd|diagram|entity relationship/i, feature: 'erd' }
 ]
 
 function inferFeature(message?: string | null): string | null {
