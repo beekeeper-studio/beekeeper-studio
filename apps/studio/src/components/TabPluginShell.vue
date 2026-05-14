@@ -2,8 +2,10 @@
   <div
     v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
     class="tab-upsell-wrapper"
+    :class="{ 'tab-upsell-wrapper--ai-shell': isAiShellPlugin }"
   >
-    <upsell-content />
+    <ai-shell-upsell v-if="isAiShellPlugin" />
+    <upsell-content v-else />
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
@@ -89,6 +91,7 @@ import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
+import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
 import type { OnViewRequestListenerParams } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import rawLog from '@bksLogger'
@@ -104,6 +107,7 @@ export default Vue.extend({
     ErrorAlert,
     IsolatedPluginView,
     UpsellContent,
+    AiShellUpsell,
   },
   props: {
     tab: {
@@ -135,6 +139,9 @@ export default Vue.extend({
     ...mapGetters(["isCommunity"]),
     shouldInitialize() {
       return !this.isCommunity && this.active && !this.initialized;
+    },
+    isAiShellPlugin() {
+      return this.tab.context.pluginId === "bks-ai-shell";
     },
     errors() {
       return this.error ? [this.error] : null;
