@@ -1,0 +1,475 @@
+@use "sass:color";
+
+// ============================================================================
+// AI Shell upgrade prompt (compact card + animated mini preview)
+// ============================================================================
+.ai-shell-upsell {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  // "safe center" stops the top from getting clipped when the card is
+  // taller than the viewport; the scroll container takes over instead.
+  align-items: safe center;
+  justify-content: center;
+  padding: 1.75rem 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+
+  .bg-glow {
+    position: absolute;
+    top: -10%;
+    right: -5%;
+    width: 60%;
+    height: 80%;
+    background:
+      radial-gradient(circle at 60% 40%, rgba($brand-pink, 0.10), transparent 55%),
+      radial-gradient(circle at 30% 80%, rgba($brand-purple, 0.10), transparent 55%);
+    pointer-events: none;
+  }
+
+  .compact-card {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    min-width: 0;
+    flex-shrink: 0;
+    background:
+      linear-gradient(
+        180deg,
+        color.adjust($query-editor-bg, $lightness: 4%) 0%,
+        color.adjust($query-editor-bg, $lightness: 1%) 100%
+      );
+    border: 1px solid rgba($theme-base, 0.08);
+    border-radius: 14px;
+    padding: 1.4rem 1.7rem 1.2rem;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .head-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .mark {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba($brand-pink, 0.15), rgba($brand-purple, 0.15));
+    border: 1px solid rgba($brand-pink, 0.25);
+    border-radius: 10px;
+    flex-shrink: 0;
+
+    .material-icons {
+      font-size: 20px;
+      background: linear-gradient(135deg, $brand-pink, $brand-purple);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: $text-dark;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+
+  p.lede {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: $text;
+    margin: 0 0 0.9rem;
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  // --------------------------------------------------------------------------
+  // Mini preview
+  // --------------------------------------------------------------------------
+  .cc-preview {
+    background: color.adjust($query-editor-bg, $lightness: -3%);
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    margin: 0 0 0.9rem;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .cc-preview-body {
+    padding: 0.6rem 0.75rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 280px;
+    min-width: 0;
+    transition: opacity 0.35s ease;
+
+    &.is-resetting {
+      opacity: 0;
+    }
+  }
+
+  // User bubble — right-aligned, yellow-tinted (matches real AI Shell)
+  .cc-user {
+    align-self: flex-end;
+    max-width: 78%;
+    background: rgba($theme-primary, 0.10);
+    color: $text-dark;
+    border-radius: 8px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .cc-asst {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+
+    p {
+      margin: 0;
+      color: $text-dark;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      text-transform: none;
+      font-weight: 400;
+    }
+
+    code {
+      background: rgba($theme-base, 0.06);
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.7rem;
+    }
+  }
+
+  .cc-thinking {
+    height: 0.9rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .cc-caret {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.85rem;
+    background: linear-gradient(135deg, $brand-pink, $brand-purple);
+    border-radius: 1px;
+    animation: cc-caret-blink 0.9s steps(2, end) infinite;
+  }
+
+  @keyframes cc-caret-blink {
+    0%, 49%   { opacity: 1; }
+    50%, 100% { opacity: 0.15; }
+  }
+
+  // Tool call indicator — minimal "Get Columns — 12 columns" row
+  .cc-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.1rem 0 0.1rem 0.625rem;
+    position: relative;
+    font-size: 0.72rem;
+    color: $text-light;
+    align-self: flex-start;
+  }
+
+  .cc-tool-bar {
+    position: absolute;
+    left: 0;
+    top: 0.2rem;
+    bottom: 0.2rem;
+    width: 2px;
+    background: rgba($theme-base, 0.10);
+    border-radius: 1px;
+  }
+
+  .cc-tool-name  { color: $text-dark; }
+  .cc-tool-sep   { color: $text-lighter; }
+  .cc-tool-meta  { color: $text-light; }
+
+  // Run Query block
+  .cc-runquery {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.15rem;
+    min-width: 0;
+  }
+
+  .cc-rq-head {
+    font-size: 0.75rem;
+    color: $text-dark;
+    font-weight: 500;
+    text-transform: none;
+  }
+
+  .cc-sql {
+    font-family: monospace;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: $text-dark;
+    background: color.adjust($query-editor-bg, $lightness: -6%);
+    border: 1px solid $border-color;
+    border-radius: 5px;
+    padding: 0.45rem 0.7rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;
+
+    .kw  { color: $brand-pink; }
+    .id  { color: $brand-secondary; }
+    .num { color: $brand-primary; }
+    .str { color: $brand-primary; }
+  }
+
+  // Result block (after SQL "runs")
+  .cc-result {
+    margin-top: 0.4rem;
+    border: 1px solid $border-color;
+    border-radius: 5px;
+    background: color.adjust($query-editor-bg, $lightness: -6%);
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .cc-result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+    font-size: 0.7rem;
+
+    th, td {
+      padding: 0.35rem 0.7rem;
+      text-align: left;
+      border-bottom: 1px solid $border-color;
+    }
+
+    th {
+      color: $text-light;
+      font-weight: 500;
+      background: rgba($theme-base, 0.02);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    td {
+      color: $text-dark;
+
+      &.num { color: $brand-primary; }
+    }
+
+    tr:last-child td { border-bottom: 0; }
+  }
+
+  // Final assistant answer — plain text. The real AI shell renders raw text
+  // without per-word color, so bold emphasis only (no accent color).
+  .cc-final {
+    margin-top: 0.35rem;
+
+    strong {
+      color: $text-dark;
+      font-weight: 600;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Step transitions (driven by Vue state on AiShellPreview)
+  // --------------------------------------------------------------------------
+  .cc-step {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    will-change: opacity, transform;
+  }
+
+  .cc-step-x {
+    transform: translateX(14px);
+  }
+
+  .cc-step.cc-step-show {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+
+  // SQL "curtain" reveal — clip-path bottom-up
+  .cc-sql-reveal {
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 1.1s cubic-bezier(0.22, 0.61, 0.36, 1);
+
+    &.shown {
+      clip-path: inset(0 0 0% 0);
+    }
+  }
+
+  // Respect reduced motion: render the final state immediately, no transitions.
+  .cc-reduced-motion {
+    .cc-step,
+    .cc-sql-reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      clip-path: none !important;
+      transition: none !important;
+    }
+    .cc-caret { animation: none; opacity: 1; }
+    .cc-preview-body.is-resetting { opacity: 1; }
+  }
+
+  // --------------------------------------------------------------------------
+  // Pills — single inline row, the three differentiators separated by middots.
+  // --------------------------------------------------------------------------
+  .pills {
+    list-style: none;
+    margin: 0 0 0.9rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    color: $text-dark;
+  }
+
+  .pill-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: none;
+    letter-spacing: 0;
+
+    .material-icons {
+      font-size: 16px;
+      color: $brand-success;
+    }
+
+    span {
+      font-weight: 500;
+      color: $text-dark;
+      white-space: nowrap;
+    }
+
+    & + .pill-row::before {
+      content: "\00b7";
+      color: $text-lighter;
+      margin-right: 0.3rem;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Testimonial (single line above CTAs) — bumped up to let it breathe.
+  // --------------------------------------------------------------------------
+  .testimonial {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.78rem;
+    color: $text-light;
+    margin: 0.4rem 0 1rem;
+    padding: 0.65rem 0.9rem;
+    background: rgba($theme-base, 0.025);
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    line-height: 1.4;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+
+    .stars {
+      color: $theme-primary;
+      font-size: 0.78rem;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .quote {
+      color: $text-dark;
+      flex: 0 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .attr {
+      color: $text-lighter;
+      flex-shrink: 0;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // CTA buttons (existing UpsellButtons)
+  // --------------------------------------------------------------------------
+  .ai-shell-upsell-buttons {
+    .actions {
+      gap: 0.5rem;
+      margin-top: 0;
+      justify-content: stretch;
+
+      .btn {
+        flex: 1;
+      }
+    }
+
+    .help {
+      margin-top: 0.4rem;
+      font-size: 0.7rem;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Lifetime-license footer band — sits flush at the card's bottom edge.
+  // --------------------------------------------------------------------------
+  .lifetime-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem -1.7rem -1.2rem;
+    padding: 0.6rem 1.2rem;
+    background: rgba($theme-primary, 0.10);
+    border-top: 1px solid rgba($theme-primary, 0.22);
+    border-radius: 0 0 14px 14px;
+    color: $text-dark;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    text-transform: none;
+    letter-spacing: 0;
+
+    .material-icons {
+      font-size: 16px;
+      color: $theme-primary;
+      flex-shrink: 0;
+    }
+
+    strong {
+      color: $text-dark;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+  }
+}
+
+// ============================================================================
+// Hide the global statusbar entirely when the AI Shell upgrade prompt is
+// the active tab. The upsell carries its own lifetime-license footer inside
+// the card, so the empty connection-color band below is just chrome noise.
+// Uses :has() — Electron's bundled Chromium 105+ supports it.
+// ============================================================================
+.app:has(.tab-pane.active .ai-shell-upsell) .global-status-bar {
+  display: none;
+}

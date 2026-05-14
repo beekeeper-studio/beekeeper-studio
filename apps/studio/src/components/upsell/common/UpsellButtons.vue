@@ -14,7 +14,7 @@
     <div class="actions">
       <a v-if="trialAvailable" class="btn btn-flat" v-tooltip="'14 day free trial, no email or credit card required'" @click.prevent="startTrial">Start Free Trial</a>
       <a v-else :href="learnUrl" class="btn btn-flat">Learn more</a>
-      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Buy License</a>
+      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Upgrade</a>
     </div>
     <p class="help text-right text-muted small" v-if="trialExpired">
       Your free trial ended on {{ trialEndDate }}
