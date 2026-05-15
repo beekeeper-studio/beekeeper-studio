@@ -2197,7 +2197,10 @@ export class DBTestUtil {
     `;
     let placeholders = [params[0]];
     let values = [`'Rose Tyler'`];
-    let convertedParams = convertParamsForReplacement(placeholders, values);
+    let rawValues: string[] | Record<string, string> = placeholders.includes('?')
+      ? values
+      : Object.fromEntries(placeholders.map((p, i) => [p, values[i]]));
+    let convertedParams = convertParamsForReplacement(placeholders, rawValues);
     query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
     let result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
@@ -2214,7 +2217,10 @@ export class DBTestUtil {
 
     placeholders = params;
     values = ['5', `'Neo'`, '0'];
-    convertedParams = convertParamsForReplacement(placeholders, values);
+    rawValues = placeholders.includes('?')
+      ? values
+      : Object.fromEntries(placeholders.map((p, i) => [p, values[i]]));
+    convertedParams = convertParamsForReplacement(placeholders, rawValues);
     query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
     result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([

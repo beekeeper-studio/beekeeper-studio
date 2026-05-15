@@ -19,16 +19,17 @@ export function canDeparameterize(params: string[]) {
   return !(params.includes('?') && params.some((val) => val != '?'));
 }
 
-export function convertParamsForReplacement(placeholders: string[], values: string[]): ParamItems | string[] {
+export function convertParamsForReplacement(placeholders: string[], values: string[] | Record<string, string>): ParamItems | string[] {
   if (placeholders.includes('?')) {
-    return values;
+    // Positional params: values is an ordered array, return as-is for sql-formatter.
+    return values as string[];
   } else {
-    // TODO (@day): this might not work with quoted params
-    // this will need to be more complex if we allow truly custom params
-    return placeholders.reduce((obj, val, index) => {
-      obj[val.slice(1)] = values[index];
-      return obj;
-    }, {});
+    // Named/numbered params: values is a record keyed by the full placeholder
+    // (e.g. { ':name': "'Alice'" }). Strip the prefix so sql-formatter gets { name: "'Alice'" }.
+    // Lookup is by key so duplicate placeholders in the SQL are harmless.
+    return Object.fromEntries(
+      Object.entries(values as Record<string, string>).map(([k, v]) => [k.slice(1), v])
+    );
   }
 }
 
