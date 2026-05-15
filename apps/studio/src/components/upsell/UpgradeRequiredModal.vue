@@ -160,9 +160,9 @@ const FEATURES: Feature[] = [
     id: 'overview',
     icon: 'workspace_premium',
     color: 'var(--theme-primary)',
-    title: 'Why upgrade?',
+    title: 'Why Upgrade',
     triggerTitle: 'Beekeeper Studio Ultimate',
-    short: 'A single Ultimate license unlocks every feature below — and your subscription comes with a lifetime usage license. Buying a license funds the small independent team behind the app.',
+    short: 'Unlock a suite of intuitive powertools that are super fun to use and will save you a bunch of time and effort. Did we mention every purchase comes with a *lifetime usage* license?',
     testimonial: {
       quote: 'By far the most user-friendly DB GUI out there. Our whole team bought a license.',
       author: 'Matt K · MinnHealth'
