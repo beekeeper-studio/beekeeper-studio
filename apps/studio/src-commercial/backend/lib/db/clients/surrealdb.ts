@@ -756,7 +756,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
-    let results: TableUpdateResult[] = [];
+    const results: TableUpdateResult[] = [];
     const sql = ['BEGIN'];
     let allBindings = {};
 

@@ -28,7 +28,7 @@
         :result="result"
         :query="query"
         :tab="tab"
-        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
+        :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div class="message" v-else-if="result">
         <div class="alert alert-info">

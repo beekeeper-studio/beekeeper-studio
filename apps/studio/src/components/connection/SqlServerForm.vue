@@ -4,8 +4,11 @@
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
-        <option value="default">Username / Password</option>
-        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
+        <option value="default">
+          Username / Password
+        </option>
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">
+          {{ t.name }}
         </option>
       </select>
     </div>

@@ -35,7 +35,7 @@
               v-model="oldPin"
               ref="oldPinInput"
               placeholder="Enter your current PIN"
-            />
+            >
             <i
               class="material-icons password-icon"
               @click="toggleOldPinVisibility"
@@ -53,7 +53,7 @@
               :type="showNewPin ? 'text' : 'password'"
               v-model="newPin"
               :placeholder="`Enter at least ${$bksConfig.security.minPinLength} characters`"
-            />
+            >
             <i
               class="material-icons password-icon"
               @click="toggleNewPinVisibility"
@@ -65,7 +65,11 @@
 
           <div class="alert alert-info">
             <i class="material-icons">info</i>
-            <div class="alert-body">Your new PIN will be encrypted and stored securely on your device.&nbsp<external-link href="https://docs.beekeeperstudio.io/user_guide/configuration#forgot-pin">Forgot your current PIN?</external-link></div>
+            <div class="alert-body">
+              Your new PIN will be encrypted and stored securely on your device.&nbsp<external-link href="https://docs.beekeeperstudio.io/user_guide/configuration#forgot-pin">
+                Forgot your current PIN?
+              </external-link>
+            </div>
           </div>
         </div>
         <div class="vue-dialog-buttons">
