@@ -22,6 +22,7 @@
     :table="source.entity"
     :pinned="source.pinned"
     :loading-columns="source.loadingColumns"
+    :field-filter-term="fieldFilterTerm"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="
@@ -63,6 +64,6 @@ export default Vue.extend({
     StatelessRoutineListItem,
     StatelessSidebarFolder,
   },
-  props: ["source", "onExpand", "onPin"],
+  props: ["source", "onExpand", "onPin", "fieldFilterTerm"],
 });
 </script>

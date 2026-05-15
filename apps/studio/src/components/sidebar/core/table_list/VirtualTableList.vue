@@ -8,7 +8,7 @@
     :data-component="itemComponent"
     :estimate-size="estimateItemHeight"
     :keeps="keeps"
-    :extra-props="{ onExpand: handleExpand, onPin: handlePin }"
+    :extra-props="{ onExpand: handleExpand, onPin: handlePin, fieldFilterTerm: fieldFilterTerm }"
   />
 </template>
 
@@ -148,11 +148,15 @@ export default Vue.extend({
 
         schema.tables.forEach((table: TableOrView) => {
           const key = entityId(schema.schema, table);
+          const fieldKey = `${schema.schema || ''}:${table.name}`
+          const fieldCols = this.$store.state.fieldSearchIndex[fieldKey]
+          const hasFieldMatch = this.fieldFilterTerm && fieldCols &&
+            fieldCols.some((col: string) => col.includes(this.fieldFilterTerm))
           items.push({
             type: "table",
             key,
             entity: table,
-            expanded: expandedMap.has(key),
+            expanded: hasFieldMatch || expandedMap.has(key),
             hidden: this.hiddenEntities.includes(table),
             contextMenu: this.tableMenuOptions,
             parent,
@@ -223,8 +227,18 @@ export default Vue.extend({
       this.$nextTick(() => {
         this.$store.dispatch("updateTableColumns", item.entity).finally(() => {
           item.loadingColumns = false;
+          this.generateDisplayItems();
         });
       });
+    },
+    loadColumnsForFieldMatches() {
+      for (const item of this.items) {
+        if (item.type !== "table") continue;
+        if (!item.expanded) continue;
+        if (item.entity.columns?.length) continue;
+        if (item.loadingColumns) continue;
+        this.loadColumns(item as TableItem);
+      }
     },
     updateTableColumnsInRange(whenEmpty = false) {
       const range = this.$refs.vList.range;
@@ -309,6 +323,12 @@ export default Vue.extend({
         },
       ];
     },
+    fieldFilterTerm() {
+      const q = this.$store.state.entityFilter.filterQuery
+      if (!q || !this.$store.state.entityFilter.showFields) return null
+      if (q.startsWith('.') && q.length > 1) return q.slice(1).toLowerCase()
+      return q.toLowerCase()
+    },
     ...mapGetters({
       defaultSchema: "defaultSchema",
       schemaTables: "schemaTables",
@@ -322,6 +342,11 @@ export default Vue.extend({
     schemaTables() {
       this.generateItems();
       this.generateDisplayItems();
+    },
+    fieldFilterTerm() {
+      this.generateItems();
+      this.generateDisplayItems();
+      this.loadColumnsForFieldMatches();
     },
     minimalMode() {
       this.generateDisplayItems();
