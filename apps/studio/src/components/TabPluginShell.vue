@@ -2,9 +2,18 @@
   <div
     v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
     class="tab-upsell-wrapper"
-    :class="{ 'tab-upsell-wrapper--ai-shell': isAiShellPlugin }"
+    :class="{ 'tab-upsell-wrapper--full': isAiShellPlugin || isErDiagramPlugin }"
   >
-    <ai-shell-upsell v-if="isAiShellPlugin" />
+    <upgrade-content
+      v-if="isAiShellPlugin"
+      trigger-feature="ai"
+      in-tab
+    />
+    <upgrade-content
+      v-else-if="isErDiagramPlugin"
+      trigger-feature="erd"
+      in-tab
+    />
     <upsell-content v-else />
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
@@ -89,10 +98,9 @@ import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { AppEvent } from "@/common/AppEvent";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
-import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
+import UpgradeContent from "@/components/upsell/UpgradeContent.vue";
 import type { OnViewRequestListenerParams } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import rawLog from '@bksLogger'
@@ -108,7 +116,7 @@ export default Vue.extend({
     ErrorAlert,
     IsolatedPluginView,
     UpsellContent,
-    AiShellUpsell,
+    UpgradeContent,
   },
   props: {
     tab: {
@@ -326,16 +334,6 @@ export default Vue.extend({
       await this.$nextTick();
       this.initialize();
     }
-    if (this.isCommunity && this.isErDiagramPlugin) {
-      this.$root.$emit(AppEvent.upgradeModal, { feature: 'erd' });
-    }
-  },
-  watch: {
-    active(val: boolean) {
-      if (val && this.isCommunity && this.isErDiagramPlugin) {
-        this.$root.$emit(AppEvent.upgradeModal, { feature: 'erd' });
-      }
-    },
   },
   beforeDestroy() {
     if (this.split) {
