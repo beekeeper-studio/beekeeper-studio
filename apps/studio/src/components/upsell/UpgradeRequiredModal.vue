@@ -307,6 +307,7 @@ export default Vue.extend({
       customTitle: null as string | null,
       triggerFeature: null as string | null,
       active: 'overview',
+      isOpen: false,
       modalWidth: 820,
     }
   },
@@ -348,14 +349,19 @@ export default Vue.extend({
       this.$modal.show('upgrade-modal')
     },
     onOpened() {
+      this.isOpen = true
       this.$root.$emit('upgradeModalOpened')
-      document.addEventListener('keydown', this.trapShortcuts, true)
     },
     onClosed() {
+      this.isOpen = false
       this.$root.$emit('upgradeModalClosed')
-      document.removeEventListener('keydown', this.trapShortcuts, true)
     },
     trapShortcuts(e: KeyboardEvent) {
+      // Only trap while the modal is actually visible. The listener stays
+      // attached for the lifetime of the component, so the open/closed flag
+      // is what gates capture — much safer than adding/removing listeners
+      // and risking a stuck listener if a close event ever doesn't fire.
+      if (!this.isOpen) return
       // Escape is handled by vue-js-modal to close. Everything else with a
       // modifier (Ctrl/Cmd) gets swallowed so global tab shortcuts (Ctrl+Tab,
       // Ctrl+W, Ctrl+T, Ctrl+1..9, etc.) don't fire underneath the modal.
@@ -367,9 +373,11 @@ export default Vue.extend({
   },
   mounted() {
     this.$root.$on(AppEvent.upgradeModal, this.showModal)
+    document.addEventListener('keydown', this.trapShortcuts, true)
   },
   beforeDestroy() {
     this.$root.$off(AppEvent.upgradeModal, this.showModal)
+    document.removeEventListener('keydown', this.trapShortcuts, true)
   }
 })
 </script>
