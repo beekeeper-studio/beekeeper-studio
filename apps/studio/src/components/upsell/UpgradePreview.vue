@@ -62,7 +62,7 @@
         </div>
         <div class="ump-ent-col">
           <div class="ump-section-label">More databases</div>
-          <div class="ump-chips ump-chips-grid">
+          <div class="ump-chips">
             <span v-for="db in dbChips" :key="db">{{ db }}</span>
           </div>
         </div>
@@ -183,43 +183,69 @@
       </div>
     </template>
 
-    <!-- ER Diagrams: miniature ERD with two connected entity boxes -->
+    <!-- ER Diagrams: 3-table Sakila ERD with FK arrows -->
     <template v-else-if="feature.id === 'erd'">
       <div class="ump-erd">
-        <div class="ump-erd-table dashed">
-          <div class="ump-erd-thead">
-            <i class="material-icons">grid_on</i>
-            <span>users</span>
+        <div class="ump-erd-left">
+          <div class="ump-erd-table dashed">
+            <div class="ump-erd-thead">
+              <i class="material-icons">grid_on</i>
+              <span>customer</span>
+            </div>
+            <div class="ump-erd-col">
+              <i class="material-icons pk">key</i><span class="name">customer_id</span><span class="type">INT</span>
+            </div>
+            <div class="ump-erd-col">
+              <span class="name pad">first_name</span><span class="type">VARCHAR</span>
+            </div>
+            <div class="ump-erd-col">
+              <span class="name pad">email</span><span class="type">VARCHAR</span>
+            </div>
           </div>
-          <div class="ump-erd-col">
-            <i class="material-icons pk">key</i><span class="name">id</span><span class="type">INTEGER</span>
-          </div>
-          <div class="ump-erd-col">
-            <i class="material-icons fk">key</i><span class="name">org_id</span><span class="type">INTEGER</span>
-          </div>
-          <div class="ump-erd-col">
-            <span class="name pad">email</span><span class="type">TEXT</span>
+          <div class="ump-erd-table dashed">
+            <div class="ump-erd-thead">
+              <i class="material-icons">grid_on</i>
+              <span>inventory</span>
+            </div>
+            <div class="ump-erd-col">
+              <i class="material-icons pk">key</i><span class="name">inventory_id</span><span class="type">INT</span>
+            </div>
+            <div class="ump-erd-col">
+              <i class="material-icons fk">key</i><span class="name">film_id</span><span class="type">INT</span>
+            </div>
+            <div class="ump-erd-col">
+              <i class="material-icons fk">key</i><span class="name">store_id</span><span class="type">INT</span>
+            </div>
           </div>
         </div>
-        <svg class="ump-erd-line" viewBox="0 0 60 80" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M 0 22 C 30 22, 30 40, 60 40" fill="none" stroke="currentColor" stroke-width="1.2" />
-          <path d="M 0 58 C 30 58, 30 40, 60 40" fill="none" stroke="currentColor" stroke-width="1.2" />
-          <path d="M 4 18 L 0 22 L 4 26 M 0 22 L 10 22" fill="none" stroke="currentColor" stroke-width="1.2" />
-          <path d="M 4 54 L 0 58 L 4 62 M 0 58 L 10 58" fill="none" stroke="currentColor" stroke-width="1.2" />
+        <svg class="ump-erd-line" viewBox="0 0 60 200" preserveAspectRatio="none" aria-hidden="true">
+          <!-- customer.customer_id (top-left) -> rental.customer_id (right) -->
+          <path d="M 0 60 C 30 60, 30 130, 60 130" fill="none" stroke="currentColor" stroke-width="1.2" />
+          <!-- inventory.inventory_id (bottom-left) -> rental.inventory_id (right) -->
+          <path d="M 0 140 C 30 140, 30 95, 60 95" fill="none" stroke="currentColor" stroke-width="1.2" />
+          <!-- crow's-foot at rental side (right edge of svg) -->
+          <path d="M 56 126 L 60 130 L 56 134 M 56 130 L 50 130" fill="none" stroke="currentColor" stroke-width="1.2" />
+          <path d="M 56 91 L 60 95 L 56 99 M 56 95 L 50 95" fill="none" stroke="currentColor" stroke-width="1.2" />
+          <!-- single-line cap at the PK side (left edge of svg) -->
+          <path d="M 0 56 L 0 64" stroke="currentColor" stroke-width="1.2" />
+          <path d="M 0 136 L 0 144" stroke="currentColor" stroke-width="1.2" />
         </svg>
         <div class="ump-erd-table focused">
           <div class="ump-erd-thead">
             <i class="material-icons">grid_on</i>
-            <span>organizations</span>
+            <span>rental</span>
           </div>
           <div class="ump-erd-col">
-            <i class="material-icons pk">key</i><span class="name">id</span><span class="type">INTEGER</span>
+            <i class="material-icons pk">key</i><span class="name">rental_id</span><span class="type">INT</span>
           </div>
           <div class="ump-erd-col">
-            <span class="name pad">name</span><span class="type">TEXT</span>
+            <span class="name pad">rental_date</span><span class="type">DATETIME</span>
           </div>
           <div class="ump-erd-col">
-            <span class="name pad">plan</span><span class="type">TEXT</span>
+            <i class="material-icons fk">key</i><span class="name">inventory_id</span><span class="type">INT</span>
+          </div>
+          <div class="ump-erd-col">
+            <i class="material-icons fk">key</i><span class="name">customer_id</span><span class="type">INT</span>
           </div>
         </div>
       </div>
@@ -307,7 +333,22 @@ export default Vue.extend({
   },
   data() {
     return {
-      dbChips: ['Oracle', 'Cassandra', 'ClickHouse', 'DuckDB', 'Firebird', 'LibSQL', 'ScyllaDB']
+      // Paid-only databases, per docs/includes/supported_databases.md.
+      dbChips: [
+        'MongoDB',
+        'Oracle',
+        'Cassandra',
+        'ClickHouse',
+        'DuckDB',
+        'Trino / Presto',
+        'DynamoDB',
+        'Snowflake',
+        'ScyllaDB',
+        'Firebird',
+        'LibSQL',
+        'SQL Anywhere',
+        'SurrealDB'
+      ]
     }
   }
 })

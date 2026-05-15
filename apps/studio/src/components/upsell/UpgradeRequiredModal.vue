@@ -187,7 +187,7 @@ const FEATURES: Feature[] = [
     color: 'var(--brand-success)',
     title: 'Enterprise connectivity',
     triggerTitle: 'Enterprise Connectivity',
-    short: 'Passwordless cloud auth — AWS IAM, Azure Entra ID, AWS/Azure CLI — plus 7 extra databases including Oracle, Cassandra, ClickHouse, DuckDB, Firebird, LibSQL, and ScyllaDB.',
+    short: 'Passwordless cloud auth — AWS IAM, Azure Entra ID, AWS/Azure CLI — plus paid-edition databases including MongoDB, Oracle, Cassandra, ClickHouse, DuckDB, DynamoDB, Snowflake, Trino, and more.',
     bullets: [
       'AWS IAM & Azure Entra ID web SSO',
       'AWS CLI & Azure CLI generated credentials',

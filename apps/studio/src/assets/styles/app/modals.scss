@@ -458,22 +458,13 @@
       flex-wrap: wrap;
       gap: 4px;
       span {
-        padding: 2px 8px;
+        padding: 1px 7px;
         border-radius: 999px;
-        font-size: 11px;
+        font-size: 10.5px;
         background: rgba($brand-purple, 0.12);
         color: $brand-purple;
         border: 1px solid rgba($brand-purple, 0.22);
-      }
-    }
-    // Grid variant — used when chips sit beside another column rather than
-    // stacked under a sibling section.
-    .ump-chips-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      span {
-        text-align: center;
+        white-space: nowrap;
       }
     }
 
@@ -656,7 +647,7 @@
       min-width: 50px;
     }
 
-    // ER Diagrams preview — two connected entity boxes ---------------------
+    // ER Diagrams preview — Sakila tables with FK arrows -------------------
     .um-preview-erd {
       background: #0a0a0a;
       // Subtle dot grid matching the real ERD canvas
@@ -667,19 +658,27 @@
     .ump-erd {
       display: grid;
       grid-template-columns: 1fr 60px 1fr;
-      align-items: center;
+      align-items: stretch;
       gap: 0;
+    }
+    .ump-erd-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
     }
     .ump-erd-table {
       background: #1a1a1a;
       border-radius: 8px;
       padding: 6px 0;
       min-width: 0;
+      align-self: center;
       &.dashed {
         border: 1px dashed rgba(255,255,255,0.25);
       }
       &.focused {
         border: 1.5px solid $theme-primary;
+        align-self: center;
       }
     }
     .ump-erd-thead {
@@ -720,9 +719,9 @@
     }
     .ump-erd-line {
       width: 100%;
-      height: 80px;
+      height: 100%;
       color: rgba(255,255,255,0.35);
-      align-self: center;
+      align-self: stretch;
     }
 
     // Folders / Organize preview — mirrors the real sidebar ------------------
