@@ -418,6 +418,7 @@ declare interface IBksConfig {
         };
     };
     security: {
+        allowRuntimeExtensions: boolean;
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
         disconnectOnSuspend: boolean;

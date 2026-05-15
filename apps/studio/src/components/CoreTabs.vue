@@ -824,8 +824,8 @@ export default Vue.extend({
         error: false,
       }))
 
-      if (!files.every(({ file }) => file.name.endsWith('.sql'))) {
-        this.$noty.error('Only .sql files are supported')
+      if (!files.every(({ file }) => /\.(sql|txt)$/i.test(file.name))) {
+        this.$noty.error('Only .sql and .txt files are supported')
         return
       }
 
@@ -932,7 +932,7 @@ export default Vue.extend({
         try {
           // TODO (azmi): this process can take longer by accident. Consider
           // an ability to cancel reading file.
-          const text = await this.$util.send('file/read', { path: file.path, options: { encoding: 'utf8', flag: 'r' }})
+          const text = await this.$util.send('file/readSqlFile', { path: file.path })
           if (text) {
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
@@ -960,23 +960,21 @@ export default Vue.extend({
 
       const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.defaultExportPath(fileName));
 
-      const filePath = this.$native.dialog.showSaveDialogSync({
-        title: "Export Query",
-        defaultPath: lastExportPath,
-        filters: [
-          { name: 'SQL (*.sql)', extensions: ['sql'] },
-          { name: 'All Files (*.*)', extensions: ['*'] },
-        ],
-      })
-
-      // do nothing if canceled
-      if (!filePath) return
-
       const notyQueue = 'export-query'
       this.$noty.info('Exporting query',  { queue: notyQueue })
 
       try {
-        await this.$util.send('file/write', { path: filePath, text: query.text, options: { encoding: 'utf8' }})
+        const saved = await window.main.fileHelpers.save({
+          fileName: lastExportPath,
+          content: query.text,
+          filters: [
+            { name: 'SQL (*.sql)', extensions: ['sql'] },
+            { name: 'All Files (*.*)', extensions: ['*'] },
+          ],
+        })
+        if (saved === false) {
+          return
+        }
         this.$noty.success('Query exported!', { killer: notyQueue })
       } catch (e) {
         console.error(e)
