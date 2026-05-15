@@ -129,31 +129,37 @@ describe("Text Selection", () => {
 });
 
 describe("convertParamsForReplacement", () => {
+  // The caller passes an ordered array for positional (?) params and a record keyed by
+  // placeholder (e.g. { ':name': "'Alice'" }) for named params.
+
   it("should handle positional params", () => {
     const result = convertParamsForReplacement(['?', '?'], ["'Alice'", '25']);
     expect(result).toEqual(["'Alice'", '25']);
   });
 
-  it("should build a named params object from unique placeholders", () => {
-    const result = convertParamsForReplacement([':name', ':age'], ["'Alice'", '25']);
+  it("should build a named params object from a record, stripping the prefix", () => {
+    // Caller passes queryParameterValues as-is: { ':name': "'Alice'", ':age': '25' }
+    const result = convertParamsForReplacement([':name', ':age'], { ':name': "'Alice'", ':age': '25' });
     expect(result).toEqual({ name: "'Alice'", age: '25' });
   });
 
-  it("should not overwrite a named param value when the same placeholder appears multiple times", () => {
-    // When :name appears twice in the SQL, sql-query-identifier returns it twice in placeholders,
-    // but the UI only asks for one value (deduplicating via _.uniq). The second occurrence must not
-    // clobber the value entered for the first.
-    const result = convertParamsForReplacement([':name', ':name', ':age'], ["'Alice'", '25']);
+  it("should produce correct params when the same placeholder appears multiple times (name,age,name,age,name)", () => {
+    // sql-query-identifier returns one entry per occurrence; the record-based approach is
+    // immune to duplicates because the lookup is by key, not by index.
+    const placeholders = [':name', ':age', ':name', ':age', ':name'];
+    const queryParamValues = { ':name': "'Alice'", ':age': '25' };
+    const result = convertParamsForReplacement(placeholders, queryParamValues);
     expect(result).toEqual({ name: "'Alice'", age: '25' });
   });
 
   it("should substitute a repeated named parameter correctly end-to-end", () => {
     // SELECT * FROM users WHERE first_name = :name OR last_name = :name
-    // User provides one value for :name. Both occurrences should be replaced.
+    // User provides one value for :name; both occurrences should be replaced.
     const query = "SELECT * FROM users WHERE first_name = :name OR last_name = :name";
     const paramTypes = { named: [':'], positional: false, numbered: [], quoted: [] };
-    // Simulates: placeholders from sql-query-identifier (with duplicate), values from UI (unique)
-    const params = convertParamsForReplacement([':name', ':name'], ["'Alice'"]);
+    const placeholders = [':name', ':name'];
+    const queryParamValues = { ':name': "'Alice'" };
+    const params = convertParamsForReplacement(placeholders, queryParamValues);
     const result = deparameterizeQuery(query, 'sqlite', params, paramTypes);
     expect(result).not.toContain(':name');
     expect(result).toContain("'Alice'");

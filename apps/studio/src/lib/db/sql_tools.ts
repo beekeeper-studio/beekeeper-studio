@@ -19,21 +19,19 @@ export function canDeparameterize(params: string[]) {
   return !(params.includes('?') && params.some((val) => val != '?'));
 }
 
-export function convertParamsForReplacement(placeholders: string[], values: string[]): ParamItems | string[] {
+export function convertParamsForReplacement(placeholders: string[], values: string[] | Record<string, string>): ParamItems | string[] {
   if (placeholders.includes('?')) {
-    return values;
+    // Positional params: values is an ordered array, return as-is for sql-formatter.
+    return values as string[];
   } else {
-    // The same named parameter (e.g. :name) can appear multiple times in a query, so
-    // sql-query-identifier returns it once per occurrence in `placeholders`. The UI, however,
-    // deduplicates via _.uniq and only asks the user for one value per unique name.
-    // We must deduplicate here so that index i in `values` maps to the i-th *unique* placeholder,
-    // not the i-th occurrence — otherwise duplicate occurrences shift all subsequent indices and
-    // clobber or discard user-entered values.
-    const uniquePlaceholders = _.uniq(placeholders);
-    return uniquePlaceholders.reduce((obj, val, index) => {
-      obj[val.slice(1)] = values[index];
-      return obj;
-    }, {});
+    // Named params: values is a record keyed by the full placeholder (e.g. { ':name': "'Alice'" }).
+    // Strip the prefix character so sql-formatter gets { name: "'Alice'" }.
+    // Using a record rather than a positional array means duplicates in `placeholders` never
+    // shift indices or clobber values — every lookup goes through the key, not position.
+    const record = values as Record<string, string>;
+    return Object.fromEntries(
+      Object.entries(record).map(([k, v]) => [k.slice(1), v])
+    );
   }
 }
 
