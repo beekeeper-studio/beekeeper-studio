@@ -39,6 +39,7 @@
         :is-focused="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
+        :formatter-dialect-options="formatterDialectOptions"
         :identifier-dialect="identifierDialect"
         :param-types="paramTypes"
         :keybindings="keybindings"
@@ -353,6 +354,7 @@
           <bks-super-formatter
             :value="unsavedText"
             :formatter-dialect="formatterDialect"
+            :formatter-dialect-options="formatterDialectOptions"
             :identifier-dialect="identifierDialect"
             :can-add-presets="true"
             :clipboard="$native.clipboard"
@@ -533,7 +535,7 @@
   import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
   import { FieldEditData, TableOrView } from "@/lib/db/models";
-  import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
+  import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
@@ -877,6 +879,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       formatterDialect() {
         return FormatterDialect(dialectFor(this.queryDialect))
+      },
+      formatterDialectOptions() {
+        // Only populated for dialects sql-formatter doesn't ship natively
+        // (currently just DynamoDB PartiQL). When null, the formatter falls
+        // back to the string `formatterDialect` prop above.
+        const opts = formatOptionsFor(dialectFor(this.queryDialect))
+        return 'dialect' in opts ? opts.dialect : null
       },
       paramTypes() {
         // TODO: Parameter replacement for redis
