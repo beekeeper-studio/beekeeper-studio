@@ -23,9 +23,14 @@ export function convertParamsForReplacement(placeholders: string[], values: stri
   if (placeholders.includes('?')) {
     return values;
   } else {
-    // TODO (@day): this might not work with quoted params
-    // this will need to be more complex if we allow truly custom params
-    return placeholders.reduce((obj, val, index) => {
+    // The same named parameter (e.g. :name) can appear multiple times in a query, so
+    // sql-query-identifier returns it once per occurrence in `placeholders`. The UI, however,
+    // deduplicates via _.uniq and only asks the user for one value per unique name.
+    // We must deduplicate here so that index i in `values` maps to the i-th *unique* placeholder,
+    // not the i-th occurrence — otherwise duplicate occurrences shift all subsequent indices and
+    // clobber or discard user-entered values.
+    const uniquePlaceholders = _.uniq(placeholders);
+    return uniquePlaceholders.reduce((obj, val, index) => {
       obj[val.slice(1)] = values[index];
       return obj;
     }, {});

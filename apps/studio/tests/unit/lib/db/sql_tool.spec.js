@@ -1,4 +1,4 @@
-import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -125,6 +125,38 @@ describe("Text Selection", () => {
       query: [10, 120],
       cursor: [0, 10],
     }).toBe(false);
+  });
+});
+
+describe("convertParamsForReplacement", () => {
+  it("should handle positional params", () => {
+    const result = convertParamsForReplacement(['?', '?'], ["'Alice'", '25']);
+    expect(result).toEqual(["'Alice'", '25']);
+  });
+
+  it("should build a named params object from unique placeholders", () => {
+    const result = convertParamsForReplacement([':name', ':age'], ["'Alice'", '25']);
+    expect(result).toEqual({ name: "'Alice'", age: '25' });
+  });
+
+  it("should not overwrite a named param value when the same placeholder appears multiple times", () => {
+    // When :name appears twice in the SQL, sql-query-identifier returns it twice in placeholders,
+    // but the UI only asks for one value (deduplicating via _.uniq). The second occurrence must not
+    // clobber the value entered for the first.
+    const result = convertParamsForReplacement([':name', ':name', ':age'], ["'Alice'", '25']);
+    expect(result).toEqual({ name: "'Alice'", age: '25' });
+  });
+
+  it("should substitute a repeated named parameter correctly end-to-end", () => {
+    // SELECT * FROM users WHERE first_name = :name OR last_name = :name
+    // User provides one value for :name. Both occurrences should be replaced.
+    const query = "SELECT * FROM users WHERE first_name = :name OR last_name = :name";
+    const paramTypes = { named: [':'], positional: false, numbered: [], quoted: [] };
+    // Simulates: placeholders from sql-query-identifier (with duplicate), values from UI (unique)
+    const params = convertParamsForReplacement([':name', ':name'], ["'Alice'"]);
+    const result = deparameterizeQuery(query, 'sqlite', params, paramTypes);
+    expect(result).not.toContain(':name');
+    expect(result).toContain("'Alice'");
   });
 });
 
