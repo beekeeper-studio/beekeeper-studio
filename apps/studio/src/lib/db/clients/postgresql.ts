@@ -1781,7 +1781,19 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // so we need to turn the string representation back to an array
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
-      return JSON.parse(value)
+      try {
+        return JSON.parse(value)
+      } catch {
+        // pg has no registered parser for custom enum array types (e.g. myenum[]) so it
+        // returns the raw PostgreSQL array literal like {val1,val2}. Reuse pg's built-in
+        // text-array parser (OID 1009) to decode it into a proper JS array, consistent
+        // with how pg handles built-in array types.
+        if (value.startsWith('{') && value.endsWith('}')) {
+          const parseTextArray = pg.types.getTypeParser(1009, 'text')
+          return parseTextArray(value)
+        }
+        return value
+      }
     }
     return value
   }
