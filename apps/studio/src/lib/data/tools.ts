@@ -27,7 +27,7 @@ export const Mutators = {
       return this.bitMutator.bind(this, dialect)
     }
     if (dataType && dataType.startsWith('json') && mutateJSON) {
-      return this.jsonMutator.bind(this)
+      return this.jsonMutator.bind(this, dialect)
     }
     return this.genericMutator.bind(this)
   },
@@ -105,15 +105,28 @@ export const Mutators = {
   },
 
   /** Stringify json data for display in table cells.
-   * node-postgres returns JSONB scalar strings as JS strings (already parsed),
-   * so wrapping them in JSON.stringify preserves the JSON representation with outer quotes,
-   * making string scalars visually distinct from JSON objects.
+   *
+   * Dialect matters here because drivers differ in how they hand back JSON values:
+   *
+   * - PostgreSQL (node-postgres): calls JSON.parse() on the wire value before the app
+   *   sees it, so a JSONB *string scalar* arrives as a plain JS string while a JSONB
+   *   *object* arrives as a JS object. Wrapping the JS string in JSON.stringify()
+   *   preserves the distinction (cell shows `"hello"` not `hello`, and
+   *   `"{\"k\":\"v\"}"` not `{"k":"v"}`).
+   *
+   * - MySQL and other dialects: the driver returns JSON columns as raw unparsed strings,
+   *   so returning the string as-is lets the cell show the JSON text directly (correct).
    */
-  jsonMutator(value: any): JsonFriendly {
+  jsonMutator(dialect: Dialect | null | undefined, value: any): JsonFriendly {
     if (_.isNull(value)) return value
-    // A JS string means the driver already parsed the JSONB value and got a string scalar.
-    // Wrap it so the cell shows the JSON text representation (e.g. "hello", not hello).
-    if (_.isString(value)) return JSON.stringify(value)
+    if (_.isString(value)) {
+      // node-postgres pre-parses JSONB, so a string here is already a scalar value.
+      if (dialect === 'postgresql' || dialect === 'greengage' || dialect === 'redshift') {
+        return JSON.stringify(value)
+      }
+      // Other drivers return JSON as raw strings; display the text content directly.
+      return value
+    }
     if (!_.isObject(value)) return value
     try {
       return friendlyJsonObject(value)
