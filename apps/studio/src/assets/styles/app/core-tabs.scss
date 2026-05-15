@@ -566,8 +566,7 @@
 .tab-upsell-wrapper {
   padding: 0rem 2rem 2rem;
 
-  // Full-bleed mode for in-tab UpgradeContent (AI Shell, ER Diagram).
-  &.tab-upsell-wrapper--full {
+  &.tab-upsell-wrapper--ai-shell {
     padding: 0;
     height: 100%;
     min-height: 0;

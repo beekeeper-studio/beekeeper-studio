@@ -1,0 +1,242 @@
+@use "sass:color";
+
+// ============================================================================
+// AI Shell upgrade prompt (compact card + animated mini preview)
+// ============================================================================
+.ai-shell-upsell {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  // "safe center" stops the top from getting clipped when the card is
+  // taller than the viewport; the scroll container takes over instead.
+  align-items: safe center;
+  justify-content: center;
+  padding: 1.75rem 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+
+  .bg-glow {
+    position: absolute;
+    top: -10%;
+    right: -5%;
+    width: 60%;
+    height: 80%;
+    background:
+      radial-gradient(circle at 60% 40%, rgba($brand-pink, 0.10), transparent 55%),
+      radial-gradient(circle at 30% 80%, rgba($brand-purple, 0.10), transparent 55%);
+    pointer-events: none;
+  }
+
+  .compact-card {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    min-width: 0;
+    flex-shrink: 0;
+    background:
+      linear-gradient(
+        180deg,
+        color.adjust($query-editor-bg, $lightness: 4%) 0%,
+        color.adjust($query-editor-bg, $lightness: 1%) 100%
+      );
+    border: 1px solid rgba($theme-base, 0.08);
+    border-radius: 14px;
+    padding: 1.4rem 1.7rem 1.2rem;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .head-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .mark {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba($brand-pink, 0.15), rgba($brand-purple, 0.15));
+    border: 1px solid rgba($brand-pink, 0.25);
+    border-radius: 10px;
+    flex-shrink: 0;
+
+    .material-icons {
+      font-size: 20px;
+      background: linear-gradient(135deg, $brand-pink, $brand-purple);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: $text-dark;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+
+  p.lede {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: $text;
+    margin: 0 0 0.9rem;
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  // --------------------------------------------------------------------------
+  // Preview-specific styles (.cc-*) live in AiShellPreview.vue (scoped) so
+  // the component is self-contained and reusable from other upsell surfaces.
+  // --------------------------------------------------------------------------
+  // Pills — single inline row, the three differentiators separated by middots.
+  // --------------------------------------------------------------------------
+  .pills {
+    list-style: none;
+    margin: 0 0 0.9rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    color: $text-dark;
+  }
+
+  .pill-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: none;
+    letter-spacing: 0;
+
+    .material-icons {
+      font-size: 16px;
+      color: $brand-success;
+    }
+
+    span {
+      font-weight: 500;
+      color: $text-dark;
+      white-space: nowrap;
+    }
+
+    & + .pill-row::before {
+      content: "\00b7";
+      color: $text-lighter;
+      margin-right: 0.3rem;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Testimonial (single line above CTAs) — bumped up to let it breathe.
+  // --------------------------------------------------------------------------
+  .testimonial {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.78rem;
+    color: $text-light;
+    margin: 0.4rem 0 1rem;
+    padding: 0.65rem 0.9rem;
+    background: rgba($theme-base, 0.025);
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    line-height: 1.4;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+
+    .stars {
+      color: $theme-primary;
+      font-size: 0.78rem;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .quote {
+      color: $text-dark;
+      flex: 0 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .attr {
+      color: $text-lighter;
+      flex-shrink: 0;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // CTA buttons (existing UpsellButtons)
+  // --------------------------------------------------------------------------
+  .ai-shell-upsell-buttons {
+    .actions {
+      gap: 0.5rem;
+      margin-top: 0;
+      justify-content: stretch;
+
+      .btn {
+        flex: 1;
+      }
+    }
+
+    .help {
+      margin-top: 0.4rem;
+      font-size: 0.7rem;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Lifetime-license footer band — sits flush at the card's bottom edge.
+  // --------------------------------------------------------------------------
+  .lifetime-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem -1.7rem -1.2rem;
+    padding: 0.6rem 1.2rem;
+    background: rgba($theme-primary, 0.10);
+    border-top: 1px solid rgba($theme-primary, 0.22);
+    border-radius: 0 0 14px 14px;
+    color: $text-dark;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    text-transform: none;
+    letter-spacing: 0;
+
+    .material-icons {
+      font-size: 16px;
+      color: $theme-primary;
+      flex-shrink: 0;
+    }
+
+    strong {
+      color: $text-dark;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+  }
+}
+
+// ============================================================================
+// Hide the global statusbar entirely when the AI Shell upgrade prompt is
+// the active tab. The upsell carries its own lifetime-license footer inside
+// the card, so the empty connection-color band below is just chrome noise.
+// Uses :has() — Electron's bundled Chromium 105+ supports it.
+// ============================================================================
+.app:has(.tab-pane.active .ai-shell-upsell) .global-status-bar {
+  display: none;
+}

@@ -15,12 +15,12 @@
     }
   }
 
-  // The upgrade modal is purely chrome — sizing and box. All inner content
-  // (.upgrade-content + descendants) is styled at top level (see end of
-  // file) so the same markup can render inline in a tab pane.
   &.upgrade-modal {
+    $surface: #1d1d1d;
+    $surface-sunk: #161616;
+
     .v--modal {
-      background: #1d1d1d;
+      background: $surface;
       border: 1px solid $border-color;
       border-radius: 12px;
       // Force a flex column so the inner body can be the sole scrolling
@@ -32,37 +32,16 @@
       width: min(820px, 92vw) !important;
       max-height: 90vh !important;
     }
-    .dialog-content {
+
+    .upgrade-modal-redesign {
       padding: 0;
+      color: $text-dark;
       display: flex;
       flex-direction: column;
       flex: 1 1 auto;
       min-height: 0;
+      overflow: hidden;
     }
-  }
-}
-
-// ============================================================================
-// Upgrade content — used inside the upgrade modal AND inline inside the AI
-// Shell / ER Diagram plugin tabs for community users.
-// ============================================================================
-.upgrade-content {
-  $surface: #1d1d1d;
-  $surface-sunk: #161616;
-
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  background: $surface;
-  color: $text-dark;
-  overflow: hidden;
-
-  // When rendered as a full tab pane, fill the wrapper.
-  &.in-tab {
-    width: 100%;
-    height: 100%;
-  }
 
     // -- Header ------------------------------------------------------------
     .um-header {
@@ -944,10 +923,8 @@
         font-weight: 600;
       }
     }
-}
+  }
 
-// Remaining modal variants (confirmation, plugin manager, etc.)
-.beekeeper-modal {
   &.confirmation-modal, &.sql-files-import-modal, &.wait-sso-modal {
     .v--modal {
       width: auto !important;
