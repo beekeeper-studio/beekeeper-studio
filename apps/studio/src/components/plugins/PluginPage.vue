@@ -25,7 +25,7 @@
       <div class="description">
         {{ plugin.description }}
       </div>
-      <div class="actions" v-if="!$bksConfig.pluginSystem.disabled">
+      <div class="actions" v-if="plugin.repo && !$bksConfig.pluginSystem.disabled">
         <template v-if="plugin.installed">
           <x-button
             v-if="plugin.updateAvailable"
