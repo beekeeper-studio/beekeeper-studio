@@ -73,29 +73,46 @@
               <p class="um-hero-desc">{{ featured.short }}</p>
             </div>
 
-            <ul v-if="featured.pills" class="um-pills">
-              <li
-                v-for="p in featured.pills"
-                :key="p.label"
-                class="pill-row"
-                v-tooltip="p.tooltip"
-              >
-                <i class="material-icons">{{ p.icon }}</i>
-                <span>{{ p.label }}</span>
-              </li>
-            </ul>
-            <ul v-else-if="featured.bullets" class="um-bullets">
-              <li v-for="b in featured.bullets" :key="b">
-                <i class="material-icons">check</i>
-                {{ b }}
-              </li>
-            </ul>
+            <template v-if="featured.id === 'overview'">
+              <div class="um-overview-grid">
+                <button
+                  v-for="f in overviewFeatures"
+                  :key="f.id"
+                  type="button"
+                  class="um-overview-card"
+                  @click="active = f.id"
+                >
+                  <i class="material-icons" :style="{ color: f.color }">{{ f.icon }}</i>
+                  <span class="t">{{ f.title }}</span>
+                  <i class="material-icons chev">chevron_right</i>
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <ul v-if="featured.pills" class="um-pills">
+                <li
+                  v-for="p in featured.pills"
+                  :key="p.label"
+                  class="pill-row"
+                  v-tooltip="p.tooltip"
+                >
+                  <i class="material-icons">{{ p.icon }}</i>
+                  <span>{{ p.label }}</span>
+                </li>
+              </ul>
+              <ul v-else-if="featured.bullets" class="um-bullets">
+                <li v-for="b in featured.bullets" :key="b">
+                  <i class="material-icons">check</i>
+                  {{ b }}
+                </li>
+              </ul>
 
-            <component
-              :is="previewComponent"
-              :feature="featured"
-              class="um-preview"
-            />
+              <component
+                :is="previewComponent"
+                :feature="featured"
+                class="um-preview"
+              />
+            </template>
 
             <div v-if="featured.testimonial" class="um-testimonial">
               <span class="stars" aria-label="5 out of 5">★★★★★</span>
@@ -139,6 +156,18 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
+  {
+    id: 'overview',
+    icon: 'workspace_premium',
+    color: 'var(--theme-primary)',
+    title: 'Why upgrade?',
+    triggerTitle: 'Beekeeper Studio Ultimate',
+    short: 'A single Ultimate license unlocks every feature below — and your subscription comes with a lifetime usage license. Buying a license funds the small independent team behind the app.',
+    testimonial: {
+      quote: 'By far the most user-friendly DB GUI out there. Our whole team bought a license.',
+      author: 'Matt K · MinnHealth'
+    }
+  },
   {
     id: 'workspaces',
     icon: 'cloud',
@@ -277,7 +306,7 @@ export default Vue.extend({
       message: null as string | null,
       customTitle: null as string | null,
       triggerFeature: null as string | null,
-      active: 'workspaces',
+      active: 'overview',
       modalWidth: 820,
     }
   },
@@ -288,6 +317,9 @@ export default Vue.extend({
     triggered(): Feature | null {
       if (!this.triggerFeature) return null
       return this.features.find((f) => f.id === this.triggerFeature) || null
+    },
+    overviewFeatures(): Feature[] {
+      return this.features.filter((f) => f.id !== 'overview')
     },
     previewComponent() {
       return UpgradePreview
@@ -312,7 +344,7 @@ export default Vue.extend({
       this.message = message
       this.customTitle = title
       this.triggerFeature = feature
-      this.active = feature || 'workspaces'
+      this.active = feature || 'overview'
       this.$modal.show('upgrade-modal')
     },
     onOpened() {

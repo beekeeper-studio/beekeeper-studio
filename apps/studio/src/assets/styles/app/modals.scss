@@ -244,6 +244,48 @@
       }
     }
 
+    // -- Overview tab — clickable feature cards that jump to the matching tab
+    .um-overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .um-overview-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: $query-editor-bg;
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      color: $text-dark;
+      font: inherit;
+      font-size: 12.5px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+      &:hover {
+        background: rgba($theme-base, 0.04);
+        border-color: rgba($theme-base, 0.18);
+        .chev { color: $text-light; transform: translateX(1px); }
+      }
+      > .material-icons { font-size: 18px; flex-shrink: 0; }
+      .t {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+      }
+      .chev {
+        font-size: 16px;
+        color: $text-lighter;
+        flex-shrink: 0;
+        transition: color 0.12s, transform 0.12s;
+      }
+    }
+
     // -- Preview card ------------------------------------------------------
     // Box stretches to fill the hero column on every tab. Per-tab content
     // is responsible for not growing too tall.
