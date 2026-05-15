@@ -15,7 +15,8 @@
         />
         <auto-updater />
         <notification-manager />
-        <upgrade-required-modal />
+        <!-- <upgrade-required-modal /> -->
+        <upgrade-required-modal-v2 />
       </template>
     </div>
     <portal-target
@@ -66,6 +67,7 @@ import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
 import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
 import WorkspaceDeleteModal from '@/components/data/WorkspaceDeleteModal.vue'
 import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
+import UpgradeRequiredModalV2 from '@/components/upsell/UpgradeRequiredModalV2.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
 import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
@@ -104,7 +106,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputJwtModal,
+    InputJwtModal, UpgradeRequiredModalV2,
   },
   data() {
     return {
