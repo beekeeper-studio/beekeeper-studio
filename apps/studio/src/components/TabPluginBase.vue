@@ -1,6 +1,11 @@
 <template>
-  <div v-if="isCommunity && tab.context.pluginId.startsWith('bks-')" class="tab-upsell-wrapper">
-    <upsell-content />
+  <div
+    v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
+    class="tab-upsell-wrapper"
+    :class="{ 'tab-upsell-wrapper--erd': isErDiagramPlugin }"
+  >
+    <erd-upsell v-if="isErDiagramPlugin" />
+    <upsell-content v-else />
   </div>
   <div v-else class="plugin-base" ref="container">
     <isolated-plugin-view
@@ -21,6 +26,7 @@ import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
+import ErdUpsell from "@/components/upsell/ErdUpsell.vue";
 import { OnViewRequestListenerParams } from "@/services/plugin/types";
 import rawLog from "@bksLogger";
 
@@ -30,6 +36,7 @@ export default Vue.extend({
   components: {
     IsolatedPluginView,
     UpsellContent,
+    ErdUpsell,
   },
 
   props: {
@@ -42,6 +49,9 @@ export default Vue.extend({
 
   computed: {
     ...mapGetters(["isCommunity"]),
+    isErDiagramPlugin(): boolean {
+      return this.tab.context.pluginId === "bks-er-diagram";
+    },
   },
 
   methods: {
