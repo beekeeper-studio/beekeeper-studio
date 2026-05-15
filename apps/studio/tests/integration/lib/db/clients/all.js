@@ -231,6 +231,11 @@ export function runCommonTests(getUtil, opts = {}) {
     test("Bad input shouldn't delete table", async () => {
       await getUtil().badDropTableTests()
     })
+
+    test("Should drop table with cascade option", async () => {
+      if (dbReadOnlyMode) return
+      await getUtil().dropTableWithCascadeTests()
+    })
   })
 
   describe("Create Database Tests", () => {
