@@ -186,51 +186,49 @@
     <!-- ER Diagrams: 3-table Sakila ERD with FK arrows -->
     <template v-else-if="feature.id === 'erd'">
       <div class="ump-erd">
-        <div class="ump-erd-left">
-          <div class="ump-erd-table dashed">
-            <div class="ump-erd-thead">
-              <i class="material-icons">grid_on</i>
-              <span>customer</span>
-            </div>
-            <div class="ump-erd-col">
-              <i class="material-icons pk">key</i><span class="name">customer_id</span><span class="type">INT</span>
-            </div>
-            <div class="ump-erd-col">
-              <span class="name pad">first_name</span><span class="type">VARCHAR</span>
-            </div>
-            <div class="ump-erd-col">
-              <span class="name pad">email</span><span class="type">VARCHAR</span>
-            </div>
+        <div class="ump-erd-table dashed ump-erd-customer">
+          <div class="ump-erd-thead">
+            <i class="material-icons">grid_on</i>
+            <span>customer</span>
           </div>
-          <div class="ump-erd-table dashed">
-            <div class="ump-erd-thead">
-              <i class="material-icons">grid_on</i>
-              <span>inventory</span>
-            </div>
-            <div class="ump-erd-col">
-              <i class="material-icons pk">key</i><span class="name">inventory_id</span><span class="type">INT</span>
-            </div>
-            <div class="ump-erd-col">
-              <i class="material-icons fk">key</i><span class="name">film_id</span><span class="type">INT</span>
-            </div>
-            <div class="ump-erd-col">
-              <i class="material-icons fk">key</i><span class="name">store_id</span><span class="type">INT</span>
-            </div>
+          <div class="ump-erd-col">
+            <i class="material-icons pk">key</i><span class="name">customer_id</span><span class="type">INT</span>
+          </div>
+          <div class="ump-erd-col">
+            <span class="name pad">first_name</span><span class="type">VARCHAR</span>
+          </div>
+          <div class="ump-erd-col">
+            <span class="name pad">email</span><span class="type">VARCHAR</span>
           </div>
         </div>
-        <svg class="ump-erd-line" viewBox="0 0 60 200" preserveAspectRatio="none" aria-hidden="true">
-          <!-- customer.customer_id (top-left) -> rental.customer_id (right) -->
-          <path d="M 0 60 C 30 60, 30 130, 60 130" fill="none" stroke="currentColor" stroke-width="1.2" />
-          <!-- inventory.inventory_id (bottom-left) -> rental.inventory_id (right) -->
-          <path d="M 0 140 C 30 140, 30 95, 60 95" fill="none" stroke="currentColor" stroke-width="1.2" />
-          <!-- crow's-foot at rental side (right edge of svg) -->
-          <path d="M 56 126 L 60 130 L 56 134 M 56 130 L 50 130" fill="none" stroke="currentColor" stroke-width="1.2" />
-          <path d="M 56 91 L 60 95 L 56 99 M 56 95 L 50 95" fill="none" stroke="currentColor" stroke-width="1.2" />
-          <!-- single-line cap at the PK side (left edge of svg) -->
-          <path d="M 0 56 L 0 64" stroke="currentColor" stroke-width="1.2" />
-          <path d="M 0 136 L 0 144" stroke="currentColor" stroke-width="1.2" />
+        <svg class="ump-erd-line" viewBox="0 0 60 160" preserveAspectRatio="none" aria-hidden="true">
+          <!-- customer.customer_id (top-left, row 1 of customer) -> rental.customer_id (row 2 of rental) -->
+          <path d="M 0 33 C 30 33, 30 90, 60 90" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <!-- inventory.inventory_id (bottom-left, row 1 of inventory) -> rental.inventory_id (row 3 of rental) -->
+          <path d="M 0 127 C 30 127, 30 108, 60 108" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <!-- crow's foot at rental side (many-side / FK column) -->
+          <path d="M 55 86 L 60 90 L 55 94 M 55 90 L 50 90" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <path d="M 55 104 L 60 108 L 55 112 M 55 108 L 50 108" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <!-- single-line cap at PK side (one-side) -->
+          <path d="M 0 29 L 0 37" stroke="currentColor" stroke-width="1.5" />
+          <path d="M 0 123 L 0 131" stroke="currentColor" stroke-width="1.5" />
         </svg>
-        <div class="ump-erd-table focused">
+        <div class="ump-erd-table dashed ump-erd-inventory">
+          <div class="ump-erd-thead">
+            <i class="material-icons">grid_on</i>
+            <span>inventory</span>
+          </div>
+          <div class="ump-erd-col">
+            <i class="material-icons pk">key</i><span class="name">inventory_id</span><span class="type">INT</span>
+          </div>
+          <div class="ump-erd-col">
+            <i class="material-icons fk">key</i><span class="name">film_id</span><span class="type">INT</span>
+          </div>
+          <div class="ump-erd-col">
+            <i class="material-icons fk">key</i><span class="name">store_id</span><span class="type">INT</span>
+          </div>
+        </div>
+        <div class="ump-erd-table focused ump-erd-rental">
           <div class="ump-erd-thead">
             <i class="material-icons">grid_on</i>
             <span>rental</span>
@@ -239,13 +237,10 @@
             <i class="material-icons pk">key</i><span class="name">rental_id</span><span class="type">INT</span>
           </div>
           <div class="ump-erd-col">
-            <span class="name pad">rental_date</span><span class="type">DATETIME</span>
+            <i class="material-icons fk">key</i><span class="name">customer_id</span><span class="type">INT</span>
           </div>
           <div class="ump-erd-col">
             <i class="material-icons fk">key</i><span class="name">inventory_id</span><span class="type">INT</span>
-          </div>
-          <div class="ump-erd-col">
-            <i class="material-icons fk">key</i><span class="name">customer_id</span><span class="type">INT</span>
           </div>
         </div>
       </div>

@@ -657,28 +657,33 @@
     }
     .ump-erd {
       display: grid;
+      grid-template-areas:
+        "customer lines rental"
+        "inventory lines rental";
       grid-template-columns: 1fr 60px 1fr;
-      align-items: stretch;
-      gap: 0;
+      grid-template-rows: auto auto;
+      column-gap: 0;
+      row-gap: 8px;
     }
-    .ump-erd-left {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 0;
+    .ump-erd-customer { grid-area: customer; }
+    .ump-erd-inventory { grid-area: inventory; }
+    .ump-erd-rental {
+      grid-area: rental;
+      // Rental is roughly the same height as customer alone; center it in
+      // the full container so the SVG's right-side targets line up with
+      // rental's FK rows.
+      align-self: center;
     }
     .ump-erd-table {
       background: #1a1a1a;
       border-radius: 8px;
       padding: 6px 0;
       min-width: 0;
-      align-self: center;
       &.dashed {
         border: 1px dashed rgba(255,255,255,0.25);
       }
       &.focused {
         border: 1.5px solid $theme-primary;
-        align-self: center;
       }
     }
     .ump-erd-thead {
@@ -718,10 +723,14 @@
       .material-icons.fk { color: $theme-primary; }
     }
     .ump-erd-line {
+      grid-area: lines;
       width: 100%;
       height: 100%;
-      color: rgba(255,255,255,0.35);
+      color: rgba(255,255,255,0.45);
       align-self: stretch;
+      // Match the table's vertical box (border-radius padding) so paths
+      // hit the visual centre of each row, not the table's edge.
+      padding: 0;
     }
 
     // Folders / Organize preview — mirrors the real sidebar ------------------
