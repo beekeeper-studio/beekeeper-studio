@@ -53,6 +53,35 @@ save = ctrlOrCmd+s
     expect(convertKeybinding("v-hotkey", "delete", "mac")).toBe("backspace");
   });
 
+  it("should resolve altOrCmd per-platform across all keybinding targets", () => {
+    expect(convertKeybinding("v-hotkey", "altOrCmd+1", "mac")).toBe("meta+1");
+    expect(convertKeybinding("v-hotkey", "altOrCmd+1", "linux")).toBe("alt+1");
+
+    expect(convertKeybinding("electron", "altOrCmd+1", "mac")).toBe("Command+1");
+    expect(convertKeybinding("electron", "altOrCmd+1", "linux")).toBe("Alt+1");
+
+    expect(convertKeybinding("codemirror", "altOrCmd+1", "mac")).toBe("Cmd-1");
+    expect(convertKeybinding("codemirror", "altOrCmd+1", "linux")).toBe("Alt-1");
+
+    expect(convertKeybinding("tabulator", "altOrCmd+1", "mac")).toBe("ctrl + 1");
+    expect(convertKeybinding("tabulator", "altOrCmd+1", "linux")).toBe("alt + 1");
+
+    expect(convertKeybinding("ui", "altOrCmd+1", "mac")).toEqual(["⌘", "1"]);
+    expect(convertKeybinding("ui", "altOrCmd+1", "linux")).toEqual(["Alt", "1"]);
+
+    // alias spellings should resolve identically
+    expect(convertKeybinding("v-hotkey", "cmdOrAlt+1", "mac")).toBe("meta+1");
+    expect(convertKeybinding("v-hotkey", "ALTORCOMMAND+1", "linux")).toBe("alt+1");
+    expect(convertKeybinding("v-hotkey", "commandOrAlt+1", "mac")).toBe("meta+1");
+  });
+
+  it("should use the tabulator modifier map for tabulator target (no fall-through)", () => {
+    // Pre-fix this fell through into the ui case and returned ui-style output.
+    expect(convertKeybinding("tabulator", "ctrl+shift+c", "linux")).toBe(
+      "ctrl + shift + c"
+    );
+  });
+
   it("should detect unrecognized config keys", () => {
     const defaultConfig = parseIni(`
 [general]
