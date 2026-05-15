@@ -45,6 +45,10 @@ export default defineConfig({
           __dirname,
           "lib/components/entity-list/define.ts"
         ),
+        "tree-list": resolve(
+          __dirname,
+          "lib/components/tree-list/define.ts"
+        ),
         "sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/define.ts"
@@ -77,6 +81,10 @@ export default defineConfig({
         "vue/entity-list": resolve(
           __dirname,
           "lib/components/entity-list/EntityList.vue"
+        ),
+        "vue/tree-list": resolve(
+          __dirname,
+          "lib/components/tree-list/TreeList.vue"
         ),
         "vue/sql-text-editor": resolve(
           __dirname,
