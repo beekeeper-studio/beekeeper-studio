@@ -1,0 +1,449 @@
+@use "sass:color";
+
+// ============================================================================
+// ER Diagram upgrade prompt. Visual shell matches the AI Shell upsell —
+// same compact-card + lifetime-note footer — but the feature identity
+// (icon, accents, animated preview) is ERD-flavoured.
+// ============================================================================
+.erd-upsell {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: safe center;
+  justify-content: center;
+  padding: 1.75rem 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+
+  .bg-glow {
+    position: absolute;
+    top: -10%;
+    right: -5%;
+    width: 60%;
+    height: 80%;
+    background:
+      radial-gradient(circle at 60% 40%, rgba($brand-secondary, 0.10), transparent 55%),
+      radial-gradient(circle at 30% 80%, rgba($brand-secondary, 0.06), transparent 55%);
+    pointer-events: none;
+  }
+
+  .compact-card {
+    position: relative;
+    width: 100%;
+    max-width: 760px;
+    min-width: 0;
+    flex-shrink: 0;
+    background:
+      linear-gradient(
+        180deg,
+        color.adjust($query-editor-bg, $lightness: 4%) 0%,
+        color.adjust($query-editor-bg, $lightness: 1%) 100%
+      );
+    border: 1px solid rgba($theme-base, 0.08);
+    border-radius: 14px;
+    padding: 1.4rem 1.7rem 1.2rem;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .head-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      color: $theme-primary;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      line-height: 1;
+      margin-bottom: 4px;
+
+      .material-icons {
+        font-size: 13px;
+      }
+    }
+  }
+
+  .mark {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($brand-secondary, 0.14);
+    border: 1px solid rgba($brand-secondary, 0.25);
+    border-radius: 10px;
+    flex-shrink: 0;
+
+    .material-icons {
+      font-size: 20px;
+      color: $brand-secondary;
+    }
+  }
+
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: $text-dark;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+
+  p.lede {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: $text;
+    margin: 0 0 0.9rem;
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  // --------------------------------------------------------------------------
+  // ER preview canvas
+  // --------------------------------------------------------------------------
+  .erd-preview {
+    position: relative;
+    height: 320px;
+    border-radius: 8px;
+    background:
+      radial-gradient(800px 240px at 50% -10%, rgba($theme-base, 0.025), transparent 70%),
+      color.adjust($query-editor-bg, $lightness: -3%);
+    border: 1px solid $border-color;
+    overflow: hidden;
+    margin: 0 0 0.9rem;
+    min-width: 0;
+
+    // Subtle grid backdrop, like the ER diagram canvas itself
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, rgba($theme-base, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba($theme-base, 0.025) 1px, transparent 1px);
+      background-size: 24px 24px;
+      background-position: -1px -1px;
+      mask-image: radial-gradient(circle at 50% 50%, black 50%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle at 50% 50%, black 50%, transparent 100%);
+      pointer-events: none;
+    }
+  }
+
+  .erd-preview-stage {
+    // Stage designed at 820 x 320 — both tables and the FK svg share
+    // this coordinate system and are centred horizontally.
+    position: absolute;
+    width: 820px;
+    height: 320px;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+  }
+
+  // Table cards ----------------------------------------------------
+  .er-table {
+    position: absolute;
+    background: color.adjust($query-editor-bg, $lightness: 2%);
+    border: 1px solid rgba($theme-base, 0.10);
+    border-radius: 6px;
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.2),
+      0 4px 14px -4px rgba(0, 0, 0, 0.6);
+    font-size: 11.5px;
+    color: $text;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: erUpsellRise 9s ease-in-out infinite;
+  }
+
+  .er-th {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 8px;
+    background: rgba($theme-base, 0.04);
+    border-bottom: 1px solid rgba($theme-base, 0.08);
+    border-radius: 6px 6px 0 0;
+    color: $text-dark;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1;
+
+    .material-icons {
+      font-size: 13px;
+      color: color.adjust($theme-primary, $lightness: -15%);
+    }
+
+    .count {
+      margin-left: auto;
+      font-size: 10.5px;
+      color: $text-lighter;
+      font-weight: 400;
+      font-family: monospace;
+    }
+  }
+
+  .er-col {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 8px;
+    font-family: monospace;
+    font-size: 11px;
+    color: $text;
+    line-height: 1;
+
+    & + .er-col {
+      border-top: 1px solid rgba($theme-base, 0.04);
+    }
+
+    .colname { color: $text-dark; }
+    .type    { color: $text-lighter; font-size: 10px; margin-left: auto; }
+
+    // PK / FK column markers — match the app's tabulator convention:
+    // PK in cyan (theme-secondary), FK in muted gold (mix of theme-primary).
+    .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 12px;
+      font-size: 9px;
+      font-weight: 600;
+      color: $text-lighter;
+      font-family: inherit;
+
+      &.pk { color: $theme-secondary; }
+      &.fk { color: color.mix($theme-primary, black, 70%); }
+    }
+  }
+
+  // Each table fades in on its own delay, then holds till near the end
+  // of a 9s loop and gently resets.
+  @keyframes erUpsellRise {
+    0%   { opacity: 0; transform: translateY(8px); }
+    8%   { opacity: 0; transform: translateY(8px); }
+    14%  { opacity: 1; transform: translateY(0); }
+    94%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(0); }
+  }
+
+  // FK link layer -------------------------------------------------
+  .fk-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+
+    path {
+      fill: none;
+      stroke: rgba($brand-secondary, 0.55);
+      stroke-width: 1.25;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      // pathLength="240" on every path so the dasharray animation
+      // takes the same time regardless of actual path length.
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      animation: erUpsellFkDraw 9s ease-in-out infinite;
+    }
+
+    .dot {
+      fill: rgba($brand-secondary, 0.85);
+      opacity: 0;
+      animation: erUpsellDotShow 9s ease-in-out infinite;
+    }
+
+    marker path {
+      fill: rgba($brand-secondary, 0.85);
+      stroke: none;
+      animation: none;
+    }
+  }
+
+  @keyframes erUpsellFkDraw {
+    0%, 30% { stroke-dashoffset: 240; opacity: 1; }
+    48%     { stroke-dashoffset: 0;   opacity: 1; }
+    94%     { stroke-dashoffset: 0;   opacity: 1; }
+    100%    { stroke-dashoffset: 0;   opacity: 0; }
+  }
+
+  @keyframes erUpsellDotShow {
+    0%, 42% { opacity: 0; r: 1.5; }
+    50%     { opacity: 1; r: 3; }
+    60%     { opacity: 0.85; r: 2.2; }
+    94%     { opacity: 0.85; r: 2.2; }
+    100%    { opacity: 0; }
+  }
+
+  // Pulsing highlight on the central film table once relationships
+  // are drawn — implies "click a table to focus on its neighbourhood".
+  .er-table.spotlight {
+    animation:
+      erUpsellRise 9s ease-in-out infinite,
+      erUpsellSpot 9s ease-in-out infinite;
+  }
+  @keyframes erUpsellSpot {
+    0%, 65% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 4px 14px -4px rgba(0, 0, 0, 0.6); }
+    75%     { box-shadow: 0 0 0 1px rgba($brand-secondary, 0.55), 0 0 22px -2px rgba($brand-secondary, 0.35); }
+    88%     { box-shadow: 0 0 0 1px rgba($brand-secondary, 0.40), 0 0 18px -4px rgba($brand-secondary, 0.22); }
+    100%    { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 4px 14px -4px rgba(0, 0, 0, 0.6); }
+  }
+
+  // Reduced motion: render tables and lines in their final state.
+  @media (prefers-reduced-motion: reduce) {
+    .er-table,
+    .er-table.spotlight,
+    .fk-layer path,
+    .fk-layer .dot {
+      animation: none !important;
+      opacity: 1;
+      transform: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Pills (matches the AI Shell upsell spec)
+  // --------------------------------------------------------------------------
+  .pills {
+    list-style: none;
+    margin: 0 0 0.9rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    color: $text-dark;
+  }
+
+  .pill-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: none;
+    letter-spacing: 0;
+
+    .material-icons {
+      font-size: 16px;
+      color: $brand-success;
+    }
+
+    span {
+      font-weight: 500;
+      color: $text-dark;
+      white-space: nowrap;
+    }
+
+    & + .pill-row::before {
+      content: "\00b7";
+      color: $text-lighter;
+      margin-right: 0.3rem;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Testimonial
+  // --------------------------------------------------------------------------
+  .testimonial {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.78rem;
+    color: $text-light;
+    margin: 0.4rem 0 1rem;
+    padding: 0.65rem 0.9rem;
+    background: rgba($theme-base, 0.025);
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    line-height: 1.4;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-width: 0;
+
+    .stars {
+      color: $theme-primary;
+      font-size: 0.78rem;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .quote {
+      color: $text-dark;
+      flex: 0 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .attr {
+      color: $text-lighter;
+      flex-shrink: 0;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // CTA buttons (existing UpsellButtons)
+  // --------------------------------------------------------------------------
+  .erd-upsell-buttons {
+    .help { font-size: 0.7rem; }
+  }
+
+  // --------------------------------------------------------------------------
+  // Lifetime-license footer band — flush at the card's bottom edge.
+  // --------------------------------------------------------------------------
+  .lifetime-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem -1.7rem -1.2rem;
+    padding: 0.6rem 1.2rem;
+    background: rgba($theme-primary, 0.10);
+    border-top: 1px solid rgba($theme-primary, 0.22);
+    border-radius: 0 0 14px 14px;
+    color: $text-dark;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    text-transform: none;
+    letter-spacing: 0;
+
+    .material-icons {
+      font-size: 16px;
+      color: $theme-primary;
+      flex-shrink: 0;
+    }
+
+    strong {
+      color: $text-dark;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+  }
+}
+
+// Hide the global statusbar when the ERD upsell is the active tab —
+// the upsell carries its own lifetime-license footer.
+.app:has(.tab-pane.active .erd-upsell) .global-status-bar {
+  display: none;
+}

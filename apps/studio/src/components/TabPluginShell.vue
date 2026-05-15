@@ -2,9 +2,13 @@
   <div
     v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
     class="tab-upsell-wrapper"
-    :class="{ 'tab-upsell-wrapper--ai-shell': isAiShellPlugin }"
+    :class="{
+      'tab-upsell-wrapper--ai-shell': isAiShellPlugin,
+      'tab-upsell-wrapper--erd': isErDiagramPlugin,
+    }"
   >
     <ai-shell-upsell v-if="isAiShellPlugin" />
+    <erd-upsell v-else-if="isErDiagramPlugin" />
     <upsell-content v-else />
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
@@ -92,6 +96,7 @@ import Vue from "vue";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
 import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
+import ErdUpsell from "@/components/upsell/ErdUpsell.vue";
 import type { OnViewRequestListenerParams } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import rawLog from '@bksLogger'
@@ -108,6 +113,7 @@ export default Vue.extend({
     IsolatedPluginView,
     UpsellContent,
     AiShellUpsell,
+    ErdUpsell,
   },
   props: {
     tab: {
@@ -142,6 +148,9 @@ export default Vue.extend({
     },
     isAiShellPlugin() {
       return this.tab.context.pluginId === "bks-ai-shell";
+    },
+    isErDiagramPlugin() {
+      return this.tab.context.pluginId === "bks-er-diagram";
     },
     errors() {
       return this.error ? [this.error] : null;
