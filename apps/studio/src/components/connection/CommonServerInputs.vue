@@ -71,7 +71,7 @@
       :supportComplexSSL="supportComplexSSL"
     />
 
-    <div class="row gutter">
+    <div v-if="!hideCredentials" class="row gutter">
       <div class="col form-group" :class="[showPasswordForm ? 's6' : 's12']">
         <label for="user">User</label>
         <masked-input
@@ -120,6 +120,11 @@ export default {
     showPasswordForm: {
       type: Boolean,
       default: true
+    },
+    // Used by SqlServerForm to hide credentials when Windows Authentication is selected
+    hideCredentials: {
+      type: Boolean,
+      default: false
     },
     passwordLabel: {
       type: String,
