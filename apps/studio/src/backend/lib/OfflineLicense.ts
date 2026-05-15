@@ -77,7 +77,10 @@ export class OfflineLicense {
         log.info("Public key does not exist", this.publicKeyPath)
       }
       this.validateSignature()
-      log.info("Validated license - ", this.payload)
+      log.info("Validated license", {
+        licenseType: this.payload?.license_key?.license_type,
+        validUntil: this.payload?.license_key?.valid_until,
+      })
     } catch (ex) {
       log.error("Unable to validate license -", ex)
       this.isValid = false

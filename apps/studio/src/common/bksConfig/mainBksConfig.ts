@@ -1,4 +1,5 @@
 import rawLog from "@bksLogger";
+import { redact } from "@/lib/log/redact";
 import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
@@ -311,9 +312,9 @@ export function mainBksConfig(): BksConfig {
   if (warnings.length > 0) {
     log.warn("Warnings:", warnings);
   }
-  log.info(`Default config: ${JSON.stringify(defaultConfig, null, 2)}`);
-  log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
-  log.info(`User config: ${JSON.stringify(userConfig, null, 2)}`);
+  log.info(`Default config: ${JSON.stringify(redact(defaultConfig), null, 2)}`);
+  log.info(`System config: ${JSON.stringify(redact(systemConfig), null, 2)}`);
+  log.info(`User config: ${JSON.stringify(redact(userConfig), null, 2)}`);
 
   return BksConfigProvider.create(source, platformInfo);
 }

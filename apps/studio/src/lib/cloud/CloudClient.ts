@@ -102,12 +102,14 @@ export class CloudClient {
     this.usedQueries = new UsedQueriesController(this.axios)
 
     this.axios.interceptors.request.use(request => {
-      log.debug('REQ', JSON.stringify(request, null, 2))
+      // Don't log the full request — headers contain auth tokens and the
+      // body may contain credentials.
+      log.debug('REQ', request.method?.toUpperCase(), request.url)
       return request
     })
 
     this.axios.interceptors.response.use(response => {
-      log.debug('RES:', JSON.stringify(response, null, 2))
+      log.debug('RES', response.status, response.config?.method?.toUpperCase(), response.config?.url)
       return response
     })
 

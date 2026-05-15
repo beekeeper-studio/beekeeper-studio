@@ -48,7 +48,7 @@ export class LicenseKeyController {
       headers['X-Installation-Id'] = encodedInstallationInfo;
       log.info("made headers")
     }
-    log.debug("making request for license", key, installationId, headers)
+    log.debug("making request for license", { installationId, hasKey: !!key })
 
     const response = await this.axios.get(url(this.path, key), {
       params,

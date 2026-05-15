@@ -69,7 +69,6 @@ export function keysToStatus(licenses: LicenseKey[]): LicenseStatus {
 export class LicenseKey extends ApplicationEntity {
 
   withProps(props: any) {
-    console.log("merging props into me:", props)
     if (props) LicenseKey.merge(this, props);
     return this;
   }

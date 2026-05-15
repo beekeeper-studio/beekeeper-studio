@@ -2,6 +2,7 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import _ from "lodash";
 import rawLog from "@bksLogger";
+import { redact } from "@/lib/log/redact";
 import { safely } from "../StoreHelpers";
 import Vue from "vue";
 
@@ -21,7 +22,7 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   mutations: mutationsFor<IConnection>(),
   actions: utilActionsFor<IConnection>('used', {
     async recordUsed(context, config: IConnection) {
-      log.debug("Recording used config for: ", config)
+      log.debug("Recording used config for: ", redact(config))
       const lastUsedConnection = context.state.items.find(c => {
         return config.id &&
           config.workspaceId &&
@@ -29,7 +30,7 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
             (c.connectionId && c.connectionId === config.id)) &&
           c.workspaceId === config.workspaceId;
       });
-      log.debug("Found used config", lastUsedConnection);
+      log.debug("Found used config", redact(lastUsedConnection));
       if (lastUsedConnection) {
         // Overlay the latest connection details from `config` (which is the
         // saved connection the user is connecting to) onto the existing

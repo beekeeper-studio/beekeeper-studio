@@ -7,7 +7,7 @@ export const SettingsPlugin = {
 
   async get(key, defaultValue) {
     const result = await Vue.prototype.$util.send('appdb/setting/get', { key });
-    log.info("get", JSON.stringify(result));
+    log.debug("get", key, { found: result?.value !== undefined });
     if (result && result.value !== undefined) {
       return result.value
     }
@@ -15,7 +15,7 @@ export const SettingsPlugin = {
   },
 
   async set(key: string, value: string) {
-    log.info("set", key, value)
+    log.debug("set", key);
     await Vue.prototype.$util.send('appdb/setting/set', { key, value });
   }
 }

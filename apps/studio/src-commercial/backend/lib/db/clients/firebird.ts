@@ -1,4 +1,5 @@
 import electronLog from "@bksLogger";
+import { redact } from "@/lib/log/redact";
 import knexlib, { Knex } from "knex";
 import Client_Firebird from "@shared/lib/knex-firebird";
 import Firebird from "node-firebird";
@@ -278,7 +279,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
 
     this.firebirdOptions = config;
 
-    log.debug("create driver client for firebird with config %j", config);
+    log.debug("create driver client for firebird with config %j", redact(config));
 
     this.pool =  new Pool(BksConfig.db.firebird.maxConnections, config);
 

@@ -10,6 +10,7 @@ import { BigQueryClient as BigQueryKnexClient } from '@shared/lib/knex-bigquery'
 import { BigQueryChangeBuilder } from "@shared/lib/sql/change_builder/BigQueryChangeBuilder";
 import platformInfo from "@/common/platform_info";
 import rawLog from '@bksLogger';
+import { redact } from '@/lib/log/redact';
 import { applyChangesSql, buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
@@ -85,7 +86,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // For testing purposes
     this.config.apiEndpoint = this.bigQueryEndpoint(this.server.config)
 
-    log.debug("configDatabase config: ", this.config)
+    log.debug("configDatabase config: ", redact(this.config))
 
 
     this.knex = knexlib({

@@ -85,7 +85,6 @@ export const PinModule: Module<State, RootState> = {
       if (existing) return
 
       if (database && usedConfig) {
-        console.log('GETTING NEW PIN: ', item, database, usedConfig)
         let newPin = await Vue.prototype.$util.send('appdb/pins/new', {
           init: {
             table: item,
@@ -93,7 +92,6 @@ export const PinModule: Module<State, RootState> = {
             saved: usedConfig
           }
         });
-        console.log('RECEIVED NEW PIN: ', newPin)
         newPin.position = (context.getters.orderedPins.reverse()[0]?.position || 0) + 1
         if(usedConfig.id) {
           newPin = await Vue.prototype.$util.send('appdb/pins/save', { obj: newPin });
