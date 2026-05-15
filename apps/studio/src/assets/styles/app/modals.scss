@@ -62,7 +62,7 @@
     }
   }
 
-  &.confirmation-modal, &.sql-files-import-modal, &.wait-sso-modal {
+  &.sql-files-import-modal, &.wait-sso-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;
