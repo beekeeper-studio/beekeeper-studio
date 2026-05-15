@@ -7,6 +7,7 @@ import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
+import { redact } from '@/lib/log/redact';
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
@@ -138,7 +139,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
     const dbConfig = await this.configDatabase(this.server, this.database);
 
-    log.info("CONFIG: ", dbConfig)
+    log.info("CONFIG: ", redact(dbConfig))
 
     this.conn = {
       pool: new pg.Pool(dbConfig)

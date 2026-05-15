@@ -21,6 +21,7 @@ import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
 import rawLog from '@bksLogger'
+import { redact } from '@/lib/log/redact'
 import _ from 'lodash'
 
 import ElectronFriendlyPageantAgent from '@/vendor/ssh2/ElectronFriendlyPageantAgent'
@@ -150,7 +151,7 @@ class SSHConnection {
 
   private async establish() {
     let connection: Client
-    this.debug("establish with options", this.options)
+    this.debug("establish with options", redact(this.options))
     if (this.options.bastionHost) {
       connection = await this.connectViaBastion()
     } else {

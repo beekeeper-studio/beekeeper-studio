@@ -90,7 +90,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         } else if (!dbObj) {
           dbObj = new cls().withProps(obj);
         }
-        log.info(`Saving ${name}: `, dbObj);
+        log.info(`Saving ${name}`, { id: (dbObj as any)?.id });
         await niceValidateOrReject(dbObj);
         await dbObj.save();
         return await transform(dbObj, cls);
@@ -105,7 +105,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         await cls.remove(dbEntities)
       } else {
         const dbObj = await cls.findOneBy({ id: obj.id });
-        log.info(`Removing ${name}: `, dbObj);
+        log.info(`Removing ${name}`, { id: (dbObj as any)?.id });
         await dbObj?.remove();
       }
     },
