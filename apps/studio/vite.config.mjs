@@ -46,6 +46,14 @@ export default defineConfig({
       },
     }
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+        silenceDeprecations: ['import', 'global-builtin'],
+      }
+    }
+  },
   server: {
     port: 3003, // Development server port
     // open: './src/index.html'
