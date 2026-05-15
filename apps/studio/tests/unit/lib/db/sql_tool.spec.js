@@ -129,8 +129,9 @@ describe("Text Selection", () => {
 });
 
 describe("convertParamsForReplacement", () => {
-  // The caller passes an ordered array for positional (?) params and a record keyed by
-  // placeholder (e.g. { ':name': "'Alice'" }) for named params.
+  // Two calling conventions:
+  //   - Record (preferred): TabQueryEditor passes queryParameterValues keyed by placeholder
+  //   - Array (legacy): test helpers (db.ts) pass a parallel array of values
 
   it("should handle positional params", () => {
     const result = convertParamsForReplacement(['?', '?'], ["'Alice'", '25']);
@@ -138,28 +139,34 @@ describe("convertParamsForReplacement", () => {
   });
 
   it("should build a named params object from a record, stripping the prefix", () => {
-    // Caller passes queryParameterValues as-is: { ':name': "'Alice'", ':age': '25' }
     const result = convertParamsForReplacement([':name', ':age'], { ':name': "'Alice'", ':age': '25' });
     expect(result).toEqual({ name: "'Alice'", age: '25' });
   });
 
+  it("should handle a legacy parallel array for named params", () => {
+    // db.ts passes placeholders and values as parallel arrays for named params
+    const result = convertParamsForReplacement([':first', ':second', ':third'], ['5', "'Neo'", '0']);
+    expect(result).toEqual({ first: '5', second: "'Neo'", third: '0' });
+  });
+
   it("should produce correct params when the same placeholder appears multiple times (name,age,name,age,name)", () => {
-    // sql-query-identifier returns one entry per occurrence; the record-based approach is
-    // immune to duplicates because the lookup is by key, not by index.
+    // Record-based: lookup is by key, duplicates in placeholders are ignored
     const placeholders = [':name', ':age', ':name', ':age', ':name'];
     const queryParamValues = { ':name': "'Alice'", ':age': '25' };
     const result = convertParamsForReplacement(placeholders, queryParamValues);
     expect(result).toEqual({ name: "'Alice'", age: '25' });
   });
 
+  it("should not overwrite a named param when the same placeholder appears multiple times (legacy array)", () => {
+    // Array-based: dedup ensures index i maps to the i-th unique placeholder
+    const result = convertParamsForReplacement([':name', ':name', ':age'], ["'Alice'", '25']);
+    expect(result).toEqual({ name: "'Alice'", age: '25' });
+  });
+
   it("should substitute a repeated named parameter correctly end-to-end", () => {
-    // SELECT * FROM users WHERE first_name = :name OR last_name = :name
-    // User provides one value for :name; both occurrences should be replaced.
     const query = "SELECT * FROM users WHERE first_name = :name OR last_name = :name";
     const paramTypes = { named: [':'], positional: false, numbered: [], quoted: [] };
-    const placeholders = [':name', ':name'];
-    const queryParamValues = { ':name': "'Alice'" };
-    const params = convertParamsForReplacement(placeholders, queryParamValues);
+    const params = convertParamsForReplacement([':name', ':name'], { ':name': "'Alice'" });
     const result = deparameterizeQuery(query, 'sqlite', params, paramTypes);
     expect(result).not.toContain(':name');
     expect(result).toContain("'Alice'");

@@ -23,15 +23,22 @@ export function convertParamsForReplacement(placeholders: string[], values: stri
   if (placeholders.includes('?')) {
     // Positional params: values is an ordered array, return as-is for sql-formatter.
     return values as string[];
-  } else {
-    // Named params: values is a record keyed by the full placeholder (e.g. { ':name': "'Alice'" }).
-    // Strip the prefix character so sql-formatter gets { name: "'Alice'" }.
-    // Using a record rather than a positional array means duplicates in `placeholders` never
-    // shift indices or clobber values — every lookup goes through the key, not position.
-    const record = values as Record<string, string>;
+  } else if (!Array.isArray(values)) {
+    // Named params with record input: values is keyed by the full placeholder
+    // (e.g. { ':name': "'Alice'" }). Strip the prefix so sql-formatter gets { name: "'Alice'" }.
+    // Lookup is by key so duplicate placeholders in the SQL are harmless.
     return Object.fromEntries(
-      Object.entries(record).map(([k, v]) => [k.slice(1), v])
+      Object.entries(values).map(([k, v]) => [k.slice(1), v])
     );
+  } else {
+    // Named params with legacy array input: deduplicate placeholders first so that
+    // index i maps to the i-th *unique* placeholder. Without dedup, a second occurrence
+    // of :name would overwrite the correct value and shift every subsequent index.
+    const uniquePlaceholders = _.uniq(placeholders);
+    return uniquePlaceholders.reduce((obj, val, index) => {
+      obj[val.slice(1)] = (values as string[])[index];
+      return obj;
+    }, {});
   }
 }
 
