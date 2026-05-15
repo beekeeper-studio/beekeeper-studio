@@ -1,5 +1,7 @@
 
 
+@use "sass:color";
+
 .beekeeper-modal {
 
   .dialog-c-title {
@@ -14,51 +16,912 @@
   }
 
   &.upgrade-modal {
-    .dialog-content {
-      padding: 2rem 2rem 1rem;
+    $surface: #1d1d1d;
+    $surface-sunk: #161616;
+
+    .v--modal {
+      background: $surface;
+      border: 1px solid $border-color;
+      border-radius: 12px;
+      // Force a flex column so the inner body can be the sole scrolling
+      // region while header/footer/lifetime stay pinned.
+      display: flex !important;
+      flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+      max-width: 820px !important;
+      width: min(820px, 92vw) !important;
+      max-height: 90vh !important;
     }
-    .dialog-c-title {
-      font-size: 1.2em;
+
+    .upgrade-modal-redesign {
+      padding: 0;
+      color: $text-dark;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
     }
-    .checkbox-wrapper {
-      margin-left: auto;
-      margin-right: auto;
-      ul.check-list {
-        padding-left: 0;
-        li {
-          padding-bottom: 10px;
-          &:before {
-            font-family: "Material Icons";
-            content: "\e5ca";
-            margin-right: 0.5rem;
-            margin-bottom: -10px;
-            color: $brand-success;
-          }
-          list-style: none;
+
+    // -- Header ------------------------------------------------------------
+    .um-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      border-bottom: 1px solid $border-color;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .um-logo {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      display: block;
+    }
+    .um-header-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .um-eyebrow {
+      font-size: 10.5px;
+      color: $text-lighter;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      line-height: 1.3;
+      &.um-eyebrow-trigger {
+        color: $theme-primary;
+      }
+      .material-icons {
+        font-size: 12px;
+      }
+    }
+    .um-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+      color: $text-dark;
+      line-height: 1.2;
+      letter-spacing: -0.1px;
+    }
+    .um-subline {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: $text-light;
+      line-height: 1.4;
+    }
+    .um-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: $text;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid $border-color;
+      border-radius: 999px;
+      white-space: nowrap;
+      align-self: center;
+    }
+    .um-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: $brand-success;
+    }
+    .um-close {
+      background: transparent;
+      border: 0;
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: $text-light;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: flex-start;
+      text-decoration: none;
+      .material-icons { font-size: 20px; }
+      &:hover { color: $text-dark; }
+    }
+
+    // -- Body --------------------------------------------------------------
+    // Single scrolling region between the pinned header and footer.
+    .um-body {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      background: $surface-sunk;
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow-y: auto;
+    }
+    .um-features {
+      padding: 14px 8px;
+      border-right: 1px solid $border-color;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .um-feature-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 0;
+      border-left: 2px solid transparent;
+      color: $text;
+      font: inherit;
+      font-size: 13.5px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: background 0.12s;
+      &:hover { background: rgba(255,255,255,0.03); }
+      &.active {
+        background: rgba(255,255,255,0.06);
+        color: $text-dark;
+      }
+      .material-icons { font-size: 18px; }
+      > span { flex: 1; }
+    }
+
+    .um-hero {
+      padding: 22px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      // Reserve space for the tallest preview so the modal doesn't jump
+      // height when switching features. Scales with viewport.
+      min-height: 55vh;
+    }
+    .um-hero-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 500;
+      color: $text-dark;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      .material-icons { font-size: 22px; }
+    }
+    .um-hero-desc {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: $text;
+      max-width: 460px;
+    }
+    .um-bullets {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: $text-light;
+      li {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 0;
+        &:before { content: none; }
+        .material-icons { font-size: 14px; color: $brand-success; }
+      }
+    }
+
+    // Inline pill row — matches the AI Shell upsell card. Used when a
+    // feature opts in via `pills: [...]` instead of `bullets: [...]`.
+    .um-pills {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 12px;
+      font-size: 13px;
+      color: $text-dark;
+      .pill-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        &:before { content: none; }
+        .material-icons { font-size: 16px; color: $brand-success; }
+        span { font-weight: 500; color: $text-dark; white-space: nowrap; }
+        & + .pill-row::before {
+          content: "\00b7";
+          color: $text-lighter;
+          margin-right: 6px;
         }
       }
-      > p {
-        margin-bottom: 0;
+    }
+
+    // -- Overview tab — clickable feature cards that jump to the matching tab
+    .um-overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .um-overview-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: $query-editor-bg;
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      color: $text-dark;
+      font: inherit;
+      font-size: 12.5px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+      &:hover {
+        background: rgba($theme-base, 0.04);
+        border-color: rgba($theme-base, 0.18);
+        .chev { color: $text-light; transform: translateX(1px); }
+      }
+      > .material-icons { font-size: 18px; flex-shrink: 0; }
+      .t {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+      }
+      .chev {
+        font-size: 16px;
+        color: $text-lighter;
+        flex-shrink: 0;
+        transition: color 0.12s, transform 0.12s;
       }
     }
-    .check-list {
-      margin-bottom: 0;
+
+    // -- Preview card ------------------------------------------------------
+    // Box stretches to fill the hero column on every tab. Per-tab content
+    // is responsible for not growing too tall.
+    .um-preview-card {
+      background: $query-editor-bg;
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: var(--font-family);
+      font-size: 12.5px;
+      color: $text;
+      overflow: hidden;
     }
-    .vue-dialog-buttons {
-      justify-content: stretch;
-      padding-left: 0;
-      padding-right: 0;
-      padding-top: 1rem;
-      & > div {
-        width: 100%;
+    // AI Shell preview renders its own card chrome — strip ours and clamp
+    // its internal min-height so it fits the hero panel.
+    .um-preview-ai {
+      padding: 0;
+      background: transparent;
+      border: 0;
+      .cc-preview { margin: 0; }
+      .cc-preview-body { min-height: 150px; padding: 8px 10px; gap: 0.35rem; }
+    }
+    .ump-section-label {
+      color: $text-lighter;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    // Cloud Workspaces preview ------------------------------------------------
+    .ump-workspaces {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .ump-ws-avatars {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ump-ws-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      background: rgba($theme-base, 0.06);
+      color: $text-light;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      &.acme { background: rgba($theme-secondary, 0.18); color: $theme-secondary; }
+      &.globex { background: rgba($brand-purple, 0.18); color: $brand-purple; }
+      &.active {
+        box-shadow: inset 0 0 0 1.5px $theme-primary;
+      }
+      &.add {
+        background: transparent;
+        border: 1px dashed $border-color;
+        color: $text-lighter;
+      }
+      .material-icons { font-size: 16px; }
+    }
+    .ump-ws-body {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ump-ws-head {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .ump-ws-name {
+      color: $text-dark;
+      font-weight: 600;
+      font-size: 12.5px;
+    }
+    .ump-ws-tag {
+      color: $text-lighter;
+      font-size: 10.5px;
+    }
+    .ump-ws-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      li {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        color: $text;
+        line-height: 1.7;
+        padding: 1px 0;
+        .connection-label {
+          height: 14px;
+          width: 3px;
+          min-width: 3px;
+          border-radius: 2px;
+          margin-right: 8px;
+          flex-shrink: 0;
+        }
+        .title {
+          flex: 1;
+          min-width: 0;
+          color: $text-dark;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .type {
+          font-size: 10px;
+          color: $text-lighter;
+          padding: 1px 6px;
+          border-radius: 999px;
+          background: rgba($theme-base, 0.05);
+          margin-left: 6px;
+          flex-shrink: 0;
+        }
+      }
+      li.query {
+        .material-icons {
+          font-size: 13px;
+          color: $brand-pink;
+          margin-right: 6px;
+          margin-left: 1px;
+        }
+      }
+    }
+
+    // Enterprise terminal + chips -------------------------------------------
+    // Enterprise: two-column split (auth terminal | databases) ---------------
+    .ump-enterprise {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .ump-ent-col {
+      min-width: 0;
+    }
+    .ump-term {
+      font-family: var(--font-family-mono);
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: $text;
+    }
+    .ump-prompt { color: $brand-success; }
+    .ump-ok {
+      display: flex; align-items: center; gap: 6px;
+      color: $brand-success;
+      .material-icons { font-size: 13px; }
+    }
+    .ump-connect {
+      font-family: var(--font-family);
+      color: $text;
+      margin-top: 2px;
+    }
+    .ump-link { color: $theme-secondary; }
+    .ump-muted-xs { color: $text-lighter; font-size: 10.5px; }
+    .ump-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      span {
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-size: 10.5px;
+        background: rgba($brand-purple, 0.12);
+        color: $brand-purple;
+        border: 1px solid rgba($brand-purple, 0.22);
+        white-space: nowrap;
+      }
+    }
+
+    // JSON sidebar preview — table on the left, JSON viewer on the right
+    // ------------------------------------------------------------------
+    .um-preview-json {
+      padding: 0;
+    }
+    .ump-json-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      background: $theme-bg;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    // Result table — mirrors the real result grid colours
+    .ump-json-table {
+      border-right: 1px solid $border-color;
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      line-height: 1.4;
+      min-width: 0;
+    }
+    .ump-jt-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 0.6fr);
+      border-bottom: 1px solid rgba($theme-base, 0.04);
+      &.ump-jt-head {
+        background: rgba($theme-base, 0.04);
+        text-transform: uppercase;
+        color: $text-lighter;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        border-bottom: 1px solid $border-color;
+      }
+      &.selected {
+        background: rgba($theme-base, 0.08);
+      }
+    }
+    .ump-jt-cell {
+      padding: 5px 8px;
+      color: $text-dark;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      &.num { color: $text-lighter; }
+    }
+    // Right pane — the JSON sidebar itself.
+    // The inner is absolutely-positioned so the JSON body's natural height
+    // doesn't drag the grid row taller than the table on the left. The row
+    // is sized by the table; we mask the JSON's bottom to suggest more
+    // content below the fold.
+    .ump-json-side {
+      position: relative;
+      min-width: 0;
+    }
+    .ump-json-side-inner {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .ump-json {
+      margin: 0;
+      padding: 6px 10px;
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      line-height: 1.55;
+      color: $text-dark;
+      white-space: pre;
+      overflow: hidden;
+      height: 100%;
+      box-sizing: border-box;
+      // Fade the bottom edge out — implies the JSON continues below.
+      mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+      // Match the real JSON viewer (json-viewer.scss): property names use a
+      // darkened theme primary; string values yellow; numbers stay text-dark.
+      .k { color: color.adjust($theme-primary, $lightness: -20%); }
+      .v { color: $theme-primary; }
+      .n { color: $text-dark; }
+      .p { color: $text-lighter; }
+      .muted { color: $text-light; }
+      .caret { color: $text-light; }
+      .fk { color: $text-light; font-size: 10px; }
+    }
+
+    // Editable query results preview ----------------------------------------
+    .um-preview-editable {
+      padding: 0;
+    }
+    .ump-editable-table {
+      display: grid;
+      grid-template-columns: 36px 1fr 1fr 1.1fr;
+      font-family: var(--font-family-mono);
+      font-size: 11.5px;
+    }
+    .ump-eth {
+      padding: 5px 8px;
+      color: $text-lighter;
+      background: $theme-bg;
+      border-bottom: 1px solid $border-color;
+      font-weight: 600;
+    }
+    .ump-cell {
+      padding: 5px 8px;
+      color: $text-dark;
+      &.num { color: $theme-secondary; }
+      &.muted { color: $text-light; }
+      &.strong { color: $text-dark; }
+    }
+    .ump-cell-editing {
+      color: #000;
+      background: rgba($theme-primary, 0.55);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ump-pencil {
+      margin-left: auto;
+      font-size: 10px;
+      color: rgba(0,0,0,0.6);
+    }
+    .ump-staged {
+      padding: 5px 10px;
+      background: rgba($theme-primary, 0.08);
+      border-top: 1px solid $border-color;
+      font-family: var(--font-family);
+      font-size: 11.5px;
+      color: $text;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      .material-icons { font-size: 14px; }
+      .muted { color: $text-light; }
+    }
+    .ump-apply {
+      margin-left: auto;
+      color: $brand-success;
+      font-weight: 500;
+      cursor: default;
+    }
+
+    // Import/Export preview — two-column split (tables | destination) -------
+    .ump-io {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .ump-io-col { min-width: 0; }
+    .ump-export-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        color: $text-dark;
+        line-height: 1.6;
+        .material-icons { font-size: 14px; color: $brand-success; }
+      }
+    }
+    .ump-meta { color: $text-lighter; font-size: 10.5px; margin-left: auto; }
+    .ump-io-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: $text;
+      line-height: 1.7;
+      .material-icons { font-size: 14px; color: $brand-warning; }
+      &.muted { color: $text-light; font-size: 11.5px; }
+    }
+    .ump-io-key {
+      color: $text-lighter;
+      min-width: 50px;
+    }
+
+    // ER Diagrams preview — Sakila tables with FK arrows -------------------
+    .um-preview-erd {
+      background: #0a0a0a;
+      // Subtle dot grid matching the real ERD canvas
+      background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 8px 8px;
+      padding: 14px 12px;
+    }
+    .ump-erd {
+      display: grid;
+      grid-template-areas:
+        "customer lines rental"
+        "inventory lines rental";
+      grid-template-columns: 1fr 60px 1fr;
+      grid-template-rows: auto auto;
+      column-gap: 0;
+      row-gap: 8px;
+    }
+    .ump-erd-customer { grid-area: customer; }
+    .ump-erd-inventory { grid-area: inventory; }
+    .ump-erd-rental {
+      grid-area: rental;
+      // Rental is roughly the same height as customer alone; center it in
+      // the full container so the SVG's right-side targets line up with
+      // rental's FK rows.
+      align-self: center;
+    }
+    .ump-erd-table {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 6px 0;
+      min-width: 0;
+      &.dashed {
+        border: 1px dashed rgba(255,255,255,0.25);
+      }
+      &.focused {
+        border: 1.5px solid $theme-primary;
+      }
+    }
+    .ump-erd-thead {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px 6px;
+      font-weight: 600;
+      font-size: 12px;
+      color: $text-dark;
+      .material-icons { font-size: 14px; color: $theme-secondary; }
+    }
+    .ump-erd-col {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: $text;
+      background: #141414;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .name.pad { padding-left: 18px; }
+      .type {
+        color: $text-lighter;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .material-icons {
+        font-size: 12px;
+        flex-shrink: 0;
+        transform: rotate(-45deg);
+      }
+      .material-icons.pk { color: $theme-secondary; }
+      .material-icons.fk { color: $theme-primary; }
+    }
+    .ump-erd-line {
+      grid-area: lines;
+      width: 100%;
+      height: 100%;
+      color: rgba(255,255,255,0.45);
+      align-self: stretch;
+      // Match the table's vertical box (border-radius padding) so paths
+      // hit the visual centre of each row, not the table's edge.
+      padding: 0;
+    }
+
+    // Folders / Organize preview — mirrors the real sidebar ------------------
+    .ump-organize {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .ump-org-col { min-width: 0; }
+    .ump-sidebar-tree {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 12.5px;
+      color: $text;
+      li.folder {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        color: rgba($theme-base, 0.77);
+        cursor: default;
+        .arrow {
+          font-size: 16px;
+          color: $text-lighter;
+          transition: transform 0.15s;
+        }
+        &.open .arrow { transform: rotate(90deg); }
+        .fld {
+          font-size: 14px;
+          color: $text-light;
+        }
+        .lbl { line-height: 1.7; }
+      }
+      .folder-children {
+        position: relative;
+        margin-left: 10px;
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 0;
+          border-left: 1px solid rgba($theme-base, 0.08);
+        }
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 0 12px;
+        }
+        li.item {
+          display: flex;
+          align-items: center;
+          padding: 2px 6px;
+          color: rgba($theme-base, 0.77);
+          .connection-label {
+            height: 14px;
+            width: 3px;
+            min-width: 3px;
+            border-radius: 2px;
+            margin-right: 8px;
+            flex-shrink: 0;
+          }
+          .lbl { flex: 1; line-height: 1.7; }
+          .pin {
+            color: $theme-primary;
+            font-size: 11px;
+          }
+        }
+        // Saved-query items use the same `code` icon as FavoriteListItem.
+        li.item.query > .material-icons {
+          color: $brand-pink;
+          font-size: 13px;
+          margin-right: 6px;
+          margin-left: 1px;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    // -- Testimonial (reuses AI Shell upsell style; prefers single line) ----
+    .um-testimonial {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 0.6rem;
+      font-size: 11.5px;
+      color: $text-light;
+      padding: 8px 12px;
+      background: rgba($theme-base, 0.025);
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      line-height: 1.4;
+      min-width: 0;
+      .stars {
+        color: $theme-primary;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+      }
+      .quote {
+        color: $text-dark;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .attr {
+        color: $text-lighter;
+        flex-shrink: 0;
+      }
+    }
+
+    // -- Footer / CTA ------------------------------------------------------
+    .um-footer {
+      padding: 10px 16px;
+      border-top: 1px solid $border-color;
+      flex-shrink: 0;
+      .upsell-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+      }
+      // Show the license-invalid notice with the same compact inline
+      // treatment as the trial-expired `.help` line — small muted text on
+      // the left of the action buttons, no separate card row.
+      > .upsell-buttons > p.card {
+        order: 2;
+        flex: 1;
+        text-align: left;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        border: 0;
+        color: $text-lighter;
+        font-size: 11.5px;
+        line-height: 1.4;
+        min-width: 0;
+        // Drop the info-outline icon that UpsellButtons renders; the muted
+        // copy carries the meaning here.
+        .material-icons { display: none; }
+        a { color: $text-light; font-weight: 600; }
+      }
+      .help {
+        order: 2;
+        flex: 1;
+        text-align: left;
+        margin: 0;
+        color: $text-lighter;
+        font-size: 11.5px;
       }
       .actions {
+        order: 3;
+        margin-left: auto;
+        display: flex;
         justify-content: flex-end;
+        gap: 6px;
+      }
+      .btn {
+        white-space: nowrap;
+        padding: 6px 14px;
+        font-size: 13px;
+        height: auto;
+        line-height: 1.3;
+        min-height: 0;
       }
     }
-    .close-btn {
-      top: 1.5rem;
-      right: 1.5rem;
+
+    // -- Lifetime-license band — flush at the modal's bottom edge ----------
+    .um-lifetime {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba($theme-primary, 0.10);
+      border-top: 1px solid rgba($theme-primary, 0.22);
+      color: $text-dark;
+      font-size: 11.5px;
+      line-height: 1.35;
+      flex-shrink: 0;
+      .material-icons {
+        font-size: 15px;
+        color: $theme-primary;
+        flex-shrink: 0;
+      }
+      strong {
+        color: $text-dark;
+        font-weight: 600;
+      }
     }
   }
 

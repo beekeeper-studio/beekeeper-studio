@@ -5,26 +5,17 @@
 import Vue from 'vue'
 import Noty from 'noty'
 import { mapGetters, mapActions, mapState } from 'vuex'
+import { AppEvent } from '@/common/AppEvent'
 import logoUrl from '@/assets/logo.svg'
 
 export default Vue.extend({
-  data: () => {
+  data() {
     return {
       notificationInterval: null,
       timeoutID: null,
       isShowingOnboardingNoty: false,
-      upsellNotificationOptions: {
-        text: "Upgrade for features like the JSON row viewer, AI shell, & NoSQL support. All purchases come with a <strong>lifetime usage license</strong>.",
-        timeout: 1000 * 60 * 5,
-        queue: "upsell",
-        killer: 'upsell',
-        layout: 'bottomRight',
-        closeWith: ['button'],
-        buttons: [
-          Noty.button('Close', 'btn btn-flat', () => Noty.closeAll('upsell')),
-          Noty.button('Get Started', 'btn btn-primary', () => window.main.openExternally('https://beekeeperstudio.io/pricing/'))
-        ]
-      },
+      isShowingUpgradeModal: false,
+      upsellNoty: null as Noty | null,
       onboardingNoty: null as Noty | null,
     }
   },
@@ -34,6 +25,15 @@ export default Vue.extend({
     }),
     ...mapGetters(['onboardingNotyShown', 'connected']),
     ...mapState(['connected']),
+    ...mapState('tabs', { activeTab: 'active' }),
+    isOnAiUpsellTab(): boolean {
+      // Community user is sitting on the AI Shell upgrade prompt — don't
+      // pile a noty on top of the in-tab pitch.
+      const tab = this.activeTab as any
+      return this.isCommunity
+        && tab?.type === 'plugin'
+        && tab?.context?.pluginId === 'bks-ai-shell'
+    },
   },
   watch: {
     isCommunity() {
@@ -43,11 +43,29 @@ export default Vue.extend({
       if (this.connected && !this.onboardingNotyShown) {
         this.setOnboardingNotyShown()
       }
-      this.noty?.close();
+      this.upsellNoty?.close();
     },
   },
   methods: {
     ...mapActions(['setOnboardingNotyShown']),
+    buildUpsellOptions() {
+      const text = `<strong>Unlock the full Beekeeper Studio.</strong> Cloud workspaces, SQL AI Shell, ER Diagrams, JSON viewer, and more — every purchase includes a <strong>lifetime usage license</strong>.`
+      return {
+        text,
+        timeout: 1000 * 60 * 5,
+        queue: "upsell",
+        killer: 'upsell',
+        layout: 'bottomRight',
+        closeWith: ['button'],
+        buttons: [
+          Noty.button('Dismiss', 'btn btn-flat', () => Noty.closeAll('upsell')),
+          Noty.button('Learn more', 'btn btn-primary', () => {
+            Noty.closeAll('upsell')
+            this.$root.$emit(AppEvent.upgradeModal)
+          })
+        ]
+      }
+    },
     initNotifyInterval() {
       const intervalTime = 1000 * 60 * 60 * 3
       if (this.notificationInterval) {
@@ -71,9 +89,18 @@ export default Vue.extend({
       }, 1000 * 60 * 5)
     },
     notifyUpsell() {
-      if (!this.isShowingOnboardingNoty) {
-        new Noty(this.upsellNotificationOptions).show()
-      }
+      if (this.isShowingOnboardingNoty) return
+      if (this.isShowingUpgradeModal) return
+      if (this.isOnAiUpsellTab) return
+      this.upsellNoty = new Noty(this.buildUpsellOptions())
+      this.upsellNoty.show()
+    },
+    onUpgradeModalOpened() {
+      this.isShowingUpgradeModal = true
+      Noty.closeAll('upsell')
+    },
+    onUpgradeModalClosed() {
+      this.isShowingUpgradeModal = false
     },
     async notifyOnboarding() {
       Noty.closeAll('onboarding');
@@ -124,12 +151,18 @@ export default Vue.extend({
         },
       });
       n.show();
-      this.noty = n;
+      this.onboardingNoty = n;
     },
   },
   mounted() {
     this.initNotifyInterval()
     this.notifyOnboarding()
+    this.$root.$on('upgradeModalOpened', this.onUpgradeModalOpened)
+    this.$root.$on('upgradeModalClosed', this.onUpgradeModalClosed)
+  },
+  beforeDestroy() {
+    this.$root.$off('upgradeModalOpened', this.onUpgradeModalOpened)
+    this.$root.$off('upgradeModalClosed', this.onUpgradeModalClosed)
   }
 })
 </script>

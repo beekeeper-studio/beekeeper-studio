@@ -89,6 +89,7 @@ import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
+import { AppEvent } from "@/common/AppEvent";
 import { mapGetters } from "vuex";
 import UpsellContent from "@/components/upsell/UpsellContent.vue";
 import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
@@ -142,6 +143,9 @@ export default Vue.extend({
     },
     isAiShellPlugin() {
       return this.tab.context.pluginId === "bks-ai-shell";
+    },
+    isErDiagramPlugin() {
+      return this.tab.context.pluginId === "bks-er-diagram";
     },
     errors() {
       return this.error ? [this.error] : null;
@@ -322,6 +326,16 @@ export default Vue.extend({
       await this.$nextTick();
       this.initialize();
     }
+    if (this.isCommunity && this.isErDiagramPlugin) {
+      this.$root.$emit(AppEvent.upgradeModal, { feature: 'erd' });
+    }
+  },
+  watch: {
+    active(val: boolean) {
+      if (val && this.isCommunity && this.isErDiagramPlugin) {
+        this.$root.$emit(AppEvent.upgradeModal, { feature: 'erd' });
+      }
+    },
   },
   beforeDestroy() {
     if (this.split) {
