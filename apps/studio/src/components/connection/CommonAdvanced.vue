@@ -90,7 +90,19 @@
               {{ option.label }}
             </option>
           </select>
+          <div class="hint">
+            <auto-mode-status
+              v-if="selectedConfig.mode === 'agent'"
+              :ssh-auth-sock="$config.sshAuthSock"
+              :is-windows="$config.isWindows"
+              :ssh-config-exists="$config.sshConfigExists"
+              :ssh-config-path="$config.sshDirectory"
+              :default-ssh-identity-file="$config.defaultSshIdentityFile"
+              :home-directory="$config.homeDirectory"
+            />
+          </div>
           <div class="ssh-agent-indicator" v-if="selectedConfig.mode === 'agent'">
+            <platform-warning location="ssh-agent" />
             <template v-if="agentStatus.ok && !agentStatus.warning" />
             <div
               v-else-if="agentStatus.warning === 'win-nix-agent-not-found'"
@@ -140,6 +152,7 @@
               </div>
             </div>
           </div>
+          <platform-warning location="ssh-keyfile" />
           <div class="row form-group">
             <label>Private Key File</label>
             <file-picker
@@ -200,11 +213,15 @@
 </template>
 
 <script lang="ts">
+import FilePicker from '@/components/common/form/FilePicker.vue'
+import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
+import MaskedInput from '@/components/MaskedInput.vue'
+import PlatformWarning from './PlatformWarning.vue'
+import AutoModeStatus from './AutoModeStatus.vue'
 import { mapGetters } from 'vuex'
 import SshJumpHosts from '@/components/connection/SshJumpHosts.vue'
 import _ from 'lodash'
-import MaskedInput from '@/components/MaskedInput.vue'
 import { TransportConnectionSshConfig, TransportSshConfig } from "@/common/transport/TransportSshConfig";
 import Vue, { PropType } from 'vue'
 import { IConnection } from '@/common/interfaces/IConnection'
@@ -221,12 +238,18 @@ export default Vue.extend({
     },
   },
   components: {
-    ToggleFormArea,
+    FilePicker, ExternalLink,
+    ToggleFormArea, MaskedInput,
+    PlatformWarning, AutoModeStatus,
     SshJumpHosts,
-    MaskedInput,
   },
   data() {
     return {
+      sshModeOptions: [
+        { label: "Automatic", mode: "agent" },
+        { label: "Key File", mode: 'keyfile' },
+        { label: "Username & Password", mode: "userpass" },
+      ],
       selectedPosition: this.config.sshConfigs?.[0]?.position ?? -1,
     }
   },
@@ -239,13 +262,6 @@ export default Vue.extend({
       return this.sshConfigs.find(
         (join) => join.position === this.selectedPosition
       )?.sshConfig ?? null;
-    },
-    sshModeOptions() {
-      return [
-        { label: "Key File", mode: "keyfile" },
-        { label: "Username & Password", mode: "userpass" },
-        { label: "SSH Agent", mode: "agent" },
-      ];
     },
     agentStatus() {
       if (this.$config.isSnap) {
