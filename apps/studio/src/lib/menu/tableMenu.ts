@@ -402,6 +402,17 @@ export function copyActionsMenu(options: {
   return copyActions
 }
 
+export function copyCellMenu(_e: any, cell: CellComponent) {
+  const value = cell.getValue();
+  const text = value == null ? "" : String(value);
+  return [
+    {
+      label: createMenuItem("Copy"),
+      action: () => ElectronPlugin.clipboard.writeText(text),
+    },
+  ];
+}
+
 export function pasteActionsMenu(range: RangeComponent) {
   return [
     {

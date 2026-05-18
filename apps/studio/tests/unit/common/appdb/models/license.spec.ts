@@ -94,6 +94,26 @@ describe("License", () => {
       });
     });
 
+    it("Community - Trial expired (no 'Expired support date')", async () => {
+      currentTime("18-Sep-2024");
+      currentVersion(ANY_VERSION);
+
+      await LicenseKey.clear();
+      const license = new LicenseKey();
+      license.validUntil = new Date("17-Sep-2024");
+      license.supportUntil = new Date("17-Sep-2024");
+      license.licenseType = "TrialLicense";
+      license.email = "trial_user";
+      license.key = "fake";
+      license.maxAllowedAppRelease = { tagName: ANY_VERSION_TAG };
+      await license.save();
+
+      expectStatus().toEqual({
+        edition: "community",
+        condition: ["Expired valid date"],
+      });
+    });
+
     it("Community - License expired", async () => {
       currentTime("18-Sep-2024");
       currentVersion(ANY_VERSION);

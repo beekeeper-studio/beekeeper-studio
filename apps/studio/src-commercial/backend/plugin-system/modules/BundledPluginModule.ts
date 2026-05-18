@@ -27,11 +27,11 @@ export class BundledPluginModule extends Module {
   }
 
   private async installBundledPlugins() {
-    for (const plugin of globals.plugins.ensureInstalled) {
+    for (const { pkg } of globals.plugins.ensureInstalled) {
       try {
-        await this.ensureInstall(plugin);
+        await this.ensureInstall(pkg);
       } catch (e) {
-        log.error(`Error installing plugin ${plugin}`, e);
+        log.error(`Error installing plugin ${pkg}`, e);
       }
     }
   }

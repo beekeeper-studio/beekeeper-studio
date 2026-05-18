@@ -22,6 +22,7 @@ import { QueryFolder } from "./models/QueryFolder"
 import { ConnectionFolder } from "./models/ConnectionFolder"
 import { SshConfig } from "./models/SshConfig"
 import { ConnectionSshConfig } from "./models/ConnectionSshConfig"
+import { TabulatorPersistence } from "./models/TabulatorPersistence"
 
 const models = [
   SavedConnection,
@@ -46,6 +47,7 @@ const models = [
   ConnectionFolder,
   SshConfig,
   ConnectionSshConfig,
+  TabulatorPersistence,
 ]
 
 interface IConnectionState {

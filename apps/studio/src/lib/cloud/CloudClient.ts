@@ -65,7 +65,7 @@ export class CloudClient {
 
   public static async getLicense(baseUrl: string, email: string, key: string, installationId = "", platformInfo: IPlatformInfo) {
     const controller = new LicenseKeyController(staticAxios(baseUrl))
-    log.info("Fetching license info! Installation id", installationId)
+    log.debug("Fetching license info! Installation id", installationId)
     return await controller.get(email, key, installationId, platformInfo)
   }
 

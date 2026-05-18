@@ -784,6 +784,10 @@ export default Vue.extend({
         this.$noty.error("You can only import data into a table")
         return;
       }
+      if (this.$store.getters.isCommunity) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Import From File')
+        return;
+      }
       const t = { tabType: 'import-table' }
       t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false

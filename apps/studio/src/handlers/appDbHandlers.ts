@@ -21,6 +21,8 @@ import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
+import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
+import { TabulatorPersistence } from "@/common/appdb/models/TabulatorPersistence";
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
@@ -179,6 +181,7 @@ export const AppDbHandlers = {
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
   ...handlersFor<TransportSshConfig>('sshConfig', SshConfig),
   ...handlersFor<TransportConnectionSshConfig>('connectionSshConfig', ConnectionSshConfig),
+  ...handlersFor<TransportTabulatorPersistence>('tabulatorPersistence', TabulatorPersistence),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

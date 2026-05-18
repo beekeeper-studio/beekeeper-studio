@@ -1,7 +1,7 @@
 <template>
   <modal
     name="import-queries"
-    class="vue-dialog beekeeper-modal"
+    class="vue-dialog beekeeper-modal import-queries-modal"
     @closed="clear"
   >
     <div class="dialog-content">
@@ -123,3 +123,19 @@ export default Vue.extend({
   }
 })
 </script>
+<style lang="scss">
+.import-queries-modal {
+  .v--modal {
+    display: flex;
+    flex-direction: column;
+  }
+  .dialog-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .vue-dialog-buttons {
+    flex-shrink: 0;
+  }
+}
+</style>

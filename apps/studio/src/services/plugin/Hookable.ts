@@ -9,11 +9,14 @@ export abstract class Hookable {
   }
 
   /** Run all handlers for a side-effect hook (no return value). */
-  protected async callHook<K extends keyof ModuleHookMap>(name: K) {
+  protected async callHook<K extends keyof ModuleHookMap>(
+    name: K,
+    ...args: Parameters<ModuleHookMap[K]>
+  ) {
     for (const module of this.modules) {
       for (const hook of module.hooks) {
         if (hook.name === name) {
-          await (hook.handler as () => void | Promise<void>)();
+          await (hook.handler as Function)(...args);
         }
       }
     }

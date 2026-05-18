@@ -16,7 +16,7 @@
  */
 
 import * as path from 'path'
-import { Client, type ConnectConfig } from 'ssh2'
+import { BaseAgent, Client, type AuthenticationType, type ConnectConfig } from 'ssh2'
 import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
@@ -58,7 +58,10 @@ type Options = {
   passphrase?: string
   endPort?: number
   endHost: string
-  agentSocket?: string,
+  agent?: string | BaseAgent
+  bastionAgent?: string | BaseAgent
+  authHandler?: AuthenticationType[]
+  bastionAuthHandler?: AuthenticationType[]
   skipAutoPrivateKey?: boolean
   noReadline?: boolean
   keepaliveInterval?: number
@@ -68,6 +71,8 @@ type Options = {
 
 type ConnectOptions = ConnectConfig & {
   stream?: NodeJS.ReadableStream
+  agent?: string | BaseAgent
+  authHandler?: AuthenticationType[]
 }
 
 interface ForwardingOptions {
@@ -302,15 +307,18 @@ class SSHConnection {
         if (this.isWindows) {
           // null or undefined
           if (agentDefault == null) {
-            agentDefault = ElectronFriendlyPageantAgent
+            agentDefault = new ElectronFriendlyPageantAgent()
           }
         }
 
-        const agentSock = this.options.agentSocket ? this.options.agentSocket : agentDefault
-        if (agentSock == null) {
-          throw new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable')
+        const agent = options.agent ?? agentDefault
+        if (agent == null) {
+          throw new Error('SSH Agent is not provided, or SSH_AUTH_SOCK is not set in the env')
         }
-        config['agent'] = agentSock
+        config['agent'] = agent
+      }
+      if (options.authHandler && options.authHandler.length) {
+        config['authHandler'] = options.authHandler
       }
       if (stream) {
         config['sock'] = stream
@@ -352,6 +360,8 @@ class SSHConnection {
       privateKey: this.options.privateKey,
       passphrase: this.options.passphrase,
       agentForward: this.options.agentForward,
+      agent: this.options.agent,
+      authHandler: this.options.authHandler,
     }
   }
 

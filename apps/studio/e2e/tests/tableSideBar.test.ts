@@ -1,28 +1,21 @@
-import { _electron as electron } from 'playwright';
-import { test, expect, beforeEach, afterEach } from '@playwright/test';
-import { NewDatabaseConnection } from '../pageComponents/NewDatabaseConnection';
-import { QueryTab } from '../pageComponents/QueryTab';
-import { QueryResultPane } from '../pageComponents/QueryResultPane';
+import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { TablesSideBar } from '../pageComponents/TablesSideBar';
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 import { userActions } from "../pageActions/index";
+import { launchElectron } from 'e2e/helpers/launchElectron';
 
-let electronApp;
-let window;
-let queryTab;
-let resultPane;
-let userAttemptsTo;
-let newDatabaseConnection;
-let tablesSideBar;
-let newTableName;
+let electronApp: ElectronApplication;
+let window: Page;
+let userAttemptsTo: any;
+let tablesSideBar: TablesSideBar;
+let newTableName: string;
+
 test.describe("Table creation", () => {
+    test.setTimeout(60_000); // 60 seconds
 
-    beforeEach(async () => {
-        electronApp = await electron.launch({ args: ['dist/main.js'] });
+    test.beforeEach(async () => {
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
-        newDatabaseConnection = new NewDatabaseConnection(window);
-        queryTab = new QueryTab(window);
-        resultPane = new QueryResultPane(window);
         tablesSideBar = new TablesSideBar(window);
         userAttemptsTo = userActions(window);
 
@@ -31,7 +24,7 @@ test.describe("Table creation", () => {
         await userAttemptsTo.connectWithDatabase();
     });
 
-    afterEach(async () => {
+    test.afterEach(async () => {
         if (!electronApp) return;
         const dropTableQuery = `DROP TABLE ${newTableName};`
         const newQueryIndex = '1';
@@ -43,7 +36,6 @@ test.describe("Table creation", () => {
     });
 
     test("create a table and verify that the columns are visible in the sidebar", async () => {
-        test.setTimeout(60_000); // 60 seconds
         newTableName = `automated_test_table_${Date.now()}`;
         const columnName = `test_number_${newTableName}`;
         const CREATE_TABLE_QUERY = `CREATE TABLE ${newTableName} (

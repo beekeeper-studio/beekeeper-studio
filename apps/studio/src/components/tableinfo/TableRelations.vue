@@ -116,6 +116,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 export default Vue.extend({
   mixins: [SelectableCellMixin],
@@ -189,6 +190,7 @@ export default Vue.extend({
           widthGrow: 2,
           editable,
           editor: vueEditor(NullableInputEditorVue),
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -200,6 +202,7 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: () => this.table.columns.map((c) => escapeHtml(c.columnName))
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         // @ts-expect-error Incorrectly typed
@@ -211,6 +214,7 @@ export default Vue.extend({
           editorParams: {
             valuesLookup: () => this.schemas.map((s) => escapeHtml(s))
           },
+          contextMenu: copyCellMenu,
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
         }] : []),
         {
@@ -223,6 +227,7 @@ export default Vue.extend({
             valuesLookup: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null),
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -234,6 +239,7 @@ export default Vue.extend({
           editorParams: {
             valuesLookup: this.getColumns
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -246,6 +252,7 @@ export default Vue.extend({
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION'
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -258,6 +265,7 @@ export default Vue.extend({
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION',
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
       ]

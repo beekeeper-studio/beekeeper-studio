@@ -128,6 +128,7 @@ const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 interface State {
   mysqlTypes: string[]
@@ -231,13 +232,14 @@ export default Vue.extend({
       // FIXME (@day): no per-db testing
       const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect != 'mongodb'
       const result = [
-        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, contextMenu: copyCellMenu, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
           editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
+          contextMenu: copyCellMenu,
           cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell),
         },
         {
@@ -264,6 +266,7 @@ export default Vue.extend({
           editable,
           editor: 'list',
           formatter: this.cellFormatter,
+          contextMenu: copyCellMenu,
           editorParams: {
             multiselect: true,
             values: this.indexColumnOptions,

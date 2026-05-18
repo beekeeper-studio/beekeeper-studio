@@ -300,7 +300,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         return obj;
       });
 
-      return { fields, rows, rowCount: result.rowCount };
+      return {
+        fields,
+        rows,
+        rowCount: result.rowCount,
+        text: result.statement.text,
+        command: result.statement.type
+      };
     });
   }
 
@@ -520,7 +526,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
-    const filterQuery = buildSchemaFilter(filter);
+    const filterQuery = buildSchemaFilter(filter, 'schema_name', (s) => this.wrapIdentifier(s));
     const { rows } = await this.driverExecuteSingle(`
       SELECT DISTINCT schema_name
       FROM information_schema.schemata

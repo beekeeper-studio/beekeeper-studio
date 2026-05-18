@@ -105,6 +105,7 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           sshConfig.agentSocket = appConfig.sshAuthSock
         }
 
+
         const connection = new SSHConnection(sshConfig)
         logger().debug("connection created!")
 

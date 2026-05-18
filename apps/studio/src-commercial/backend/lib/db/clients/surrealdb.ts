@@ -455,7 +455,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
     return keys;
   }
-  async query(queryText: string, options?: any): Promise<CancelableQuery> {
+  async query(queryText: string, _tabId?: number, options?: any): Promise<CancelableQuery> {
     return {
       execute: async(): Promise<NgQueryResult[]> => {
         return await this.executeQuery(queryText, options)

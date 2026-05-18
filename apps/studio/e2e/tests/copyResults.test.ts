@@ -1,26 +1,24 @@
-import { _electron as electron } from 'playwright';
-import { test, expect, beforeEach, afterEach } from '@playwright/test';
+import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { QueryTab } from '../pageComponents/QueryTab';
 import { Footer } from '../pageComponents/Footer';
 import { QueryResultPane } from '../pageComponents/QueryResultPane';
 import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
+import { launchElectron } from 'e2e/helpers/launchElectron';
 
 const POSTGRES_QUERY = 'SELECT * FROM actor WHERE actor_id IN (1, 2);';
 
-let electronApp;
-let window;
-let queryTab;
-let footer;
-let resultPane;
-let userAttemptsTo;
+let electronApp: ElectronApplication;
+let window: Page;
+let queryTab: QueryTab;
+let footer: Footer;
+let resultPane: QueryResultPane;
+let userAttemptsTo: any;
 
 test.describe("Copy Results Verifications", () => {
 
-    beforeEach(async () => {
-        electronApp = await electron.launch({
-            args: ['dist/main.js'],
-        });
+    test.beforeEach(async () => {
+        electronApp = await launchElectron();
         window = await electronApp.firstWindow();
         queryTab = new QueryTab(window);
         resultPane = new QueryResultPane(window);
@@ -38,7 +36,7 @@ test.describe("Copy Results Verifications", () => {
         await expect(resultPane.resultSecondRow).toBeVisible();
     });
 
-    afterEach(async () => {
+    test.afterEach(async () => {
         if (electronApp) {
             await electronApp.close();
         }

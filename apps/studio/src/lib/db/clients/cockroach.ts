@@ -177,16 +177,25 @@ export class CockroachClient extends PostgresClient {
   }
 
   protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
-    let optionsString = undefined;
+    const optionsParts: string[] = [];
+    const password = server.config.options?.jwtAuthEnabled
+      ? server.config.password?.replace(/\s+/g, '')
+      : server.config.password;
     const cluster = server.config.options?.cluster || undefined;
     if (cluster) {
-      optionsString = `--cluster=${cluster}`;
+      optionsParts.push(`--cluster=${cluster}`);
     }
+
+    if (server.config.options?.jwtAuthEnabled) {
+      optionsParts.push('--crdb:jwt_auth_enabled=true');
+    }
+
+    const optionsString = optionsParts.length > 0 ? optionsParts.join(' ') : undefined;
 
     const config: PoolConfig = {
       host: server.config.host,
       port: server.config.port || undefined,
-      password: server.config.password || undefined,
+      password: password || undefined,
       database: database.database,
       max: BksConfig.db.cockroachdb.maxConnections, // max idle connections per time (30 secs)
       connectionTimeoutMillis: BksConfig.db.cockroachdb.connectionTimeout,

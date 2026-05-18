@@ -16,6 +16,8 @@ export interface IPlatformInfo {
   isDevelopment: boolean,
   isAppImage: boolean,
   sshAuthSock: string,
+  sshConfigExists: boolean,
+  defaultSshIdentityFile: string,
   environment: string,
   resourcesPath: string,
   env: {
@@ -32,6 +34,7 @@ export interface IPlatformInfo {
   homeDirectory: string,
   sshDirectory: string,
   pluginsDirectory: string,
+  driverDepsDirectory: string,
   testMode: boolean,
   appDbPath: string,
   updatesDisabled: boolean,

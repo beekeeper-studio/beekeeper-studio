@@ -14,8 +14,8 @@
         <div v-if="oracleExpanded" class="advanced-body">
           <settings-input setting-key="oracleInstantClient" input-type="directory" @changed="restart"
           title="Instant Client Location" :help="help" />
-          <settings-input setting-key="oracleConfigLocation" input-type="directory" title="TNS_ADMIN override"
-          help="The directory containing tnsnames.ora, sqlnet.ora, and wallets" />
+          <settings-input setting-key="oracleConfigLocation" input-type="directory" @changed="configDirChanged" title="TNS_ADMIN override"
+          help="The directory containing tnsnames.ora, sqlnet.ora, and wallets. Changing this after connecting requires a restart." />
         </div>
       </div>
 
@@ -102,13 +102,10 @@ export default Vue.extend({
     },
     restartNotification() {
       return new Noty({
-        text: "You must restart Beekeeper Studio for this change to take effect",
+        text: "You must restart Beekeeper Studio for this change to take effect.",
         layout: 'bottomRight',
-        closeWith: ['button'],
-        buttons: [
-          Noty.button("Not now", 'btn btn-flat', () => this.restartNotification.close()),
-          Noty.button("Restart", 'btn btn-primary', () => this.$native.app.restart())
-        ]
+        timeout: false,
+        closeWith: ['click', 'button'],
       })
     }
   },
@@ -117,6 +114,9 @@ export default Vue.extend({
       if(this.$config.isLinux) {
         this.restartNotification.show()
       }
+    },
+    configDirChanged() {
+      this.restartNotification.show()
     },
   },
 

@@ -7,7 +7,7 @@ icon: material/view-dashboard
 # Plugin Views
 
 !!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). Things might change, but we'd love your feedback!
+    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
 
 Plugins can integrate with Beekeeper Studio through different types of views, each designed for specific use cases. Views define where and how your plugin's interface appears within the application.
 
@@ -15,19 +15,13 @@ Plugins can integrate with Beekeeper Studio through different types of views, ea
 
 Tab views appear as tabs in the main workspace area, alongside query tabs and other content.
 
-### Plain (Planned)
+### Base Tab
 
-!!! info "Coming Soon"
-    Plain views are planned for future releases and will provide full-tab real estate for your plugin.
+The base tab will take up the entire tab space for your plugin's interface.
 
-Plain views will offer the entire tab space for your plugin's interface, without any predefined sections.
+### Shell Tab
 
-### Shell
-
-The shell view is perfect for plugins that need to display data or results. It provides:
-
-- **Top Section**: Your plugin's iframe interface
-- **Bottom Section**: A built-in result table for displaying data
+The shell tab contains a result table at the bottom that can be opened and closed.
 
 This layout is ideal for plugins that query or analyze data, as users can interact with your plugin controls at the top and see results in the familiar table format below.
 

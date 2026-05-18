@@ -183,6 +183,7 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState(['database', 'connection', 'usedConfig']),
     hotkeys() {
+      if (!this.active) return {}
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshColumns,
         'general.addRow': this.addRow,
