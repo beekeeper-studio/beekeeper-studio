@@ -30,6 +30,7 @@ export interface IPlatformInfo {
   userDirectory: string,
   downloadsDirectory: string,
   homeDirectory: string,
+  sshDirectory: string,
   pluginsDirectory: string,
   testMode: boolean,
   appDbPath: string,

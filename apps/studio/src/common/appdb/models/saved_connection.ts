@@ -165,39 +165,39 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false, default: false })
   sshEnabled = false
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: "varchar", nullable: true })
   sshHost: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: "int", nullable: true })
   sshPort: Nullable<number> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: "varchar", nullable: true })
   sshKeyfile: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshUsername: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshBastionHost: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'int', nullable: true })
   sshBastionHostPort: Nullable<number> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', length: 8, nullable: false, default: 'agent' })
   sshBastionMode: SshMode = 'agent'
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshBastionUsername: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshBastionKeyfile: Nullable<string> = null
 
@@ -327,23 +327,23 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshKeyfilePassword: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshBastionPassword: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshBastionKeyfilePassword: Nullable<string> = null
 
-  /** @deprecated use `sshConfigs` instead — kept for migration read-back only */
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent" })
   sshMode: SshMode = 'agent'
 

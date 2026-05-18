@@ -146,7 +146,7 @@
               :value="selectedConfig.keyfile"
               editable
               :show-hidden-files="true"
-              :default-path="filePickerDefaultPath"
+              :default-path="$config.sshDirectory"
               @input="updateSelectedSsh('keyfile', $event)"
             />
           </div>
@@ -260,9 +260,6 @@ export default Vue.extend({
     enableSshLink(): string {
       return "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap";
     },
-    filePickerDefaultPath(): string {
-      return window.main.join(window.platformInfo.homeDirectory, ".ssh");
-    },
   },
   methods: {
     onAdd() {
@@ -273,7 +270,6 @@ export default Vue.extend({
         position,
         sshConfig: {
           host: '',
-          port: 22,
           mode: 'agent',
           username: '',
         },

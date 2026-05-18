@@ -57,6 +57,7 @@ export function mainPlatformInfo(): IPlatformInfo {
   let userDirectory = testMode ? './tmp' : e.app.getPath("userData")
   const downloadsDirectory = testMode ? './tmp' : e.app.getPath('downloads')
   const homeDirectory = testMode ? './tmp' : e.app.getPath('home')
+  const sshDirectory = join(homeDirectory, '.ssh')
   if (p.env.PORTABLE_EXECUTABLE_DIR) {
     userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
   }
@@ -99,6 +100,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     userDirectory,
     downloadsDirectory,
     homeDirectory,
+    sshDirectory,
     pluginsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
