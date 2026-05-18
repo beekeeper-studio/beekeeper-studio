@@ -46,6 +46,7 @@ export type KeyFileAuthSshOptions = BaseSshOptions & {
 export type AgentAuthSshOptions = BaseSshOptions & {
   mode: 'agent';
   agentSocket?: string;
+  agent?: BaseAgent;
 }
 
 export type SshOptions = PasswordAuthSshOptions | KeyFileAuthSshOptions | AgentAuthSshOptions;
@@ -248,13 +249,13 @@ class SSHConnection {
         options.agentForward = true
         let agentDefault: any = process.env['SSH_AUTH_SOCK']
         if (this.isWindows && agentDefault == null) {
-          agentDefault = ElectronFriendlyPageantAgent
+          agentDefault = new ElectronFriendlyPageantAgent()
         }
-        const agentSock = hop.agentSocket || agentDefault
-        if (agentSock == null) {
+        const agent = hop.agent || hop.agentSocket || agentDefault
+        if (agent == null) {
           return reject(new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable'))
         }
-        options.agent = agentSock
+        options.agent = agent
       }
 
       if (sock) {

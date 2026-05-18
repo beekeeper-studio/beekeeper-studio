@@ -6,10 +6,33 @@ import { SshOptions, Options, SSHConnection, BaseSshOptions } from '../../vendor
 import appConfig from '@/common/platform_info'
 import pf from 'portfinder'
 import _ from 'lodash'
+import type { BaseAgent } from 'ssh2'
 import { IDbConnectionServerConfig } from './types';
 import { resolveHomePathToAbsolute } from '@/handlers/utils';
 import { IDbSshTunnel } from './backendTypes';
 import { readSshConfig, SshConfigResult } from '../ssh/sshConfigReader';
+import { loadAllowedPublicKeys } from '@/lib/ssh/sshKeyUtils';
+import { createFilteringAgent } from '@/lib/ssh/identitiesOnlyAgent';
+
+const isWindows = process.platform === 'win32';
+
+function maybeBuildFilteringAgent(
+  identityFiles: string[] | undefined,
+  identitiesOnly: boolean | undefined,
+  socketPath: string | undefined,
+  passphrase: string | undefined,
+): BaseAgent | string | undefined {
+  if (!socketPath) return undefined;
+  if (!identitiesOnly || !identityFiles?.length) {
+    return socketPath;
+  }
+  const allowed = loadAllowedPublicKeys(identityFiles, passphrase);
+  return createFilteringAgent({
+    socketPath,
+    isWindows,
+    allowedPublicKeys: allowed,
+  });
+}
 
 const log = rawLog.scope('db:tunnel');
 const logger = () => log;
@@ -37,29 +60,27 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
             throw new Error(`Invalid SSH mode ${ssh.mode}`);
           }
 
-          let defaults: SshConfigResult = {
-            host: ssh.host,
-            port: ssh.port ?? 22,
-            identityFile: "~/.ssh/id_rsa",
-          };
-
-          if (ssh.host && ssh.mode === "agent") {
+          // Resolve from ~/.ssh/config for all modes. The resolved HostName
+          // always replaces the alias; port/user only fill in missing values.
+          // Identity files are only honoured in agent ("Automatic") mode.
+          let fileConfig: SshConfigResult | undefined;
+          if (ssh.host) {
             try {
-              defaults = Object.assign(defaults, readSshConfig(ssh.host));
+              fileConfig = readSshConfig(ssh.host);
             } catch (e) {
               log.error(`Could not read ssh config for ${ssh.host}: ${e.message}`);
             }
           }
 
           const baseOptions: BaseSshOptions = {
-            host: defaults.host,
-            port: defaults.port,
-            username: ssh.username ?? defaults.user,
+            host: fileConfig?.host || ssh.host,
+            port: ssh.port ?? fileConfig?.port ?? 22,
+            username: ssh.username ?? fileConfig?.user,
             mode: ssh.mode === 'userpass' ? 'password' : ssh.mode,
           };
 
           if (ssh.mode === "keyfile") {
-            const keyfile = ssh.keyfile ?? defaults.identityFile!;
+            const keyfile = ssh.keyfile ?? "~/.ssh/id_rsa";
             const privateKeyContent = fs.readFileSync(
               path.resolve(resolveHomePathToAbsolute(keyfile))
             );
@@ -77,13 +98,19 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
             };
           }
 
+          const agent = maybeBuildFilteringAgent(
+            fileConfig?.identityFiles,
+            fileConfig?.identitiesOnly,
+            appConfig.sshAuthSock,
+            undefined,
+          );
           return {
             ...baseOptions,
-            agentSocket: appConfig.sshAuthSock,
+            agentSocket: typeof agent === 'string' ? agent : undefined,
+            agent: typeof agent === 'string' ? undefined : agent,
           };
         })
 
-        const useAgent = jumpHosts.some((ssh) => ssh.mode === 'agent');
         const end = jumpHosts.pop();
         const sshConfig: Options = {
           endHost: end.host,
@@ -101,8 +128,8 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           jumpHosts,
         }
 
-        if (useAgent && appConfig.sshAuthSock) {
-          sshConfig.agentSocket = appConfig.sshAuthSock
+        if (end.mode === 'agent') {
+          sshConfig.agent = end.agent || end.agentSocket;
         }
 
 
