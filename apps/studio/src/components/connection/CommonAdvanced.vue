@@ -205,10 +205,13 @@ import { mapGetters } from 'vuex'
 import SshJumpHosts from '@/components/connection/SshJumpHosts.vue'
 import _ from 'lodash'
 import MaskedInput from '@/components/MaskedInput.vue'
-import { TransportSshConfig } from "@/common/transport/TransportSshConfig";
+import { TransportConnectionSshConfig, TransportSshConfig } from "@/common/transport/TransportSshConfig";
 import Vue, { PropType } from 'vue'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { AppEvent } from '@/common/AppEvent'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('CommonAdvanced.vue');
 
 export default Vue.extend({
   props: {
@@ -229,14 +232,13 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters('settings', ['privacyMode'] as const),
-    sshConfigs() {
+    sshConfigs(): TransportConnectionSshConfig[] {
       return this.config.sshConfigs ?? [];
     },
     selectedConfig(): TransportSshConfig | null {
-      const join = this.sshConfigs.find(
-        (j) => j.position === this.selectedPosition
-      );
-      return join?.sshConfig ?? null;
+      return this.sshConfigs.find(
+        (join) => join.position === this.selectedPosition
+      )?.sshConfig ?? null;
     },
     sshModeOptions() {
       return [
@@ -263,32 +265,33 @@ export default Vue.extend({
   },
   methods: {
     onAdd() {
-      const sshConfigs = [...this.sshConfigs]
-      const position = sshConfigs.length
-      sshConfigs.push({
-        connectionId: this.config.id ?? null,
-        position,
-        sshConfig: {
-          host: '',
-          mode: 'agent',
-          username: '',
+      const lastPosition = this.sshConfigs.reduce(
+        (max, join) => Math.max(max, join.position),
+        -1
+      )
+      const position = lastPosition + 1
+      this.$set(this.config, 'sshConfigs', [
+        ...this.sshConfigs,
+        {
+          connectionId: this.config.id ?? null,
+          position,
+          sshConfig: { host: '', mode: 'agent', username: '' },
         },
-      })
-      this.$set(this.config, 'sshConfigs', sshConfigs)
+      ])
       this.selectedPosition = position
     },
     onRemove(position) {
-      const filteredConfigs = this.sshConfigs.filter((j) =>
-        j.position !== position
+      const remaining = this.sshConfigs.filter(
+        (join) => join.position !== position
       )
       let counter = 0
-      const sshConfigs = _.cloneWith(filteredConfigs, (value, key) => {
+      const updated = _.cloneWith(remaining, (value, key) => {
         if (key === 'position') {
           return counter++
         }
         return value
       })
-      this.$set(this.config, 'sshConfigs', sshConfigs)
+      this.$set(this.config, 'sshConfigs', updated)
     },
     onReorder({ oldIndex, newIndex }) {
       const reordered = _.cloneDeep(this.sshConfigs)
@@ -303,13 +306,18 @@ export default Vue.extend({
 
       this.$set(this.config, 'sshConfigs', reordered)
     },
-    updateSelectedSsh(field, value) {
-      const sshConfigs = _.cloneDeep(this.sshConfigs)
-      const join = sshConfigs.find((j) => j.position === this.selectedPosition)
-      if (join) {
-        join.sshConfig[field] = value
+    updateSelectedSsh(field: string, value: any) {
+      const index = this.sshConfigs.findIndex(
+        (join) => join.position === this.selectedPosition
+      );
+      if (index === -1) {
+        log.error(`No SSH config found at position ${this.selectedPosition}`);
+        return;
       }
-      this.$set(this.config, 'sshConfigs', sshConfigs)
+      const updated = [...this.sshConfigs];
+      updated[index] = _.cloneDeep(updated[index]);
+      updated[index].sshConfig[field] = value;
+      this.$set(this.config, 'sshConfigs', updated);
     },
     focusHostInput() {
       this.trigger(AppEvent.focusConnectionHost);
