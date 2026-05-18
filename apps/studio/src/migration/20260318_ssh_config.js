@@ -30,38 +30,5 @@ export default {
         version INTEGER NOT NULL DEFAULT 0
       )
     `)
-
-    // Migrate sshBastionHost as position-0 entry
-    await runner.query(`
-      INSERT INTO ssh_config (host, port, mode, username, password, keyfile, keyfilePassword)
-      SELECT sshBastionHost, COALESCE(sshBastionHostPort, 22), COALESCE(sshBastionMode, 'agent'), sshBastionUsername, sshBastionPassword, sshBastionKeyfile, sshBastionKeyfilePassword
-      FROM saved_connection
-      WHERE sshBastionHost IS NOT NULL AND sshBastionHost != ''
-    `)
-    await runner.query(`
-      INSERT INTO connection_ssh_config (connectionId, sshConfigId, position)
-      SELECT sc.id, ssh.id, 0
-      FROM saved_connection sc
-      JOIN ssh_config ssh ON ssh.host = sc.sshBastionHost
-      WHERE sc.sshBastionHost IS NOT NULL AND sc.sshBastionHost != ''
-    `)
-
-    // Migrate sshHost as the last (target) entry
-    await runner.query(`
-      INSERT INTO ssh_config (host, port, mode, username, password, keyfile, keyfilePassword)
-      SELECT sshHost, COALESCE(sshPort, 22), COALESCE(sshMode, 'agent'), sshUsername, sshPassword, sshKeyfile, sshKeyfilePassword
-      FROM saved_connection
-      WHERE sshEnabled = 1 AND sshHost IS NOT NULL AND sshHost != ''
-    `)
-    await runner.query(`
-      INSERT INTO connection_ssh_config (connectionId, sshConfigId, position)
-      SELECT sc.id, ssh.id, COALESCE(existing.maxPos + 1, 0)
-      FROM saved_connection sc
-      JOIN ssh_config ssh ON ssh.host = sc.sshHost
-      LEFT JOIN (
-        SELECT connectionId, MAX(position) AS maxPos FROM connection_ssh_config GROUP BY connectionId
-      ) existing ON existing.connectionId = sc.id
-      WHERE sc.sshEnabled = 1 AND sc.sshHost IS NOT NULL AND sc.sshHost != ''
-    `)
   }
 }
