@@ -23,7 +23,7 @@ export class ConnectionSshConfig extends ApplicationEntity {
   @JoinColumn({ name: 'connectionId' })
   connection: any
 
-  @ManyToOne(() => SshConfig, (cfg) => cfg.connectionSshConfigs, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => SshConfig, { eager: true, cascade: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'sshConfigId' })
   sshConfig: SshConfig
 }

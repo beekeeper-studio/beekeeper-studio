@@ -1,7 +1,6 @@
 import { TransportConnectionSshConfig } from '@/common/transport/TransportSshConfig';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import type { SshMode } from '@/common/interfaces/IConnection';
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
@@ -181,35 +180,6 @@ export interface IDbConnectionServerSSHConfig {
   enabled: boolean
   keepaliveInterval: Nullable<number>
   configs: TransportConnectionSshConfig[]
-
-  /** @deprecated Use {@link configs} instead. */
-  host: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  port: number
-  /** @deprecated Use {@link configs} instead. */
-  user: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  password: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  privateKey: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  passphrase: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  bastionHost: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  bastionPort: Nullable<number>
-  /** @deprecated Use {@link configs} instead. */
-  bastionUser: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  bastionPassword: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  bastionPrivateKey: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  bastionPassphrase: Nullable<string>
-  /** @deprecated Use {@link configs} instead. */
-  bastionMode: Nullable<SshMode>
-  /** @deprecated Use {@link configs} instead by passing `mode: "agent"`. */
-  useAgent: boolean
 }
 
 export interface IDbConnectionServerConfig {

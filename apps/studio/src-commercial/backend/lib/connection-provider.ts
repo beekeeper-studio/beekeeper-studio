@@ -11,22 +11,6 @@ export default {
       enabled: config.sshEnabled,
       configs: config.sshConfigs || [],
       keepaliveInterval: config.sshKeepaliveInterval,
-
-      // TODO remove these
-      host: config.sshHost ? config.sshHost.trim() : null,
-      port: config.sshPort,
-      user: config.sshUsername ? config.sshUsername.trim() : null,
-      password: config.sshMode === 'userpass' ? config.sshPassword : null,
-      privateKey: config.sshMode === 'keyfile' ? config.sshKeyfile : null,
-      passphrase: config.sshMode === 'keyfile' ? config.sshKeyfilePassword : null,
-      bastionHost: config.sshBastionHost,
-      bastionPort: config.sshBastionHostPort,
-      bastionUser: config.sshBastionUsername,
-      bastionPassword: config.sshBastionMode === 'userpass' ? config.sshBastionPassword : null,
-      bastionPrivateKey: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfile : null,
-      bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
-      bastionMode: config.sshBastionMode,
-      useAgent: config.sshMode == 'agent',
     }
 
     return {

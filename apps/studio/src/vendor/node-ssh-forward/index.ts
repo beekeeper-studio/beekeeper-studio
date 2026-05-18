@@ -55,14 +55,6 @@ type Options = {
   password?: string
   privateKey?: string | Buffer
   agentForward?: boolean
-  /** @deprecated Use jumpHosts instead */
-  bastionHost?: string
-  bastionPort?: number
-  bastionUsername?: string
-  bastionPassword?: string
-  bastionPrivateKey?: string | Buffer
-  bastionPassphrase?: string
-  bastionAgentForward?: boolean
   passphrase?: string
   endPort?: number
   endHost: string
@@ -174,11 +166,7 @@ class SSHConnection {
     let connection: Client
     this.debug("establish with options", this.options)
 
-    // Collect the ordered list of jump hosts.
-    // Support both the new jumpHosts array and the legacy bastionHost string.
-    const jumpHosts: SshOptions[] = this.options.jumpHosts && this.options.jumpHosts.length > 0
-      ? this.options.jumpHosts
-      : (this.options.bastionHost ? [{ host: this.options.bastionHost, mode: 'agent' as const }] : [])
+    const jumpHosts: SshOptions[] = this.options.jumpHosts ?? []
 
     if (jumpHosts.length > 0) {
       connection = await this.connectViaBastion(jumpHosts)
@@ -364,18 +352,6 @@ class SSHConnection {
       privateKey: this.options.privateKey,
       passphrase: this.options.passphrase,
       agentForward: this.options.agentForward,
-    }
-  }
-
-  private getBastionOptions(): ConnectOptions {
-    return {
-      host: this.options.bastionHost,
-      port: this.options.bastionPort,
-      username: this.options.bastionUsername,
-      password: this.options.bastionPassword,
-      privateKey: this.options.bastionPrivateKey,
-      passphrase: this.options.bastionPassphrase,
-      agentForward: this.options.bastionAgentForward,
     }
   }
 

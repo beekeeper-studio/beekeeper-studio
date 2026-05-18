@@ -12,7 +12,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
-import { resolveSshConfigs, waitPromise } from "@/common/utils";
+import { waitPromise } from "@/common/utils";
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -149,8 +149,6 @@ export const ConnHandlers: IConnectionHandlers = {
         throw new Error(`Incorrect pin. Please try again.`);
       }
     }
-
-    config.sshConfigs = resolveSshConfigs(config);
 
     if (config.azureAuthOptions?.azureAuthEnabled && !config.authId) {
       let cache = new TokenCache();

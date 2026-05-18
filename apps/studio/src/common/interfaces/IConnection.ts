@@ -34,24 +34,6 @@ export interface ISimpleConnection extends Transport {
   defaultDatabase: Nullable<string>
   url: Nullable<string>
   sshEnabled: boolean
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshHost: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshPort: Nullable<number>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshKeyfile: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshUsername: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshBastionHost: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshBastionHostPort: Nullable<number>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshBastionMode: SshMode
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshBastionUsername: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshBastionKeyfile: Nullable<string>
   sshKeepaliveInterval: Nullable<number>
   ssl: boolean
   sslCaFile: Nullable<string>
@@ -78,18 +60,7 @@ export interface ISimpleConnection extends Transport {
 
 export interface IConnection extends ISimpleConnection {
   name: Nullable<string>
-
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshMode: SshMode
   password: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshPassword: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshKeyfilePassword: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshBastionPassword: Nullable<string>
-  /** @deprecated use {@link IConnection.sshConfigs} instead */
-  sshBastionKeyfilePassword: Nullable<string>
 
   /** Ordered list of SSH hop configs (jump hosts + target host), sorted by position ascending */
   sshConfigs?: TransportConnectionSshConfig[]

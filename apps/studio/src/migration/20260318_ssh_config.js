@@ -6,7 +6,7 @@ export default {
       CREATE TABLE IF NOT EXISTS ssh_config (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         host VARCHAR(255) NOT NULL DEFAULT '',
-        port INTEGER NOT NULL DEFAULT 22,
+        port INTEGER,
         mode VARCHAR(8) NOT NULL DEFAULT 'agent',
         username VARCHAR(255),
         password VARCHAR(255),
