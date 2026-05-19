@@ -14,7 +14,8 @@ export function isUltimateType(s: ConnectionType) {
     'mongodb',
     'sqlanywhere',
     'trino',
-    'surrealdb'
+    'surrealdb',
+    'snowflake'
   ]
   return types.includes(s)
 }

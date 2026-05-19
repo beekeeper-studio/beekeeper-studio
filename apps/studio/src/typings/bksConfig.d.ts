@@ -249,6 +249,19 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        snowflake: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;

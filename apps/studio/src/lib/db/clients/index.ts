@@ -298,5 +298,12 @@ export const CLIENTS: ClientConfig[] = [
       'server:domain',
       'server:socketPathWithCustomPort',
     ]
+  },
+  {
+    key: 'snowflake',
+    name: 'Snowflake',
+    disabledFeatures: [
+
+    ]
   }
 ];

@@ -89,6 +89,7 @@ import addBastionAuth from './20260324_add_bastion_auth'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
+import addSnowflakeOptions from './20260501_add_snowflake_options'
 
 import ultimate from './ultimate/index'
 
@@ -139,6 +140,7 @@ const realMigrations = [
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,
   createTabulatorPersistence,
+  addSnowflakeOptions
 ]
 
 // fixtures require the models

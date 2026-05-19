@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from '@bksLogger'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions } from '../models'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions, OrderBy } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { fromIni } from "@aws-sdk/credential-providers";
@@ -102,7 +102,7 @@ function ansiWrapIdentifier(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-function wrapIdentifier(value) {
+function defaultWrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
@@ -119,7 +119,7 @@ export function getEntraOptions(server, extra): AuthOptions {
   };
 }
 
-export function buildFilterString(filters: TableFilter[], columns = []) {
+export function buildFilterString(filters: TableFilter[], columns = [], wrapIdentifier: (s: string) => string) {
   let filterString = ""
   let filterParams = []
   if (filters && _.isArray(filters) && filters.length > 0) {
@@ -164,16 +164,27 @@ export function applyChangesSql(changes: TableChanges, knex: any): string {
     return queries.endsWith(';') ? queries : `${queries};`
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = [], selects = ['*']) {
+export function buildSelectTopQuery(
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: string | TableFilter[],
+  countTitle = 'total',
+  columns = [],
+  selects = ['*'],
+  schema?: string,
+  wrapIdentifier: (s: string) => string = defaultWrapIdentifier
+) {
   log.debug('building selectTop for', table, offset, limit, orderBy, selects)
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "ORDER BY " + (orderBy.map((item: any) => {
       if (_.isObject(item)) {
-        return `\`${item['field']}\` ${item['dir'].toUpperCase()}`
+        return `${wrapIdentifier(item['field'])} ${item['dir'].toUpperCase()}`
       } else {
-        return `\`${item}\``
+        return wrapIdentifier(item)
       }
     })).join(",")
   }
@@ -182,14 +193,14 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   if (_.isString(filters)) {
     filterString = `WHERE ${filters}`
   } else {
-    const filterBlob = buildFilterString(filters, columns)
+    const filterBlob = buildFilterString(filters, columns, wrapIdentifier)
     filterString = filterBlob.filterString
     filterParams = filterBlob.filterParams
   }
 
   const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(", ")}`
   const baseSQL = `
-    FROM \`${table}\`
+    FROM ${schema ? `${wrapIdentifier(schema)}.` : ''}${wrapIdentifier(table)}
     ${filterString}
   `
   const countSQL = `

@@ -104,6 +104,7 @@ export default {
       libsqlOptions: config.libsqlOptions,
       sqlAnywhereOptions: config.sqlAnywhereOptions,
       surrealDbOptions: config.surrealDbOptions,
+      snowflakeOptions: config.snowflakeOptions,
       runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : []
     }
   },
