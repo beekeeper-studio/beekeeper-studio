@@ -75,7 +75,9 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
       } as IConnection;
 
       clients.backup.connConfig = iConn;
+      clients.backup.database = iConn.defaultDatabase;
       clients.restore.connConfig = iConn;
+      clients.restore.database = iConn.defaultDatabase;
     })
 
     describe("Common Tests", () => {

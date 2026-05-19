@@ -110,7 +110,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       command.options.push(BaseCommandClient.connectionType == 'mariadb' ? '--skip-ssl' : '--ssl-mode=DISABLED');
     }
 
-    command.options.push(`--execute="SOURCE ${this.quotedInputFilePath}"`);
+    command.options.push(`--execute="SOURCE ${this._config.inputPath}"`);
 
     return command;
   }
