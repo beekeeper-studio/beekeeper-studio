@@ -66,10 +66,16 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), `psql-`));
       fs.chmodSync(temp, "777")
       container = await new GenericContainer(`postgres:latest`)
-        .withEnv("POSTGRES_PASSWORD", "example")
-        .withEnv("POSTGRES_DB", "banana")
+        .withEnvironment({
+          "POSTGRES_PASSWORD": "example",
+          "POSTGRES_DB": "banana"
+        })
         .withExposedPorts(5432)
-        .withBindMount(path.join(temp, "postgresql"), "/var/run/postgresql", "rw")
+        .withBindMounts([{
+          source: path.join(temp, "postgresql"),
+          target: "/var/run/postgresql",
+          mode: "rw"
+        }])
         .withStartupTimeout(dbtimeout)
         .start();
       jest.setTimeout(timeoutDefault);
@@ -132,7 +138,7 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
       if (container) {
         await container.stop()
       }
-      stub?.dispose();
+      await stub?.dispose();
     })
   })
 }

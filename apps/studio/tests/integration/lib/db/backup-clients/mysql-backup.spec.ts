@@ -19,6 +19,14 @@ const TEST_CONFIGS: Array<BackupTestConfig> = [
       sqlInsert: true
     },
     restore: {}
+  },
+  {
+    description: "Backup with spaces in filename",
+    backup: {
+      dropDatabase: true,
+      filename: 'Dumb name with spaces'
+    },
+    restore: {}
   }
 ]
 
@@ -109,7 +117,7 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
       if (container) {
         await container.stop()
       }
-      stub?.dispose();
+      await stub?.dispose();
     })
   })
 }

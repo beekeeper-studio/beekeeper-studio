@@ -72,7 +72,7 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
       if (util?.connection) {
         await util.connection.disconnect();
       }
-      stub?.dispose();
+      await stub?.dispose();
     })
   })
 }

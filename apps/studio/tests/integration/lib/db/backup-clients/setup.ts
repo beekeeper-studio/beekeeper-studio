@@ -13,7 +13,7 @@ const handlers: Record<string, (args: any) => Promise<any>> = {
 
 export interface UtilStub {
   sId: string;
-  dispose(): void;
+  dispose(): Promise<void>;
 }
 
 // Install a stub for Vue.prototype.$util that routes calls into the real
@@ -68,10 +68,10 @@ export function installUtilStub(): UtilStub {
 
   return {
     sId,
-    dispose: () => {
+    dispose: async () => {
       emitter.removeAllListeners();
       tokens.clear();
-      removeState(sId);
+      await removeState(sId);
     },
   };
 }
