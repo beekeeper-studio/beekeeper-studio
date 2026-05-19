@@ -153,6 +153,10 @@ jobs:
       - name: Symlink libaio v1 (for oracle)
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
 
+      - name: Install PostgreSQL 15 (for postgres-backup)
+        if: matrix.chunk[0] == 'postgres-backup.spec.ts'
+        run: sudo bash bin/get-postgres-15.sh
+
       - name: Test
         uses: nick-fields/retry@v2
         with:

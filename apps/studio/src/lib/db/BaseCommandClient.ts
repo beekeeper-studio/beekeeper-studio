@@ -52,16 +52,32 @@ export abstract class BaseCommandClient {
   // deprecated their password env variable :(
   static get quotedPassword() {
     const password = BaseCommandClient._password || '';
+    return this.quoteValue(password);
+  }
+
+  get quotedOutputFilePath() {
+    let filepath = '';
+    if (this._config.outputPath && this._config.outputPath.trim() !== '') {
+      filepath += `${this._config.outputPath}${this.pathSep}`;
+    }
+    if (this.filename && this._config.format !== 'd') {
+      filepath += this.filename;
+    }
+    return BaseCommandClient.quoteValue(filepath);
+  }
+
+  protected static quoteValue(value: string): string {
     if (window.platformInfo.isWindows) {
-      const escaped = password
+      const escaped = value
         .replace(/%/g, '%%')
         .replace(/"/g, '""')
         .replace(/([&|<>^])/g, '^$1');
       return `"${escaped}"`;
     } else {
-      const escaped = password.replace(/'/g, `'\\''`);
+      const escaped = value.replace(/'/g, `'\\''`);
       return `'${escaped}'`;
     }
+
   }
 
   set connConfig(value: IConnection) {
