@@ -64,6 +64,9 @@ export interface IConnection extends ISimpleConnection {
 
   /** Ordered list of SSH hop configs (jump hosts + target host), sorted by position ascending */
   sshConfigs?: TransportConnectionSshConfig[]
+
+  /** When false, the client must NOT send keyfilePassword on sshConfigs to the cloud API. */
+  sshStoreKeyfilePassword?: boolean
 }
 
 export interface ICloudSavedConnection extends IConnection {

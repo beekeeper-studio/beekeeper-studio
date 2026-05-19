@@ -308,6 +308,9 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'boolean', default: true })
   rememberPassword = true
 
+  @Column({ type: 'boolean', default: true })
+  sshStoreKeyfilePassword = true
+
   @Column({type: 'boolean', default: false})
   readOnlyMode = false
 
@@ -459,6 +462,16 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   maybeClearPasswords(): void {
     if (!this.rememberPassword) {
       this.password = null
+    }
+  }
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  maybeClearKeyfilePassword(): void {
+    if (this.sshStoreKeyfilePassword === false && this.sshConfigs) {
+      this.sshConfigs.forEach((csc) => {
+        if (csc.sshConfig) csc.sshConfig.keyfilePassword = null
+      })
     }
   }
 

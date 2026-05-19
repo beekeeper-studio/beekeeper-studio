@@ -387,3 +387,41 @@ describe("SshConfig orphan cleanup", () => {
     await expect(ConnectionSshConfig.count()).resolves.toBe(0);
   });
 });
+
+describe("sshStoreKeyfilePassword flag", () => {
+  beforeEach(async () => {
+    await TestOrmConnection.connect();
+  });
+
+  afterEach(async () => {
+    await TestOrmConnection.disconnect();
+  });
+
+  it("clears keyfilePassword on sshConfigs when set to false on save", async () => {
+    const ssh = new SshConfig();
+    ssh.withProps({
+      host: "h",
+      port: 22,
+      mode: "keyfile",
+      username: "u",
+      keyfile: "/path/to/key",
+      keyfilePassword: "secret",
+    });
+    await ssh.save();
+
+    const conn = await buildConnection({ name: "store-flag" });
+
+    const link = new ConnectionSshConfig();
+    link.withProps({ connectionId: conn.id, sshConfigId: ssh.id });
+    await link.save();
+
+    const reloaded = await SavedConnection.findOneBy({ id: conn.id });
+    expect(reloaded.sshConfigs[0].sshConfig.keyfilePassword).toBe("secret");
+
+    reloaded.sshStoreKeyfilePassword = false;
+    await reloaded.save();
+
+    const final = await SshConfig.findOneBy({ id: ssh.id });
+    expect(final.keyfilePassword).toBeNull();
+  });
+});

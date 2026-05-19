@@ -207,6 +207,21 @@
             placeholder="(in seconds)"
           />
         </div>
+        <div class="row form-group">
+          <label
+            class="checkbox-group"
+            for="sshStoreKeyfilePassword"
+          >
+            <input
+              class="form-control"
+              id="sshStoreKeyfilePassword"
+              type="checkbox"
+              name="sshStoreKeyfilePassword"
+              v-model="config.sshStoreKeyfilePassword"
+            >
+            <span>Store Keyfile Password</span>
+          </label>
+        </div>
       </details>
     </template>
   </toggle-form-area>
