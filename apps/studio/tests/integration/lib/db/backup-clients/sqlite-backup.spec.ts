@@ -69,9 +69,7 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
     })
 
     afterAll(async () => {
-      if (util?.connection) {
-        await util.connection.disconnect();
-      }
+      await util?.disconnect();
       await stub?.dispose();
     })
   })
