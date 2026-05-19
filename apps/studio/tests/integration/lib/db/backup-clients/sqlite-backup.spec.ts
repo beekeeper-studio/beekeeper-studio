@@ -80,13 +80,25 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 
     describe("Common Tests", () => {
       runBackupTests(() => {
+        const skipDataChecks = backupConfig.schemaOnly;
         return {
           dialect: 'sqlite',
           backup: clients.backup,
           restore: clients.restore,
           backupConfig,
           restoreConfig,
-          outputDirSuffix
+          outputDirSuffix,
+          beforeRestore: skipDataChecks ? undefined : async () => {
+            if (backupConfig.dataOnly) {
+              await util.knex.raw('DELETE FROM test_param');
+            } else {
+              await util.knex.raw('DROP TABLE IF EXISTS test_param');
+            }
+          },
+          verifyRestore: skipDataChecks ? undefined : async () => {
+            const rows = await util.knex('test_param').where({ data: 'River Song' });
+            expect(rows.length).toBeGreaterThan(0);
+          },
         }
       })
     })

@@ -14,6 +14,9 @@ type backupParams = {
   backupConfig: Partial<BackupConfig>,
   restoreConfig: Partial<BackupConfig>,
   outputDirSuffix?: string,
+  beforeRestore?: () => Promise<void>,
+  verifyRestore?: () => Promise<void>,
+  skipRestoreRun?: boolean,
 }
 
 export type BackupTestConfig = {
@@ -31,17 +34,23 @@ export function runBackupTests(getParams: () => backupParams) {
   let backupConfig: Partial<BackupConfig>;
   let restoreConfig: Partial<BackupConfig>;
   let outputDirSuffix: string | undefined;
+  let beforeRestore: (() => Promise<void>) | undefined;
+  let verifyRestore: (() => Promise<void>) | undefined;
+  let skipRestoreRun: boolean;
 
   beforeAll(() => {
     // TODO (@day): look into this further
     // I hate this with a burning passion, but just doesn't like me just passing to the function...
-    const {dialect: d, backup: b, restore: r, backupConfig: bc, restoreConfig: rc, outputDirSuffix: ods} = getParams();
-    dialect = d;
-    backup = b;
-    restore = r;
-    backupConfig = bc;
-    restoreConfig = rc;
-    outputDirSuffix = ods;
+    const params = getParams();
+    dialect = params.dialect;
+    backup = params.backup;
+    restore = params.restore;
+    backupConfig = params.backupConfig;
+    restoreConfig = params.restoreConfig;
+    outputDirSuffix = params.outputDirSuffix;
+    beforeRestore = params.beforeRestore;
+    verifyRestore = params.verifyRestore;
+    skipRestoreRun = params.skipRestoreRun ?? false;
   })
 
   it("Should be able to find the backup dump tool", async () => {
@@ -134,12 +143,24 @@ export function runBackupTests(getParams: () => backupParams) {
   })
 
   it("Should be able to run a restore", async () => {
+    if (skipRestoreRun) {
+      return;
+    }
+
+    if (beforeRestore) {
+      await beforeRestore();
+    }
+
     try {
       await restore.runCommand();
     } catch (e) {
       // this may reject even if the command actually succeeds (don't blame me, blame pg_restore)
       // so we need to check if it succeeds in other ways
       expect(e).toBe(errorMessages.nonZero)
+    }
+
+    if (verifyRestore) {
+      await verifyRestore();
     }
   })
 }

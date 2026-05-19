@@ -165,13 +165,23 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 
     describe("Common Tests", () => {
       runBackupTests(() => {
+        const skipRestoreRun = backupConfig.format === 'p';
+        const skipDataChecks = backupConfig.schemaOnly;
         return {
           dialect: 'psql',
           backup: clients.backup,
           restore: clients.restore,
           backupConfig,
           restoreConfig,
-          outputDirSuffix
+          outputDirSuffix,
+          skipRestoreRun,
+          beforeRestore: skipRestoreRun || skipDataChecks ? undefined : async () => {
+            await util.knex.raw('DELETE FROM test_param');
+          },
+          verifyRestore: skipRestoreRun || skipDataChecks ? undefined : async () => {
+            const rows = await util.knex('test_param').where({ data: 'River Song' });
+            expect(rows.length).toBeGreaterThan(0);
+          },
         }
       })
     })

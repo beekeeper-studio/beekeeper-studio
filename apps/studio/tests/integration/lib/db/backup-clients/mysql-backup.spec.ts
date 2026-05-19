@@ -125,13 +125,21 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 
     describe("Common Tests", () => {
       runBackupTests(() => {
+        const skipDataChecks = backupConfig.schemaOnly;
         return {
           dialect: 'mysql',
           backup: clients.backup,
           restore: clients.restore,
           backupConfig,
           restoreConfig,
-          outputDirSuffix
+          outputDirSuffix,
+          beforeRestore: skipDataChecks ? undefined : async () => {
+            await util.knex.raw('DELETE FROM `test`.`test_param`');
+          },
+          verifyRestore: skipDataChecks ? undefined : async () => {
+            const rows = await util.knex.raw("SELECT data FROM `test`.`test_param` WHERE data = 'River Song'");
+            expect((rows[0] as any[]).length).toBeGreaterThan(0);
+          },
         }
       })
     })
