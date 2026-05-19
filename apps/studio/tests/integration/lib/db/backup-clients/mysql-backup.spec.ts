@@ -27,10 +27,35 @@ const TEST_CONFIGS: Array<BackupTestConfig> = [
       filename: 'Dumb name with spaces'
     },
     restore: {}
+  },
+  {
+    description: "Backup with parens & brackets in filename",
+    backup: {
+      dropDatabase: true,
+      filename: 'backup (mysql) [2026-05-19]'
+    },
+    restore: {}
+  },
+  {
+    description: "Backup with spaces in output directory and filename",
+    backup: {
+      dropDatabase: true,
+      filename: 'Dumb name with spaces'
+    },
+    restore: {},
+    outputDirSuffix: 'my backups (mysql)'
+  },
+  {
+    description: "Backup with spaces in output directory only",
+    backup: {
+      dropDatabase: true,
+    },
+    restore: {},
+    outputDirSuffix: 'backup dir with spaces'
   }
 ]
 
-function testWith(description: string, backupConfig: Partial<BackupConfig>, restoreConfig: Partial<BackupConfig>) {
+function testWith(description: string, backupConfig: Partial<BackupConfig>, restoreConfig: Partial<BackupConfig>, outputDirSuffix?: string) {
   describe(`MySQL: Can Create and restore backups: ${description}`, () => {
     let container: StartedTestContainer;
     let config: IDbConnectionServerConfig;
@@ -105,7 +130,8 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
           backup: clients.backup,
           restore: clients.restore,
           backupConfig,
-          restoreConfig
+          restoreConfig,
+          outputDirSuffix
         }
       })
     })
@@ -120,4 +146,4 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
   })
 }
 
-TEST_CONFIGS.forEach(({description, backup, restore}) => testWith(description, backup, restore))
+TEST_CONFIGS.forEach(({description, backup, restore, outputDirSuffix}) => testWith(description, backup, restore, outputDirSuffix))

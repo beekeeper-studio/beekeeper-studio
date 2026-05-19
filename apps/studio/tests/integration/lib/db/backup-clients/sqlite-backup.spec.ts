@@ -23,10 +23,32 @@ const TEST_CONFIGS: Array<BackupTestConfig> = [
       preserveRowIds: true
     },
     restore: {}
+  },
+  {
+    description: "Backup with spaces in filename",
+    backup: {
+      filename: "sqlite dump with spaces"
+    },
+    restore: {}
+  },
+  {
+    description: "Backup with parens & brackets in filename",
+    backup: {
+      filename: "backup (sqlite) [2026-05-19]"
+    },
+    restore: {}
+  },
+  {
+    description: "Backup with spaces in output directory and filename",
+    backup: {
+      filename: "sqlite dump"
+    },
+    restore: {},
+    outputDirSuffix: "sqlite backups (test)"
   }
 ]
 
-function testWith(description: string, backupConfig: Partial<BackupConfig>, restoreConfig: Partial<BackupConfig>) {
+function testWith(description: string, backupConfig: Partial<BackupConfig>, restoreConfig: Partial<BackupConfig>, outputDirSuffix?: string) {
   describe(`SQLite: Can Create and restore backups: ${description}`, () => {
     let config: IDbConnectionServerConfig;
     let util: DBTestUtil;
@@ -63,7 +85,8 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
           backup: clients.backup,
           restore: clients.restore,
           backupConfig,
-          restoreConfig
+          restoreConfig,
+          outputDirSuffix
         }
       })
     })
@@ -75,4 +98,4 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
   })
 }
 
-TEST_CONFIGS.forEach(({description, backup, restore}) => testWith(description, backup, restore))
+TEST_CONFIGS.forEach(({description, backup, restore, outputDirSuffix}) => testWith(description, backup, restore, outputDirSuffix))

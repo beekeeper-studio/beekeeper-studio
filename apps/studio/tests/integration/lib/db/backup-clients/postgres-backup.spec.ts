@@ -48,10 +48,53 @@ const TEST_CONFIGS: Array<BackupTestConfig> = [
       compression: "9"
     },
     restore: {}
+  },
+  {
+    description: "Plain text backup with spaces in filename",
+    backup: {
+      format: "p",
+      filename: "Postgres dump with spaces"
+    },
+    restore: {}
+  },
+  {
+    description: "Custom backup with spaces in filename",
+    backup: {
+      format: "c",
+      filename: "Postgres custom (compressed)"
+    },
+    restore: {}
+  },
+  {
+    description: "Tar backup with spaces in filename",
+    backup: {
+      format: "t",
+      filename: "Postgres tar dump"
+    },
+    restore: {}
+  },
+  {
+    description: "Plain text backup with spaces in output directory",
+    backup: {
+      format: "p",
+      filename: "dump with spaces"
+    },
+    restore: {},
+    outputDirSuffix: "psql backups (test)"
+  },
+  {
+    description: "Directory backup with spaces in output directory",
+    backup: {
+      format: "d",
+    },
+    restore: {
+      isDir: true,
+    },
+    outputDirSuffix: "psql dir backups (test)"
   }
 ]
 
-function testWith(description: string, backupConfig: Partial<BackupConfig>, restoreConfig: Partial<BackupConfig>) {
+function testWith(description: string, backupConfig: Partial<BackupConfig>, restoreConfig: Partial<BackupConfig>, outputDirSuffix?: string) {
   describe(`Postgresql: Can Create and restore backups: ${description}`, () => {
 
     let container: StartedTestContainer;
@@ -126,7 +169,8 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
           backup: clients.backup,
           restore: clients.restore,
           backupConfig,
-          restoreConfig
+          restoreConfig,
+          outputDirSuffix
         }
       })
     })
@@ -143,4 +187,4 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 }
 
 
-TEST_CONFIGS.forEach(({description, backup, restore}) => testWith(description, backup, restore))
+TEST_CONFIGS.forEach(({description, backup, restore, outputDirSuffix}) => testWith(description, backup, restore, outputDirSuffix))

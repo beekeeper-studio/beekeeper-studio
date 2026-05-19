@@ -12,13 +12,15 @@ type backupParams = {
   backup: BaseCommandClient,
   restore: BaseCommandClient,
   backupConfig: Partial<BackupConfig>,
-  restoreConfig: Partial<BackupConfig>
+  restoreConfig: Partial<BackupConfig>,
+  outputDirSuffix?: string,
 }
 
 export type BackupTestConfig = {
   description: string,
   backup: Partial<BackupConfig>,
-  restore: Partial<BackupConfig>
+  restore: Partial<BackupConfig>,
+  outputDirSuffix?: string,
 }
 
 export function runBackupTests(getParams: () => backupParams) {
@@ -28,16 +30,18 @@ export function runBackupTests(getParams: () => backupParams) {
   let restore: BaseCommandClient;
   let backupConfig: Partial<BackupConfig>;
   let restoreConfig: Partial<BackupConfig>;
+  let outputDirSuffix: string | undefined;
 
   beforeAll(() => {
     // TODO (@day): look into this further
     // I hate this with a burning passion, but just doesn't like me just passing to the function...
-    const {dialect: d, backup: b, restore: r, backupConfig: bc, restoreConfig: rc} = getParams();
+    const {dialect: d, backup: b, restore: r, backupConfig: bc, restoreConfig: rc, outputDirSuffix: ods} = getParams();
     dialect = d;
     backup = b;
     restore = r;
     backupConfig = bc;
     restoreConfig = rc;
+    outputDirSuffix = ods;
   })
 
   it("Should be able to find the backup dump tool", async () => {
@@ -46,6 +50,10 @@ export function runBackupTests(getParams: () => backupParams) {
 
   it("Should create a backup command", () => {
     backupDir = fs.mkdtempSync(path.join(os.tmpdir(), `${dialect}-backup-`));
+    if (outputDirSuffix) {
+      backupDir = path.join(backupDir, outputDirSuffix);
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
     if (backupConfig.format == 'd') {
       backupDir = fs.mkdtempSync(path.join(backupDir, `${dialect}-dir-backup-`));
     }
