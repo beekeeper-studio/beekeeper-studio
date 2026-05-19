@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString } from "class-validator"
-import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, OneToMany, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
@@ -7,9 +7,9 @@ import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
-import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
+import { ConnectionSshConfig } from './ConnectionSshConfig'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
@@ -168,30 +168,39 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false, default: false })
   sshEnabled = false
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: "varchar", nullable: true })
   sshHost: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: "int", nullable: true })
   sshPort: Nullable<number> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: "varchar", nullable: true })
   sshKeyfile: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshUsername: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshBastionHost: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'int', nullable: true })
   sshBastionHostPort: Nullable<number> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', length: 8, nullable: false, default: 'agent' })
   sshBastionMode: SshMode = 'agent'
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshBastionUsername: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true })
   sshBastionKeyfile: Nullable<string> = null
 
@@ -315,48 +324,33 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @JoinColumn({ name: 'connectionFolderId' })
   connectionFolder?: ConnectionFolder
 
+  // Do NOT initialize this to [] - TypeORM does not allow array initializers on relations.
+  // See ConnectionFolder.ts for the same pattern.
+  @OneToMany(() => ConnectionSshConfig, (csc) => csc.connection, { cascade: true, eager: true, orphanedRowAction: 'delete' })
+  sshConfigs?: ConnectionSshConfig[]
+
   @Column({type: 'varchar', nullable: true, transformer: [encrypt]})
   password: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshKeyfilePassword: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshPassword: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshBastionPassword: Nullable<string> = null
 
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   sshBastionKeyfilePassword: Nullable<string> = null
 
-  _sshMode: SshMode = "agent"
-
+  /** @deprecated use `sshConfigs` instead — kept for migration read-back only (see {@link SshConfig.migrateLegacyColumns}) */
   @Column({ name: "sshMode", type: "varchar", length: "8", nullable: false, default: "agent" })
-  set sshMode(value: SshMode) {
-    this._sshMode = value
-    if (this._sshMode !== 'userpass') {
-      this.sshPassword = null
-    }
-
-    if (this._sshMode !== 'keyfile') {
-      this.sshKeyfile = null
-      this.sshKeyfilePassword = null
-    }
-
-    if (this._sshMode === 'keyfile' && !this.sshKeyfile) {
-      this.sshKeyfile = resolveHomePathToAbsolute("~/.ssh/id_rsa")
-    }
-
-    if (!this.sshKeepaliveInterval || this.sshKeepaliveInterval < 0) {
-      // store null if zero, empty or negative
-      this.sshKeepaliveInterval = null
-    }
-  }
-
-  get sshMode(): SshMode {
-    return this._sshMode
-  }
+  sshMode: SshMode = 'agent'
 
   private smellsLikeUrl(url: string): boolean {
     return url.includes("://")
@@ -465,10 +459,6 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   maybeClearPasswords(): void {
     if (!this.rememberPassword) {
       this.password = null
-      this.sshPassword = null
-      this.sshKeyfilePassword = null
-      this.sshBastionPassword = null
-      this.sshBastionKeyfilePassword = null
     }
   }
 

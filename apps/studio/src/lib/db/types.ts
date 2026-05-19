@@ -1,6 +1,6 @@
+import { TransportConnectionSshConfig } from '@/common/transport/TransportSshConfig';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import type { SshMode } from '@/common/interfaces/IConnection';
 
 export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
@@ -179,25 +179,9 @@ export interface IDbConnectionDatabase {
 }
 
 export interface IDbConnectionServerSSHConfig {
-  host: Nullable<string>
-  port: number
-  user: Nullable<string>
-  password: Nullable<string>
-  privateKey: Nullable<string>
-  passphrase: Nullable<string>
-  identityFiles?: string[]
-  identitiesOnly?: boolean
-  bastionHost: Nullable<string>
-  bastionPort: Nullable<number>
-  bastionUser: Nullable<string>
-  bastionPassword: Nullable<string>
-  bastionPrivateKey: Nullable<string>
-  bastionPassphrase: Nullable<string>
-  bastionIdentityFiles?: string[]
-  bastionIdentitiesOnly?: boolean
-  bastionMode: Nullable<SshMode>
-  keepaliveInterval: number
-  useAgent: boolean
+  enabled: boolean
+  keepaliveInterval: Nullable<number>
+  configs: TransportConnectionSshConfig[]
 }
 
 export interface IDbConnectionServerConfig {

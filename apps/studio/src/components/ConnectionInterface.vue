@@ -416,7 +416,6 @@ export default Vue.extend({
         await this.$store.commit('workspace', this.$store.state.localWorkspace)
       }
       const conn = await this.$util.send('appdb/saved/new')
-      conn.sshUsername = this.username
       this.config = conn;
     } catch (e) {
       log.error(e)

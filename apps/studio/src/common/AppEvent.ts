@@ -79,6 +79,8 @@ export enum AppEvent {
   changedTheme = 'changedTheme',
   /** A plugin menu item was clicked in the native/client menu under the tools. */
   pluginMenuClicked = 'pluginMenuClicked',
+  /** Focus the host input in the connection form (e.g. from the SSH tunnel's target connection edit button). */
+  focusConnectionHost = 'focusConnectionHost',
 }
 
 export interface RootBinding {

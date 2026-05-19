@@ -18,16 +18,12 @@
         </div>
         <div class="subtitle">
           <span
-            class="bastion"
-            v-if="displayConfig.sshBastionHost && !privacyMode"
-          >
-            <span class="truncate">{{ displayConfig.sshBastionHost }}</span>&nbsp;>&nbsp;
-          </span>
-          <span
             class="ssh"
-            v-if="displayConfig.sshHost && !privacyMode"
+            v-if="this.config.sshEnabled && sshTargetHost && !privacyMode"
           >
-            <span class="truncate">{{ displayConfig.sshHost }}</span>&nbsp;>&nbsp;
+            <span v-if="sshHopCount > 0" class="truncate">{{ sshHopCount }} {{ pluralize('jump', sshHopCount) }}</span>
+            <span v-if="sshHopCount > 0">&nbsp;>&nbsp;</span>
+            <span class="truncate">{{ sshTargetHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
             <span>
@@ -90,6 +86,15 @@ export default {
     split: null
   }),
   computed: {
+    sshTargetHost() {
+      if (!this.config.sshEnabled || !this.config.sshConfigs?.length) return null
+      const sorted = [...this.config.sshConfigs].sort((a, b) => a.position - b.position)
+      return sorted[sorted.length - 1]?.sshConfig?.host ?? null
+    },
+    sshHopCount() {
+      if (!this.config.sshConfigs?.length) return 0
+      return this.config.sshConfigs.length - 1
+    },
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(['isCloud']),
@@ -171,6 +176,9 @@ export default {
     },
   },
   methods: {
+    pluralize(word, amount, flag) {
+      return window.main.pluralize(word, amount, flag)
+    },
     showContextMenu(event) {
       const ultimateCheck = this.$store.getters.isUltimate
         ? true

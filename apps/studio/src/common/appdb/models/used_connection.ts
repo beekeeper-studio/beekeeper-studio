@@ -1,6 +1,6 @@
 import { IConnection, ISimpleConnection } from '@/common/interfaces/IConnection'
 import _ from 'lodash'
-import { Entity, Column} from "typeorm"
+import { Entity, Column } from "typeorm"
 import { DbConnectionBase } from './saved_connection'
 
 @Entity({ name: 'used_connection' })
@@ -14,13 +14,6 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.url = other.url
       this.port = other.port
       this.host = other.host
-      this.sshHost = other.sshHost
-      this.sshPort = other.sshPort
-      this.sshBastionHost = other.sshBastionHost
-      this.sshBastionHostPort = other.sshBastionHostPort
-      this.sshBastionMode = other.sshBastionMode
-      this.sshBastionUsername = other.sshBastionUsername
-      this.sshBastionKeyfile = other.sshBastionKeyfile
       this.sshKeepaliveInterval = other.sshKeepaliveInterval
       this.ssl = other.ssl
       this.sslCaFile = other.sslCaFile
