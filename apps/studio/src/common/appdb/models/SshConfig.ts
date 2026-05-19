@@ -54,34 +54,36 @@ export class SshConfig extends ApplicationEntity implements TransportSshConfig {
 
       // Check the bastion host first
       if (conn.sshBastionHost != null && conn.sshBastionHost !== '') {
+        const bastion = await SshConfig.create({
+          host: conn.sshBastionHost,
+          port: conn.sshBastionHostPort,
+          mode: conn.sshBastionMode || 'agent',
+          username: conn.sshBastionUsername,
+          password: conn.sshBastionPassword,
+          keyfile: conn.sshBastionKeyfile,
+          keyfilePassword: conn.sshBastionKeyfilePassword,
+        }).save()
         await ConnectionSshConfig.create({
           connectionId: conn.id,
           position: position++,
-          sshConfig: SshConfig.create({
-            host: conn.sshBastionHost,
-            port: conn.sshBastionHostPort,
-            mode: conn.sshBastionMode || 'agent',
-            username: conn.sshBastionUsername,
-            password: conn.sshBastionPassword,
-            keyfile: conn.sshBastionKeyfile,
-            keyfilePassword: conn.sshBastionKeyfilePassword,
-          }),
+          sshConfigId: bastion.id,
         }).save()
       }
 
       if (conn.sshHost != null && conn.sshHost !== '') {
+        const host = await SshConfig.create({
+          host: conn.sshHost,
+          port: conn.sshPort,
+          mode: conn.sshMode || 'agent',
+          username: conn.sshUsername,
+          password: conn.sshPassword,
+          keyfile: conn.sshKeyfile,
+          keyfilePassword: conn.sshKeyfilePassword,
+        }).save()
         await ConnectionSshConfig.create({
           connectionId: conn.id,
           position: position++,
-          sshConfig: SshConfig.create({
-            host: conn.sshHost,
-            port: conn.sshPort,
-            mode: conn.sshMode || 'agent',
-            username: conn.sshUsername,
-            password: conn.sshPassword,
-            keyfile: conn.sshKeyfile,
-            keyfilePassword: conn.sshKeyfilePassword,
-          }),
+          sshConfigId: host.id,
         }).save()
       }
     }
