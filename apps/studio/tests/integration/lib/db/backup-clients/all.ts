@@ -91,7 +91,7 @@ export function runBackupTests(getParams: () => backupParams) {
     if (backupConfig.format != 'd') {
       const backupPath = path.join(backupDir, backup.filename);
       expect(fs.existsSync(backupPath)).toBe(true);
-      if (backupConfig.format != 't' && !backupConfig.compression) {
+      if (!['t', 'c'].includes(backupConfig.format) && !backupConfig.compression) {
         // read 3 kb of the file just to see if it actually contains sql
         const data = await readFile(backupPath);
 
