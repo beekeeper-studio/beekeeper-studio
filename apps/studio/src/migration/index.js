@@ -87,7 +87,6 @@ import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
 import sshConfig from './20260318_ssh_config'
 import addBastionAuth from './20260324_add_bastion_auth'
-import sshConfigOrphanCleanup from './20260518_ssh_config_orphan_cleanup'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
@@ -138,7 +137,6 @@ const realMigrations = [
   addPositionToItems,
   sshConfig,
   addBastionAuth,
-  sshConfigOrphanCleanup,
   addOnboardingNotyShown,
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,

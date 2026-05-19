@@ -3,7 +3,7 @@ import { SshConfig } from "@/common/appdb/models/SshConfig";
 import { ConnectionSshConfig } from "@/common/appdb/models/ConnectionSshConfig";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AppDbHandlers } from "@/handlers/appDbHandlers";
-import migration from "@/migration/20260518_ssh_config_orphan_cleanup";
+import migration from "@/migration/20260318_ssh_config";
 
 type LegacyFields = Partial<{
   name: string;

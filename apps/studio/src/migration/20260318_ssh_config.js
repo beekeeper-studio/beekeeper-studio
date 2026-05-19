@@ -30,5 +30,21 @@ export default {
         version INTEGER NOT NULL DEFAULT 0
       )
     `)
+
+    // Delete orphan ssh_config rows once no join still references them.
+    // Fires for any DELETE path: app-level remove, FK cascade, or explicit SQL.
+    await runner.query(
+      `DROP TRIGGER IF EXISTS connection_ssh_config_cleanup_ssh_config`
+    )
+    await runner.query(`
+      CREATE TRIGGER connection_ssh_config_cleanup_ssh_config
+      AFTER DELETE ON connection_ssh_config
+      FOR EACH ROW
+      BEGIN
+        DELETE FROM ssh_config
+        WHERE id = OLD.sshConfigId
+          AND NOT EXISTS (SELECT 1 FROM connection_ssh_config WHERE sshConfigId = OLD.sshConfigId);
+      END
+    `)
   }
 }
