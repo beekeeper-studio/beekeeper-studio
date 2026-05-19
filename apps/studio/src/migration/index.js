@@ -85,8 +85,8 @@ import migrateRedshiftToIamOptions from './20250820_migrate_redshift_to_iam_opti
 import createConnectionFolders from './20260223_create_connection_folders'
 import createQueryFolders from './20260223_create_query_folders'
 import addPositionToItems from './20260227_add_position_to_items'
-import sshConfig from './20260318_ssh_config'
 import addBastionAuth from './20260324_add_bastion_auth'
+import sshConfig from './20260519_ssh_config'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
@@ -135,8 +135,8 @@ const realMigrations = [
   addIamAuthOptions, migrateRedshiftToIamOptions, addEditorFontSize,
   createConnectionFolders, createQueryFolders,
   addPositionToItems,
-  sshConfig,
   addBastionAuth,
+  sshConfig,
   addOnboardingNotyShown,
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,

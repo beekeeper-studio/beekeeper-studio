@@ -13,7 +13,6 @@ log.info("initializing background")
 
 import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
-import { SshConfig } from '@/common/appdb/models/SshConfig'
 import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
 import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
@@ -132,9 +131,6 @@ async function initBasics() {
   log.info("running migrations!!")
   const migrator = new Migration(ormConnection, process.env.NODE_ENV)
   await migrator.run()
-
-  log.debug("backfilling legacy ssh columns")
-  await SshConfig.migrateLegacyColumns()
 
   log.debug("getting settings")
   settings = await UserSetting.all()

@@ -4,8 +4,6 @@ import { loadEncryptionKey } from '../../encryption_key'
 import { EncryptTransformer } from '../transformers/Transformers'
 import { TransportSshConfig } from '@/common/transport/TransportSshConfig'
 import { SshMode } from '@/common/interfaces/IConnection'
-import { ConnectionSshConfig } from './ConnectionSshConfig'
-import { SavedConnection } from './saved_connection'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 
@@ -36,57 +34,4 @@ export class SshConfig extends ApplicationEntity implements TransportSshConfig {
 
   @Column({ type: 'varchar', nullable: true, transformer: [encrypt] })
   keyfilePassword: Nullable<string> = null
-
-  /**
-   * Scan saved_connection for legacy SSH columns (sshHost, sshBastionHost, etc.)
-   * and populate ssh_config + connection_ssh_config for any row that doesn't
-   * already have a join entry. Idempotent — safe to call any time.
-   */
-  static async migrateLegacyColumns(): Promise<void> {
-    const connections = await SavedConnection.findBy({ sshEnabled: true })
-
-    for (const conn of connections) {
-      if (await ConnectionSshConfig.existsBy({ connectionId: conn.id })) {
-        continue
-      }
-
-      let position = 0
-
-      // Check the bastion host first
-      if (conn.sshBastionHost != null && conn.sshBastionHost !== '') {
-        const bastion = await SshConfig.create({
-          host: conn.sshBastionHost,
-          port: conn.sshBastionHostPort,
-          mode: conn.sshBastionMode || 'agent',
-          username: conn.sshBastionUsername,
-          password: conn.sshBastionPassword,
-          keyfile: conn.sshBastionKeyfile,
-          keyfilePassword: conn.sshBastionKeyfilePassword,
-        }).save()
-        await ConnectionSshConfig.create({
-          connectionId: conn.id,
-          position: position++,
-          sshConfigId: bastion.id,
-        }).save()
-      }
-
-      if (conn.sshHost != null && conn.sshHost !== '') {
-        const host = await SshConfig.create({
-          host: conn.sshHost,
-          port: conn.sshPort,
-          mode: conn.sshMode || 'agent',
-          username: conn.sshUsername,
-          password: conn.sshPassword,
-          keyfile: conn.sshKeyfile,
-          keyfilePassword: conn.sshKeyfilePassword,
-        }).save()
-        await ConnectionSshConfig.create({
-          connectionId: conn.id,
-          position: position++,
-          sshConfigId: host.id,
-        }).save()
-      }
-    }
-  }
 }
-

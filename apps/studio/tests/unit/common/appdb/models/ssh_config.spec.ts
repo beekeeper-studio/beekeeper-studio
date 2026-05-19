@@ -3,7 +3,7 @@ import { SshConfig } from "@/common/appdb/models/SshConfig";
 import { ConnectionSshConfig } from "@/common/appdb/models/ConnectionSshConfig";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AppDbHandlers } from "@/handlers/appDbHandlers";
-import migration from "@/migration/20260318_ssh_config";
+import migration from "@/migration/20260519_ssh_config";
 
 type LegacyFields = Partial<{
   name: string;
@@ -37,7 +37,16 @@ async function buildConnection(
   return c;
 }
 
-describe("SshConfig.migrateLegacyColumns", () => {
+async function runMigration() {
+  const runner = TestOrmConnection.connection.connection.createQueryRunner();
+  try {
+    await migration.run(runner);
+  } finally {
+    await runner.release();
+  }
+}
+
+describe("ssh_config migration: legacy column backfill", () => {
   beforeEach(async () => {
     await TestOrmConnection.connect();
   });
@@ -72,7 +81,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshPassword: "ssh-secret",
     });
 
-    await SshConfig.migrateLegacyColumns();
+    await runMigration();
 
     const autoJoin = await ConnectionSshConfig.findBy({
       connectionId: auto.id,
@@ -139,7 +148,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshBastionPassword: "bastion-secret",
     });
 
-    await SshConfig.migrateLegacyColumns();
+    await runMigration();
 
     const autoJoin = await ConnectionSshConfig.findBy({
       connectionId: auto.id,
@@ -230,7 +239,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshBastionPassword: "p2",
     });
 
-    await SshConfig.migrateLegacyColumns();
+    await runMigration();
 
     await expect(ConnectionSshConfig.count()).resolves.toBe(6);
     await expect(SshConfig.count()).resolves.toBe(6);
@@ -245,8 +254,8 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshUsername: "sshuser",
     });
 
-    await SshConfig.migrateLegacyColumns();
-    await SshConfig.migrateLegacyColumns();
+    await runMigration();
+    await runMigration();
 
     expect(await ConnectionSshConfig.count()).toBe(1);
     expect(await SshConfig.count()).toBe(1);
@@ -263,7 +272,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
     c.sshMode = "agent";
     await c.save();
 
-    await SshConfig.migrateLegacyColumns();
+    await runMigration();
 
     expect(await ConnectionSshConfig.count()).toBe(0);
     expect(await SshConfig.count()).toBe(0);
@@ -282,7 +291,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshBastionUsername: "bastionuser",
     });
 
-    await SshConfig.migrateLegacyColumns();
+    await runMigration();
 
     const links = await ConnectionSshConfig.findBy({ connectionId: conn.id });
 
@@ -311,7 +320,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshBastionPassword: "bastion-secret",
     });
 
-    await SshConfig.migrateLegacyColumns();
+    await runMigration();
 
     const links = await ConnectionSshConfig.findBy({ connectionId: conn.id });
     links.sort((a, b) => a.position - b.position);
@@ -343,9 +352,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
 describe("SshConfig orphan cleanup", () => {
   beforeEach(async () => {
     await TestOrmConnection.connect();
-    const runner = TestOrmConnection.connection.connection.createQueryRunner();
-    await migration.run(runner);
-    await runner.release();
+    await runMigration();
   });
 
   afterEach(async () => {
