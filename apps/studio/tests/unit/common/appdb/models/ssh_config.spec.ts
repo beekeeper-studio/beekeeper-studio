@@ -2,6 +2,8 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { SshConfig } from "@/common/appdb/models/SshConfig";
 import { ConnectionSshConfig } from "@/common/appdb/models/ConnectionSshConfig";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { AppDbHandlers } from "@/handlers/appDbHandlers";
+import migration from "@/migration/20260518_ssh_config_orphan_cleanup";
 
 type LegacyFields = Partial<{
   name: string;
@@ -22,7 +24,7 @@ type LegacyFields = Partial<{
   sshBastionKeyfilePassword: Nullable<string>;
 }>;
 
-async function buildLegacyConnection(
+async function buildConnection(
   fields: LegacyFields
 ): Promise<SavedConnection> {
   const c = new SavedConnection();
@@ -45,14 +47,14 @@ describe("SshConfig.migrateLegacyColumns", () => {
   });
 
   it("migrates ssh host in all three modes", async () => {
-    const auto = await buildLegacyConnection({
+    const auto = await buildConnection({
       name: "ssh-auto",
       sshHost: "hostname",
       sshPort: 123,
       sshMode: "agent" as const,
       sshUsername: "sshuser",
     });
-    const keyfile = await buildLegacyConnection({
+    const keyfile = await buildConnection({
       name: "ssh-keyfile",
       sshHost: "host",
       sshPort: 123,
@@ -61,7 +63,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshKeyfile: "/Users/azmy60/.ssh/pc_key.pub",
       sshKeyfilePassword: "keyfile-secret",
     });
-    const userpass = await buildLegacyConnection({
+    const userpass = await buildConnection({
       name: "userpass",
       sshHost: "host",
       sshPort: 123,
@@ -112,14 +114,14 @@ describe("SshConfig.migrateLegacyColumns", () => {
   });
 
   it("migrates bastion host in all three modes", async () => {
-    const auto = await buildLegacyConnection({
+    const auto = await buildConnection({
       name: "bastion-auto",
       sshBastionHost: "bastionhost",
       sshBastionHostPort: 123,
       sshBastionMode: "agent" as const,
       sshBastionUsername: "bastionuser",
     });
-    const keyfile = await buildLegacyConnection({
+    const keyfile = await buildConnection({
       name: "bastion-keyfile",
       sshBastionHost: "bastionhost",
       sshBastionHostPort: 123,
@@ -128,7 +130,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshBastionKeyfile: "/Users/azmy60/.ssh/pc_key.pub",
       sshBastionKeyfilePassword: "bastion-keyfile-secret",
     });
-    const userpass = await buildLegacyConnection({
+    const userpass = await buildConnection({
       name: "bastion-userpass",
       sshBastionHost: "bastionhost",
       sshBastionHostPort: 123,
@@ -179,14 +181,14 @@ describe("SshConfig.migrateLegacyColumns", () => {
   });
 
   it("migrates all six legacy rows in a single pass", async () => {
-    await buildLegacyConnection({
+    await buildConnection({
       name: "ssh-auto",
       sshHost: "hostname",
       sshPort: 123,
       sshMode: "agent",
       sshUsername: "sshuser",
     });
-    await buildLegacyConnection({
+    await buildConnection({
       name: "ssh-keyfile",
       sshHost: "host",
       sshPort: 123,
@@ -195,7 +197,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshKeyfile: "/Users/azmy60/.ssh/pc_key.pub",
       sshKeyfilePassword: "k1",
     });
-    await buildLegacyConnection({
+    await buildConnection({
       name: "ssh-userpass",
       sshHost: "host",
       sshPort: 123,
@@ -203,14 +205,14 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshUsername: "sshuser",
       sshPassword: "p1",
     });
-    await buildLegacyConnection({
+    await buildConnection({
       name: "bastion-auto",
       sshBastionHost: "bastionhost",
       sshBastionHostPort: 123,
       sshBastionMode: "agent",
       sshBastionUsername: "bastionuser",
     });
-    await buildLegacyConnection({
+    await buildConnection({
       name: "bastion-keyfile",
       sshBastionHost: "bastionhost",
       sshBastionHostPort: 123,
@@ -219,7 +221,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
       sshBastionKeyfile: "/Users/azmy60/.ssh/pc_key.pub",
       sshBastionKeyfilePassword: "k2",
     });
-    await buildLegacyConnection({
+    await buildConnection({
       name: "bastion-userpass",
       sshBastionHost: "bastionhost",
       sshBastionHostPort: 123,
@@ -235,7 +237,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
   });
 
   it("is idempotent — re-running does not duplicate configs", async () => {
-    await buildLegacyConnection({
+    await buildConnection({
       name: "ssh-auto",
       sshHost: "hostname",
       sshPort: 123,
@@ -268,7 +270,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
   });
 
   it("creates bastion at position 0 and host at position 1 when both are set", async () => {
-    const conn = await buildLegacyConnection({
+    const conn = await buildConnection({
       name: "both",
       sshHost: "host",
       sshPort: 22,
@@ -294,7 +296,7 @@ describe("SshConfig.migrateLegacyColumns", () => {
   });
 
   it("migrates both a userpass bastion and a keyfile host on the same connection", async () => {
-    const conn = await buildLegacyConnection({
+    const conn = await buildConnection({
       name: "both-with-creds",
       sshHost: "host",
       sshPort: 22,
@@ -335,5 +337,46 @@ describe("SshConfig.migrateLegacyColumns", () => {
       keyfilePassword: "host-keyfile-secret",
       password: null,
     });
+  });
+});
+
+describe("SshConfig orphan cleanup", () => {
+  beforeEach(async () => {
+    await TestOrmConnection.connect();
+    const runner = TestOrmConnection.connection.connection.createQueryRunner();
+    await migration.run(runner);
+    await runner.release();
+  });
+
+  afterEach(async () => {
+    await TestOrmConnection.disconnect();
+  });
+
+  it("deletes an orphaned sshConfig when it is removed from the connection", async () => {
+    const ssh = new SshConfig();
+    ssh.withProps({
+      host: "bastion.example.com",
+      port: 22,
+      mode: "userpass",
+      username: "tunnel-user",
+      password: "s3cr3t",
+    });
+    await ssh.save();
+
+    const conn = await buildConnection({ name: "Test Connection" });
+
+    const link = new ConnectionSshConfig();
+    link.withProps({ connectionId: conn.id, sshConfigId: ssh.id });
+    await link.save();
+
+    await expect(SavedConnection.count()).resolves.toBe(1);
+    await expect(SshConfig.count()).resolves.toBe(1);
+    await expect(ConnectionSshConfig.count()).resolves.toBe(1);
+
+    await AppDbHandlers["appdb/saved/remove"]({ obj: { conn } });
+
+    await expect(SavedConnection.count()).resolves.toBe(0);
+    await expect(SshConfig.count()).resolves.toBe(0);
+    await expect(ConnectionSshConfig.count()).resolves.toBe(0);
   });
 });

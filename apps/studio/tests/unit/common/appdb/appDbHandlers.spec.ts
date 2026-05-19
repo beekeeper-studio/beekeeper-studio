@@ -136,38 +136,6 @@ describe('AppDbHandlers - appdb/saved/save', () => {
     expect(totalSshConfigs).toBe(1)
   })
 
-  it('deletes an orphaned sshConfig when it is removed from the connection', async () => {
-    // First save: create connection with an sshConfig
-    const first = await AppDbHandlers['appdb/saved/save']({
-      obj: buildConnection({
-        sshEnabled: true,
-        sshConfigs: [
-          {
-            position: 0,
-            sshConfig: {
-              host: 'bastion.example.com',
-              port: 22,
-              mode: 'userpass',
-              username: 'tunnel-user',
-              password: 's3cr3t',
-            }
-          }
-        ] as any
-      }),
-      options: undefined
-    })
-
-    expect(await SshConfig.count()).toBe(1)
-
-    // Second save: remove the sshConfig
-    await AppDbHandlers['appdb/saved/save']({
-      obj: { ...first, sshConfigs: [] as any },
-      options: undefined
-    })
-
-    expect(await SshConfig.count()).toBe(0)
-  })
-
   it('saves a connection with sshConfigs in a transaction', async () => {
     const result = await AppDbHandlers['appdb/saved/save']({
       obj: buildConnection({
