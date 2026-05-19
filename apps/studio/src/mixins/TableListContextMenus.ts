@@ -115,7 +115,7 @@ export default {
               return 'disabled'
             }
             if (usedConfig.readOnlyMode) {
-              return 'disalbed'
+              return 'disabled'
             }
             return ''
           },

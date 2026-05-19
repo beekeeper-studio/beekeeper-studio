@@ -5,7 +5,7 @@ import * as snowflake from "snowflake-sdk";
 import { Connection, ConnectionOptions, Pool, PoolOptions } from "snowflake-sdk"
 import BksConfig from "@/common/bksConfig";
 import rawLog from '@bksLogger'
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
+import { BksField, CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, errorMessages, escapeString } from "@/lib/db/clients/utils";
 import _ from "lodash";
 import { TableKey } from "@/shared/lib/dialects/models";
@@ -17,6 +17,7 @@ import { SnowflakeDialect } from "@beekeeperstudio/knex-snowflake-dialect"
 import knexlib from 'knex';
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
+import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
 
 const log = rawLog.scope('snowflake')
 
@@ -24,6 +25,8 @@ interface SnowflakeResult {
   columns: { name: string, type?: string | number | any }[]
   rows: Record<string, any>[];
   arrayMode: boolean;
+  rowCount: number;
+  affectedCount: number;
 }
 
 const snowflakeContext = {
@@ -277,7 +280,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       hasDefault: !_.isNil(row.COLUMN_DEFAULT),
       array: row.is_array === "YES",
       comment: row.COMMENT || null,
-      bksField: { name: row.COLUMN_NAME, bksType: 'UNKNOWN' }
+      bksField: this.parseTableColumn(row)
     }))
   }
 
@@ -490,6 +493,8 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
         command: command?.type,
         text: command?.text,
         rows: r.rows,
+        rowCount: r.rowCount,
+        affectedRows: r.affectedCount,
         fields: r.columns.map((c) => ({
           name: c.name,
           id: c.name,
@@ -583,6 +588,55 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     }
   }
 
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
+    const columns = await this.listTableColumns(table, schema);
+    const queries = buildSelectTopQuery(
+      table,
+      null,
+      null,
+      orderBy,
+      filters,
+      "total",
+      columns,
+      ['*'],
+      schema,
+      this.wrapIdentifier
+    );
+    const rowCount = await this.driverExecuteSingle(queries.countQuery, { params: queries.params });
+
+    const cursorOptions = {
+      query: queries.query,
+      params: queries.params,
+      pool: this.pool,
+      chunkSize
+    };
+
+    return {
+      totalRows: Number(rowCount.rows[0].total),
+      columns,
+      cursor: new SnowflakeCursor(cursorOptions)
+    }
+  }
+
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const options = {
+      query,
+      params: [],
+      pool: this.pool,
+      chunkSize
+    };
+
+    const cursor = new SnowflakeCursor(options);
+
+    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+
+    return {
+      totalRows,
+      columns,
+      cursor
+    };
+  }
+
   async getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
     return `SELECT * FROM ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)} LIMIT ${limit}`;
   }
@@ -639,7 +693,70 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+    newElementName = this.wrapIdentifier(newElementName);
+    if ([DatabaseElement.TABLE, DatabaseElement.VIEW, DatabaseElement["MATERIALIZED-VIEW"]].includes(typeOfElement)) {
+      elementName = this.wrapTable(elementName, schema);
+    } else {
+      elementName = this.wrapIdentifier(elementName);
+    }
 
+    let alterType: string = typeOfElement;
+    if (typeOfElement === DatabaseElement["MATERIALIZED-VIEW"]){
+      alterType = "MATERIALIZED VIEW"
+    }
+
+    return `ALTER ${alterType} ${elementName} RENAME TO ${newElementName}`;
+  }
+
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+    if ([DatabaseElement.TABLE, DatabaseElement.VIEW, DatabaseElement["MATERIALIZED-VIEW"]].includes(typeOfElement)) {
+      elementName = this.wrapTable(elementName, schema);
+    } else {
+      elementName = this.wrapIdentifier(elementName);
+    }
+
+    let dropType: string = typeOfElement;
+    if (typeOfElement === DatabaseElement["MATERIALIZED-VIEW"]){
+      dropType = "MATERIALIZED VIEW"
+    }
+
+    const sql = `DROP ${dropType} ${elementName}`;
+
+    await this.driverExecuteSingle(sql);
+  }
+
+  async truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+    if ([DatabaseElement.TABLE, DatabaseElement.VIEW, DatabaseElement["MATERIALIZED-VIEW"]].includes(typeOfElement)) {
+      elementName = this.wrapTable(elementName, schema);
+    } else {
+      elementName = this.wrapIdentifier(elementName);
+    }
+
+    let truncateType: string = typeOfElement;
+    if (typeOfElement === DatabaseElement["MATERIALIZED-VIEW"]){
+      truncateType = "MATERIALIZED VIEW"
+    }
+
+    return `TRUNCATE ${truncateType} ${elementName}`;
+  }
+
+  async truncateAllTables(_schema?: string): Promise<void> {
+    // this isn't used anywhere afaik
+  }
+
+  async duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
+    const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema);
+
+    await this.driverExecuteSingle(sql);
+  }
+
+  async duplicateTableSql(tableName: string, duplicateTableName: string, schema: string = this._defaultSchema): Promise<string> {
+    const sql = `
+      CREATE TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(duplicateTableName)}
+      CLONE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(tableName)}
+    `;
+
+    return sql;
   }
 
   async runWithConnection<T>(run: (conn: Connection) => Promise<T>): Promise<T> {
@@ -772,7 +889,9 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
         const result: SnowflakeResult = {
           columns,
           rows,
-          arrayMode: options.arrayMode
+          arrayMode: options.arrayMode,
+          rowCount: stmt.getNumRows(),
+          affectedCount: stmt.getNumUpdatedRows()
         };
         return result;
       })
@@ -821,6 +940,13 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   wrapIdentifier(value: string): string {
     if (!value || value === '*') return value;
     return `"${value.replaceAll(/"/g, '""')}"`;
+  }
+
+  protected parseTableColumn(column: any): BksField {
+    return {
+      name: column.COLUMN_NAME,
+      bksType: "UNKNOWN"
+    }
   }
 
   private async insertRows(rawInserts: TableInsert[], connection: Connection) {

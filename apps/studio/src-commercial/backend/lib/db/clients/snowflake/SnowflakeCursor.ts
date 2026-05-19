@@ -1,4 +1,4 @@
-import { BeeCursor } from "@/lib/db/models";
+import { BeeCursor, TableColumn } from "@/lib/db/models";
 import { Bind, Connection, Pool, RowStatement, SnowflakeError } from "snowflake-sdk";
 
 interface CursorOptions {
