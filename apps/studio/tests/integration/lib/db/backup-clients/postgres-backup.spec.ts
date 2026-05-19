@@ -102,6 +102,7 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
     let util: DBTestUtil;
     let clients: CommandClients;
     let stub: UtilStub;
+    jest.setTimeout(dbtimeout)
 
     beforeAll(async () => {
       stub = installUtilStub();
@@ -121,7 +122,6 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
         }])
         .withStartupTimeout(dbtimeout)
         .start();
-      jest.setTimeout(timeoutDefault);
 
       config = {
         client: 'postgresql',
@@ -160,6 +160,7 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 
       clients.backup.connConfig = iConn;
       clients.restore.connConfig = iConn;
+      jest.setTimeout(timeoutDefault);
     })
 
     describe("Common Tests", () => {
