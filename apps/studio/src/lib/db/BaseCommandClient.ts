@@ -66,6 +66,10 @@ export abstract class BaseCommandClient {
     return BaseCommandClient.quoteValue(filepath);
   }
 
+  get quotedInputFilePath() {
+    return BaseCommandClient.quoteValue(this._config.inputPath);
+  }
+
   protected static quoteValue(value: string): string {
     if (window.platformInfo.isWindows) {
       const escaped = value
