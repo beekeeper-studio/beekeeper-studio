@@ -1338,7 +1338,7 @@ describe(`MongoDB`, () => {
         
         // Consider the test passed if the validation prevented the insert
         expect(validationWorked).toBe(true);
-        
+
         // Verify only the valid document is in the collection
         const finalResult = await connection.selectTop(testCollection, 0, 10, [], []);
         expect(finalResult.result.length).toBe(1); // Still just one document
@@ -1352,5 +1352,48 @@ describe(`MongoDB`, () => {
         }
       }
     });
+  })
+
+  // queryStream() is supposed to set up a streaming cursor for the supplied
+  // query. The current implementation calls getColumnsAndTotalRows() — which
+  // runs the query in full via QueryLeaf — before handing back a cursor that
+  // will run it again. For an INSERT that means the document gets written
+  // twice (once during column inference, once when the cursor is drained).
+  // This block pins the *correct* behaviour: the document is written exactly
+  // once after the full queryStream → start → drain → close cycle.
+  describe("queryStream double execution", () => {
+    it("should run the supplied query only once across the full stream lifecycle", async () => {
+      const testCollection = `qs_double_exec_${Date.now()}`
+
+      try {
+        await connection.createTable({ table: testCollection })
+
+        const stream = await connection.queryStream(
+          `INSERT INTO ${testCollection} (n) VALUES (1)`,
+          100
+        )
+        try {
+          await stream.cursor.start()
+          for (let i = 0; i < 100; i++) {
+            const rows = await stream.cursor.read()
+            if (!rows || rows.length === 0) break
+          }
+          await stream.cursor.close()
+        } catch (_e) {
+          // QueryLeaf's executeCursor may reject non-SELECT statements. That's
+          // fine — the bug we care about is that getColumnsAndTotalRows
+          // already wrote the document before the cursor was even touched.
+        }
+
+        const final = await connection.selectTop(testCollection, 0, 10, [], [])
+        expect(final.result.length).toBe(1)
+      } finally {
+        try {
+          await connection.dropElement(testCollection, DatabaseElement.TABLE)
+        } catch (_e) {
+          // ignore
+        }
+      }
+    })
   })
 })

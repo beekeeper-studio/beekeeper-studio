@@ -311,6 +311,13 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         expect(results[1].rows[0].c0).toContain("2");
       });
     });
+
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (options.readOnly) return
+        await util.queryStreamDoubleExecutionTest()
+      })
+    })
   });
 }
 

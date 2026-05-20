@@ -244,6 +244,14 @@ function testWith(options) {
         })
       })
     }
+
+    if (!options.readOnly) {
+      describe("queryStream double execution", () => {
+        it("should run the supplied query only once across the full stream lifecycle", async () => {
+          await util.queryStreamDoubleExecutionTest()
+        })
+      })
+    }
   })
 }
 
