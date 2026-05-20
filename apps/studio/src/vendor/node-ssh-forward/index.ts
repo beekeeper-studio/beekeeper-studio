@@ -177,7 +177,7 @@ class SSHConnection {
     if (jumpHosts.length > 0) {
       connection = await this.connectViaBastion(jumpHosts)
     } else {
-      connection = await this.connect(this.getEndOptions())
+      connection = await this.connect(this.options.endHost)
     }
     return connection
   }
@@ -288,6 +288,8 @@ class SSHConnection {
         privateKey: this.options.privateKey,
         passphrase: this.options.passphrase,
         agentForward: this.options.agentForward,
+        agent: this.options.agent,
+        authHandler: this.options.authHandler,
       }
 
       const config: ConnectConfig = _.clone(options);
@@ -350,20 +352,6 @@ class SSHConnection {
 
 
     })
-  }
-
-  private getEndOptions(): ConnectOptions {
-    return {
-      host: this.options.endHost,
-      port: this.options.endPort,
-      username: this.options.username,
-      password: this.options.password,
-      privateKey: this.options.privateKey,
-      passphrase: this.options.passphrase,
-      agentForward: this.options.agentForward,
-      agent: this.options.agent,
-      authHandler: this.options.authHandler,
-    }
   }
 
   async forward(options: ForwardingOptions) {

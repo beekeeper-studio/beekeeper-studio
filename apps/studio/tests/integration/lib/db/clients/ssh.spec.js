@@ -124,18 +124,30 @@ describe("SSH Tunnel Tests", () => {
         username: 'postgres',
         password: 'example',
         sshEnabled: true,
-        sshMode: 'userpass',
-        // ssh is reachable from the bastion container via the bastion_ssh network (by container name)
-        sshHost: 'test_ssh',
-        sshPort: 2222,
-        sshUsername: 'beekeeper',
-        sshPassword: 'password',
-        // bastion is the only container reachable from the test runner via its mapped port
-        sshBastionHost: bastionContainer.getHost(),
-        sshBastionHostPort: bastionContainer.getMappedPort(2222),
-        sshBastionMode: 'userpass',
-        sshBastionUsername: 'beekeeper',
-        sshBastionPassword: 'password',
+        sshConfigs: [
+          {
+            // bastion is the only container reachable from the test runner via its mapped port
+            position: 0,
+            sshConfig: {
+              host: bastionContainer.getHost(),
+              port: bastionContainer.getMappedPort(2222),
+              mode: 'userpass',
+              username: 'beekeeper',
+              password: 'password',
+            },
+          },
+          {
+            // ssh is reachable from the bastion container via the bastion_ssh network (by container name)
+            position: 1,
+            sshConfig: {
+              host: 'test_ssh',
+              port: 2222,
+              mode: 'userpass',
+              username: 'beekeeper',
+              password: 'password',
+            },
+          },
+        ],
       }
 
       const conn = ConnectionProvider.for(config)
@@ -163,7 +175,7 @@ describe("SSH Tunnel Tests", () => {
       await database.disconnect()
     }
     if (environment) {
-      await environment.stop()
+      await environment.down()
     }
     await TestOrmConnection.disconnect()
   })
