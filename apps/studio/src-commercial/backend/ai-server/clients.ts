@@ -88,7 +88,7 @@ export function identify(headers: IncomingHttpHeaders): Identity {
   return { id, name: explicitName || userAgent, userAgent };
 }
 
-async function persist(): Promise<void> {
+async function writeClients(): Promise<void> {
   const clients: PersistedClient[] = [];
   for (const c of registry.values()) {
     if (c.status === "approved" || c.status === "denied") {
@@ -116,6 +116,15 @@ async function persist(): Promise<void> {
   } catch (e) {
     log.warn("could not persist clients", e);
   }
+}
+
+// Serialise writes — two concurrent persists (e.g. several new clients
+// auto-approving at once) must not read-modify-write over each other.
+let persistChain: Promise<void> = Promise.resolve();
+
+function persist(): Promise<void> {
+  persistChain = persistChain.then(writeClients, writeClients);
+  return persistChain;
 }
 
 export async function loadClients(): Promise<void> {
