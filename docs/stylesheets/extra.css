@@ -1,60 +1,198 @@
+/* ============================================================================
+   Beekeeper Studio Documentation — visual refresh
+   ----------------------------------------------------------------------------
+   A readability-focused refresh for the mkdocs-material docs site.
+   Source: the "Documentation Typography Refresh" design handoff.
+
+   What changed for reading comfort:
+   - Prose capped at a ~70-character measure (the headline fix)
+   - Solid body alpha + generous leading so text reads anchored, not washed out
+   - Real breathing room above section heads, hairline rule under h2
+   - Quieter sidebar, brand rail on the active page
+   - Mono right rail so left (wayfinding) and right (page index) read distinctly
+   - Media reads as a lifted surface, never mistaken for page padding
+   ============================================================================ */
+
 :root {
-  /* --md-hue: 225deg;
-  --md-accent-fg-color: #FAD83B;
+  --md-hue: 225deg;
+
+  /* Brand */
+  --bks-yellow: #fad83b;
+  --bks-yellow-hover: #ffe66d;
+
+  --md-accent-bg-color: black;
+  --md-accent-fg-color: #fad83b;
   --md-accent-fg-color--transparent: #fad73b58;
+  --md-primary-fg-color: #181818;        /* header + tab bar surface */
+  --md-primary-fg-color--light: #2c2c2c94;
+  --md-primary-fg-color--dark: black;
+  --md-primary-bg-color: white;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+  --md-code-hl-comment-color: #898989;
 
-
-
-
-  --md-primary-fg-color: hsla(var(--md-hue), 15%, 9%, 1);
-  --md-primary-fg-color--light: hsla(var(--md-hue), 15%, 9%, 0.54);
-  --md-primary-fg-color--dark: hsla(var(--md-hue), 15%, 9%, 1);
-  --md-primary-bg-color: hsla(var(--md-hue), 15%, 100%, 1);
-  --md-primary-bg-color--light: hsla(var(--md-hue), 15%, 100%, 0.7); */
-
-    --md-hue: 225deg;
-    --md-accent-bg-color: black;
-    --md-accent-fg-color: #fad83b;
-    --md-accent-fg-color--transparent: #fad73b 58;
-    --md-primary-fg-color: #2c2c2c;
-    --md-primary-fg-color--light: #2c2c2c94;
-    --md-primary-fg-color--dark: black;
-    --md-primary-bg-color: white;
-    --md-primary-bg-color--light: #pink;
-    --md-code-hl-comment-color: #898989;
-
-
+  /* Hairline rule — under section headings, beside captions, dividers */
+  --bks-doc-rule: rgba(255, 255, 255, 0.08);
 }
+
 [data-md-color-scheme="slate"] {
   --md-typeset-a-color: var(--md-accent-fg-color);
-  --md-default-bg-color: #1a1a1a;
-  --md-typeset-color: rgba(255, 255, 255, 0.72);
+
+  /* Shell sits a touch above the header so the article is the focal plane */
+  --md-default-bg-color: #1d1d1d;
+
+  /* Body text reads solid, not washed out */
+  --md-typeset-color: rgba(255, 255, 255, 0.82);
   --md-default-fg-color--light: white;
+
+  --md-code-bg-color: #1a1a1a;
   --md-code-hl-comment-color: #898989;
-  --md-code-bg-color:hsl(0, 0%, 5.5%);
-
-
 }
 
-article {
-    a:hover {
-        text-decoration: underline;
-    }
-    img, video {
-        border: solid 1px rgba(255, 255, 255, 0.20);
-        border-radius: 3px;
-        box-shadow: 3px 3px rgba(0, 0, 0, 0.30);
-        border-right: 0;
-        border-bottom: 0;
-    }
+/* ── READING MEASURE ──────────────────────────────────────────────────────
+   The headline fix: cap prose at ~70 characters so the eye doesn't get lost
+   on the return sweep. Widen the outer grid so the cap actually engages. */
+.md-grid {
+  max-width: 70rem;
+}
+.md-content__inner {
+  max-width: 740px;
 }
 
+/* ── BODY TYPE ────────────────────────────────────────────────────────────
+   A slightly larger body size and more generous leading for long-form docs. */
+.md-typeset {
+  font-size: 0.825rem;
+  line-height: 1.72;
+}
+.md-typeset p {
+  margin: 0 0 1.15em;
+}
 
+/* ── HEADING RHYTHM ───────────────────────────────────────────────────────
+   Real breathing room above section heads; a hairline rule under h2 so
+   sections separate without the heading shouting. */
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  color: rgba(255, 255, 255, 0.94);
+}
+.md-typeset h2 {
+  margin-top: 3rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--bks-doc-rule);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: rgba(255, 255, 255, 0.9);
+}
+.md-typeset h3 {
+  margin-top: 2.25rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+.md-typeset h4 {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ── CHROME ───────────────────────────────────────────────────────────────
+   Header + tab bar are #181818 (via --md-primary-fg-color above), a hair
+   darker than the shell, separated from the content by a hairline. */
+.md-header,
+.md-tabs {
+  border-bottom: 1px solid var(--bks-doc-rule);
+}
+
+/* ── PRIMARY NAV (left sidebar) ───────────────────────────────────────────
+   Nav recedes so content leads: lighter weight, quieter colour, with a brand
+   rail and a soft wash on the current page. */
+[data-md-color-scheme="slate"] .md-nav__link {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 400;
+}
+.md-nav__link:hover,
+.md-nav__link:focus {
+  color: #fff;
+}
+.md-nav--primary .md-nav__item--active > .md-nav__link {
+  color: var(--bks-yellow);
+}
+.md-nav--primary .md-nav__link--active {
+  color: var(--bks-yellow);
+  font-weight: 500;
+  background: rgba(250, 216, 59, 0.08);
+  border-radius: 4px;
+  box-shadow: inset 2px 0 0 var(--bks-yellow);
+}
+
+/* ── TABLE OF CONTENTS (right rail) ───────────────────────────────────────
+   The right rail stays mono regardless of brand accent — it's a per-page
+   index, not a brand surface. The contrast with the yellow left nav makes the
+   left-to-right hierarchy (wayfinding -> content -> page index) clearer. */
+.md-nav--secondary .md-nav__link--active {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 500;
+}
+
+/* ── LINKS ────────────────────────────────────────────────────────────────*/
+.md-typeset a:hover {
+  color: var(--bks-yellow-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── FIGURES (screenshots / gifs / videos) ────────────────────────────────
+   Media reads as a lifted surface — deep drop shadow, hairline top highlight,
+   brightened edge — so it's never mistaken for page padding. */
+.md-typeset img,
+.md-typeset video {
+  border: 0;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 40px -12px rgba(0, 0, 0, 0.55),
+    0 6px 14px -6px rgba(0, 0, 0, 0.4);
+}
+
+/* Caption sits outside the media with its own left rule, so it reads as being
+   *about* the image, not part of it. */
+.md-typeset figure {
+  margin: 2rem 0 2.25rem;
+}
+.md-typeset figcaption {
+  max-width: none;
+  margin: 0.65rem 0 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--bks-doc-rule);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: left;
+}
+
+/* ── CODE BLOCKS ──────────────────────────────────────────────────────────*/
+.md-typeset .highlight,
+.md-typeset pre > code {
+  border-radius: 10px;
+}
+.md-typeset pre > code {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── ADMONITIONS ──────────────────────────────────────────────────────────*/
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 10px;
+}
+
+/* ── DIVIDERS ─────────────────────────────────────────────────────────────*/
+.md-typeset hr {
+  border-bottom: 1px solid var(--bks-doc-rule);
+}
+
+/* ── TABLES ───────────────────────────────────────────────────────────────*/
+.md-typeset table:not([class]) th,
 .md-typeset table:not([class]) td {
-    padding: 0.75em 1.25em;
-}
-
-
-.md-typeset table:not([class]) th {
-    padding: 0.75em 1.25em;
+  padding: 0.75em 1.25em;
 }
