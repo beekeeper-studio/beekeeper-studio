@@ -184,12 +184,19 @@
               v-model="dryRun"
             >
           </x-button>
-          <x-button
-            @click.prevent="triggerSave"
-            class="btn btn-flat btn-small"
+          <button
+            class="btn btn-fab btn-flat"
+            style="background: transparent;"
           >
-            Save
-          </x-button>
+            <i class="material-icons">history</i>
+          </button>
+          <button
+            @click.prevent="triggerSave"
+            class="btn btn-fab btn-flat"
+            style="background: transparent;"
+          >
+            <i class="material-icons">save</i>
+          </button>
 
           <x-buttons class="" v-tooltip="runButtonTooltip">
             <x-button
@@ -198,7 +205,10 @@
               @click.prevent="queryFunctions.primaryRead"
               :disabled="runButtonDisabled"
             >
-              <x-label>{{ runPrimaryText() }}</x-label>
+              <x-label style="display: flex; align-items: center;">
+                <i class="material-icons">play_arrow</i>
+                {{ runPrimaryText() }}
+              </x-label>
             </x-button>
             <x-button
               class="btn btn-primary btn-small"
