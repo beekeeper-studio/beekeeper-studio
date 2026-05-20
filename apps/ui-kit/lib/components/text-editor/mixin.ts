@@ -12,6 +12,15 @@ import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, 
 export default {
   props,
 
+  emits: [
+    "bks-value-change",
+    "bks-selection-change",
+    "bks-focus",
+    "bks-blur",
+    "bks-lsp-ready",
+    "bks-initialized",
+  ],
+
   data() {
     return {
       textEditor: null,
