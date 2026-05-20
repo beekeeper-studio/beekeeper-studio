@@ -21,6 +21,12 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     }
   }),
   actions: utilActionsFor<IConnection>('saved', {
+    async save(context, item: IConnection) {
+      const updated = await Vue.prototype.$util.send(`appdb/saved/saveWithSshConfigs`, item);
+      context.commit('upsert', updated);
+      return updated.id;
+    },
+
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),

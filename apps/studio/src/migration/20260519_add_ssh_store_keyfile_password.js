@@ -3,7 +3,7 @@ export default {
   async run(runner) {
     await runner.query(`
       ALTER TABLE saved_connection
-      ADD COLUMN sshStoreKeyfilePassword BOOLEAN NOT NULL DEFAULT 1
+      ADD COLUMN sshStoreKeyfilePassword BOOLEAN NOT NULL DEFAULT 0
     `)
   }
 }

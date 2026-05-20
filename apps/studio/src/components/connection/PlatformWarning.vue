@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="activeWarnings.length > 0">
     <div
       v-for="(warning, index) in activeWarnings"
       :key="index"

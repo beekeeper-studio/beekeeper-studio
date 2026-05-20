@@ -172,7 +172,10 @@
       </template>
 
       <details class="advanced-settings">
-        <summary><h5>Advanced settings</h5></summary>
+        <summary>
+          <i class="material-icons toggle-icon">keyboard_arrow_right</i>
+          <h5>Advanced Settings</h5>
+        </summary>
         <div class="row form-group">
           <label for="sshKeepaliveInterval">
             Keepalive Interval
@@ -385,6 +388,8 @@ export default Vue.extend({
     padding-inline: 0.5rem;
     line-height: normal;
     font-weight: 500;
+    flex-grow: 1;
+    text-align: left;
 
     &:hover, &:focus {
       background-color: rgb(from var(--theme-base) r g b / 5%);
@@ -417,9 +422,36 @@ export default Vue.extend({
   }
 }
 
-summary h5 {
-  margin-bottom: 0.25rem;
-  padding-left: 0.5em;
-  display: inline-block;
+.advanced-settings  {
+
+  > summary {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    list-style: none;
+    margin-top: 1rem;
+
+    h5 {
+      margin: 0;
+      display: inline-block;
+    }
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    .toggle-icon {
+      font-size: 1.25rem;
+      color: var(--text);
+      transition: transform 0.15s ease;
+      margin-left: -0.25rem;
+    }
+  }
+
+  &[open] > summary .toggle-icon {
+    transform: rotate(90deg);
+  }
 }
+
+
 </style>

@@ -308,8 +308,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'boolean', default: true })
   rememberPassword = true
 
-  @Column({ type: 'boolean', default: true })
-  sshStoreKeyfilePassword = true
+  @Column({ type: 'boolean', default: false })
+  sshStoreKeyfilePassword = false
 
   @Column({type: 'boolean', default: false})
   readOnlyMode = false
