@@ -674,23 +674,23 @@ describe('SurrealDB Integration Tests', () => {
   //
   // 1. apps/studio/src-commercial/backend/lib/db/clients/surrealdb.ts:660
   //    blindly appends `LIMIT 1` (case-sensitive .includes('LIMIT') check)
-  //    for column inference. That mutates the user's query: CREATE/UPDATE/
-  //    DELETE statements get a meaningless `LIMIT 1` glued on, ORDER BY
-  //    semantics are dropped from aggregate queries, etc. The "sample"
-  //    query is also executed in full, so any side effects fire twice
-  //    when combined with the cursor.
+  //    for column inference, then executes that mutated query via
+  //    driverExecuteSingle. CREATE/UPDATE/DELETE statements get a
+  //    meaningless `LIMIT 1` glued on; ORDER BY semantics are dropped
+  //    from aggregate queries; the sample runs to completion so any side
+  //    effects fire twice when combined with the cursor.
   //
   // 2. apps/studio/src-commercial/backend/lib/db/clients/surrealdb/
   //    SurrealDBCursor.ts:81 strips existing LIMIT/START clauses from the
   //    user's query and reissues it on every chunk read with the cursor's
-  //    own pagination. Even after fixing (1), this would still corrupt the
-  //    query — the cursor needs to honour the user's query verbatim.
+  //    own pagination. Even after fixing (1), this would still corrupt
+  //    queries — the cursor needs to honour the user's query verbatim.
   //
-  // These tests pin the correct behaviour. The first test confirms a
-  // CREATE statement runs exactly once across the full lifecycle. The
-  // second test confirms that a SELECT without an explicit LIMIT still
-  // yields all rows in the requested order (the LIMIT 1 sample must not
-  // poison the cursor's view).
+  // The first test pins single-execution by running a side-effecting
+  // CREATE through queryStream and asserting the table only contains one
+  // record. The second test pins that the cursor surfaces every row in
+  // the requested order — the LIMIT 1 sample must not poison the cursor's
+  // view.
   describe("queryStream double execution", () => {
     it("should run a side-effecting CREATE only once across the full stream lifecycle", async () => {
       const tableName = `qs_counter_${Date.now()}`
@@ -698,11 +698,13 @@ describe('SurrealDB Integration Tests', () => {
       try {
         await connection.executeQuery(`
           DEFINE TABLE ${tableName} SCHEMAFULL;
+          DEFINE FIELD note ON TABLE ${tableName} TYPE string;
           DEFINE FIELD value ON TABLE ${tableName} TYPE int;
+          DEFINE FIELD flag ON TABLE ${tableName} TYPE bool;
         `)
 
         const stream = await connection.queryStream(
-          `CREATE ${tableName} SET value = 1`,
+          `CREATE ${tableName} SET note = 'hello', value = 42, flag = true`,
           100
         )
         try {
@@ -713,9 +715,9 @@ describe('SurrealDB Integration Tests', () => {
           }
           await stream.cursor.close()
         } catch (_e) {
-          // The cursor may reject (or repeatedly issue) non-SELECT
-          // statements. What we're measuring here is whether the
-          // implementation as a whole leaves more than one row behind.
+          // The cursor (or the LIMIT-1 sample) may reject CREATE. The
+          // signal we care about is whether the resulting table has more
+          // than one row.
         }
 
         const result = await connection.executeQuery(`SELECT * FROM ${tableName}`)
@@ -730,11 +732,8 @@ describe('SurrealDB Integration Tests', () => {
       }
     })
 
-    it("should stream all rows for a SELECT without an explicit LIMIT", async () => {
-      // person has 5 rows seeded in setupTestData() with ages 25..45 in
-      // 5-year increments. A correct queryStream must surface all 5 rows
-      // in age-desc order — not just the single row picked by the
-      // `LIMIT 1` column-inference sample.
+    it("should stream all rows for a SELECT without an explicit LIMIT in user-requested order", async () => {
+      // person has 5 rows seeded in setupTestData() with ages 25..45.
       const stream = await connection.queryStream(
         'SELECT name, age FROM person ORDER BY age DESC',
         100
@@ -753,8 +752,6 @@ describe('SurrealDB Integration Tests', () => {
       }
 
       expect(collected.length).toBe(5)
-      // Stream order must match the user's ORDER BY DESC — the LIMIT 1
-      // sample doesn't get to define what the cursor sees.
       const ages = collected.map((row) => row.find((v) => typeof v === 'number'))
       expect(ages).toEqual([45, 40, 35, 30, 25])
     })

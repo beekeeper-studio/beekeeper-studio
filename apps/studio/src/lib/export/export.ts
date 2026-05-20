@@ -33,6 +33,7 @@ export abstract class Export {
   private callbacks = {
     progress: Array<ProgressCallback>()
   }
+  private headerWritten: boolean = false
 
   constructor(
     public filePath: string,
@@ -151,11 +152,20 @@ export abstract class Export {
 
     this.countTotal = results.totalRows
     await this.cursor?.start()
-    const header = await this.getHeader(results.columns)
+
+    if (this.columns) {
+      await this.writeHeader();
+    }
+  }
+
+  async writeHeader(): Promise<void> {
+    if (this.headerWritten) return;
+    const header = await this.getHeader(this.columns)
 
     if (header) {
       await this.fileHandle.write(header)
     }
+    this.headerWritten = true;
   }
 
   async exportData(): Promise<void> {
@@ -168,6 +178,14 @@ export abstract class Export {
           throw new Error("Something went wrong")
         }
         rows = await this.cursor?.read()
+
+        if (!this.columns) {
+          this.columns = this.cursor.columns;
+          if (this.columns) {
+            await this.writeHeader();
+          }
+        }
+
         for (let rI = 0; rI < rows.length; rI++) {
           const row = rows[rI];
           const mutated = Mutators.mutateRow(row, this.columns?.map((c) => c.dataType), this.preserveComplex, dialectFor(this.connection.connectionType))

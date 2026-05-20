@@ -1580,120 +1580,217 @@ export class DBTestUtil {
     expect(count).toBe(100_000)
   }
 
-  // Documents that queryStream() executes its input twice: once internally via
-  // getColumnsAndTotalRows (which calls executeQuery, materialising every row
-  // and discarding the result) and again via the cursor. For SELECTs this just
-  // wastes work, but the "run all to file" flow can hand a multi-statement
-  // script (INSERTs/UPDATEs/DELETEs feeding a final SELECT) to queryStream,
-  // and every side-effecting statement therefore runs twice. These tests use
-  // a measurable side effect (a sequence or AUTO_INCREMENT counter) so the
-  // bug is visible as a concrete duplicate write.
+  // queryStream() is the engine behind the export flow (apps/studio/src/lib/
+  // export/export.ts:143). It is supposed to be a pure cursor-setup function:
+  // build the cursor, return it, let the caller drive start/read/close. The
+  // bug is that getColumnsAndTotalRows (BasicDatabaseClient.ts:568) calls
+  // executeQuery(query) — running the user's query a SECOND time just to
+  // inspect `fields`/`rowCount`. For plain SELECTs that wastes a full
+  // materialisation; for the "run all to file" flow, which can submit a
+  // multi-statement script (INSERT/UPDATE/DELETE feeding a final SELECT),
+  // every side-effecting statement runs twice.
   //
-  // Expectation: side effect should occur exactly once after the full
-  // queryStream + start + drain + close cycle. The tests currently fail with
-  // a value of 2x the expected count, confirming the double execution.
+  // The test query in each case is a side-effecting SELECT (data-modifying
+  // CTE, INSERT…RETURNING, INSERT…OUTPUT, multi-statement INSERT+SELECT, or
+  // a sequence-advancing SELECT) that streams rows AND leaves exactly one
+  // measurable side effect per execution. After the full queryStream →
+  // start → drain → close cycle the counter table must contain exactly one
+  // row (or the sequence must have advanced exactly N times). With the bug
+  // present every counter has twice the expected entries.
   async queryStreamDoubleExecutionTest() {
-    type Plan = { setup: string[]; query: string; check: string; extractCount: (row: any) => number; expected: number }
+    type Plan = {
+      setup: string[]
+      teardown: string[]
+      query: string
+      expectedRows: number
+      verify: () => Promise<void>
+    }
     let plan: Plan
     switch (this.dbType) {
       case 'postgresql':
       case 'cockroachdb':
       case 'greengage':
       case 'redshift':
+        // Data-modifying CTE: single statement, returns rows, has side
+        // effect. pg-cursor handles it natively via its DECLARE CURSOR.
         plan = {
-          setup: ['DROP SEQUENCE IF EXISTS qs_double_exec_seq', 'CREATE SEQUENCE qs_double_exec_seq START 1'],
-          query: "SELECT nextval('qs_double_exec_seq') AS n FROM generate_series(1, 5)",
-          check: "SELECT last_value FROM qs_double_exec_seq",
-          extractCount: (row) => Number(row.last_value),
-          expected: 5,
+          setup: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            `CREATE TABLE qs_double_exec_counter (
+              id SERIAL PRIMARY KEY,
+              note TEXT,
+              value INTEGER,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+          ],
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query:
+            "WITH ins AS (INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at) SELECT id, note, value, created_at FROM ins",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
         }
         break
       case 'mysql':
       case 'mariadb':
       case 'tidb':
+        // mysql2 is configured with multipleStatements: true (mysql.ts:154),
+        // so the cursor's connection.query() runs both statements. This
+        // matches the "run all to file" multi-statement scenario exactly:
+        // INSERT side effect followed by a SELECT that returns rows.
         plan = {
           setup: [
             'DROP TABLE IF EXISTS qs_double_exec_counter',
-            'CREATE TABLE qs_double_exec_counter (id INT AUTO_INCREMENT PRIMARY KEY, note VARCHAR(8))',
+            `CREATE TABLE qs_double_exec_counter (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              note VARCHAR(50),
+              value INT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
           ],
-          query: "INSERT INTO qs_double_exec_counter (note) VALUES ('x')",
-          check: 'SELECT COUNT(*) AS n FROM qs_double_exec_counter',
-          extractCount: (row) => Number(row.n),
-          expected: 1,
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query:
+            "INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42); SELECT id, note, value, created_at FROM qs_double_exec_counter",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
         }
         break
       case 'sqlite':
-        // SQLite RETURNING requires 3.35+; better-sqlite3 ships a modern
-        // SQLite, so this works in the test environment.
+        // SQLite RETURNING (3.35+) lets the cursor iterate the inserted row.
         plan = {
           setup: [
             'DROP TABLE IF EXISTS qs_double_exec_counter',
-            'CREATE TABLE qs_double_exec_counter (id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT)',
+            `CREATE TABLE qs_double_exec_counter (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              note TEXT,
+              value INTEGER,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )`,
           ],
-          query: "INSERT INTO qs_double_exec_counter (note) VALUES ('x') RETURNING id",
-          check: 'SELECT COUNT(*) AS n FROM qs_double_exec_counter',
-          extractCount: (row) => Number(row.n),
-          expected: 1,
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query:
+            "INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
         }
         break
       case 'sqlserver':
         plan = {
           setup: [
             "IF OBJECT_ID('qs_double_exec_counter','U') IS NOT NULL DROP TABLE qs_double_exec_counter",
-            'CREATE TABLE qs_double_exec_counter (id INT IDENTITY(1,1) PRIMARY KEY, note VARCHAR(8))',
+            `CREATE TABLE qs_double_exec_counter (
+              id INT IDENTITY(1,1) PRIMARY KEY,
+              note VARCHAR(50),
+              value INT,
+              created_at DATETIME DEFAULT GETDATE()
+            )`,
           ],
-          query: "INSERT INTO qs_double_exec_counter (note) OUTPUT INSERTED.id VALUES ('x')",
-          check: 'SELECT COUNT(*) AS n FROM qs_double_exec_counter',
-          extractCount: (row) => Number(row.n),
-          expected: 1,
+          teardown: [
+            "IF OBJECT_ID('qs_double_exec_counter','U') IS NOT NULL DROP TABLE qs_double_exec_counter",
+          ],
+          query:
+            "INSERT INTO qs_double_exec_counter (note, value) OUTPUT INSERTED.id, INSERTED.note, INSERTED.value, INSERTED.created_at VALUES ('hello', 42)",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
         }
         break
       case 'duckdb':
+        // DuckDB supports data-modifying CTEs as of 0.10+.
         plan = {
           setup: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
             'DROP SEQUENCE IF EXISTS qs_double_exec_seq',
             'CREATE SEQUENCE qs_double_exec_seq START 1',
+            `CREATE TABLE qs_double_exec_counter (
+              id INTEGER DEFAULT nextval('qs_double_exec_seq') PRIMARY KEY,
+              note VARCHAR,
+              value INTEGER,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
           ],
-          query: "SELECT nextval('qs_double_exec_seq') AS n FROM range(5)",
-          // currval() needs the sequence to have been touched in this session,
-          // which it will have been after queryStream completes.
-          check: "SELECT currval('qs_double_exec_seq') AS last_value",
-          extractCount: (row) => Number(row.last_value),
-          expected: 5,
+          teardown: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            'DROP SEQUENCE IF EXISTS qs_double_exec_seq',
+          ],
+          query:
+            "WITH ins AS (INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at) SELECT id, note, value, created_at FROM ins",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
         }
         break
       case 'oracle':
-        // Oracle's cursor (oracledb's conn.queryStream) requires the statement
-        // to return rows, so we use a sequence-driven SELECT instead of an
-        // INSERT. NOCACHE keeps the dictionary in lockstep with NEXTVAL so the
-        // post-test NEXTVAL is a deterministic probe.
+        // Oracle's oracledb.queryStream needs a row-returning statement, so
+        // we use a sequence-driven SELECT instead of an INSERT counter.
+        // NOCACHE keeps the post-test NEXTVAL probe deterministic: after 5
+        // correct advances the next NEXTVAL returns 6; with the bug it
+        // returns 11.
         plan = {
           setup: [
             "BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE qs_double_exec_seq'; EXCEPTION WHEN OTHERS THEN NULL; END;",
             'CREATE SEQUENCE qs_double_exec_seq START WITH 1 NOCACHE',
           ],
-          query: 'SELECT qs_double_exec_seq.NEXTVAL AS n FROM dual CONNECT BY level <= 5',
-          // Reading NEXTVAL once after the test reveals how many times the seq
-          // was advanced inside queryStream: 5 correct advances → probe is 6;
-          // 10 buggy advances → probe is 11.
-          check: 'SELECT qs_double_exec_seq.NEXTVAL AS n FROM dual',
-          extractCount: (row) => Number(row.N ?? row.n),
-          expected: 6,
+          teardown: [
+            "BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE qs_double_exec_seq'; EXCEPTION WHEN OTHERS THEN NULL; END;",
+          ],
+          query:
+            "SELECT qs_double_exec_seq.NEXTVAL AS n, 'hello' AS note, 42 AS value, SYSTIMESTAMP AS created_at FROM dual CONNECT BY level <= 5",
+          expectedRows: 5,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT qs_double_exec_seq.NEXTVAL AS n FROM dual'
+            )
+            const row = result.rows[0]
+            expect(Number(row.N ?? row.n)).toBe(6)
+          },
         }
         break
       case 'clickhouse':
-        // ClickHouse has no sequences; use a MergeTree counter and an INSERT
-        // statement. The cursor's client.query() still pushes the INSERT
-        // through the HTTP interface, so a buggy run leaves 2 rows behind.
+        // ClickHouse has no sequences, no RETURNING, no usable
+        // multi-statement. The cursor will see zero rows for an INSERT, but
+        // the bug-detecting signal is still the counter row count.
         plan = {
           setup: [
             'DROP TABLE IF EXISTS qs_double_exec_counter',
-            'CREATE TABLE qs_double_exec_counter (n UInt32) ENGINE = MergeTree() ORDER BY n',
+            `CREATE TABLE qs_double_exec_counter (
+              id UInt32,
+              note String,
+              value Int32,
+              created_at DateTime DEFAULT now()
+            ) ENGINE = MergeTree() ORDER BY id`,
           ],
-          query: 'INSERT INTO qs_double_exec_counter VALUES (1)',
-          check: 'SELECT COUNT(*) AS n FROM qs_double_exec_counter',
-          extractCount: (row) => Number(row.n),
-          expected: 1,
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query: "INSERT INTO qs_double_exec_counter (id, note, value) VALUES (1, 'hello', 42)",
+          expectedRows: 0,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
         }
         break
       default:
@@ -1705,20 +1802,31 @@ export class DBTestUtil {
       await this.connection.executeQuery(sql)
     }
 
-    const stream = await this.connection.queryStream(plan.query, 100)
-    await stream.cursor.start()
-    // Drain the cursor as the export flow does, so any lazy-cursor
-    // implementations (e.g. better-sqlite3's iterator) actually run.
-    // Cap iterations defensively in case a buggy cursor never returns 0 rows.
-    for (let i = 0; i < 100; i++) {
-      const rows = await stream.cursor.read()
-      if (!rows || rows.length === 0) break
-    }
-    await stream.cursor.close()
+    const collected: any[][] = []
+    try {
+      const stream = await this.connection.queryStream(plan.query, 100)
+      await stream.cursor.start()
+      // Drain the cursor as the export flow does (export.ts:166 onward).
+      // Cap iterations defensively in case a misbehaving cursor never
+      // returns 0 rows.
+      for (let i = 0; i < 100; i++) {
+        const rows = await stream.cursor.read()
+        if (!rows || rows.length === 0) break
+        collected.push(...rows)
+      }
+      await stream.cursor.close()
 
-    const [result] = await this.connection.executeQuery(plan.check)
-    const observed = plan.extractCount(result.rows[0])
-    expect(observed).toBe(plan.expected)
+      expect(collected.length).toBe(plan.expectedRows)
+      await plan.verify()
+    } finally {
+      for (const sql of plan.teardown) {
+        try {
+          await this.connection.executeQuery(sql)
+        } catch (_e) {
+          // Best-effort cleanup.
+        }
+      }
+    }
   }
 
   async generatedColumnsTests() {

@@ -1354,22 +1354,23 @@ describe(`MongoDB`, () => {
     });
   })
 
-  // queryStream() is supposed to set up a streaming cursor for the supplied
-  // query. The current implementation calls getColumnsAndTotalRows() — which
-  // runs the query in full via QueryLeaf — before handing back a cursor that
-  // will run it again. For an INSERT that means the document gets written
-  // twice (once during column inference, once when the cursor is drained).
-  // This block pins the *correct* behaviour: the document is written exactly
-  // once after the full queryStream → start → drain → close cycle.
+  // queryStream() drives the export flow (apps/studio/src/lib/export/export.ts:143).
+  // The bug is that getColumnsAndTotalRows (BasicDatabaseClient.ts:568)
+  // calls executeQuery(query) inside queryStream — running the user's
+  // query a second time. For an INSERT that means the document gets
+  // written twice (once during column inference, once when the cursor is
+  // drained). This test pins single execution by inserting via the
+  // queryStream and asserting the final collection has exactly one
+  // document.
   describe("queryStream double execution", () => {
-    it("should run the supplied query only once across the full stream lifecycle", async () => {
+    it("should run the supplied write only once across the full stream lifecycle", async () => {
       const testCollection = `qs_double_exec_${Date.now()}`
 
       try {
         await connection.createTable({ table: testCollection })
 
         const stream = await connection.queryStream(
-          `INSERT INTO ${testCollection} (n) VALUES (1)`,
+          `INSERT INTO ${testCollection} (note, value, flag) VALUES ('hello', 42, 1)`,
           100
         )
         try {
@@ -1380,9 +1381,9 @@ describe(`MongoDB`, () => {
           }
           await stream.cursor.close()
         } catch (_e) {
-          // QueryLeaf's executeCursor may reject non-SELECT statements. That's
-          // fine — the bug we care about is that getColumnsAndTotalRows
-          // already wrote the document before the cursor was even touched.
+          // QueryLeaf's executeCursor may reject non-row-returning writes.
+          // The signal we care about is the final collection size, which
+          // reflects whether the write fired more than once.
         }
 
         const final = await connection.selectTop(testCollection, 0, 10, [], [])
