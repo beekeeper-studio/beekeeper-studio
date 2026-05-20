@@ -13,7 +13,7 @@ const KEEP_FILES = 3;
 let buffer: AiServerLogEntry[] = [];
 let bufferSize = 500;
 let persist = true;
-let listeners = new Set<(entry: AiServerLogEntry) => void>();
+const listeners = new Set<(entry: AiServerLogEntry) => void>();
 
 function logFile(): string {
   return path.join(platformInfo.userDirectory, "ai-server.log.jsonl");

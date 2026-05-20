@@ -5,10 +5,20 @@
     @click.prevent="open"
     @contextmenu.prevent="open"
     class="nav-item selectable ai-server-status-btn"
-    :class="{ 'is-running': running }"
+    :class="{ 'is-running': running, 'is-stopped': !running }"
     v-tooltip.right-end="tooltip"
   >
-    <span class="material-icons icon">smart_toy</span>
+    <span class="ai-indicator" :class="{ running, stopped: !running }">
+      <span class="ai-hex">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect class="fill" x="6" y="6" width="88" height="88" rx="16" ry="16" />
+          <g class="glyph">
+            <path d="M58 12 L28 56 L46 56 L40 88 L72 42 L52 42 L58 12 Z" />
+          </g>
+        </svg>
+      </span>
+      <span v-if="running" class="ai-dot" />
+    </span>
   </a>
 </template>
 
@@ -74,19 +84,68 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
+// Scoped: every selector below is rewritten by Vue with a data attribute,
+// so .ai-indicator, .ai-hex etc. cannot collide with other components.
 .ai-server-status-btn {
-  // Inherit nav-item shape from the surrounding sidebar; only style the icon state.
-  .icon {
-    transition: color 0.2s ease, opacity 1.2s ease-in-out;
+  // Keep the surrounding .nav-item geometry from the global sidebar — only
+  // replace the inner icon with the AI-server chip.
+  .ai-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
   }
-  &.is-running .icon {
-    color: var(--bks-theme-base, var(--theme-primary, #5e94e6));
-    animation: ai-server-pulse 2.4s ease-in-out infinite;
+
+  .ai-hex {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ai-hex svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  // Running — yellow chip, dark glyph
+  .ai-indicator.running .ai-hex svg .fill {
+    fill: var(--bks-brand-primary, #fad83b);
+  }
+  .ai-indicator.running .ai-hex svg .glyph path {
+    fill: rgba(0, 0, 0, 0.85);
+  }
+
+  // Stopped — soft chip, light glyph
+  .ai-indicator.stopped .ai-hex svg .fill {
+    fill: rgba(255, 255, 255, 0.08);
+  }
+  .ai-indicator.stopped .ai-hex svg .glyph path {
+    fill: var(--bks-text-light, rgba(255, 255, 255, 0.57));
+  }
+
+  // Status dot — bottom-right corner, pulsing
+  .ai-dot {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--bks-brand-success, #15db95);
+    border: 2px solid var(--bks-global-sidebar-bg, var(--bks-theme-bg, #181818));
+    box-shadow: 0 0 0 0 rgba(21, 219, 149, 0.5);
+    animation: ai-status-pulse 2.4s ease-in-out infinite;
   }
 }
 
-@keyframes ai-server-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+@keyframes ai-status-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(21, 219, 149, 0.45); }
+  50%      { box-shadow: 0 0 0 5px rgba(21, 219, 149, 0); }
 }
 </style>

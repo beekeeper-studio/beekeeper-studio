@@ -39,6 +39,7 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <ai-server-modal />
+    <ai-server-access-dialog />
     <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
     <lock-manager />
@@ -86,6 +87,7 @@ import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import AiServerModal from '@/components/aiServer/AiServerModal.vue'
+import AiServerAccessDialog from '@/components/aiServer/AiServerAccessDialog.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
@@ -105,7 +107,7 @@ export default Vue.extend({
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
-    PluginManagerModal, AiServerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    PluginManagerModal, AiServerModal, AiServerAccessDialog, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
     InputJwtModal,
   },
   data() {

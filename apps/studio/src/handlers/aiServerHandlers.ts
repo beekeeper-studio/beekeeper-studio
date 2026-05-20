@@ -12,7 +12,22 @@ import {
 import { loadGrants, saveGrants } from "@commercial/backend/ai-server/grants";
 import { recent as recentLog, clear as clearLog } from "@commercial/backend/ai-server/queryLog";
 import { loadOptions, saveOptions } from "@commercial/backend/ai-server/options";
-import { AiServerGrants, AiServerLogEntry, AiServerStatus, AiServerOptions } from "@commercial/backend/ai-server/types";
+import {
+  listClients,
+  approveClient,
+  denyClient,
+  revokeClient,
+  onAccessRequest,
+  onClientsChanged,
+} from "@commercial/backend/ai-server/clients";
+import {
+  AiServerGrants,
+  AiServerLogEntry,
+  AiServerStatus,
+  AiServerOptions,
+  AiServerClient,
+  AiServerAccessRequest,
+} from "@commercial/backend/ai-server/types";
 import { state } from "@/handlers/handlerState";
 import bksConfig from "@/common/bksConfig";
 
@@ -27,6 +42,10 @@ export interface IAiServerHandlers {
   "ai-server/options/set": (args: { options: AiServerOptions; sId?: string }) => Promise<AiServerOptions>;
   "ai-server/log/list": (args: { limit?: number; since?: number; sId?: string }) => Promise<AiServerLogEntry[]>;
   "ai-server/log/clear": (args: { sId?: string }) => Promise<{ ok: true }>;
+  "ai-server/clients/list": (args: { sId?: string }) => Promise<AiServerClient[]>;
+  "ai-server/clients/approve": (args: { id: string; sId?: string }) => Promise<AiServerClient[]>;
+  "ai-server/clients/deny": (args: { id: string; sId?: string }) => Promise<AiServerClient[]>;
+  "ai-server/clients/revoke": (args: { id: string; sId?: string }) => Promise<AiServerClient[]>;
 }
 
 function withToken<T extends AiServerStatus>(s: T): T & { token: string | null } {
@@ -56,7 +75,12 @@ export const AiServerHandlers: IAiServerHandlers = {
     const saved = await saveOptions(options);
     await refreshOptions();
     const running = getStatus().running;
-    const changed = before.requireToken !== saved.requireToken || before.bindLocal !== saved.bindLocal;
+    const changed =
+      before.requireToken !== saved.requireToken ||
+      before.bindLocal !== saved.bindLocal ||
+      // allowWrites flips the read-only flag baked into cached DB sessions —
+      // a restart clears them so the new policy takes effect cleanly.
+      before.allowWrites !== saved.allowWrites;
     if (running && changed) {
       // regenerateToken stops + starts, picking up the new bind host / token policy.
       await regenerateToken();
@@ -68,6 +92,10 @@ export const AiServerHandlers: IAiServerHandlers = {
     clearLog();
     return { ok: true };
   },
+  "ai-server/clients/list": async () => listClients(),
+  "ai-server/clients/approve": async ({ id }) => approveClient(id),
+  "ai-server/clients/deny": async ({ id }) => denyClient(id),
+  "ai-server/clients/revoke": async ({ id }) => revokeClient(id),
 };
 
 interface SubscribedPort {
@@ -104,12 +132,46 @@ function broadcastStatus(status: AiServerStatus): void {
   }
 }
 
+function broadcastAccessRequest(request: AiServerAccessRequest): void {
+  for (const sub of subscribedPorts.values()) {
+    try {
+      state(sub.sId)?.port?.postMessage({
+        type: "aiServerAccessRequest",
+        input: request,
+      });
+    } catch {
+      // ignore
+    }
+  }
+}
+
+async function broadcastClients(): Promise<void> {
+  let clients: AiServerClient[] = [];
+  try {
+    clients = await listClients();
+  } catch {
+    return;
+  }
+  for (const sub of subscribedPorts.values()) {
+    try {
+      state(sub.sId)?.port?.postMessage({
+        type: "aiServerClientsChanged",
+        input: clients,
+      });
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export function registerAiServerSubscriber(sId: string): void {
   subscribedPorts.set(sId, { sId });
   if (!installedListeners) {
     installedListeners = true;
     onLogAppend(broadcastLog);
     onStatusChange(broadcastStatus);
+    onAccessRequest(broadcastAccessRequest);
+    onClientsChanged(() => { void broadcastClients(); });
   }
 }
 

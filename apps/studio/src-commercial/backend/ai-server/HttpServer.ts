@@ -1,9 +1,9 @@
 import http, { IncomingMessage, ServerResponse } from "http";
 import { URL } from "url";
 import rawLog from "@bksLogger";
-import bksConfig from "@/common/bksConfig";
 import { dispatch } from "./router";
 import { extractBearer, verifyToken } from "./auth";
+import { identify, gate } from "./clients";
 
 const log = rawLog.scope("ai-server:http");
 
@@ -15,6 +15,8 @@ export interface HttpServerOptions {
   portScanRange: number;
   /** When null, the server skips bearer-token verification. */
   token: string | null;
+  /** Live read of whether unknown clients must be approved before serving. */
+  isPromptEnabled: () => boolean;
 }
 
 export interface RunningHttpServer {
@@ -100,6 +102,29 @@ export async function startHttpServer(opts: HttpServerOptions): Promise<RunningH
           writeJson(res, 401, { error: "unauthorized", message: "Bearer token required" });
           return;
         }
+      }
+
+      // Identity gate: an unknown client must be approved by the user before
+      // its requests are served (unless prompting is turned off).
+      const identity = identify(req.headers);
+      const decision = await gate(
+        identity,
+        req.socket?.remoteAddress ?? "",
+        opts.isPromptEnabled()
+      );
+      if (decision === "denied") {
+        writeJson(res, 403, {
+          error: "access_denied",
+          message: "This client was denied access in Beekeeper Studio",
+        });
+        return;
+      }
+      if (decision === "pending") {
+        writeJson(res, 403, {
+          error: "access_pending",
+          message: "Access approval is pending in Beekeeper Studio — retry shortly",
+        });
+        return;
       }
 
       let body: unknown = null;

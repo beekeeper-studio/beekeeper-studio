@@ -19,12 +19,44 @@ export const EMPTY_GRANTS: AiServerGrants = Object.freeze({
 export interface AiServerOptions {
   requireToken: boolean;
   bindLocal: boolean;
+  /** Start the server automatically when Beekeeper Studio launches. */
+  autoStart: boolean;
+  /** When false, every connection is forced read-only regardless of grant. */
+  allowWrites: boolean;
+  /** Show an in-app approve/deny prompt the first time a new client connects. */
+  promptForNewClients: boolean;
 }
 
 export const DEFAULT_OPTIONS: AiServerOptions = Object.freeze({
   requireToken: true,
   bindLocal: false,
+  autoStart: false,
+  allowWrites: false,
+  promptForNewClients: true,
 }) as AiServerOptions;
+
+export type AiServerClientStatus = "approved" | "denied" | "pending";
+
+/** A client that has been seen by the AI server, with its approval decision. */
+export interface AiServerClient {
+  /** Stable identity — an explicit client id header, or a hash of the user-agent. */
+  id: string;
+  name: string;
+  userAgent: string;
+  status: AiServerClientStatus;
+  firstSeen: number;
+  lastSeen: number;
+  requestCount: number;
+}
+
+/** Pushed to the renderer when an unknown client needs an approve/deny decision. */
+export interface AiServerAccessRequest {
+  id: string;
+  name: string;
+  userAgent: string;
+  address: string;
+  requestedAt: number;
+}
 
 export interface AiServerStatus {
   running: boolean;

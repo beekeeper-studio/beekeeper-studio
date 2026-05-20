@@ -4,6 +4,7 @@ import { state, newState } from "@/handlers/handlerState";
 import { ConnHandlers } from "../handlers/connHandlers";
 import { AiServerConnectionGrant } from "./types";
 import { getSession, makeSId, rememberSession } from "./sessionRegistry";
+import { loadOptions } from "./options";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("ai-server:connection");
@@ -21,23 +22,29 @@ export class AiConnectionError extends Error {
 export async function resolveSession(
   tokenPrefix: string,
   grant: AiServerConnectionGrant
-): Promise<{ sId: string; connection: SavedConnection }> {
+): Promise<{ sId: string; connection: SavedConnection; readOnly: boolean }> {
   const saved = await SavedConnection.findOneBy({ id: grant.connectionId });
   if (!saved) throw new AiConnectionError("connection not found", 404);
 
+  // Write access is a single server-wide setting shared by every client.
+  // The per-connection grant flag stays in the data model but is no longer
+  // the enforcement point — `allowWrites` is the authority.
+  const options = await loadOptions();
+  const readOnly = !options.allowWrites;
+
   const existing = getSession(tokenPrefix, grant.connectionId);
   if (existing && state(existing)?.connection) {
-    return { sId: existing, connection: saved };
+    return { sId: existing, connection: saved, readOnly };
   }
 
   const sId = makeSId(tokenPrefix, grant.connectionId);
   newState(sId);
 
-  // Force read-only on the in-memory config we hand to conn/create.
+  // Apply the read-only flag to the in-memory config we hand to conn/create.
   // SavedConnection extends DbConnectionBase which carries readOnlyMode; copying
   // ensures we don't mutate the persisted entity.
   const config = saved.withProps();
-  config.readOnlyMode = grant.readOnly;
+  config.readOnlyMode = readOnly;
 
   try {
     await ConnHandlers["conn/create"]({
@@ -51,5 +58,5 @@ export async function resolveSession(
   }
 
   rememberSession(tokenPrefix, grant.connectionId, sId);
-  return { sId, connection: saved };
+  return { sId, connection: saved, readOnly };
 }

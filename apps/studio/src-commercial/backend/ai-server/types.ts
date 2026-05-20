@@ -8,4 +8,7 @@ export {
   AiServerStatusWithToken,
   AiServerPortFileV1,
   AiServerLogEntry,
+  AiServerClient,
+  AiServerClientStatus,
+  AiServerAccessRequest,
 } from "@/common/interfaces/IAiServer";

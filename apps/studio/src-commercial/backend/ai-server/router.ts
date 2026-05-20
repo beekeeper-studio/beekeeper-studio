@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from "http";
+import { IncomingMessage } from "http";
 import { URL } from "url";
 import platformInfo from "@/common/platform_info";
 import bksConfig from "@/common/bksConfig";
@@ -18,6 +18,7 @@ import { capResults } from "./rowCapper";
 import { resolveSession, AiConnectionError } from "./connectionResolver";
 import { append as logAppend } from "./queryLog";
 import * as queryLog from "./queryLog";
+import { loadOptions } from "./options";
 
 const log = rawLog.scope("ai-server:router");
 
@@ -95,10 +96,11 @@ const routes: Route[] = [
       const conns = await SavedConnection.findBy({ id: In(ids) });
       const wsFilter = workspaceFilter(grants);
       const filtered = wsFilter ? conns.filter((c) => wsFilter.includes(c.workspaceId)) : conns;
+      const readOnly = !(await loadOptions()).allowWrites;
       return {
         body: filtered.map((c) => {
           const grant = findConnectionGrant(grants, c.id);
-          return { ...projectConnection(c), readOnly: grant?.readOnly !== false, maxRows: grant?.maxRows ?? null };
+          return { ...projectConnection(c), readOnly, maxRows: grant?.maxRows ?? null };
         }),
       };
     },
@@ -111,8 +113,8 @@ const routes: Route[] = [
       const grants = await loadGrants();
       if (!isConnectionAllowed(grants, id)) throw new AiConnectionError("connection not allowed", 403);
       const grant = findConnectionGrant(grants, id)!;
-      const { sId, connection } = await resolveSession(ctx.tokenPrefix, grant);
-      return { body: { sessionId: sId, name: connection.name, readOnly: grant.readOnly } };
+      const { sId, connection, readOnly } = await resolveSession(ctx.tokenPrefix, grant);
+      return { body: { sessionId: sId, name: connection.name, readOnly } };
     },
   },
   {
@@ -238,7 +240,7 @@ const routes: Route[] = [
       if (typeof b.sql !== "string" || b.sql.trim().length === 0) {
         throw new AiConnectionError("sql is required", 400);
       }
-      const { sId, connection } = await resolveSession(ctx.tokenPrefix, grant);
+      const { sId, connection, readOnly } = await resolveSession(ctx.tokenPrefix, grant);
       const cap = effectiveMaxRows(grant.maxRows, b.maxRows);
       const startedAt = Date.now();
       try {
@@ -257,7 +259,7 @@ const routes: Route[] = [
           rowCount: capped.rowCount,
           truncated: capped.truncated,
           durationMs,
-          readOnly: grant.readOnly,
+          readOnly,
         });
         return {
           body: {
@@ -278,7 +280,7 @@ const routes: Route[] = [
           rowCount: 0,
           truncated: false,
           durationMs,
-          readOnly: grant.readOnly,
+          readOnly,
           error: (e as Error).message,
         });
         throw e;

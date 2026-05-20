@@ -44,23 +44,59 @@ describe("ai-server/options", () => {
     expect(opts).toEqual(DEFAULT_OPTIONS);
     expect(opts.requireToken).toBe(true);
     expect(opts.bindLocal).toBe(false);
+    expect(opts.autoStart).toBe(false);
+    expect(opts.allowWrites).toBe(false);
+    expect(opts.promptForNewClients).toBe(true);
   });
 
   it("round-trips saved values", async () => {
-    await saveOptions({ requireToken: false, bindLocal: false });
+    await saveOptions({
+      requireToken: false,
+      bindLocal: false,
+      autoStart: true,
+      allowWrites: true,
+      promptForNewClients: false,
+    });
     const loaded = await loadOptions();
-    expect(loaded).toEqual({ requireToken: false, bindLocal: false });
+    expect(loaded).toEqual({
+      requireToken: false,
+      bindLocal: false,
+      autoStart: true,
+      allowWrites: true,
+      promptForNewClients: false,
+    });
   });
 
   it("forces requireToken true when bindLocal is true", async () => {
-    const saved = await saveOptions({ requireToken: false, bindLocal: true });
-    expect(saved).toEqual({ requireToken: true, bindLocal: true });
+    const saved = await saveOptions({
+      requireToken: false,
+      bindLocal: true,
+      autoStart: false,
+      allowWrites: false,
+      promptForNewClients: true,
+    });
+    expect(saved.requireToken).toBe(true);
+    expect(saved.bindLocal).toBe(true);
     const loaded = await loadOptions();
-    expect(loaded).toEqual({ requireToken: true, bindLocal: true });
+    expect(loaded.requireToken).toBe(true);
+    expect(loaded.bindLocal).toBe(true);
   });
 
-  it("coerces malformed values", async () => {
-    const saved = await saveOptions({ requireToken: undefined as any, bindLocal: undefined as any });
-    expect(saved).toEqual({ requireToken: true, bindLocal: false });
+  it("coerces malformed values to safe defaults", async () => {
+    const saved = await saveOptions({
+      requireToken: undefined as any,
+      bindLocal: undefined as any,
+      autoStart: undefined as any,
+      allowWrites: undefined as any,
+      promptForNewClients: undefined as any,
+    });
+    expect(saved).toEqual({
+      requireToken: true,
+      bindLocal: false,
+      autoStart: false,
+      allowWrites: false,
+      // Prompting is opt-out — an absent value still defaults to true.
+      promptForNewClients: true,
+    });
   });
 });

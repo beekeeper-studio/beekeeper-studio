@@ -6,6 +6,8 @@ import {
   AiServerLogEntry,
   AiServerOptions,
   AiServerStatusWithToken,
+  AiServerClient,
+  AiServerAccessRequest,
   DEFAULT_OPTIONS,
   EMPTY_GRANTS,
 } from "@/common/interfaces/IAiServer";
@@ -15,6 +17,8 @@ interface State {
   grants: AiServerGrants;
   options: AiServerOptions;
   log: AiServerLogEntry[];
+  clients: AiServerClient[];
+  accessRequests: AiServerAccessRequest[];
   loaded: boolean;
 }
 
@@ -41,6 +45,8 @@ export const AiServerStoreModule: Module<State, RootState> = {
     grants: initialGrants(),
     options: initialOptions(),
     log: [],
+    clients: [],
+    accessRequests: [],
     loaded: false,
   }),
   getters: {
@@ -74,6 +80,16 @@ export const AiServerStoreModule: Module<State, RootState> = {
     },
     clearLog(state) {
       state.log = [];
+    },
+    setClients(state, clients: AiServerClient[]) {
+      state.clients = clients ?? [];
+    },
+    enqueueAccessRequest(state, request: AiServerAccessRequest) {
+      if (state.accessRequests.some((r) => r.id === request.id)) return;
+      state.accessRequests.push(request);
+    },
+    dismissAccessRequest(state, id: string) {
+      state.accessRequests = state.accessRequests.filter((r) => r.id !== id);
     },
     markLoaded(state) {
       state.loaded = true;
@@ -122,6 +138,25 @@ export const AiServerStoreModule: Module<State, RootState> = {
       await Vue.prototype.$util.send("ai-server/log/clear");
       context.commit("clearLog");
     },
+    async loadClients(context) {
+      const clients = await Vue.prototype.$util.send("ai-server/clients/list");
+      context.commit("setClients", clients ?? []);
+    },
+    async approveClient(context, id: string) {
+      const clients = await Vue.prototype.$util.send("ai-server/clients/approve", { id });
+      context.commit("setClients", clients ?? []);
+      context.commit("dismissAccessRequest", id);
+    },
+    async denyClient(context, id: string) {
+      const clients = await Vue.prototype.$util.send("ai-server/clients/deny", { id });
+      context.commit("setClients", clients ?? []);
+      context.commit("dismissAccessRequest", id);
+    },
+    async revokeClient(context, id: string) {
+      const clients = await Vue.prototype.$util.send("ai-server/clients/revoke", { id });
+      context.commit("setClients", clients ?? []);
+      context.commit("dismissAccessRequest", id);
+    },
     async initialize(context) {
       if (context.state.loaded) return;
       await Promise.all([
@@ -129,6 +164,7 @@ export const AiServerStoreModule: Module<State, RootState> = {
         context.dispatch("loadGrants"),
         context.dispatch("loadOptions"),
         context.dispatch("loadLog"),
+        context.dispatch("loadClients"),
       ]);
       context.commit("markLoaded");
     },
@@ -137,6 +173,12 @@ export const AiServerStoreModule: Module<State, RootState> = {
     },
     receiveLogPush(context, entry: AiServerLogEntry) {
       context.commit("appendLog", entry);
+    },
+    receiveClientsPush(context, clients: AiServerClient[]) {
+      context.commit("setClients", clients ?? []);
+    },
+    receiveAccessRequest(context, request: AiServerAccessRequest) {
+      context.commit("enqueueAccessRequest", request);
     },
   },
 };

@@ -8,7 +8,14 @@ function normalize(raw: unknown): AiServerOptions {
   const bindLocal = !!r.bindLocal;
   // LAN binding without auth would be wildly unsafe — force token on.
   const requireToken = bindLocal ? true : r.requireToken !== false;
-  return { requireToken, bindLocal };
+  return {
+    requireToken,
+    bindLocal,
+    autoStart: !!r.autoStart,
+    allowWrites: !!r.allowWrites,
+    // Default true — prompting is the safe behaviour for an unknown client.
+    promptForNewClients: r.promptForNewClients !== false,
+  };
 }
 
 export async function loadOptions(): Promise<AiServerOptions> {

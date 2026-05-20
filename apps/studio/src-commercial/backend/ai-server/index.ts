@@ -8,6 +8,7 @@ import { writePortFile, removePortFile } from "./portFile";
 import { configure as configureLog, shutdown as shutdownLog, subscribe as subscribeLog } from "./queryLog";
 import { forgetAll } from "./sessionRegistry";
 import { loadOptions } from "./options";
+import { loadClients, resetPending } from "./clients";
 import { AiServerStatus, AiServerLogEntry, AiServerOptions, DEFAULT_OPTIONS } from "./types";
 
 const log = rawLog.scope("ai-server");
@@ -109,11 +110,15 @@ export async function startAiServer(): Promise<AiServerStatus> {
   const host = runtime.options.bindLocal ? ALL_INTERFACES : LOOPBACK;
   const token = runtime.options.requireToken ? generateToken() : null;
 
+  // Load persisted client approve/deny decisions before accepting requests.
+  await loadClients();
+
   const running = await startHttpServer({
     host,
     port: bksConfig.aiServer.port,
     portScanRange: bksConfig.aiServer.portScanRange,
     token,
+    isPromptEnabled: () => runtime.options.promptForNewClients,
   });
 
   runtime.running = running;
@@ -152,6 +157,7 @@ export async function stopAiServer(): Promise<AiServerStatus> {
     runtime.unsubscribeLog = null;
   }
   forgetAll();
+  resetPending();
   removePortFile();
   try {
     await r.close();
@@ -172,11 +178,18 @@ export async function regenerateToken(): Promise<AiServerStatus> {
 }
 
 export async function initAiServer(): Promise<void> {
-  // Remove any stale port file from a previous run. Do NOT auto-start —
-  // the server only runs when the user clicks Start in the AI Server panel.
+  // Remove any stale port file from a previous run.
   removePortFile();
   await refreshOptions();
   emitStatus();
+  // Auto-start when the user opted in (and config hasn't disabled the feature).
+  if (runtime.options.autoStart && !bksConfig.aiServer.disabled) {
+    try {
+      await startAiServer();
+    } catch (e) {
+      log.warn("auto-start failed", e);
+    }
+  }
 }
 
 export async function shutdownAiServer(): Promise<void> {
