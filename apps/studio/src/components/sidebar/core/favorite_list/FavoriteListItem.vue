@@ -110,7 +110,7 @@ export default Vue.extend({
           handler: ({ item }) => this.$emit('remove', item)
         },
         {
-          name: "Version History",
+          name: "View Edit History",
           handler: ({ item }) => this.$emit('open-history', item)
         },
         {

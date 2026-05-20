@@ -552,6 +552,7 @@ export default Vue.extend({
   font-size: 1rem;
   font-weight: normal;
   color: var(--text-light);
+  text-transform: capitalize;
 }
 
 .unsaved-version .title {
