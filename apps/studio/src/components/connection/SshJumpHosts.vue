@@ -50,7 +50,11 @@
                 :class="{ 'empty': !row.host }"
                 v-text="row.host || '<EMPTY>'"
               />
-              <span class="port" v-text="`:${row.port}`" />
+              <span
+                class="port"
+                :class="{ 'empty': !row.port }"
+                v-text="`:${row.port || '<EMPTY>'}`"
+              />
             </span>
             <span class="col-action">
               <button
