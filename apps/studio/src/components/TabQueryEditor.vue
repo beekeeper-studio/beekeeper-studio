@@ -1250,7 +1250,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       async editResults() {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to edit query result data")
+          this.$root.$emit(AppEvent.upgradeModal, "Editable Query Results")
           return;
         }
         if (!this.resultsEditData[this.selectedResult]) {
@@ -1401,7 +1401,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       async submitQueryToFile() {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal)
+          this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
 
@@ -1415,7 +1415,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       async submitCurrentQueryToFile() {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal)
+          this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
         if (this.runButtonDisabled) return;

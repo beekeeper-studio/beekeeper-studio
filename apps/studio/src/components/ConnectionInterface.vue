@@ -50,11 +50,10 @@
                   </option>
                 </select>
               </div>
-              <div v-if="config.connectionType">
+              <div v-if="config.connectionType && !shouldUpsell">
                 <!-- INDIVIDUAL DB CONFIGS -->
-                <upsell-content v-if="shouldUpsell" />
                 <postgres-form
-                  v-else-if="config.connectionType === 'cockroachdb'"
+                  v-if="config.connectionType === 'cockroachdb'"
                   :config="config"
                   :testing="testing"
                 />
@@ -129,7 +128,7 @@
                   :testing="testing"
                 />
                 <duck-db-form
-                  v-else-if="config.connectionType === 'duckdb'"
+                  v-else-if="config.connectionType === 'duckdb' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
@@ -209,6 +208,12 @@
               </div>
             </form>
           </div>
+          <upgrade-panel
+            v-if="shouldUpsell"
+            :feature-name="friendlyConnectionType"
+            standalone
+            class="connection-upgrade-panel"
+          />
           <template v-if="!config.connectionType">
             <div class="pitch" v-if="!isUltimate">
               🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
@@ -267,7 +272,7 @@ import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
-import UpsellContent from '@/components/upsell/UpsellContent.vue'
+import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
@@ -280,7 +285,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner
   },
 
   data() {

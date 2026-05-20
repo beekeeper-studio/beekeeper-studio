@@ -351,7 +351,7 @@ export default {
     },
     importFromLocal() {
       if (!this.isCloud) {
-          this.$root.$emit(AppEvent.upgradeModal)
+          this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
           return
         }
         this.$root.$emit(AppEvent.promptQueryImport)
@@ -398,7 +398,7 @@ export default {
     },
     createFolder() {
       if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your queries into folders')
+        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
       this.folderModalName = ''
@@ -428,7 +428,7 @@ export default {
     },
     createSubfolder(parentFolder) {
       if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your queries into folders')
+        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
       this.folderModalName = ''

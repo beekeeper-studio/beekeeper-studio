@@ -565,4 +565,11 @@
 
 .tab-upsell-wrapper {
   padding: 0rem 2rem 2rem;
+
+  &.tab-upsell-wrapper--ai-shell {
+    padding: 0;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+  }
 }

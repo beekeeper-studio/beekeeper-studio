@@ -46,6 +46,53 @@ describe("Cassandra Tests", () => {
     }
   })
 
+  // Regression test: the filter callback in CassandraChangeBuilder.alterTable used a
+  // block body without a return statement, so renameColumnAlterations was always empty
+  // and ALTER TABLE … RENAME … SQL was never generated.
+  describe("Column rename via alterTable", () => {
+    const KEYSPACE = 'alter_rename_test_ks'
+    let renameConnection
+
+    beforeAll(async () => {
+      await connection.executeQuery(
+        `CREATE KEYSPACE IF NOT EXISTS ${KEYSPACE} WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`
+      )
+      await connection.executeQuery(`
+        CREATE TABLE IF NOT EXISTS ${KEYSPACE}.cluster_rename_test (
+          bucket uuid,
+          ts timeuuid,
+          value text,
+          PRIMARY KEY (bucket, ts)
+        )
+      `)
+
+      // Create a second connection targeting this keyspace so that
+      // alterTable generates unqualified SQL that Cassandra can resolve.
+      renameConnection = server.createConnection(KEYSPACE)
+      await renameConnection.connect()
+    })
+
+    afterAll(async () => {
+      if (renameConnection) await renameConnection.disconnect()
+      await connection.executeQuery(`DROP KEYSPACE IF EXISTS ${KEYSPACE}`)
+    })
+
+    it("should rename a clustering column end-to-end", async () => {
+      await renameConnection.alterTable({
+        table: 'cluster_rename_test',
+        adds: [],
+        drops: [],
+        alterations: [
+          { columnName: 'ts', changeType: 'columnName', newValue: 'event_time' }
+        ]
+      })
+
+      const columns = await renameConnection.listTableColumns('cluster_rename_test')
+      expect(columns.find((c) => c.columnName === 'event_time')).toBeTruthy()
+      expect(columns.find((c) => c.columnName === 'ts')).toBeFalsy()
+    })
+  })
+
   it("Should connect to Cassandra", async () => {
     const version = await connection.versionString()
     expect(version).toBeTruthy()
