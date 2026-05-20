@@ -32,26 +32,13 @@
         <div class="icon-container">
           <i class="material-icons-outlined link-icon">link</i>
         </div>
-        <div
-          class="form-group"
-          title="The database connection that the SSH tunnel will forward to"
+        <button
+          class="btn connection-string"
+          type="button" @click="focusHostInput"
+          v-tooltip="`Your database connection, reached through the SSH tunnel above`"
         >
-          <!-- <label class="label" for="connection-host-placeholder">Target Connection</label> -->
-          <div class="input-wrapper">
-            <input
-              type="text"
-              disabled
-              id="connection-host-placeholder"
-              :value="$bks.simpleConnectionString(config)"
-            >
-            <button class="btn btn-fab" type="button" @click="focusHostInput">
-              <i class="material-icons">create</i>
-            </button>
-          </div>
-          <div class="hint">
-            Your database connection, reached through the SSH tunnel above
-          </div>
-        </div>
+          {{ $bks.simpleConnectionString(config) }}
+        </button>
       </div>
       <!-- Edit form for the selected row -->
       <template v-if="selectedConfig">
@@ -368,11 +355,14 @@ export default Vue.extend({
 }
 
 .connection-host {
-  margin-top: 0.5rem;
+  margin-block: 0.1rem;
   display: flex;
+  font-size: 0.831rem;
 
   .icon-container {
     width: 1.5rem;
+    min-width: 1.5rem;
+    padding-left: 0.05rem;
   }
 
   .link-icon {
@@ -383,36 +373,21 @@ export default Vue.extend({
     margin-left: -0.17rem;
   }
 
-  .form-group {
-    padding-top: 0;
-    width: 100%;
-  }
+  .connection-string {
+    min-width: 0;
+    border-radius: 5px;
+    border: 1px dashed rgb(from var(--theme-base) r g b / 10%);
+    color: var(--text-lighter);
+    background-color: transparent;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding-inline: 0.5rem;
+    line-height: normal;
+    font-weight: 500;
 
-  .input-wrapper {
-    position: relative;
-    display: flex;
-
-    input {
-      font-weight: 600;
-    }
-
-    .btn {
-      position: absolute;
-      right: 0px;
-      top: 50%;
-      transform: translateY(-50%);
-      margin-block: 0;
-      height: 1.6rem;
-      width: 1.6rem;
-      min-width: 1.6rem;
-
-      &:not(:hover) {
-        background-color: transparent;
-      }
-
-      .material-icons {
-        font-size: 1em;
-      }
+    &:hover, &:focus {
+      background-color: rgb(from var(--theme-base) r g b / 5%);
     }
   }
 }

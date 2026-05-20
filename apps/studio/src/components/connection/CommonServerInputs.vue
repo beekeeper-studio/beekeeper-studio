@@ -189,12 +189,12 @@ export default {
 
 <style lang="scss" scoped>
 ::v-deep input.glow {
-  animation: glow-fade 1s ease-out;
+  animation: glow-fade 1.5s ease-out;
 }
 
 @keyframes glow-fade {
   0% {
-    box-shadow: 0 0 6px 2px var(--input-highlight);
+    box-shadow: 0 0 6px 2px var(--theme-primary);
   }
   100% {
     box-shadow: none;
