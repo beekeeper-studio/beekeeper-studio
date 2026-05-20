@@ -1,4 +1,4 @@
-import { FieldPacket, Pool } from "mysql2/typings/mysql";
+import { FieldPacket, OkPacket, Pool, RowDataPacket } from "mysql2/typings/mysql";
 import PoolConnection from "mysql2/typings/mysql/lib/PoolConnection";
 import Query from "mysql2/typings/mysql/lib/protocol/sequences/Query";
 import { BeeCursor, TableColumn } from "../../models";
@@ -68,8 +68,9 @@ export class MysqlCursor extends BeeCursor {
     }
   }
 
-  private handleRow(row: any) {
-    this.rowBuffer.push(row)
+  private handleRow(row: RowDataPacket | OkPacket) {
+    if ("fieldCount" in row) return;
+    this.rowBuffer.push(row as any[])
     if (this.rowBuffer.length >= this.chunkSize) {
       this.cursor?.connection.pause()
       this.bufferReady = true
