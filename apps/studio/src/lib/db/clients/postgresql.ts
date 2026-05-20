@@ -88,7 +88,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
-  dataTypes: any;
+  dataTypes: any = {};
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
 
