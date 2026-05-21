@@ -145,10 +145,22 @@
   color: var(--bks-yellow);
 }
 .md-nav--primary .md-nav__link--active {
+  position: relative;
   color: var(--bks-yellow);
   font-weight: 500;
   background: rgba(250, 216, 59, 0.08);
-  box-shadow: inset 2px 0 0 var(--bks-yellow);
+  /* Flush left edge so the wash meets the rail cleanly; rounded on the
+     right only — a fully rounded wash would curl around the rail. */
+  border-radius: 0 6px 6px 0;
+}
+.md-nav--primary .md-nav__link--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--bks-yellow);
 }
 .md-nav--primary .md-nav__link--active svg {
   fill: var(--bks-yellow);
