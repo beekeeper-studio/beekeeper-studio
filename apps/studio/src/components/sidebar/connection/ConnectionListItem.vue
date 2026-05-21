@@ -19,11 +19,9 @@
         <div class="subtitle">
           <span
             class="ssh"
-            v-if="this.config.sshEnabled && sshTargetHost && !privacyMode"
+            v-if="displayConfig.sshEnabled && sshStartHost && !privacyMode"
           >
-            <span v-if="sshHopCount > 0" class="truncate">{{ sshHopCount }} {{ pluralize('jump', sshHopCount) }}</span>
-            <span v-if="sshHopCount > 0">&nbsp;>&nbsp;</span>
-            <span class="truncate">{{ sshTargetHost }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ sshStartHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
             <span>
@@ -86,14 +84,10 @@ export default {
     split: null
   }),
   computed: {
-    sshTargetHost() {
-      if (!this.config.sshEnabled || !this.config.sshConfigs?.length) return null
-      const sorted = [...this.config.sshConfigs].sort((a, b) => a.position - b.position)
-      return sorted[sorted.length - 1]?.sshConfig?.host ?? null
-    },
-    sshHopCount() {
-      if (!this.config.sshConfigs?.length) return 0
-      return this.config.sshConfigs.length - 1
+    sshStartHost() {
+      if (!this.displayConfig.sshEnabled || !this.displayConfig.sshConfigs?.length) return null
+      const sorted = [...this.displayConfig.sshConfigs].sort((a, b) => a.position - b.position)
+      return sorted[0]?.sshConfig?.host ?? null
     },
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),

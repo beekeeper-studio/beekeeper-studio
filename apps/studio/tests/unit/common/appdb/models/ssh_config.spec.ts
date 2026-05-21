@@ -1,32 +1,56 @@
+import { Column, getMetadataArgsStorage } from "typeorm";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { SshConfig } from "@/common/appdb/models/SshConfig";
 import { ConnectionSshConfig } from "@/common/appdb/models/ConnectionSshConfig";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
 import { AppDbHandlers } from "@/handlers/appDbHandlers";
+import { EncryptTransformer } from "@/common/appdb/transformers/Transformers";
+import { loadEncryptionKey } from "@/common/encryption_key";
+import { SshMode } from "@/common/interfaces/IConnection";
 import migration from "@/migration/20260519_ssh_config";
+
+// Same key/transformer SshConfig uses, so encrypted secrets round-trip after
+// the migration copies them byte-for-byte into ssh_config.
+const encrypt = new EncryptTransformer(loadEncryptionKey());
 
 type LegacyFields = Partial<{
   name: string;
   sshEnabled: boolean;
   sshHost: Nullable<string>;
   sshPort: Nullable<number>;
-  sshMode: SavedConnection["sshMode"];
+  sshMode: SshMode;
   sshUsername: Nullable<string>;
   sshKeyfile: Nullable<string>;
   sshPassword: Nullable<string>;
   sshKeyfilePassword: Nullable<string>;
   sshBastionHost: Nullable<string>;
   sshBastionHostPort: Nullable<number>;
-  sshBastionMode: SavedConnection["sshBastionMode"];
+  sshBastionMode: SshMode;
   sshBastionUsername: Nullable<string>;
   sshBastionKeyfile: Nullable<string>;
   sshBastionPassword: Nullable<string>;
   sshBastionKeyfilePassword: Nullable<string>;
 }>;
 
-async function buildConnection(
-  fields: LegacyFields
-): Promise<SavedConnection> {
+function attachLegacySshColumns(): void {
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshHost");
+  Column({ type: "integer", nullable: true })(SavedConnection.prototype, "sshPort");
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshMode");;
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshUsername");
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshKeyfile");
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionHost");
+  Column({ type: "integer", nullable: true })(SavedConnection.prototype, "sshBastionHostPort");;
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionMode");;
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionUsername");
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionKeyfile");;
+
+  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshPassword");
+  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshKeyfilePassword");;
+  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshBastionPassword");;
+  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshBastionKeyfilePassword");;
+}
+
+async function buildConnection(fields: LegacyFields): Promise<SavedConnection> {
   const c = new SavedConnection();
   c.connectionType = "mysql";
   c.host = "localhost";
@@ -47,6 +71,10 @@ async function runMigration() {
 }
 
 describe("ssh_config migration: legacy column backfill", () => {
+  beforeAll(() => {
+    attachLegacySshColumns();
+  });
+
   beforeEach(async () => {
     await TestOrmConnection.connect();
   });
@@ -262,15 +290,12 @@ describe("ssh_config migration: legacy column backfill", () => {
   });
 
   it("skips connections where ssh is disabled", async () => {
-    const c = new SavedConnection();
-    c.connectionType = "mysql";
-    c.host = "localhost";
-    c.port = 3306;
-    c.name = "no-ssh";
-    c.sshEnabled = false;
-    c.sshHost = "should-not-migrate";
-    c.sshMode = "agent";
-    await c.save();
+    await buildConnection({
+      name: "no-ssh",
+      sshEnabled: false,
+      sshHost: "should-not-migrate",
+      sshMode: "agent",
+    });
 
     await runMigration();
 
