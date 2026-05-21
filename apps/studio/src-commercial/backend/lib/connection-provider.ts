@@ -104,6 +104,7 @@ export default {
       libsqlOptions: config.libsqlOptions,
       sqlAnywhereOptions: config.sqlAnywhereOptions,
       surrealDbOptions: config.surrealDbOptions,
+      dynamoDbOptions: config.dynamoDbOptions,
       runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : []
     }
   },

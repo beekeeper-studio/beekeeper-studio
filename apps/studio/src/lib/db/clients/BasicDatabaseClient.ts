@@ -352,6 +352,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
   async alterTable(change: AlterTableSpec): Promise<void> {
     const sql = await this.alterTableSql(change)
+    if (!sql) {
+      // No SQL generated (e.g., no changes or schemaless database)
+      return
+    }
     await this.executeQuery(sql)
   }
 

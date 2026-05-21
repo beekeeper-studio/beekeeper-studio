@@ -11,9 +11,10 @@ export interface ContextOption {
   slug: string
   type?: 'divider'
   handler: (...any) => void
-  class?: string
+  class?: string | ((...args: any[]) => string)
   shortcut?: string
   ultimate?: boolean
+  title?: string | ((...args: any[]) => string)
 }
 
 interface MenuProps {
@@ -62,6 +63,11 @@ export const BeekeeperPlugin = {
   buildConnectionName(config: IConnection) {
     return config.name || this.simpleConnectionString(config)
   },
+  dynamoConnectionLabel(config: IConnection): string {
+    const endpoint = config.dynamoDbOptions?.endpoint
+    if (endpoint) return endpoint.replace(/^https?:\/\//, '')
+    return config.iamAuthOptions?.awsRegion || 'us-east-1'
+  },
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
@@ -69,6 +75,8 @@ export const BeekeeperPlugin = {
       return config.defaultDatabase || "./unknown.db"
     } else if (config.connectionType === 'mongodb') {
       return config.url
+    } else if (config.connectionType === 'dynamodb') {
+      return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
     } else {
@@ -97,6 +105,8 @@ export const BeekeeperPlugin = {
       connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
     } else if (config.connectionType === 'mongodb') {
       return config.url;
+    } else if (config.connectionType === 'dynamodb') {
+      return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
     } else {
