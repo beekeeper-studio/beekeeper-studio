@@ -1761,10 +1761,9 @@ export class DBTestUtil {
           expectedRows: 5,
           verify: async () => {
             const [result] = await this.connection.executeQuery(
-              'SELECT qs_double_exec_seq.NEXTVAL AS n FROM dual'
+              'SELECT id FROM qs_double_exec_counter'
             )
-            const row = result.rows[0]
-            expect(Number(row.N ?? row.n)).toBe(6)
+            expect(result.rows.length).toBe(1)
           },
         }
         break
