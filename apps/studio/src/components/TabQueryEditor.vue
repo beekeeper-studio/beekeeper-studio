@@ -826,8 +826,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           if (_.isEmpty(placeholders)) {
             return query;
           }
-          const values = Object.values(this.queryParameterValues) as string[];
-          const convertedParams = convertParamsForReplacement(placeholders, values);
+          // For positional (?) params pass an ordered array; for named params pass the
+          // full record keyed by placeholder so the mapping is stable regardless of how
+          // many times each name appears in the query.
+          const rawValues = placeholders.includes('?')
+            ? Object.values(this.queryParameterValues) as string[]
+            : this.queryParameterValues as Record<string, string>;
+          const convertedParams = convertParamsForReplacement(placeholders, rawValues);
           query = deparameterizeQuery(query, this.dialect, convertedParams, this.paramTypes);
         } catch (ex) {
           log.error("Unable to deparameterize query", ex)

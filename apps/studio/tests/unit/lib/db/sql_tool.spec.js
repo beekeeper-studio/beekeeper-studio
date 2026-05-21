@@ -1,4 +1,4 @@
-import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -125,6 +125,44 @@ describe("Text Selection", () => {
       query: [10, 120],
       cursor: [0, 10],
     }).toBe(false);
+  });
+});
+
+describe("convertParamsForReplacement", () => {
+  // Callers always pass a string[] for positional (?) params and a Record keyed by
+  // placeholder (e.g. { ':name': "'Alice'" }) for named/numbered params.
+
+  it("should return the values array as-is for positional params", () => {
+    const result = convertParamsForReplacement(['?', '?'], ["'Alice'", '25']);
+    expect(result).toEqual(["'Alice'", '25']);
+  });
+
+  it("should strip the prefix from each record key for named params", () => {
+    const result = convertParamsForReplacement([':name', ':age'], { ':name': "'Alice'", ':age': '25' });
+    expect(result).toEqual({ name: "'Alice'", age: '25' });
+  });
+
+  it("should strip the prefix from each record key for numbered params", () => {
+    // e.g. SQLite ?1/?2/?3, Postgres $1/$2/$3 — prefix stripped to get 1-based index key
+    const result = convertParamsForReplacement(['$1', '$2', '$3'], { '$1': '5', '$2': "'Neo'", '$3': '0' });
+    expect(result).toEqual({ '1': '5', '2': "'Neo'", '3': '0' });
+  });
+
+  it("should be unaffected by duplicate placeholders in the SQL — lookup is by key", () => {
+    // sql-query-identifier returns one entry per occurrence; the Record has one key per
+    // unique name so duplicates in the placeholder list don't shift any index.
+    const placeholders = [':name', ':age', ':name', ':age', ':name'];
+    const result = convertParamsForReplacement(placeholders, { ':name': "'Alice'", ':age': '25' });
+    expect(result).toEqual({ name: "'Alice'", age: '25' });
+  });
+
+  it("should substitute a repeated named parameter correctly end-to-end", () => {
+    const query = "SELECT * FROM users WHERE first_name = :name OR last_name = :name";
+    const paramTypes = { named: [':'], positional: false, numbered: [], quoted: [] };
+    const params = convertParamsForReplacement([':name', ':name'], { ':name': "'Alice'" });
+    const result = deparameterizeQuery(query, 'sqlite', params, paramTypes);
+    expect(result).not.toContain(':name');
+    expect(result).toContain("'Alice'");
   });
 });
 
