@@ -131,6 +131,9 @@
 
 .md-nav--primary .md-nav__link {
   border-radius: 6px;
+  /* Reserve the rail gutter on every item so the active rail never shifts
+     its label out of alignment with the rest. */
+  border-left: 3px solid transparent;
 }
 .md-nav--primary .md-nav__link:hover {
   background: rgba(255, 255, 255, 0.04);
@@ -145,22 +148,12 @@
   color: var(--bks-yellow);
 }
 .md-nav--primary .md-nav__link--active {
-  position: relative;
   color: var(--bks-yellow);
   font-weight: 500;
   background: rgba(250, 216, 59, 0.08);
-  /* Flush left edge so the wash meets the rail cleanly; rounded on the
-     right only — a fully rounded wash would curl around the rail. */
+  /* Flat left edge so the rail reads as a straight bar, not a bracket. */
   border-radius: 0 6px 6px 0;
-}
-.md-nav--primary .md-nav__link--active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--bks-yellow);
+  border-left-color: var(--bks-yellow);
 }
 .md-nav--primary .md-nav__link--active svg {
   fill: var(--bks-yellow);
