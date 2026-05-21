@@ -4,7 +4,7 @@
       <i class="material-icons-outlined">info</i>
       <div v-if="showCli">
         You are signing in using the <b>'Azure CLI'</b> Beekeeper Studio will attempt to use the AZ tool in path specified.
-        <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+        <a href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid/#azure-cli-authentication">Learn more</a>
       </div>
       <div v-else>
         You are using azure authentication, depending on the authentication

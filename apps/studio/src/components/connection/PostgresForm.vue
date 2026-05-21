@@ -105,7 +105,7 @@ export default {
         this.showPasswordForm = true
       } else {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+          this.$root.$emit(AppEvent.upgradeModal, "Enterprise Authentication");
           this.authType = 'default'
         } else {
           this.showPasswordForm = false

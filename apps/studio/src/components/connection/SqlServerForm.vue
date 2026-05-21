@@ -85,7 +85,7 @@
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
           if (this.$store.getters.isCommunity) {
-            this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+            this.$root.$emit(AppEvent.upgradeModal, "Enterprise Authentication");
             this.authType = 'default'
           } else {
             this.azureAuthEnabled = true
