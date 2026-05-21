@@ -1732,13 +1732,13 @@ export class DBTestUtil {
             'DROP SEQUENCE IF EXISTS qs_double_exec_seq',
           ],
           query:
-            "WITH ins AS (INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at) SELECT id, note, value, created_at FROM ins",
+            "INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at",
           expectedRows: 1,
           verify: async () => {
             const [result] = await this.connection.executeQuery(
-              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+              'SELECT id FROM qs_double_exec_counter'
             )
-            expect(Number(result.rows[0].n)).toBe(1)
+            expect(result.rows.length).toBe(1)
           },
         }
         break
