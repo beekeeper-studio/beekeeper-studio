@@ -81,6 +81,11 @@ export enum AppEvent {
   pluginMenuClicked = 'pluginMenuClicked',
   /** Focus the host input in the connection form (e.g. from the SSH tunnel's target connection edit button). */
   focusConnectionHost = 'focusConnectionHost',
+  /** Open query edit history on a new / existing query tab.
+   * @example
+   * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
+   **/
+  openQueryEditHistory = 'openQueryEditHistory',
 }
 
 export interface RootBinding {

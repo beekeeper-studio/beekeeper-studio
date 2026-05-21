@@ -105,6 +105,7 @@
                 @remove="remove"
                 @select="select"
                 @open="open"
+                @open-history="openHistory"
                 @rename="rename"
                 @export="exportTo"
                 @duplicate="duplicate"
@@ -137,6 +138,7 @@
                   @remove="remove"
                   @select="select"
                   @open="open"
+                  @open-history="openHistory"
                   @rename="rename"
                   @export="exportTo"
                   @duplicate="duplicate"
@@ -163,6 +165,7 @@
               @remove="remove"
               @select="select"
               @open="open"
+              @open-history="openHistory"
               @rename="rename"
               @export="exportTo"
               @duplicate="duplicate"
@@ -375,6 +378,9 @@ export default {
     },
     open(item) {
       this.$root.$emit('favoriteClick', item)
+    },
+    openHistory(item) {
+      this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
       if (await this.$confirm("Really delete?")) {
