@@ -104,8 +104,9 @@
 }
 
 /* ── PRIMARY NAV (left sidebar) ───────────────────────────────────────────
-   Nav recedes so content leads: lighter weight, quieter colour, with a brand
-   rail and a soft wash on the current page. */
+   Nav recedes so content leads: a small-caps section label, dimmed page
+   icons, lighter item weight, with a brand rail + soft wash on the active
+   page. */
 [data-md-color-scheme="slate"] .md-nav__link {
   color: rgba(255, 255, 255, 0.78);
   font-weight: 400;
@@ -114,6 +115,32 @@
 .md-nav__link:focus {
   color: #fff;
 }
+
+/* Section label ("Features", ...) reads as an eyebrow, not a heading. On
+   desktop the active section is "lifted" and its toggle link acts as the
+   sidebar header; the mobile drawer is left untouched. */
+@media screen and (min-width: 76.25em) {
+  .md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link {
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+.md-nav--primary .md-nav__link {
+  border-radius: 6px;
+}
+.md-nav--primary .md-nav__link:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Page icons recede — the nav is wayfinding, not content. */
+.md-nav--primary .md-nav__link svg {
+  fill: rgba(255, 255, 255, 0.42);
+}
+
 .md-nav--primary .md-nav__item--active > .md-nav__link {
   color: var(--bks-yellow);
 }
@@ -121,17 +148,42 @@
   color: var(--bks-yellow);
   font-weight: 500;
   background: rgba(250, 216, 59, 0.08);
-  border-radius: 4px;
   box-shadow: inset 2px 0 0 var(--bks-yellow);
+}
+.md-nav--primary .md-nav__link--active svg {
+  fill: var(--bks-yellow);
 }
 
 /* ── TABLE OF CONTENTS (right rail) ───────────────────────────────────────
-   The right rail stays mono regardless of brand accent — it's a per-page
-   index, not a brand surface. The contrast with the yellow left nav makes the
-   left-to-right hierarchy (wayfinding -> content -> page index) clearer. */
+   A small-caps label and a continuous index rail. The rail stays mono
+   regardless of brand accent — it's a per-page index, not a brand surface;
+   the contrast with the yellow left nav clarifies the page hierarchy. */
+.md-nav--secondary .md-nav__title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.md-nav--secondary .md-nav__list {
+  padding-left: 0;
+}
+.md-nav--secondary > .md-nav__list {
+  border-left: 1px solid var(--bks-doc-rule);
+}
+[data-md-color-scheme="slate"] .md-nav--secondary .md-nav__link {
+  margin-left: -1px;
+  padding-left: 0.75rem;
+  border-left: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.55);
+}
+.md-nav--secondary .md-nav__list .md-nav__list .md-nav__link {
+  padding-left: 1.5rem;
+}
 .md-nav--secondary .md-nav__link--active {
   color: rgba(255, 255, 255, 0.92);
   font-weight: 500;
+  border-left-color: rgba(255, 255, 255, 0.45);
 }
 
 /* ── LINKS ────────────────────────────────────────────────────────────────*/
