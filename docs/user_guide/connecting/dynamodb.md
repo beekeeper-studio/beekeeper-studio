@@ -1,7 +1,7 @@
 ---
 title: DynamoDB
 summary: "Connect to Amazon DynamoDB with Beekeeper Studio"
-icon: simple/amazondynamodb
+icon: amazondynamodb
 description: "Browse tables, run PartiQL queries, and edit data in DynamoDB using Beekeeper Studio"
 ---
 

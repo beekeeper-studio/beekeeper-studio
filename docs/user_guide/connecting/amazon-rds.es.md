@@ -1,7 +1,7 @@
 ---
 title: Amazon RDS
 summary: Como conectarse a las bases de datos RDS 'especiales' de Amazon usando tipos de autenticacion nativos
-icon: material/cloud
+icon: amazonrds
 ---
 
 Conectarse a Amazon RDS requiere que configures un usuario IAM y te asegures de que tu grupo de seguridad permita trafico desde tu direccion IP.
