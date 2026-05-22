@@ -114,8 +114,8 @@ export class Connection {
         if (!Array.isArray(result)) result = [result];
         const arrBlob = []
         // for blob columns
-        result.map((value) => {
-          Object.keys(value).map((c) => {
+        result.forEach((value) => {
+          Object.keys(value).forEach((c) => {
             if (_.isFunction(value[c])) {
               // create a promise for every blob and run the parsing function
               value[c] = new Promise((resBlob, rejBlob) => {
@@ -217,8 +217,8 @@ export class Transaction {
         if (!Array.isArray(result)) result = [result];
         const arrBlob = [];
         // for blob columns
-        result.map((value) => {
-          Object.keys(value).map((c) => {
+        result.forEach((value) => {
+          Object.keys(value).forEach((c) => {
             if (_.isFunction(value[c])) {
               value[c] = new Promise((resBlob, rejBlob) => {
                 value[c](transaction, (error, name, event, row) => {

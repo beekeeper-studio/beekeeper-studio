@@ -44,9 +44,19 @@ module.exports = {
     "no-inner-declarations": "error",
     "no-prototype-builtins": "error",
     "no-unsafe-optional-chaining": "error",
+    "no-self-compare": "error",
+    "no-constructor-return": "error",
+    "no-template-curly-in-string": "error",
+    "array-callback-return": "error",
     "vue/no-parsing-error": "error",
     "vue/valid-next-tick": "error",
     "vue/valid-template-root": "error",
+    // Likely-bug rules kept as warn: real signal, but too many existing hits
+    // (or occasional intentional uses) to fail CI on.
+    "eqeqeq": ["warn", "smart"],
+    "no-unused-expressions": ["warn", { "allowShortCircuit": true, "allowTernary": true, "allowTaggedTemplates": true }],
+    "no-return-assign": "warn",
+    "no-sequences": "warn",
     // Style/code-smell rules: kept as warn so they don't block CI.
     "no-empty": "warn",
     "no-useless-catch": "warn",
@@ -87,6 +97,11 @@ module.exports = {
       ],
       "env": {
         "jest": true
+      },
+      "rules": {
+        // Test fixtures embed shell scripts and config templates that
+        // legitimately contain `${...}` substitution syntax.
+        "no-template-curly-in-string": "off"
       }
     },
     {
