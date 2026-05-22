@@ -123,9 +123,9 @@ export function tabulatorForTableData(
   tabulator.on("layout-refreshed", onFirstLayout);
 
   if (options.onRangeChange) {
-    function onRangeChange() {
+    const onRangeChange = () => {
       options.onRangeChange(tabulator.getRanges());
-    }
+    };
     tabulator.on("cellMouseUp", onRangeChange);
     tabulator.on("headerMouseUp", onRangeChange);
     tabulator.on(

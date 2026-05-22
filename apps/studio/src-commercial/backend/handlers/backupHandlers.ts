@@ -17,8 +17,9 @@ export const BackupHandlers: IBackupHandlers = {
   'backup/runCommand': async function({ command, sId }: { command: Command, sId: string }) {
     if (command.isSql) {
       // Execute SQL command on connection
-      return new Promise<void>(async (resolve, reject) => {
-        (await state(sId).connection.query(`${command.mainCommand} ${command.options ? command.options.join(' ') : ''}`, null)).execute()
+      const sqlQuery = await state(sId).connection.query(`${command.mainCommand} ${command.options ? command.options.join(' ') : ''}`, null);
+      return new Promise<void>((resolve, reject) => {
+        sqlQuery.execute()
           .catch((reason) => {
             state(sId).port.postMessage({
               type: 'backupNotif',

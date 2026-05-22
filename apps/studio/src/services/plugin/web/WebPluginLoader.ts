@@ -212,13 +212,14 @@ export default class WebPluginLoader {
             version: this.context.appVersion,
           };
           break;
-        case "getViewContext":
+        case "getViewContext": {
           const view = this.viewInstances.find((ins) => ins.iframe === source);
           if (!view) {
             throw new Error("View context not found.");
           }
           response.result = view.context;
           break;
+        }
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;

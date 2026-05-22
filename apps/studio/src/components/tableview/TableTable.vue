@@ -747,9 +747,8 @@ export default Vue.extend({
   },
   async mounted() {
     if (this.shouldInitialize) {
-      await this.$nextTick(async() => {
-        await this.initialize()
-      })
+      await this.$nextTick()
+      await this.initialize()
     }
     if (this.active) {
       this.handleTabActive()

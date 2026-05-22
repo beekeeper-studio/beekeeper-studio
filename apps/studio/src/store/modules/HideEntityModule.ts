@@ -88,8 +88,9 @@ export const HideEntityModule: Module<State, RootState> = {
         if(u.connectionId === usedConfig.id && u.workspaceId === usedConfig.id) {
           let scope = 'hiddenSchema';
           if ("entityType" in u) scope = 'hiddenEntity';
-          Vue.prototype.$util.send(`appdb/${scope}/save`, { obj: u });
+          return Vue.prototype.$util.send(`appdb/${scope}/save`, { obj: u });
         }
+        return undefined;
       }))
     },
     async addEntity(context, item: DatabaseEntity) {

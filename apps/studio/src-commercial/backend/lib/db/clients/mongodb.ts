@@ -756,7 +756,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
     const listener = {
       onPrint: (value): void => {
-        value.map((v) => {
+        value.forEach((v) => {
           results.push({
             output: v.printable
           })
