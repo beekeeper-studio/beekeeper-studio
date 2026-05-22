@@ -115,7 +115,7 @@ export class MySqlBackupClient extends BaseCommandClient {
       options: [
         `--verbose`,
         `--user=${BaseCommandClient.username}`,
-        `--password=${BaseCommandClient.quotedPassword}`
+        `--password=${BaseCommandClient._password ?? ''}`
       ]
     });
 
@@ -150,7 +150,7 @@ export class MySqlBackupClient extends BaseCommandClient {
       }
     }
 
-    command.options.push(`--result-file=${this.quotedOutputFilePath}`);
+    command.options.push(`--result-file=${this.outputFilePath}`);
 
     if (this._config.insertIgnore) {
       command.options.push(`--insert-ignore`);
@@ -183,7 +183,7 @@ export class MySqlBackupClient extends BaseCommandClient {
     }
 
     if (this._config.customArgs && this._config.customArgs.trim() != '') {
-      command.options.push(this._config.customArgs);
+      command.options.push(...BaseCommandClient.parseArgs(this._config.customArgs));
     }
 
     command.options.push(BaseCommandClient.databaseName);
