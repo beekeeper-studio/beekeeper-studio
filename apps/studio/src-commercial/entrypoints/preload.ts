@@ -153,9 +153,6 @@ export const api = {
   readTextFromClipboard(): string {
     return electron.clipboard.readText();
   },
-  openPath(path: string) {
-    return electron.shell.openPath(path);
-  },
   showItemInFolder(path: string) {
     electron.shell.showItemInFolder(path);
   },

@@ -435,6 +435,7 @@ declare interface IBksConfig {
     security: {
         activityEvents: string[];
         activityReportIntervalSeconds: number;
+        allowRuntimeExtensions: boolean;
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
         disconnectOnSuspend: boolean;
@@ -476,5 +477,5 @@ declare interface IBksConfig {
             maxColumnWidth: number;
         };
     };
-}
+};
 

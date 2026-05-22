@@ -261,7 +261,7 @@ export function friendlyJsonObject<T extends object>(obj: T): T {
     },
   });
 
-  if(!obj.hasOwnProperty("toString")){
+  if(!Object.prototype.hasOwnProperty.call(obj, "toString")){
     Object.defineProperties(obj, {
       toString: {
         value() {
