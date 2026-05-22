@@ -131,9 +131,8 @@
 
 .md-nav--primary .md-nav__link {
   border-radius: 6px;
-  /* Reserve the rail gutter on every item so the active rail never shifts
-     its label out of alignment with the rest. */
-  border-left: 3px solid transparent;
+  /* Inset the item so the wash reads as a floating pill with room around it. */
+  margin: 2px 8px;
 }
 .md-nav--primary .md-nav__link:hover {
   background: rgba(255, 255, 255, 0.04);
@@ -151,9 +150,6 @@
   color: var(--bks-yellow);
   font-weight: 500;
   background: rgba(250, 216, 59, 0.08);
-  /* Flat left edge so the rail reads as a straight bar, not a bracket. */
-  border-radius: 0 6px 6px 0;
-  border-left-color: var(--bks-yellow);
 }
 .md-nav--primary .md-nav__link--active svg {
   fill: var(--bks-yellow);
