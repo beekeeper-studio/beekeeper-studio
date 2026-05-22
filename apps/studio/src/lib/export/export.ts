@@ -95,7 +95,7 @@ export abstract class Export {
     if([ExportStatus.Completed, ExportStatus.Aborted, ExportStatus.Error].includes(this.status)) {
       return 100
     }
-    if (this.countTotal === 0) return 0
+    if (this.countTotal === 0 || this.countTotal === -1) return this.countTotal
     return Math.min(100, Math.round((this.countExported / this.countTotal) * 100))
   }
 
@@ -150,7 +150,7 @@ export abstract class Export {
     this.columns = results.columns
     this.cursor = results.cursor
 
-    this.countTotal = results.totalRows
+    this.countTotal = results.totalRows ?? -1
     await this.cursor?.start()
 
     if (this.columns) {
@@ -257,9 +257,11 @@ export abstract class Export {
   calculateTimeLeft(): void {
     if (this.lastChunkTime) {
       this.timeElapsed += (Date.now() - this.lastChunkTime)
-      const recordsLeft = this.countTotal - this.countExported
-      const timePerRecord = this.timeElapsed / this.countExported
-      this.timeLeft = Math.round(timePerRecord * recordsLeft)
+      if (this.countTotal !== -1) {
+        const recordsLeft = this.countTotal - this.countExported
+        const timePerRecord = this.timeElapsed / this.countExported
+        this.timeLeft = Math.round(timePerRecord * recordsLeft)
+      }
     }
 
     this.lastChunkTime = Date.now()
