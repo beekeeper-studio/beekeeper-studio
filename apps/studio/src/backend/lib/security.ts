@@ -2,8 +2,7 @@ import { getActiveWindows } from "@/background/WindowBuilder";
 import { AppEvent } from "@/common/AppEvent";
 import bksConfig from "@/common/bksConfig";
 import rawLog from "@bksLogger";
-import { app, powerMonitor, webContents, WebContents } from "electron";
-import _ from "lodash";
+import { ipcMain, powerMonitor } from "electron";
 
 const log = rawLog.scope("security");
 
@@ -11,26 +10,12 @@ let idleCheckInterval: NodeJS.Timer;
 
 let initialized = false;
 
-// Tracks the last time any Beekeeper window saw user input. powerMonitor's
+// Tracks the last time any Beekeeper window reported user input. powerMonitor's
 // system idle time is unreliable on Linux (especially Wayland and tiling WMs)
-// and can report the user as idle while they're actively typing in the app,
-// so we combine the system signal with our own per-window input tracking.
+// and can report the user as idle while they're actively using the app, so we
+// combine it with renderer-reported activity (see the `userActive` IPC, which
+// the renderer fires from real mousedown/keydown events).
 let lastAppInputAt = Date.now();
-const trackedContents = new WeakSet<WebContents>();
-
-const recordInput = _.throttle(() => {
-  lastAppInputAt = Date.now();
-}, 1000);
-
-function trackInput(contents: WebContents) {
-  if (trackedContents.has(contents) || contents.isDestroyed()) return;
-  trackedContents.add(contents);
-  contents.on("input-event", (_event, input) => {
-    if (input.type === "keyDown" || input.type === "mouseDown") {
-      recordInput();
-    }
-  });
-}
 
 function appIdleSeconds(): number {
   return Math.floor((Date.now() - lastAppInputAt) / 1000);
@@ -43,8 +28,9 @@ export function initializeSecurity() {
   }
 
   if (bksConfig.security.disconnectOnIdle) {
-    webContents.getAllWebContents().forEach(trackInput);
-    app.on("web-contents-created", (_event, contents) => trackInput(contents));
+    ipcMain.on("userActive", () => {
+      lastAppInputAt = Date.now();
+    });
 
     idleCheckInterval = setInterval(() => {
       const systemIdle = powerMonitor.getSystemIdleTime();
