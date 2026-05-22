@@ -94,7 +94,8 @@ export abstract class Export {
     if([ExportStatus.Completed, ExportStatus.Aborted, ExportStatus.Error].includes(this.status)) {
       return 100
     }
-    return Math.round((this.countExported / this.countTotal) * 100)
+    if (this.countTotal === 0) return 0
+    return Math.min(100, Math.round((this.countExported / this.countTotal) * 100))
   }
 
   notify() {

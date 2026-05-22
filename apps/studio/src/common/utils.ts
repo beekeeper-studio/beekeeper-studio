@@ -2,7 +2,7 @@
 
 import { Error as CustomError } from '../lib/errors'
 import _ from 'lodash';
-import { format } from 'sql-formatter';
+import { format, formatDialect, FormatOptionsWithDialect, FormatOptionsWithLanguage } from 'sql-formatter';
 import { TableFilter, TableOrView, Routine, TableColumn } from '@/lib/db/models';
 import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { IndexColumn } from '@shared/lib/dialects/models';
@@ -110,13 +110,22 @@ export function makeString(value: any): string {
   return _.toString(value);
 }
 
+// Format SQL / SQL-like text using sql-formatter. Accepts both the classic
+// `{ language }` shape (built-in dialects like postgresql, mysql, trino) and
+// the v15 `{ dialect }` shape for custom dialect definitions (PartiQL). Falls
+// back to the raw input if the formatter can't parse — callers rely on this
+// never throwing.
 export function safeSqlFormat(
-  ...args: Parameters<typeof format>
-): ReturnType<typeof format> {
+  query: string,
+  options?: FormatOptionsWithLanguage | FormatOptionsWithDialect
+): string {
   try {
-    return format(args[0], args[1]);
-  } catch (ex) {
-    return args[0];
+    if (options && 'dialect' in options && options.dialect) {
+      return formatDialect(query, options as FormatOptionsWithDialect);
+    }
+    return format(query, options as FormatOptionsWithLanguage);
+  } catch (_ex) {
+    return query;
   }
 }
 

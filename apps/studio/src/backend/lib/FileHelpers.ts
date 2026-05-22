@@ -30,9 +30,7 @@ async function save(options: SaveFileOptions) {
 export function initializeFileHelpers() {
   if (initialized) return;
 
-  ipcMain.handle("fileHelpers:save", (_event, params) => {
-    save(params);
-  });
+  ipcMain.handle("fileHelpers:save", (_event, params) => save(params));
 
   initialized = true;
 }

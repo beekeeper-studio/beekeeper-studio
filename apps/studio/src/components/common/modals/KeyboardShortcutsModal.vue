@@ -6,7 +6,9 @@
     >
       <div v-kbd-trap="true">
         <div class="dialog-content">
-          <div class="dialog-c-title">Keyboard Shortcuts</div>
+          <div class="dialog-c-title">
+            Keyboard Shortcuts
+          </div>
           <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
             <i class="material-icons">clear</i>
           </a>

@@ -3,7 +3,7 @@ import { spawn } from "child_process";
 import { state } from "@/handlers/handlerState";
 import platformInfo from "@/common/platform_info";
 
-const errorMessages = {
+export const errorMessages = {
   nonZero: 'Command returned non-zero exit code'
 }
 
@@ -41,7 +41,7 @@ export const BackupHandlers: IBackupHandlers = {
       })
     } else {
       state(sId).backupProc = spawn(command.mainCommand, command.options, {
-        shell: true,
+        shell: false,
         env: command.env
       });
 
@@ -100,7 +100,7 @@ export const BackupHandlers: IBackupHandlers = {
     const command = platformInfo.isWindows ? 'where' : 'which';
 
     return new Promise((resolve, reject) => {
-      const proc = spawn(command, [toolName], { shell: true });
+      const proc = spawn(command, [toolName], { shell: false });
 
       let stdout = '';
       let stderr = '';

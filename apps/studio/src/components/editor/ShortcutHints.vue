@@ -70,7 +70,6 @@
       >
         <span>Ctrl</span><span>F</span>
       </div>
-
     </div>
     <div v-if="!isMongo" class="shortcut-item">
       <div>Find and Replace</div>

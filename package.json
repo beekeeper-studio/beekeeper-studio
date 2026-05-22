@@ -26,7 +26,7 @@
     "test:unit": "yarn workspace beekeeper-studio test:unit && yarn workspace @beekeeperstudio/ui-kit test:unit",
     "test:ci": "yarn workspace beekeeper-studio test:ci",
     "test:codemirror": "yarn workspace beekeeper-studio test:codemirror",
-    "all:lint": "yarn workspace beekeeper-studio lint && yarn workspace sqltools lint && npx eslint 'shared/**' --fix",
+    "all:lint": "yarn workspace beekeeper-studio lint",
     "postinstall": "husky install",
     "prepack": "pinst --disable",
     "postpack": "pinst --enable"

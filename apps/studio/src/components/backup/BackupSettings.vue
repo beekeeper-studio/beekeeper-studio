@@ -128,6 +128,7 @@
                     <label :for="control.settingName">{{ control.settingDesc + (control.required ? '*' : '') }}</label>
                     <div class="input-group">
                       <input
+                        class="form-control"
                         type="text"
                         :name="control.settingName"
                         :id="control.settingName"
