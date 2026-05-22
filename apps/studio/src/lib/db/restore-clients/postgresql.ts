@@ -176,7 +176,7 @@ export class PostgresRestoreClient extends BaseCommandClient {
 
     command.options.push(`--dbname=${BaseCommandClient.databaseName}`)
 
-    command.options.push(`${this._config.inputPath}`);
+    command.options.push(`${this.quotedInputFilePath}`);
 
     return command;
   }

@@ -31,7 +31,7 @@ export class SqliteRestoreClient extends BaseCommandClient {
       mainCommand: this.mainCommand,
       options: [
         BaseCommandClient.databaseName,
-        `".read ${this._config.inputPath}"`
+        `".read ${this.quotedInputFilePath}"`
       ]
     });
 
