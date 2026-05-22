@@ -48,6 +48,7 @@ export default defineConfig({
   },
   server: {
     port: 3003, // Development server port
+    strictPort: true, // Fail loudly if 3003 is taken (e.g. a stale dev server) instead of silently using another port
     // open: './src/index.html'
   }
 });

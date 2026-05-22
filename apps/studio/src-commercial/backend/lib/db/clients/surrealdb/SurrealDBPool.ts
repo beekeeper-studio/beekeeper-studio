@@ -85,7 +85,6 @@ export class SurrealPool {
 
     return new Promise((resolve, reject) => {
       log.info('Waiting for new connection to be available');
-      let timeout: NodeJS.Timeout;
       const interval = setInterval(() => {
         for (const p of this.pool) {
           if (!this.inUse.has(p.id)) {
@@ -98,7 +97,7 @@ export class SurrealPool {
           }
         }
       }, 100);
-      timeout = setTimeout(() => {
+      const timeout: NodeJS.Timeout = setTimeout(() => {
         clearInterval(interval);
         reject("Timed out waiting for new connection to be available from SurrealDBPool");
       }, BksConfig.db.surrealdb.connectionTimeout)

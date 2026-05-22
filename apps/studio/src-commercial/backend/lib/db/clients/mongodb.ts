@@ -461,7 +461,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async updateValues(updates: TableUpdate[], connection: Db) {
-    let results = [];
+    const results = [];
     const errors = [];
 
     for (const update of updates) {
@@ -488,7 +488,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         const filter = { _id: idValue };
 
         // Handle value conversion for special types if needed
-        let fieldValue = update.value;
+        const fieldValue = update.value;
 
         // Create the update document
         const updateDoc = {
@@ -591,7 +591,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       const collection = db.collection(changes.table);
 
       // Process index additions
-      for (let addition of changes.additions) {
+      for (const addition of changes.additions) {
         try {
           // Convert column order specifications to MongoDB format
           const indexSpec = addition.columns.reduce((obj, col) => ({
@@ -622,7 +622,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       }
 
       // Process index drops
-      for (let drop of changes.drops) {
+      for (const drop of changes.drops) {
         try {
           log.debug(`Dropping index ${drop.name} from ${changes.table}`);
           await collection.dropIndex(drop.name);
@@ -700,7 +700,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
     const queries = this.identifyCommands(queryText);
-    let results = [];
+    const results = [];
 
     for (let i = 0; i < queries.length; i++) {
       const query = queries[i];
@@ -752,11 +752,11 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async executeCommand(commandText: string, _options?: any): Promise<NgQueryResult[]> {
-    let results: NgQueryResult[] = [];
+    const results: NgQueryResult[] = [];
 
     const listener = {
       onPrint: (value): void => {
-        value.map((v) => {
+        value.forEach((v) => {
           results.push({
             output: v.printable
           })

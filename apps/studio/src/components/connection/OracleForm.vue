@@ -12,10 +12,14 @@
           </h4>
         </div>
         <div v-if="oracleExpanded" class="advanced-body">
-          <settings-input setting-key="oracleInstantClient" input-type="directory" @changed="restart"
-          title="Instant Client Location" :help="help" />
-          <settings-input setting-key="oracleConfigLocation" input-type="directory" @changed="configDirChanged" title="TNS_ADMIN override"
-          help="The directory containing tnsnames.ora, sqlnet.ora, and wallets. Changing this after connecting requires a restart." />
+          <settings-input
+            setting-key="oracleInstantClient" input-type="directory" @changed="restart"
+            title="Instant Client Location" :help="help"
+          />
+          <settings-input
+            setting-key="oracleConfigLocation" input-type="directory" @changed="configDirChanged" title="TNS_ADMIN override"
+            help="The directory containing tnsnames.ora, sqlnet.ora, and wallets. Changing this after connecting requires a restart."
+          />
         </div>
       </div>
 
@@ -32,8 +36,10 @@
       </div>
 
       <div class="oracle-manual" v-if="connectionMethod === 'manual'">
-        <common-server-inputs :support-complex-s-s-l="false"
-          ssl-help="Requires your wallet to be already set up in TNS_ADMIN" :config="config" />
+        <common-server-inputs
+          :support-complex-s-s-l="false"
+          ssl-help="Requires your wallet to be already set up in TNS_ADMIN" :config="config"
+        />
         <div class="form-group">
           <label for="serviceName">Service Name</label>
           <input type="text" class="form-control" v-model="config.serviceName">
@@ -43,8 +49,10 @@
       <div v-if="connectionMethod === 'connectionString'">
         <div class="form-group gutter">
           <label for="connectionString">Connection String or TNS alias</label>
-          <textarea v-model="config.options.connectionString" name="connectionString" class="form-control" id=""
-            cols="30" rows="5" />
+          <textarea
+            v-model="config.options.connectionString" name="connectionString" class="form-control" id=""
+            cols="30" rows="5"
+          />
         </div>
         <div class="row gutter">
           <div class="col s6 form-group">

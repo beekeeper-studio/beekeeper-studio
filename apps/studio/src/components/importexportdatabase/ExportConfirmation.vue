@@ -110,7 +110,7 @@ import { TransportExport } from '@/common/transport/TransportExport';
     },
     methods: {
       showFiles() {
-        this.$native.files.open(this.tableOptions.filePath)
+        this.$native.files.showItemInFolder(this.tableOptions.filePath)
       },
       getTableExport(table): TransportExport {
         const exportFile = `${this.tableOptions.filePath}/${table.name}`;
