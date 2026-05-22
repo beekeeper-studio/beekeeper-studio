@@ -643,42 +643,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    // For query streaming, we need to estimate total rows and columns
-    // This is a simplified implementation
-    const cursor = new SurrealDBCursor({
-      query,
-      conn: this.pool,
-      chunkSize
-    });
-
-    // Try to get a sample to determine columns
-    let columns: TableColumn[] = [];
-    let totalRows = 0;
-
-    try {
-      // Execute a small sample to get column info
-      const sampleQuery = query.includes('LIMIT') ? query : `${query} LIMIT 1`;
-      const sampleResult = await this.driverExecuteSingle(sampleQuery);
-
-      if (sampleResult.columns) {
-        columns = sampleResult.columns.map(col => ({
-          columnName: col.name,
-          dataType: 'unknown',
-          tableName: ''
-        }));
-      }
-
-      // For total rows, we'd need to run a count query, but that's complex
-      // for arbitrary queries, so we'll set it to -1 to indicate unknown
-      totalRows = -1;
-    } catch (error) {
-      log.warn('Could not determine columns for query stream:', error);
-    }
-
     return {
-      totalRows,
-      columns,
-      cursor
+      cursor: new SurrealDBCursor({ query, conn: this.pool, chunkSize }),
     };
   }
 

@@ -628,7 +628,6 @@ describe('SurrealDB Integration Tests', () => {
 
 
       expect(stream.totalRows).toBeGreaterThan(0)
-      expect(stream.columns).toBeDefined()
       expect(stream.cursor).toBeDefined()
 
       await stream.cursor.start()
@@ -646,7 +645,6 @@ describe('SurrealDB Integration Tests', () => {
     it('should handle query streaming', async () => {
       const stream = await connection.queryStream('SELECT * FROM person WHERE age > 30', 1)
 
-      expect(stream.columns).toBeDefined()
       expect(stream.cursor).toBeDefined()
 
       await stream.cursor.start()
