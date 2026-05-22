@@ -451,6 +451,7 @@ export default Vue.extend({
       if (this.usedConfig.readOnlyMode) return;
       if (this.disabledFeatures?.alter?.addColumn) {
         this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+        return;
       }
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`

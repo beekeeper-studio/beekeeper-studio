@@ -110,6 +110,10 @@ export default Vue.extend({
           handler: ({ item }) => this.$emit('remove', item)
         },
         {
+          name: "View Edit History",
+          handler: ({ item }) => this.$emit('open-history', item)
+        },
+        {
           type: 'divider'
         },
         {
@@ -130,6 +134,6 @@ export default Vue.extend({
       })
     },
   }
-  
+
 })
 </script>

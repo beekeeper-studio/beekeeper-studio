@@ -32,16 +32,26 @@ export function initializeSecurity() {
       lastAppInputAt = Date.now();
     });
 
+    let hasDisconnectedWhileIdle = false;
     idleCheckInterval = setInterval(() => {
       const systemIdle = powerMonitor.getSystemIdleTime();
       const appIdle = appIdleSeconds();
       const effectiveIdle = Math.min(systemIdle, appIdle);
-      if (effectiveIdle > bksConfig.security.idleThresholdSeconds) {
-        log.info(
-          `User has been idle for ${effectiveIdle}s (system=${systemIdle}, app=${appIdle}), disconnecting.`
-        );
-        disconnect("User has been idle");
+      const overThreshold =
+        effectiveIdle > bksConfig.security.idleThresholdSeconds;
+
+      if (!overThreshold) {
+        hasDisconnectedWhileIdle = false;
+        return;
       }
+
+      if (hasDisconnectedWhileIdle) return;
+
+      log.info(
+        `User has been idle for ${effectiveIdle}s (system=${systemIdle}, app=${appIdle}), disconnecting.`
+      );
+      disconnect("User has been idle");
+      hasDisconnectedWhileIdle = true;
     }, (bksConfig.security.idleCheckIntervalSeconds || 1) * 1000);
     log.info("Idle checker started");
   }

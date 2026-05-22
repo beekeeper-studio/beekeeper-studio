@@ -31,8 +31,19 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
       });
       log.debug("Found used config", lastUsedConnection);
       if (lastUsedConnection) {
-        lastUsedConnection.updatedAt = new Date();
-        await context.dispatch('save', lastUsedConnection);
+        // Overlay the latest connection details from `config` (which is the
+        // saved connection the user is connecting to) onto the existing
+        // used_connection row, so subsequent reads reflect the current
+        // host/port/credentials/etc., not the snapshot from the first connect.
+        await context.dispatch('save', {
+          ...config,
+          id: lastUsedConnection.id,
+          connectionId: config.id,
+          workspaceId: config.workspaceId,
+          createdAt: lastUsedConnection.createdAt,
+          updatedAt: new Date(),
+        });
+        config = context.state.items.find((item) => item.id === lastUsedConnection.id);
       } else {
         const id = await context.dispatch('save', config);
         config = context.state.items.find((item) => item.id === id);

@@ -31,7 +31,6 @@ import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
-import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
@@ -709,10 +708,6 @@ const store = new Vuex.Store<State>({
       await context.dispatch('licenses/init')
       await context.dispatch('userEnums/init')
       await context.dispatch('updateWindowTitle')
-      setInterval(
-        () => context.dispatch('licenses/sync'),
-        globals.licenseCheckInterval
-      )
     },
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')

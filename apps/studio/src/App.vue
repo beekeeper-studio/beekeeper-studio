@@ -161,7 +161,10 @@ export default Vue.extend({
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');
     this.licenseInterval = setInterval(
-      () => this.$store.dispatch('licenses/updateAll'),
+      () => {
+        log.debug('license check - interval')
+        this.$store.dispatch('licenses/updateAll')
+      },
       globals.licenseCheckInterval
     )
     const query = querystring.parse(window.location.search, { parseBooleans: true })

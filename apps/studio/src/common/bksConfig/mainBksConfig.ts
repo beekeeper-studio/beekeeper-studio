@@ -16,7 +16,8 @@ type ConfigFileName =
   | "default.config.ini"
   | "system.config.ini"
   | "user.config.ini"
-  | "local.config.ini";
+  | "local.config.ini"
+  | "deprecated.config.ini";
 
 const log = rawLog.scope("BksConfig");
 
@@ -27,6 +28,7 @@ const log = rawLog.scope("BksConfig");
 export function checkUnrecognized(
   defaultConfig: IBksConfig,
   newConfig: Partial<IBksConfig>,
+  deprecated: Partial<IBksConfig>,
   sourceName: "system" | "user"
 ): ConfigEntryDetailWarning[] {
   const results: ConfigEntryDetailWarning[] = [];
@@ -40,7 +42,7 @@ export function checkUnrecognized(
         continue;
       }
 
-      const unrecognized = !_.has(defaultConfig, path);
+      const unrecognized = !_.has(defaultConfig, path) && !_.has(deprecated, path);
       const value = obj[key];
 
       if (unrecognized) {
@@ -105,6 +107,36 @@ export function checkConflicts(
   }
 
   traverse(source);
+
+  return results;
+}
+
+export function checkDeprecations(
+  config: Partial<IBksConfig>,
+  deprecations: Partial<IBksConfig>,
+  sourceName: "system" | "user"
+): ConfigEntryDetailWarning[] {
+  const results: ConfigEntryDetailWarning[] = [];
+
+  function traverse(obj: Record<string, any>, parentPath = "") {
+    for (const key of Object.keys(obj)) {
+      const path = parentPath ? `${parentPath}.${key}` : key;
+      const value = obj[key];
+      if (typeof value === "object" && !Array.isArray(value)) {
+        traverse(value, path);
+      } else if (_.has(config, path)) {
+        results.push({
+          type: "deprecated-key",
+          sourceName,
+          section: parentPath,
+          path,
+          value
+        });
+      }
+    }
+  }
+
+  traverse(deprecations);
 
   return results;
 }
@@ -180,6 +212,10 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
     return readConfig(path.join(bundledConfigPath, file));
   }
 
+  if (!isDev && file === "deprecated.config.ini") {
+    return readConfig(path.join(bundledConfigPath, file));
+  }
+
   if (!existsSync(filePath)) {
     if (isDev) {
       throw new Error(`Failed loading config. File not found: ${filePath}`);
@@ -215,22 +251,30 @@ function resolveConfigDir() {
 function collectConfigWarnings(
   defaultConfig: IBksConfig,
   systemConfig: Partial<IBksConfig>,
-  userConfig: Partial<IBksConfig>
+  userConfig: Partial<IBksConfig>,
+  deprecatedConfig: Partial<IBksConfig>
 ) {
   const systemConfigWarnings = checkUnrecognized(
     defaultConfig,
     systemConfig,
+    deprecatedConfig,
     "system"
   );
   const userConfigWarnings = checkUnrecognized(
     defaultConfig,
     userConfig,
+    deprecatedConfig,
     "user"
   );
   const systemUserConflicts = checkConflicts(userConfig, systemConfig, "user");
+  const userDeprecations = checkDeprecations(userConfig, deprecatedConfig, "user");
+  const systemDeprecations = checkDeprecations(systemConfig, deprecatedConfig, "system");
+
   const warnings = systemConfigWarnings.concat(
     userConfigWarnings,
-    systemUserConflicts
+    systemUserConflicts,
+    userDeprecations,
+    systemDeprecations
   );
   return warnings;
 }
@@ -240,6 +284,7 @@ export function mainBksConfig(): BksConfig {
 
   const defaultConfig: IBksConfig = loadConfig("default.config.ini");
   const systemConfig: Partial<IBksConfig> = loadConfig("system.config.ini");
+  const deprecatedConfig: Partial<IBksConfig> = loadConfig("deprecated.config.ini");
   let userConfig: Partial<IBksConfig> = {};
   try {
     userConfig = loadConfig(
@@ -252,7 +297,8 @@ export function mainBksConfig(): BksConfig {
   const warnings = collectConfigWarnings(
     defaultConfig,
     systemConfig,
-    userConfig
+    userConfig,
+    deprecatedConfig
   );
   const source: BksConfigSource = {
     defaultConfig,

@@ -12,6 +12,15 @@ import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, 
 export default {
   props,
 
+  emits: [
+    "bks-value-change",
+    "bks-selection-change",
+    "bks-focus",
+    "bks-blur",
+    "bks-lsp-ready",
+    "bks-initialized",
+  ],
+
   data() {
     return {
       textEditor: null,
@@ -280,7 +289,7 @@ export default {
           },
           divider,
           {
-            label: "Find & Replace",
+            label: this.readOnly ? "Find" : "Find & Replace",
             id: "text-find",
             handler: () => {
               this.textEditor.execCommand("findAndReplace");

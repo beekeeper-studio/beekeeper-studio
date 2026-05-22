@@ -1,3 +1,4 @@
+import { IsNotEmpty, IsString } from "class-validator"
 import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
@@ -5,7 +6,7 @@ import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
@@ -248,6 +249,9 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false, transformer: [surrealEncrypt] })
   surrealDbOptions: SurrealDBOptions = {};
 
+  @Column({ type: 'simple-json', nullable: false })
+  dynamoDbOptions: DynamoDBOptions = {};
+
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })
   trustServerCertificate = false
@@ -280,6 +284,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     return this;
   }
 
+  @IsString({ message: 'Name is required' })
+  @IsNotEmpty({ message: 'Name is required' })
   @Column("varchar")
   name!: string
 

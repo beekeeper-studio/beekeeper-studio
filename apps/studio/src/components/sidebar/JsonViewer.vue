@@ -53,7 +53,7 @@
         :value="text"
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
-        :replaceExtensions="replaceExtensions"
+        :replace-extensions="replaceExtensions"
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
