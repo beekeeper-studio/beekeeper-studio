@@ -155,7 +155,7 @@
     "vue2-datepicker": "^3.11.1",
     "vuedraggable": "^2.24.2",
     "vuex": "^3.1.1",
-    "ws": "^8.18.3",
+    "ws": "^8.20.1",
     "xel": "beekeeper-studio/xel",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yargs-parser": "^21.0.0"
