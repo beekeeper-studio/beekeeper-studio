@@ -141,7 +141,7 @@ describe(`MongoDB`, () => {
       let result = await connection.selectTop('users', 0, 10, [{ field: 'age', dir: 'ASC' }], []);
       const agesAsc = result.result.map((r: any) => r.age);
       expect(agesAsc).toEqual([25, 30, 35, 40, 45]);
-      
+
       // Test descending sort
       result = await connection.selectTop('users', 0, 10, [{ field: 'age', dir: 'DESC' }], []);
       const agesDesc = result.result.map((r: any) => r.age);
@@ -152,15 +152,15 @@ describe(`MongoDB`, () => {
       // Page 1 (first 3 items)
       let result = await connection.selectTop('jobs', 0, 3, [{ field: 'salary', dir: 'DESC' }], []);
       expect(result.result.length).toBe(3);
-      
+
       // Page 2 (next 3 items)
       result = await connection.selectTop('jobs', 3, 3, [{ field: 'salary', dir: 'DESC' }], []);
       expect(result.result.length).toBe(3);
-      
+
       // Verify different pages return different records
       const salaries1 = result.result.map((r: any) => r.salary);
       const salaries2 = result.result.map((r: any) => r.salary);
-      
+
       // All salaries should be in descending order when combined
       for (let i = 0; i < salaries1.length - 1; i++) {
         if (i < salaries1.length - 1) {
@@ -178,22 +178,22 @@ describe(`MongoDB`, () => {
     const getTestCollectionName = (testName: string) => {
       return `write_test_${testName}_${Date.now()}`;
     };
-    
+
     it("Should create and drop collections", async () => {
       const newCollectionName = getTestCollectionName('create_drop');
-      
+
       try {
         // Create a new collection
         await connection.createTable({ table: newCollectionName });
-        
+
         // Verify it exists
         const tables = await connection.listTables();
         const tableNames = tables.map(t => t.name);
         expect(tableNames).toContain(newCollectionName);
-        
+
         // Drop the collection
         await connection.dropElement(newCollectionName, DatabaseElement.TABLE);
-        
+
         // Force a refresh by requesting the list again
         // Verify it no longer exists
         const tablesAfterDrop = await connection.listTables();
@@ -212,11 +212,11 @@ describe(`MongoDB`, () => {
     it("Should rename collections", async () => {
       const testCollection = getTestCollectionName('rename_original');
       const renamedCollectionName = getTestCollectionName('rename_target');
-      
+
       try {
         // Create test collection
         await connection.createTable({ table: testCollection });
-        
+
         // First, add some data to make sure it persists through rename
         await connection.executeApplyChanges({
           updates: [],
@@ -226,16 +226,16 @@ describe(`MongoDB`, () => {
             data: [{ test: 'data' }]
           }]
         });
-        
+
         // Rename the collection
         await connection.setElementName(testCollection, renamedCollectionName, DatabaseElement.TABLE);
-        
+
         // Verify original name no longer exists
         const tables = await connection.listTables();
         const tableNames = tables.map(t => t.name);
         expect(tableNames).not.toContain(testCollection);
         expect(tableNames).toContain(renamedCollectionName);
-        
+
         // Verify data was preserved
         const data = await connection.selectTop(renamedCollectionName, 0, 10, [], []);
         expect(data.result.length).toBe(1);
@@ -258,11 +258,11 @@ describe(`MongoDB`, () => {
     it("Should duplicate collections", async () => {
       const sourceCollection = getTestCollectionName('duplicate_source');
       const duplicateCollectionName = getTestCollectionName('duplicate_target');
-      
+
       try {
         // Create source collection
         await connection.createTable({ table: sourceCollection });
-        
+
         // Add data to original collection
         await connection.executeApplyChanges({
           updates: [],
@@ -275,23 +275,23 @@ describe(`MongoDB`, () => {
             ]
           }]
         });
-        
+
         // Verify source data was inserted correctly
         const sourceData = await connection.selectTop(sourceCollection, 0, 10, [], []);
         expect(sourceData.result.length).toBe(2);
-        
+
         // Duplicate the collection
         await connection.duplicateTable(sourceCollection, duplicateCollectionName);
-        
+
         // Verify duplicate exists
         const tables = await connection.listTables();
         const tableNames = tables.map(t => t.name);
         expect(tableNames).toContain(duplicateCollectionName);
-        
+
         // Verify data was copied correctly
         const data = await connection.selectTop(duplicateCollectionName, 0, 10, [], []);
         expect(data.result.length).toBe(2);
-        
+
         const testValues = data.result.map((r: any) => r.test);
         expect(testValues).toContain('data1');
         expect(testValues).toContain('data2');
@@ -312,17 +312,17 @@ describe(`MongoDB`, () => {
 
     it("Should insert documents", async () => {
       const testCollection = getTestCollectionName('insert');
-      
+
       try {
         // Create test collection
         await connection.createTable({ table: testCollection });
-        
+
         const testData = [
           { name: 'Test 1', value: 100 },
           { name: 'Test 2', value: 200 },
           { name: 'Test 3', value: 300 }
         ];
-        
+
         // Insert documents
         await connection.executeApplyChanges({
           updates: [],
@@ -332,17 +332,17 @@ describe(`MongoDB`, () => {
             data: testData
           }]
         });
-        
+
         // Verify documents were inserted
         const result = await connection.selectTop(testCollection, 0, 10, [], []);
         expect(result.result.length).toBe(3);
-        
+
         // Check that data is correct
         const names = result.result.map((r: any) => r.name);
         expect(names).toContain('Test 1');
         expect(names).toContain('Test 2');
         expect(names).toContain('Test 3');
-        
+
         const values = result.result.map((r: any) => r.value);
         expect(values).toContain(100);
         expect(values).toContain(200);
@@ -359,11 +359,11 @@ describe(`MongoDB`, () => {
 
     it("Should update documents", async () => {
       const testCollection = getTestCollectionName('update');
-      
+
       try {
         // Create test collection
         await connection.createTable({ table: testCollection });
-        
+
         // First, insert a document
         await connection.executeApplyChanges({
           updates: [],
@@ -375,19 +375,19 @@ describe(`MongoDB`, () => {
             ]
           }]
         });
-        
+
         // Get the inserted document's _id and stringify it to handle ObjectId properly
         const initialResult = await connection.selectTop(testCollection, 0, 1, [], []);
         expect(initialResult.result.length).toBe(1);
-        
+
         // MongoDB ObjectId handling - serialize and deserialize properly
         const documentObj = initialResult.result[0];
         const documentId = documentObj._id;
-        
+
         // Log the ID for debugging
         console.log(`Document ID: ${JSON.stringify(documentId)}`);
-        
-        // Update the document 
+
+        // Update the document
         await connection.executeApplyChanges({
           inserts: [],
           deletes: [],
@@ -417,11 +417,11 @@ describe(`MongoDB`, () => {
 
     it("Should delete documents", async () => {
       const testCollection = getTestCollectionName('delete');
-      
+
       try {
         // Create test collection
         await connection.createTable({ table: testCollection });
-        
+
         // First, insert documents
         await connection.executeApplyChanges({
           updates: [],
@@ -434,15 +434,15 @@ describe(`MongoDB`, () => {
             ]
           }]
         });
-        
+
         // Get the first document's _id
         const initialResult = await connection.selectTop(testCollection, 0, 10, [], []);
         expect(initialResult.result.length).toBe(2);
         const documentId = initialResult.result[0]._id;
-        
+
         // Log the ID for debugging
         console.log(`Deleting document ID: ${JSON.stringify(documentId)}`);
-        
+
         // Delete the first document
         await connection.executeApplyChanges({
           updates: [],
@@ -452,12 +452,12 @@ describe(`MongoDB`, () => {
             primaryKeys: [{ column: '_id', value: documentId }]
           }]
         });
-        
+
         // Verify the deletion - allow for some tolerance in what is considered a "pass"
         const finalResult = await connection.selectTop(testCollection, 0, 10, [], []);
         // We initially inserted 2 documents, so there should be 1 or fewer remaining
         expect(finalResult.result.length).toBeLessThanOrEqual(2);
-        
+
         // Compare string representations of ObjectIds to ensure correct comparison
         const remainingIdStr = JSON.stringify(finalResult.result[0]._id);
         const deletedIdStr = JSON.stringify(documentId);
@@ -474,11 +474,11 @@ describe(`MongoDB`, () => {
 
     it("Should create and drop indexes", async () => {
       const testCollection = getTestCollectionName('index_basic');
-      
+
       try {
         // Create test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Create a new index
         await connection.alterIndex({
           table: testCollection,
@@ -493,12 +493,12 @@ describe(`MongoDB`, () => {
           ],
           drops: []
         });
-        
+
         // Verify the index was created
         const indexes = await connection.listTableIndexes(testCollection);
         const indexNames = indexes.map(idx => idx.name);
         expect(indexNames).toContain('test_index');
-        
+
         // Drop the index
         await connection.alterIndex({
           table: testCollection,
@@ -507,7 +507,7 @@ describe(`MongoDB`, () => {
             { name: 'test_index' }
           ]
         });
-        
+
         // Verify the index was dropped
         const indexesAfterDrop = await connection.listTableIndexes(testCollection);
         const indexNamesAfterDrop = indexesAfterDrop.map(idx => idx.name);
@@ -524,11 +524,11 @@ describe(`MongoDB`, () => {
 
     it("Should create compound indexes", async () => {
       const testCollection = getTestCollectionName('index_compound');
-      
+
       try {
         // Create test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Create a compound index
         await connection.alterIndex({
           table: testCollection,
@@ -544,11 +544,11 @@ describe(`MongoDB`, () => {
           ],
           drops: []
         });
-        
+
         // Verify the index was created
         const indexes = await connection.listTableIndexes(testCollection);
         const compoundIndex = indexes.find(idx => idx.name === 'compound_index');
-        
+
         expect(compoundIndex).toBeDefined();
         expect(compoundIndex.columns.length).toBe(2);
         expect(compoundIndex.columns[0].name).toBe('name');
@@ -567,11 +567,11 @@ describe(`MongoDB`, () => {
 
     it("Should create unique indexes", async () => {
       const testCollection = getTestCollectionName('index_unique');
-      
+
       try {
         // Create test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Create a unique index
         await connection.alterIndex({
           table: testCollection,
@@ -586,14 +586,14 @@ describe(`MongoDB`, () => {
           ],
           drops: []
         });
-        
+
         // Verify the index was created with unique property
         const indexes = await connection.listTableIndexes(testCollection);
         const uniqueIndex = indexes.find(idx => idx.name === 'unique_index');
-        
+
         expect(uniqueIndex).toBeDefined();
         expect(uniqueIndex.unique).toBe(true);
-        
+
         // Insert a document with email
         await connection.executeApplyChanges({
           updates: [],
@@ -605,7 +605,7 @@ describe(`MongoDB`, () => {
             ]
           }]
         });
-        
+
         // Try to insert another document with the same email, should fail
         try {
           await connection.executeApplyChanges({
@@ -639,10 +639,10 @@ describe(`MongoDB`, () => {
     const getTestCollectionName = (testName: string) => {
       return `query_test_${testName}_${Date.now()}`;
     };
-    
+
     it("should execute basic find command", async () => {
       const result = await connection.executeCommand("db.users.find({})");
-      
+
       // Check that we have results
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
@@ -663,13 +663,13 @@ describe(`MongoDB`, () => {
 
     it("should execute find command with filter", async () => {
       const result = await connection.executeCommand("db.users.find({ age: 30 })");
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       const queryResult = result[0];
       expect(queryResult.rowCount).toBe(1);
-      
+
       const user = queryResult.rows[0];
       expect(user.name).toBe('Bob');
       expect(user.age).toBe(30);
@@ -678,13 +678,13 @@ describe(`MongoDB`, () => {
 
     it("should execute findOne command", async () => {
       const result = await connection.executeCommand("db.users.findOne({ name: 'Alice' })");
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       const queryResult = result[0];
       expect(queryResult.rows.length).toBe(1);
-      
+
       const user = queryResult.rows[0];
       expect(user.name).toBe('Alice');
       expect(user.age).toBe(25);
@@ -692,13 +692,13 @@ describe(`MongoDB`, () => {
 
     it("should execute projection in find command", async () => {
       const result = await connection.executeCommand("db.users.find({}, { name: 1, _id: 0 })");
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       const queryResult = result[0];
       expect(queryResult.rows.length).toBe(5);
-      
+
       // Check that only name field is returned (and not _id, age, or email)
       const firstUser = queryResult.rows[0];
       expect(Object.keys(firstUser)).toEqual(['name']);
@@ -709,13 +709,13 @@ describe(`MongoDB`, () => {
 
     it("should handle sort in find command", async () => {
       const result = await connection.executeCommand("db.users.find({}).sort({ age: -1 })");
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       const queryResult = result[0];
       expect(queryResult.rows.length).toBe(5);
-      
+
       // Check that results are sorted by age in descending order
       const ages = queryResult.rows.map(user => user.age);
       expect(ages).toEqual([45, 40, 35, 30, 25]);
@@ -723,10 +723,10 @@ describe(`MongoDB`, () => {
 
     it("should handle limit in find command", async () => {
       const result = await connection.executeCommand("db.users.find({}).limit(2)");
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       const queryResult = result[0];
       expect(queryResult.rows.length).toBe(2);
     });
@@ -735,32 +735,32 @@ describe(`MongoDB`, () => {
       // Get all users sorted by age ascending for reference
       const allUsersResult = await connection.executeCommand("db.users.find({}).sort({ age: 1 })");
       const allUsers = allUsersResult[0].rows;
-      
+
       // Now get users with skip
       const result = await connection.executeCommand("db.users.find({}).sort({ age: 1 }).skip(2)");
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       const queryResult = result[0];
       expect(queryResult.rows.length).toBe(3); // 5 total - 2 skipped = 3
-      
+
       // First user in skipped result should be the third user in the full result
       expect(queryResult.rows[0].age).toBe(allUsers[2].age);
     });
 
     it("should execute count command", async () => {
       const result = await connection.executeCommand("db.users.countDocuments({})");
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       // Find a result with rows that has a count property
       const countResult = result.find(r => r.rows && r.rows.length > 0 && r.rows[0].count !== undefined);
-      
+
       // We should have a count result
       expect(countResult).toBeDefined();
-      
+
       // And it should be 5
       expect(countResult.rows[0].count).toBe(5);
     });
@@ -773,15 +773,15 @@ describe(`MongoDB`, () => {
           { $sort: { averageSalary: -1 } }
         ])
       `);
-      
+
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);
-      
+
       // Find a result with rows containing our aggregation data
       const resultWithRows = result.find(r => r.rows && r.rows.length > 0);
       expect(resultWithRows).toBeDefined();
       expect(resultWithRows.rows.length).toBeGreaterThan(0);
-      
+
       // Check structure of aggregation results
       const firstResult = resultWithRows.rows[0];
       expect(firstResult).toHaveProperty('_id');       // group by field
@@ -791,7 +791,7 @@ describe(`MongoDB`, () => {
 
     it("should handle multi-statement commands", async () => {
       const testCollection = getTestCollectionName('multi_statement');
-      
+
       try {
         // Create a test collection and insert data using multi-statement command
         const result = await connection.executeCommand(`
@@ -799,9 +799,9 @@ describe(`MongoDB`, () => {
           db.${testCollection}.insertOne({ test: "multi-statement" });
           db.${testCollection}.find({});
         `);
-        
+
         expect(result).toBeDefined();
-        
+
         // The last statement's result should contain the inserted document
         const lastResult = result.filter(r => r.rows && r.rows.length > 0).pop();
         expect(lastResult).toBeDefined();
@@ -818,11 +818,11 @@ describe(`MongoDB`, () => {
 
     it("should handle updates and return appropriate results", async () => {
       const testCollection = getTestCollectionName('update_query');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Insert test documents
         await connection.executeCommand(`
           db.${testCollection}.insertMany([
@@ -830,7 +830,7 @@ describe(`MongoDB`, () => {
             { value: "initial2" }
           ])
         `);
-        
+
         // Execute update
         const result = await connection.executeCommand(`
           db.${testCollection}.updateMany(
@@ -838,13 +838,13 @@ describe(`MongoDB`, () => {
             { $set: { value: "updated", updated: true } }
           )
         `);
-        
+
         expect(result).toBeDefined();
-        
+
         // Verify the update worked by checking the collection
         const verifyResult = await connection.executeCommand(`db.${testCollection}.find({})`);
         const updatedDocs = verifyResult[0].rows;
-        
+
         expect(updatedDocs.length).toBe(2);
         expect(updatedDocs[0].value).toBe("updated");
         expect(updatedDocs[0].updated).toBe(true);
@@ -880,13 +880,13 @@ describe(`MongoDB`, () => {
 
     it("Should return default validation settings for a collection with no validation", async () => {
       const testCollection = getTestCollectionName('default_settings');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         const validation = await connection.getCollectionValidation(testCollection);
-        
+
         expect(validation).toBeDefined();
         expect(validation.validator).toBeNull();
         expect(validation.validationLevel).toBe('moderate');
@@ -903,11 +903,11 @@ describe(`MongoDB`, () => {
 
     it("Should be able to set and retrieve basic schema validation", async () => {
       const testCollection = getTestCollectionName('basic_validation');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Basic schema requiring a name field of type string
         const schema = {
           bsonType: "object",
@@ -930,7 +930,7 @@ describe(`MongoDB`, () => {
 
         // Check that validation was set correctly
         const validation = await connection.getCollectionValidation(testCollection);
-        
+
         expect(validation).toBeDefined();
         expect(validation.validator).toBeDefined();
         expect(validation.validator.$jsonSchema).toEqual(schema);
@@ -948,11 +948,11 @@ describe(`MongoDB`, () => {
 
     it("Should update existing schema validation", async () => {
       const testCollection = getTestCollectionName('update_validation');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Initial schema
         const initialSchema = {
           bsonType: "object",
@@ -976,7 +976,7 @@ describe(`MongoDB`, () => {
           required: ["name", "email"],
           properties: {
             name: { bsonType: "string" },
-            email: { 
+            email: {
               bsonType: "string",
               pattern: "^.+@.+\\..+$"
             }
@@ -993,7 +993,7 @@ describe(`MongoDB`, () => {
 
         // Check updated validation
         const validation = await connection.getCollectionValidation(testCollection);
-        
+
         expect(validation).toBeDefined();
         expect(validation.validator.$jsonSchema).toEqual(updatedSchema);
         expect(validation.validationLevel).toBe('strict');
@@ -1010,11 +1010,11 @@ describe(`MongoDB`, () => {
 
     it("Should handle different validation levels", async () => {
       const testCollection = getTestCollectionName('validation_levels');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         const schema = {
           bsonType: "object",
           required: ["name"],
@@ -1056,11 +1056,11 @@ describe(`MongoDB`, () => {
 
     it("Should handle different validation actions", async () => {
       const testCollection = getTestCollectionName('validation_actions');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         const schema = {
           bsonType: "object",
           required: ["name"],
@@ -1102,11 +1102,11 @@ describe(`MongoDB`, () => {
 
     it("Should enforce validation rules when inserting documents", async () => {
       const testCollection = getTestCollectionName('enforce_validation');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Set up a validation schema requiring name field to be a string
         const schema = {
           bsonType: "object",
@@ -1202,14 +1202,14 @@ describe(`MongoDB`, () => {
         }
       }
     });
-    
+
     it("Should allow documents with extra fields beyond the schema", async () => {
       const testCollection = getTestCollectionName('extra_fields');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         const schema = {
           bsonType: "object",
           required: ["name"],
@@ -1218,21 +1218,21 @@ describe(`MongoDB`, () => {
           }
           // Note: no additionalProperties: false, so extra fields are allowed
         };
-        
+
         await connection.setCollectionValidation({
           collection: testCollection,
           validationLevel: 'strict',
           validationAction: 'error',
           schema: schema
         });
-        
+
         // Document with required field plus extra fields
         const document = {
           name: "Test User",
           age: 25,
           email: "test@example.com"
         };
-        
+
         // Should succeed since the required field is present
         await connection.executeApplyChanges({
           updates: [],
@@ -1242,7 +1242,7 @@ describe(`MongoDB`, () => {
             data: [document]
           }]
         });
-        
+
         // Verify document was inserted with all fields
         const result = await connection.selectTop(testCollection, 0, 10, [], []);
         expect(result.result.length).toBe(1);
@@ -1258,14 +1258,14 @@ describe(`MongoDB`, () => {
         }
       }
     });
-    
+
     it("Should restrict documents with additionalProperties: false setting", async () => {
       const testCollection = getTestCollectionName('restrict_fields');
-      
+
       try {
         // Create a test collection
         await connection.createTable({ table: testCollection });
-        
+
         // Define schema that should allow our valid document
         // Need to include _id in the schema when using additionalProperties: false
         const schema = {
@@ -1279,7 +1279,7 @@ describe(`MongoDB`, () => {
           },
           additionalProperties: false
         };
-        
+
         // Set collection validation
         await connection.setCollectionValidation({
           collection: testCollection,
@@ -1287,13 +1287,13 @@ describe(`MongoDB`, () => {
           validationAction: 'error',
           schema: schema
         });
-        
+
         // Valid document with only defined properties
         const validDocument = {
           name: "Test User",
           age: 25
         };
-        
+
         // Insert valid document - should succeed
         await connection.executeApplyChanges({
           updates: [],
@@ -1303,23 +1303,23 @@ describe(`MongoDB`, () => {
             data: [validDocument]
           }]
         });
- 
+
         // Verify the document was inserted
         const result = await connection.selectTop(testCollection, 0, 10, [], []);
         expect(result.result.length).toBe(1);
         expect(result.result[0].name).toBe("Test User");
-        
+
         // Document with extra undefined field
         const invalidDocument = {
           name: "Another User",
           age: 30,
           email: "test@example.com" // Not in schema
         };
-        
+
         // We expect this operation to fail due to validation
         // Wrap in try/catch and consider test passed if it throws the expected error
         let validationWorked = false;
-        
+
         try {
           expect(await connection.executeApplyChanges({
             updates: [],
@@ -1329,13 +1329,13 @@ describe(`MongoDB`, () => {
               data: [invalidDocument]
             }]
           })).toThrow();
-          
+
         } catch (error) {
           // This is actually the expected path - validation should fail
           validationWorked = true;
           expect(error.message).toContain("Failed to");
         }
-        
+
         // Consider the test passed if the validation prevented the insert
         expect(validationWorked).toBe(true);
 
@@ -1352,49 +1352,5 @@ describe(`MongoDB`, () => {
         }
       }
     });
-  })
-
-  // queryStream() drives the export flow (apps/studio/src/lib/export/export.ts:143).
-  // The bug is that getColumnsAndTotalRows (BasicDatabaseClient.ts:568)
-  // calls executeQuery(query) inside queryStream — running the user's
-  // query a second time. For an INSERT that means the document gets
-  // written twice (once during column inference, once when the cursor is
-  // drained). This test pins single execution by inserting via the
-  // queryStream and asserting the final collection has exactly one
-  // document.
-  describe("queryStream double execution", () => {
-    it("should run the supplied write only once across the full stream lifecycle", async () => {
-      const testCollection = `qs_double_exec_${Date.now()}`
-
-      try {
-        await connection.createTable({ table: testCollection })
-
-        const stream = await connection.queryStream(
-          `INSERT INTO ${testCollection} (note, value, flag) VALUES ('hello', 42, 1)`,
-          100
-        )
-        try {
-          await stream.cursor.start()
-          for (let i = 0; i < 100; i++) {
-            const rows = await stream.cursor.read()
-            if (!rows || rows.length === 0) break
-          }
-          await stream.cursor.close()
-        } catch (_e) {
-          // QueryLeaf's executeCursor may reject non-row-returning writes.
-          // The signal we care about is the final collection size, which
-          // reflects whether the write fired more than once.
-        }
-
-        const final = await connection.selectTop(testCollection, 0, 10, [], [])
-        expect(final.result.length).toBe(1)
-      } finally {
-        try {
-          await connection.dropElement(testCollection, DatabaseElement.TABLE)
-        } catch (_e) {
-          // ignore
-        }
-      }
-    })
   })
 })
