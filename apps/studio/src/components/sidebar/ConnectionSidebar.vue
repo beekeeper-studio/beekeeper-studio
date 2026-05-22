@@ -430,7 +430,7 @@ export default {
       }
     },
     empty() {
-      return !this.filteredConnections?.length
+      return !this.filteredConnections?.length && !this.folders?.length
     },
     noPins() {
       return !this.pinnedConnections?.length;
