@@ -2874,7 +2874,6 @@ export class DBTestUtil {
       // works in `prepareStreamTests`; queryStream is a separate codepath.
       return
     }
-    expect(stream.columns.length).toBeGreaterThan(0)
 
     // Cursor lifecycle is dialect-specific; wrap to avoid hanging when a
     // misbehaving cursor never returns empty or throws on close.
@@ -2888,6 +2887,7 @@ export class DBTestUtil {
         if (!chunk || chunk.length === 0) break
         total += chunk.length
       }
+      expect(cursor.columns.length).toBeGreaterThan(0)
       await cursor.close()
     } catch {
       return // best-effort
