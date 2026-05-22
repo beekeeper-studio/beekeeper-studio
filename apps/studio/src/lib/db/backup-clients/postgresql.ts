@@ -169,7 +169,7 @@ export class PostgresBackupClient extends BaseCommandClient {
         `--verbose`,
         `--username=${BaseCommandClient.username}`,
         `--format=${this._config.format}`,
-        `--file=${this.quotedOutputFilePath}`
+        `--file=${this.outputFilePath}`
       ]
     });
 
@@ -236,7 +236,7 @@ export class PostgresBackupClient extends BaseCommandClient {
     }
 
     if (this._config.customArgs && this._config.customArgs.trim() != '') {
-      command.options.push(this._config.customArgs);
+      command.options.push(...BaseCommandClient.parseArgs(this._config.customArgs));
     }
 
     command.options.push(BaseCommandClient.databaseName);
