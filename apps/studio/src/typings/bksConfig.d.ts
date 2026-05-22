@@ -433,6 +433,8 @@ declare interface IBksConfig {
         };
     };
     security: {
+        activityEvents: string[];
+        activityReportIntervalSeconds: number;
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
         disconnectOnSuspend: boolean;

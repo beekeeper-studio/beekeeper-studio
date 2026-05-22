@@ -13,13 +13,13 @@ import InputPinModal from "@/components/common/modals/InputPinModal.vue";
 import CreatePinModal from "@/components/common/modals/CreatePinModal.vue";
 import UpdatePinModal from "@/components/common/modals/UpdatePinModal.vue";
 
-// powerMonitor's system idle time is unreliable on Linux, so when
-// disconnect-on-idle is enabled we report real user input from the renderer
-// to back up the idle detection in the main process. The send is throttled
-// since the main process only needs coarse granularity.
-const USER_ACTIVE_THROTTLE_MS = 5000;
-const USER_ACTIVE_EVENTS = ["mousedown", "keydown"];
+// capture: still observe input even if a handler stops propagation. passive: observe only.
 const USER_ACTIVE_LISTENER_OPTS = { capture: true, passive: true };
+
+type ThrottledReporter = (() => void) & { cancel(): void };
+
+// Renderer-reported input backs up the main-process idle check, which is unreliable on Linux (#4144).
+let reportUserActive: ThrottledReporter | null = null;
 
 export default Vue.extend({
   components: { InputPinModal, CreatePinModal, UpdatePinModal },
@@ -38,22 +38,21 @@ export default Vue.extend({
         timeout: 10000,
       });
     },
-    reportUserActive: _.throttle(() => {
-      window.main.sendUserActive();
-    }, USER_ACTIVE_THROTTLE_MS),
   },
   async mounted() {
     this.registerHandlers(this.rootBindings);
-    if (this.$bksConfig.security.disconnectOnIdle) {
-      USER_ACTIVE_EVENTS.forEach((event) =>
-        window.addEventListener(
-          event,
-          this.reportUserActive,
-          USER_ACTIVE_LISTENER_OPTS
-        )
+    const { security } = this.$bksConfig;
+    if (security.disconnectOnIdle) {
+      const handler = _.throttle(
+        () => window.main.sendUserActive(),
+        security.activityReportIntervalSeconds * 1000
+      );
+      reportUserActive = handler;
+      security.activityEvents.forEach((event) =>
+        window.addEventListener(event, handler, USER_ACTIVE_LISTENER_OPTS)
       );
     }
-    if (this.$bksConfig.security.lockMode === "pin") {
+    if (security.lockMode === "pin") {
       const isLockSet = await this.$util.send("lock/isSet");
       if (!isLockSet) {
         this.$modal.show("create-pin-modal");
@@ -62,13 +61,14 @@ export default Vue.extend({
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
-    USER_ACTIVE_EVENTS.forEach((event) =>
-      window.removeEventListener(
-        event,
-        this.reportUserActive,
-        USER_ACTIVE_LISTENER_OPTS
-      )
-    );
+    if (reportUserActive) {
+      const handler = reportUserActive;
+      this.$bksConfig.security.activityEvents.forEach((event) =>
+        window.removeEventListener(event, handler, USER_ACTIVE_LISTENER_OPTS)
+      );
+      handler.cancel();
+      reportUserActive = null;
+    }
   },
 });
 </script>
