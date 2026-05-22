@@ -109,7 +109,7 @@ export class SurrealPool {
     const index = this.pool.findIndex((c) => c.id === conn.id);
     if (index > -1) {
       // just in case so we don't leave a dangling connection
-      if (conn.status !== ConnectionStatus.Disconnected) {
+      if (conn.status != ConnectionStatus.Disconnected) {
         await conn.close();
       }
       this.pool.splice(index, 1)

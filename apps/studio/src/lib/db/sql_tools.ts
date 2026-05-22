@@ -16,7 +16,7 @@ export function splitQueries(queryText: string, dialect) {
 
 // can only have positional params OR non-positional
 export function canDeparameterize(params: string[]) {
-  return !(params.includes('?') && params.some((val) => val !== '?'));
+  return !(params.includes('?') && params.some((val) => val != '?'));
 }
 
 export function convertParamsForReplacement(placeholders: string[], values: string[] | Record<string, string>): ParamItems | string[] {
@@ -51,7 +51,7 @@ export function deparameterizeQuery(queryText: string, dialect: Dialect, params:
 export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
   const tables = rawTables.filter((table) => {
     return (table.entityType === 'table' && allFilters.showTables &&
-      ((table.parenttype !== 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
+      ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
       (table.entityType === 'view' && allFilters.showViews) ||
       (table.entityType === 'materialized-view' && allFilters.showViews) ||
       (Object.keys(RoutineTypeNames).includes(table.type) && allFilters.showRoutines)
@@ -84,7 +84,7 @@ export function removeQueryQuotes(possibleQuery: string, dialect: any): string {
   const unquotedQuery = possibleQuery.slice(1, possibleQuery.length - 1);
 
   // if the query is quoted and we can identify at least one valid sql statement, we'll unquote it.
-  if (isQuoted && identify(unquotedQuery, { strict: false, dialect })?.some((res) => res.type !== 'UNKNOWN')) {
+  if (isQuoted && identify(unquotedQuery, { strict: false, dialect })?.some((res) => res.type != 'UNKNOWN')) {
     return unquotedQuery;
   }
 

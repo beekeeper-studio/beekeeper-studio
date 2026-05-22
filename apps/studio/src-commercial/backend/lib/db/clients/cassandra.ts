@@ -819,12 +819,12 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
         const value = row[key];
         const typeCode = typeByColumn[key].code;
 
-        if (typeCode === cassandra.types.dataTypes.list || typeCode === cassandra.types.dataTypes.set) {
+        if (typeCode == cassandra.types.dataTypes.list || typeCode == cassandra.types.dataTypes.set) {
           row[key] = value?.map((v) => this.convertValueByType(v, typeByColumn[key].info.code));
           return;
         }
 
-        if (typeCode === cassandra.types.dataTypes.map) {
+        if (typeCode == cassandra.types.dataTypes.map) {
           const [keyType, valueType] = typeByColumn[key].info;
           const converted = {};
           if (value) {

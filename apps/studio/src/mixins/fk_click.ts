@@ -17,7 +17,7 @@ export const FkLinkMixin = {
       const keyWidth = 40
       const icon = () => "<i class='material-icons fk-link'>launch</i>"
       const tooltip = () => {
-        if (keyDatas.length === 1) {
+        if (keyDatas.length == 1) {
           if (keyDatas[0].isComposite) {
             const cols = keyDatas[0].toColumn.join(', ');
             return `View record in ${keyDatas[0].toTable} (${cols})`;

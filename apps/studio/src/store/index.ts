@@ -177,7 +177,7 @@ const store = new Vuex.Store<State>({
       return state.defaultSchema;
     },
     friendlyConnectionType(state) {
-      return ConnectionTypes.find((ct) => ct.value === state.connectionType)?.name ?? "Default Connection"
+      return ConnectionTypes.find((ct) => ct.value == state.connectionType)?.name ?? "Default Connection"
     },
     workspace(state, getters): IWorkspace {
       if (state.workspaceId === LocalWorkspace.id) return LocalWorkspace

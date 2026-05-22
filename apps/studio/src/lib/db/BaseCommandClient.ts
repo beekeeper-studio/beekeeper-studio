@@ -239,7 +239,7 @@ export abstract class BaseCommandClient {
           settingDesc: 'Filename',
           required: true,
           show: (config: BackupConfig): boolean => {
-            return config.format !== 'd';
+            return config.format != 'd';
           },
           actions: isRestore ? [] : [
             this.fileTypeAction

@@ -66,7 +66,7 @@ export class PostgresBackupClient extends BaseCommandClient {
             placeholder: 'Optionally select a compression level...',
             required: false,
             show: (config: BackupConfig): boolean => {
-              return config.format !== 't'
+              return config.format != 't'
             }
           },
           {
@@ -235,7 +235,7 @@ export class PostgresBackupClient extends BaseCommandClient {
       });
     }
 
-    if (this._config.customArgs && this._config.customArgs.trim() !== '') {
+    if (this._config.customArgs && this._config.customArgs.trim() != '') {
       command.options.push(this._config.customArgs);
     }
 

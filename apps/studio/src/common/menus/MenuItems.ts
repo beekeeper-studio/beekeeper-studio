@@ -365,13 +365,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           type: 'radio',
           label: 'Stable',
           click: actionHandler.toggleBeta,
-          checked: settings?.useBeta?.value === false
+          checked: settings?.useBeta?.value == false
         },
         {
           type: 'radio',
           label: 'Beta',
           click: actionHandler.toggleBeta,
-          checked: settings?.useBeta?.value === true
+          checked: settings?.useBeta?.value == true
         }
       ]
     },

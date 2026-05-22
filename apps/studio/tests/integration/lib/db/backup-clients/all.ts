@@ -63,7 +63,7 @@ export function runBackupTests(getParams: () => backupParams) {
       backupDir = path.join(backupDir, outputDirSuffix);
       fs.mkdirSync(backupDir, { recursive: true });
     }
-    if (backupConfig.format === 'd') {
+    if (backupConfig.format == 'd') {
       backupDir = fs.mkdtempSync(path.join(backupDir, `${dialect}-dir-backup-`));
     }
     backupConfig.outputPath = backupDir;
@@ -97,7 +97,7 @@ export function runBackupTests(getParams: () => backupParams) {
       expect(e).toBe(errorMessages.nonZero)
     }
 
-    if (backupConfig.format !== 'd') {
+    if (backupConfig.format != 'd') {
       const backupPath = path.join(backupDir, backup.filename);
       expect(fs.existsSync(backupPath)).toBe(true);
       if (!['t', 'c'].includes(backupConfig.format) && !backupConfig.compression) {
@@ -105,7 +105,7 @@ export function runBackupTests(getParams: () => backupParams) {
         const data = await readFile(backupPath);
 
         const identification = identify(data, { strict: false, dialect });
-        expect(identification.some((value) => value.executionType !== 'UNKNOWN')).toBe(true);
+        expect(identification.some((value) => value.executionType != 'UNKNOWN')).toBe(true);
       }
     } else {
       expect(fs.existsSync(backupDir)).toBe(true)

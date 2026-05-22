@@ -22,7 +22,7 @@ export default {
       bastionPrivateKey: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfile : null,
       bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
       bastionMode: config.sshBastionMode,
-      useAgent: config.sshMode === 'agent',
+      useAgent: config.sshMode == 'agent',
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
 

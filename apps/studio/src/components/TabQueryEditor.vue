@@ -701,7 +701,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return this.query?.title
       },
       showDryRun() {
-        return this.dialect === 'bigquery'
+        return this.dialect == 'bigquery'
       },
       identifyDialect() {
         // dialect for sql-query-identifier
@@ -810,7 +810,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (params.length && params.includes('?')) {
           let posIndex = 0; // number doesn't matter, this just distinguishes positional from other types
           params = params.map((param) => {
-            if (param !== '?') return param;
+            if (param != '?') return param;
 
             return posIndex++;
           })

@@ -236,7 +236,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   toggleBeta = async (menuItem: Electron.MenuItem): Promise<void> => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
-    const beta = label.toLowerCase() === 'beta';
+    const beta = label.toLowerCase() == 'beta';
     this.settings.useBeta.userValue = beta;
     await this.settings.useBeta.save()
     getActiveWindows().forEach( window => {

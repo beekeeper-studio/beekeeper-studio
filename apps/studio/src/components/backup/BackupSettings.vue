@@ -276,7 +276,7 @@ export default Vue.extend({
       // Force settings that have a show method to be redrawn.
       const needsUpdate: [CommandSettingSection, number][] = this.sections
         .map((s, i) => [s, i])
-        .filter((s) => s[0].show !== undefined || s[0].controls.some((c) => c.show !== undefined));
+        .filter((s) => s[0].show != undefined || s[0].controls.some((c) => c.show != undefined));
       needsUpdate.forEach((value) => {
         Vue.set(this.sections, value[1], { ...value[0] });
       });

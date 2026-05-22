@@ -182,7 +182,7 @@ export class MySqlBackupClient extends BaseCommandClient {
       command.options.push(`--no-tablespaces`);
     }
 
-    if (this._config.customArgs && this._config.customArgs.trim() !== '') {
+    if (this._config.customArgs && this._config.customArgs.trim() != '') {
       command.options.push(this._config.customArgs);
     }
 

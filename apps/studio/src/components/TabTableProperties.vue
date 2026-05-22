@@ -288,7 +288,7 @@ export default {
 
         if (p.needsPartitions && (!this.supportedFeatures.partitions ||
           ((!this.supportedFeatures.editPartitions && !this.properties.partitions?.length) ||
-          (this.supportedFeatures.editPartitions && this.table.tabletype !== partitionTableType)))) {
+          (this.supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
         if (p.mongoOnly && this.dialect !== 'mongodb') {

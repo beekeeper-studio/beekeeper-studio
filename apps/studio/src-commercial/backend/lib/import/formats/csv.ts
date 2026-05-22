@@ -35,7 +35,7 @@ export default class extends Import {
           parser.abort();
         }
 
-        if (!data || data?.length === 0) return;
+        if (!data || data?.length == 0) return;
         log.info(`Importing ${data?.length} records`)
 
         const importData = [];
