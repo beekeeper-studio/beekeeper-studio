@@ -547,6 +547,10 @@ export default Vue.extend({
       return canCopy ? `${cellName} - Click to Copy` : cellName;
     },
   },
+  created() {
+    /** @type {import('tabulator-tables').Tabulator | null} */
+    this.tabulator = null
+  },
   async mounted() {
     this.tabState.dirty = false
     // table columns are updated by TabTableProperties on load. So no need to do it here.

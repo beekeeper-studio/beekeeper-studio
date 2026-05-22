@@ -411,6 +411,10 @@ export default Vue.extend({
       this.removedRows = []
     }
   },
+  created() {
+    /** @type {import('tabulator-tables').Tabulator | null} */
+    this.tabulator = null
+  },
   mounted() {
     this.tabState.dirty = false
     this.initializeTabulator()

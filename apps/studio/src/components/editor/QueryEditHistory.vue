@@ -259,6 +259,10 @@ export default Vue.extend({
       return (err as Error).message ?? String(err);
     },
   },
+  created() {
+    /** @type {import('split.js').Instance | null} */
+    this.split = null
+  },
   beforeDestroy() {
     this.destroySplit();
   },

@@ -237,6 +237,10 @@
         sheets: []
       }
     },
+    created() {
+      /** @type {import('tabulator-tables').TabulatorFull | null} */
+      this.tabulator = null
+    },
     computed: {
       ...mapGetters('imports', {'getImportOptions': 'getImportOptions'}),
       ...mapState('imports', {'tablesToImport': 'tablesToImport'}),

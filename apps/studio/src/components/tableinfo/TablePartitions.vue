@@ -317,6 +317,10 @@ export default Vue.extend({
       this.expressionTemplate = template;
     }
   },
+  created() {
+    /** @type {import('tabulator-tables').Tabulator | null} */
+    this.tabulator = null
+  },
   async mounted() {
     if (!this.active) this.forceRedraw = true;
     this.tabState.dirty = false;

@@ -484,6 +484,10 @@ export default {
       return result;
     },
   },
+  created() {
+    /** @type {import('split.js').Instance | null} */
+    this.split = null
+  },
   async mounted() {
     this.folderExpandedState = SmartLocalStorage.getJSON('connectionFolderExpanded-v1', {})
     this.buildSplit()

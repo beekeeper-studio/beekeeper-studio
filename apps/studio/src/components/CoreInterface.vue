@@ -201,6 +201,10 @@
         })
       },
     },
+    created() {
+      /** @type {import('split.js').Instance | null} */
+      this.split = null
+    },
     mounted() {
       this.$store.dispatch('hideEntities/load')
       this.registerHandlers(this.rootBindings)

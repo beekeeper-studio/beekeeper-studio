@@ -609,6 +609,10 @@ export default {
       this.initialize({ userKeymap: value });
     },
   },
+  created() {
+    /** @type {import('codemirror').Editor | null} */
+    this.editor = null
+  },
   async mounted() {
     await this.initialize({
       userKeymap: this.$store.getters['settings/userKeymap'],

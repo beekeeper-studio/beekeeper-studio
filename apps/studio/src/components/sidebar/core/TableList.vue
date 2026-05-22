@@ -374,6 +374,10 @@
         }
       }
     },
+    created() {
+      /** @type {import('split.js').Instance | null} */
+      this.split = null
+    },
     mounted() {
       const components = [this.$refs.pinned, this.$refs.tables]
       this.split = Split(components, {

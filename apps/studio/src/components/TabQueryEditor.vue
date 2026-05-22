@@ -1905,6 +1905,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     },
     created() {
       this.queryMagic = queryMagicExtension()
+      /** @type {import('split.js').Instance | null} */
+      this.split = null
+      this.warningNoty = null
       this.registerHandlers(this.rootBindings)
     },
     async mounted() {

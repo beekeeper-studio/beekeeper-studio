@@ -95,6 +95,10 @@ export default Vue.extend({
       }
     },
   },
+  created() {
+    /** @type {import('split.js').Instance | null} */
+    this.mainSplit = null
+  },
   mounted() {
     const mainEl = this.$refs.main;
     const rightEl = this.$refs.right;

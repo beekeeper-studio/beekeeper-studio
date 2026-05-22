@@ -479,6 +479,10 @@ export default {
       this.initTabulator()
     },
   },
+  created() {
+    /** @type {import('tabulator-tables').TabulatorFull | null} */
+    this.tabulator = null
+  },
   mounted () {
     this.initialize()
   },

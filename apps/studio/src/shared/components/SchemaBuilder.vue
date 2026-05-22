@@ -23,7 +23,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue'
-import { TabulatorFull, CellComponent, RowComponent } from 'tabulator-tables'
+import { TabulatorFull, Tabulator, CellComponent, RowComponent } from 'tabulator-tables'
 import { getDialectData } from '../lib/dialects'
 import tab from '../lib/tabulator'
 import {vueEditor, vueFormatter} from '../lib/tabulator/helpers'
@@ -34,6 +34,8 @@ import { Dialect, SchemaItem } from '../lib/dialects/models'
 
 interface SchemaBuilderData {
   builtColumns: SchemaItem[],
+  /** Tabulator instance — declared optional so it is not returned from data() and stays non-reactive. */
+  tabulator?: Tabulator
   defaultName: string
   columnsModified: boolean
 }

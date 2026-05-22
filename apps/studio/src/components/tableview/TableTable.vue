@@ -742,6 +742,8 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   created() {
+    /** @type {import('tabulator-tables').Tabulator | null} */
+    this.tabulator = null
     this.timeAgo = new TimeAgo('en-US')
     this.interval = setInterval(this.setlastUpdatedText, 10000)
   },
