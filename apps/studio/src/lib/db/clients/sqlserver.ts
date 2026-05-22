@@ -702,6 +702,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema = 'dbo') {
+    // duplicateTableSql produces a `SELECT ... INTO` statement. The query
+    // identifier classifies that as a plain SELECT, so the read-only guard in
+    // driverExecuteSingle never trips even though it creates a table. Enforce
+    // read-only mode explicitly here.
+    if (await this.checkAllowReadOnly() && this.readOnlyMode) {
+      throw new Error(errorMessages.readOnly)
+    }
+
     const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema)
 
     await this.driverExecuteSingle(sql)
