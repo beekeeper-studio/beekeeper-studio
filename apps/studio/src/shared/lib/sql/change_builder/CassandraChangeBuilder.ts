@@ -113,7 +113,7 @@ export class CassandraChangeBuilder extends ChangeBuilderBase {
         You cannot rename a column if an index has been created on it.
         You cannot rename a static column, since you cannot use a static column in the table's primary key.
     */
-    const renameColumnAlterations = spec.alterations?.filter(v => { v.changeType === 'columnName' })
+    const renameColumnAlterations = spec.alterations?.filter(v => v.changeType === 'columnName') ?? []
     const alterations = [
       ...spec.adds?.map(v => this.addColumn(v)),
       ...spec.drops?.map(v => this.dropColumn(v))

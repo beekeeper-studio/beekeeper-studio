@@ -150,7 +150,7 @@ export class MySqlBackupClient extends BaseCommandClient {
       }
     }
 
-    command.options.push(`--result-file=${this._config.outputPath}${this.pathSep}${this.filename}`);
+    command.options.push(`--result-file=${this.quotedOutputFilePath}`);
 
     if (this._config.insertIgnore) {
       command.options.push(`--insert-ignore`);

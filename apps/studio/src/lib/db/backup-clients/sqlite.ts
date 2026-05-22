@@ -70,7 +70,7 @@ export class SqliteBackupClient extends BaseCommandClient {
       mainCommand: this._config.dumpToolPath,
       options: [
         BaseCommandClient.databaseName,
-        `".output ${this._config.outputPath}${this.pathSep}${this.filename}"`,
+        `".output ${this.quotedOutputFilePath}"`,
         `".trace stdout"`
       ]
     });

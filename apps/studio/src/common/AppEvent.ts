@@ -79,6 +79,11 @@ export enum AppEvent {
   changedTheme = 'changedTheme',
   /** A plugin menu item was clicked in the native/client menu under the tools. */
   pluginMenuClicked = 'pluginMenuClicked',
+  /** Open query edit history on a new / existing query tab.
+   * @example
+   * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
+   **/
+  openQueryEditHistory = 'openQueryEditHistory',
 }
 
 export interface RootBinding {

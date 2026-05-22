@@ -550,7 +550,7 @@ export default {
     },
     createFolder() {
       if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your connections into folders')
+        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
       this.folderModalName = ''
@@ -580,7 +580,7 @@ export default {
     },
     createSubfolder(parentFolder) {
       if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your connections into folders')
+        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
       this.folderModalName = ''
