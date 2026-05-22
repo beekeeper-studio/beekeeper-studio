@@ -92,7 +92,6 @@ export default {
     return {
       importerId: null,
       table: null,
-      tabulator: null,
       tableColumnNames: {},
       nonNullableColumns: [],
       ignoreText: 'IGNORE',
@@ -387,7 +386,7 @@ export default {
       }
     },
     canContinue() {
-      if (this.tabulator === null) return false
+      if (!this.tabulator) return false
 
       if (this.createTable) {
         return true

@@ -373,7 +373,6 @@ export default {
   },
   props: ['selectedConfig'],
   data: () => ({
-    split: null,
     sortables: {
       labelColor: "Color",
       id: "Created",

@@ -84,7 +84,7 @@ export default {
   ],
   data() {
     return {
-      editor: null,
+      editorReady: false,
       foundRootFold: false,
       bookmarkInstances: [],
       markInstances: [],
@@ -104,13 +104,13 @@ export default {
     heightAndStatus() {
       return {
         height: this.height,
-        status: this.editor != null
+        status: this.editorReady
       }
     },
     valueAndStatus() {
       return {
         value: this.value,
-        status: this.editor != null
+        status: this.editorReady
       }
     },
     rootBindings() {
@@ -360,6 +360,7 @@ export default {
       }
 
       this.editor = cm;
+      this.editorReady = true;
       this.firstInitialization = false;
 
       this.$nextTick(() => {
@@ -460,6 +461,7 @@ export default {
       });
     },
     destroyEditor() {
+      this.editorReady = false;
       this.destroyPlugins();
       if (this.editor) {
         this.editor

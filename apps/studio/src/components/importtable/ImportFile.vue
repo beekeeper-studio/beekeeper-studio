@@ -185,7 +185,7 @@
       </section>
     </form>
     <div>
-      <h3 v-show="tabulator">
+      <h3 v-show="previewReady">
         Parsed File Preview
       </h3>
       <div
@@ -232,7 +232,7 @@
         trimWhitespaces: true,
         importerId: null,
         isAutodetect: true,
-        tabulator: null,
+        previewReady: false,
         sheetSelected: null,
         sheets: []
       }
@@ -263,6 +263,7 @@
 
         this.importerId = await this.$util.send('import/init', { options: importOptions })
         this.tabulator = null
+        this.previewReady = false
         this.isAutodetect = true
         this.allowChangeSettings = await this.$util.send('import/allowChangeSettings', { id: this.importerId })
         await this.setAutodetectOptions()
@@ -315,6 +316,7 @@
             editable: false
           }
         })
+        this.previewReady = true
       },
       async setAutodetectOptions() {
         const isAutodetect = this.isAutodetect

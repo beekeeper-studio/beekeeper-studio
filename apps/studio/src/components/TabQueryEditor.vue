@@ -590,7 +590,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         errorMarker: null,
         saveError: null,
         info: null,
-        split: null,
         elapsedTime: 0,
         timerInterval: null,
         tableHeight: 0,
@@ -623,13 +622,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         individualQueries: [],
         currentlySelectedQuery: null,
-        queryMagic: queryMagicExtension(),
         isManualCommit: false,
         hasActiveTransaction: false,
         transactionTimeoutWarningListenerId: null,
         transactionTimeoutListenerId: null,
         showKeepAlive: false,
-        warningNoty: null,
         showTransactionActiveTooltip: false,
         enteredTransactionFromIdent: false,
         queryFunctions: {} as {
@@ -1907,6 +1904,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     created() {
+      this.queryMagic = queryMagicExtension()
       this.registerHandlers(this.rootBindings)
     },
     async mounted() {

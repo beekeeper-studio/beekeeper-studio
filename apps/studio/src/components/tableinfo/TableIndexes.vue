@@ -132,7 +132,6 @@ import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 interface State {
   mysqlTypes: string[]
-  tabulator: Tabulator
   newRows: RowComponent[]
   removedRows: RowComponent[],
   loading: boolean,
@@ -149,7 +148,6 @@ export default Vue.extend({
   data(): State {
     return {
       mysqlTypes: ['mysql', 'mariadb', 'tidb'],
-      tabulator: null,
       newRows: [],
       removedRows: [],
       loading: false,

@@ -158,7 +158,6 @@ export default Vue.extend({
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {
-      tabulator: null,
       actualTableHeight: "100%",
       forceRedraw: false,
       editedCells: [],

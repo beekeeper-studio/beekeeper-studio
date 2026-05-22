@@ -362,7 +362,6 @@ export default Vue.extend({
       tableFilters: [createTableFilter(this.table.columns?.[0]?.columnName)],
       headerFilter: true,
       columnsSet: false,
-      tabulator: null,
       loading: false,
       dataLoading: false,
       hasNextPage: false,
@@ -383,11 +382,8 @@ export default Vue.extend({
       paginationStates: [null], // used for pagination that is not based on offsets. Null is always the starter one because that means "just bring back em back from the beginning"
       queryError: null,
       saveError: null,
-      timeAgo: new TimeAgo('en-US'),
       lastUpdated: null,
       lastUpdatedText: null,
-      // @ts-expect-error Fix typings
-      interval: setInterval(this.setlastUpdatedText, 10000),
 
       forceRedraw: false,
       rawPage: 1,
@@ -430,7 +426,7 @@ export default Vue.extend({
       return this.dialectData?.queryDialectOverride ?? this.dialect;
     },
     columnsWithFilterAndOrder() {
-      if (!this.tabulator || !this.table) return []
+      if (!this.initialized || !this.tabulator || !this.table) return []
       const cols = this.tabulator.getColumns()
       const columnNames = this.table.columns.map((c) => c.columnName)
       const typeOf = (f) => this.table.columns.find((c) => c.columnName === f)?.dataType
@@ -744,6 +740,10 @@ export default Vue.extend({
       this.tabulator.destroy()
     }
     this.unregisterHandlers(this.rootBindings)
+  },
+  created() {
+    this.timeAgo = new TimeAgo('en-US')
+    this.interval = setInterval(this.setlastUpdatedText, 10000)
   },
   async mounted() {
     if (this.shouldInitialize) {

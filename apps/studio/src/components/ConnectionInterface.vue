@@ -304,7 +304,6 @@ export default Vue.extend({
       errorLink: null,
       testing: false,
       connecting: false,
-      split: null,
       url: null,
       importError: null,
       sidebarShown: true,

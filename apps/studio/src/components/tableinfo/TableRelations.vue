@@ -127,7 +127,6 @@ export default Vue.extend({
   },
   data() {
     return {
-      tabulator: null,
       newRows: [],
       removedRows: [],
       error: null,

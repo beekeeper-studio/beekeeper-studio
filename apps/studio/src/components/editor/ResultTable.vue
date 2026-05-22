@@ -106,7 +106,6 @@ import { stringToTypedArray } from '@/common/utils'
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
-        tabulator: null,
         actualTableHeight: '100%',
         selectedRowData: {},
         filterValue: '',

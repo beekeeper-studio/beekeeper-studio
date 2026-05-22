@@ -59,7 +59,6 @@ export default Vue.extend({
       sql: "",
       data: [],
       columns: [],
-      mainSplit: null,
       showInitialPlaceholder: true,
     };
   },

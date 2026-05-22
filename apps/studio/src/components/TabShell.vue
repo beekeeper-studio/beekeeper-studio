@@ -152,7 +152,6 @@ export default Vue.extend({
       errorMarker: null,
       saveError: null,
       info: null,
-      split: null,
       tableHeight: 0,
       savePrompt: false,
       lastWord: null,

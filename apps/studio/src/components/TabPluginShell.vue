@@ -123,7 +123,6 @@ export default Vue.extend({
       isRunningQuery: null,
       error: null,
       info: null,
-      split: null,
       tableHeight: 0,
       executeTime: 0,
       initialized: false,

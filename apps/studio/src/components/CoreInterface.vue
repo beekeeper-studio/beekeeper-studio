@@ -90,7 +90,6 @@
     data() {
       /* eslint-disable */
       return {
-        split: null,
         quickSearchShown: false,
         initializing: true,
         resizeObserver: null,

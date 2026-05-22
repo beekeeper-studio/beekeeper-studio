@@ -23,7 +23,6 @@ export default {
 
   data() {
     return {
-      textEditor: null,
       internalActionsKeymap: [],
       contextMenuExtensions: [] as ContextMenuExtension[],
     };

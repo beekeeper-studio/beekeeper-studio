@@ -209,7 +209,6 @@
         isExpanded: false,
         listItemsCollapsed: null,
         activeItem: 'tables',
-        split: null,
         sizes: [25,75],
         expandedTables: []
       }

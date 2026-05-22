@@ -16,7 +16,6 @@ export default {
   props: ['tables', 'schemas'],
   data() {
     return {
-      tabulator: null,
       loading: false,
       schemaFilter: null,
       tableFilter: null,

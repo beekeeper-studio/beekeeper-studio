@@ -109,7 +109,6 @@ export default Vue.extend({
   props: ['table', 'tabID', 'active', 'tabState', 'properties'],
   data() {
     return {
-      tabulator: null,
       forceRedraw: false,
       newRows: [],
       removedRows: [],

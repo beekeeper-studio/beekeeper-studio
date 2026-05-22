@@ -164,7 +164,6 @@ export default Vue.extend({
       restoring: false,
       error: null as unknown,
       showDiff: true,
-      split: null as ReturnType<typeof Split> | null,
     };
   },
   watch: {
