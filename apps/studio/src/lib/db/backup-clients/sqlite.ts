@@ -62,7 +62,7 @@ export class SqliteBackupClient extends BaseCommandClient {
   processLog(chunk: any): string[] {
     const str: string = chunk.toString();
 
-    return str.split('\n').map((s) => s.trim()).filter((s) => s != "" && !!s);
+    return str.split('\n').map((s) => s.trim()).filter((s) => s !== "" && !!s);
   }
   buildCommand(): Command {
     const command = new Command({

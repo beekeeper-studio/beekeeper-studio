@@ -499,7 +499,7 @@ export default Vue.extend({
     },
     completeDeleteAction() {
       const { schema, name: dbName, entityType } = this.dbDeleteElementParams
-      if (entityType !== 'table' && this.dbAction == 'truncate') {
+      if (entityType !== 'table' && this.dbAction === 'truncate') {
         this.$noty.warning("Sorry, you can only truncate tables.")
         return;
       }
@@ -531,7 +531,7 @@ export default Vue.extend({
     async duplicateTableSql() {
       const { tableName, schema, entityType } = this.dbDuplicateTableParams
 
-      if (entityType !== 'table' && this.dbAction == 'duplicate') {
+      if (entityType !== 'table' && this.dbAction === 'duplicate') {
         this.$noty.warning("Sorry, you can only duplicate tables.")
         return;
       }
@@ -570,7 +570,7 @@ export default Vue.extend({
     async duplicateTable() {
       const { tableName, schema, entityType } = this.dbDuplicateTableParams
 
-      if (entityType !== 'table' && this.dbAction == 'duplicate') {
+      if (entityType !== 'table' && this.dbAction === 'duplicate') {
         this.$noty.warning("Sorry, you can only duplicate tables.")
         return;
       }
@@ -650,7 +650,7 @@ export default Vue.extend({
       await this.$store.dispatch("tabs/reopenLastClosedTab")
     },
     nextTab() {
-      if (this.activeTab == this.lastTab) {
+      if (this.activeTab === this.lastTab) {
         this.setActiveTab(this.firstTab)
       } else {
         this.setActiveTab(this.tabItems[this.activeIdx + 1])
@@ -658,7 +658,7 @@ export default Vue.extend({
     },
 
     previousTab() {
-      if (this.activeTab == this.firstTab) {
+      if (this.activeTab === this.firstTab) {
         this.setActiveTab(this.lastTab)
       } else {
         this.setActiveTab(this.tabItems[this.activeIdx - 1])

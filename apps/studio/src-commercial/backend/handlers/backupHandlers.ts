@@ -76,7 +76,7 @@ export const BackupHandlers: IBackupHandlers = {
 
         state(sId).backupProc.on('close', async (code) => {
           // non-zero means something went wrong
-          if (code != 0) {
+          if (code !== 0) {
             state(sId).port.postMessage({
               type: 'backupNotif',
               input: {

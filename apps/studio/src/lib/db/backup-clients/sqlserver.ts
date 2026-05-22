@@ -111,7 +111,7 @@ export class SqlServerBackupClient extends BaseCommandClient {
             settingDesc: 'Server Encryption Certificate',
             required: true,
             show: (config: BackupConfig): boolean => {
-              return config.encryption && config.encryptorType == 'cert'
+              return config.encryption && config.encryptorType === 'cert'
             }
           },
           {
@@ -120,7 +120,7 @@ export class SqlServerBackupClient extends BaseCommandClient {
             settingDesc: 'Server Asymmetric Key',
             required: true,
             show: (config: BackupConfig): boolean => {
-              return config.encryption && config.encryptorType == 'key'
+              return config.encryption && config.encryptorType === 'key'
             }
           }
         ]
@@ -144,18 +144,18 @@ export class SqlServerBackupClient extends BaseCommandClient {
       env: {},
       mainCommand: `BACKUP DATABASE ${BaseCommandClient.databaseName}`,
       options: [
-        `TO DISK = '${this._config.outputPath && this._config.outputPath.trim() != '' ? this._config.outputPath + this.pathSep : ''}${this.filename}'`, // backup device
+        `TO DISK = '${this._config.outputPath && this._config.outputPath.trim() !== '' ? this._config.outputPath + this.pathSep : ''}${this.filename}'`, // backup device
       ]
     });
 
     if (this._config.encryption) {
-      const certCommand = this._config.encryptorType == 'key' ? 'SERVER ASYMMETRIC KEY' : 'SERVER CERTIFICATE';
+      const certCommand = this._config.encryptorType === 'key' ? 'SERVER ASYMMETRIC KEY' : 'SERVER CERTIFICATE';
       command.options.push(`WITH ENCRYPTION (ALGORITHM = ${this._config.encryptionAlgorithm}, ${certCommand} = ${this._config.encryptionCertificate}),`);
     } else {
       command.options.push('WITH')
     }
 
-    if (this._config.customArgs && this._config.customArgs.trim() != '') {
+    if (this._config.customArgs && this._config.customArgs.trim() !== '') {
       command.options.push(this._config.customArgs);
     }
 

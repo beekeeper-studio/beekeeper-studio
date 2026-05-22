@@ -19,7 +19,7 @@ export function autoquoteHandler(
   const keywords = CodeMirror.resolveMode(instance.getOption("mode")).keywords;
 
   // quote names when needed
-  if (origin === "complete" && keywords[text[0].toLowerCase()] != true) {
+  if (origin === "complete" && keywords[text[0].toLowerCase()] !== true) {
     // eslint-disable-next-line
     // @ts-ignore
     const alias = instance.activeAlias;

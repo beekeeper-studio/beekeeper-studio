@@ -235,7 +235,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   override async setElementName(elementName: string, newElementName: string, typeOfElement:DatabaseElement): Promise<void> {
     const db = this.conn.db(this.db);
 
-    if (typeOfElement == DatabaseElement.TABLE) {
+    if (typeOfElement === DatabaseElement.TABLE) {
       try {
         // Check if target name already exists
         const targetCollections = await db.listCollections({ name: newElementName }).toArray();

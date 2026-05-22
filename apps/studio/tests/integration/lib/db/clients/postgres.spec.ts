@@ -70,7 +70,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
           );
       `)
 
-      if (dockerTag == '16.4') {
+      if (dockerTag === '16.4') {
         await util.knex.raw(`
           CREATE TABLE partitionedtable (
             recordId SERIAL,
@@ -322,7 +322,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Should be able to list partitions for a table", async () => {
-      if (dockerTag == '16.4') {
+      if (dockerTag === '16.4') {
         const partitions = await util.connection.listTablePartitions('partitionedtable');
 
         expect(partitions.length).toBe(3);
@@ -333,8 +333,8 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     // regression test for Bug #1564 "BUG: Tables appear twice in UI"
     it("Should not have duplicate tables for tables with the same name in different schemas", async () => {
       const tables = await util.connection.listTables({ schema: null });
-      const schema1 = tables.filter((t) => t.schema == "schema1");
-      const schema2 = tables.filter((t) => t.schema == "schema2");
+      const schema1 = tables.filter((t) => t.schema === "schema1");
+      const schema2 = tables.filter((t) => t.schema === "schema2");
 
       expect(schema1.length).toBe(1);
       expect(schema2.length).toBe(1);
@@ -352,11 +352,11 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
     // regression tests for Bug #1583 "Only parent table shows in UI when using INHERITS"
     it("Inherited tables should NOT behave like partitioned tables", async () => {
-      if (dockerTag == '16.4') {
+      if (dockerTag === '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['parent', 'child'] });
         const partitions = await util.connection.listTablePartitions('parent');
-        const parent = tables.find((value) => value.name == 'parent');
-        const child = tables.find((value) => value.name == 'child');
+        const parent = tables.find((value) => value.name === 'parent');
+        const child = tables.find((value) => value.name === 'child');
 
         expect(partitions.length).toBe(0);
         expect(parent.parenttype).toBe(null);
@@ -365,11 +365,11 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
     })
 
     it("Partitions should have parenttype 'p'", async () => {
-      if (dockerTag == '16.4') {
+      if (dockerTag === '16.4') {
         const tables = await util.connection.listTables({ schema: 'public', tables: ['partition_1', 'another_partition', 'party'] });
-        const partition1 = tables.find((value) => value.name == 'partition_1');
-        const another = tables.find((value) => value.name == 'another_partition');
-        const party = tables.find((value) => value.name == 'party');
+        const partition1 = tables.find((value) => value.name === 'partition_1');
+        const another = tables.find((value) => value.name === 'another_partition');
+        const party = tables.find((value) => value.name === 'party');
 
         expect(partition1.parenttype).toBe('p');
         expect(another.parenttype).toBe('p');

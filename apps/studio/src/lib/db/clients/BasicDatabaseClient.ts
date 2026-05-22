@@ -754,9 +754,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
     let queryBuilder: Knex.QueryBuilder;
 
-    if (filter.type == 'is') {
+    if (filter.type === 'is') {
       queryBuilder = this.knex.whereNull(filter.field);
-    } else if (filter.type == 'is not') {
+    } else if (filter.type === 'is not') {
       queryBuilder = this.knex.whereNotNull(filter.field);
     } else {
       queryBuilder = this.knex.where(filter.field, filter.type, filter.value);

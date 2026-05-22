@@ -351,7 +351,7 @@ export default Vue.extend({
       return dialectFor(this.config.connectionType)
     },
     determineLabelColor() {
-      return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
+      return this.config.labelColor === "default" ? '' : `connection-label-color-${this.config.labelColor}`
     },
     rootBindings() {
       return [

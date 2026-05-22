@@ -53,7 +53,7 @@ module.exports = {
     "vue/valid-template-root": "error",
     // Likely-bug rules kept as warn: real signal, but too many existing hits
     // (or occasional intentional uses) to fail CI on.
-    "eqeqeq": ["warn", "smart"],
+    "eqeqeq": ["error", "smart"],
     "no-unused-expressions": ["warn", { "allowShortCircuit": true, "allowTernary": true, "allowTaggedTemplates": true }],
     "no-return-assign": "warn",
     "no-sequences": "warn",

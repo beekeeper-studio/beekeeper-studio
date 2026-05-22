@@ -155,7 +155,7 @@ export const LicenseModule: Module<State, RootState>  = {
 
       const work = (async () => {
         // This is to allow for dev switching
-        const isDevUpdate = window.platformInfo.isDevelopment && license.email == "fake_email";
+        const isDevUpdate = window.platformInfo.isDevelopment && license.email === "fake_email";
         try {
           const installationId = _context.state.installationId
 

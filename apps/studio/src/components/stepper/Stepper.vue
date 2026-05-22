@@ -248,7 +248,7 @@ export default Vue.extend({
     evalSteps(): void {
       for (let i = this.currentStepIndex + 1; i < this.iSteps.length; i++) {
         let step: Step = { ...this.iSteps[i] };
-        step.deactivated = this.iSteps[i].completePrevious != undefined &&
+        step.deactivated = this.iSteps[i].completePrevious !== undefined &&
           this.iSteps[i].completePrevious && !this.iSteps[i - 1].completed;
         Vue.set(this.iSteps, i, step);
       }

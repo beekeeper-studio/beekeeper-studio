@@ -259,7 +259,7 @@ export default {
     },
     importFormatter(cell) {
       const cellValue = cell.getValue()
-      if (cellValue == this.ignoreText) return buildNullValue(this.ignoreText)
+      if (cellValue === this.ignoreText) return buildNullValue(this.ignoreText)
       const column = this.findByColumnName(cellValue)
       const attributesToShow = this.getColumnAttributes(column).join(" ")
       const attributesSpan = `<span class='attributes'>${escapeHtml(attributesToShow)}</span>`
@@ -276,7 +276,7 @@ export default {
       dt.delete('null')
 
       // if there are more than one type in the column, or there are no types, just default
-      if (dt.size != 1) {
+      if (dt.size !== 1) {
         return this.importDataTypes.defaultType
       }
 

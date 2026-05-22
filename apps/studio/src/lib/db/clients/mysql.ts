@@ -454,7 +454,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     _schema?: string,
     connection?: Connection
   ): Promise<ExtendedTableColumn[]> {
-    const hasGeneratedSupport = this.connectionType == 'mariadb' ?
+    const hasGeneratedSupport = this.connectionType === 'mariadb' ?
      !isVersionLessThanOrEqual(this.versionInfo, { major: 10, minor: 2, patch: 4 }):
      !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
     const clause = table ? `AND table_name = ?` : "";

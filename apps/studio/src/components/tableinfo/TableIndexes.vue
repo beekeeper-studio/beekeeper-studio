@@ -230,7 +230,7 @@ export default Vue.extend({
     tableColumns() {
       const editable = (cell) => this.newRows.includes(cell.getRow()) && !this.loading
       // FIXME (@day): no per-db testing
-      const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect != 'mongodb'
+      const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect !== 'mongodb'
       const result = [
         (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, contextMenu: copyCellMenu, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
         {
@@ -288,7 +288,7 @@ export default Vue.extend({
       const tabulator = this.tabulator as Tabulator
       // mongo doesn't have custom names for sql, they're auto generated
       // FIXME (@day): no per-db testing
-      const name = this.dialect == 'mongodb' ? '' : `${this.table.name}_index_${this.tabulator.getData().length + 1}`
+      const name = this.dialect === 'mongodb' ? '' : `${this.table.name}_index_${this.tabulator.getData().length + 1}`
       const row = await tabulator.addRow({
         name,
         unique: true

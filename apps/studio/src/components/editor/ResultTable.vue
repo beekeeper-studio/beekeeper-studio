@@ -602,7 +602,7 @@ import { stringToTypedArray } from '@/common/utils'
         );
         const pkCells: CellComponent[] = cell.getRow().getCells().filter((c) => pkFields.has(c.getField()));
 
-        if (cell.getOldValue() == cell.getValue()) {
+        if (cell.getOldValue() == cell.getValue()) { // eslint-disable-line eqeqeq -- loose compare: tabulator stringifies numbers, treat 5 and "5" as unchanged
           return;
         }
 
@@ -647,7 +647,7 @@ import { stringToTypedArray } from '@/common/utils'
         if (typeof currentEdit?.oldValue === 'undefined' && cell.getValue() == null) {
           // don't do anything because of an issue found when trying to set to null, undefined == null so was getting rid of the need to make a change\
           return true;
-        } else if (currentEdit?.oldValue == cell.getValue()) {
+        } else if (currentEdit?.oldValue == cell.getValue()) { // eslint-disable-line eqeqeq -- loose compare: tabulator stringifies numbers
           this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit));
           return false; // no change made
         } else {
@@ -1014,7 +1014,7 @@ import { stringToTypedArray } from '@/common/utils'
         // this.tabulator.copyToClipboard("all")
 
         const allRows = this.tabulator.getData()
-        if (allRows.length == 0) {
+        if (allRows.length === 0) {
           return
         }
         const columnTitles = {}

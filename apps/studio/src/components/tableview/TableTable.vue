@@ -1346,7 +1346,7 @@ export default Vue.extend({
         const result = {}
         columnNames.forEach(({ columnName, dataType }) => {
           const d = rowData[columnName]
-          if (this.isPrimaryKey(columnName) && (!d && d != 0)) {
+          if (this.isPrimaryKey(columnName) && (!d && d != 0)) { // eslint-disable-line eqeqeq -- loose != preserves handling of "" / false PK values
             // do nothing
           } else {
             result[columnName] = d
@@ -1444,7 +1444,7 @@ export default Vue.extend({
 
       // some number fields were being converted to strings so were triggered the cellEdited event because tabulator probably `===` stuff
       // If the cell value does fall into this, we don't want anything edited.
-      if (cell.getOldValue() == cell.getValue()) {
+      if (cell.getOldValue() == cell.getValue()) { // eslint-disable-line eqeqeq -- loose compare: tabulator stringifies numbers, treat 5 and "5" as unchanged
         return
       }
 
@@ -1477,7 +1477,7 @@ export default Vue.extend({
 
       if (typeof currentEdit?.oldValue === 'undefined' && cell.getValue() === null) {
         // don't do anything because of an issue found when trying to set to null, undefined == null so was getting rid of the need to make a change\
-      } else if (currentEdit?.oldValue == cell.getValue()) {
+      } else if (currentEdit?.oldValue == cell.getValue()) { // eslint-disable-line eqeqeq -- loose compare: tabulator stringifies numbers
         this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, currentEdit))
         cell.getElement().classList.remove('edited')
         this.updateJsonViewer()

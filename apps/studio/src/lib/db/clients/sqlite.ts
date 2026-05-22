@@ -596,7 +596,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     try {
       return await child(connection);
     } finally {
-      if (connection != this._rawConnection) {
+      if (connection !== this._rawConnection) {
         connection.close();
       }
     }

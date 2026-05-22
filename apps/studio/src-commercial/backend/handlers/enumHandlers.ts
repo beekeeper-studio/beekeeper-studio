@@ -21,7 +21,7 @@ export const EnumHandlers: IEnumHandlers = {
       return;
     }
     state(sId).watcher = watch(filename, (event, _filename) => {
-      if (event == 'change') {
+      if (event === 'change') {
         state(sId).port.postMessage({ type: 'enumFileChanged' });
       }
     })

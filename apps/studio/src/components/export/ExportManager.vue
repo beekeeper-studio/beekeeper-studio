@@ -65,7 +65,7 @@ export default Vue.extend({
         await this.$util.send('export/start', { id: exp.id });
         const status = await this.$util.send('export/status', { id: exp.id });
 
-        if (status == ExportStatus.Error) {
+        if (status === ExportStatus.Error) {
           const error = await this.$util.send('export/error', { id: exp.id });
         // Error handling for export failure
         let errorMessage = "An unexpected error occurred during export.";
