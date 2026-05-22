@@ -32,22 +32,26 @@ module.exports = {
     "@typescript-eslint/ban-types": "warn",
     "@typescript-eslint/no-var-requires": "warn",
     "prefer-rest-params": "warn",
-    // Demoted to warn to surface preexisting issues without blocking CI.
-    // Each one is a real code smell but fixing them is out of scope here.
-    "no-async-promise-executor": "warn",
-    "no-case-declarations": "warn",
-    "no-constant-condition": "warn",
+    // Bug-catching rules: errors so the build fails when real bugs land.
+    "no-async-promise-executor": "error",
+    "no-case-declarations": "error",
+    // checkLoops off: intentional `while (true)` loops are allowed; constant
+    // conditions in `if`/ternaries are still caught.
+    "no-constant-condition": ["error", { "checkLoops": false }],
+    // allowEmptyCase: empty `case` grouping is intentional, not a fallthrough
+    // bug; a case with statements falling through is still caught.
+    "no-fallthrough": ["error", { "allowEmptyCase": true }],
+    "no-inner-declarations": "error",
+    "no-prototype-builtins": "error",
+    "no-unsafe-optional-chaining": "error",
+    "vue/no-parsing-error": "error",
+    "vue/valid-next-tick": "error",
+    "vue/valid-template-root": "error",
+    // Style/code-smell rules: kept as warn so they don't block CI.
     "no-empty": "warn",
-    "no-fallthrough": "warn",
-    "no-inner-declarations": "warn",
-    "no-prototype-builtins": "warn",
-    "no-unsafe-optional-chaining": "warn",
     "no-useless-catch": "warn",
     "no-useless-escape": "warn",
     "@typescript-eslint/no-namespace": "warn",
-    "vue/no-parsing-error": "warn",
-    "vue/valid-next-tick": "warn",
-    "vue/valid-template-root": "warn",
     // Block plugin RCE via file:// URLs (CVE — see safeOpenExternal.ts).
     // shell.openExternal must only be reached via safeOpenExternal so the
     // http(s)-only protocol allowlist is enforced.
@@ -92,6 +96,15 @@ module.exports = {
       ],
       "rules": {
         "no-restricted-syntax": "off"
+      }
+    },
+    {
+      // Renders nothing by design; the empty template root is intentional.
+      "files": [
+        "apps/studio/src/components/EmptyComponent.vue"
+      ],
+      "rules": {
+        "vue/valid-template-root": "off"
       }
     }
   ]
