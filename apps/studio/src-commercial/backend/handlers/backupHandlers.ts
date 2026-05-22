@@ -3,7 +3,7 @@ import { spawn } from "child_process";
 import { state } from "@/handlers/handlerState";
 import platformInfo from "@/common/platform_info";
 
-const errorMessages = {
+export const errorMessages = {
   nonZero: 'Command returned non-zero exit code'
 }
 

@@ -32,7 +32,7 @@ import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_t
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
 type Queries = ConnectionTypeQueries & DialectQueries
-type ExpectedQueries = Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb' | 'sqlanywhere' | 'surrealdb' | 'redis' | 'trino'>
+type ExpectedQueries = Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb' | 'sqlanywhere' | 'surrealdb' | 'redis' | 'trino' | 'dynamodb' | 'bedrock'>
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -2197,7 +2197,10 @@ export class DBTestUtil {
     `;
     let placeholders = [params[0]];
     let values = [`'Rose Tyler'`];
-    let convertedParams = convertParamsForReplacement(placeholders, values);
+    let rawValues: string[] | Record<string, string> = placeholders.includes('?')
+      ? values
+      : Object.fromEntries(placeholders.map((p, i) => [p, values[i]]));
+    let convertedParams = convertParamsForReplacement(placeholders, rawValues);
     query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
     let result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([
@@ -2214,7 +2217,10 @@ export class DBTestUtil {
 
     placeholders = params;
     values = ['5', `'Neo'`, '0'];
-    convertedParams = convertParamsForReplacement(placeholders, values);
+    rawValues = placeholders.includes('?')
+      ? values
+      : Object.fromEntries(placeholders.map((p, i) => [p, values[i]]));
+    convertedParams = convertParamsForReplacement(placeholders, rawValues);
     query = deparameterizeQuery(query, this.dialect, convertedParams, paramTypes);
     result = await this.knex.raw(query);
     expect(this.convertResult(result)).toMatchObject([

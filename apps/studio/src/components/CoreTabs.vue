@@ -85,7 +85,7 @@
           :tab="tab"
           :tab-id="tab.id"
           @update-tab="updateTab"
-         />
+        />
         <Shell
           v-if="tab.tabType === 'shell'"
           :active="activeTab?.id === tab.id"
@@ -109,7 +109,7 @@
           :tab="tab"
           @close="close"
         >
-          <template v-slot:default="slotProps">
+          <template #default="slotProps">
             <TableTable
               :tab="tab"
               :active="activeTab?.id === tab.id"
@@ -122,7 +122,7 @@
           :tab="tab"
           @close="close"
         >
-          <template v-slot:default="slotProps">
+          <template #default="slotProps">
             <TableProperties
               :active="activeTab?.id === tab.id"
               :tab="tab"
@@ -271,7 +271,7 @@
     </portal>
 
     <confirmation-modal :id="confirmModalId">
-      <template v-slot:title>
+      <template #title>
         Really close
         <span
           class="tab-like"
@@ -281,7 +281,7 @@
         </span>
         ?
       </template>
-      <template v-slot:message>
+      <template #message>
         You will lose unsaved changes
       </template>
     </confirmation-modal>
@@ -784,6 +784,10 @@ export default Vue.extend({
         this.$noty.error("You can only import data into a table")
         return;
       }
+      if (this.$store.getters.isCommunity) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Import From File')
+        return;
+      }
       const t = { tabType: 'import-table' }
       t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false
@@ -1156,7 +1160,7 @@ export default Vue.extend({
       }
       this.addTab(tab)
     },
-    favoriteClick(item) {
+    async favoriteClick(item, options?: { openHistory?: boolean }) {
       const tab = {} as TransportOpenTab
       tab.tabType = 'query'
       tab.title = item.title
@@ -1164,10 +1168,16 @@ export default Vue.extend({
       tab.unsavedChanges = false
 
       const existing = this.tabItems.find((t) => matches(t, tab))
-      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+      if (existing) {
+        await this.$store.dispatch('tabs/setActive', existing)
+      } else {
+        await this.addTab(tab)
+      }
 
-      this.addTab(tab)
-
+      if (options.openHistory) {
+        await this.$nextTick()
+        this.trigger(AppEvent.openQueryEditHistory, item.id)
+      }
     },
     async createQueryFromItem(item) {
       const tab = {} as TransportOpenTab;

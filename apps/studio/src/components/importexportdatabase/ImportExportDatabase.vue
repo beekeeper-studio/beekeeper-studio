@@ -1,9 +1,9 @@
 <template>
   <div
     v-if="isCommunity"
-    class="tab-upsell-wrapper"
+    class="upgrade-panel-tab-wrapper"
   >
-    <upsell-content />
+    <upgrade-panel feature-name="Multi-Table Export" standalone />
   </div>
   <div v-else class="import-export__wrapper tabcontent">
     <div class="import-export__container">
@@ -91,7 +91,7 @@
   import ExportObjects from './ExportObjects.vue'
   import ExportOptions from './ExportOptions.vue'
   import ExportConfirmation from './ExportConfirmation.vue'
-  import UpsellContent from '@/components/upsell/UpsellContent.vue'
+  import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
 
   import { ExportStatus } from '../../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
@@ -100,7 +100,7 @@
     components: {
       Stepper,
       StatusBar,
-      UpsellContent
+      UpgradePanel
     },
     props: ['schema', 'tab', 'active'],
     data() {
