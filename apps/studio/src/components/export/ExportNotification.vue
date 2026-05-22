@@ -35,7 +35,6 @@ export default {
       // this is a hack to get the countExported to update
       const countExported = this.countExported;
       const percentComplete = this.percentComplete;
-      console.log("PERCENT COMPLETE: ", percentComplete)
       return percentComplete && percentComplete >= 0
         ? `(${percentComplete}%) Exporting table '${this.exportName}'`
         : `(${countExported ?? "0"} rows) Exporting query '${this.exportName}'`// Fallback to "0" if countExported is undefined
