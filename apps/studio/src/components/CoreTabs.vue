@@ -85,7 +85,7 @@
           :tab="tab"
           :tab-id="tab.id"
           @update-tab="updateTab"
-         />
+        />
         <Shell
           v-if="tab.tabType === 'shell'"
           :active="activeTab?.id === tab.id"
@@ -109,7 +109,7 @@
           :tab="tab"
           @close="close"
         >
-          <template v-slot:default="slotProps">
+          <template #default="slotProps">
             <TableTable
               :tab="tab"
               :active="activeTab?.id === tab.id"
@@ -122,7 +122,7 @@
           :tab="tab"
           @close="close"
         >
-          <template v-slot:default="slotProps">
+          <template #default="slotProps">
             <TableProperties
               :active="activeTab?.id === tab.id"
               :tab="tab"
@@ -271,7 +271,7 @@
     </portal>
 
     <confirmation-modal :id="confirmModalId">
-      <template v-slot:title>
+      <template #title>
         Really close
         <span
           class="tab-like"
@@ -281,7 +281,7 @@
         </span>
         ?
       </template>
-      <template v-slot:message>
+      <template #message>
         You will lose unsaved changes
       </template>
     </confirmation-modal>

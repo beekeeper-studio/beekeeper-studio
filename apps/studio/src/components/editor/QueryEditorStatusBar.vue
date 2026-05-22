@@ -3,7 +3,7 @@
     :active="active"
     :class="{ 'empty': !results || results.length === 0, 'query-meta': true }"
   >
-    <slot name="left-actions"></slot>
+    <slot name="left-actions" />
     <template v-if="results?.length > 0">
       <div
         id="query-editor-statusbar"

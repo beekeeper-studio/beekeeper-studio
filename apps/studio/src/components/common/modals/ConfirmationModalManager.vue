@@ -6,16 +6,16 @@
         :id="modal.id"
         :key="modal.id"
       >
-        <template v-slot:title v-if="modal.title">
+        <template #title v-if="modal.title">
           {{ modal.title }}
         </template>
-        <template v-slot:message v-if="modal.message">
+        <template #message v-if="modal.message">
           {{ modal.message }}
         </template>
-        <template v-slot:confirm-label v-if="modal.confirmLabel">
+        <template #confirm-label v-if="modal.confirmLabel">
           {{ modal.confirmLabel }}
         </template>
-        <template v-slot:cancel-label v-if="modal.cancelLabel">
+        <template #cancel-label v-if="modal.cancelLabel">
           {{ modal.cancelLabel }}
         </template>
       </confirmation-modal>

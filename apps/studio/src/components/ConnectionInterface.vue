@@ -86,7 +86,8 @@
                   v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
-                  @error="connectionError = $event" />
+                  @error="connectionError = $event"
+                />
                 <big-query-form
                   v-else-if="config.connectionType === 'bigquery'"
                   :config="config"

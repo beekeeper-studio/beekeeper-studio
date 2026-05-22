@@ -162,7 +162,6 @@
               <x-label>Rollback</x-label>
             </x-button>
           </x-buttons>
-
         </div>
 
         <div class="editor-help expand" />
@@ -269,15 +268,15 @@
       <result-table
         ref="table"
         v-else-if="showResultTable"
-        :editData="resultEditData"
-        :editingData="editingResult"
+        :edit-data="resultEditData"
+        :editing-data="editingResult"
         :focus="focusingElement === 'table'"
         :active="active"
         :table-height="tableHeight"
         :result="result"
         :query="query"
         :tab="tab"
-        :isManualCommit="isManualCommit"
+        :is-manual-commit="isManualCommit"
         :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
@@ -318,8 +317,8 @@
         :results="results"
         :running="running"
         :editing="editingResult"
-        :changesCount="$refs.table?.pendingChangesCount"
-        :changesString="$refs.table?.pendingChangesString"
+        :changes-count="$refs.table?.pendingChangesCount"
+        :changes-string="$refs.table?.pendingChangesString"
         :result-editable="resultEditable"
         @editResults="editResults"
         @stopEditing="stopEditing"
@@ -429,8 +428,12 @@
               <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
                 <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
                 <select v-model="query.queryFolderId" :disabled="!isUltimate && !isCloud">
-                  <option :value="null">No folder</option>
-                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+                  <option :value="null">
+                    No folder
+                  </option>
+                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">
+                    {{ f.name }}
+                  </option>
                 </select>
               </div>
             </div>

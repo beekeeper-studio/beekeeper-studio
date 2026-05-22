@@ -50,7 +50,7 @@
           @actionCompleted="refresh"
           @refresh="refresh"
         >
-          <template v-slot:footer>
+          <template #footer>
             <div class="statusbar-info col flex expand">
               <x-button
                 @click.prevent="openData"
@@ -98,7 +98,7 @@
             </div>
           </template>
 
-          <template v-slot:actions>
+          <template #actions>
             <x-button
               class="actions-btn btn btn-flat"
               title="Actions"

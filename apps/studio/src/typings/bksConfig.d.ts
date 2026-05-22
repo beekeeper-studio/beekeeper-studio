@@ -474,5 +474,5 @@ declare interface IBksConfig {
             maxColumnWidth: number;
         };
     };
-};
+}
 

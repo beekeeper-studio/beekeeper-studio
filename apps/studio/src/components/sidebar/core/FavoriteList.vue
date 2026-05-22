@@ -201,7 +201,9 @@
       >
         <form @submit.prevent="submitFolderModal">
           <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}</div>
+            <div class="dialog-c-title">
+              {{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}
+            </div>
             <div class="form-group">
               <label>Folder Name</label>
               <input
@@ -216,7 +218,9 @@
             <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
               <label>Parent Folder</label>
               <select v-model="folderModalParentId" @change="folderModalError = null">
-                <option v-for="f in rootFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+                <option v-for="f in rootFolders" :key="f.id" :value="f.id">
+                  {{ f.name }}
+                </option>
               </select>
             </div>
             <error-alert v-if="folderModalError" :error="folderModalError" />

@@ -54,7 +54,7 @@
                 </span>
               </div>
               <div class="row flex-middle">
-                <span class="expand"/>
+                <span class="expand" />
                 <div class="btn-group">
                   <button class="btn" @click.prevent.stop="loadExtension">
                     <i class="material-icons">add</i> Add Extension

@@ -12,7 +12,9 @@
       <div class="form-group col">
         <label for="protocol">Protocol</label>
         <select name="protocol" id="protocolSelect" v-model="config.surrealDbOptions.protocol">
-          <option :value="undefined" disabled hidden>Select a protocol...</option>
+          <option :value="undefined" disabled hidden>
+            Select a protocol...
+          </option>
           <option :key="`${p}`" v-for="p in protocols" :value="p">
             {{ p }}
           </option>
@@ -41,7 +43,9 @@
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <select name="authMethod" id="surrealAuthMethod" v-model="config.surrealDbOptions.authType">
-        <option :value="undefined" disabled hidden>Select...</option>
+        <option :value="undefined" disabled hidden>
+          Select...
+        </option>
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">
           {{ t.name }}
         </option>
