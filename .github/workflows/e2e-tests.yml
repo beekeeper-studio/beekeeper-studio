@@ -2,6 +2,7 @@ name: E2E Tests
 
 permissions:
   contents: read
+  actions: write
 
 on:
   push:
@@ -9,30 +10,22 @@ on:
       - master
     paths-ignore:
       - docs/**
-  pull_request:
-    paths-ignore:
-      - apps/sqltools/**
-      - docs/**
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  e2e-tests:
-    name: E2E Tests
+  prep:
     runs-on: ubuntu-24.04
-
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v2
-
-      - name: Install Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
+      - uses: actions/checkout@v4
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
 
       - name: Cache node_modules
         id: cache-nm
@@ -56,8 +49,56 @@ jobs:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+
       - name: Install Playwright browsers
-        run: yarn playwright install --with-deps chromium
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: yarn playwright install chromium
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-24.04
+    needs: [prep]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          fail-on-cache-miss: true
+
+      - name: Restore Playwright browsers cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          fail-on-cache-miss: true
+
+      - name: Install Playwright system dependencies
+        run: yarn playwright install-deps chromium
 
       - name: Build UI Kit
         run: yarn lib:build

@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Python 3.11 (non-Mac)
         uses: actions/setup-python@v5
@@ -69,8 +69,23 @@ jobs:
       - name: Install xvfb-maybe
         run: npm install -g xvfb-maybe
 
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/Library/Caches/ms-playwright
+            ~/AppData/Local/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+
       - name: Install Playwright browsers
-        run: yarn playwright install --with-deps chromium
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: yarn playwright install chromium
+
+      - name: Install Playwright system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: yarn playwright install-deps chromium
 
       - name: Build UI Kit
         run: yarn lib:build

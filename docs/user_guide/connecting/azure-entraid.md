@@ -75,8 +75,15 @@ If you're part of a large enterprise, they likely have documentation on how to d
     - **Database**
     - **Username**
     - Note: No password required!
-1. Click 'connect'. This takes a few moments as Beekeeper Studio asks for the temporary access key
+5. Click 'connect'. This takes a few moments as Beekeeper Studio asks for the temporary access key
 
+
+### Tips
+- If you are using EntraID group based authentication:
+    - Use the group name as the username in Beekeeper
+    - Authenticate in the Azure CLI using an account that is part of that group
+    - Ensure that the group has a matching **AADUSER** on the database server
+- If you created your **AADUSER** with an alias, ie `CREATE AADUSER '<reallylongupn>' as 'shortername'`, you may still need to use the `<reallylongupn>` as the username from within Beekeeper
 
 ## Service Principal Authentication
 
@@ -106,7 +113,8 @@ We recommend using Azure CLI whenever possible.
     - **Client ID**
     - **Client Secret**
 
-!!! warning Beekeeper Studio **will** store your client ID and Secret in this authentication workflow.
+!!! warning "Beekeeper does store this"
+    Beekeeper Studio **will** store your client ID and Secret in this authentication workflow.
 
 
 ## Troubleshooting

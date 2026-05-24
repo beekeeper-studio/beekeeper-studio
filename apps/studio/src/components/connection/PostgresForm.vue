@@ -26,8 +26,9 @@
     <div class="form-group" v-if="isCockroach">
       <label for="Cluster ID">
         CockroachDB Cloud Cluster ID
-        <i class="material-icons"
-           v-tooltip="`Go to CockroachDB online -> Connect -> parameters only -> copy from 'options'`"
+        <i
+          class="material-icons"
+          v-tooltip="`Go to CockroachDB online -> Connect -> parameters only -> copy from 'options'`"
         >help_outlined</i>
       </label>
       <input type="text" class="form-control" v-model="config.options.cluster">
@@ -105,7 +106,7 @@ export default {
         this.showPasswordForm = true
       } else {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+          this.$root.$emit(AppEvent.upgradeModal, "Enterprise Authentication");
           this.authType = 'default'
         } else {
           this.showPasswordForm = false

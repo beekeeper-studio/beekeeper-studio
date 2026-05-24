@@ -30,7 +30,7 @@
       title="[DEV MODE OVERRIDES]"
       :hide-toggle="true"
     >
-      <template v-slot:header>
+      <template #header>
         <x-switch
           @click.prevent="devMode = !devMode"
           :toggled="devMode"

@@ -17,8 +17,8 @@ type Message = {
 
 export class UtilityConnection {
   private replyHandlers: Map<string, { resolve: any, reject: any }> = new Map();
-  private listeners: Array<{type: string, id: string, listener: Listener}> = new Array();
-  private messageQueue: Array<Message> = new Array();
+  private listeners: Array<{type: string, id: string, listener: Listener}> = [];
+  private messageQueue: Array<Message> = [];
   private port: MessagePort;
   private _sId: string;
   private portsRequested: boolean = false;

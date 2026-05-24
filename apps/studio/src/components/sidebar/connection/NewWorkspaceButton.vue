@@ -41,7 +41,7 @@ export default Vue.extend({
     },
     onClick() {
       if (this.$store.getters.isCommunity) {
-        this.$root.$emit(AppEvent.upgradeModal)
+        this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
       }
     },
   }

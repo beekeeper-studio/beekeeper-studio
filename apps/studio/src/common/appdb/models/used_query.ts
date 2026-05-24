@@ -27,7 +27,7 @@ export class UsedQuery extends ApplicationEntity {
   status = 'pending'
 
   @Column({ type:'bigint', nullable: true})
-  numberOfRecords?: BigInt
+  numberOfRecords?: bigint
 
   @Column({ type: 'integer', nullable: false, default: -1 })
   workspaceId = -1

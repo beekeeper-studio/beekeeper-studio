@@ -5,7 +5,9 @@
       :class="['vue-dialog', 'beekeeper-modal', 'plugin-manager-modal', { 'plugin-page-open': selectedPlugin }]"
     >
       <div class="dialog-content">
-        <div class="dialog-c-title">Plugins</div>
+        <div class="dialog-c-title">
+          Plugins
+        </div>
         <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
           <i class="material-icons">clear</i>
         </a>
