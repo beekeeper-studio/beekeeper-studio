@@ -27,7 +27,7 @@ export function snakeCaseObjectKeys(data) {
 export function parseIndexColumn(str: string): IndexColumn {
   str = str.trim()
 
-  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
+  const order = str.endsWith(' DESC') ? 'DESC' : 'ASC'
   const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
 
   let name: string = nameAndPrefix
@@ -251,13 +251,16 @@ export function streamToBuffer(stream: Stream): Promise<Buffer> {
 /** Make `object.toString` look better :D */
 export function friendlyJsonObject<T extends object>(obj: T): T {
   Object.defineProperties(obj, {
-    [Symbol.toPrimitive]() {
-      try {
-        return stringifyWithBigInt(obj);
-      } catch (ex) {
-        console.warn('Error serializing object:', obj, ex);
-        return "[object Object]"
-      }
+    [Symbol.toPrimitive]: {
+      value() {
+        try {
+          return stringifyWithBigInt(obj);
+        } catch (ex) {
+          console.warn('Error serializing object:', obj, ex);
+          return "[object Object]"
+        }
+      },
+      enumerable: false,
     },
   });
 
@@ -355,6 +358,7 @@ export function isDateDataType (dataType) {
 }
 
 export function isNumericDataType (dataType) {
+  if (isDateDataType(dataType)) return false
   const base = normalizeDataType(dataType)
   const numericStarts = [
     'smallint',
