@@ -27,7 +27,8 @@
                 content:
                   'You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path.',
                 html: true,
-              }">help_outlined</i>
+              }"
+            >help_outlined</i>
           </label>
 
           <div class="alert alert-danger" v-show="!cliFound">
@@ -39,7 +40,7 @@
             </div>
           </div>
 
-          <file-picker v-model="cliPath"/>
+          <file-picker v-model="cliPath" />
         </div>
       </div>
 
@@ -81,7 +82,7 @@
           class="form-control"
           placeholder="Enter AWS profile name (e.g., default, dev, prod)"
           v-model="config.iamAuthOptions.awsProfile"
-        />
+        >
       </div>
 
       <div v-show="isKeyAuth">

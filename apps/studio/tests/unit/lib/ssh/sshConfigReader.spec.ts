@@ -25,6 +25,7 @@ Host production
       port: 22022,
       user: "admin",
       identityFile: "/keys/prod_key",
+      identityFiles: ["/keys/prod_key"],
     });
   });
 
@@ -65,5 +66,44 @@ Host myserver
 
     const result = readSshConfig("myserver", configPath);
     expect(result.identityFile).toBe("/etc/ssh/custom_key");
+  });
+
+  it("returns multiple IdentityFile entries in order", () => {
+    const configPath = writeConfig(`
+Host myserver
+  IdentityFile /keys/a
+  IdentityFile /keys/b`);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result.identityFiles).toEqual(["/keys/a", "/keys/b"]);
+    expect(result.identityFile).toBe("/keys/a");
+  });
+
+  it("parses IdentitiesOnly yes", () => {
+    const configPath = writeConfig(`
+Host myserver
+  IdentityFile /keys/a
+  IdentitiesOnly yes`);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result.identitiesOnly).toBe(true);
+  });
+
+  it("parses IdentitiesOnly no", () => {
+    const configPath = writeConfig(`
+Host myserver
+  IdentitiesOnly no`);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result.identitiesOnly).toBe(false);
+  });
+
+  it("leaves identitiesOnly undefined when the directive is absent", () => {
+    const configPath = writeConfig(`
+Host myserver
+  HostName real.example.com`);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result.identitiesOnly).toBeUndefined();
   });
 });

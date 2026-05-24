@@ -24,7 +24,7 @@ export type IniArray = {
 };
 
 export interface ConfigEntryDetailWarning {
-  type: "unrecognized-key" | "system-user-conflict" | "unknown-allow-plugin";
+  type: "unrecognized-key" | "system-user-conflict" | "unknown-allow-plugin" | "deprecated-key";
   sourceName: "system" | "user";
   section: string;
   path: string;
@@ -144,6 +144,25 @@ const uiModifierMap: ModifierMap = {
   PAGEDOWN: "PageDown",
 };
 
+const contextMenuModifierMap: ModifierMap = {
+  CTRL: "Control",
+  CMD: "Control",
+  CTRLORCMD: "Control",
+  CMDORCTRL: "Control",
+  COMMAND: "Control",
+  CONTROLORCOMMAND: "Control",
+  COMMANDORCONTROL: "Control",
+  SHIFT: "Shift",
+  ALT: "Alt",
+  OPTION: "Alt",
+  ALTGR: "AltGraph",
+  SUPER: "Super",
+  META: "Meta",
+  PageUp: "PageUp",
+  PageDown: "PageDown",
+  ENTER: "Enter"
+}
+
 export function convertKeybinding(
   target: KeybindingTarget,
   keybinding: string,
@@ -155,7 +174,7 @@ export function convertKeybinding(
   platform: Platform
 ): string[];
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror" | "ui",
+  target: "electron" | "v-hotkey" | "codemirror" | "ui" | "tabulator" | "context-menu",
   keybinding: string,
   platform: Platform
 ): string[] | string {
@@ -177,8 +196,13 @@ export function convertKeybinding(
     case "tabulator":
       modifierMap = tabulatorModifierMap;
       joinChar = ' + ';
+      break;
     case "ui":
       modifierMap = uiModifierMap;
+      break;
+    case "context-menu":
+      modifierMap = contextMenuModifierMap;
+      joinChar = '+'
       break;
     default:
       log.error("Unrecognized target for keybinding conversion: ", target)
@@ -214,7 +238,7 @@ export function convertKeybinding(
       mod = mod.toLowerCase();
     }
 
-    if (target === "ui" && !modifierMap[key]) {
+    if ((target === "ui" || target === "context-menu") && !modifierMap[key]) {
       mod = _.upperFirst(mod.toLowerCase());
     }
 

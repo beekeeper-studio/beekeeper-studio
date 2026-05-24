@@ -122,7 +122,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listTables(filter: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -599,7 +599,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listDatabases(filter: DatabaseFilterOptions) {
-    const databaseFilter = buildDatabaseFilter(filter, 'name');
+    const databaseFilter = buildDatabaseFilter(filter, 'name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT name
       FROM sys.databases
@@ -702,6 +702,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema = 'dbo') {
+    // duplicateTableSql produces a `SELECT ... INTO` statement. The query
+    // identifier classifies that as a plain SELECT, so the read-only guard in
+    // driverExecuteSingle never trips even though it creates a table. Enforce
+    // read-only mode explicitly here.
+    if (await this.checkAllowReadOnly() && this.readOnlyMode) {
+      throw new Error(errorMessages.readOnly)
+    }
+
     const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema)
 
     await this.driverExecuteSingle(sql)
@@ -777,7 +785,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -802,7 +810,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         r.specific_name as id,
@@ -864,7 +872,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listSchemas(filter: FilterOptions) {
-    const schemaFilter = buildSchemaFilter(filter);
+    const schemaFilter = buildSchemaFilter(filter, 'schema_name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT schema_name
       FROM INFORMATION_SCHEMA.SCHEMATA

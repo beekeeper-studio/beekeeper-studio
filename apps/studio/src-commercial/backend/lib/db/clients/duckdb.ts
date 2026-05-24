@@ -526,7 +526,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
-    const filterQuery = buildSchemaFilter(filter);
+    const filterQuery = buildSchemaFilter(filter, 'schema_name', (s) => this.wrapIdentifier(s));
     const { rows } = await this.driverExecuteSingle(`
       SELECT DISTINCT schema_name
       FROM information_schema.schemata
@@ -697,13 +697,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
       try {
         const statement = await conn.prepare(query.text);
-        let result: DuckDBMaterializedResult;
-
         if (params) {
           const { values, types } = this.buildStatementBindArgs(params)
           statement.bind(values, types);
         }
-        result = await statement.run();
+        const result: DuckDBMaterializedResult = await statement.run();
 
         const columnNames = result.columnNames();
         const columnTypes = result.columnTypes();

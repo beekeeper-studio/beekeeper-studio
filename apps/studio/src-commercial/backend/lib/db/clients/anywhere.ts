@@ -123,7 +123,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         t.table_name,
@@ -145,7 +145,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         t.table_name,
@@ -167,7 +167,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'u.user_name');
+    const schemaFilter = buildSchemaFilter(filter, 'u.user_name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         p.proc_id               AS id,
@@ -722,7 +722,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   }
 
   async listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         t.table_name,
@@ -911,7 +911,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
     // Add column definitions
     const columnDefs = columns.map(c => {
-      let dataType = c.domain_name.toLowerCase();
+      const dataType = c.domain_name.toLowerCase();
 
       // Start with column name
       let def = `  ${c.column_name} `;
@@ -1219,7 +1219,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const runQuery = async (connection: SqlAnywhereConn) => {
       const queries = this.identifyCommands(q);
       const results: SQLAnywhereResult[] = [];
-      for (let query of queries) {
+      for (const query of queries) {
         log.info('EXECUTING QUERY: ', query.text);
         const result = await connection.query(query.text, autoCommit);
         log.info('RECEIVED RESULT: ', result);

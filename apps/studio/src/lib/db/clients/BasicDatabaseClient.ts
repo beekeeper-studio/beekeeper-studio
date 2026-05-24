@@ -33,11 +33,6 @@ export interface QueryLogOptions {
     error?: string
 }
 
-// TODO (@day): not sure if I really want this
-export interface QueryResultEditData {
-
-}
-
 interface TableMetadata {
   name: string,
   alias?: string,
@@ -275,12 +270,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         return editData;
       }
 
-      if (!table.isEditable) {
-        // In the future we could actually say what PK we are missing?
-        editData.readOnlyReason = FieldReadOnlyReason.MissingPK;
-        return editData;
-      }
-
       editData = {
         id: field.id,
         editable: false,
@@ -289,11 +278,18 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         linkedSchema: table.schema,
         isPK: false,
         generated: tableColumn.generated,
+        nullable: tableColumn.nullable,
+        array: tableColumn.array,
         dataType: tableColumn.dataType,
+        bksField: tableColumn.bksField,
       };
 
-      if (table?.isEditable) {
-        editData.isPK = table.pks.some((pk) => pk.columnName === fieldColumn.name);
+      editData.isPK = table.pks.some((pk) => pk.columnName === fieldColumn.name);
+
+      if (!table.isEditable) {
+        // In the future we could actually say what PK we are missing?
+        editData.readOnlyReason = FieldReadOnlyReason.MissingPK;
+        return editData;
       }
 
       editData.editable = !editData.isPK && !tableColumn.generated;
@@ -356,6 +352,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
   async alterTable(change: AlterTableSpec): Promise<void> {
     const sql = await this.alterTableSql(change)
+    if (!sql) {
+      // No SQL generated (e.g., no changes or schemaless database)
+      return
+    }
     await this.executeQuery(sql)
   }
 
@@ -809,7 +809,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       const pks = await this.getPrimaryKeys(table.name, table.schema);
       const columns = await this.listTableColumns(table.name, table.schema);
       let isEditable = false;
-      if (!!pks?.length) {
+      if (pks?.length) {
         const hasTableWildcard = wildcards.some((w) => this.matchesTable(w, table));
         if (hasTopLevelWildcard || hasTableWildcard) {
           isEditable = true;
