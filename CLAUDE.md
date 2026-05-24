@@ -149,6 +149,24 @@ Test files are organized in `apps/studio/tests/`:
 3. **Run tests**: `yarn test:unit` before committing
 4. **Build**: `yarn bks:build` for production build
 
+## UI Copy Style
+
+User-facing strings (button labels, tooltips, alerts, helper text, form hints) should be written as **neutral statements**, not first-person plural narration.
+
+- Don't use "we", "we'll", "we found", "we couldn't", "we didn't". Don't address the app as if it's a person reporting back.
+- Prefer terse statements about state or behaviour: `Resolved /path/to/key`, `No ssh-agent found`, `Falls back to User from ~/.ssh/config`.
+- Don't anthropomorphise: `The agent will be queried` is fine, `we'll ask the agent` is not.
+- This applies to copy, not to code comments — internal comments may use "we" if it improves clarity.
+
+Examples:
+
+| Avoid                                                   | Prefer                                            |
+| ------------------------------------------------------- | ------------------------------------------------- |
+| "We found your ssh-agent socket: /tmp/agent.123"        | "ssh-agent socket: /tmp/agent.123"                |
+| "We couldn't find an ssh config at /home/u/.ssh/config" | "No ssh config at /home/u/.ssh/config"            |
+| "If blank, we use User from ~/.ssh/config"              | "If blank, falls back to User from ~/.ssh/config" |
+| "We'll resolve HostName from your config"               | "Resolves HostName from the matching entry"       |
+
 ## Path Aliases (Vite/TypeScript)
 
 ```typescript

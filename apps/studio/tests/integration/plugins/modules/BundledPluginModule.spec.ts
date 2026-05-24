@@ -10,8 +10,6 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import fs from "fs";
 import path from "path";
 import { BundledPluginModule } from "@commercial/backend/plugin-system/modules/BundledPluginModule";
-import aiShellManifest from "@beekeeperstudio/bks-ai-shell/manifest.json";
-import erDiagramManifest from "@beekeeperstudio/bks-er-diagram/manifest.json";
 
 describe("BundledPluginModule", () => {
   const server = createPluginServer();
@@ -67,9 +65,10 @@ describe("BundledPluginModule", () => {
     // Check if the plugins are installed
     const manager = createPluginManager();
     await manager.initialize();
-    expect(manager.getPlugins()).toHaveLength(2);
-    expect(manager.getPlugins()[0].manifest.id).toBe("bks-ai-shell");
-    expect(manager.getPlugins()[1].manifest.id).toBe("bks-er-diagram");
+    const plugins = await manager.getPlugins();
+    expect(plugins).toHaveLength(2);
+    expect(plugins[0].manifest.id).toBe("bks-ai-shell");
+    expect(plugins[1].manifest.id).toBe("bks-er-diagram");
   });
 
   it("ensures bundled plugins are installed", async () => {
@@ -79,18 +78,19 @@ describe("BundledPluginModule", () => {
     await manager.initialize();
 
     // Verify plugins were installed
-    expect(manager.getPlugins()).toHaveLength(2);
-    expect(manager.getPlugins()[0].manifest.id).toBe("bks-ai-shell");
-    expect(manager.getPlugins()[1].manifest.id).toBe("bks-er-diagram");
+    const plugins = await manager.getPlugins();
+    expect(plugins).toHaveLength(2);
+    expect(plugins[0].manifest.id).toBe("bks-ai-shell");
+    expect(plugins[1].manifest.id).toBe("bks-er-diagram");
 
     // Bundled plugins should NOT be copied again after uninstall
     await manager.uninstallPlugin("bks-ai-shell");
     await manager.uninstallPlugin("bks-er-diagram");
-    expect(manager.getPlugins()).toHaveLength(0);
+    await expect(manager.getPlugins()).resolves.toHaveLength(0);
 
     const manager2 = createPluginManager();
     manager2.registerModule(BundledPluginModule);
     await manager2.initialize();
-    expect(manager2.getPlugins()).toHaveLength(0);
+    await expect(manager2.getPlugins()).resolves.toHaveLength(0);
   });
 });

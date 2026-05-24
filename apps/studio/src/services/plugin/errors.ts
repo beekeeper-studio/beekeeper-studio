@@ -32,3 +32,10 @@ export const PluginTimeoutError = class extends Error {
     this.name = "PluginTimeoutError";
   }
 };
+
+export const PluginSystemDisabledError = class extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = "PluginSystemDisabledError";
+  }
+};

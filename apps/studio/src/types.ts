@@ -32,7 +32,7 @@ export type ExternalMenuItem<TabContext = {}> = {
 
 export type Platform = "windows" | "mac" | "linux";
 
-export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror" | "ui" | "tabulator" | "xel";
+export type KeybindingTarget = "electron" | "v-hotkey" | "codemirror" | "ui" | "tabulator" | "context-menu";
 
 export type FileHelpers = {
   save: (options: SaveFileOptions) => Promise<void>;

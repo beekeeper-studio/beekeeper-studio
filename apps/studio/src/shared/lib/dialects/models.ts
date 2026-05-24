@@ -3,8 +3,8 @@ import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
 import { ExtendedTableColumn } from '@/lib/db/models'
 
-const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'redis'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino'] as const
+const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -37,6 +37,10 @@ export function dialectFor(s: string): Dialect | null {
       return 'sqlite'
     case 'mssql':
       return 'sqlserver'
+    case 'scylladb':
+      return 'cassandra'
+    case 'bedrock':
+      return 'sqlite'
     default:
       return Dialects.find((d) => d === s) || null
   }
@@ -60,7 +64,9 @@ export const DialectTitles: {[K in Dialect]: string} = {
   sqlanywhere: 'SqlAnywhere',
   trino: 'Trino',
   surrealdb: 'SurrealDB',
-  redis: 'Redis'
+  bedrock: 'Bedrock',
+  redis: 'Redis',
+  dynamodb: 'Amazon DynamoDB'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -90,6 +96,24 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'trino') return 'trino'
   if (d === 'surrealdb') return 'sql'
   return 'mysql' // we want this as the default
+}
+
+// formatOptionsFor — returns sql-formatter config. For dialects sql-formatter
+// knows, returns `{ language }`; for custom dialects (PartiQL) returns
+// `{ dialect: <DialectOptions> }`. Consume via `safeSqlFormat`, which dispatches
+// to either `format` or `formatDialect`.
+import type { DialectOptions } from 'sql-formatter'
+import { partiqlDialect } from './partiqlFormatter'
+
+export type FormatterOptions =
+  | { language: FormatterDialect }
+  | { dialect: DialectOptions }
+
+export function formatOptionsFor(d: Dialect): FormatterOptions {
+  if (d === 'dynamodb') {
+    return { dialect: partiqlDialect }
+  }
+  return { language: FormatterDialect(d) }
 }
 
 
@@ -131,6 +155,7 @@ export interface DialectData {
   sqlLabel: "SQL" | "code";
   disabledFeatures?: {
     manualCommit?: boolean
+    resultEditing?: boolean
     rawFilters?: boolean
     builderFilters?: boolean
     shell?: boolean
@@ -176,6 +201,7 @@ export interface DialectData {
     truncateElement?: boolean
     exportTable?: boolean
     createTable?: boolean
+    createDatabase?: boolean
     dropTable?: boolean
     dropSchema?: boolean
     collations?: boolean
@@ -204,6 +230,7 @@ export interface DialectData {
     infoIndexes?: string
     infoRelations?: string
     infoTriggers?: string
+    infoCreateTable?: string
     tableTable?: string
     query?: string
   },

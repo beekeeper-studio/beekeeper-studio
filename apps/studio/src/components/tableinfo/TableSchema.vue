@@ -183,6 +183,7 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState(['database', 'connection', 'usedConfig']),
     hotkeys() {
+      if (!this.active) return {}
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshColumns,
         'general.addRow': this.addRow,
@@ -450,6 +451,7 @@ export default Vue.extend({
       if (this.usedConfig.readOnlyMode) return;
       if (this.disabledFeatures?.alter?.addColumn) {
         this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+        return;
       }
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`

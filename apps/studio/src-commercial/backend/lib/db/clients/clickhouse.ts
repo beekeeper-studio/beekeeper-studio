@@ -120,7 +120,7 @@ const clickhouseContext = {
 const knex = knexlib({ client: ClickhouseKnexClient });
 
 const RE_NULLABLE = /^Nullable\((.*)\)$/;
-const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/i;
+const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/is;
 
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
@@ -502,7 +502,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   private async updateValues(updates: TableUpdate[]) {
     log.info("Applying updates", updates);
-    let results: TableUpdateResult[] = [];
+    const results: TableUpdateResult[] = [];
 
     const updateQueries = buildUpdateQueries(this.knex, updates);
     for (const query of updateQueries) {
@@ -687,7 +687,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
-    let queryId = uuidv4();
+    const queryId = uuidv4();
     const cancelable = createCancelablePromise(errors.CANCELED_BY_USER);
     return {
       execute: async (): Promise<NgQueryResult[]> => {
@@ -745,6 +745,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
           fields: [],
           affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
+          text: result.statement.text,
           rows: [],
           rowCount: 0,
         });
@@ -756,6 +757,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
           fields: [{ id: "c0", name: "Result" }],
           affectedRows: 0, // TODO (azmi): implement affectedRows
           command: result.statement.type,
+          text: result.statement.text,
           rows: [{ c0: data }],
           rowCount: 1,
         });
@@ -776,6 +778,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         fields,
         affectedRows: 0, // TODO we can get this somewhere i feel like??
         command: result.statement.type,
+        text: result.statement.text,
         rows,
         rowCount: rows.length,
       });
@@ -817,7 +820,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         columns = data.meta;
       } else {
         const result = await this.client.exec({
-          query,
+          query: statement.text,
           query_params: options.params,
           query_id: options.queryId,
 
@@ -1068,7 +1071,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
   static buildFilterString(filters: TableFilter[], columns = []) {
     let fullFilterString = "";
     let filterString = "";
-    let filterParams = {};
+    const filterParams = {};
     let paramCounter = 0;
 
     if (filters && _.isArray(filters) && filters.length > 0) {

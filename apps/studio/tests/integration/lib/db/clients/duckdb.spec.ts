@@ -204,6 +204,45 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await util.paramTest(['?']);
       })
     })
+
+    // Regression test: wrapIdentifier was used for the data type in addColumn,
+    // producing "DOUBLE" (quoted identifier) instead of DOUBLE (type name).
+    // DuckDB rejects a quoted identifier as a type name, so the column was never added.
+    describe("addColumn type regression", () => {
+      beforeAll(async () => {
+        await util.knex.schema.raw(`CREATE TABLE IF NOT EXISTS add_col_type_test (id INTEGER PRIMARY KEY)`)
+      })
+
+      afterAll(async () => {
+        await util.knex.schema.dropTableIfExists('add_col_type_test')
+      })
+
+      it("should add a DOUBLE column without quoting the type name", async () => {
+        await util.connection.alterTable({
+          table: 'add_col_type_test',
+          schema: util.defaultSchema,
+          adds: [{ columnName: 'score', dataType: 'DOUBLE', nullable: true }]
+        })
+
+        const columns = await util.connection.listTableColumns('add_col_type_test', util.defaultSchema)
+        const col = columns.find((c) => c.columnName.toLowerCase() === 'score')
+        expect(col).toBeTruthy()
+        expect(col.dataType.toLowerCase()).toContain('double')
+      })
+
+      it("should add a VARCHAR column without quoting the type name", async () => {
+        await util.connection.alterTable({
+          table: 'add_col_type_test',
+          schema: util.defaultSchema,
+          adds: [{ columnName: 'label', dataType: 'VARCHAR', nullable: true }]
+        })
+
+        const columns = await util.connection.listTableColumns('add_col_type_test', util.defaultSchema)
+        const col = columns.find((c) => c.columnName.toLowerCase() === 'label')
+        expect(col).toBeTruthy()
+        expect(col.dataType.toLowerCase()).toContain('varchar')
+      })
+    })
   });
 }
 

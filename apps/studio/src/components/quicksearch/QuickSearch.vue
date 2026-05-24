@@ -56,7 +56,7 @@
           <i
             class="material-icons item-icon plugin"
             v-else-if="blob.tabType.startsWith('plugin-')"
-          >{{ $bksPlugin.pluginOf(blob.generatedPluginId)?.manifest.icon }}</i>
+          >{{ snapshotsById[blob.generatedPluginId]?.manifest.icon || 'code' }}</i>
           <i
             class="material-icons item-icon database"
             v-else
@@ -194,6 +194,7 @@ export default Vue.extend({
     ...mapGetters({ database: 'search/database', isUltimate: 'isUltimate' }),
     ...mapState(['tables']),
     ...mapState('tabs', { 'tabs': 'tabs' }),
+    ...mapGetters("plugins/snapshots", ['snapshotsById']),
     elements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))

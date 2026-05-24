@@ -61,7 +61,7 @@ function testWith(info) {
       const tsaContent = `
 BEEKEEPER =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = ${container.getHost()})(PORT = ${1521}))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = ${container.getHost()})(PORT = ${container.getMappedPort(1521)}))
     (CONNECT_DATA =
       (SERVICE_NAME = BEEKEEPER)
     )
@@ -279,6 +279,57 @@ BEEKEEPER =
     // })
 
 
+
+    describe("Connection error handling", () => {
+      it("should return a real error for bad credentials, not crash the utility process", async () => {
+        const { createServer } = require('@commercial/backend/lib/db/server')
+
+        const badConfig = {
+          client: 'oracle',
+          host: container.getHost(),
+          port: container.getMappedPort(1521),
+          user: 'wrong_user',
+          password: 'wrong_password',
+          serviceName: 'BEEKEEPER',
+          instantClientLocation: process.env['ORACLE_CLI_PATH'],
+          oracleConfigLocation: tsaDir,
+          options: { connectionMethod: 'manual' },
+        }
+
+        const server = createServer(badConfig)
+        const connection = server.createConnection('BEEKEEPER')
+
+        // Should throw a meaningful Oracle error, not crash.
+        await expect(connection.connect()).rejects.toThrow(/ORA-/)
+      })
+
+      it("should connect via TNS alias using configDir from initOracleClient", async () => {
+        // The initial beforeAll connection set configDir = tsaDir via
+        // initOracleClient. Verify a new connection can resolve the
+        // BEEKEEPER alias from that same directory's tnsnames.ora.
+        const { createServer } = require('@commercial/backend/lib/db/server')
+
+        const aliasConfig = {
+          client: 'oracle',
+          user: 'beekeeper',
+          password: 'password',
+          instantClientLocation: process.env['ORACLE_CLI_PATH'],
+          oracleConfigLocation: tsaDir,
+          options: {
+            connectionMethod: 'connectionString',
+            connectionString: 'BEEKEEPER',
+          },
+        }
+
+        const server = createServer(aliasConfig)
+        const connection = server.createConnection('BEEKEEPER')
+        await connection.connect()
+
+        const result = await connection.executeQuery('SELECT 1 FROM dual')
+        expect(result).toBeDefined()
+        await connection.disconnect()
+      })
+    })
 
     describe("Common DB Tests", () => {
       runCommonTests(getUtil, false)

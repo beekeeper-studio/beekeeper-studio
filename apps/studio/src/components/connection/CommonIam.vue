@@ -27,7 +27,8 @@
                 content:
                   'You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path.',
                 html: true,
-              }">help_outlined</i>
+              }"
+            >help_outlined</i>
           </label>
 
           <div class="alert alert-danger" v-show="!cliFound">
@@ -39,7 +40,7 @@
             </div>
           </div>
 
-          <file-picker v-model="cliPath"/>
+          <file-picker v-model="cliPath" />
         </div>
       </div>
 
@@ -81,29 +82,29 @@
           class="form-control"
           placeholder="Enter AWS profile name (e.g., default, dev, prod)"
           v-model="config.iamAuthOptions.awsProfile"
-        />
+        >
       </div>
 
       <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">Access Key ID</label>
-          <masked-input :value="config.iamAuthOptions.accessKeyId" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" />
+          <masked-input :value="config.iamAuthOptions.accessKeyId" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" />
         </div>
         <div class="form-group">
           <label for="Secret Access Key">Secret Access Key</label>
-          <masked-input :value="config.iamAuthOptions.secretAccessKey" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" />
+          <masked-input :value="config.iamAuthOptions.secretAccessKey" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" />
         </div>
       </div>
 
       <div class="form-group">
         <label for="AWS Region">AWS Region</label>
-        <masked-input :value="config.iamAuthOptions.awsRegion" :privacy-mode="privacyMode" @input="val => config.iamAuthOptions.awsRegion = val" />
+        <masked-input :value="config.iamAuthOptions.awsRegion" @input="val => config.iamAuthOptions.awsRegion = val" />
       </div>
 
       <div v-show="isRedshift">
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
-          <masked-input :value="config.redshiftOptions.clusterIdentifier" :privacy-mode="privacyMode" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" />
+          <masked-input :value="config.redshiftOptions.clusterIdentifier" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" />
         </div>
         <div class="form-group">
           <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
@@ -121,7 +122,6 @@
 <script>
 import MaskedInput from '@/components/MaskedInput.vue'
 import FilePicker from '@/components/common/form/FilePicker.vue'
-import { mapGetters } from 'vuex'
 
 export default {
   props: ['config', 'authType'],
@@ -138,7 +138,6 @@ export default {
     };
   },
   computed: {
-    ...mapGetters('settings', ['privacyMode']),
     isRedshift() {
       return this.config.connectionType === 'redshift';
     },

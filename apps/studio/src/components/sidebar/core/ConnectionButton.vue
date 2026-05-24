@@ -44,15 +44,15 @@
           </x-label>
         </x-menuitem>
         <x-menuitem @click.stop.prevent="showQuickSwitcher">
-            <x-label class="flex items-center justify-between">
-              <span class="flex items-center">
-                <i class="material-icons">swap_horiz</i>
-                Switch Connection
-              </span>
-              <span style="font-size: 22px;">
-                {{ isQuickSwitcherVisible ? '‹' : '›' }}
-              </span>
-            </x-label>
+          <x-label class="flex items-center justify-between">
+            <span class="flex items-center">
+              <i class="material-icons">swap_horiz</i>
+              Switch Connection
+            </span>
+            <span style="font-size: 22px;">
+              {{ isQuickSwitcherVisible ? '‹' : '›' }}
+            </span>
+          </x-label>
         </x-menuitem>
       </x-menu>
     </x-button>

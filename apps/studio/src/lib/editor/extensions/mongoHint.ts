@@ -13,7 +13,7 @@ const getCompletions = StateField.define<((cmd: string) => Promise<string[]>) | 
     return null;
   },
   update(value, tr) {
-    for (let e of tr.effects) {
+    for (const e of tr.effects) {
       if (e.is(setGetCompletions)) return e.value
     }
     return value

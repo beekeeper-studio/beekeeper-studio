@@ -3,7 +3,7 @@
     title="SSH Tunnel"
     :expanded="config.sshEnabled"
   >
-    <template v-slot:header>
+    <template #header>
       <x-switch
         @click.prevent="config.sshEnabled = !config.sshEnabled"
         :toggled="config.sshEnabled"
@@ -25,19 +25,24 @@
       >
         <div class="row gutter">
           <div class="col s9 form-group">
-            <label for="bastionHost">Bastion Host (Jump Host)</label>
+            <label for="bastionHost">
+              Bastion Host (Jump Host)
+              <i
+                class="material-icons help-icon"
+                v-tooltip="{ content: hostTooltip, html: true }"
+              >help_outlined</i>
+            </label>
             <masked-input
               :value="config.sshBastionHost"
-              :privacyMode="privacyMode"
               @input="val => config.sshBastionHost = val"
             />
           </div>
           <div class="col s3 form-group">
-            <label for="sshBastionHostPort">Port</label>
+            <label for="sshBastionHostPort">Port <span class="hint">(Optional)</span></label>
             <masked-input
               :value="config.sshBastionHostPort"
-              :privacyMode="privacyMode"
               @input="val => config.sshBastionHostPort = val"
+              placeholder="22"
             />
           </div>
         </div>
@@ -56,6 +61,17 @@
               {{ option.label }}
             </option>
           </select>
+          <div class="hint">
+            <auto-mode-status
+              v-if="config.sshBastionMode === 'agent'"
+              :ssh-auth-sock="$config.sshAuthSock"
+              :is-windows="$config.isWindows"
+              :ssh-config-exists="$config.sshConfigExists"
+              :ssh-config-path="sshConfigPath"
+              :default-ssh-identity-file="$config.defaultSshIdentityFile"
+              :home-directory="homeDirectory"
+            />
+          </div>
         </div>
 
         <div
@@ -63,13 +79,19 @@
           class="agent flex-col"
         >
           <div class="form-group">
-            <label>Bastion Username</label>
+            <label>
+              Bastion Username <span class="hint">(Optional)</span>
+              <i
+                class="material-icons help-icon"
+                v-tooltip="{ content: usernameTooltip, html: true }"
+              >help_outlined</i>
+            </label>
             <masked-input
               :value="config.sshBastionUsername"
-              :privacyMode="privacyMode"
               @input="val => config.sshBastionUsername = val"
             />
           </div>
+          <platform-warning location="ssh-agent" />
         </div>
 
         <div
@@ -79,10 +101,15 @@
           <div class="row">
             <div class="col">
               <div class="form-group">
-                <label>Bastion Username</label>
+                <label>
+                  Bastion Username <span class="hint">(Optional)</span>
+                  <i
+                    class="material-icons help-icon"
+                    v-tooltip="{ content: usernameTooltip, html: true }"
+                  >help_outlined</i>
+                </label>
                 <masked-input
                   :value="config.sshBastionUsername"
-                  :privacyMode="privacyMode"
                   @input="val => config.sshBastionUsername = val"
                 />
               </div>
@@ -114,10 +141,15 @@
         >
           <div class="col s6">
             <div class="form-group">
-              <label>Bastion Username</label>
+              <label>
+                Bastion Username <span class="hint">(Optional)</span>
+                <i
+                  class="material-icons help-icon"
+                  v-tooltip="{ content: usernameTooltip, html: true }"
+                >help_outlined</i>
+              </label>
               <masked-input
                 :value="config.sshBastionUsername"
-                :privacyMode="privacyMode"
                 @input="val => config.sshBastionUsername = val"
               />
             </div>
@@ -139,19 +171,24 @@
 
       <div class="row gutter">
         <div class="col s9 form-group">
-          <label for="sshHost">SSH Hostname</label>
+          <label for="sshHost">
+            SSH Hostname
+            <i
+              class="material-icons help-icon"
+              v-tooltip="{ content: hostTooltip, html: true }"
+            >help_outlined</i>
+          </label>
           <masked-input
             :value="config.sshHost"
-            :privacyMode="privacyMode"
             @input="val => config.sshHost = val"
           />
         </div>
         <div class="col s3 form-group">
-          <label for="sshPort">Port</label>
+          <label for="sshPort">Port <span class="hint">(Optional)</span></label>
           <masked-input
             :value="config.sshPort"
-            :privacyMode="privacyMode"
             @input="val => config.sshPort = val"
+            placeholder="22"
           />
         </div>
       </div>
@@ -169,6 +206,16 @@
             {{ option.label }}
           </option>
         </select>
+        <div class="hint" v-if="config.sshMode === 'agent'">
+          <auto-mode-status
+            :ssh-auth-sock="$config.sshAuthSock"
+            :is-windows="$config.isWindows"
+            :ssh-config-exists="$config.sshConfigExists"
+            :ssh-config-path="sshConfigPath"
+            :default-ssh-identity-file="$config.defaultSshIdentityFile"
+            :home-directory="homeDirectory"
+          />
+        </div>
       </div>
 
       <div
@@ -176,28 +223,19 @@
         class="agent flex-col"
       >
         <div class="form-group">
-          <label for="sshUsername">SSH Username</label>
+          <label for="sshUsername">
+            SSH Username <span class="hint">(Optional)</span>
+            <i
+              class="material-icons help-icon"
+              v-tooltip="{ content: usernameTooltip, html: true }"
+            >help_outlined</i>
+          </label>
           <masked-input
             :value="config.sshUsername"
-            :privacyMode="privacyMode"
             @input="val => config.sshUsername = val"
           />
         </div>
         <platform-warning location="ssh-agent" />
-        <div
-          v-if="$config.isWindows && !$config.sshAuthSock"
-          class="alert alert-info"
-        >
-          <i class="material-icons-outlined">info</i>
-          <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
-        </div>
-        <div
-          v-else-if="!$config.sshAuthSock && !$config.isWindows"
-          class="alert alert-warning"
-        >
-          <i class="material-icons">error_outline</i>
-          <div>You don't seem to have an SSH agent running.</div>
-        </div>
       </div>
 
       <div
@@ -207,10 +245,15 @@
         <div class="row">
           <div class="col">
             <div class="form-group">
-              <label for="sshUsername">SSH Username</label>
+              <label for="sshUsername">
+                SSH Username <span class="hint">(Optional)</span>
+                <i
+                  class="material-icons help-icon"
+                  v-tooltip="{ content: usernameTooltip, html: true }"
+                >help_outlined</i>
+              </label>
               <masked-input
                 :value="config.sshUsername"
-                :privacyMode="privacyMode"
                 @input="val => config.sshUsername = val"
               />
             </div>
@@ -242,10 +285,15 @@
       >
         <div class="col s6">
           <div class="form-group">
-            <label for="sshUsername">SSH Username</label>
+            <label for="sshUsername">
+              SSH Username <span class="hint">(Optional)</span>
+              <i
+                class="material-icons help-icon"
+                v-tooltip="{ content: usernameTooltip, html: true }"
+              >help_outlined</i>
+            </label>
             <masked-input
               :value="config.sshUsername"
-              :privacyMode="privacyMode"
               @input="val => config.sshUsername = val"
             />
           </div>
@@ -288,26 +336,27 @@ import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
 import PlatformWarning from './PlatformWarning.vue'
-import { mapGetters } from 'vuex'
+import AutoModeStatus from './AutoModeStatus.vue'
 
 export default {
   props: ['config'],
   components: {
     FilePicker, ExternalLink,
     ToggleFormArea, MaskedInput,
-    PlatformWarning
-  },
-  computed: {
-    ...mapGetters('settings', ['privacyMode']),
+    PlatformWarning, AutoModeStatus
   },
   data() {
     return {
       sshModeOptions: [
+        { label: "Automatic", mode: "agent" },
         { label: "Key File", mode: 'keyfile' },
         { label: "Username & Password", mode: "userpass" },
-        { label: "SSH Agent", mode: "agent" }
       ],
-      filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh')
+      filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh'),
+      sshConfigPath: window.main.join(platformInfo.homeDirectory, '.ssh', 'config'),
+      homeDirectory: platformInfo.homeDirectory,
+      hostTooltip: "Hostname or IP. A <code>Host</code> alias from <code>~/.ssh/config</code> resolves to <code>HostName</code>, <code>Port</code>, and <code>User</code> from the matching entry.",
+      usernameTooltip: "If blank, falls back to <code>User</code> from <code>~/.ssh/config</code>, then your OS username.",
     }
   },
   methods: {
@@ -319,7 +368,14 @@ export default {
 </script>
 
 <style scoped>
-.alert-row {
-  margin-inline: 0;
+.help-icon {
+  font-size: 14px;
+  padding-left: 0.25rem;
+  opacity: 0.6;
+  vertical-align: middle;
+}
+
+body.theme-dark .bastion-host {
+  background-color: rgb(from var(--theme-base) r g b / 3.5%);
 }
 </style>

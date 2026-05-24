@@ -137,6 +137,20 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'scylladb',
+    name: 'ScyllaDB',
+    defaultPort: 9042,
+    disabledFeatures: [
+      'server:ssl',
+      'server:socketPath',
+      'server:schema',
+      'server:domain',
+      'scriptCreateTable',
+      'cancelQuery',
+      'server:socketPathWithCustomPort',
+    ],
+  },
+  {
     key: 'oracle',
     name: 'Oracle',
     defaultPort: 1521,
@@ -274,5 +288,34 @@ export const CLIENTS: ClientConfig[] = [
       'scriptCreateTable',
       'cancelQuery'
     ],
-  }
+  },
+  {
+    key: 'bedrock',
+    name: 'Bedrock',
+    defaultPort: 3306,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+      'server:socketPathWithCustomPort',
+    ]
+  },
+  {
+    key: 'dynamodb',
+    name: 'DynamoDB',
+    defaultPort: 8000,
+    disabledFeatures: [
+      'server:host',
+      'server:port',
+      'server:user',
+      'server:password',
+      'server:domain',
+      'server:schema',
+      'server:ssl',
+      'server:ssh',
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'scriptCreateTable',
+      'cancelQuery',
+    ],
+  },
 ];

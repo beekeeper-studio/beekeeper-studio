@@ -4,7 +4,7 @@
       <i class="material-icons-outlined">info</i>
       <div v-if="showCli">
         You are signing in using the <b>'Azure CLI'</b> Beekeeper Studio will attempt to use the AZ tool in path specified.
-        <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+        <a href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid/#azure-cli-authentication">Learn more</a>
       </div>
       <div v-else>
         You are using azure authentication, depending on the authentication
@@ -12,8 +12,7 @@
         refer to our
         <a
           href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
-          >Beekeeper Docs</a
-        >
+        >Beekeeper Docs</a>
         for more information
       </div>
     </div>
@@ -21,17 +20,15 @@
       <div v-show="showCli" class="form-group">
         <label for="cliPath">
           Azure CLI Path (az)
-          </label
-        >
-        <file-picker v-model="config.azureAuthOptions.cliPath"/>
+        </label>
+        <file-picker v-model="config.azureAuthOptions.cliPath" />
         <div class="alert alert-danger" v-show="!cliFound">
           <i class="material-icons-outlined">warning</i>
           <div>
             NO CLI FOUND, Please refer to our
             <a
               href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
-              >Beekeeper Docs</a
-            >
+            >Beekeeper Docs</a>
             for more information
           </div>
         </div>
@@ -47,10 +44,9 @@
                 'This is the <code>\'Server name\'</code> field on your database in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
               html: true,
             }"
-            >help_outlined</i
-          >
+          >help_outlined</i>
         </label>
-        <masked-input :value="config.host" :privacy-mode="privacyMode" @input="val => config.host = val" />
+        <masked-input :value="config.host" @input="val => config.host = val" />
       </div>
       <div class="form-group">
         <label for="database">Database</label>
@@ -59,16 +55,14 @@
           type="text"
           class="form-control"
           v-model="config.defaultDatabase"
-        />
+        >
       </div>
       <div
         class="advanced-connection-settings signed-in-as"
         v-if="hasAccessTokenCache"
       >
         <div class="advanced-body">
-          <span class="info"
-            >Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span
-          >
+          <span class="info">Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span>
           <button
             class="btn btn-flat btn-icon"
             type="button"
@@ -100,32 +94,23 @@
                 'This can be found in the <code>\'Microsoft Entra ID\'</code> section of Azure, <br/> in the Overview labelled <code>\'Tenant ID\'</code>',
               html: true,
             }"
-            >help_outlined</i
-          >
+          >help_outlined</i>
         </label>
-        <masked-input :value="config.azureAuthOptions.tenantId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.tenantId = val" />
+        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientId">Client ID</label>
-        <masked-input :value="config.azureAuthOptions.clientId" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.clientId = val" />
+        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" />
       </div>
       <div class="row gutter">
         <div class="col s12 form-group" v-show="isServicePrincipal">
           <label for="clientSecret">Client Secret</label>
-          <input
-            :type="toggleClientSecretInputType"
-            v-model="config.azureAuthOptions.clientSecret"
-            class="password form-control"
-          >
-          <i
-            @click.prevent="toggleClientSecret"
-            class="material-icons password-icon"
-          >{{ toggleClientSecretIcon }}</i>
+          <password-input v-model="config.azureAuthOptions.clientSecret" />
         </div>
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
-        <masked-input :value="config.azureAuthOptions.msiEndpoint" :privacy-mode="privacyMode" @input="val => config.azureAuthOptions.msiEndpoint = val" />
+        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" />
       </div>
     </div>
   </div>
@@ -135,6 +120,7 @@ import { AzureAuthType } from "@/lib/db/types";
 import { AppEvent } from "@/common/AppEvent";
 import _ from "lodash";
 import MaskedInput from '@/components/MaskedInput.vue'
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
 import { mapState, mapGetters } from 'vuex'
 import FilePicker from '@/components/common/form/FilePicker.vue'
@@ -151,6 +137,7 @@ export default {
   },
   components: {
     MaskedInput,
+    PasswordInput,
     CommonSsl,
     FilePicker
   },
@@ -160,19 +147,12 @@ export default {
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
-      showClientSecret: false,
       cliError: false
     };
   },
   computed: {
     ...mapGetters('settings', ['privacyMode']),
     ...mapState(['connection']),
-    toggleClientSecretIcon() {
-      return this.showClientSecret ? "visibility_off" : "visibility"
-    },
-    toggleClientSecretInputType() {
-      return this.showClientSecret ? "text" : "password"
-    },
     showUser() {
       return this.authType === AzureAuthType.CLI;
     },
@@ -209,9 +189,6 @@ export default {
     toggleIAMAuthentication() {
       this.azureAuthEnabled = !this.azureAuthEnabled;
       this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled;
-    },
-    toggleClientSecret() {
-      return this.showClientSecret = !this.showClientSecret
     },
     async signOut() {
       try {

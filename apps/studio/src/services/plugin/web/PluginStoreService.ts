@@ -19,6 +19,7 @@ import {
   PluginView,
   TabType,
   CreatePluginTabOptions,
+  PluginSnapshot,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -48,6 +49,10 @@ export default class PluginStoreService {
         this.tablesChangedListeners.forEach((listener) => listener());
       }
     })
+  }
+
+  async initialize() {
+    await this.store.dispatch('plugins/initialize');
   }
 
   on(name: 'tablesChanged', listener: () => void) {
@@ -361,6 +366,18 @@ export default class PluginStoreService {
 
   removeKeybinding(placement: Keybinding["placement"], handler: Keybinding["handler"]) {
     this.store.commit("plugins/keybinding/remove", { placement, handler });
+  }
+  
+  async loadSnapshots() {
+    return await this.store.dispatch("plugins/snapshots/load");
+  }
+
+  getSnapshots(): PluginSnapshot[] {
+    return this.store.state.plugins!.snapshots.all;
+  }
+
+  getSnapshot(id: string): PluginSnapshot | undefined {
+    return this.store.getters["plugins/snapshots/snapshotsById"][id];
   }
 
   buildPluginTabInit(
