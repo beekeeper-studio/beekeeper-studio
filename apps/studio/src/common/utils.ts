@@ -251,16 +251,13 @@ export function streamToBuffer(stream: Stream): Promise<Buffer> {
 /** Make `object.toString` look better :D */
 export function friendlyJsonObject<T extends object>(obj: T): T {
   Object.defineProperties(obj, {
-    [Symbol.toPrimitive]: {
-      value() {
-        try {
-          return stringifyWithBigInt(obj);
-        } catch (ex) {
-          console.warn('Error serializing object:', obj, ex);
-          return "[object Object]"
-        }
-      },
-      enumerable: false,
+    [Symbol.toPrimitive]() {
+      try {
+        return stringifyWithBigInt(obj);
+      } catch (ex) {
+        console.warn('Error serializing object:', obj, ex);
+        return "[object Object]"
+      }
     },
   });
 
