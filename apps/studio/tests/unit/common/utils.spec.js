@@ -1,4 +1,4 @@
-import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType } from "@/common/utils"
+import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType, friendlyJsonObject } from "@/common/utils"
 import { PostgresData } from '@/shared/lib/dialects/postgresql'
 import { MysqlData } from '@/shared/lib/dialects/mysql'
 import { SqliteData } from '@/shared/lib/dialects/sqlite'
@@ -194,6 +194,17 @@ describe("isNumericDataType", () => {
     expect(isNumericDataType('date')).toBe(false)
     expect(isNumericDataType('text')).toBe(false)
   })
+
+  // BUG: 'interval' (a Postgres date/time type) starts with 'int' and is
+  // incorrectly classified as numeric. It's also picked up by
+  // isDateDataType, so the same value is simultaneously "numeric" and
+  // "date" — which affects how IN-clause copy quotes the values
+  // (tableMenu.ts skips quoting for numeric types).
+  it("should not classify interval as numeric", () => {
+    expect(isNumericDataType('interval')).toBe(false)
+    expect(isNumericDataType('INTERVAL')).toBe(false)
+    expect(isNumericDataType('interval year to month')).toBe(false)
+  })
 })
 
 describe("isDateDataType", () => {
@@ -213,5 +224,20 @@ describe("isDateDataType", () => {
     expect(isDateDataType('int2(16,0)')).toBe(false)
     expect(isDateDataType('varchar(255)')).toBe(false)
     expect(isDateDataType('text')).toBe(false)
+  })
+})
+
+describe("friendlyJsonObject", () => {
+  // BUG: the first Object.defineProperties call in friendlyJsonObject uses a
+  // method shorthand for the Symbol.toPrimitive key, so the *function itself*
+  // is passed as the property descriptor. ToPropertyDescriptor extracts no
+  // recognized fields from a function, yielding an empty descriptor — the
+  // property is installed with `value: undefined`. As a result,
+  // `obj[Symbol.toPrimitive]` is undefined rather than the intended callable,
+  // and JS engines silently fall through to the toString path instead of
+  // invoking the desired hint-aware primitive coercion.
+  it("should install Symbol.toPrimitive as a callable function", () => {
+    const obj = friendlyJsonObject({ a: 1, b: "hello" })
+    expect(typeof obj[Symbol.toPrimitive]).toBe('function')
   })
 })
