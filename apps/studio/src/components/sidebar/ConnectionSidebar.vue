@@ -164,99 +164,30 @@
             <nav
               v-else
               class="list-body"
+              @contextmenu.self.prevent="showLonelyContextMenu($event)"
             >
-              <sidebar-folder
-                v-for="{ folder, connections, subfolders } in foldersWithConnections"
-                :key="`${folder.id}-${connections.length}`"
-                :title="`${folder.name} (${connections.length})`"
-                placeholder="No Items"
-                :expanded-initially="getFolderExpanded(folder.id)"
-                @toggle="onFolderToggle(folder.id, $event)"
-                @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
-                @header-drop="onConnectionFolderHeaderDrop(folder)"
+              <BksTreeList
+                :list="tree"
+                @bks-folder-toggle="onTreeFolderToggle"
+                @bks-change="onTreeChange"
+                @bks-folder-drop="onTreeFolderDrop"
+                @bks-folder-contextmenu="showFolderContextMenu($event.event, $event.item.folder)"
               >
-                <Draggable
-                  :list="connections"
-                  group="connections"
-                  ghost-class="drag-ghost"
-                  @start="onConnectionDragStart($event, connections)"
-                  @end="draggingConnection = null"
-                  @change="onConnectionDrop($event, folder, connections)"
-                >
+                <template #item="{ item: node }">
                   <connection-list-item
-                    v-for="c in connections"
-                    :key="c.id"
-                    :config="c"
+                    :config="node.config"
                     :selected-config="selectedConfig"
                     :show-duplicate="true"
-                    :pinned="pinnedConnections.includes(c)"
+                    :pinned="pinnedConnections.includes(node.config)"
                     :privacy-mode="privacyMode"
-                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.config.id) }"
                     @edit="edit"
                     @remove="remove"
                     @duplicate="duplicate"
                     @doubleClick="connect"
                   />
-                </Draggable>
-                <sidebar-folder
-                  v-for="{ folder: subfolder, connections: subConnections } in subfolders"
-                  :key="`${subfolder.id}-${subConnections.length}`"
-                  :title="`${subfolder.name} (${subConnections.length})`"
-                  placeholder="No Items"
-                  :expanded-initially="getFolderExpanded(subfolder.id)"
-                  @toggle="onFolderToggle(subfolder.id, $event)"
-                  @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
-                  @header-drop="onConnectionFolderHeaderDrop(subfolder)"
-                >
-                  <Draggable
-                    :list="subConnections"
-                    group="connections"
-                    ghost-class="drag-ghost"
-                    @start="onConnectionDragStart($event, subConnections)"
-                    @end="draggingConnection = null"
-                    @change="onConnectionDrop($event, subfolder, subConnections)"
-                  >
-                    <connection-list-item
-                      v-for="c in subConnections"
-                      :key="c.id"
-                      :config="c"
-                      :selected-config="selectedConfig"
-                      :show-duplicate="true"
-                      :pinned="pinnedConnections.includes(c)"
-                      :privacy-mode="privacyMode"
-                      :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
-                      @edit="edit"
-                      @remove="remove"
-                      @duplicate="duplicate"
-                      @doubleClick="connect"
-                    />
-                  </Draggable>
-                </sidebar-folder>
-              </sidebar-folder>
-              <Draggable
-                :list="lonelyConnections"
-                :group="isCloud ? { name: 'connections', put: false } : 'connections'"
-                ghost-class="drag-ghost"
-                @start="onConnectionDragStart($event, lonelyConnections)"
-                @end="draggingConnection = null"
-                @change="onConnectionDrop($event, null, lonelyConnections)"
-                @contextmenu.self.prevent="showLonelyContextMenu($event)"
-              >
-                <connection-list-item
-                  v-for="c in lonelyConnections"
-                  :key="c.id"
-                  :config="c"
-                  :selected-config="selectedConfig"
-                  :show-duplicate="true"
-                  :pinned="pinnedConnections.includes(c)"
-                  :privacy-mode="privacyMode"
-                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
-                  @edit="edit"
-                  @remove="remove"
-                  @duplicate="duplicate"
-                  @doubleClick="connect"
-                />
-              </Draggable>
+                </template>
+              </BksTreeList>
             </nav>
           </div>
         </div>
@@ -345,18 +276,16 @@
 
 <script>
 import _ from 'lodash'
-import { SmartLocalStorage } from '@/common/LocalStorage'
 import WorkspaceSidebar from './WorkspaceSidebar.vue'
-import { mapState, mapGetters, mapActions } from 'vuex'
+import { mapState, mapGetters, mapMutations } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
-import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import Draggable from 'vuedraggable'
+import BksTreeList from '@beekeeperstudio/ui-kit/vue/tree-list'
 import Noty from 'noty'
 
 const log = rawLog.scope('connection-sidebar');
@@ -366,10 +295,9 @@ export default {
     ConnectionListItem,
     SidebarLoading,
     ErrorAlert,
-    SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
-    Draggable
+    BksTreeList
   },
   props: ['selectedConfig'],
   data: () => ({
@@ -388,8 +316,6 @@ export default {
     folderModalParentId: null,
     folderModalError: null,
     folderModalSubmitting: false,
-    folderExpandedState: {},
-    draggingConnection: null
   }),
   watch: {
     async sort(newSort) {
@@ -438,15 +364,9 @@ export default {
     rootFolders() {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
-    lonelyConnections() {
-      const folderIds = this.folders.map((c) => c.id)
-      return [...this.filteredConnections]
-        .filter((config) => !config.connectionFolderId || !folderIds.includes(config.connectionFolderId))
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-    },
-    foldersWithConnections() {
+    tree() {
       if (this.loading) return []
-      return this.$store.getters['data/connectionFolders/foldersWithConnections'](this.sortedConnections)
+      return this.$store.getters['data/connectionFolders/treeItems'](this.sortedConnections)
     },
     loading() {
       return this.connectionsLoading || this.foldersLoading
@@ -486,7 +406,6 @@ export default {
     },
   },
   async mounted() {
-    this.folderExpandedState = SmartLocalStorage.getJSON('connectionFolderExpanded-v1', {})
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
@@ -497,14 +416,9 @@ export default {
     this.$nextTick(() => { this.sortInitialized = true })
   },
   methods: {
-    getFolderExpanded(folderId) {
-      const stored = this.folderExpandedState[folderId]
-      return stored !== undefined ? stored : true
-    },
-    onFolderToggle(folderId, expanded) {
-      this.$set(this.folderExpandedState, folderId, expanded)
-      SmartLocalStorage.addItem('connectionFolderExpanded-v1', this.folderExpandedState)
-    },
+    ...mapMutations('data/connectionFolders', {
+      setFolderExpanded: 'setFolderExpanded',
+    }),
     clearFilter() {
       this.connFilter = null;
     },
@@ -666,47 +580,76 @@ export default {
         this.$noty.error(`Reorder error: ${ex.message}`)
       }
     },
-    onConnectionDragStart(event, list) {
-      this.draggingConnection = list[event.oldIndex]
-    },
-    cloudRelativePosition(list, newIndex) {
-      const prev = list[newIndex - 1]
-      const next = list[newIndex + 1]
-      if (prev) return { after: prev.id }
-      if (next) return { before: next.id }
+    relativeConnectionPosition(siblings, newIndex) {
+      let previous = null
+      let next = null
+      for (let i = newIndex - 1; i >= 0; i--) {
+        if (siblings[i].type === 'item') {
+          previous = siblings[i].config
+          break
+        }
+      }
+      for (let i = newIndex + 1; i < siblings.length; i++) {
+        if (siblings[i].type === 'item') {
+          next = siblings[i].config
+          break
+        }
+      }
+      if (previous) {
+        return { after: previous.id }
+      }
+      if (next) {
+        return { before: next.id }
+      }
       return { before: null }
     },
-    async onConnectionFolderHeaderDrop(folder) {
-      if (!this.draggingConnection) return
+    onTreeFolderToggle({ folder: node, expanded }) {
+      if (!node.folder) {
+        return
+      }
+      this.setFolderExpanded({ folderId: node.folder.id, expanded })
+    },
+    async onTreeFolderDrop({ folder, draggedNode }) {
+      if (!draggedNode || draggedNode.type !== 'item') {
+        return
+      }
+      if (draggedNode.config.connectionFolderId === folder.folder.id) {
+        return
+      }
       try {
-        // Use reorder action for both local and cloud workspaces
         await this.$store.dispatch('data/connections/reorder', {
-          item: this.draggingConnection,
-          connectionFolderId: folder.id,
-          position: { before: null }
+          item: draggedNode.config,
+          connectionFolderId: folder.folder.id,
+          position: { before: null },
         })
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
-    async onConnectionDrop(event, folder, currentList) {
+    async onTreeChange({ event, parent }) {
+      const targetFolderId = parent?.folder?.id ?? null
+      const siblings = parent?.children ?? this.tree
+
+      if (!(event.added || event.moved)) {
+        return
+      }
+
+      const node = event.added?.element || event.moved?.element
+      const newIndex = event.added?.newIndex ?? event.moved?.newIndex
+
+      if (node.type !== 'item') {
+        return
+      }
+
       try {
-        if (event.added) {
-          const { element: item, newIndex } = event.added
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/connections/reorder', {
-            item,
-            connectionFolderId: folder?.id ?? null,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        } else if (event.moved) {
-          const { element: item, newIndex } = event.moved
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/connections/reorder', {
-            item,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
+        const payload = {
+          item: node.config,
+          position: this.relativeConnectionPosition(siblings, newIndex),
         }
+        if (event.added) {
+          payload.connectionFolderId = targetFolderId
+        }
+        await this.$store.dispatch('data/connections/reorder', payload)
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
@@ -734,12 +677,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
-.folder-drop-zone {
-  min-height: 8px;
-}
 .drag-pending {
   opacity: 0.5;
 }

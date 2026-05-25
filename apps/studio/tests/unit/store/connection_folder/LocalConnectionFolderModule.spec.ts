@@ -72,13 +72,15 @@ describe('LocalConnectionFolderModule', () => {
     })
   })
 
-  describe('foldersWithConnections getter', () => {
-    it('returns an empty array when there are no folders', () => {
-      const result = (store.getters as any)['data/connectionFolders/foldersWithConnections']([])
-      expect(result).toEqual([])
+  describe('treeItems getter', () => {
+    const getTreeItems = (connections: any[]) =>
+      store.getters['data/connectionFolders/treeItems'](connections)
+
+    it('returns an empty array when there are no folders or connections', () => {
+      expect(getTreeItems([])).toEqual([])
     })
 
-    it('groups connections under their folder', () => {
+    it('groups connections under their folder and keeps lonely connections at the root', () => {
       const folder = { id: 1, name: 'Work', parentId: null }
       store.commit('data/connectionFolders/upsert', folder)
 
@@ -87,15 +89,23 @@ describe('LocalConnectionFolderModule', () => {
         { id: 11, name: 'DB2', connectionFolderId: null },
       ]
 
-      const result = (store.getters as any)['data/connectionFolders/foldersWithConnections'](connections)
+      const result = (store.getters as any)['data/connectionFolders/treeItems'](connections)
+      expect(result).toHaveLength(2)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].folder).toEqual(folder)
-      expect(result[0].connections).toHaveLength(1)
-      expect(result[0].connections[0].id).toBe(10)
+      const lonely = result.filter((n: any) => n.type === 'item')
+      expect(lonely).toHaveLength(1)
+      expect(lonely[0].config.id).toBe(11)
+
+      const folderNode = result.find((n: any) => n.type === 'folder')
+      expect(folderNode.folder).toEqual(folder)
+      expect(folderNode.count).toBe(1)
+      expect(folderNode.expanded).toBe(true)
+      expect(folderNode.children).toHaveLength(1)
+      expect(folderNode.children[0].type).toBe('item')
+      expect(folderNode.children[0].config.id).toBe(10)
     })
 
-    it('groups connections under subfolders', () => {
+    it('nests subfolders inside their parent folder', () => {
       const parent = { id: 1, name: 'Parent', parentId: null }
       const child = { id: 2, name: 'Child', parentId: 1 }
       store.commit('data/connectionFolders/upsert', parent)
@@ -106,31 +116,43 @@ describe('LocalConnectionFolderModule', () => {
         { id: 11, name: 'DB2', connectionFolderId: 2 },
       ]
 
-      const result = (store.getters as any)['data/connectionFolders/foldersWithConnections'](connections)
+      const result = (store.getters as any)['data/connectionFolders/treeItems'](connections)
 
       expect(result).toHaveLength(1)
-      expect(result[0].connections).toHaveLength(1)
-      expect(result[0].connections[0].id).toBe(10)
-      expect(result[0].subfolders).toHaveLength(1)
-      expect(result[0].subfolders[0].folder).toEqual(child)
-      expect(result[0].subfolders[0].connections).toHaveLength(1)
-      expect(result[0].subfolders[0].connections[0].id).toBe(11)
+      const parentNode = result[0]
+      expect(parentNode.children.filter((n: any) => n.type === 'item')).toHaveLength(1)
+      expect(parentNode.children.find((n: any) => n.type === 'item').config.id).toBe(10)
+
+      const subfolderNode = parentNode.children.find((n: any) => n.type === 'folder')
+      expect(subfolderNode.folder).toEqual(child)
+      expect(subfolderNode.children).toHaveLength(1)
+      expect(subfolderNode.children[0].config.id).toBe(11)
     })
 
-    it('uses the connections passed as argument, not store state', () => {
+    it('orders connections within a folder by position', () => {
       const folder = { id: 1, name: 'Work', parentId: null }
       store.commit('data/connectionFolders/upsert', folder)
 
-      const sortedConnections = [
-        { id: 20, name: 'ZZZ', connectionFolderId: 1 },
-        { id: 21, name: 'AAA', connectionFolderId: 1 },
+      const connections = [
+        { id: 20, name: 'ZZZ', connectionFolderId: 1, position: 2 },
+        { id: 21, name: 'AAA', connectionFolderId: 1, position: 1 },
       ]
 
-      const result = (store.getters as any)['data/connectionFolders/foldersWithConnections'](sortedConnections)
+      const result = (store.getters as any)['data/connectionFolders/treeItems'](connections)
+      const items = result[0].children.filter((n: any) => n.type === 'item')
+      expect(items).toHaveLength(2)
+      expect(items[0].config.id).toBe(21)
+      expect(items[1].config.id).toBe(20)
+    })
 
-      expect(result[0].connections).toHaveLength(2)
-      expect(result[0].connections[0].id).toBe(20)
-      expect(result[0].connections[1].id).toBe(21)
+    it('reflects collapsed state from setFolderExpanded', () => {
+      const folder = { id: 1, name: 'Work', parentId: null }
+      store.commit('data/connectionFolders/upsert', folder)
+      store.commit('data/connectionFolders/setFolderExpanded', { folderId: 1, expanded: false })
+
+      const result = getTreeItems([{ id: 10, name: 'DB1', connectionFolderId: 1 }])
+
+      expect(result[0].expanded).toBe(false)
     })
   })
 })
