@@ -15,7 +15,7 @@ import _ from 'lodash';
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
 import { IDbConnectionServer } from "../backendTypes";
-import { GenericBinaryTranscoder } from "../serialization/transcoders";
+import { GenericBinaryTranscoder, UnknownTranscoder } from "../serialization/transcoders";
 
 import rawLog from '@bksLogger'
 import bksConfig from '@/common/bksConfig';
@@ -52,7 +52,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   dialectData = SD;
   isTempDB = false;
   _rawConnection: Database.Database;
-  transcoders = [GenericBinaryTranscoder];
+  transcoders = [GenericBinaryTranscoder, UnknownTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, sqliteContext, server, database);

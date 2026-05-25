@@ -7,7 +7,7 @@ import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
-import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
+import { MongoDBObjectIdTranscoder, UnknownTranscoder } from "@/lib/db/serialization/transcoders";
 import { ElectronRuntime as MongoRuntime } from '@mongosh/browser-runtime-electron';
 import { NodeDriverServiceProvider } from '@mongosh/service-provider-node-driver';
 import { createCancelablePromise } from "@/common/utils";
@@ -42,7 +42,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   conn: MongoClient;
   runtime: MongoRuntime;
   queryLeaf: QueryLeaf;
-  transcoders = [MongoDBObjectIdTranscoder];
+  transcoders = [MongoDBObjectIdTranscoder, UnknownTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, mongoContext, server, database);

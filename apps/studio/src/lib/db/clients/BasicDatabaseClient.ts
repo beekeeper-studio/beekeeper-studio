@@ -12,7 +12,7 @@ import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
-import { Transcoder } from '../serialization/transcoders';
+import { Transcoder, UnknownTranscoder } from '../serialization/transcoders';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 
 const log = rawLog.scope('BasicDatabaseClient');
@@ -85,7 +85,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   connectionType: ConnectionType;
   connErrHandler: (msg: string) => void = null;
   reservedConnections: Map<number, Conn> = new Map<number, Conn>();
-  transcoders: Transcoder<any, any>[] = [];
+  transcoders: Transcoder<any, any>[] = [UnknownTranscoder];
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;

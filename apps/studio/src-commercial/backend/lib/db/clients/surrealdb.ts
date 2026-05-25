@@ -6,7 +6,7 @@ import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/d
 import rawLog from '@bksLogger';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
-import { SurrealDBRecordTranscoder, Transcoder } from "@/lib/db/serialization/transcoders";
+import { SurrealDBRecordTranscoder, Transcoder, UnknownTranscoder } from "@/lib/db/serialization/transcoders";
 import { SurrealDBCursor } from "./surrealdb/SurrealDBCursor";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SurrealDBChangeBuilder } from "@/shared/lib/sql/change_builder/SurrealDBChangeBuilder";
@@ -68,7 +68,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   version: SurrealDBResult;
   pool: SurrealPool;
   connectionString: string;
-  transcoders: Transcoder<any, any>[] = [SurrealDBRecordTranscoder];
+  transcoders: Transcoder<any, any>[] = [SurrealDBRecordTranscoder, UnknownTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, surrealContext, server, database);

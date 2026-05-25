@@ -10,7 +10,7 @@ import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { NgQueryResult, BksField } from "@/lib/db/models";
-import { LibSQLBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import { LibSQLBinaryTranscoder, UnknownTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("libsql");
 const knex = createSQLiteKnex(Client_Libsql);
@@ -20,7 +20,7 @@ export class LibSQLClient extends SqliteClient {
   /** Use this connection only when we need to sync to remote database */
   // @ts-expect-error not fully typed
   _rawConnection: Database.Database;
-  transcoders = [LibSQLBinaryTranscoder];
+  transcoders = [LibSQLBinaryTranscoder, UnknownTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(server, database);

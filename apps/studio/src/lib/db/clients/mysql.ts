@@ -64,7 +64,7 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import BksConfig from "@/common/bksConfig";
 import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
-import { GenericBinaryTranscoder } from "../serialization/transcoders";
+import { GenericBinaryTranscoder, UnknownTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
@@ -306,7 +306,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   conn: {
     pool: mysql.Pool;
   };
-  transcoders = [GenericBinaryTranscoder];
+  transcoders = [GenericBinaryTranscoder, UnknownTranscoder];
 
   interval: NodeJS.Timeout
 

@@ -56,7 +56,7 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import { GenericBinaryTranscoder, UnknownTranscoder } from "@/lib/db/serialization/transcoders";
 import BksConfig from "@/common/bksConfig";
 
 type FirebirdResult = {
@@ -235,7 +235,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
-  transcoders = [GenericBinaryTranscoder];
+  transcoders = [GenericBinaryTranscoder, UnknownTranscoder];
 
   constructor(
     server: IDbConnectionServer,

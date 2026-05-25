@@ -25,7 +25,7 @@ import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderB
 import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
-import { GenericBinaryTranscoder } from "../serialization/transcoders";
+import { GenericBinaryTranscoder, UnknownTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
@@ -91,7 +91,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   conn: HasPool;
   _defaultSchema: string;
   dataTypes: any;
-  transcoders = [GenericBinaryTranscoder];
+  transcoders = [GenericBinaryTranscoder, UnknownTranscoder];
   interval: NodeJS.Timeout;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {

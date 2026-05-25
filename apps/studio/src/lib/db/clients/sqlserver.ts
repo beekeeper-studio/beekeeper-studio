@@ -34,7 +34,7 @@ import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, T
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
-import { GenericBinaryTranscoder } from '../serialization/transcoders';
+import { GenericBinaryTranscoder, UnknownTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 const log = logRaw.scope('sql-server')
 
@@ -97,7 +97,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   logger: any
   pool: ConnectionPool;
   authService: AzureAuthService;
-  transcoders = [GenericBinaryTranscoder];
+  transcoders = [GenericBinaryTranscoder, UnknownTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, SQLServerContext, server, database)

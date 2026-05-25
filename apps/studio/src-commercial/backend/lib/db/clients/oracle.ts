@@ -49,7 +49,7 @@ import { OracleCursor } from './oracle/OracleCursor';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
-import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
+import { GenericBinaryTranscoder, UnknownTranscoder } from '@/lib/db/serialization/transcoders';
 import Client_Oracledb from '@shared/lib/knex-oracledb';
 import fs from 'fs';
 
@@ -75,7 +75,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   instantClientLocation: string
   version: string
   readOnlyMode: boolean
-  transcoders = [GenericBinaryTranscoder];
+  transcoders = [GenericBinaryTranscoder, UnknownTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knexLib({ client: Client_Oracledb }), NoOpContextProvider, server, database);

@@ -134,3 +134,49 @@ export const DuckDBBinaryTranscoder: Transcoder<DuckDBBlobValue, Uint8Array> = {
     return _.isTypedArray(value);
   },
 };
+
+// Built-in class instances that Electron's structured-clone IPC can carry safely.
+type AnyConstructor = new (...args: any[]) => unknown;
+const STRUCTURED_CLONE_SAFE_CLASSES: ReadonlyArray<AnyConstructor> = [
+  Date, Map, Set, RegExp, Error, ArrayBuffer, DataView,
+];
+
+function isIpcSafe(value: unknown): boolean {
+  if (value === null || typeof value !== "object") return true;
+  const proto = Object.getPrototypeOf(value);
+  if (proto === Object.prototype || proto === null) return true;
+  if (Array.isArray(value)) return true;
+  if (ArrayBuffer.isView(value)) return true;
+  return STRUCTURED_CLONE_SAFE_CLASSES.some((Klass) => value instanceof Klass);
+}
+
+function describeUnsafeValue(value: unknown): string {
+  return (value as any)?.constructor?.name ?? typeof value;
+}
+
+/**
+ * Safety net for the IPC boundary: throws when a class instance would otherwise
+ * leak across structured-clone without a dedicated transcoder. Appended last so
+ * dialect-specific transcoders get first claim on every field and value.
+ */
+export const UnknownTranscoder: Transcoder<unknown, unknown> = {
+  serialize(value) {
+    if (isIpcSafe(value)) return value;
+    throw new Error(
+      `UnknownTranscoder: refusing to serialize value of type ${describeUnsafeValue(value)}. ` +
+      `Add a dedicated Transcoder and tag the BksField accordingly.`
+    );
+  },
+  deserialize(value) {
+    throw new Error(
+      `UnknownTranscoder: refusing to deserialize value of type ${describeUnsafeValue(value)}. ` +
+      `Missing transcoder for this dialect.`
+    );
+  },
+  serializeCheckByField(field) {
+    return field.bksType === "UNKNOWN";
+  },
+  deserializeCheckByValue(value) {
+    return !isIpcSafe(value);
+  },
+};

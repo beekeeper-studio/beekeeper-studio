@@ -49,7 +49,7 @@ import { DuckDBChangeBuilder } from "@shared/lib/sql/change_builder/DuckDBChange
 import { DuckDBData } from "@shared/lib/dialects/duckdb";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { TableKey } from "@shared/lib/dialects/models";
-import { DuckDBBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import { DuckDBBinaryTranscoder, UnknownTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("duckdb");
 
@@ -203,7 +203,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   // We only use one connection to be able to read and write at the same time
   // https://duckdb.org/docs/connect/concurrency#handling-concurrency
   connectionInstance: Connection;
-  transcoders = [DuckDBBinaryTranscoder];
+  transcoders = [DuckDBBinaryTranscoder, UnknownTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, duckDBContext, server, database);
