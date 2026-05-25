@@ -4,7 +4,6 @@
     :class="['BksTreeList', { BksUiKit: isRoot }]"
     :list="list"
     :animation="0"
-    :sort="false"
     draggable='[data-item-type="item"]'
     ghost-class="drag-ghost"
     group="BksTreeList"
@@ -120,20 +119,11 @@ export default Vue.extend({
       this.$set(treeState.expanded, key, expanded);
       this.$emit("bks-folder-toggle", { folder: item, expanded });
     },
-    canDropTarget(event: any): boolean {
+    canDropTarget(): boolean {
       const treeState = this.treeState as TreeState;
-
-      if (treeState.hover.folderId !== null) {
-        return false;
-      }
-
-      const targetIsRoot = event.to.classList.contains("BksUiKit");
-
-      if (targetIsRoot) {
-        return event.dragged.dataset.itemType === "folder";
-      }
-
-      return true;
+      // Block list drops while hovering a folder header; the folder-drop
+      // handler takes over in that case.
+      return treeState.hover.folderId === null;
     },
     onFolderDragOver(item: TreeItem) {
       const treeState = this.treeState as TreeState;
