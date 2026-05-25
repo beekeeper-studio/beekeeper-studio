@@ -95,6 +95,7 @@
                 @remove="remove"
                 @select="select"
                 @open="open"
+                @open-history="openHistory"
                 @rename="rename"
                 @export="exportTo"
                 @duplicate="duplicate"
@@ -131,7 +132,9 @@
       >
         <form @submit.prevent="submitFolderModal">
           <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}</div>
+            <div class="dialog-c-title">
+              {{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}
+            </div>
             <div class="form-group">
               <label>Folder Name</label>
               <input
@@ -146,7 +149,9 @@
             <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
               <label>Parent Folder</label>
               <select v-model="folderModalParentId" @change="folderModalError = null">
-                <option v-for="f in rootFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+                <option v-for="f in rootFolders" :key="f.id" :value="f.id">
+                  {{ f.name }}
+                </option>
               </select>
             </div>
             <error-alert v-if="folderModalError" :error="folderModalError" />
@@ -265,7 +270,7 @@ export default {
     },
     importFromLocal() {
       if (!this.isCloud) {
-          this.$root.$emit(AppEvent.upgradeModal)
+          this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
           return
         }
         this.$root.$emit(AppEvent.promptQueryImport)
@@ -293,6 +298,9 @@ export default {
     open(item) {
       this.$root.$emit('favoriteClick', item)
     },
+    openHistory(item) {
+      this.trigger('favoriteClick', item, { openHistory: true })
+    },
     async remove(favorite) {
       if (await this.$confirm("Really delete?")) {
         await this.$store.dispatch('data/queries/remove', favorite)
@@ -309,7 +317,7 @@ export default {
     },
     createFolder() {
       if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your queries into folders')
+        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
       this.folderModalName = ''
@@ -339,7 +347,7 @@ export default {
     },
     createSubfolder(parentFolder) {
       if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your queries into folders')
+        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
       this.folderModalName = ''

@@ -19,6 +19,8 @@ theme:
   logo: assets/bks.svg
   favicon: assets/favicon-96x96.png
   name: material
+  # Nav `icon:` resolves via theme templates as `.icons/<name>.svg` (see Material partials).
+  custom_dir: docs/assets/custom
   icon:
     repo: fontawesome/brands/github
   font:
@@ -122,6 +124,9 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      options:
+        custom_icons:
+          - docs/assets/custom/.icons
 
 nav:
   - Introduction:
@@ -139,6 +144,7 @@ nav:
     - ClickHouse: user_guide/connecting/clickhouse.md
     - user_guide/connecting/cockroachdb.md
     - user_guide/connecting/duckdb.md
+    - DynamoDB: user_guide/connecting/dynamodb.md
     - user_guide/connecting/firebird.md
     - user_guide/connecting/google-bigquery.md
     - GreengageDB: user_guide/connecting/greengage.md

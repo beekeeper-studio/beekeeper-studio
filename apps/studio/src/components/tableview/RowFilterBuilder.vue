@@ -266,7 +266,7 @@ export default Vue.extend({
     addFilter() {
       if (this.isCommunity) {
         if (this.filters.length >= 2) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use more than 2 filters")
+          this.$root.$emit(AppEvent.upgradeModal, "Advanced Filters")
           return;
         }
       }

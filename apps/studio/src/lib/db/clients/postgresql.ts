@@ -344,7 +344,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   async listMaterializedViewColumns(table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
     const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : '';
     if (table && !schema) {
-      throw new Error("Cannot get columns for '${table}, no schema provided'")
+      throw new Error(`Cannot get columns for '${table}', no schema provided`)
     }
     const sql = `
       SELECT s.nspname, t.relname, a.attname,

@@ -697,13 +697,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
       try {
         const statement = await conn.prepare(query.text);
-        let result: DuckDBMaterializedResult;
-
         if (params) {
           const { values, types } = this.buildStatementBindArgs(params)
           statement.bind(values, types);
         }
-        result = await statement.run();
+        const result: DuckDBMaterializedResult = await statement.run();
 
         const columnNames = result.columnNames();
         const columnTypes = result.columnTypes();

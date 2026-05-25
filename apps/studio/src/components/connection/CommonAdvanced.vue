@@ -3,7 +3,7 @@
     title="SSH Tunnel"
     :expanded="config.sshEnabled"
   >
-    <template v-slot:header>
+    <template #header>
       <x-switch
         @click.prevent="config.sshEnabled = !config.sshEnabled"
         :toggled="config.sshEnabled"

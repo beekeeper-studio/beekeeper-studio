@@ -222,6 +222,9 @@ export const LicenseModule: Module<State, RootState>  = {
     async remove(context, license) {
       await Vue.prototype.$util.send('license/remove', { id: license.id })
       await context.dispatch('sync')
+      if (context.getters.isCommunity && context.rootState.workspaceId !== -1) {
+        context.commit('workspaceId', -1, { root: true })
+      }
     },
     async sync(context) {
       const status = await Vue.prototype.$util.send('license/getStatus')

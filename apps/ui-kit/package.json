@@ -39,6 +39,7 @@
     "./mongo-shell/state": "./dist/mongo-shell/state.js",
     "./super-formatter": "./dist/super-formatter.js",
     "./surreal-text-editor": "./dist/surreal-text-editor.js",
+    "./merge-text-editor": "./dist/merge-text-editor.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
     "./vue/tree-list": "./dist/vue/tree-list.js",
@@ -48,6 +49,7 @@
     "./vue/mongo-shell": "./dist/vue/mongo-shell.js",
     "./vue/super-formatter": "./dist/vue/super-formatter.js",
     "./vue/surreal-text-editor": "./dist/vue/surreal-text-editor.js",
+    "./vue/merge-text-editor": "./dist/vue/merge-text-editor.js",
     "./config/context-menu": "./dist/config/context-menu.js"
   },
   "scripts": {
@@ -67,6 +69,7 @@
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/language": "^6.11.0",
     "@codemirror/lint": "^6.8.4",
+    "@codemirror/merge": "^6.12.1",
     "@codemirror/search": "^6.5.10",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
@@ -85,6 +88,7 @@
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/language": "^6.11.0",
     "@codemirror/lint": "^6.8.4",
+    "@codemirror/merge": "^6.12.1",
     "@codemirror/search": "^6.5.10",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",

@@ -61,7 +61,7 @@ const partialReadonlyState = StateField.define<State>({
     return { ranges: new Map() };
   },
   update(state, tr) {
-    let newState = { ...state };
+    const newState = { ...state };
 
     for (const effect of tr.effects) {
       if (effect.is(setEditableRangesEffect)) {

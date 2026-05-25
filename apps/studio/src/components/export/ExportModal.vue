@@ -326,7 +326,7 @@ export default {
     },
     upgradeModal() {
       this.closeModal()
-      this.$root.$emit(AppEvent.upgradeModal)
+      this.$root.$emit(AppEvent.upgradeModal, 'Multi-table Export')
     },
     toggleAdvanced() {
       this.advancedToggled = !this.advancedToggled
