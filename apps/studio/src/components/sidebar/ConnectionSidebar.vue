@@ -169,7 +169,7 @@
               <BksTreeList
                 :list="tree"
                 @bks-folder-toggle="onTreeFolderToggle"
-                @bks-change="onTreeChange"
+                @bks-item-change="onTreeItemChange"
                 @bks-folder-drop="onTreeFolderDrop"
                 @bks-folder-contextmenu="showFolderContextMenu($event.event, $event.item.folder)"
               >
@@ -626,28 +626,14 @@ export default {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
-    async onTreeChange({ event, parent }) {
-      const targetFolderId = parent?.folder?.id ?? null
-      const siblings = parent?.children ?? this.tree
-
-      if (!(event.added || event.moved)) {
-        return
-      }
-
-      const node = event.added?.element || event.moved?.element
-      const newIndex = event.added?.newIndex ?? event.moved?.newIndex
-
-      if (node.type !== 'item') {
-        return
-      }
-
+    async onTreeItemChange({ event, siblings, targetFolder }) {
       try {
         const payload = {
-          item: node.config,
-          position: this.relativeConnectionPosition(siblings, newIndex),
+          item: event.element.config,
+          position: this.relativeConnectionPosition(siblings, event.newIndex),
         }
-        if (event.added) {
-          payload.connectionFolderId = targetFolderId
+        if (event.type === 'added') {
+          payload.connectionFolderId = targetFolder?.id ?? null
         }
         await this.$store.dispatch('data/connections/reorder', payload)
       } catch (ex) {

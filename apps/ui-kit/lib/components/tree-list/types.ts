@@ -17,7 +17,12 @@ export type TreeState = {
 };
 
 export interface TreeListEventMap extends HTMLElementEventMap {
-  "bks-change": CustomEvent<{ event: any; parent: TreeItem | null }>;
+  "bks-item-change": CustomEvent<{
+    event: { type: "added" | "moved"; element: TreeItem; newIndex: number };
+    draggableEvent: any;
+    siblings: TreeItem[];
+    targetFolder: any;
+  }>;
   "bks-item-click": CustomEvent<{ item: TreeItem }>;
   "bks-folder-toggle": CustomEvent<{ folder: TreeItem; expanded: boolean }>;
   "bks-folder-drop": CustomEvent<{ folder: TreeItem; draggedNode: TreeItem }>;

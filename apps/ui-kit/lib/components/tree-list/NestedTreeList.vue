@@ -9,7 +9,7 @@
     ghost-class="drag-ghost"
     group="BksTreeList"
     :move="canDropTarget"
-    @change="$emit('bks-change', { event: $event, parent: null })"
+    @change="$emit('bks-item-change', { event: $event, parent: null })"
     @start="onDragStart"
     @end="onDragEnd"
   >
@@ -62,9 +62,9 @@
           v-show="isExpanded(item)"
           class="folder-children"
           :list="item.children"
-          @bks-change="
+          @bks-item-change="
             (payload) =>
-              $emit('bks-change', {
+              $emit('bks-item-change', {
                 event: payload.event,
                 parent: payload.parent || item,
               })

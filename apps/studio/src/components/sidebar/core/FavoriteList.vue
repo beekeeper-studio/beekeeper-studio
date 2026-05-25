@@ -82,7 +82,7 @@
           <BksTreeList
             :list="tree"
             @bks-folder-toggle="onTreeFolderToggle"
-            @bks-change="onTreeChange"
+            @bks-item-change="onTreeItemChange"
             @bks-folder-drop="onTreeFolderDrop"
             @bks-folder-contextmenu="showFolderContextMenu($event.event, $event.item.folder)"
           >
@@ -427,28 +427,14 @@ export default {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
-    async onTreeChange({ event, parent }) {
-      const targetFolderId = parent?.folder?.id ?? null;
-      const siblings = parent?.children ?? this.tree;
-
-      if (!(event.added || event.moved)) {
-        return;
-      }
-
-      const node = event.added?.element || event.moved?.element;
-      const newIndex = event.added?.newIndex || event.moved?.newIndex;
-
-      if (node.type !== 'item') {
-        return;
-      }
-
+    async onTreeItemChange({ event, siblings, targetFolder }) {
       try {
         const payload = {
-          item: node.query,
-          position: this.relativeQueryPosition(siblings, newIndex),
+          item: event.element.query,
+          position: this.relativeQueryPosition(siblings, event.newIndex),
         }
-        if (event.added) {
-          payload.queryFolderId = targetFolderId;
+        if (event.type === 'added') {
+          payload.queryFolderId = targetFolder?.id ?? null;
         }
         await this.$store.dispatch('data/queries/reorder', payload);
       } catch (ex) {
