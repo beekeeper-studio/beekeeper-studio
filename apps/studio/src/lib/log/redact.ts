@@ -1,6 +1,6 @@
 // Redacts sensitive values (passwords, passphrases, tokens, secrets, private
-// keys) from electron-log messages before they reach a transport. Wired up via
-// electron-log's `hooks` API: see https://github.com/megahertz/electron-log/blob/master/docs/extend.md#hooks
+// keys) from log messages before they reach a transport. Wired into the
+// shared logger via its `hooks` API.
 
 import { cloneDeepWith } from 'lodash';
 
