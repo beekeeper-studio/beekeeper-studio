@@ -1,4 +1,4 @@
-import { BeeCursor } from "../../models";
+import { BeeCursor, TableColumn } from "../../models";
 import rawLog from '@bksLogger';
 import { BigQuery, GetRowsOptions, Job, QueryResultsOptions, RowMetadata } from "@google-cloud/bigquery";
 import { waitFor } from "../base/wait";
@@ -18,14 +18,23 @@ export class BigQueryCursor extends BeeCursor {
   private bufferReady = false;
   private end = false;
   private error?: Error;
+  private fields?: string[];
 
   constructor(
-    private conn: Conn, 
-    private query: string, 
-    private params: string[], 
+    private conn: Conn,
+    private query: string,
+    private params: string[],
     chunkSize: number
   ) {
     super(chunkSize);
+  }
+
+  get columns(): TableColumn[] | null {
+    if (!this.fields) return null;
+    return this.fields.map((f) => ({
+      columnName: f,
+      dataType: "unknown"
+    }))
   }
 
   async start(): Promise<void> {
@@ -62,6 +71,11 @@ export class BigQueryCursor extends BeeCursor {
     } else {
       this.handleEnd();
     }
+
+    if (!this.fields && resource[0]) {
+      this.fields = Object.keys(resource[0]);
+    }
+
     this.rowBuffer.push(...resource);
     this.pause();
   }
