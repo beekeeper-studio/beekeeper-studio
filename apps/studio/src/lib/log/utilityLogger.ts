@@ -1,12 +1,16 @@
 import log from 'electron-log/node'
 import { redactMessage } from './redact'
+import { resolveLogLevels } from './logLevel'
 
 export default function logger() {
+  const levels = resolveLogLevels()
   log.logId = 'utility';
-  log.transports.console.level = 'info';
-  log.transports.file.level = "silly";
+  log.transports.console.level = levels.console;
+  log.transports.file.level = levels.file;
   log.transports.file.fileName = "utility.log";
-  log.transports.console.format = '{h}:{i}:{s}.{ms} [UTILITY]{scope} › {text}'
+  log.variables.processType = 'UTILITY';
+  log.transports.console.format = '{h}:{i}:{s}.{ms} [{processType}]{scope} › {text}'
+  log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] [{processType}]{scope} {text}'
   log.errorHandler.setOptions({ showDialog: false})
   log.hooks.push((message) => redactMessage(message))
 
