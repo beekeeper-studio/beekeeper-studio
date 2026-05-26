@@ -19,6 +19,10 @@ const SENSITIVE_KEY_PATTERNS = [
   /apikey/i,
   /bearer/i,
   /\bjwt\b/i,
+  // Catches typeorm/cloud-workspace fields like passwordCipherText,
+  // sshPasswordCipher, encryptedToken — the cipher payload is still secret.
+  /cipher/i,
+  /encrypted/i,
 ];
 
 function isSensitiveKey(key: PropertyKey | undefined): boolean {
