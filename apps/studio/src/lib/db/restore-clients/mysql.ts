@@ -74,7 +74,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       options: [
         `--verbose`,
         `--user=${BaseCommandClient.username}`,
-        `--password=${BaseCommandClient.quotedPassword}`,
+        `--password=${BaseCommandClient._password ?? ''}`,
       ]
     });
 
@@ -110,7 +110,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       command.options.push(BaseCommandClient.connectionType == 'mariadb' ? '--skip-ssl' : '--ssl-mode=DISABLED');
     }
 
-    command.options.push(`--execute="SOURCE ${this._config.inputPath}"`);
+    command.options.push(`--execute=SOURCE ${this._config.inputPath}`);
 
     return command;
   }
@@ -126,7 +126,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       options: [
         `--verbose`,
         `--user=${BaseCommandClient.username}`,
-        `--password=${BaseCommandClient.quotedPassword}`
+        `--password=${BaseCommandClient._password ?? ''}`
       ]
     });
 

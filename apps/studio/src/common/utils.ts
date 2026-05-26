@@ -27,7 +27,7 @@ export function snakeCaseObjectKeys(data) {
 export function parseIndexColumn(str: string): IndexColumn {
   str = str.trim()
 
-  const order = str.endsWith('DESC') ? 'DESC' : 'ASC'
+  const order = str.endsWith(' DESC') ? 'DESC' : 'ASC'
   const nameAndPrefix = str.replaceAll(' DESC', '').trimEnd()
 
   let name: string = nameAndPrefix
@@ -261,7 +261,7 @@ export function friendlyJsonObject<T extends object>(obj: T): T {
     },
   });
 
-  if(!obj.hasOwnProperty("toString")){
+  if(!Object.prototype.hasOwnProperty.call(obj, "toString")){
     Object.defineProperties(obj, {
       toString: {
         value() {
@@ -355,6 +355,7 @@ export function isDateDataType (dataType) {
 }
 
 export function isNumericDataType (dataType) {
+  if (isDateDataType(dataType)) return false
   const base = normalizeDataType(dataType)
   const numericStarts = [
     'smallint',

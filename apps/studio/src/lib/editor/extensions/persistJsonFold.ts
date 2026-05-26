@@ -95,7 +95,7 @@ function fold(view: EditorView) {
         jsonPath.length === 0
           ? 0
           : findKeyPosition(view.state.doc.toString(), jsonPath);
-      if (linePos === -1) return;
+      if (linePos === -1) return undefined;
       const line = view.state.doc.line(linePos + 1);
       const range = foldable(view.state, line.from, line.to);
       return foldEffect.of(range);
