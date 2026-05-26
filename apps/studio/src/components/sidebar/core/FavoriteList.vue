@@ -77,30 +77,100 @@
           v-else-if="filteredQueries.length > 0"
           class="list-body"
           ref="wrapper"
-          @contextmenu.self.prevent="showLonelyContextMenu($event)"
         >
-          <bks-tree-list
-            :list="tree"
-            @bks-folder-toggle="onTreeFolderToggle"
-            @bks-item-change="onTreeItemChange"
-            @bks-folder-drop="onTreeFolderDrop"
-            @bks-folder-contextmenu="showFolderContextMenu($event.event, $event.item.folder)"
+          <sidebar-folder
+            v-for="({ folder, queries, subfolders }) in foldersWithQueries"
+            :key="`${folder.id}-${queries.length}`"
+            :title="`${folder.name} (${queries.length})`"
+            :expanded-initially="getFolderExpanded(folder.id)"
+            @toggle="onFolderToggle(folder.id, $event)"
+            @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
+            @header-drop="onQueryFolderHeaderDrop(folder)"
           >
-            <template #item="{ item: node }">
+            <Draggable
+              :list="queries"
+              group="queries"
+              ghost-class="drag-ghost"
+              @start="onQueryDragStart($event, queries)"
+              @end="draggingQuery = null"
+              @change="onQueryDrop($event, folder, queries)"
+            >
               <favorite-list-item
-                :item="node.query"
-                :active="isActive(node.query)"
-                :selected="selected === node.query"
-                :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.query.id) }"
+                v-for="item in queries"
+                :key="item.id"
+                :item="item"
+                :active="isActive(item)"
+                :selected="selected === item"
+                :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
                 @remove="remove"
                 @select="select"
                 @open="open"
                 @open-history="openHistory"
+                @rename="rename"
                 @export="exportTo"
                 @duplicate="duplicate"
               />
-            </template>
-          </bks-tree-list>
+            </Draggable>
+            <sidebar-folder
+              v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
+              :key="`${subfolder.id}-${subQueries.length}`"
+              :title="`${subfolder.name} (${subQueries.length})`"
+              :expanded-initially="getFolderExpanded(subfolder.id)"
+              @toggle="onFolderToggle(subfolder.id, $event)"
+              @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+              @header-drop="onQueryFolderHeaderDrop(subfolder)"
+            >
+              <Draggable
+                :list="subQueries"
+                group="queries"
+                ghost-class="drag-ghost"
+                @start="onQueryDragStart($event, subQueries)"
+                @end="draggingQuery = null"
+                @change="onQueryDrop($event, subfolder, subQueries)"
+              >
+                <favorite-list-item
+                  v-for="item in subQueries"
+                  :key="item.id"
+                  :item="item"
+                  :active="isActive(item)"
+                  :selected="selected === item"
+                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
+                  @remove="remove"
+                  @select="select"
+                  @open="open"
+                  @open-history="openHistory"
+                  @rename="rename"
+                  @export="exportTo"
+                  @duplicate="duplicate"
+                />
+              </Draggable>
+            </sidebar-folder>
+          </sidebar-folder>
+          <Draggable
+            :list="lonelyQueries"
+            :group="isCloud ? { name: 'queries', put: false } : 'queries'"
+            ghost-class="drag-ghost"
+            @start="onQueryDragStart($event, lonelyQueries)"
+            @end="draggingQuery = null"
+            @change="onQueryDrop($event, null, lonelyQueries)"
+            @contextmenu.self.prevent="showLonelyContextMenu($event)"
+          >
+            <favorite-list-item
+              v-for="item in lonelyQueries"
+              :key="item.id"
+              :item="item"
+              :active="isActive(item)"
+              :selected="selected === item"
+              :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
+              @remove="remove"
+              @select="select"
+              @open="open"
+              @open-history="openHistory"
+              @rename="rename"
+              @export="exportTo"
+              @duplicate="duplicate"
+            />
+          </Draggable>
         </nav>
         <div
           class="empty"
@@ -166,32 +236,60 @@
           </div>
         </form>
       </modal>
+      <modal
+        class="vue-dialog beekeeper-modal"
+        name="rename-modal"
+        @closed="renameMe=null"
+        height="auto"
+        :scrollable="true"
+      >
+        <div
+          class="dialog-content"
+          v-kbd-trap="true"
+          v-if="renameMe"
+        >
+          <div class="dialog-c-title">
+            Rename {{ renameMe.title }}
+          </div>
+          <query-rename-form
+            :query="renameMe"
+            @done="$modal.hide('rename-modal')"
+          />
+        </div>
+      </modal>
     </portal>
   </div>
 </template>
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { mapGetters, mapMutations, mapState } from 'vuex'
+import { SmartLocalStorage } from '@/common/LocalStorage'
+import { mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
+import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
-import BksTreeList from '@beekeeperstudio/ui-kit/vue/tree-list'
+import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
+import Draggable from 'vuedraggable'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, BksTreeList },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm, Draggable },
   data: function () {
     return {
       checkedFavorites: [],
       selected: null,
+      renameMe: null,
       folderModalName: '',
       folderModalItem: null,
       folderModalParentId: null,
       folderModalError: null,
       folderModalSubmitting: false,
+      folderExpandedState: {},
+      draggingQuery: null
     }
   },
   mounted() {
+    this.folderExpandedState = SmartLocalStorage.getJSON('queryFolderExpanded-v1', {})
     document.addEventListener('mousedown', this.maybeUnselect)
   },
   beforeDestroy() {
@@ -220,22 +318,37 @@ export default {
     error() {
       return this.queriesError || this.foldersError || null
     },
-    tree() {
-      return this.$store.getters['data/queryFolders/treeItems'](this.filteredQueries)
+    foldersWithQueries() {
+      return this.$store.getters['data/queryFolders/foldersWithQueries'](this.filteredQueries)
+    },
+    lonelyQueries() {
+      const folderIds = this.folders.map((f) => f.id)
+      return [...this.filteredQueries]
+        .filter((query) => !query.queryFolderId || !folderIds.includes(query.queryFolderId))
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
     }
   },
   methods: {
-    ...mapMutations('data/queryFolders', {
-      setFolderExpanded: 'setFolderExpanded',
-    }),
+    getFolderExpanded(folderId) {
+      const stored = this.folderExpandedState[folderId]
+      return stored !== undefined ? stored : true
+    },
+    onFolderToggle(folderId, expanded) {
+      this.$set(this.folderExpandedState, folderId, expanded)
+      SmartLocalStorage.addItem('queryFolderExpanded-v1', this.folderExpandedState)
+    },
     clearFilter() {
       this.filterQuery = null
     },
     createQuery() {
       this.$root.$emit(AppEvent.newTab)
+    },
+    rename(query) {
+      this.$modal.show('rename-modal')
+      this.renameMe = query
     },
     exportTo(query) {
       this.$root.$emit(AppEvent.promptQueryExport, query)
@@ -359,56 +472,47 @@ export default {
         }
       }
     },
-    relativeQueryPosition(siblings, newIndex) {
-      let previous = null
-      let next = null
-      for (let i = newIndex - 1; i >= 0; i--) {
-        if (siblings[i].type === 'item') {
-          previous = siblings[i].query
-          break
-        }
-      }
-      for (let i = newIndex + 1; i < siblings.length; i++) {
-        if (siblings[i].type === 'item') {
-          next = siblings[i].query
-          break
-        }
-      }
-      if (previous) return { after: previous.id }
+    onQueryDragStart(event, list) {
+      this.draggingQuery = list[event.oldIndex]
+    },
+    cloudRelativePosition(list, newIndex) {
+      const prev = list[newIndex - 1]
+      const next = list[newIndex + 1]
+      if (prev) return { after: prev.id }
       if (next) return { before: next.id }
       return { before: null }
     },
-    onTreeFolderToggle({ folder: node, expanded }) {
-      if (!node.folder) return
-      this.setFolderExpanded({ folderId: node.folder.id, expanded })
-    },
-    async onTreeFolderDrop({ folder, draggedNode }) {
-      if (!draggedNode || draggedNode.type !== 'item') {
-        return
-      }
-      if (draggedNode.query.queryFolderId === folder.folder.id) {
-        return
-      }
+    async onQueryFolderHeaderDrop(folder) {
+      if (!this.draggingQuery) return
       try {
+        // Use reorder action for both local and cloud workspaces
         await this.$store.dispatch('data/queries/reorder', {
-          item: draggedNode.query,
-          queryFolderId: folder.folder.id,
-          position: { before: null },
+          item: this.draggingQuery,
+          queryFolderId: folder.id,
+          position: { before: null }
         })
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
-    async onTreeItemChange({ event, siblings, targetFolder }) {
+    async onQueryDrop(event, folder, currentList) {
       try {
-        const payload = {
-          item: event.element.query,
-          position: this.relativeQueryPosition(siblings, event.newIndex),
+        if (event.added) {
+          const { element: item, newIndex } = event.added
+          // Use reorder action for both local and cloud workspaces
+          await this.$store.dispatch('data/queries/reorder', {
+            item,
+            queryFolderId: folder?.id ?? null,
+            position: this.cloudRelativePosition(currentList, newIndex)
+          })
+        } else if (event.moved) {
+          const { element: item, newIndex } = event.moved
+          // Use reorder action for both local and cloud workspaces
+          await this.$store.dispatch('data/queries/reorder', {
+            item,
+            position: this.cloudRelativePosition(currentList, newIndex)
+          })
         }
-        if (event.type === 'added') {
-          payload.queryFolderId = targetFolder?.id ?? null;
-        }
-        await this.$store.dispatch('data/queries/reorder', payload);
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
@@ -436,6 +540,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/styles/app/_variables';
-
+.drag-ghost {
+  opacity: 0.4;
+}
+.drag-pending {
+  opacity: 0.5;
+}
+.folder-drop-zone {
+  min-height: 8px;
+}
 </style>

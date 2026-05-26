@@ -1,15 +1,9 @@
-import Vue from "vue";
-import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
-import { SmartLocalStorage } from "@/common/LocalStorage";
-import { createTreeItems } from "./treeItems";
 
-const EXPANDED_STORAGE_KEY = "queryFolderExpanded-v1";
 
-type State = DataState<IQueryFolder> & {
-  expandedState: Record<number, boolean>;
-};
+
+type State = DataState<IQueryFolder>
 
 export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
@@ -17,19 +11,24 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     items: [],
     loading: false,
     error: null,
-    pollError: null,
-    expandedState: SmartLocalStorage.getJSON(EXPANDED_STORAGE_KEY, {}),
+    pollError: null
   },
-  mutations: {
-    ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc'}),
-    setFolderExpanded(state, { folderId, expanded }: { folderId: number; expanded: boolean }) {
-      Vue.set(state.expandedState, folderId, expanded)
-      SmartLocalStorage.addItem(EXPANDED_STORAGE_KEY, state.expandedState)
-    },
-  },
+  mutations: mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc'}),
   getters: {
-    treeItems: (state) => (queries: ISavedQuery[]) =>
-      createTreeItems(state.items, queries, state.expandedState),
+    foldersWithQueries: (state) => (queries: any[]) => {
+      const byPosition = (a: any, b: any) => a.position - b.position
+      const rootFolders = state.items.filter((f) => !f.parentId)
+      return rootFolders.map((folder) => ({
+        folder,
+        queries: queries.filter((q) => q.queryFolderId === folder.id).sort(byPosition),
+        subfolders: state.items
+          .filter((f) => f.parentId === folder.id)
+          .map((subfolder) => ({
+            folder: subfolder,
+            queries: queries.filter((q) => q.queryFolderId === subfolder.id).sort(byPosition)
+          }))
+      }))
+    }
   },
   actions: actionsFor<IQueryFolder>('queryFolders', {
     async poll() {

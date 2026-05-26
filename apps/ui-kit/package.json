@@ -31,7 +31,6 @@
     "./style.css": "./dist/style.css",
     "./table": "./dist/table.js",
     "./entity-list": "./dist/entity-list.js",
-    "./tree-list": "./dist/tree-list.js",
     "./sql-text-editor": "./dist/sql-text-editor.js",
     "./text-editor": "./dist/text-editor.js",
     "./lib/components/text-editor/extensions/redisCommands.json": "./lib/components/text-editor/extensions/redisCommands.json",
@@ -42,7 +41,6 @@
     "./merge-text-editor": "./dist/merge-text-editor.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
-    "./vue/tree-list": "./dist/vue/tree-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",
     "./vue/data-editor": "./dist/vue/data-editor.js",
     "./vue/text-editor": "./dist/vue/text-editor.js",
@@ -98,8 +96,7 @@
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21",
     "ansi-to-html": "^0.7.2",
-    "highlight.js": "^11.11.1",
-    "vuedraggable": "^2.24.2"
+    "highlight.js": "^11.11.1"
   },
   "devDependencies": {
     "@open-rpc/client-js": "^1.8.1",
@@ -133,6 +130,7 @@
     "vue-js-modal": "^2.0.1",
     "vue-tsc": "^2.1.10",
     "vue-virtual-scroll-list": "^2.3.5",
-    "vue2-teleport": "^1.1.4"
+    "vue2-teleport": "^1.1.4",
+    "vuedraggable": "^2.24.2"
   }
 }
