@@ -2,7 +2,7 @@
   <div
     class="list-item"
     :title="title"
-    @contextmenu.stop.prevent="showContextMenu"
+    @contextmenu.prevent="showContextMenu"
   >
     <a
       href=""
@@ -14,7 +14,19 @@
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">
-          {{ label }}
+          <span>{{ label }}</span>
+          <input
+            v-if="renaming"
+            ref="renameInput"
+            v-model="renameValue"
+            class="rename-input"
+            @keyup.enter="submitRename"
+            @keyup.esc="cancelRename"
+            @blur="cancelRename"
+            @click.stop.prevent
+            @dblclick.stop
+            @mousedown.stop
+          >
         </div>
         <div class="subtitle">
           <span
@@ -87,7 +99,9 @@ export default {
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
-    split: null
+    split: null,
+    renaming: false,
+    renameValue: ''
   }),
   computed: {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
@@ -172,6 +186,13 @@ export default {
   },
   methods: {
     showContextMenu(event) {
+      // Stop here and propagate the event if right clicking an input element
+      if (event.target === this.$refs.renameInput) {
+        return;
+      }
+
+      event.stopPropagation();
+
       const ultimateCheck = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
@@ -190,6 +211,11 @@ export default {
         !this.isRecentList && {
           name: this.pinned ? 'Unpin' : 'Pin',
           handler: () => this.pinned ? this.unpin() : this.pin()
+        },
+        !this.isRecentList && {
+          name: "Rename",
+          slug: 'rename',
+          handler: () => this.startRename()
         },
         {
           name: "Duplicate",
@@ -271,8 +297,56 @@ export default {
     },
     unpin() {
       this.$store.dispatch('pinnedConnections/remove', this.config);
+    },
+    async startRename() {
+      if (this.isRecentList) {
+        return
+      }
+      this.renaming = true
+      this.renameValue = this.savedConnection?.name || ''
+      await this.$nextTick()
+      this.$refs.renameInput.focus()
+      this.$refs.renameInput.select()
+    },
+    async submitRename() {
+      if (!this.renaming) {
+        return
+      }
+      this.renaming = false
+      const name = this.renameValue.trim()
+      if (!name || name === (this.savedConnection?.name || '')) {
+        return
+      }
+      try {
+        const updated = { ...this.savedConnection, name }
+        await this.$store.dispatch('data/connections/save', updated)
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      }
+    },
+    cancelRename() {
+      this.renaming = false
     }
   }
 
 }
 </script>
+<style lang="scss" scoped>
+.list-item .list-item-btn .connection-title .title {
+  position: relative;
+  overflow: visible;
+}
+
+.rename-input {
+  width: 100%;
+  height: auto;
+  padding-inline: 0.1rem;
+  font-size: inherit;
+  line-height: normal;
+  position: absolute;
+  left: -0.15rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--theme-bg);
+}
+</style>

@@ -11,8 +11,9 @@
       :class="{active, selected}"
     >
       <i class="item-icon query material-icons">code</i>
-      <div classs="list-text">
+      <div class="list-text">
         <div class="list-title flex-col">
+          <span class="item-text title truncate expand">{{ item.title }}</span>
           <input
             v-if="renaming"
             ref="renameInput"
@@ -25,11 +26,6 @@
             @dblclick.stop
             @mousedown.stop
           >
-          <span
-            v-else
-            class="item-text title truncate expand"
-            @dblclick.stop.prevent="startRename"
-          >{{ item.title }}</span>
         </div>
         <div class="database subtitle"><span>{{ subtitle }}</span></div>
       </div>
@@ -199,12 +195,28 @@ export default Vue.extend({
 })
 </script>
 <style lang="scss" scoped>
+.list-text {
+  flex-grow: 1;
+  font-size: 1rem;
+
+}
+
+.list-item-btn .list-text .list-title {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+
 .rename-input {
   width: 100%;
   height: auto;
   padding-inline: 0.1rem;
-  padding-block: 0.1rem;
   font-size: inherit;
   line-height: normal;
+  position: absolute;
+  left: -0.15rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--theme-bg);
 }
 </style>
