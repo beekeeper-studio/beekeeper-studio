@@ -64,16 +64,11 @@ export class SurrealPool {
     if (this.pool.length < this.maxSize) {
       const newConn = new SurrealConn(this);
       log.info('Acquiring new connection', newConn.id);
-      log.info('CONFIG: ', this.config)
       await newConn.connect(this.connectionString, this.config);
-      log.info("Connected")
       await newConn.use(this.database);
-      log.info("Used", this.database)
       if (this.auth) {
-        log.info("Signing in", this.auth)
         await newConn.signin(this.auth);
       } else {
-        log.info("Authenticating: ", this.token)
         await newConn.authenticate(this.token)
       }
       await newConn.ready;

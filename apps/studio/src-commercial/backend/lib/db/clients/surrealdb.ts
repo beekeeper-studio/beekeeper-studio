@@ -253,7 +253,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       const parentFields = [];
 
       // This means it's a schemaless table, so we'll have to guess
-      if (!tableFields || tableFields.length == 0) {
+      if (!tableFields || tableFields.length === 0) {
         const results = await this.driverExecuteSingle(`SELECT * FROM ${table} LIMIT 10`);
         const existingFields = new Set<string>();
         results.rows.forEach((row) => {

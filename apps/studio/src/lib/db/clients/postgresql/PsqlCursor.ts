@@ -55,7 +55,6 @@ export class PsqlCursor extends BeeCursor {
         reject("You need to call start first")
       } else {
         this.cursor.read(this.chunkSize, (err, rows, result) => {
-          log.info("RESULT: ", result)
           if (err) {
             reject(err.message)
           } else {
