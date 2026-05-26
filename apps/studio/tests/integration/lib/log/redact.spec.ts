@@ -163,4 +163,61 @@ describe('log redaction (electron-log hooks)', () => {
     expect(contents).toContain('42')
     expect(contents).toContain('hello world')
   })
+
+  it('redacts additional credential field patterns', () => {
+    const cfg = {
+      host: 'db.example.com',
+      pwd: 'shorty-pwd',
+      apiKey: 'ak_topsecret',
+      apikey: 'ak2_topsecret',
+      credentials: { username: 'matt', token: 'tok_topsecret' },
+      credential: 'single-cred',
+      jwt: 'eyJhbGciOiJIUzI1NiJ9.payload.sig',
+      bearerToken: 'btok_topsecret',
+    }
+
+    log.info('extra-secrets', cfg)
+
+    const contents = fileContents(logFile)
+    expect(contents).toContain('db.example.com')
+    expect(contents).not.toContain('shorty-pwd')
+    expect(contents).not.toContain('ak_topsecret')
+    expect(contents).not.toContain('ak2_topsecret')
+    expect(contents).not.toContain('tok_topsecret')
+    expect(contents).not.toContain('single-cred')
+    expect(contents).not.toContain('eyJhbGciOiJIUzI1NiJ9.payload.sig')
+    expect(contents).not.toContain('btok_topsecret')
+  })
+
+  it('does not redact when NODE_ENV is development', () => {
+    const originalEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'development'
+    try {
+      log.info('dev-mode', { host: 'db.example.com', password: SECRETS.password })
+
+      const contents = fileContents(logFile)
+      expect(contents).toContain('db.example.com')
+      expect(contents).toContain(SECRETS.password)
+      expect(contents).not.toContain('[REDACTED]')
+    } finally {
+      process.env.NODE_ENV = originalEnv
+    }
+  })
+
+  it('redacts under test, production, and unset NODE_ENV', () => {
+    const originalEnv = process.env.NODE_ENV
+    try {
+      for (const value of ['test', 'production', undefined]) {
+        fs.rmSync(logFile, { force: true })
+        if (value === undefined) delete process.env.NODE_ENV
+        else process.env.NODE_ENV = value
+
+        log.info(`env-${String(value)}`, { password: SECRETS.password })
+        const contents = fileContents(logFile)
+        expect(contents).not.toContain(SECRETS.password)
+      }
+    } finally {
+      process.env.NODE_ENV = originalEnv
+    }
+  })
 })
