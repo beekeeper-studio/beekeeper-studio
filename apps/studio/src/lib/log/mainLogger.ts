@@ -1,9 +1,9 @@
 import log from 'electron-log/main';
 import { redactMessage } from './redact'
-import { resolveLogLevels } from './logLevel'
+import { resolveLogLevelsFromProcessEnv } from './logLevel'
 
 export default function logger() {
-  const levels = resolveLogLevels()
+  const levels = resolveLogLevelsFromProcessEnv()
   log.transports.console.level = levels.console
   log.transports.file.level = levels.file
   // processType is a per-logger variable; the format substitutes it via the

@@ -1,4 +1,34 @@
-import { resolveLogLevels } from '@/lib/log/logLevel'
+import { resolveLogLevels, resolveLogLevelsFromProcessEnv } from '@/lib/log/logLevel'
+
+describe('resolveLogLevels', () => {
+  it('returns warn/warn in production', () => {
+    expect(resolveLogLevels({ isDevelopment: false })).toEqual({ file: 'warn', console: 'warn' })
+  })
+
+  it('returns silly/info in development', () => {
+    expect(resolveLogLevels({ isDevelopment: true })).toEqual({ file: 'silly', console: 'info' })
+  })
+
+  it('returns silly/info when debugFlag is set in production', () => {
+    expect(resolveLogLevels({ isDevelopment: false, debugFlag: true })).toEqual({ file: 'silly', console: 'info' })
+  })
+
+  it('honours an override in both transports', () => {
+    expect(resolveLogLevels({ isDevelopment: false, override: 'debug' })).toEqual({ file: 'debug', console: 'debug' })
+  })
+
+  it('override is case-insensitive', () => {
+    expect(resolveLogLevels({ isDevelopment: false, override: 'INFO' })).toEqual({ file: 'info', console: 'info' })
+  })
+
+  it('falls back to defaults when override is invalid', () => {
+    expect(resolveLogLevels({ isDevelopment: false, override: 'screamloudly' })).toEqual({ file: 'warn', console: 'warn' })
+  })
+
+  it('override beats debugFlag', () => {
+    expect(resolveLogLevels({ isDevelopment: false, override: 'error', debugFlag: true })).toEqual({ file: 'error', console: 'error' })
+  })
+})
 
 function withEnv<T>(env: Record<string, string | undefined>, fn: () => T): T {
   const original: Record<string, string | undefined> = {}
@@ -18,46 +48,16 @@ function withEnv<T>(env: Record<string, string | undefined>, fn: () => T): T {
   }
 }
 
-describe('resolveLogLevels', () => {
-  it('returns warn/warn for production builds', () => {
+describe('resolveLogLevelsFromProcessEnv', () => {
+  it('reads NODE_ENV/BKS_LOG_LEVEL/DEBUG from process.env', () => {
+    withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: 'verbose', DEBUG: undefined }, () => {
+      expect(resolveLogLevelsFromProcessEnv()).toEqual({ file: 'verbose', console: 'verbose' })
+    })
+    withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: undefined, DEBUG: '1' }, () => {
+      expect(resolveLogLevelsFromProcessEnv()).toEqual({ file: 'silly', console: 'info' })
+    })
     withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: undefined, DEBUG: undefined }, () => {
-      expect(resolveLogLevels()).toEqual({ file: 'warn', console: 'warn' })
-    })
-  })
-
-  it('returns silly/info for development builds', () => {
-    withEnv({ NODE_ENV: 'development', BKS_LOG_LEVEL: undefined, DEBUG: undefined }, () => {
-      expect(resolveLogLevels()).toEqual({ file: 'silly', console: 'info' })
-    })
-  })
-
-  it('returns silly/info when DEBUG is set (legacy opt-in)', () => {
-    withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: undefined, DEBUG: '*' }, () => {
-      expect(resolveLogLevels()).toEqual({ file: 'silly', console: 'info' })
-    })
-  })
-
-  it('honours BKS_LOG_LEVEL override in both transports', () => {
-    withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: 'debug', DEBUG: undefined }, () => {
-      expect(resolveLogLevels()).toEqual({ file: 'debug', console: 'debug' })
-    })
-  })
-
-  it('BKS_LOG_LEVEL is case-insensitive', () => {
-    withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: 'INFO', DEBUG: undefined }, () => {
-      expect(resolveLogLevels()).toEqual({ file: 'info', console: 'info' })
-    })
-  })
-
-  it('falls back to defaults when BKS_LOG_LEVEL is invalid', () => {
-    withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: 'screamloudly', DEBUG: undefined }, () => {
-      expect(resolveLogLevels()).toEqual({ file: 'warn', console: 'warn' })
-    })
-  })
-
-  it('BKS_LOG_LEVEL beats DEBUG when both are set', () => {
-    withEnv({ NODE_ENV: 'production', BKS_LOG_LEVEL: 'error', DEBUG: '*' }, () => {
-      expect(resolveLogLevels()).toEqual({ file: 'error', console: 'error' })
+      expect(resolveLogLevelsFromProcessEnv()).toEqual({ file: 'warn', console: 'warn' })
     })
   })
 })
