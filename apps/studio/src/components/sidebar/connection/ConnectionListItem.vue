@@ -14,19 +14,12 @@
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">
-          <span>{{ label }}</span>
-          <input
-            v-if="renaming"
-            ref="renameInput"
-            v-model="renameValue"
-            class="rename-input"
-            @keyup.enter="submitRename"
-            @keyup.esc="cancelRename"
-            @blur="cancelRename"
-            @click.stop.prevent
-            @dblclick.stop
-            @mousedown.stop
-          >
+          <editable-text
+            :initial-value="label"
+            :rename="rename"
+            @submit="submitRename"
+            @cancel="rename = false"
+          />
         </div>
         <div class="subtitle">
           <span
@@ -85,8 +78,10 @@
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
+import EditableText from '@/components/common/EditableText.vue'
 
 export default {
+  components: { EditableText },
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
   props: [
@@ -100,8 +95,7 @@ export default {
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     split: null,
-    renaming: false,
-    renameValue: ''
+    rename: false,
   }),
   computed: {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
@@ -187,7 +181,7 @@ export default {
   methods: {
     showContextMenu(event) {
       // Stop here and propagate the event if right clicking an input element
-      if (event.target === this.$refs.renameInput) {
+      if (event.target.tagName === 'INPUT') {
         return;
       }
 
@@ -215,7 +209,9 @@ export default {
         !this.isRecentList && {
           name: "Rename",
           slug: 'rename',
-          handler: () => this.startRename()
+          handler: () => {
+            this.rename = true;
+          },
         },
         {
           name: "Duplicate",
@@ -298,23 +294,9 @@ export default {
     unpin() {
       this.$store.dispatch('pinnedConnections/remove', this.config);
     },
-    async startRename() {
-      if (this.isRecentList) {
-        return
-      }
-      this.renaming = true
-      this.renameValue = this.savedConnection?.name || ''
-      await this.$nextTick()
-      this.$refs.renameInput.focus()
-      this.$refs.renameInput.select()
-    },
-    async submitRename() {
-      if (!this.renaming) {
-        return
-      }
-      this.renaming = false
-      const name = this.renameValue.trim()
-      if (!name || name === (this.savedConnection?.name || '')) {
+    async submitRename(name) {
+      if (!name || name === this.label) {
+        this.rename = false
         return
       }
       try {
@@ -322,11 +304,10 @@ export default {
         await this.$store.dispatch('data/connections/save', updated)
       } catch (ex) {
         this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.rename = false
       }
     },
-    cancelRename() {
-      this.renaming = false
-    }
   }
 
 }
@@ -334,19 +315,7 @@ export default {
 <style lang="scss" scoped>
 .list-item .list-item-btn .connection-title .title {
   position: relative;
-  overflow: visible;
-}
-
-.rename-input {
   width: 100%;
-  height: auto;
-  padding-inline: 0.1rem;
-  font-size: inherit;
-  line-height: normal;
-  position: absolute;
-  left: -0.15rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--theme-bg);
+  overflow: visible;
 }
 </style>

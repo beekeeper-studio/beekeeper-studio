@@ -13,19 +13,12 @@
       <i class="item-icon query material-icons">code</i>
       <div class="list-text">
         <div class="list-title flex-col">
-          <span class="item-text title truncate expand">{{ item.title }}</span>
-          <input
-            v-if="renaming"
-            ref="renameInput"
-            v-model="renameValue"
-            class="rename-input"
-            @keyup.enter="submitRename"
-            @keyup.esc="cancelRename"
-            @blur="cancelRename"
-            @click.stop
-            @dblclick.stop
-            @mousedown.stop
-          >
+          <editable-text
+            :initial-value="item.title"
+            :rename="rename"
+            @submit="submitRename"
+            @cancel="rename = false"
+          />
         </div>
         <div class="database subtitle"><span>{{ subtitle }}</span></div>
       </div>
@@ -38,13 +31,14 @@ import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
+import EditableText from '@/components/common/EditableText.vue'
 
 export default Vue.extend({
+  components: { EditableText },
   props: ['item', 'selected', 'active'],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
-    renaming: false,
-    renameValue: '',
+    rename: false,
   }),
   computed: {
     ...mapGetters(['isCloud']),
@@ -86,6 +80,7 @@ export default Vue.extend({
     async moveToRoot(item) {
       try {
         const updated = _.clone(item)
+
         updated.queryFolderId = null
         await this.$store.dispatch('data/queries/save', updated)
       } catch (ex) {
@@ -109,7 +104,7 @@ export default Vue.extend({
     },
     openContextMenu(event, item) {
       // Stop here and propagate the event if right clicking an input element
-      if (event.target === this.$refs.renameInput) {
+      if (event.target.tagName === 'INPUT') {
         return;
       }
 
@@ -122,7 +117,9 @@ export default Vue.extend({
         },
         {
           name: "Rename",
-          handler: () => this.startRename()
+          handler: () => {
+            this.rename = true;
+          },
         },
         {
           name: "Duplicate",
@@ -156,25 +153,9 @@ export default Vue.extend({
         options
       })
     },
-    async startRename() {
-      this.renaming = true;
-      this.renameValue = this.item.title;
-
-      await this.$nextTick();
-
-      this.$refs.renameInput.focus();
-      this.$refs.renameInput.select();
-    },
-    async submitRename() {
-      if (!this.renaming) {
-        return;
-      }
-
-      this.renaming = false;
-
-      const title = this.renameValue.trim();
-
+    async submitRename(title) {
       if (!title || title === this.item.title) {
+        this.rename = false;
         return;
       }
 
@@ -185,10 +166,9 @@ export default Vue.extend({
         });
       } catch (ex) {
         this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.rename = false;
       }
-    },
-    cancelRename() {
-      this.renaming = false;
     },
   }
 
@@ -205,18 +185,5 @@ export default Vue.extend({
   position: relative;
   width: 100%;
   overflow: visible;
-}
-
-.rename-input {
-  width: 100%;
-  height: auto;
-  padding-inline: 0.1rem;
-  font-size: inherit;
-  line-height: normal;
-  position: absolute;
-  left: -0.15rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--theme-bg);
 }
 </style>
