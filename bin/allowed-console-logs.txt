@@ -1,4 +1,3 @@
-apps/studio/src-commercial/backend/lib/db/clients/oracle/OracleCursor.ts::console.log('handling metadata', data)
 apps/studio/src-commercial/entrypoints/main.ts::.catch((err) => console.log('An error occurred: ', err));
 apps/studio/src-commercial/entrypoints/main.ts::.then((name) => console.log(`Added Extension:  ${name}`))
 apps/studio/src-commercial/entrypoints/main.ts::console.log("Dev mode detected, disabling CORS")
