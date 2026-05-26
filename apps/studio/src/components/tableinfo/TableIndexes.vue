@@ -132,7 +132,6 @@ import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 interface State {
   mysqlTypes: string[]
-  /** Tabulator instance — declared optional so it is not returned from data() and stays non-reactive. */
   tabulator?: Tabulator
   newRows: RowComponent[]
   removedRows: RowComponent[],

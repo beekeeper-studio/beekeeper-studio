@@ -34,7 +34,6 @@ import { Dialect, SchemaItem } from '../lib/dialects/models'
 
 interface SchemaBuilderData {
   builtColumns: SchemaItem[],
-  /** Tabulator instance — declared optional so it is not returned from data() and stays non-reactive. */
   tabulator?: Tabulator
   defaultName: string
   columnsModified: boolean

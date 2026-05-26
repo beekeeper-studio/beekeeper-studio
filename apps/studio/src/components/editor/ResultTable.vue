@@ -1123,7 +1123,6 @@ import { stringToTypedArray } from '@/common/utils'
       this.unregisterHandlers(this.rootBindings)
     },
     created() {
-      /** @type {import('tabulator-tables').Tabulator | null} */
       this.tabulator = null
     },
     async mounted() {

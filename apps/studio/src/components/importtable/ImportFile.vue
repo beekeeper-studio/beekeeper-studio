@@ -238,7 +238,6 @@
       }
     },
     created() {
-      /** @type {import('tabulator-tables').TabulatorFull | null} */
       this.tabulator = null
     },
     computed: {

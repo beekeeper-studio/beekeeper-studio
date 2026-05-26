@@ -335,7 +335,6 @@ export default {
   },
 
   created() {
-    /** @type {import('./TextEditor').TextEditor | null} */
     this.textEditor = null
   },
   mounted() {

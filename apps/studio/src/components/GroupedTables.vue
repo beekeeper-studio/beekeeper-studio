@@ -173,7 +173,6 @@ export default {
     }
   },
   created() {
-    /** @type {import('tabulator-tables').Tabulator | null} */
     this.tabulator = null
   },
   mounted() {

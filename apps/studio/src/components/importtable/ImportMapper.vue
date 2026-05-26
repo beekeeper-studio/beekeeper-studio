@@ -480,7 +480,6 @@ export default {
     },
   },
   created() {
-    /** @type {import('tabulator-tables').TabulatorFull | null} */
     this.tabulator = null
   },
   mounted () {

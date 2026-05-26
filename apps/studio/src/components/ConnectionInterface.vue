@@ -395,7 +395,6 @@ export default Vue.extend({
     }
   },
   created() {
-    /** @type {import('split.js').Instance | null} */
     this.split = null
   },
   async mounted() {

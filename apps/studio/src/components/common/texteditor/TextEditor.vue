@@ -610,7 +610,6 @@ export default {
     },
   },
   created() {
-    /** @type {import('codemirror').Editor | null} */
     this.editor = null
   },
   async mounted() {

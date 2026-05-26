@@ -485,7 +485,6 @@ export default {
     },
   },
   created() {
-    /** @type {import('split.js').Instance | null} */
     this.split = null
   },
   async mounted() {
