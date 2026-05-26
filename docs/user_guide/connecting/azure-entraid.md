@@ -26,6 +26,8 @@ We recommend using the Azure CLI authentication whenever possible.
 
 Uses your Microsoft EntraID credentials via a browser for a streamlined sign-in experience.
 
+![SQL Server connection form with Azure AD SSO selected](../../assets/images/azure-entraid-sso.png)
+
 <video controls>
     <source id="workspaces" type="video/mp4" src="https://assets.beekeeperstudio.io/bks-azure-entra-sso.mp4" />
 </video>
@@ -55,6 +57,8 @@ Uses your Microsoft EntraID credentials via a browser for a streamlined sign-in 
 Sign into azure using the Azure CLI, then use your authenticated session to access your database in Azure.
 
 This is the most enterprise-friendly workflow as it does not require the cooperation of the Beekeeper Studio servers, simply a pre-authenticated AZ client with the right permissions.
+
+![SQL Server connection form with Azure CLI authentication selected](../../assets/images/azure-entraid-cli.png)
 
 <video controls>
     <source id="workspaces" type="video/mp4" src="https://assets.beekeeperstudio.io/bks-azure-entra-cli.mp4" />
@@ -93,6 +97,7 @@ Service principals are best suited for automated services or non-interactive app
 
 We recommend using Azure CLI whenever possible.
 
+![SQL Server connection form with Azure Service Principal selected](../../assets/images/azure-entraid-service-principal.png)
 
 <video controls>
     <source id="workspaces" type="video/mp4" src="https://assets.beekeeperstudio.io/bks-azure-entra-principal.mp4" />

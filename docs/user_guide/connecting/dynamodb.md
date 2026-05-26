@@ -7,6 +7,12 @@ description: "Browse tables, run PartiQL queries, and edit data in DynamoDB usin
 
 # DynamoDB Support
 
+## How To Connect
+
+Select **DynamoDB** from the connection type dropdown, choose your authentication method (IAM access keys, AWS profile, or CLI), and provide the relevant credentials. Optionally, set a **Custom Endpoint** to point at DynamoDB Local (for example `http://localhost:8000`).
+
+![DynamoDB connection form in Beekeeper Studio](../../assets/images/dynamodb-connection.png)
+
 ## Supported Features
 
 - Table data view (Scan-based)

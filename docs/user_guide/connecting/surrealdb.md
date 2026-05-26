@@ -9,6 +9,8 @@ description: "Connecting to SurrealDB over websocket or http"
 
 Connecting to a SurrealDB instance is simple. Select SurrealDB from the dropdown, and fill in the protocol, host, port, username, and password fields, then click Connect.
 
+![SurrealDB connection form in Beekeeper Studio](../../assets/images/surrealdb-connection.png)
+
 ## SurrealDB Connection Details
 
 To connect to a SurrealDB instance, you'll need the following information:

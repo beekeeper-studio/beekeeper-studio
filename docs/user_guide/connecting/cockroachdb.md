@@ -16,6 +16,8 @@ CockroachDB uses the PostgreSQL wire protocol, so the basics — host, port, dat
 
 Pick **CockroachDB** from the connection type dropdown and fill in host, port (`26257` by default), username, password, and database. SSL is typically required for cloud clusters; Beekeeper's default "trust the server" SSL mode works with Cockroach Cloud's certificates.
 
+![CockroachDB connection form in Beekeeper Studio](../../assets/images/cockroachdb-connection.png)
+
 If you have a Postgres-style connection string from the Cockroach console, paste it into the URL box at the top of the form — Beekeeper will extract the cluster ID and any Cockroach-specific options automatically.
 
 ## Cockroach Cloud Cluster ID

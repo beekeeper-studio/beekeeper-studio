@@ -9,6 +9,8 @@ icon: simple/redis
 
 Connecting to a Redis instance is straightforward. Select `Redis` from the connection type dropdown, fill in your connection details, and click `Connect`.
 
+![Redis connection form in Beekeeper Studio](../../assets/images/redis-connection.png)
+
 ## Redis Connection Details
 
 To connect to a Redis instance, you'll need the following information:

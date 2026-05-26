@@ -7,6 +7,12 @@ description: "Use a MongoDB shell or SQL editor to run queries against MongoDB b
 
 # MongoDB Support
 
+## How To Connect
+
+Select **MongoDB** from the connection type dropdown, enter your MongoDB URL (for example `mongodb://localhost:27017`), and optionally fill in the default database. Click **Connect**.
+
+![MongoDB connection form in Beekeeper Studio](../../assets/images/mongodb-connection.png)
+
 ## Supported Features
 
 - Table data view

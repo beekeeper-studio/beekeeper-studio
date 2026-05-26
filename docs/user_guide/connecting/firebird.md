@@ -6,6 +6,12 @@ icon: material/database
 
 Beekeeper Studio doesn't support the firebird 3+ wire protocol yet, so your firebird server needs to allow legacy connections.
 
+## Connection Form
+
+Select **Firebird** from the connection type dropdown, then fill in the host, port (default `3050`), username, password, and the path to your database file in the **Default Database** field.
+
+![Firebird connection form in Beekeeper Studio](../../assets/images/firebird-connection.png)
+
 !!! Warning
     If security is a concern, you should not use the Legacy_Auth authentication plugin. The legacy connection method sends passwords over the wire unencrypted, does not support wire protocol encryption, and also limits (truncates!) the usable length of the password to 8 bytes.
 

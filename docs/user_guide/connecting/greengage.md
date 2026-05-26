@@ -22,6 +22,8 @@ GreengageDB is **PostgreSQL-compatible** (it speaks the PostgreSQL wire protocol
 4. (Optional) Configure **SSL/TLS** and/or **SSH Tunnel**.
 5. Click **Test Connection**, then **Connect**.
 
+![GreengageDB connection form in Beekeeper Studio](../../assets/images/greengage-connection.png)
+
 ## GreengageDB docs
 
 To learn more about GreengageDB and how to set up your environment (including Docker), see the official documentation:

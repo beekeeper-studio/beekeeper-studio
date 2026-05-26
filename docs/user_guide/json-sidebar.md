@@ -10,6 +10,8 @@ Open the JSON Sidebar in any data table in one of two ways - Right click any row
 
 The JSON sidebar allows you to view any record in JSON format. It's a great way to view wide-tables, complex schemas, and nested fields.
 
+![JSON Viewer pane open alongside the table data, showing the selected row as JSON](../assets/images/json-sidebar-detail.png)
+
 Once you have the data you like, simply copy the data -- it's normal JSON!
 
 

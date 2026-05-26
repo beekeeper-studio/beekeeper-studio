@@ -16,6 +16,8 @@ Support has been limited to basically a "read only" state since any form of writ
 ## How to Connect
 Connecting to a Trino database from Beekeeper Studio is straightforward. SElect Trino from the dropdown, and fill in the host, port, username, and password fields of the Trino Cluster (not any of the underlying databases), then click Connect.
 
+![Trino connection form in Beekeeper Studio](../../assets/images/trino-connection.png)
+
 ### Trino Connection Details
 
 To connect to a Trino database, you'll need the following information:
