@@ -7,6 +7,23 @@ description: "Browse tables, run PartiQL queries, and edit data in DynamoDB usin
 
 # DynamoDB Support
 
+!!! note "Beta feature"
+    DynamoDB support is currently in beta. It works well, but you may run into the occasional rough edge — please [report any issues](https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose).
+
+## Connecting to DynamoDB
+
+DynamoDB is a managed AWS service, so there's no host or port to enter. Select **DynamoDB** as the connection type, then choose how to authenticate:
+
+- **IAM Access Key and Secret Key** — enter an access key ID and secret access key directly.
+- **IAM Credentials File** — use a named profile from the shared AWS credentials file (`~/.aws/credentials`).
+- **AWS CLI Authentication** — reuse the credentials from an existing AWS CLI configuration.
+
+Set the **AWS Region** your tables live in (for example, `us-east-1`).
+
+### Connecting to DynamoDB Local
+
+To connect to [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) or another DynamoDB-compatible endpoint, enter its address in the **Custom Endpoint** field (for example, `http://localhost:8000`). Any non-empty credentials work against a local endpoint.
+
 ## Supported Features
 
 - Table data view (Scan-based)
