@@ -79,7 +79,7 @@
           ref="wrapper"
           @contextmenu.self.prevent="showLonelyContextMenu($event)"
         >
-          <BksTreeList
+          <bks-tree-list
             :list="tree"
             @bks-folder-toggle="onTreeFolderToggle"
             @bks-item-change="onTreeItemChange"
@@ -96,12 +96,11 @@
                 @select="select"
                 @open="open"
                 @open-history="openHistory"
-                @rename="rename"
                 @export="exportTo"
                 @duplicate="duplicate"
               />
             </template>
-          </BksTreeList>
+          </bks-tree-list>
         </nav>
         <div
           class="empty"
@@ -167,27 +166,6 @@
           </div>
         </form>
       </modal>
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="rename-modal"
-        @closed="renameMe=null"
-        height="auto"
-        :scrollable="true"
-      >
-        <div
-          class="dialog-content"
-          v-kbd-trap="true"
-          v-if="renameMe"
-        >
-          <div class="dialog-c-title">
-            Rename {{ renameMe.title }}
-          </div>
-          <query-rename-form
-            :query="renameMe"
-            @done="$modal.hide('rename-modal')"
-          />
-        </div>
-      </modal>
     </portal>
   </div>
 </template>
@@ -198,16 +176,14 @@ import { mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
-import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
 import BksTreeList from '@beekeeperstudio/ui-kit/vue/tree-list'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, QueryRenameForm, BksTreeList },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, BksTreeList },
   data: function () {
     return {
       checkedFavorites: [],
       selected: null,
-      renameMe: null,
       folderModalName: '',
       folderModalItem: null,
       folderModalParentId: null,
@@ -260,10 +236,6 @@ export default {
     },
     createQuery() {
       this.$root.$emit(AppEvent.newTab)
-    },
-    rename(query) {
-      this.$modal.show('rename-modal')
-      this.renameMe = query
     },
     exportTo(query) {
       this.$root.$emit(AppEvent.promptQueryExport, query)

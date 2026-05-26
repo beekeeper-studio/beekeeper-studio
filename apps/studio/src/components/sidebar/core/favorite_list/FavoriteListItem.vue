@@ -1,7 +1,7 @@
 <template>
   <div
     class="list-item"
-    @contextmenu.prevent.stop="openContextMenu($event, item)"
+    @contextmenu.prevent="openContextMenu($event, item)"
   >
     <a
       class="list-item-btn"
@@ -11,9 +11,27 @@
       :class="{active, selected}"
     >
       <i class="item-icon query material-icons">code</i>
-      <div class="list-title flex-col">
-        <span class="item-text title truncate expand">{{ item.title }}</span>
-        <span class="database subtitle"><span>{{ subtitle }}</span></span>
+      <div classs="list-text">
+        <div class="list-title flex-col">
+          <input
+            v-if="renaming"
+            ref="renameInput"
+            v-model="renameValue"
+            class="rename-input"
+            @keyup.enter="submitRename"
+            @keyup.esc="cancelRename"
+            @blur="cancelRename"
+            @click.stop
+            @dblclick.stop
+            @mousedown.stop
+          >
+          <span
+            v-else
+            class="item-text title truncate expand"
+            @dblclick.stop.prevent="startRename"
+          >{{ item.title }}</span>
+        </div>
+        <div class="database subtitle"><span>{{ subtitle }}</span></div>
       </div>
     </a>
   </div>
@@ -28,7 +46,9 @@ import TimeAgo from 'javascript-time-ago'
 export default Vue.extend({
   props: ['item', 'selected', 'active'],
   data: () => ({
-    timeAgo: new TimeAgo('en-US')
+    timeAgo: new TimeAgo('en-US'),
+    renaming: false,
+    renameValue: '',
   }),
   computed: {
     ...mapGetters(['isCloud']),
@@ -92,6 +112,13 @@ export default Vue.extend({
       }
     },
     openContextMenu(event, item) {
+      // Stop here and propagate the event if right clicking an input element
+      if (event.target === this.$refs.renameInput) {
+        return;
+      }
+
+      event.stopPropagation();
+
       const options = [
         {
           name: "Open",
@@ -99,7 +126,7 @@ export default Vue.extend({
         },
         {
           name: "Rename",
-          handler: ({ item }) => this.$emit('rename', item)
+          handler: () => this.startRename()
         },
         {
           name: "Duplicate",
@@ -133,7 +160,51 @@ export default Vue.extend({
         options
       })
     },
+    async startRename() {
+      this.renaming = true;
+      this.renameValue = this.item.title;
+
+      await this.$nextTick();
+
+      this.$refs.renameInput.focus();
+      this.$refs.renameInput.select();
+    },
+    async submitRename() {
+      if (!this.renaming) {
+        return;
+      }
+
+      this.renaming = false;
+
+      const title = this.renameValue.trim();
+
+      if (!title || title === this.item.title) {
+        return;
+      }
+
+      try {
+        await this.$store.dispatch('data/queries/save', {
+          id: this.item.id,
+          title,
+        });
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      }
+    },
+    cancelRename() {
+      this.renaming = false;
+    },
   }
 
 })
 </script>
+<style lang="scss" scoped>
+.rename-input {
+  width: 100%;
+  height: auto;
+  padding-inline: 0.1rem;
+  padding-block: 0.1rem;
+  font-size: inherit;
+  line-height: normal;
+}
+</style>
