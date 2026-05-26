@@ -2,6 +2,7 @@
 // keys) from log messages before they reach a transport. Wired into the
 // shared logger via its `hooks` API.
 
+import type { LogMessage } from 'electron-log';
 import { cloneDeepWith } from 'lodash';
 
 const REDACTED = '[REDACTED]';
@@ -33,11 +34,6 @@ function redact(input: unknown): unknown {
   });
 }
 
-export interface LogMessageLike {
-  data: unknown[];
-  [k: string]: unknown;
-}
-
 // Mirrors the dev-mode signal in src/common/platform_info/mainPlatformInfo.ts.
 // We don't import platform_info directly because utilityPlatformInfo imports
 // the shared logger at module top-level, which creates a circular dep that
@@ -48,10 +44,7 @@ function isDevelopment(): boolean {
   return process.env.NODE_ENV === 'development';
 }
 
-// Generic over the message shape so it can be wired into a hook without
-// importing the third-party LogMessage type (the import-checker script
-// forbids that string outside the shared logger files).
-export function redactMessage<T extends { data: unknown[] }>(message: T): T {
+export function redactMessage(message: LogMessage): LogMessage {
   if (!message || !Array.isArray(message.data)) return message;
   if (isDevelopment()) return message;
   return { ...message, data: message.data.map(redact) };

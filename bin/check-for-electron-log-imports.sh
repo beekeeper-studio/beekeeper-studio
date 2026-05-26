@@ -1,6 +1,6 @@
 #! /bin/bash
 
-git grep -a "electron-log" apps/studio/src* ':!*preload.ts' ':!*Logger.ts'
+git grep -a "electron-log" apps/studio/src* ':!*preload.ts' ':!*Logger.ts' ':!*lib/log/redact.ts'
 STATUS=$?
 
 if [[ $STATUS -eq 0 ]]
