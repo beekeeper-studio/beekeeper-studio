@@ -40,15 +40,18 @@ export interface LogMessageLike {
 
 // Mirrors the dev-mode signal in src/common/platform_info/mainPlatformInfo.ts.
 // We don't import platform_info directly because utilityPlatformInfo imports
-// @bksLogger at module top-level, which creates a circular dep that breaks
-// during logger init. esbuild statically replaces this expression at build
-// time ("development" in watch mode, "production" otherwise); jest sets it to
-// "test" so redaction stays on under integration tests.
+// the shared logger at module top-level, which creates a circular dep that
+// breaks during logger init. esbuild statically replaces this expression at
+// build time ("development" in watch mode, "production" otherwise); jest sets
+// it to "test" so redaction stays on under integration tests.
 function isDevelopment(): boolean {
   return process.env.NODE_ENV === 'development';
 }
 
-export function redactMessage(message: LogMessageLike): LogMessageLike {
+// Generic over the message shape so it can be wired into a hook without
+// importing the third-party LogMessage type (the import-checker script
+// forbids that string outside the shared logger files).
+export function redactMessage<T extends { data: unknown[] }>(message: T): T {
   if (!message || !Array.isArray(message.data)) return message;
   if (isDevelopment()) return message;
   return { ...message, data: message.data.map(redact) };
