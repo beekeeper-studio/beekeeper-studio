@@ -38,8 +38,16 @@ function redact(input: unknown): unknown {
   });
 }
 
+// Set BKS_LOG_NO_REDACT=1 (or any truthy value) to dump raw values into the
+// log file. Intended for local debugging of redaction-related issues — never
+// for production runs. Read on every call so tests can flip it at runtime.
+function redactionDisabled(): boolean {
+  return !!process.env.BKS_LOG_NO_REDACT;
+}
+
 export function redactMessage(message: LogMessage): LogMessage {
   if (!message || !Array.isArray(message.data)) return message;
+  if (redactionDisabled()) return message;
   return { ...message, data: message.data.map(redact) };
 }
 

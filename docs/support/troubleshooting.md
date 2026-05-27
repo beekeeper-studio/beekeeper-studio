@@ -59,6 +59,7 @@ following environment variables set:
 | ----------------------- | ------------------------------------------------------------------------------------- |
 | `DEBUG=1`               | Quick toggle. Drops the log level to `silly` (everything) and opens DevTools on launch. |
 | `BKS_LOG_LEVEL=<level>` | Sets the log level explicitly. Valid values: `error`, `warn`, `info`, `verbose`, `debug`, `silly`. Takes precedence over `DEBUG`. |
+| `BKS_LOG_NO_REDACT=1`   | Disables the credential redacter so passwords, tokens, and similar fields appear verbatim. Local debugging only — never set this on a machine whose logs might be shared. |
 
 `silly` is the most verbose; `error` is the quietest. Most users investigating
 a bug should start with `BKS_LOG_LEVEL=debug` or `DEBUG=1`.

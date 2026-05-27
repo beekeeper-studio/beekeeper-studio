@@ -226,4 +226,20 @@ describe('log redaction (electron-log hooks)', () => {
       process.env.NODE_ENV = originalEnv
     }
   })
+
+  it('skips redaction when BKS_LOG_NO_REDACT is set', () => {
+    const original = process.env.BKS_LOG_NO_REDACT
+    process.env.BKS_LOG_NO_REDACT = '1'
+    try {
+      log.info('no-redact', { host: 'db.example.com', password: SECRETS.password })
+
+      const contents = fileContents(logFile)
+      expect(contents).toContain('db.example.com')
+      expect(contents).toContain(SECRETS.password)
+      expect(contents).not.toContain('[REDACTED]')
+    } finally {
+      if (original === undefined) delete process.env.BKS_LOG_NO_REDACT
+      else process.env.BKS_LOG_NO_REDACT = original
+    }
+  })
 })
