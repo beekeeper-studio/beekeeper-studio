@@ -1097,26 +1097,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   ): Promise<StreamResults> {
     const cursor = new DuckDBCursor(this.connectionInstance, query, chunkSize);
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
-
     return {
-      totalRows,
-      columns,
       cursor
-    }
-  }
-
-  async getColumnsAndTotalRows(query: string): Promise<ColumnsAndTotalRows> {
-    const [result] = await this.executeQuery(query)
-    const {fields, rowCount: totalRows} = result
-    const columns = fields.map(f => ({
-      columnName: f.name,
-      dataType: f.dataType
-    }))
-
-    return {
-      columns,
-      totalRows
     }
   }
 

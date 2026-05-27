@@ -43,11 +43,6 @@ interface TableMetadata {
   pks: PrimaryKeyColumn[]
 }
 
-interface ColumnsAndTotalRows {
-  columns: TableColumn[]
-  totalRows: number
-}
-
 // this provides the ability to get the current tab information, plus provides
 // a way to log the data to a table in the app sqlite.
 // this is a useful design if BKS ever gains a web version.
@@ -566,20 +561,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       return true;
     } catch (_e) {
       return false;
-    }
-  }
-
-  async getColumnsAndTotalRows(query: string): Promise<ColumnsAndTotalRows> {
-    const [result] = await this.executeQuery(query)
-    const {fields, rowCount: totalRows} = result
-    const columns = fields.map(f => ({
-      columnName: f.name,
-      dataType: f.dataType
-    }))
-
-    return {
-      columns,
-      totalRows
     }
   }
 
