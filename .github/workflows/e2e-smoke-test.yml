@@ -131,20 +131,47 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Ubuntu (older LTS — 24.04 and 22.04 covered by native runners)
+          - distro: ubuntu-20.04
+            image: ubuntu:20.04
+            pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          # Debian (3 releases back)
           - distro: debian-bookworm
             image: debian:bookworm
             pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          - distro: debian-bullseye
+            image: debian:bullseye
+            pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          - distro: debian-buster
+            image: debian:buster
+            pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          # Fedora (current + 1 back — no LTS, short release cycle)
           - distro: fedora-41
             image: fedora:41
             pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
+          - distro: fedora-40
+            image: fedora:40
+            pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
+          # Arch Linux (rolling — only current makes sense)
           - distro: arch-linux
             image: archlinux:latest
             pkg-install: "pacman -Syu --noconfirm git curl xorg-server ca-certificates"
-          - distro: opensuse-leap-15
+          # openSUSE Leap (3 releases back)
+          - distro: opensuse-leap-15.6
             image: opensuse/leap:15.6
             pkg-install: "zypper --non-interactive install git curl xorg-x11-server-extra ca-certificates"
+          - distro: opensuse-leap-15.5
+            image: opensuse/leap:15.5
+            pkg-install: "zypper --non-interactive install git curl xorg-x11-server-extra ca-certificates"
+          - distro: opensuse-leap-15.4
+            image: opensuse/leap:15.4
+            pkg-install: "zypper --non-interactive install git curl xorg-x11-server-extra ca-certificates"
+          # Rocky Linux / RHEL (2 major versions)
           - distro: rocky-linux-9
             image: rockylinux:9
+            pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
+          - distro: rocky-linux-8
+            image: rockylinux:8
             pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
 
     steps:
