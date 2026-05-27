@@ -90,12 +90,12 @@ knex.client._escapeBinding = function (value: any, context: any) {
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
-  defaultSchema: () => Promise<string>
   version: SQLServerVersion
   dbConfig: any
   readOnlyMode: boolean
   logger: any
   pool: ConnectionPool;
+  _defaultSchema: string = 'dbo';
   authService: AzureAuthService;
   transcoders = [GenericBinaryTranscoder];
 
@@ -103,9 +103,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     super(knex, SQLServerContext, server, database)
     this.dialect = 'mssql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.defaultSchema = async (): Promise<string> => 'dbo'
     this.logger = () => log
     this.createUpsertFunc = this.createUpsertSQL
+  }
+
+  async defaultSchema(): Promise<string> {
+    return this._defaultSchema;
   }
 
   async getVersion(): Promise<SQLServerVersion> {
@@ -142,7 +145,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }))
   }
 
-  async listTableColumns(table: string, schema: string): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     const clauses = []
     if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
@@ -261,7 +264,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       : this.genSelectOld(table, offset, limit, orderBy, filters, schema, selects);
   }
 
-  async listTableTriggers(table: string, schema: string) {
+  async listTableTriggers(table: string, schema: string = this._defaultSchema) {
     // SQL Server does not have information_schema for triggers, so other way around
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const qualified = `${D.wrapIdentifier(schema)}.${D.wrapIdentifier(table)}`;
@@ -288,7 +291,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     })
   }
 
-  async getPrimaryKeys(table: string, schema?: string) {
+  async getPrimaryKeys(table: string, schema: string = this._defaultSchema) {
     this.logger().debug('finding foreign key for', table)
     const sql = `
     SELECT COLUMN_NAME, ORDINAL_POSITION
@@ -310,8 +313,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return res.length === 1 ? res[0].columnName : null
   }
 
-  async listTableIndexes(table: string, schema: string = null): Promise<TableIndex[]> {
-    schema = schema ?? await this.defaultSchema();
+  async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
     const sql = `
       SELECT
 
@@ -367,8 +369,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return _.sortBy(result, 'id') as TableIndex[]
   }
 
-  async getTableProperties(table: string, schema: string = null): Promise<TableProperties> {
-    schema = schema ?? await this.defaultSchema();
+  async getTableProperties(table: string, schema: string = this._defaultSchema): Promise<TableProperties> {
     const triggers = await this.listTableTriggers(table, schema)
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
@@ -561,7 +562,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return result;
   }
 
-  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string, selects = ['*']) {
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema, selects = ['*']) {
     const query = this.genSelectNew(table, null, null, orderBy, filters, schema, selects)
     const columns = await this.listTableColumns(table, schema)
     const rowCount = await this.getTableLength(table, schema)
@@ -573,7 +574,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  async getTableLength(table: string, schema: string) {
+  async getTableLength(table: string, schema: string = this._defaultSchema) {
     const countQuery = this.genCountQuery(table, [], schema)
     const countResults = await this.driverExecuteSingle(countQuery)
     const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
@@ -581,8 +582,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return totalRecords
   }
 
-  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = null): Promise<string> {
-    schema = schema ?? await this.defaultSchema();
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
     if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
       return ''
     }
@@ -1002,7 +1002,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return data.recordset.map((row) => row.definition)
   }
 
-  async setTableDescription(table: string, desc: string, schema: string) {
+  async setTableDescription(table: string, desc: string, schema: string = this._defaultSchema) {
     const existingDescription = await this.getTableDescription(table, schema)
     const f = existingDescription ? 'sp_updateextendedproperty' : 'sp_addextendedproperty'
     const sql = `
@@ -1418,7 +1418,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return `'${value.replaceAll(/'/g, "''")}'`
   }
 
-  private genCountQuery(table: string, filters: string | TableFilter[], schema: string) {
+  private genCountQuery(table: string, filters: string | TableFilter[], schema: string = this._defaultSchema) {
     const filterString = _.isString(filters) ? `WHERE ${filters}` : this.buildFilterString(filters)
 
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
@@ -1440,7 +1440,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return (data.recordsets[0] as any).schema
   }
 
-  private async listDefaultConstraints(table: string, schema: string) {
+  private async listDefaultConstraints(table: string, schema: string = this._defaultSchema) {
     const sql = `
       -- returns name of a column's default value constraint
       SELECT
@@ -1462,7 +1462,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         sys.default_constraints
           ON all_columns.default_object_id = default_constraints.object_id
       WHERE
-        schemas.name = ${D.escapeString(schema || await this.defaultSchema(), true)}
+        schemas.name = ${D.escapeString(schema, true)}
         AND tables.name = ${D.escapeString(table, true)}
     `
     const { data } = await this.driverExecuteSingle(sql)
@@ -1476,8 +1476,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     })
   }
 
-  private async getTableDescription(table: string, schema: string | null = null) {
-    schema = schema ?? await this.defaultSchema();
+  private async getTableDescription(table: string, schema: string = this._defaultSchema) {
     const query = `SELECT *
       FROM fn_listextendedproperty (
         'MS_Description',

@@ -2293,6 +2293,80 @@ export class DBTestUtil {
     expect(version).toBeDefined()
   }
 
+  /**
+   * Regression guard for sql-query-identifier 3.0.0 unwrap fix: queries that
+   * use quoted identifiers (e.g. `SELECT cl."legacyConfig", * FROM "Agenda" ag
+   * JOIN "Clinic" cl ON ...`) used to leave the surrounding quotes on the
+   * parsed table/column names, so `getResultEditData` couldn't match parsed
+   * columns to their tables and returned everything read-only.
+   */
+  async getResultEditDataQuotedIdentifierTest() {
+    // Per-DB quoting & casing — use what each dialect actually accepts:
+    // - mysql / mariadb / tidb: backticks
+    // - sqlserver: [brackets]
+    // - firebird: double quotes around UPPERCASE names — firebird folds
+    //   unquoted identifiers to upper case, and quoted identifiers are
+    //   case-sensitive, so this is the only way to hit the seeded rows
+    // - everyone else: double quotes
+    let wrap: (s: string) => string
+    let people = 'people'
+    let addresses = 'addresses'
+    let countryCol = 'country'
+    let addressIdCol = 'address_id'
+    let idCol = 'id'
+    let firstNameCol = 'firstname'
+
+    if (this.dbType === 'mysql' || this.dbType === 'mariadb' || this.dbType === 'tidb') {
+      wrap = (s) => `\`${s}\``
+    } else if (this.dbType === 'sqlserver') {
+      wrap = (s) => `[${s}]`
+    } else if (this.dbType === 'firebird') {
+      wrap = (s) => `"${s}"`
+      people = 'PEOPLE'
+      addresses = 'ADDRESSES'
+      countryCol = 'COUNTRY'
+      addressIdCol = 'ADDRESS_ID'
+      idCol = 'ID'
+      firstNameCol = 'FIRSTNAME'
+    } else {
+      wrap = (s) => `"${s}"`
+    }
+
+    const queryText = `SELECT a.${wrap(countryCol)}, a.${wrap(idCol)} AS aid, p.* FROM ${wrap(people)} p JOIN ${wrap(addresses)} a ON p.${wrap(addressIdCol)} = a.${wrap(idCol)}`
+
+    const results = await this.connection.executeQuery(queryText)
+    const fields = results[0].fields
+    expect(fields.length).toBeGreaterThan(0)
+
+    const editData = await this.connection.getResultEditData(queryText, fields)
+    expect(editData.length).toBe(fields.length)
+
+    const sameName = (a: string | undefined, b: string) =>
+      !!a && a.toLowerCase() === b.toLowerCase()
+
+    // a.<country> must resolve to the joined `addresses` table and be editable.
+    const countryField = editData.find((e) =>
+      sameName(e.columnName, countryCol) && sameName(e.linkedTable, addresses)
+    )
+    expect(countryField).toBeDefined()
+    expect(countryField.editable).toBe(true)
+
+    // `p.*` expands; the PK from `people` should be detected and read-only.
+    const peopleIdField = editData.find((e) =>
+      sameName(e.columnName, idCol) && sameName(e.linkedTable, people)
+    )
+    expect(peopleIdField).toBeDefined()
+    expect(peopleIdField.isPK).toBe(true)
+    expect(peopleIdField.editable).toBe(false)
+
+    // A non-PK column from `p.*` should be editable and linked to `people`.
+    const peopleFirstName = editData.find((e) =>
+      sameName(e.columnName, firstNameCol) && sameName(e.linkedTable, people)
+    )
+    expect(peopleFirstName).toBeDefined()
+    expect(peopleFirstName.editable).toBe(true)
+  }
+
   async compositeKeyTests() {
     // 5.1 doesn't have great support for composite keys, so we'll skip the test
     if (this.dbType === 'mysql') {
