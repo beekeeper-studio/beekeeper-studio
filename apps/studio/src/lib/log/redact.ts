@@ -41,8 +41,14 @@ function redact(input: unknown): unknown {
 // Set BKS_LOG_NO_REDACT=1 (or any truthy value) to dump raw values into the
 // log file. Intended for local debugging of redaction-related issues — never
 // for production runs. Read on every call so tests can flip it at runtime.
+//
+// `process` isn't defined in the renderer (contextIsolation + no node
+// integration), and reading an undeclared global throws ReferenceError. A
+// throw here would kill every log call via the hook (electron-log catches
+// the exception and silently drops the message), so guard with `typeof`.
 function redactionDisabled(): boolean {
-  return !!process.env.BKS_LOG_NO_REDACT;
+  if (typeof process === 'undefined') return false;
+  return !!process.env?.BKS_LOG_NO_REDACT;
 }
 
 export function redactMessage(message: LogMessage): LogMessage {
