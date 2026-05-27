@@ -2084,7 +2084,7 @@ export class DBTestUtil {
       wrap = (s) => `"${s}"`
     }
 
-    const queryText = `SELECT a.${wrap(countryCol)}, p.* FROM ${wrap(people)} p JOIN ${wrap(addresses)} a ON p.${wrap(addressIdCol)} = a.${wrap(idCol)}`
+    const queryText = `SELECT a.${wrap(countryCol)}, a.${wrap(idCol)} AS aid, p.* FROM ${wrap(people)} p JOIN ${wrap(addresses)} a ON p.${wrap(addressIdCol)} = a.${wrap(idCol)}`
 
     const results = await this.connection.executeQuery(queryText)
     const fields = results[0].fields
