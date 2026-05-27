@@ -21,9 +21,9 @@ log.transports.console.level = levels.console;
 if (log.transports.ipc) {
   log.transports.ipc.level = levels.file;
 }
-// Tag every renderer message with processType so the main-process file
-// transport can route it to renderer.log via resolvePathFn, and the console
-// formatter (`{processType}`) prints `[RENDERER]` in the terminal stream.
+// Tag every renderer message with processType so the console formatter
+// (`{processType}`) prints `[RENDERER]` in the terminal stream when main
+// relays IPC-bridged messages there.
 log.variables.processType = 'RENDERER';
 log.transports.console.format = '{h}:{i}:{s}.{ms} [{processType}]{scope} › {text}';
 log.hooks.push((message) => redactMessage(message));
