@@ -58,6 +58,7 @@ export const MysqlData: DialectData = {
       renameSchema: true,
     },
     schema: true,
+    dropCascade: true,
   },
   notices: {
     infoIndexes: 'Only ascending indexes are supported in MySQL before version 8.0.'
