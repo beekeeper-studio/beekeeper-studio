@@ -46,7 +46,14 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
   await window.main.requestPlatformInfo();
   await window.main.requestBksConfigSource();
-  rawLog.transports.console.level = "info"
+  // Main resolves BKS_LOG_LEVEL / DEBUG / NODE_ENV and hands the result
+  // back via platformInfo; apply it now so renderer messages above the
+  // renderer-side default (warn in prod, info in dev) start flowing.
+  const resolvedLevel = window.platformInfo.logLevel
+  if (resolvedLevel) {
+    rawLog.transports.console.level = resolvedLevel
+    if (rawLog.transports.ipc) rawLog.transports.ipc.level = resolvedLevel
+  }
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 

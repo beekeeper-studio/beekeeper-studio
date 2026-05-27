@@ -1,15 +1,15 @@
-import log from 'electron-log/node'
-import { redactMessage } from './redact'
+import log from 'electron-log/node';
+import { redactMessage } from './redact';
+import { resolveLevel } from './logLevel';
 
-export default function logger() {
-  log.logId = 'utility';
-  log.transports.console.level = 'info';
-  log.transports.file.level = "silly";
-  log.transports.file.fileName = "utility.log";
-  log.transports.console.format = '{h}:{i}:{s}.{ms} [UTILITY]{scope} › {text}'
-  log.errorHandler.setOptions({ showDialog: false})
-  log.hooks.push((message) => redactMessage(message))
+const level = resolveLevel();
+log.logId = 'utility';
+log.transports.console.level = level;
+log.transports.file.level = level;
+log.transports.file.fileName = 'utility.log';
+log.variables.processType = 'UTILITY';
+log.transports.console.format = '{h}:{i}:{s}.{ms} [{processType}]{scope} › {text}';
+log.errorHandler.setOptions({ showDialog: false });
+log.hooks.push((message) => redactMessage(message));
 
-  return log;
-}
-
+export default log;

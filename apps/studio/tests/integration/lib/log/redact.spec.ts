@@ -164,6 +164,27 @@ describe('log redaction (electron-log hooks)', () => {
     expect(contents).toContain('hello world')
   })
 
+  it('redacts cipher/encrypted field names (typeorm/cloud workspace shape)', () => {
+    const cfg = {
+      host: 'db.example.com',
+      passwordCipherText: 'cipher-secret-1',
+      sshPasswordCipher: 'cipher-secret-2',
+      sshKeyfilePasswordCipherText: 'cipher-secret-3',
+      encryptedToken: 'enc-secret-1',
+      encryptedClientSecret: 'enc-secret-2',
+    }
+
+    log.info('used-connection', cfg)
+
+    const contents = fileContents(logFile)
+    expect(contents).toContain('db.example.com')
+    expect(contents).not.toContain('cipher-secret-1')
+    expect(contents).not.toContain('cipher-secret-2')
+    expect(contents).not.toContain('cipher-secret-3')
+    expect(contents).not.toContain('enc-secret-1')
+    expect(contents).not.toContain('enc-secret-2')
+  })
+
   it('redacts additional credential field patterns', () => {
     const cfg = {
       host: 'db.example.com',

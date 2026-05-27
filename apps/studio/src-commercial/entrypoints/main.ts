@@ -6,6 +6,7 @@ import * as electron from 'electron'
 import { ipcMain } from 'electron'
 import _ from 'lodash'
 import log from '@bksLogger'
+import { resolveLevel } from '@/lib/log/logLevel'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
@@ -172,7 +173,7 @@ app.on('window-all-closed', () => {
 })
 
 ipcMain.handle('platformInfo', () => {
-  return platformInfo;
+  return { ...platformInfo, logLevel: resolveLevel() };
 })
 
 ipcMain.handle('bksConfigSource', () => {
