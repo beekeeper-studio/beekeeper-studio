@@ -6,7 +6,7 @@ import { resolveLevel } from './logLevel';
 // Main is the origin of the log level — mainPlatformInfo bakes the same
 // resolveLevel() result into platformInfo so utility (via env-serialized
 // platformInfo) and renderer (via IPC platformInfo) pick up the same value.
-// We can't pull platformInfo here directly because mainLogger is also
+// We can't pull platformInfo here directly because this module is also
 // bundled into preload, where importing platform_info throws by design.
 const level = resolveLevel();
 log.transports.console.level = level;
