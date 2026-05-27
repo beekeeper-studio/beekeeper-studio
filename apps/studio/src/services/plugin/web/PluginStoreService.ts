@@ -324,13 +324,13 @@ export default class PluginStoreService {
     }
 
     if (options.type === "tableStructure") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.openTableProperties, { table });
       return;
     }
 
     if (options.type === "tableTable") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.loadTable, {
         table,
         filters: options.filters,
