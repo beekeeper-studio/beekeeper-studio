@@ -1,13 +1,14 @@
 import log from 'electron-log/main';
 import path from 'path';
 import { redactMessage } from './redact';
-import platformInfo from '@/common/platform_info';
+import { resolveLevel } from './logLevel';
 
-// platformInfo.logLevel is resolved once in mainPlatformInfo.ts and shared
-// with utility (via env-serialized platformInfo) and renderer (via the
-// platformInfo IPC). Falls back to 'warn' if the field is missing — should
-// never happen in normal runs.
-const level = platformInfo.logLevel ?? 'warn';
+// Main is the origin of the log level — mainPlatformInfo bakes the same
+// resolveLevel() result into platformInfo so utility (via env-serialized
+// platformInfo) and renderer (via IPC platformInfo) pick up the same value.
+// We can't pull platformInfo here directly because mainLogger is also
+// bundled into preload, where importing platform_info throws by design.
+const level = resolveLevel();
 log.transports.console.level = level;
 log.transports.file.level = level;
 log.variables.processType = 'MAIN';
