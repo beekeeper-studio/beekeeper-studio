@@ -10,7 +10,6 @@ export default function logger() {
   log.transports.file.fileName = "utility.log";
   log.variables.processType = 'UTILITY';
   log.transports.console.format = '{h}:{i}:{s}.{ms} [{processType}]{scope} › {text}'
-  log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] [{processType}]{scope} {text}'
   log.errorHandler.setOptions({ showDialog: false})
   log.hooks.push((message) => redactMessage(message))
 

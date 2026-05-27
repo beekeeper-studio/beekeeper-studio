@@ -45,8 +45,8 @@ You can find logs for Beekeeper Studio in these directories:
 - macOS: `~/Library/Logs/beekeeper-studio/{process}.log`
 - Windows: `%USERPROFILE%\AppData\Roaming\beekeeper-studio\logs\{process}.log`
 
-`{process}` is `main` for the Electron main process and `utility` for the
-database driver process.
+`{process}` is one of `main` (the Electron main process), `renderer` (the
+UI process), or `utility` (the database driver process).
 
 By default, packaged builds only write `warn` and `error` messages to disk.
 Sensitive fields (passwords, tokens, private keys) are redacted before they
@@ -85,8 +85,8 @@ $env:BKS_LOG_LEVEL = "debug"
 & "Beekeeper Studio.exe"
 ```
 
-Reproduce the issue, then attach the contents of `main.log` and `utility.log`
-to your bug report.
+Reproduce the issue, then attach the contents of `main.log`, `renderer.log`,
+and `utility.log` to your bug report.
 
 
 ## MySQL
