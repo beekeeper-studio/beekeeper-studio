@@ -210,25 +210,10 @@ describe('log redaction (electron-log hooks)', () => {
     expect(contents).not.toContain('btok_topsecret')
   })
 
-  it('does not redact when NODE_ENV is development', () => {
-    const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
-    try {
-      log.info('dev-mode', { host: 'db.example.com', password: SECRETS.password })
-
-      const contents = fileContents(logFile)
-      expect(contents).toContain('db.example.com')
-      expect(contents).toContain(SECRETS.password)
-      expect(contents).not.toContain('[REDACTED]')
-    } finally {
-      process.env.NODE_ENV = originalEnv
-    }
-  })
-
-  it('redacts under test, production, and unset NODE_ENV', () => {
+  it('redacts under every NODE_ENV (development, test, production, unset)', () => {
     const originalEnv = process.env.NODE_ENV
     try {
-      for (const value of ['test', 'production', undefined]) {
+      for (const value of ['development', 'test', 'production', undefined]) {
         fs.rmSync(logFile, { force: true })
         if (value === undefined) delete process.env.NODE_ENV
         else process.env.NODE_ENV = value

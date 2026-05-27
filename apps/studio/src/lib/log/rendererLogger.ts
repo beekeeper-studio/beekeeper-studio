@@ -25,7 +25,7 @@ if (log.transports.ipc) {
 // (`{processType}`) prints `[RENDERER]` in the terminal stream when main
 // relays IPC-bridged messages there.
 log.variables.processType = 'RENDERER';
-log.transports.console.format = '{h}:{i}:{s}.{ms} [{processType}]{scope} › {text}';
+log.transports.console.format = '{h}:{i}:{s}.{ms} [{level}] [{processType}]{scope} › {text}';
 log.hooks.push((message) => redactMessage(message));
 
 export default log;
