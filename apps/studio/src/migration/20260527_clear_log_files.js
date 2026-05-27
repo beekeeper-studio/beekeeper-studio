@@ -19,7 +19,7 @@ function clearMainTransportFile() {
       file.clear()
     }
   } catch (e) {
-    log.warn('Failed to clear main file transport via electron-log:', e)
+    log.warn('Failed to clear main file transport via the shared logger:', e)
   }
 }
 
