@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
+import { resolveLevel } from '@/lib/log/logLevel'
 
 // TODO: Automatically enable wayland without flags once
 // we're confident it will 'just work' for all Wayland users.
@@ -114,6 +115,10 @@ export function mainPlatformInfo(): IPlatformInfo {
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
     // cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
+    // Resolved here once so main, utility, and renderer all read the same
+    // value: main consumes platformInfo directly, utility receives it as a
+    // JSON env var when forked, renderer fetches it over IPC.
+    logLevel: resolveLevel(),
 
     cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }

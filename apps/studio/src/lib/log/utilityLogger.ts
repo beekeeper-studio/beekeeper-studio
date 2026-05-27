@@ -1,8 +1,8 @@
 import log from 'electron-log/node';
 import { redactMessage } from './redact';
-import { resolveLevel } from './logLevel';
+import platformInfo from '@/common/platform_info';
 
-const level = resolveLevel();
+const level = platformInfo.logLevel ?? 'warn';
 log.logId = 'utility';
 log.transports.console.level = level;
 log.transports.file.level = level;
