@@ -203,7 +203,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   // We only use one connection to be able to read and write at the same time
   // https://duckdb.org/docs/connect/concurrency#handling-concurrency
   connectionInstance: Connection;
-  _defaultSchema: string;
+  _defaultSchema: string = "main";
   transcoders = [DuckDBBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -249,7 +249,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       }
     );
     this.connectionInstance = await this.databaseInstance.connect();
-    this._defaultSchema = await this.defaultSchema();
 
     this.knex = knexlib({
       client: DuckDBKnexClient as unknown as typeof Knex.Client,
@@ -676,7 +675,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async defaultSchema(): Promise<string> {
-    return "main";
+    return this._defaultSchema;
   }
 
   protected async rawExecuteQuery(

@@ -95,7 +95,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   readOnlyMode: boolean
   logger: any
   pool: ConnectionPool;
-  _defaultSchema: string;
+  _defaultSchema: string = 'dbo';
   authService: AzureAuthService;
   transcoders = [GenericBinaryTranscoder];
 
@@ -108,7 +108,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async defaultSchema(): Promise<string> {
-    return 'dbo';
+    return this._defaultSchema;
   }
 
   async getVersion(): Promise<SQLServerVersion> {
@@ -1087,7 +1087,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
     this.dbConfig = await this.configDatabase(this.server, this.database, signal)
     this.pool = await new ConnectionPool(this.dbConfig).connect();
-    this._defaultSchema = await this.defaultSchema();
 
     this.pool.on('error', (err) => {
       if (err instanceof ConnectionError) {
