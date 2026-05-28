@@ -11,7 +11,7 @@
         <div class="dialog-content">
           <div class="dialog-c-title has-icon">
             <i class="material-icons">vpn_key</i>
-            Paste CockroachDB JWT
+            Input {{ title }}
             <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
               <i class="material-icons">clear</i>
             </a>
@@ -23,15 +23,13 @@
           <error-alert v-if="errorMessage" :error="errorMessage" />
 
           <div class="form-group">
-            <label for="input-jwt">JWT Token</label>
-            <textarea
-              id="input-jwt"
-              ref="tokenInput"
+            <label for="input-ephemeral">{{ title }}</label>
+            <input
+              id="input-ephemeral"
+              ref="valueInput"
               class="form-control"
-              v-model.trim="token"
-              rows="5"
-              spellcheck="false"
-              placeholder="Paste a fresh CockroachDB JWT"
+              v-model.trim="value"
+              :placeholder="`Input a ${title}`"
             />
           </div>
         </div>
@@ -65,13 +63,14 @@ export default Vue.extend({
   components: { ErrorAlert },
   data() {
     return {
-      modalName: "input-jwt-modal",
-      submitListener: (_token: string) => {},
+      modalName: "input-ephemeral-modal",
+      submitListener: (_value: string) => {},
       cancelListener: () => {},
       submitting: false,
-      token: "",
-      errorMessage: "",
-      description: "Paste a fresh CockroachDB JWT. Beekeeper will send it as the password for this connection.",
+      value: null,
+      errorMessage: null,
+      description: null,
+      title: null
     };
   },
   methods: {
@@ -80,31 +79,32 @@ export default Vue.extend({
       this.submitListener = params.onSubmit || (() => {});
       this.cancelListener = params.onCancel || (() => {});
       this.submitting = false;
-      this.token = "";
-      this.errorMessage = "";
-      this.description = params.description || "Paste a fresh CockroachDB JWT. Beekeeper will send it as the password for this connection.";
+      this.value = null;
+      this.errorMessage = null;
+      this.description = params.description || "Input a new value. Beekeeper will use it to connect";
+      this.title = params.title || "Value"
     },
     opened() {
       this.$nextTick(() => {
-        this.$refs.tokenInput.focus();
+        this.$refs.valueInput.focus();
       });
     },
     close() {
       this.$modal.hide(this.modalName);
     },
     submit() {
-      if (!this.token) {
-        this.errorMessage = "A JWT token is required to connect";
+      if (!this.value) {
+        this.errorMessage = `Please input a ${this.title ?? "value"} to connect`;
         return;
       }
 
       this.submitting = true;
-      this.errorMessage = "";
+      this.errorMessage = null;
       this.close();
     },
     closed() {
       if (this.submitting) {
-        this.submitListener(this.token);
+        this.submitListener(this.value);
       } else {
         this.cancelListener();
       }

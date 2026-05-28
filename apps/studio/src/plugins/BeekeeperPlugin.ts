@@ -138,14 +138,29 @@ export const BeekeeperPlugin = {
       const description = connectionName
         ? `Paste a fresh CockroachDB JWT to connect to ${connectionName}. Beekeeper will send it as the password for this connection.`
         : 'Paste a fresh CockroachDB JWT. Beekeeper will send it as the password for this connection.';
+      const title = "CockroachDB JWT";
 
-      Vue.prototype.$modal.show('input-jwt-modal', {
+      Vue.prototype.$modal.show('input-ephemeral-modal', {
         description,
+        title,
         onSubmit: (token: string) => resolve({ token, cancelled: false }),
         onCancel: () => resolve({ cancelled: true }),
       })
     })
   },
+  async promptSnowflakeMFAPasscode(): Promise<{ passcode?: string, cancelled: boolean }> {
+    return new Promise((resolve) => {
+      const description = "Input the MFA passcode from your Authenticator App (this is not saved)";
+      const title = "MFA Passcode";
+
+      Vue.prototype.$modal.show('input-ephemeral-modal', {
+        description,
+        title,
+        onSubmit: (passcode: string) => resolve({ passcode, cancelled: false }),
+        onCancel: () => resolve({ cancelled: true }),
+      });
+    })
+  }
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin

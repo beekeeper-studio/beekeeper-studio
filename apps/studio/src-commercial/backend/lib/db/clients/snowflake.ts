@@ -18,6 +18,7 @@ import knexlib from 'knex';
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
+import { ModifyAquaConfiguration$ } from "@aws-sdk/client-redshift";
 
 const log = rawLog.scope('snowflake')
 
@@ -121,15 +122,18 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       warehouse: server.config.snowflakeOptions.defaultWarehouse,
     };
 
-    if ([SnowflakeAuthType.MFA, SnowflakeAuthType.Default].includes(server.config.snowflakeOptions?.authType)) {
+    if ([SnowflakeAuthType.MFACode, SnowflakeAuthType.MFANotif, SnowflakeAuthType.Default].includes(server.config.snowflakeOptions?.authType)) {
       config.username = server.config.user;
       config.password = server.config.password;
     }
 
-    if (server.config.snowflakeOptions?.authType === SnowflakeAuthType.MFA) {
+    if ([SnowflakeAuthType.MFACode, SnowflakeAuthType.MFANotif].includes(server.config.snowflakeOptions?.authType)) {
       config.authenticator = 'USERNAME_PASSWORD_MFA';
-      config.passcode = server.config.snowflakeOptions?.passcode;
       config.clientRequestMFAToken = true;
+    }
+
+    if (server.config.snowflakeOptions?.authType === SnowflakeAuthType.MFACode) {
+      config.passcode = server.config.snowflakeOptions?.passcode;
     }
 
     if (server.config.snowflakeOptions?.authType === SnowflakeAuthType.Browser) {

@@ -115,14 +115,16 @@ export const AzureAuthTypes = [
 
 export enum SnowflakeAuthType {
   Default,
-  MFA,
+  MFACode,
+  MFANotif,
   Browser
 }
 
 export const SnowflakeAuthTypes = [
   { name: 'Username / Password', value: SnowflakeAuthType.Default },
   { name: 'SSO with Browser', value: SnowflakeAuthType.Browser },
-  { name: 'Multi-Factor Authentication', value: SnowflakeAuthType.MFA }
+  { name: 'Multi-Factor Authentication with Code', value: SnowflakeAuthType.MFACode },
+  { name: 'Multi-Factor Authentication with Duo', value: SnowflakeAuthType.MFANotif }
 ]
 
 export interface RedshiftOptions {

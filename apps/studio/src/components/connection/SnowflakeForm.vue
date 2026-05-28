@@ -41,26 +41,6 @@
         <password-input v-model="config.password" />
       </div>
     </div>
-    <div v-if="showPasscode" class="form-group expand">
-      <div class="col form-group">
-        <label for="password">
-          Multi-Factor Authentication Passcode
-          <i
-            class="material-icons"
-            v-tooltip="{
-              content: `MFA Code from Authenticator App if needed, this is not saved`,
-              html: true,
-            }"
-          >
-            help_outlined
-          </i>
-        </label>
-        <masked-input
-          :value="config.snowflakeOptions.passcode"
-          @input="val => config.snowflakeOptions.passcode = val"
-        />
-      </div>
-    </div>
     <div class="form-group expand">
       <label
         for="defaultDatabase"
@@ -108,9 +88,6 @@ export default {
     }
   },
   computed: {
-    showPasscode() {
-      return this.authType === SnowflakeAuthType.MFA;
-    },
     showUserAndPassword() {
       return this.authType !== SnowflakeAuthType.Browser
     }
