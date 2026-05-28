@@ -1,4 +1,5 @@
 import log from 'electron-log/node'
+import { redactMessage } from './redact'
 
 export default function logger() {
   log.logId = 'utility';
@@ -7,6 +8,7 @@ export default function logger() {
   log.transports.file.fileName = "utility.log";
   log.transports.console.format = '{h}:{i}:{s}.{ms} [UTILITY]{scope} › {text}'
   log.errorHandler.setOptions({ showDialog: false})
+  log.hooks.push((message) => redactMessage(message))
 
   return log;
 }

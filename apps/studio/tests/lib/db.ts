@@ -1580,6 +1580,254 @@ export class DBTestUtil {
     expect(count).toBe(100_000)
   }
 
+  // queryStream() is the engine behind the export flow (apps/studio/src/lib/
+  // export/export.ts:143). It is supposed to be a pure cursor-setup function:
+  // build the cursor, return it, let the caller drive start/read/close. The
+  // bug is that getColumnsAndTotalRows (BasicDatabaseClient.ts:568) calls
+  // executeQuery(query) — running the user's query a SECOND time just to
+  // inspect `fields`/`rowCount`. For plain SELECTs that wastes a full
+  // materialisation; for the "run all to file" flow, which can submit a
+  // multi-statement script (INSERT/UPDATE/DELETE feeding a final SELECT),
+  // every side-effecting statement runs twice.
+  //
+  // The test query in each case is a side-effecting SELECT (data-modifying
+  // CTE, INSERT…RETURNING, INSERT…OUTPUT, multi-statement INSERT+SELECT, or
+  // a sequence-advancing SELECT) that streams rows AND leaves exactly one
+  // measurable side effect per execution. After the full queryStream →
+  // start → drain → close cycle the counter table must contain exactly one
+  // row (or the sequence must have advanced exactly N times). With the bug
+  // present every counter has twice the expected entries.
+  async queryStreamDoubleExecutionTest() {
+    type Plan = {
+      setup: string[]
+      teardown: string[]
+      query: string
+      expectedRows: number
+      verify: () => Promise<void>
+    }
+    let plan: Plan
+    switch (this.dbType) {
+      case 'postgresql':
+      case 'cockroachdb':
+      case 'greengage':
+      case 'redshift':
+        // Data-modifying CTE: single statement, returns rows, has side
+        // effect. pg-cursor handles it natively via its DECLARE CURSOR.
+        plan = {
+          setup: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            `CREATE TABLE qs_double_exec_counter (
+              id SERIAL PRIMARY KEY,
+              note TEXT,
+              value INTEGER,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+          ],
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query:
+            "WITH ins AS (INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at) SELECT id, note, value, created_at FROM ins",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
+        }
+        break
+      case 'mysql':
+      case 'mariadb':
+      case 'tidb':
+        // mysql2 is configured with multipleStatements: true (mysql.ts:154),
+        // so the cursor's connection.query() runs both statements. This
+        // matches the "run all to file" multi-statement scenario exactly:
+        // INSERT side effect followed by a SELECT that returns rows.
+        plan = {
+          setup: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            `CREATE TABLE qs_double_exec_counter (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              note VARCHAR(50),
+              value INT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+          ],
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query:
+            "INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42); SELECT id, note, value, created_at FROM qs_double_exec_counter",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
+        }
+        break
+      case 'sqlite':
+        // SQLite RETURNING (3.35+) lets the cursor iterate the inserted row.
+        plan = {
+          setup: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            `CREATE TABLE qs_double_exec_counter (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              note TEXT,
+              value INTEGER,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )`,
+          ],
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query:
+            "INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
+        }
+        break
+      case 'sqlserver':
+        plan = {
+          setup: [
+            "IF OBJECT_ID('qs_double_exec_counter','U') IS NOT NULL DROP TABLE qs_double_exec_counter",
+            `CREATE TABLE qs_double_exec_counter (
+              id INT IDENTITY(1,1) PRIMARY KEY,
+              note VARCHAR(50),
+              value INT,
+              created_at DATETIME DEFAULT GETDATE()
+            )`,
+          ],
+          teardown: [
+            "IF OBJECT_ID('qs_double_exec_counter','U') IS NOT NULL DROP TABLE qs_double_exec_counter",
+          ],
+          query:
+            "INSERT INTO qs_double_exec_counter (note, value) OUTPUT INSERTED.id, INSERTED.note, INSERTED.value, INSERTED.created_at VALUES ('hello', 42)",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
+        }
+        break
+      case 'duckdb':
+        // DuckDB supports data-modifying CTEs as of 0.10+.
+        plan = {
+          setup: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            'DROP SEQUENCE IF EXISTS qs_double_exec_seq',
+            'CREATE SEQUENCE qs_double_exec_seq START 1',
+            `CREATE TABLE qs_double_exec_counter (
+              id INTEGER DEFAULT nextval('qs_double_exec_seq') PRIMARY KEY,
+              note VARCHAR,
+              value INTEGER,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+          ],
+          teardown: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            'DROP SEQUENCE IF EXISTS qs_double_exec_seq',
+          ],
+          query:
+            "INSERT INTO qs_double_exec_counter (note, value) VALUES ('hello', 42) RETURNING id, note, value, created_at",
+          expectedRows: 1,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT id FROM qs_double_exec_counter'
+            )
+            expect(result.rows.length).toBe(1)
+          },
+        }
+        break
+      case 'oracle':
+        // Oracle's oracledb.queryStream needs a row-returning statement, so
+        // we use a sequence-driven SELECT instead of an INSERT counter.
+        // NOCACHE keeps the post-test NEXTVAL probe deterministic: after 5
+        // correct advances the next NEXTVAL returns 6; with the bug it
+        // returns 11.
+        plan = {
+          setup: [
+            "BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE qs_double_exec_seq'; EXCEPTION WHEN OTHERS THEN NULL; END;",
+            'CREATE SEQUENCE qs_double_exec_seq START WITH 1 NOCACHE',
+          ],
+          teardown: [
+            "BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE qs_double_exec_seq'; EXCEPTION WHEN OTHERS THEN NULL; END;",
+          ],
+          query:
+            "SELECT qs_double_exec_seq.NEXTVAL AS n, 'hello' AS note, 42 AS value, SYSTIMESTAMP AS created_at FROM dual CONNECT BY level <= 5",
+          expectedRows: 5,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT qs_double_exec_seq.NEXTVAL AS n FROM dual'
+            )
+            expect(Number(result.rows[0].c0)).toBe(6)
+          },
+        }
+        break
+      case 'clickhouse':
+        // ClickHouse has no sequences, no RETURNING, no usable
+        // multi-statement. The cursor will see zero rows for an INSERT, but
+        // the bug-detecting signal is still the counter row count.
+        plan = {
+          setup: [
+            'DROP TABLE IF EXISTS qs_double_exec_counter',
+            `CREATE TABLE qs_double_exec_counter (
+              id UInt32,
+              note String,
+              value Int32,
+              created_at DateTime DEFAULT now()
+            ) ENGINE = MergeTree() ORDER BY id`,
+          ],
+          teardown: ['DROP TABLE IF EXISTS qs_double_exec_counter'],
+          query: "INSERT INTO qs_double_exec_counter (id, note, value) VALUES (1, 'hello', 42)",
+          expectedRows: 0,
+          verify: async () => {
+            const [result] = await this.connection.executeQuery(
+              'SELECT COUNT(*) AS n FROM qs_double_exec_counter'
+            )
+            expect(Number(result.rows[0].n)).toBe(1)
+          },
+        }
+        break
+      default:
+        // Unsupported dialect for this test — skip.
+        return
+    }
+
+    for (const sql of plan.setup) {
+      await this.connection.executeQuery(sql)
+    }
+
+    const collected: any[][] = []
+    try {
+      const stream = await this.connection.queryStream(plan.query, 100)
+      await stream.cursor.start()
+      // Drain the cursor as the export flow does (export.ts:166 onward).
+      // Cap iterations defensively in case a misbehaving cursor never
+      // returns 0 rows.
+      for (let i = 0; i < 100; i++) {
+        const rows = await stream.cursor.read()
+        if (!rows || rows.length === 0) break
+        collected.push(...rows)
+      }
+      await stream.cursor.close()
+
+      expect(collected.length).toBe(plan.expectedRows)
+      await plan.verify()
+    } finally {
+      for (const sql of plan.teardown) {
+        try {
+          await this.connection.executeQuery(sql)
+        } catch (_e) {
+          // Best-effort cleanup.
+        }
+      }
+    }
+  }
+
   async generatedColumnsTests() {
     if (this.options.skipGeneratedColumns) return
 
@@ -2043,6 +2291,80 @@ export class DBTestUtil {
   async databaseVersionTest() {
     const version = await this.connection.versionString();
     expect(version).toBeDefined()
+  }
+
+  /**
+   * Regression guard for sql-query-identifier 3.0.0 unwrap fix: queries that
+   * use quoted identifiers (e.g. `SELECT cl."legacyConfig", * FROM "Agenda" ag
+   * JOIN "Clinic" cl ON ...`) used to leave the surrounding quotes on the
+   * parsed table/column names, so `getResultEditData` couldn't match parsed
+   * columns to their tables and returned everything read-only.
+   */
+  async getResultEditDataQuotedIdentifierTest() {
+    // Per-DB quoting & casing — use what each dialect actually accepts:
+    // - mysql / mariadb / tidb: backticks
+    // - sqlserver: [brackets]
+    // - firebird: double quotes around UPPERCASE names — firebird folds
+    //   unquoted identifiers to upper case, and quoted identifiers are
+    //   case-sensitive, so this is the only way to hit the seeded rows
+    // - everyone else: double quotes
+    let wrap: (s: string) => string
+    let people = 'people'
+    let addresses = 'addresses'
+    let countryCol = 'country'
+    let addressIdCol = 'address_id'
+    let idCol = 'id'
+    let firstNameCol = 'firstname'
+
+    if (this.dbType === 'mysql' || this.dbType === 'mariadb' || this.dbType === 'tidb') {
+      wrap = (s) => `\`${s}\``
+    } else if (this.dbType === 'sqlserver') {
+      wrap = (s) => `[${s}]`
+    } else if (this.dbType === 'firebird') {
+      wrap = (s) => `"${s}"`
+      people = 'PEOPLE'
+      addresses = 'ADDRESSES'
+      countryCol = 'COUNTRY'
+      addressIdCol = 'ADDRESS_ID'
+      idCol = 'ID'
+      firstNameCol = 'FIRSTNAME'
+    } else {
+      wrap = (s) => `"${s}"`
+    }
+
+    const queryText = `SELECT a.${wrap(countryCol)}, a.${wrap(idCol)} AS aid, p.* FROM ${wrap(people)} p JOIN ${wrap(addresses)} a ON p.${wrap(addressIdCol)} = a.${wrap(idCol)}`
+
+    const results = await this.connection.executeQuery(queryText)
+    const fields = results[0].fields
+    expect(fields.length).toBeGreaterThan(0)
+
+    const editData = await this.connection.getResultEditData(queryText, fields)
+    expect(editData.length).toBe(fields.length)
+
+    const sameName = (a: string | undefined, b: string) =>
+      !!a && a.toLowerCase() === b.toLowerCase()
+
+    // a.<country> must resolve to the joined `addresses` table and be editable.
+    const countryField = editData.find((e) =>
+      sameName(e.columnName, countryCol) && sameName(e.linkedTable, addresses)
+    )
+    expect(countryField).toBeDefined()
+    expect(countryField.editable).toBe(true)
+
+    // `p.*` expands; the PK from `people` should be detected and read-only.
+    const peopleIdField = editData.find((e) =>
+      sameName(e.columnName, idCol) && sameName(e.linkedTable, people)
+    )
+    expect(peopleIdField).toBeDefined()
+    expect(peopleIdField.isPK).toBe(true)
+    expect(peopleIdField.editable).toBe(false)
+
+    // A non-PK column from `p.*` should be editable and linked to `people`.
+    const peopleFirstName = editData.find((e) =>
+      sameName(e.columnName, firstNameCol) && sameName(e.linkedTable, people)
+    )
+    expect(peopleFirstName).toBeDefined()
+    expect(peopleFirstName.editable).toBe(true)
   }
 
   async compositeKeyTests() {
@@ -2626,7 +2948,6 @@ export class DBTestUtil {
       // works in `prepareStreamTests`; queryStream is a separate codepath.
       return
     }
-    expect(stream.columns.length).toBeGreaterThan(0)
 
     // Cursor lifecycle is dialect-specific; wrap to avoid hanging when a
     // misbehaving cursor never returns empty or throws on close.
@@ -2640,6 +2961,7 @@ export class DBTestUtil {
         if (!chunk || chunk.length === 0) break
         total += chunk.length
       }
+      expect(cursor.columns.length).toBeGreaterThan(0)
       await cursor.close()
     } catch {
       return // best-effort

@@ -143,6 +143,13 @@ function testWith(dockerTag: string, readonly: boolean) {
       })
     })
 
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (util.connection.readOnlyMode) return
+        await util.queryStreamDoubleExecutionTest()
+      })
+    })
+
     it("Can select top from table with square brackets in name", async () => {
       const top = await util.connection.selectTop("my[socks]", 0, 1, [{dir: 'ASC', field: 'id'}], [])
       expect(top.result.length).toBe(1)
