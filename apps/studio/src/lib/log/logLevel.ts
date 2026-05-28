@@ -10,9 +10,9 @@ import type { LogLevel } from 'electron-log';
 
 const VALID: LogLevel[] = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
 
-export function resolveLevel(): LogLevel {
-  const override = process.env.BKS_LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
+export function resolveLevel(env: any): LogLevel {
+  const override = env.BKS_LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
   if (override && (VALID as string[]).includes(override)) return override;
-  if (process.env.NODE_ENV === 'development' || process.env.DEBUG) return 'silly';
+  if (env.NODE_ENV === 'development' || env.DEBUG) return 'silly';
   return 'warn';
 }

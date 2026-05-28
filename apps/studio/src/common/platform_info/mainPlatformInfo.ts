@@ -118,7 +118,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     // Resolved here once so main, utility, and renderer all read the same
     // value: main consumes platformInfo directly, utility receives it as a
     // JSON env var when forked, renderer fetches it over IPC.
-    logLevel: resolveLevel(),
+    logLevel: resolveLevel(p.env),
 
     cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }

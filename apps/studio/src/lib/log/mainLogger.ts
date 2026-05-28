@@ -8,7 +8,7 @@ import { resolveLevel } from './logLevel';
 // platformInfo) and renderer (via IPC platformInfo) pick up the same value.
 // We can't pull platformInfo here directly because this module is also
 // bundled into preload, where importing platform_info throws by design.
-const level = resolveLevel();
+const level = resolveLevel(process.env);
 log.transports.console.level = level;
 log.transports.file.level = level;
 log.variables.processType = 'MAIN';
