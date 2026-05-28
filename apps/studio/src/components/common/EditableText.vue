@@ -1,11 +1,12 @@
 <template>
   <div class="editable-text">
-    <span class="editable-text-label">{{ initialValue }}</span>
+    <span class="text">
+      <slot name="text">{{ initialValue }}</slot>
+    </span>
     <input
       v-if="rename"
       ref="input"
       v-model="value"
-      class="editable-text-input"
       :data-submitting="submitting"
       :disabled="submitting"
       @keyup.enter="onSubmit"
@@ -32,10 +33,12 @@ export default Vue.extend({
       default: false,
     },
   },
-  data: () => ({
-    value: "",
-    submitting: false,
-  }),
+  data() {
+    return {
+      value: "",
+      submitting: false,
+    };
+  },
   watch: {
     async rename(active: boolean) {
       this.submitting = false;
@@ -75,30 +78,31 @@ export default Vue.extend({
 <style lang="scss" scoped>
 .editable-text {
   position: relative;
-  width: 100%;
+  display: inline-block;
+
+  input {
+    width: 100%;
+    height: auto;
+    padding-inline: 0.1rem;
+    font-size: inherit;
+    line-height: normal;
+    position: absolute;
+    left: -0.15rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--theme-bg);
+
+    &[data-submitting="true"] {
+      border: none;
+    }
+  }
 }
 
-.editable-text-label {
+.text {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.editable-text-input {
-  width: 100%;
-  height: auto;
-  padding-inline: 0.1rem;
-  font-size: inherit;
-  line-height: normal;
-  position: absolute;
-  left: -0.15rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--theme-bg);
-
-  &[data-submitting="true"] {
-    border: none;
-  }
-}
 </style>

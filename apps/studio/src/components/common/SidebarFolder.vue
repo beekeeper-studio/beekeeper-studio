@@ -24,10 +24,15 @@
           title="Schema"
           class="schema-icon item-icon material-icons"
         >folder</i>
-        <span
-          class="table-name truncate expand"
-          :title="title"
-        >{{ title }}</span>
+        <editable-text
+          class="folder-name"
+          :initial-value="name"
+          :rename="rename"
+          @submit="$emit('rename-submit', $event)"
+          @cancel="$emit('rename-cancel')"
+        >
+          <template #text>{{ title }}</template>
+        </editable-text>
       </a>
       <slot name="folder-drop-zone" />
       <div v-if="expanded">
@@ -54,8 +59,11 @@
 </template>
 
 <script type="text/javascript">
-	export default {
-    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections"],
+import EditableText from '@/components/common/EditableText.vue'
+
+  export default {
+    props: ["name", "childrenCount", "rename", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections"],
+    components: { EditableText },
     data() {
       return {
         manuallyExpanded: false,
@@ -67,6 +75,9 @@
       this.manuallyExpanded = this.expandedInitially
     },
     computed: {
+      title() {
+        return `${this.name} (${this.childrenCount})`
+      },
       hasSlot() {
         return !!this.$slots.default
       },
@@ -123,5 +134,9 @@
     background-color: rgba(128, 128, 128, 0.2);
     outline: 1px solid rgba(128, 128, 128, 0.4);
     outline-offset: -1px;
+  }
+
+  .folder-name {
+    width: 100%;
   }
 </style>

@@ -82,10 +82,14 @@
             v-for="({ folder, queries, subfolders }) in foldersWithQueries"
             :key="`${folder.id}-${queries.length}`"
             :title="`${folder.name} (${queries.length})`"
+            :editable-label="folder.name"
+            :rename="renamingFolderId === folder.id"
             :expanded-initially="getFolderExpanded(folder.id)"
             @toggle="onFolderToggle(folder.id, $event)"
-            @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
+            @contextmenu.native.prevent="showFolderContextMenu($event, folder)"
             @header-drop="onQueryFolderHeaderDrop(folder)"
+            @rename-submit="submitFolderRename(folder, $event)"
+            @rename-cancel="renamingFolderId = null"
           >
             <Draggable
               :list="queries"
@@ -114,10 +118,14 @@
               v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
               :key="`${subfolder.id}-${subQueries.length}`"
               :title="`${subfolder.name} (${subQueries.length})`"
+              :editable-label="subfolder.name"
+              :rename="renamingFolderId === subfolder.id"
               :expanded-initially="getFolderExpanded(subfolder.id)"
               @toggle="onFolderToggle(subfolder.id, $event)"
-              @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+              @contextmenu.native.prevent="showFolderContextMenu($event, subfolder)"
               @header-drop="onQueryFolderHeaderDrop(subfolder)"
+              @rename-submit="submitFolderRename(subfolder, $event)"
+              @rename-cancel="renamingFolderId = null"
             >
               <Draggable
                 :list="subQueries"
@@ -259,7 +267,8 @@ export default {
       folderModalError: null,
       folderModalSubmitting: false,
       folderExpandedState: {},
-      draggingQuery: null
+      draggingQuery: null,
+      renamingFolderId: null,
     }
   },
   mounted() {
@@ -384,6 +393,11 @@ export default {
       this.$modal.show('query-folder-modal')
     },
     showFolderContextMenu(event, folder) {
+      if (event.target.tagName === 'INPUT') {
+        return;
+      }
+      event.stopPropagation();
+
       const options = []
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
@@ -425,10 +439,20 @@ export default {
       this.$noty.success('Query duplicated')
     },
     renameQueryFolder(folder) {
-      this.folderModalName = folder.name
-      this.folderModalItem = folder
-      this.folderModalError = null
-      this.$modal.show('query-folder-modal')
+      this.renamingFolderId = folder.id
+    },
+    async submitFolderRename(folder, name) {
+      if (!name || name === folder.name) {
+        this.renamingFolderId = null
+        return
+      }
+      try {
+        await this.$store.dispatch('data/queryFolders/save', { ...folder, name })
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.renamingFolderId = null
+      }
     },
     async moveFolderToParent(folder, newParent) {
       await this.$store.dispatch('data/queryFolders/save', { ...folder, parentId: newParent.id })
