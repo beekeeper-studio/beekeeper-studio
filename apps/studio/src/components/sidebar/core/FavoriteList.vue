@@ -106,7 +106,6 @@
                 @select="select"
                 @open="open"
                 @open-history="openHistory"
-                @rename="rename"
                 @export="exportTo"
                 @duplicate="duplicate"
               />
@@ -139,7 +138,6 @@
                   @select="select"
                   @open="open"
                   @open-history="openHistory"
-                  @rename="rename"
                   @export="exportTo"
                   @duplicate="duplicate"
                 />
@@ -166,7 +164,6 @@
               @select="select"
               @open="open"
               @open-history="openHistory"
-              @rename="rename"
               @export="exportTo"
               @duplicate="duplicate"
             />
@@ -236,27 +233,6 @@
           </div>
         </form>
       </modal>
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="rename-modal"
-        @closed="renameMe=null"
-        height="auto"
-        :scrollable="true"
-      >
-        <div
-          class="dialog-content"
-          v-kbd-trap="true"
-          v-if="renameMe"
-        >
-          <div class="dialog-c-title">
-            Rename {{ renameMe.title }}
-          </div>
-          <query-rename-form
-            :query="renameMe"
-            @done="$modal.hide('rename-modal')"
-          />
-        </div>
-      </modal>
     </portal>
   </div>
 </template>
@@ -269,16 +245,14 @@ import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
-import QueryRenameForm from '@/components/common/form/QueryRenameForm.vue'
 import Draggable from 'vuedraggable'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, QueryRenameForm, Draggable },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable },
   data: function () {
     return {
       checkedFavorites: [],
       selected: null,
-      renameMe: null,
       folderModalName: '',
       folderModalItem: null,
       folderModalParentId: null,
@@ -345,10 +319,6 @@ export default {
     },
     createQuery() {
       this.$root.$emit(AppEvent.newTab)
-    },
-    rename(query) {
-      this.$modal.show('rename-modal')
-      this.renameMe = query
     },
     exportTo(query) {
       this.$root.$emit(AppEvent.promptQueryExport, query)
