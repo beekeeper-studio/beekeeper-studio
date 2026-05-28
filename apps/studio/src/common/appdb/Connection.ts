@@ -21,6 +21,8 @@ import { FormatterPreset } from "./models/FormatterPreset"
 import { QueryFolder } from "./models/QueryFolder"
 import { ConnectionFolder } from "./models/ConnectionFolder"
 import { TabulatorPersistence } from "./models/TabulatorPersistence"
+import { QueryAudit } from "./models/QueryAudit"
+import { QueryAuditSubscriber } from "./subscribers/QueryAuditSubscriber"
 
 const models = [
   SavedConnection,
@@ -44,6 +46,7 @@ const models = [
   QueryFolder,
   ConnectionFolder,
   TabulatorPersistence,
+  QueryAudit,
 ]
 
 interface IConnectionState {
@@ -66,6 +69,7 @@ export default class Connection {
       synchronize: false,
       migrationsRun: false,
       entities: models,
+      subscribers: [QueryAuditSubscriber],
       logging: this.logging,
       ...options
     })

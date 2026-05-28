@@ -75,7 +75,7 @@
                   Current version
                 </span>
                 <time class="title" v-text="audit.time" />
-                <span class="editor-label">{{ audit.user }}</span>
+                <span v-if="isCloud" class="editor-label">{{ audit.user }}</span>
               </button>
             </li>
           </ul>
@@ -189,7 +189,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["connectionType", "tables"]),
-    ...mapGetters(["dialectData", "cloudClient", "workspaceEmail"]),
+    ...mapGetters(["dialectData", "isCloud"]),
     dirty(): boolean {
       return this.unsavedText !== null;
     },
@@ -232,9 +232,8 @@ export default Vue.extend({
       // `audits` is sorted newest-first by the API, so single-pass grouping
       // also yields chronological group order (newest → oldest).
       for (const audit of this.audits) {
-        // createdAt is float seconds since epoch (cloud API convention).
         const heading = this.$bks.timeAgo(
-          new Date(audit.queryAudit.createdAt * 1000)
+          new Date(audit.queryAudit.createdAt)
         );
         if (!current || current.heading !== heading) {
           current = { heading, items: [] };
@@ -318,9 +317,8 @@ export default Vue.extend({
       }
       return target.id === this.queryAudits[0].id;
     },
-    formatTime(createdAt: number): string {
-      // createdAt is float seconds since epoch (cloud API convention).
-      const d = new Date(createdAt * 1000);
+    formatTime(createdAt: Date): string {
+      const d = new Date(createdAt);
       const month = d.toLocaleString("en-US", { month: "long" });
       const day = d.getDate();
       const time = d.toLocaleString("en-US", {
@@ -345,11 +343,10 @@ export default Vue.extend({
       this.loadingList = true;
       this.error = null;
       try {
-        const cli = this.cloudClient;
-        if (!cli) {
-          throw new Error("You are not logged in");
-        }
-        const queryAudits: IQueryAudit[] = await cli.queryAudits.list(queryId);
+        const queryAudits: IQueryAudit[] = await this.$store.dispatch(
+          "data/queryAudits/list",
+          queryId
+        );
         this.queryAudits = queryAudits;
         if (queryAudits.length === 0) {
           this.previousAudit = null;
@@ -378,10 +375,6 @@ export default Vue.extend({
       this.loadingPreview = true;
       this.error = null;
       try {
-        const cli = this.cloudClient;
-        if (!cli) {
-          throw new Error("You are not logged in");
-        }
         if (auditId === "unsaved") {
           // Show editor text vs the latest saved snapshot. Reuse the
           // already-fetched detail when possible.
@@ -389,7 +382,10 @@ export default Vue.extend({
           const previous = latest
             ? this.previousAudit?.id === latest.id
               ? this.previousAudit
-              : await cli.queryAudits.get(queryId, latest.id)
+              : await this.$store.dispatch("data/queryAudits/get", {
+                  queryId,
+                  auditId: latest.id,
+                })
             : null;
           if (this.selectedAuditId === auditId) {
             this.selectedAudit = null;
@@ -397,10 +393,16 @@ export default Vue.extend({
           }
           return;
         }
-        const detail = await cli.queryAudits.get(queryId, auditId);
+        const detail: IQueryAuditDetail = await this.$store.dispatch(
+          "data/queryAudits/get",
+          { queryId, auditId }
+        );
         const previous =
           detail.previousAuditId != null
-            ? await cli.queryAudits.get(queryId, detail.previousAuditId)
+            ? await this.$store.dispatch("data/queryAudits/get", {
+                queryId,
+                auditId: detail.previousAuditId,
+              })
             : null;
         // Guard against a stale response if the user clicked another row in flight.
         if (this.selectedAuditId === auditId) {
@@ -430,13 +432,9 @@ export default Vue.extend({
       this.restoring = true;
       this.error = null;
       try {
-        const cli = this.cloudClient;
-        if (!cli) {
-          throw new Error("You are not logged in");
-        }
-        const restored: ISavedQuery = await cli.queryAudits.restore(
-          queryId,
-          auditId
+        const restored: ISavedQuery = await this.$store.dispatch(
+          "data/queryAudits/restore",
+          { queryId, auditId }
         );
         this.$store.commit("data/queries/upsert", restored);
         await this.loadAudits();

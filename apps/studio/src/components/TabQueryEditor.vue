@@ -1820,7 +1820,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             id: "formatter",
             handler: this.formatterPreset,
           },
-          ...(this.query?.id && this.isCloud
+          ...(this.query?.id
             ? [
                 divider,
                 {
