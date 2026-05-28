@@ -14,15 +14,31 @@ export default Vue.extend({
       timeoutID: null,
       isShowingOnboardingNoty: false,
       upsellNotificationOptions: {
-        text: "Upgrade for features like the JSON row viewer, AI shell, & NoSQL support. All purchases come with a <strong>lifetime usage license</strong>.",
+        text: `<div class="bks-upgrade-noty">
+                <div class="bks-upgrade-noty-head">
+                  <div class="bks-upgrade-noty-glyph"><i class="material-icons">workspace_premium</i></div>
+                  <h2>Do more with Beekeeper Studio</h2>
+                </div>
+                <p class="bks-upgrade-noty-body">Upgrade to unlock the full toolkit — built for people who live in their database all day.</p>
+                <div class="bks-upgrade-noty-chips">
+                  <span class="bks-upgrade-noty-chip"><i class="material-icons c-json">data_object</i>JSON row viewer</span>
+                  <span class="bks-upgrade-noty-chip"><i class="material-icons c-ai">auto_awesome</i>AI Shell</span>
+                  <span class="bks-upgrade-noty-chip"><i class="material-icons c-nosql">hub</i>NoSQL support</span>
+                  <span class="bks-upgrade-noty-chip">+ more</span>
+                </div>
+                <div class="bks-upgrade-noty-lifetime">
+                  <i class="material-icons">all_inclusive</i>
+                  <span><strong>Lifetime usage license</strong> — included with every purchase.</span>
+                </div>
+              </div>`,
         timeout: 1000 * 60 * 5,
         queue: "upsell",
         killer: 'upsell',
         layout: 'bottomRight',
         closeWith: ['button'],
         buttons: [
-          Noty.button('Close', 'btn btn-flat', () => Noty.closeAll('upsell')),
-          Noty.button('Get Started', 'btn btn-primary', () => window.main.openExternally('https://beekeeperstudio.io/pricing/'))
+          Noty.button('Not now', 'btn btn-flat', () => Noty.closeAll('upsell')),
+          Noty.button('Upgrade', 'btn btn-brand', () => window.main.openExternally('https://beekeeperstudio.io/pricing/'))
         ]
       },
       onboardingNoty: null as Noty | null,

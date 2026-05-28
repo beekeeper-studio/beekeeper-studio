@@ -84,3 +84,137 @@
     outline: 1px auto var(--text-dark);
   }
 }
+
+// =====================================================================
+// Upgrade upsell notification — redesigned card
+// Inherits the refreshed upgrade-screen language: gradient card, honey
+// primary CTA, glyph mark in a tinted rounded square, feature chips, and
+// the lifetime-license band. (Claude Design handoff — "Featured" variation.)
+// =====================================================================
+.noty_theme__mint.noty_bar:has(.bks-upgrade-noty) {
+  background: linear-gradient(
+    180deg,
+    color.adjust($theme-bg, $lightness: 2%) 0%,
+    $theme-bg 100%
+  );
+  border: 1px solid $border-color;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba($theme-base, 0.05),
+    0 12px 32px -10px rgba(black, 0.45),
+    0 4px 12px -6px rgba(black, 0.35);
+
+  .noty_body {
+    padding: 18px 18px 4px;
+  }
+
+  .noty_buttons {
+    padding: 0 18px 16px;
+    margin-top: 4px;
+  }
+}
+
+.bks-upgrade-noty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 340px;
+  font-size: 13px;
+  line-height: 1.5;
+
+  .bks-upgrade-noty-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-right: 20px; // clear the close button
+  }
+
+  .bks-upgrade-noty-glyph {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba($theme-primary, 0.13);
+    box-shadow: inset 0 0 0 1px rgba($theme-primary, 0.24);
+    color: $theme-primary;
+
+    .material-icons {
+      font-size: 20px;
+    }
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 15.5px;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: $text-dark;
+  }
+
+  .bks-upgrade-noty-body {
+    margin: -4px 0 0;
+    color: $text;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .bks-upgrade-noty-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .bks-upgrade-noty-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: rgba($theme-base, 0.04);
+    border: 1px solid $border-color;
+    font-size: 11.5px;
+    color: $text-dark;
+
+    .material-icons {
+      font-size: 13px;
+    }
+    .c-json {
+      color: $brand-secondary;
+    }
+    .c-ai {
+      color: $brand-pink;
+    }
+    .c-nosql {
+      color: $brand-success;
+    }
+  }
+
+  .bks-upgrade-noty-lifetime {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba($theme-primary, 0.07);
+    border: 1px solid rgba($theme-primary, 0.18);
+    color: $text;
+    font-size: 12px;
+    line-height: 1.35;
+
+    .material-icons {
+      flex-shrink: 0;
+      font-size: 17px;
+      color: $theme-primary;
+    }
+    strong {
+      color: $text-dark;
+      font-weight: 600;
+    }
+  }
+}
