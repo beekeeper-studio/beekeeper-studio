@@ -378,4 +378,10 @@ export default {
 body.theme-dark .bastion-host {
   background-color: rgb(from var(--theme-base) r g b / 3.5%);
 }
+
+@media (prefers-color-scheme: dark) {
+  body.theme-system .bastion-host {
+    background-color: rgb(from var(--theme-base) r g b / 3.5%);
+  }
+}
 </style>
