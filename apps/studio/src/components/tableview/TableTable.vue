@@ -334,8 +334,7 @@ import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEd
 import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
-import { dialectFor, FormatterDialect, TableKey } from '@shared/lib/dialects/models'
-import { format } from 'sql-formatter';
+import { dialectFor, formatOptionsFor, TableKey } from '@shared/lib/dialects/models'
 import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
@@ -748,9 +747,8 @@ export default Vue.extend({
   },
   async mounted() {
     if (this.shouldInitialize) {
-      await this.$nextTick(async() => {
-        await this.initialize()
-      })
+      await this.$nextTick()
+      await this.initialize()
     }
     if (this.active) {
       this.handleTabActive()
@@ -1666,7 +1664,7 @@ export default Vue.extend({
           deletes: this.buildPendingDeletes()
         }
         const sql = await this.connection.applyChangesSql(changes);
-        const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
+        const formatted = safeSqlFormat(sql, formatOptionsFor(this.queryDialect))
         this.$root.$emit(AppEvent.newTab, formatted)
       } catch(ex) {
         console.error(ex);
@@ -1805,8 +1803,7 @@ export default Vue.extend({
         this.table.schema,
         selects
       ).then((query: string) => {
-        const language = FormatterDialect(this.queryDialect);
-        const formatted = safeSqlFormat(query, { language });
+        const formatted = safeSqlFormat(query, formatOptionsFor(this.queryDialect));
         this.$root.$emit(AppEvent.newTab, formatted);
       }).catch((e: unknown) => {
         log.error("Error opening query tab:", e);

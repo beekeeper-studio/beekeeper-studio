@@ -243,6 +243,13 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         expect(col.dataType.toLowerCase()).toContain('varchar')
       })
     })
+
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (options.readOnly) return
+        await util.queryStreamDoubleExecutionTest()
+      })
+    })
   });
 }
 

@@ -33,6 +33,7 @@ export default defineConfig({
         "@codemirror/lint",
         "@codemirror/lang-sql",
         "@codemirror/autocomplete",
+        "@codemirror/merge",
         "@replit/codemirror-emacs",
         "@replit/codemirror-vim",
         "@marimo-team/codemirror-languageserver",
@@ -73,6 +74,10 @@ export default defineConfig({
           __dirname,
           "lib/components/text-editor/define.ts"
         ),
+        "merge-text-editor": resolve(
+          __dirname,
+          "lib/components/merge-text-editor/define.ts"
+        ),
         "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
         "vue/entity-list": resolve(
           __dirname,
@@ -97,6 +102,10 @@ export default defineConfig({
         "vue/surreal-text-editor": resolve(
           __dirname,
           "lib/components/surreal-text-editor/SurrealTextEditor.vue"
+        ),
+        "vue/merge-text-editor": resolve(
+          __dirname,
+          "lib/components/merge-text-editor/MergeTextEditor.vue"
         ),
         "vue/super-formatter": resolve(
           __dirname,

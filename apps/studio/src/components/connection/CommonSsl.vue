@@ -4,14 +4,14 @@
       title="Enable SSL"
       v-if="supportComplexSSL && supportsSsl"
     >
-      <template v-slot:header>
+      <template #header>
         <x-switch
           @click.prevent="toggleSsl"
           :toggled="config.ssl"
         />
       </template>
 
-      <template v-slot:default>
+      <template #default>
         <div class="row gutter">
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>

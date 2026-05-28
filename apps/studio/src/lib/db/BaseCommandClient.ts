@@ -48,20 +48,58 @@ export abstract class BaseCommandClient {
 
   protected static _password?: string;
 
-  // This is actually only used for mysql because for some reason they
-  // deprecated their password env variable :(
-  static get quotedPassword() {
-    const password = BaseCommandClient._password || '';
-    if (window.platformInfo.isWindows) {
-      const escaped = password
-        .replace(/%/g, '%%')
-        .replace(/"/g, '""')
-        .replace(/([&|<>^])/g, '^$1');
-      return `"${escaped}"`;
-    } else {
-      const escaped = password.replace(/'/g, `'\\''`);
-      return `'${escaped}'`;
+  get outputFilePath() {
+    let filepath = '';
+    if (this._config.outputPath && this._config.outputPath.trim() !== '') {
+      filepath += `${this._config.outputPath}${this.pathSep}`;
     }
+    if (this.filename && this._config.format !== 'd') {
+      filepath += this.filename;
+    }
+    return filepath;
+  }
+
+  get inputFilePath() {
+    return this._config.inputPath;
+  }
+
+  // sqlite3's dot-commands (.output / .read) parse their own arguments, so a
+  // path with spaces must be quoted for sqlite itself. Commands are spawned
+  // without a shell, so this is the only quoting ever applied to arguments.
+  protected static sqliteQuote(value: string): string {
+    return `'${value}'`;
+  }
+
+  // Splits a free-text custom-arguments string into individual argv entries,
+  // honouring single and double quotes. Required because the arguments go
+  // straight to spawn() with no shell to do the word-splitting.
+  protected static parseArgs(input: string): string[] {
+    const args: string[] = [];
+    let current = '';
+    let quote: '"' | "'" | null = null;
+    let hasToken = false;
+    for (const ch of input) {
+      if (quote) {
+        if (ch === quote) quote = null;
+        else current += ch;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+        hasToken = true;
+      } else if (/\s/.test(ch)) {
+        if (hasToken) {
+          args.push(current);
+          current = '';
+          hasToken = false;
+        }
+      } else {
+        current += ch;
+        hasToken = true;
+      }
+    }
+    if (hasToken) {
+      args.push(current);
+    }
+    return args;
   }
 
   set connConfig(value: IConnection) {
@@ -343,7 +381,8 @@ export abstract class BaseCommandClient {
   // end log file things
 
   protected get mainCommand() {
-    return window.platformInfo.isWindows ? `"${this._config.dumpToolPath}"` : this._config.dumpToolPath;
+    // Spawned without a shell, so the path is passed verbatim — no quoting.
+    return this._config.dumpToolPath;
   }
 
 

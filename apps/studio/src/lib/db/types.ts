@@ -26,6 +26,7 @@ export const DatabaseTypes = [
   'redis',
   'trino',
   'bedrock',
+  'dynamodb',
   'snowflake'
 ] as const
 
@@ -55,6 +56,7 @@ export const ConnectionTypes = [
   { name: 'SurrealDB', value: 'surrealdb' },
   { name: 'Redis', value: 'redis' },
   { name: 'Bedrock', value: 'bedrock' },
+  { name: 'DynamoDB', value: 'dynamodb' },
   { name: 'Snowflake', value: 'snowflake' }
 ]
 
@@ -134,8 +136,14 @@ export interface RedshiftOptions {
   isServerless?: boolean;
 }
 
+export interface DynamoDBOptions {
+  /** Custom endpoint, e.g. `http://localhost:8000` for DynamoDB Local. */
+  endpoint?: string;
+}
+
 export interface IamAuthOptions {
   awsProfile?: string
+  profiles?: string[];
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
@@ -282,6 +290,7 @@ export interface IDbConnectionServerConfig {
   libsqlOptions?: LibSQLOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
+  dynamoDbOptions?: DynamoDBOptions
   snowflakeOptions?: SnowflakeOptions
   runtimeExtensions?: string[]
 }

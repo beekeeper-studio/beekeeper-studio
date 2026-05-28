@@ -1036,10 +1036,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     return {
-      totalRows,
-      columns,
       cursor: new OracleCursor(this.pool, query, [], chunkSize)
     }
   }

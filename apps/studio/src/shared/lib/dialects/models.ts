@@ -4,7 +4,7 @@ import { Version } from '@/common/version'
 import { ExtendedTableColumn } from '@/lib/db/models'
 
 const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'snowflake'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb', 'snowflake'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -66,6 +66,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   surrealdb: 'SurrealDB',
   bedrock: 'Bedrock',
   redis: 'Redis',
+  dynamodb: 'Amazon DynamoDB',
   snowflake: 'Snowflake'
 }
 
@@ -97,6 +98,24 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'surrealdb') return 'sql'
   if (d === 'snowflake') return 'snowflake'
   return 'mysql' // we want this as the default
+}
+
+// formatOptionsFor — returns sql-formatter config. For dialects sql-formatter
+// knows, returns `{ language }`; for custom dialects (PartiQL) returns
+// `{ dialect: <DialectOptions> }`. Consume via `safeSqlFormat`, which dispatches
+// to either `format` or `formatDialect`.
+import type { DialectOptions } from 'sql-formatter'
+import { partiqlDialect } from './partiqlFormatter'
+
+export type FormatterOptions =
+  | { language: FormatterDialect }
+  | { dialect: DialectOptions }
+
+export function formatOptionsFor(d: Dialect): FormatterOptions {
+  if (d === 'dynamodb') {
+    return { dialect: partiqlDialect }
+  }
+  return { language: FormatterDialect(d) }
 }
 
 
@@ -214,6 +233,7 @@ export interface DialectData {
     infoIndexes?: string
     infoRelations?: string
     infoTriggers?: string
+    infoCreateTable?: string
     tableTable?: string
     query?: string
   },

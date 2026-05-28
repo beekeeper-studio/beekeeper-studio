@@ -5,6 +5,7 @@ export abstract class BeeCursor {
   constructor(public chunkSize: number) {
 
   }
+  abstract get columns(): TableColumn[] | null
   abstract start(): Promise<void>
   abstract read(): Promise<any[][]>
   abstract cancel(): Promise<void>
@@ -27,8 +28,8 @@ export class NoOpCursor extends BeeCursor {
 }
 
 export interface StreamResults {
-  columns: TableColumn[],
-  totalRows: number,
+  columns?: TableColumn[],
+  totalRows?: number,
   cursor: BeeCursor
 }
 

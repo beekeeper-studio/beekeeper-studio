@@ -300,6 +300,25 @@ export const CLIENTS: ClientConfig[] = [
     ]
   },
   {
+    key: 'dynamodb',
+    name: 'DynamoDB',
+    defaultPort: 8000,
+    disabledFeatures: [
+      'server:host',
+      'server:port',
+      'server:user',
+      'server:password',
+      'server:domain',
+      'server:schema',
+      'server:ssl',
+      'server:ssh',
+      'server:socketPath',
+      'server:socketPathWithCustomPort',
+      'scriptCreateTable',
+      'cancelQuery',
+    ],
+  },
+  {
     key: 'snowflake',
     name: 'Snowflake',
     disabledFeatures: [

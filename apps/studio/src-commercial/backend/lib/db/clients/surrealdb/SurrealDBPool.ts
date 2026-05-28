@@ -1,4 +1,4 @@
-import Surreal, { AnyAuth, ConnectionStatus, ConnectOptions, Token } from "surrealdb";
+import { Surreal, AnyAuth, ConnectOptions, Token } from "surrealdb";
 import rawLog from "@bksLogger";
 import { uuidv4 } from "@/lib/uuid";
 import ws from "ws";
@@ -42,10 +42,10 @@ export class SurrealPool {
 
     this.database = _.pick(config, "namespace", "database");
     config = _.omit(config, "namespace", "database")
-    if (typeof config.auth !== 'string') {
-      this.auth = config.auth;
-    } else {
-      this.token = config.auth
+    if (typeof config.authentication !== 'string' && typeof config.authentication !== 'function') {
+      this.auth = config.authentication;
+    } else if (typeof config.authentication === 'string') {
+      this.token = config.authentication
     }
     config = _.omit(config, "auth")
     this.config = config;
@@ -64,17 +64,11 @@ export class SurrealPool {
     if (this.pool.length < this.maxSize) {
       const newConn = new SurrealConn(this);
       log.info('Acquiring new connection', newConn.id);
-      log.info('CONFIG: ', this.config)
       await newConn.connect(this.connectionString, this.config);
-      log.info("Connected")
-      newConn.info
       await newConn.use(this.database);
-      log.info("Used", this.database)
       if (this.auth) {
-        log.info("Signing in", this.auth)
         await newConn.signin(this.auth);
       } else {
-        log.info("Authenticating: ", this.token)
         await newConn.authenticate(this.token)
       }
       await newConn.ready;
@@ -86,7 +80,6 @@ export class SurrealPool {
 
     return new Promise((resolve, reject) => {
       log.info('Waiting for new connection to be available');
-      let timeout: NodeJS.Timeout;
       const interval = setInterval(() => {
         for (const p of this.pool) {
           if (!this.inUse.has(p.id)) {
@@ -99,7 +92,7 @@ export class SurrealPool {
           }
         }
       }, 100);
-      timeout = setTimeout(() => {
+      const timeout: NodeJS.Timeout = setTimeout(() => {
         clearInterval(interval);
         reject("Timed out waiting for new connection to be available from SurrealDBPool");
       }, BksConfig.db.surrealdb.connectionTimeout)
@@ -110,7 +103,7 @@ export class SurrealPool {
     const index = this.pool.findIndex((c) => c.id === conn.id);
     if (index > -1) {
       // just in case so we don't leave a dangling connection
-      if (conn.status != ConnectionStatus.Disconnected) {
+      if (conn.status != "disconnected") {
         await conn.close();
       }
       this.pool.splice(index, 1)

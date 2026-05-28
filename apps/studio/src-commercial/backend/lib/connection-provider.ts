@@ -105,6 +105,7 @@ export default {
       sqlAnywhereOptions: config.sqlAnywhereOptions,
       surrealDbOptions: config.surrealDbOptions,
       snowflakeOptions: config.snowflakeOptions,
+      dynamoDbOptions: config.dynamoDbOptions,
       runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : []
     }
   },

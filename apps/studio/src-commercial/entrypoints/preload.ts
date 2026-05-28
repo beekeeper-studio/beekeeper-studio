@@ -46,6 +46,9 @@ export const api = {
   disableConnectionMenuItems(){
     ipcRenderer.send("disable-connection-menu-items");
   },
+  sendUserActive() {
+    ipcRenderer.send("userActive");
+  },
   send(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
     ipcRenderer.send(event, name, arg)
@@ -149,9 +152,6 @@ export const api = {
   },
   readTextFromClipboard(): string {
     return electron.clipboard.readText();
-  },
-  openPath(path: string) {
-    return electron.shell.openPath(path);
   },
   showItemInFolder(path: string) {
     electron.shell.showItemInFolder(path);

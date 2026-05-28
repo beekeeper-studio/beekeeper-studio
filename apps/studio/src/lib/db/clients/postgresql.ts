@@ -46,8 +46,6 @@ const pgErrors = {
   CANCELED: '57014',
 };
 
-const dataTypes: any = {}
-
 export interface STQOptions {
   table: string,
   orderBy?: OrderBy[],
@@ -90,7 +88,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
-  dataTypes: any;
+  dataTypes: any = {};
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
 
@@ -344,7 +342,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   async listMaterializedViewColumns(table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
     const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : '';
     if (table && !schema) {
-      throw new Error("Cannot get columns for '${table}, no schema provided'")
+      throw new Error(`Cannot get columns for '${table}', no schema provided`)
     }
     const sql = `
       SELECT s.nspname, t.relname, a.attname,
@@ -1112,7 +1110,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: qs.query,
       params: qs.params,
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
     return {
@@ -1127,14 +1126,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: query,
       params: [],
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
-
     return {
-      totalRows,
-      columns,
       cursor: new PsqlCursor(cursorOpts)
     }
   }
@@ -1379,7 +1375,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   parseFields(fields: any[], rowResults: boolean) {
     return fields.map((field, idx) => {
-      field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+      field.dataType = this.dataTypes[field.dataTypeID] || 'user-defined'
       field.id = rowResults ? `c${idx}` : field.name
       return field
     })

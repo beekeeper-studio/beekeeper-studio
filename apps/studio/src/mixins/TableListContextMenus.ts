@@ -8,6 +8,12 @@ function disabled(...args: boolean[]) {
   return args.some((v) => v) ? 'disabled' : '';
 }
 
+function disabledTitle(dialectName: string, feature: string, isDisabled: boolean, isReadOnly: boolean): string {
+  if (isReadOnly) return 'Read-only mode is enabled';
+  if (isDisabled) return `${feature} is not supported for ${dialectName}`;
+  return '';
+}
+
 export default {
   data() {
     // HACK (@day): this stuff will be removed once we get write mode working for BQ
@@ -42,6 +48,7 @@ export default {
   computed: {
     tableMenuOptions() {
       const dialect: DialectData = this.$store.getters.dialectData;
+      const dialectName: string = this.$store.getters.dialect;
       const usedConfig: IConnection = this.$store.state.usedConfig;
       return [
         {
@@ -62,6 +69,7 @@ export default {
           name: "Export To File",
           slug: 'export',
           class: disabled(dialect.disabledFeatures?.exportTable),
+          title: disabledTitle(dialectName, 'Export', !!dialect.disabledFeatures?.exportTable, false),
           handler: ({ item }) => {
             this.trigger(AppEvent.beginExport, { table: item })
           }
@@ -69,6 +77,7 @@ export default {
         {
           name: "Import from File",
           class: disabled(dialect.disabledFeatures?.importFromFile, usedConfig.readOnlyMode),
+          title: disabledTitle(dialectName, 'Import', !!dialect.disabledFeatures?.importFromFile, usedConfig.readOnlyMode),
           slug: 'import',
           ultimate: true,
           handler: ({ item }) => {
@@ -100,6 +109,7 @@ export default {
           name: "SQL: Create",
           slug: 'sql-create',
           class: disabled(dialect.disabledFeatures?.sqlCreate),
+          title: disabledTitle(dialectName, 'SQL: Create', !!dialect.disabledFeatures?.sqlCreate, false),
           handler: ({ item }) => {
             this.$root.$emit('loadTableCreate', item)
           }
@@ -119,6 +129,16 @@ export default {
             }
             return ''
           },
+          title: ({ item }) => {
+            if (usedConfig.readOnlyMode) return 'Read-only mode is enabled';
+            if (item.entityType === 'table' && dialect.disabledFeatures?.alter?.renameTable) {
+              return `Rename is not supported for ${dialectName}`;
+            }
+            if (item.entityType === 'view' && dialect.disabledFeatures?.alter?.renameView) {
+              return `Rename is not supported for ${dialectName}`;
+            }
+            return '';
+          },
           handler: ({ item }) => {
             const type = item.entityType === 'table'
               ? DatabaseElement.TABLE
@@ -130,6 +150,7 @@ export default {
           name: "Drop",
           slug: 'sql-drop',
           class: disabled(dialect.disabledFeatures?.dropTable, usedConfig.readOnlyMode),
+          title: disabledTitle(dialectName, 'Drop', !!dialect.disabledFeatures?.dropTable, usedConfig.readOnlyMode),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'drop' })
           }
@@ -138,6 +159,7 @@ export default {
           name: "Truncate",
           slug: 'sql-truncate',
           class: disabled(dialect.disabledFeatures?.truncateElement, usedConfig.readOnlyMode),
+          title: disabledTitle(dialectName, 'Truncate', !!dialect.disabledFeatures?.truncateElement, usedConfig.readOnlyMode),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.dropDatabaseElement, { item, action: 'truncate' })
           }
@@ -146,6 +168,7 @@ export default {
           name: "Duplicate",
           slug: 'sql-duplicate',
           class: disabled(dialect.disabledFeatures?.duplicateTable, usedConfig.readOnlyMode),
+          title: disabledTitle(dialectName, 'Duplicate', !!dialect.disabledFeatures?.duplicateTable, usedConfig.readOnlyMode),
           handler: ({ item }) => {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }
