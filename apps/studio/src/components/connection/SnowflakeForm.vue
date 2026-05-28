@@ -14,7 +14,7 @@
         <i
           class="material-icons"
           v-tooltip="{
-            content: `Your account identifier, found in Snowsight`,
+            content: `Your account identifier, formatted as &ltorg_name&gt-&ltaccount_name&gt`,
             html: true,
           }"
         >
