@@ -252,6 +252,8 @@ declare interface IBksConfig {
         snowflake: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            connectionTimeout: number;
+            idleTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;

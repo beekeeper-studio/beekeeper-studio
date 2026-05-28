@@ -1,6 +1,6 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
-import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
+import { DatabaseElement, IDbConnectionDatabase, SnowflakeAuthType } from "@/lib/db/types";
 import * as snowflake from "snowflake-sdk";
 import { Connection, ConnectionOptions, Pool, PoolOptions } from "snowflake-sdk"
 import BksConfig from "@/common/bksConfig";
@@ -100,7 +100,6 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
   async disconnect(): Promise<void> {
     await super.disconnect();
-    await this.pool.drain();
     await this.pool.clear();
   }
 
@@ -111,13 +110,32 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       throw new Error('Please enter a default database');
     }
 
+    if (!server.config.snowflakeOptions.defaultWarehouse) {
+      throw new Error('Please enter a default warehouse');
+    }
+
     const config: ConnectionOptions = {
+      authenticator: 'SNOWFLAKE',
       account: server.config.snowflakeOptions.accountId,
-      username: server.config.user,
-      password: server.config.password,
       database: database.database,
-      warehouse: server.config.snowflakeOptions.defaultWarehouse
+      warehouse: server.config.snowflakeOptions.defaultWarehouse,
     };
+
+    if ([SnowflakeAuthType.MFA, SnowflakeAuthType.Default].includes(server.config.snowflakeOptions?.authType)) {
+      config.username = server.config.user;
+      config.password = server.config.password;
+    }
+
+    if (server.config.snowflakeOptions?.authType === SnowflakeAuthType.MFA) {
+      config.authenticator = 'USERNAME_PASSWORD_MFA';
+      config.passcode = server.config.snowflakeOptions?.passcode;
+      config.clientRequestMFAToken = true;
+    }
+
+    if (server.config.snowflakeOptions?.authType === SnowflakeAuthType.Browser) {
+      config.authenticator = 'EXTERNALBROWSER';
+      config.clientStoreTemporaryCredential = true;
+    }
 
     return config;
   }
@@ -125,7 +143,10 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   private configPool(): PoolOptions {
     return {
       max: BksConfig.db.snowflake.maxConnections,
-      autostart: true
+      autostart: true,
+      evictionRunIntervalMillis: BksConfig.db.snowflake.idleTimeout,
+      idleTimeoutMillis: BksConfig.db.snowflake.idleTimeout,
+      acquireTimeoutMillis: BksConfig.db.snowflake.connectionTimeout
     }
   }
 
@@ -642,7 +663,47 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   async getTableProperties(table: string, schema?: string): Promise<TableProperties | null> {
+    const permissionWarnings: string[] = [];
 
+    const sql = `
+      SHOW TABLES LIKE :1 IN SCHEMA ${this.wrapIdentifier(schema)}
+    `
+
+    const params = [table]
+
+    const detailsPromise = this.driverExecuteSingle(sql, { params }).catch(err => {
+      log.warn('Unable to fetch table size/description (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table size and description due to insufficient permissions')
+      return { rows: [{ comment: null, bytes: 0, search_optimization_bytes: 0, owner: null }]};
+    })
+
+
+    const relationsPromise = this.getTableKeys(table, schema).catch(err => {
+      log.warn('Unable to fetch table relations (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table relations due to insufficient permissions')
+      return []
+    })
+
+    const [
+      details,
+      relations
+    ] = await Promise.all([
+      detailsPromise,
+      relationsPromise
+    ]);
+
+    const props = details.rows.length > 0 ? details.rows[0] : {};
+    return {
+      description: props.comment,
+      indexSize: Number(props.search_optimization_bytes || 0), // this conceptually matches but idk if its the same thing
+      size: Number(props.bytes || 0),
+      indexes: [],
+      relations,
+      triggers: [],
+      partitions: [],
+      owner: props.owner,
+      permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
+    }
   }
 
   async getTableCreateScript(table: string, schema?: string): Promise<string> {
@@ -660,7 +721,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   async getViewCreateScript(view: string, schema?: string): Promise<string[]> {
     // TODO (@day): I'm worried about escaping here
     const sql = `
-      SELECT GET_DDL('VIEWR', :1, TRUE) AS SCRIPT
+      SELECT GET_DDL('VIEW', :1, TRUE) AS SCRIPT
     `;
     const params = [`${schema}.${view}`];
 
@@ -786,25 +847,29 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
   private async getQueryResultFromId<T>(queryId: string, conn: Connection, rowResults: boolean, formatResults: (stmt: RawSnowflakeStatement, rows: any[]) => T): Promise<T> {
     return await new Promise<T>(async (resolve, reject) => {
-      const snowflakeStmt = await conn.getResultsFromQueryId({
-        queryId,
-        rowMode: rowResults ? 'array' : 'object_with_renamed_duplicated_columns'
-      });
-      const stream = snowflakeStmt.streamRows();
-      const rows: any[] = [];
+      try {
+        const snowflakeStmt = await conn.getResultsFromQueryId({
+          queryId,
+          rowMode: rowResults ? 'array' : 'object_with_renamed_duplicated_columns'
+        });
+        const stream = snowflakeStmt.streamRows();
+        const rows: any[] = [];
 
-      stream.on('error', err => {
-        reject(err)
-      })
+        stream.on('error', err => {
+          reject(err)
+        })
 
-      stream.on('data', row => {
-        rows.push(row);
-      })
+        stream.on('data', row => {
+          rows.push(row);
+        })
 
-      stream.on('end', () => {
-        const result = formatResults(snowflakeStmt, rows);
-        resolve(result);
-      })
+        stream.on('end', () => {
+          const result = formatResults(snowflakeStmt, rows);
+          resolve(result);
+        })
+      } catch (e) {
+        reject(e);
+      }
     })
   }
 
@@ -831,7 +896,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
         complete: (err, stmt) => {
           if (err) {
             log.error(err.message);
-            reject(err);
+            return reject(err);
           }
 
           const queryId = stmt.getQueryId();

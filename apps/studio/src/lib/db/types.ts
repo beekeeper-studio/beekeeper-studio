@@ -113,6 +113,18 @@ export const AzureAuthTypes = [
   { name: 'Azure CLI Authentication', value: AzureAuthType.CLI }
 ];
 
+export enum SnowflakeAuthType {
+  Default,
+  MFA,
+  Browser
+}
+
+export const SnowflakeAuthTypes = [
+  { name: 'Username / Password', value: SnowflakeAuthType.Default },
+  { name: 'SSO with Browser', value: SnowflakeAuthType.Browser },
+  { name: 'Multi-Factor Authentication', value: SnowflakeAuthType.MFA }
+]
+
 export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
@@ -169,8 +181,10 @@ export interface SurrealDBOptions {
 }
 
 export interface SnowflakeOptions {
+  authType?: SnowflakeAuthType;
   accountId?: string;
   defaultWarehouse?: string;
+  passcode?: string;
 }
 
 export enum SurrealAuthType {

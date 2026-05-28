@@ -1,5 +1,13 @@
 <template>
   <div class="with-connection-type snowflake-form">
+    <div class="form-group col">
+      <label for="authenticationType">Authentication Method</label>
+      <select name="" id="" v-model="authType">
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
+          {{ t.name }}
+        </option>
+      </select>
+    </div>
     <div class="form-group">
       <label for="accountId">
         Account ID
@@ -20,7 +28,7 @@
         v-model="config.snowflakeOptions.accountId"
       >
     </div>
-    <div class="row gutter">
+    <div v-if="showUserAndPassword" class="row gutter">
       <div class="col s6 form-group">
         <label for="user">User</label>
         <masked-input
@@ -31,6 +39,26 @@
       <div class="col s6 form-group">
         <label for="password">Password</label>
         <password-input v-model="config.password" />
+      </div>
+    </div>
+    <div v-if="showPasscode" class="form-group expand">
+      <div class="col form-group">
+        <label for="password">
+          Multi-Factor Authentication Passcode
+          <i
+            class="material-icons"
+            v-tooltip="{
+              content: `MFA Code from Authenticator App if needed, this is not saved`,
+              html: true,
+            }"
+          >
+            help_outlined
+          </i>
+        </label>
+        <masked-input
+          :value="config.snowflakeOptions.passcode"
+          @input="val => config.snowflakeOptions.passcode = val"
+        />
       </div>
     </div>
     <div class="form-group expand">
@@ -59,6 +87,7 @@
 <script lang="ts">
 import MaskedInput from '@/components/MaskedInput.vue'
 import PasswordInput from '@/components/common/form/PasswordInput.vue'
+import { SnowflakeAuthType, SnowflakeAuthTypes } from '@/lib/db/types';
 
 export default {
   components: { MaskedInput, PasswordInput },
@@ -72,6 +101,25 @@ export default {
       default: false,
     },
   },
+  data() {
+    return {
+      authTypes: SnowflakeAuthTypes,
+      authType: this.config.snowflakeOptions?.authType || SnowflakeAuthType.Default
+    }
+  },
+  computed: {
+    showPasscode() {
+      return this.authType === SnowflakeAuthType.MFA;
+    },
+    showUserAndPassword() {
+      return this.authType !== SnowflakeAuthType.Browser
+    }
+  },
+  watch: {
+    authType() {
+      this.config.snowflakeOptions.authType = this.authType;
+    }
+  }
 }
 </script>
 
