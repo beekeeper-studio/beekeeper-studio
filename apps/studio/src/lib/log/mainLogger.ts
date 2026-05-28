@@ -1,18 +1,12 @@
 import log from 'electron-log/main';
 import path from 'path';
 import { redactMessage } from './redact';
-import { resolveLevel } from './logLevel';
 
-// Main is the origin of the log level — mainPlatformInfo bakes the same
-// resolveLevel() result into platformInfo so utility (via env-serialized
-// platformInfo) and renderer (via IPC platformInfo) pick up the same value.
-// We can't pull platformInfo here directly because this module is also
-// bundled into preload, where importing platform_info throws by design.
-const level = resolveLevel(process.env);
-log.transports.console.level = level;
-log.transports.file.level = level;
+// we set these in main.ts later, becuase we don't have access to platformInfo here
+log.transports.console.level = 'silly';
+log.transports.file.level = 'warn';
 log.variables.processType = 'MAIN';
-log.transports.console.format = '{h}:{i}:{s}.{ms} [{level}] [{processType}]{scope} › {text}';
+log.transports.console.format = '{h}:{i}:{s}.{ms} [{level}] [{processType}]{scope}›{text}';
 
 // Renderer messages arrive via IPC and are processed by main's default
 // logger; route them to renderer.log so the file split matches the
