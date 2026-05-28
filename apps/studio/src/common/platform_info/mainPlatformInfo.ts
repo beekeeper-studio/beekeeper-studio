@@ -4,7 +4,6 @@ import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
-import { LogLevel } from 'electron-log'
 
 // TODO: Automatically enable wayland without flags once
 // we're confident it will 'just work' for all Wayland users.
@@ -30,10 +29,10 @@ export function resolveAppVersion(appVersion): BksVersion {
 
 }
 
-const VALID: LogLevel[] = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
+const VALID = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
 
-export function resolveLevel(env: any, isDev = false): LogLevel {
-  const override = env.BKS_LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
+export function resolveLevel(env: any, isDev = false) {
+  const override = env.BKS_LOG_LEVEL?.toLowerCase() || undefined;
   if (override && (VALID as string[]).includes(override)) return override;
   if (env.NODE_ENV === 'development' || env.DEBUG || isDev) return 'silly';
   return 'warn';
