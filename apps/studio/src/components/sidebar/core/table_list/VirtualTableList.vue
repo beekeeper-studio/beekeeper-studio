@@ -33,47 +33,14 @@ import { AppEvent } from "@/common/AppEvent";
 import { mapGetters, mapState } from "vuex";
 import { entityId } from "@/common/utils";
 import "scrollyfills";
-import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
-
-type Entity = TableOrView | Routine | string;
-
-type Item = SchemaItem | TableItem | RoutineItem;
-
-interface BaseItem {
-  type: "schema" | "table" | "routine" | "root";
-  entity: Entity;
-  key: string;
-  expanded: boolean;
-  hidden: boolean;
-  contextMenu: any[];
-  level: number;
-  parent?: BaseItem;
-  pinned: boolean;
-}
-
-interface RootItem extends BaseItem {
-  type: "root";
-  entity: string;
-}
-
-interface SchemaItem extends BaseItem {
-  type: "schema";
-  entity: string;
-  parent: BaseItem;
-}
-
-interface TableItem extends BaseItem {
-  type: "table";
-  entity: TableOrView;
-  parent: BaseItem;
-  loadingColumns: boolean;
-}
-
-interface RoutineItem extends BaseItem {
-  type: "routine";
-  entity: Routine;
-  parent: BaseItem;
-}
+import {
+  Entity,
+  Item,
+  BaseItem,
+  RootItem,
+  SchemaItem,
+  TableItem,
+} from "@/common/interfaces/ISidebarEntityItem";
 
 export default Vue.extend({
   mixins: [TableListContextMenus],

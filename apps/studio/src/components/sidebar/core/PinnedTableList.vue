@@ -13,7 +13,7 @@
       </div>
     </div>
     <Draggable
-      :options="{ handle: '.drag-handle' }"
+      :options="dragOptions"
       v-model="orderedPins"
       tag="div"
       ref="pinContainer"
@@ -23,6 +23,7 @@
         class="pin-wrapper"
         v-for="p in orderedPins"
         :key="p.id || p.entity.name"
+        :data-draggable-content="p.entity.name"
       >
         <table-list-item
           v-if="p.entityType !== 'routine'"
@@ -85,6 +86,13 @@ export default Vue.extend({
       set(pins: TransportPinnedEntity[]) {
         this.$store.dispatch('pins/reorder', pins)
       }
+    },
+    dragOptions() {
+      return {
+        // handle: '.drag-handle',
+        setData: (dataTransfer: DataTransfer, dragEl: HTMLElement) =>
+          this.setDragData(dataTransfer, dragEl),
+      }
     }
   },
   watch: {
@@ -104,6 +112,11 @@ export default Vue.extend({
   methods: {
     refreshColumns(table) {
       this.$store.dispatch('updateTableColumns', table)
+    },
+    // Sortable's hook to populate the native drag's DataTransfer, so a pinned
+    // entity can be dropped onto the query editor or a plugin view.
+    setDragData(dataTransfer: DataTransfer, dragEl: HTMLElement) {
+      dataTransfer.setData("text/plain", dragEl.dataset.draggableContent)
     },
   }
 
