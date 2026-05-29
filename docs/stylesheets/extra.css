@@ -132,7 +132,8 @@
 .md-nav--primary .md-nav__link {
   border-radius: 6px;
   /* Inset the item so the wash reads as a floating pill with room around it. */
-  margin: 2px 8px;
+  margin: 0px 8px;
+  padding: 4px;
 }
 .md-nav--primary .md-nav__link:hover {
   background: rgba(255, 255, 255, 0.04);
@@ -248,4 +249,9 @@
 .md-typeset table:not([class]) th,
 .md-typeset table:not([class]) td {
   padding: 0.75em 1.25em;
+}
+
+/* Left Navigation */
+.md-nav--lifted > .md-nav__list > .md-nav__item--active > label.md-nav__link {
+  box-shadow: none;
 }
