@@ -202,7 +202,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     const schemaFilter = buildSchemaFilter(filter, 'TABLE_SCHEMA');
 
-    let sql = `
+    const sql = `
       SELECT
         TABLE_SCHEMA as schema,
         TABLE_NAME as name,
@@ -224,7 +224,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     // TODO (@day): do we need a custom wrapIdent
     const schemaFilter = buildSchemaFilter(filter, 'TABLE_SCHEMA');
 
-    let sql = `
+    const sql = `
       SELECT
         TABLE_SCHEMA as schema,
         TABLE_NAME as name,
@@ -385,11 +385,13 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
     const data = await this.driverExecuteSingle(sql);
 
-    if (data?.rows && data.rows.length > 0) {
+    if (data?.rows) {
       return data.rows.map((r) => ({
         columnName: r.column_name,
         position: r.key_sequence
       }))
+    } else {
+      return []
     }
   }
 
