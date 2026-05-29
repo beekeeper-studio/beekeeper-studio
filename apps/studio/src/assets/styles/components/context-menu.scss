@@ -12,7 +12,7 @@
   z-index: 1000000;
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
-  box-shadow: var(--elevation-5);
+  box-shadow: var(--menu-shadow);
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
@@ -74,7 +74,7 @@
 // ------ Theme Customization ------
 
 .BksContextMenu-list, .vue-simple-context-menu {
-  background: color.adjust($theme-bg, $lightness: 5%);
+  background: var(--menu-bg);
   color: $text;
 }
 
