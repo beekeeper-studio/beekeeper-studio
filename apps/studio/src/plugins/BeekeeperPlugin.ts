@@ -79,6 +79,8 @@ export const BeekeeperPlugin = {
       return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
+    } else if (config.connectionType === 'snowflake') {
+      return `${config.username || 'user'}@${config.snowflakeOptions?.accountId}/${config.defaultDatabase}`
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -109,6 +111,8 @@ export const BeekeeperPlugin = {
       return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
+    } else if (config.connectionType === 'snowflake') {
+      connectionString = `${config.snowflakeOptions?.accountId}/${config.defaultDatabase}`;
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
