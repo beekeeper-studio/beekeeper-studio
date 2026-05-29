@@ -117,7 +117,6 @@
             <sidebar-folder
               v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
               :key="`${subfolder.id}-${subQueries.length}`"
-              :title="`${subfolder.name} (${subQueries.length})`"
               :name="subfolder.name"
               :children-count="subQueries.length"
               :rename="renamingFolderId === subfolder.id"
