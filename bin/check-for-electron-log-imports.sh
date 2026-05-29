@@ -1,6 +1,6 @@
 #! /bin/bash
 
-git grep -a "electron-log" apps/studio/src* ':!*preload.ts' ':!*Logger.ts' ':!*lib/log/redact.ts'
+git grep -a "electron-log" apps/studio/src* ':!*preload.ts' ':!*Logger.ts' ':!*lib/log/redact.ts' ':!*lib/log/logLevel.ts' ':!*bksLogger.d.ts'
 STATUS=$?
 
 if [[ $STATUS -eq 0 ]]
@@ -9,7 +9,7 @@ then
   exit 1;
 fi
 
-git grep -a \( -e mainLogger -e rendererLogger -e utilityLogger \) apps/studio/src* ':!*bksLogger.ts'
+git grep -a \( -e mainLogger -e rendererLogger -e utilityLogger \) apps/studio/src* ':!*bksLogger.d.ts'
 
 STATUS=$?
 
