@@ -1,6 +1,6 @@
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
+import { DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult, TableOverview, TablesOverview } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
@@ -58,6 +58,9 @@ export interface IConnectionHandlers {
   'conn/executeQuery': ({ queryText, options, sId }: { queryText: string, options: any, sId: string }) => Promise<NgQueryResult[]>,
   'conn/listDatabases': ({ filter, sId }: { filter?: DatabaseFilterOptions, sId: string }) => Promise<string[]>,
   'conn/getTableProperties': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableProperties | null>,
+  'conn/getTableOverview': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableOverview | null>,
+  'conn/getTablesOverview': ({ schema, sId }: { schema?: string, sId: string }) => Promise<TablesOverview>,
+  'conn/optimizeTable': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<void>,
   'conn/getQuerySelectTop': ({ table, limit, schema, sId }: { table: string, limit: number, schema?: string, sId: string }) => Promise<string>,
   'conn/listMaterializedViews': ({ filter, sId }: { filter?: FilterOptions, sId: string }) => Promise<TableOrView[]>,
   'conn/getPrimaryKey': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string | null>,
@@ -379,6 +382,21 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/getTableProperties': async function({ table, schema, sId }: { table: string, schema?: string, sId: string}) {
     checkConnection(sId);
     return await state(sId).connection.getTableProperties(table, schema);
+  },
+
+  'conn/getTableOverview': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getTableOverview(table, schema);
+  },
+
+  'conn/getTablesOverview': async function({ schema, sId }: { schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.getTablesOverview(schema);
+  },
+
+  'conn/optimizeTable': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.optimizeTable(table, schema);
   },
 
   'conn/getQuerySelectTop': async function({ table, limit, schema, sId }: { table: string, limit: number, schema?: string, sId: string }) {

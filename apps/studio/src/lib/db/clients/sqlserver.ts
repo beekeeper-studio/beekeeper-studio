@@ -30,7 +30,7 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField } from '../models';
+import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField, TableOverview, TablesOverview } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
@@ -385,6 +385,18 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       description,
       relations
     }
+  }
+
+  async getTableOverview(table: string, schema?: string): Promise<TableOverview | null> {
+    return null;
+  }
+
+  async getTablesOverview(schema?: string): Promise<TablesOverview> {
+    return [];
+  }
+
+  async optimizeTable(table: string, schema?: string): Promise<void> {
+    throw new Error('Table optimization is not supported for this database')
   }
 
   async getOutgoingKeys(table: string, schema?: string) {

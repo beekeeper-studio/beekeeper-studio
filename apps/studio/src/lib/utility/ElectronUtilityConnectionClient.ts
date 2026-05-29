@@ -1,6 +1,6 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, FieldDescriptor, FieldEditData, ServerStatistics } from "../db/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, FieldDescriptor, FieldEditData, ServerStatistics, TableOverview, TablesOverview } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
 
@@ -120,6 +120,18 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async getTableProperties(table: string, schema?: string): Promise<TableProperties> {
     return await Vue.prototype.$util.send('conn/getTableProperties', { table, schema });
+  }
+
+  async getTableOverview(table: string, schema?: string): Promise<TableOverview | null> {
+    return await Vue.prototype.$util.send('conn/getTableOverview', { table, schema });
+  }
+
+  async getTablesOverview(schema?: string): Promise<TablesOverview> {
+    return await Vue.prototype.$util.send('conn/getTablesOverview', { schema });
+  }
+
+  async optimizeTable(table: string, schema?: string): Promise<void> {
+    return await Vue.prototype.$util.send('conn/optimizeTable', { table, schema });
   }
 
   async getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {

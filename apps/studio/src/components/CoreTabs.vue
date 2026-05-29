@@ -131,6 +131,12 @@
             />
           </template>
         </tab-with-table>
+        <TablesOverview
+          v-if="tab.tabType === 'tables-overview'"
+          :active="activeTab?.id === tab.id"
+          :tab="tab"
+          :tab-id="tab.id"
+        />
         <TableBuilder
           v-if="tab.tabType === 'table-builder'"
           :active="activeTab?.id === tab.id"
@@ -300,6 +306,7 @@ import Statusbar from './common/StatusBar.vue'
 import CoreTabHeader from './CoreTabHeader.vue'
 import TableTable from './tableview/TableTable.vue'
 import TableProperties from './TabTableProperties.vue'
+import TablesOverview from './TabTablesOverview.vue'
 import TableBuilder from './TabTableBuilder.vue'
 import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
 import ImportTable from './TabImportTable.vue'
@@ -337,6 +344,7 @@ export default Vue.extend({
     CoreTabHeader,
     TableTable,
     TableProperties,
+    TablesOverview,
     ImportExportDatabase,
     ImportTable,
     Draggable,
@@ -670,6 +678,8 @@ export default Vue.extend({
     async createTab(config: TabTypeConfig.Config) {
       if (config.type === "query") {
         this.createQuery()
+      } else if (config.type === "tables-overview") {
+        this.openTablesOverview()
       } else if (config.type === "shell") {
         this.createShell()
       } else if (config.type === "plugin-shell" || config.type === "plugin-base") {
@@ -1015,6 +1025,16 @@ export default Vue.extend({
       const existing = this.tabItems.find((tab) => matches(tab, t))
       if (existing) return this.$store.dispatch('tabs/setActive', existing)
       this.addTab(t)
+    },
+    openTablesOverview() {
+      const tab = {} as TransportOpenTab;
+      tab.tabType = 'tables-overview';
+      tab.title = 'Tables Overview';
+      tab.entityType = 'table';
+      tab.unsavedChanges = false;
+      const existing = this.tabItems.find((t) => matches(t, tab))
+      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+      this.addTab(tab)
     },
     async openTable({ table, filters }) {
       let tab = {} as TransportOpenTab;

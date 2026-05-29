@@ -1,7 +1,7 @@
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
-import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn, TableIndex } from "../models";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn, TableIndex, TableOverview, TablesOverview } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
@@ -150,6 +150,18 @@ export class RedshiftClient extends PostgresClient {
 
   async getTableProperties(_table: string, _schema?: string): Promise<TableProperties> {
     return null;
+  }
+
+  async getTableOverview(table: string, schema: string = this._defaultSchema): Promise<TableOverview | null> {
+    return null;
+  }
+
+  async getTablesOverview(schema: string = this._defaultSchema): Promise<TablesOverview> {
+    return [];
+  }
+
+  async optimizeTable(table: string, schema: string = this._defaultSchema): Promise<void> {
+    throw new Error('Table optimization is not supported for this database')
   }
 
   async getPrimaryKeys(table: string, schema?: string): Promise<PrimaryKeyColumn[]> {

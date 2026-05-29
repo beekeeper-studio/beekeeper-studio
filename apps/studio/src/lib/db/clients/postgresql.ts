@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableOverview, TablesOverview, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -125,7 +125,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
       transactions: true,
-      filterTypes: ['standard', 'ilike']
+      filterTypes: ['standard', 'ilike'],
+      tableOverview: true,
+      tablesOverview: true,
+      tableOptimization: true,
+      fragmentationStats: true
     };
   }
 
@@ -935,6 +939,172 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       partitions,
       owner,
       permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
+    }
+  }
+
+  async getTableOverview(table: string, schema: string = this._defaultSchema): Promise<TableOverview | null> {
+    const identifier = this.wrapTable(table, schema)
+    const permissionWarnings: string[] = []
+
+    const statements = [
+      `'${escapeString(schema)}' as schema_name`,
+      `'${escapeString(table)}' as table_name`,
+      `COALESCE(s.n_live_tup, 0) as row_count`,
+      `COALESCE(s.n_dead_tup, 0) as dead_tuples`,
+      `pg_total_relation_size(c.oid) as total_size`,
+      `pg_relation_size('${identifier}') as table_size`,
+      `pg_indexes_size('${identifier}') as index_size`,
+      `NULL as free_space`,
+      `CASE
+        WHEN COALESCE(s.n_live_tup, 0) + COALESCE(s.n_dead_tup, 0) > 0
+        THEN COALESCE(s.n_dead_tup, 0)::float / (COALESCE(s.n_live_tup, 0) + COALESCE(s.n_dead_tup, 0))
+        ELSE NULL
+      END as fragmentation`
+    ]
+
+    if (this.version.number < 90000) {
+      statements[6] = `0 as index_size`
+    }
+
+    const sql = `
+      SELECT ${statements.join(",")}
+      FROM pg_class c
+      JOIN pg_namespace n
+        ON n.oid = c.relnamespace
+      LEFT JOIN pg_stat_user_tables s
+        ON s.relid = c.oid
+      WHERE c.relname = $1
+        AND n.nspname = $2
+        AND c.relkind IN ('r', 'p')
+      LIMIT 1
+    `
+
+    const result = await this.driverExecuteSingle(sql, { params: [table, schema] }).catch(err => {
+      log.warn('Unable to fetch table overview (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table overview due to insufficient permissions')
+      return { rows: [{ schema_name: schema, table_name: table, row_count: 0, total_size: 0, table_size: 0, index_size: 0, free_space: null, fragmentation: null }] }
+    })
+
+    const props = result.rows.length > 0 ? result.rows[0] : {}
+
+    const rowCount = Number(props.row_count || 0)
+    const deadTuples = Number(props.dead_tuples || 0)
+    const fragmentation = props.fragmentation === null || props.fragmentation === undefined
+      ? null
+      : Number(props.fragmentation)
+
+    const canOptimize = deadTuples > 1000 || (fragmentation !== null && fragmentation > 0.2)
+
+    return {
+      schemaName: props.schema_name || schema,
+      tableName: props.table_name || table,
+      rowCount,
+      totalSize: Number(props.total_size || 0),
+      indexSize: Number(props.index_size || 0),
+      tableSize: Number(props.table_size || 0),
+      freeSpace: null,
+      fragmentation,
+      canOptimize,
+      optimizationNote: canOptimize
+        ? "VACUUM ANALYZE can reclaim space from dead tuples and update planner statistics."
+        : null,
+      permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
+    }
+  }
+
+  async getTablesOverview(schema?: string): Promise<TablesOverview> {
+    const permissionWarnings: string[] = []
+
+    const statements = [
+      `n.nspname as schema_name`,
+      `c.relname as table_name`,
+      `COALESCE(s.n_live_tup, 0) as row_count`,
+      `COALESCE(s.n_dead_tup, 0) as dead_tuples`,
+      `pg_total_relation_size(c.oid) as total_size`,
+      `pg_relation_size(c.oid) as table_size`,
+      `pg_indexes_size(c.oid) as index_size`,
+      `NULL as free_space`,
+      `CASE
+        WHEN COALESCE(s.n_live_tup, 0) + COALESCE(s.n_dead_tup, 0) > 0
+        THEN COALESCE(s.n_dead_tup, 0)::float / (COALESCE(s.n_live_tup, 0) + COALESCE(s.n_dead_tup, 0))
+        ELSE NULL
+      END as fragmentation`
+    ]
+
+    if (this.version.number < 90000) {
+      statements[6] = `0 as index_size`
+    }
+
+    const schemaFilter = schema
+      ? `AND n.nspname = $1`
+      : `
+        AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+        AND n.nspname NOT LIKE 'pg_toast%'
+      `
+
+    const sql = `
+      SELECT ${statements.join(",")}
+      FROM pg_class c
+      JOIN pg_namespace n
+        ON n.oid = c.relnamespace
+      LEFT JOIN pg_stat_user_tables s
+        ON s.relid = c.oid
+      WHERE c.relkind IN ('r', 'p')
+        ${schemaFilter}
+      ORDER BY pg_total_relation_size(c.oid) DESC
+    `
+
+    const result = await this.driverExecuteSingle(sql, schema ? { params: [schema] } : {})
+      .catch(err => {
+        log.warn('Unable to fetch tables overview (likely due to insufficient permissions):', err.message)
+        permissionWarnings.push('Unable to retrieve tables overview due to insufficient permissions')
+        return { rows: [] }
+      })
+
+    const tables: TableOverview[] = result.rows.map((props: any) => {
+      const deadTuples = Number(props.dead_tuples || 0)
+      const fragmentation = props.fragmentation === null || props.fragmentation === undefined
+        ? null
+        : Number(props.fragmentation)
+
+      const canOptimize = deadTuples > 1000 || (fragmentation !== null && fragmentation > 0.2)
+
+      return {
+        schemaName: props.schema_name || schema || this._defaultSchema,
+        tableName: props.table_name,
+        rowCount: Number(props.row_count || 0),
+        totalSize: Number(props.total_size || 0),
+        tableSize: Number(props.table_size || 0),
+        indexSize: Number(props.index_size || 0),
+        freeSpace: props.free_space === null || props.free_space === undefined
+          ? null
+          : Number(props.free_space),
+        fragmentation,
+        canOptimize,
+        optimizationNote: canOptimize
+          ? "VACUUM ANALYZE can reclaim space from dead tuples and update planner statistics."
+          : null,
+        permissionWarnings: permissionWarnings.length > 0 ? permissionWarnings : undefined
+      }
+    })
+
+    return {
+      tables,
+      freeSpace: null,
+      canOptimize: tables.some((t) => t.canOptimize),
+      optimizationNote: tables.some((t) => t.canOptimize)
+        ? "VACUUM ANALYZE will process all tables that need optimization."
+        : null,
+    }
+
+  }
+
+  async optimizeTable(table: string, schema: string): Promise<void> {
+    if (!table) {
+      await this.driverExecuteSingle(`VACUUM ANALYZE`);
+    } else {
+      const identifier = this.wrapTable(table, schema ?? this._defaultSchema)
+      await this.driverExecuteSingle(`VACUUM ANALYZE ${identifier}`)
     }
   }
 

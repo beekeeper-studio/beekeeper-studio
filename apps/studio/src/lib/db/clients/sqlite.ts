@@ -4,7 +4,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions, BksField, BksFieldType, TableOverview, TablesOverview } from "../models";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery } from './utils';
@@ -75,6 +75,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       customRoutines: false,
       comments: false,
       properties: true,
+      tableOverview: true,
+      tablesOverview: true,
+      tableOptimization: true,
+      fragmentationStats: false,
       partitions: false,
       editPartitions: false,
       backups: true,
@@ -418,6 +422,115 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       triggers,
       partitions: []
     }
+  }
+
+  async getTableOverview(table: string, _schema?: string): Promise<TableOverview | null> {
+    try {
+      const exists = await this.driverExecuteSingle(`
+        SELECT name FROM sqlite_master
+        WHERE type = 'table' AND name = ?
+        LIMIT 1
+      `, { params: [table] });
+
+      if (!exists.rows.length) return null;
+
+      const safeTableName = table.replace(/`/g, "``");
+
+      const rowResult = await this.driverExecuteSingle(`
+        SELECT COUNT(*) as count FROM \`${safeTableName}\`
+      `);
+      const rowCount = Number(rowResult.rows?.[0]?.count || 0);
+
+      let tableSize = 0;
+      let indexSize = 0;
+
+      try {
+        const tableSizeResult = await this.driverExecuteSingle(`
+          SELECT COALESCE(SUM(pgsize), 0) as size
+          FROM dbstat WHERE name = ?
+        `, { params: [table] });
+
+        const indexSizeResult = await this.driverExecuteSingle(`
+          SELECT COALESCE(SUM(s.pgsize), 0) as size
+          FROM dbstat s
+          WHERE s.name IN (
+            SELECT name FROM sqlite_master
+            WHERE type = 'index' AND tbl_name = ?
+          )
+        `, { params: [table] });
+
+        tableSize = Number(tableSizeResult.rows?.[0]?.size || 0);
+        indexSize = Number(indexSizeResult.rows?.[0]?.size || 0);
+      } catch {
+        tableSize = 0;
+        indexSize = 0;
+      }
+
+      return {
+        schemaName: "main",
+        tableName: table,
+        rowCount,
+        tableSize,
+        indexSize,
+        totalSize: tableSize + indexSize,
+        freeSpace: null,
+        fragmentation: null,
+        canOptimize: false,      // decidided on getTablesOverview because
+        optimizationNote: null,  // SQlite optimization is database-wide
+      };
+    } catch (err: any) {
+      log.warn("Unable to fetch table overview:", err.message);
+      return {
+        schemaName: "main",
+        tableName: table,
+        rowCount: 0,
+        totalSize: 0,
+        tableSize: 0,
+        indexSize: 0,
+        freeSpace: null,
+        fragmentation: null,
+        canOptimize: false,
+        optimizationNote: null,
+        permissionWarnings: [err.message],
+      };
+    }
+  }
+
+  async getTablesOverview(_schema?: string): Promise<TablesOverview> {
+    try {
+      const tables = await this.driverExecuteSingle(`
+        SELECT name FROM sqlite_master
+        WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+        ORDER BY name
+      `);
+
+      const promises = tables.rows.map((row: any) => this.getTableOverview(row.name));
+      const results = await Promise.all(promises);
+      const overviews = results.filter((o): o is TableOverview => o !== null);
+
+      const freelistResult = await this.driverExecuteSingle('PRAGMA freelist_count;');
+      const pageSizeResult = await this.driverExecuteSingle('PRAGMA page_size;');
+      const freelist = Number(freelistResult.rows?.[0]?.freelist_count || 0);
+      const pageSize = Number(pageSizeResult.rows?.[0]?.page_size || 0);
+      const freeSpace = freelist * pageSize;
+      const canOptimize = freeSpace > 1024 * 1024;
+
+      return {
+        tables: overviews,
+        freeSpace,
+        canOptimize,
+        optimizationNote: canOptimize
+          ? "SQLite optimization is database-wide (VACUUM). It cannot be applied per table."
+          : null,
+      };
+    } catch (err: any) {
+      log.warn("Unable to fetch tables overview:", err.message);
+      return { tables: [], freeSpace: null, canOptimize: false, optimizationNote: null };
+    }
+  }
+
+  async optimizeTable(_table: string): Promise<void> {
+    await this.driverExecuteSingle(`VACUUM`);
   }
 
   async getTableCreateScript(table: string, _schema?: string): Promise<string> {

@@ -1,5 +1,5 @@
 import pg, { PoolConfig } from "pg";
-import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField } from "../models";
+import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField, TableOverview, TablesOverview } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
@@ -152,6 +152,18 @@ export class CockroachClient extends PostgresClient {
       partitions,
       owner
     };
+  }
+
+  async getTableOverview(_table: string, _schema: string = this._defaultSchema): Promise<TableOverview | null> {
+    return null;
+  }
+
+  async getTablesOverview(_schema: string = this._defaultSchema): Promise<TablesOverview> {
+    return [];
+  }
+
+  async optimizeTable(_table: string, _schema: string = this._defaultSchema): Promise<void> {
+    throw new Error('Table optimization is not supported for this database')
   }
 
   async createDatabase(databaseName: string, charset: string, _collation: string): Promise<string> {

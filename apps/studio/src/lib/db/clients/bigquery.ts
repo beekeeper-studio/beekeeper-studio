@@ -1,7 +1,7 @@
 import * as bq from '@google-cloud/bigquery';
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete, BksField } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, TableInsert, TableUpdate, TableDelete, BksField, TableOverview, TablesOverview } from "../models";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
@@ -387,6 +387,18 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const data = await this.driverExecuteSingle(sql);
 
     return data.rows.map((row) => row.createtable)[0];
+  }
+
+  async getTableOverview(_table: string, _schema?: string): Promise<TableOverview | null> {
+    return null;
+  }
+
+  async getTablesOverview(_schema?: string): Promise<TablesOverview> {
+    return [];
+  }
+
+  async optimizeTable(_table: string, _schema?: string): Promise<void> {
+    throw new Error('BigQuery manages table optimization automatically')
   }
 
   async getViewCreateScript(_view: string, _schema?: string): Promise<string[]> {

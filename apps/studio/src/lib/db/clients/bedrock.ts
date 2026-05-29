@@ -19,6 +19,8 @@ import {
   PrimaryKeyColumn,
   TableProperties,
   TableChanges,
+  TableOverview,
+  TablesOverview
 } from "../models";
 import {
   IndexColumn,
@@ -212,6 +214,18 @@ export class BedrockClient extends MysqlClient {
       triggers,
       partitions: [],
     };
+  }
+
+  async getTableOverview(table: string, _schema?: string): Promise<TableOverview | null> {
+    return null;
+  }
+
+  async getTablesOverview(_schema?: string): Promise<TablesOverview> {
+    return []
+  }
+
+  async optimizeTable(_table: string, _schema?: string): Promise<void> {
+    throw new Error('Table optimization is not supported for this database')
   }
 
   // TODO transactions?

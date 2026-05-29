@@ -29,6 +29,11 @@ export const TabModule: Module<State, RootState> = {
         menuItem: { label: 'Add Query', shortcut: 'Control+T' },
       },
       {
+        type: 'tables-overview',
+        name: "Tables Overview",
+        menuItem: { label: 'Tables Overview' },
+      },
+      {
         type: 'shell',
         name: "Shell",
         menuItem: { label: 'Add Shell' },

@@ -23,6 +23,11 @@
     :class="iconClass"
   >construction</i>
   <i
+    v-else-if="tab.tabType === 'tables-overview'"
+    class="material-icons item-icon icon-table-properties"
+    :class="iconClass"
+  >construction</i>
+  <i
     v-else-if="tab.tabType === 'settings'"
     class="material-icons item-icon settings"
   >settings</i>

@@ -12,6 +12,8 @@ import {
   TableUpdateResult,
   TableUpdate,
   TableDelete,
+  TableOverview,
+  TablesOverview
 } from "../models";
 import {
   AppContextProvider,
@@ -563,6 +565,18 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getTableProperties() {
     return null;
+  }
+
+  async getTableOverview(table: string, _schema?: string): Promise<TableOverview | null> {
+    return null;
+  }
+
+  async getTablesOverview(): Promise<TablesOverview> {
+    return [];
+  }
+
+  async optimizeTable(_table: string, _schema?: string): Promise<void> {
+    throw new Error('Table optimization is not supported for this database')
   }
 
   async getQuerySelectTop(_table: string, limit: number) {
