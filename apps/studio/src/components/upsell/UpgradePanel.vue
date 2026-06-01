@@ -13,10 +13,6 @@
             {{ triggered ? `Unlock ${featureName}` : 'Upgrade Beekeeper Studio' }}
           </h2>
         </div>
-        <span class="indie-pill">
-          <span class="dot"></span>
-          Independent · Open source
-        </span>
       </div>
       <p v-if="triggered" class="subtitle">
         … plus a bunch of other intuitive and useful features.
@@ -96,7 +92,7 @@ const FEATURES = [
   {
     id: 'ai',
     title: 'SQL AI Shell',
-    blurb: 'Bring your own model — Claude, OpenAI, Gemini, or local.',
+    blurb: 'Bring your own model; Claude, OpenAI, Gemini, or local.',
     icon: 'auto_awesome',
     color: 'var(--bks-brand-pink, #ff78f7)'
   },

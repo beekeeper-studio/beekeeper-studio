@@ -164,6 +164,27 @@ describe('log redaction (electron-log hooks)', () => {
     expect(contents).toContain('hello world')
   })
 
+  it('redacts cipher/encrypted field names (typeorm/cloud workspace shape)', () => {
+    const cfg = {
+      host: 'db.example.com',
+      passwordCipherText: 'cipher-secret-1',
+      sshPasswordCipher: 'cipher-secret-2',
+      sshKeyfilePasswordCipherText: 'cipher-secret-3',
+      encryptedToken: 'enc-secret-1',
+      encryptedClientSecret: 'enc-secret-2',
+    }
+
+    log.info('used-connection', cfg)
+
+    const contents = fileContents(logFile)
+    expect(contents).toContain('db.example.com')
+    expect(contents).not.toContain('cipher-secret-1')
+    expect(contents).not.toContain('cipher-secret-2')
+    expect(contents).not.toContain('cipher-secret-3')
+    expect(contents).not.toContain('enc-secret-1')
+    expect(contents).not.toContain('enc-secret-2')
+  })
+
   it('redacts additional credential field patterns', () => {
     const cfg = {
       host: 'db.example.com',
@@ -189,25 +210,10 @@ describe('log redaction (electron-log hooks)', () => {
     expect(contents).not.toContain('btok_topsecret')
   })
 
-  it('does not redact when NODE_ENV is development', () => {
-    const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
-    try {
-      log.info('dev-mode', { host: 'db.example.com', password: SECRETS.password })
-
-      const contents = fileContents(logFile)
-      expect(contents).toContain('db.example.com')
-      expect(contents).toContain(SECRETS.password)
-      expect(contents).not.toContain('[REDACTED]')
-    } finally {
-      process.env.NODE_ENV = originalEnv
-    }
-  })
-
-  it('redacts under test, production, and unset NODE_ENV', () => {
+  it('redacts under every NODE_ENV (development, test, production, unset)', () => {
     const originalEnv = process.env.NODE_ENV
     try {
-      for (const value of ['test', 'production', undefined]) {
+      for (const value of ['development', 'test', 'production', undefined]) {
         fs.rmSync(logFile, { force: true })
         if (value === undefined) delete process.env.NODE_ENV
         else process.env.NODE_ENV = value
@@ -218,6 +224,22 @@ describe('log redaction (electron-log hooks)', () => {
       }
     } finally {
       process.env.NODE_ENV = originalEnv
+    }
+  })
+
+  it('skips redaction when BKS_LOG_NO_REDACT is set', () => {
+    const original = process.env.BKS_LOG_NO_REDACT
+    process.env.BKS_LOG_NO_REDACT = '1'
+    try {
+      log.info('no-redact', { host: 'db.example.com', password: SECRETS.password })
+
+      const contents = fileContents(logFile)
+      expect(contents).toContain('db.example.com')
+      expect(contents).toContain(SECRETS.password)
+      expect(contents).not.toContain('[REDACTED]')
+    } finally {
+      if (original === undefined) delete process.env.BKS_LOG_NO_REDACT
+      else process.env.BKS_LOG_NO_REDACT = original
     }
   })
 })

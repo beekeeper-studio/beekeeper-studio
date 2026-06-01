@@ -31,6 +31,8 @@ export const cssVars = [
   "--input-highlight",
 
   "--query-editor-bg",
+  "--menu-bg",
+  "--menu-shadow",
 
   "--scrollbar-track",
   "--scrollbar-thumb",

@@ -19,6 +19,10 @@ const SENSITIVE_KEY_PATTERNS = [
   /apikey/i,
   /bearer/i,
   /\bjwt\b/i,
+  // Catches typeorm/cloud-workspace fields like passwordCipherText,
+  // sshPasswordCipher, encryptedToken — the cipher payload is still secret.
+  /cipher/i,
+  /encrypted/i,
 ];
 
 function isSensitiveKey(key: PropertyKey | undefined): boolean {
@@ -34,21 +38,24 @@ function redact(input: unknown): unknown {
   });
 }
 
-// Mirrors the dev-mode signal in src/common/platform_info/mainPlatformInfo.ts.
-// We don't import platform_info directly because utilityPlatformInfo imports
-// the shared logger at module top-level, which creates a circular dep that
-// breaks during logger init. esbuild statically replaces this expression at
-// build time ("development" in watch mode, "production" otherwise); jest sets
-// it to "test" so redaction stays on under integration tests.
-function isDevelopment(): boolean {
-  return process.env.NODE_ENV === 'development';
+// Set BKS_LOG_NO_REDACT=1 (or any truthy value) to dump raw values into the
+// log file. Intended for local debugging of redaction-related issues — never
+// for production runs. Read on every call so tests can flip it at runtime.
+//
+// `process` isn't defined in the renderer (contextIsolation + no node
+// integration), and reading an undeclared global throws ReferenceError. A
+// throw here would kill every log call via the hook (electron-log catches
+// the exception and silently drops the message), so guard with `typeof`.
+function redactionDisabled(): boolean {
+  if (typeof process === 'undefined') return false;
+  return !!process.env?.BKS_LOG_NO_REDACT;
 }
 
 export function redactMessage(message: LogMessage): LogMessage {
   if (!message || !Array.isArray(message.data)) return message;
-  if (isDevelopment()) return message;
+  if (redactionDisabled()) return message;
   return { ...message, data: message.data.map(redact) };
 }
 
 // Exposed for tests.
-export const __test__ = { redact, isSensitiveKey, isDevelopment };
+export const __test__ = { redact, isSensitiveKey };

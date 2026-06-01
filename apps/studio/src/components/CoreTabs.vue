@@ -65,6 +65,7 @@
         <i class="material-icons">stars</i> Upgrade
       </a>
     </div>
+    <x-progressbar v-if="activeTab?.isLoading" />
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
@@ -1174,7 +1175,7 @@ export default Vue.extend({
         await this.addTab(tab)
       }
 
-      if (options.openHistory) {
+      if (options?.openHistory) {
         await this.$nextTick()
         this.trigger(AppEvent.openQueryEditHistory, item.id)
       }

@@ -105,12 +105,12 @@ export class CloudClient {
     this.usedQueries = new UsedQueriesController(this.axios)
 
     this.axios.interceptors.request.use(request => {
-      log.debug('REQ', JSON.stringify(request, null, 2))
+      log.debug('REQ', request)
       return request
     })
 
     this.axios.interceptors.response.use(response => {
-      log.debug('RES:', JSON.stringify(response, null, 2))
+      log.debug('RES:', response)
       return response
     })
 
