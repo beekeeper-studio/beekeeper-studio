@@ -1,54 +1,45 @@
 :root {
-  /* --md-hue: 225deg;
-  --md-accent-fg-color: #FAD83B;
+  --md-hue: 225deg;
+  --md-accent-bg-color: black;
+  --md-accent-fg-color: #fad83b;
   --md-accent-fg-color--transparent: #fad73b58;
-
-
-
-
-  --md-primary-fg-color: hsla(var(--md-hue), 15%, 9%, 1);
-  --md-primary-fg-color--light: hsla(var(--md-hue), 15%, 9%, 0.54);
-  --md-primary-fg-color--dark: hsla(var(--md-hue), 15%, 9%, 1);
-  --md-primary-bg-color: hsla(var(--md-hue), 15%, 100%, 1);
-  --md-primary-bg-color--light: hsla(var(--md-hue), 15%, 100%, 0.7); */
-
-    --md-hue: 225deg;
-    --md-accent-bg-color: black;
-    --md-accent-fg-color: #fad83b;
-    --md-accent-fg-color--transparent: #fad73b 58;
-    --md-primary-fg-color: #2c2c2c;
-    --md-primary-fg-color--light: #2c2c2c94;
-    --md-primary-fg-color--dark: black;
-    --md-primary-bg-color: white;
-    --md-primary-bg-color--light: #pink;
-    --md-code-hl-comment-color: #898989;
-
-
+  --md-code-hl-comment-color: #898989;
 }
+
+/* Light mode */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #2c2c2c;
+  --md-primary-fg-color--light: #2c2c2c94;
+  --md-primary-fg-color--dark: black;
+  --md-primary-bg-color: white;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+}
+
+/* Dark mode */
 [data-md-color-scheme="slate"] {
   --md-typeset-a-color: var(--md-accent-fg-color);
   --md-default-bg-color: #1a1a1a;
   --md-typeset-color: rgba(255, 255, 255, 0.72);
   --md-default-fg-color--light: white;
   --md-code-hl-comment-color: #898989;
-  --md-code-bg-color:hsl(0, 0%, 5.5%);
-
-
+  --md-code-bg-color: hsl(0, 0%, 5.5%);
+  --md-primary-fg-color: #2c2c2c;
+  --md-primary-fg-color--light: #2c2c2c94;
+  --md-primary-fg-color--dark: black;
 }
 
 article {
-    a:hover {
-        text-decoration: underline;
-    }
-    img, video {
-        border: solid 1px rgba(255, 255, 255, 0.20);
-        border-radius: 3px;
-        box-shadow: 3px 3px rgba(0, 0, 0, 0.30);
-        border-right: 0;
-        border-bottom: 0;
-    }
+  a:hover {
+    text-decoration: underline;
+  }
+  img, video {
+    border: solid 1px var(--md-default-fg-color--lightest);
+    border-radius: 3px;
+    box-shadow: 3px 3px rgba(0, 0, 0, 0.30);
+    border-right: 0;
+    border-bottom: 0;
+  }
 }
-
 
 .md-typeset table:not([class]) td {
     padding: 0.75em 1.25em;
