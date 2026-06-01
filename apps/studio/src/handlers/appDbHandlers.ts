@@ -30,7 +30,6 @@ import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
 import { IQueryAudit } from "@/common/interfaces/IQueryAudit";
-import { transformAudit, QueryAuditHandlers } from "@/handlers/queryAuditHandlers";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -163,13 +162,21 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
   return cls.merge(newObj, obj);
 }
 
+async function transformQueryAudit(obj: QueryAudit): Promise<TransportQueryAudit> {
+  if (_.isNil(obj)) return null;
+  return {
+    ...obj,
+    user: { source: "util" },
+  };
+}
+
 export const AppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
-  ...handlersFor<IQueryAudit>('queryAudit', QueryAudit),
+  ...handlersFor<IQueryAudit>('queryAudit', QueryAudit, transformQueryAudit),
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
@@ -181,7 +188,6 @@ export const AppDbHandlers = {
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
   ...handlersFor<TransportTabulatorPersistence>('tabulatorPersistence', TabulatorPersistence),
-  ...QueryAuditHandlers,
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
@@ -210,5 +216,28 @@ export const AppDbHandlers = {
     let cache = new TokenCache();
     cache = await cache.save();
     return cache.id;
+  },
+  "appdb/queryAudit/get": async function ({
+    queryId,
+    auditId,
+  }: {
+    queryId: number;
+    auditId: number;
+  }): Promise<TransportQueryAuditDetail | null> {
+    return await QueryAudit.getDetail(queryId, auditId);
+  },
+  "appdb/queryAudit/restore": async function ({
+    queryId,
+    auditId,
+  }: {
+    queryId: number;
+    auditId: number;
+  }): Promise<TransportFavoriteQuery> {
+    const audit = await QueryAudit.findOneByOrFail({
+      id: auditId,
+      favoriteQueryId: queryId,
+    });
+    const { query } = await audit.restore();
+    return query;
   },
 };

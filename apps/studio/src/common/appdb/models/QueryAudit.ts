@@ -1,6 +1,7 @@
 import { Column, Entity, Index, ManyToOne } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import { FavoriteQuery } from "./favorite_query";
+import { TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
 @Entity({ name: "query_audit" })
 export class QueryAudit extends ApplicationEntity {
@@ -30,15 +31,49 @@ export class QueryAudit extends ApplicationEntity {
   @Column({ type: "text", nullable: false })
   text: string;
 
-  static async getPreviousId(queryId: number, revision: number): Promise<number | null> {
+  static async getDetail(
+    queryId: number,
+    auditId: number
+  ): Promise<TransportQueryAuditDetail | null> {
+    const audit = await QueryAudit.findOneBy({
+      id: auditId,
+      favoriteQueryId: queryId,
+    });
+
+    if (!audit) {
+      return null;
+    }
+
+    return {
+      ...audit,
+      user: { source: "util" },
+      previousAuditId: await QueryAudit.getPreviousId(queryId, audit.revision),
+      values: { title: audit.title, text: audit.text },
+    };
+  }
+
+  async restore(): Promise<{ query: FavoriteQuery }> {
+    const query = await FavoriteQuery.findOneByOrFail({
+      id: this.favoriteQueryId,
+    });
+    query.title = this.title;
+    query.text = this.text;
+    await query.save();
+    return { query };
+  }
+
+  private static async getPreviousId(
+    queryId: number,
+    revision: number
+  ): Promise<number | null> {
     const audit = await QueryAudit.getRepository()
       .createQueryBuilder("a")
-      .where(
-        "a.favoriteQueryId = :id AND a.revision < :v",
-        { id: queryId, v: revision }
-      )
+      .where("a.favoriteQueryId = :id AND a.revision < :v", {
+        id: queryId,
+        v: revision,
+      })
       .orderBy("a.revision", "DESC")
-      .getOne()
+      .getOne();
     return audit?.id ?? null;
   }
 }

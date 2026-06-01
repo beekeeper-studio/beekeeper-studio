@@ -33,7 +33,7 @@
       </header>
       <div class="audit-groups">
         <x-progressbar v-show="loadingList" />
-        <section v-if="dirty" class="audit-group">
+        <section v-if="hasUnsavedChanges" class="audit-group">
           <ul>
             <li class="item-wrapper">
               <button
@@ -75,7 +75,12 @@
                   Current version
                 </span>
                 <time class="title" v-text="audit.time" />
-                <span v-if="isCloud" class="editor-label">{{ audit.user }}</span>
+                <span v-if="audit.queryAudit.user.source === 'cloud'" class="editor-label">{{
+                  audit.queryAudit.user.name ||
+                  audit.queryAudit.user.username ||
+                  audit.queryAudit.user.email ||
+                  "Unknown"
+                }}</span>
               </button>
             </li>
           </ul>
@@ -97,9 +102,7 @@
             class="btn btn-primary"
             type="button"
             @click="confirmRestore"
-            :disabled="
-              isCurrentVersion() || restoring || selectedAuditId === 'unsaved' || loadingList
-            "
+            :disabled="!canRestore"
           >
             Restore this version
           </button>
@@ -122,6 +125,7 @@ import type { Extension } from "@codemirror/state";
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 import rawLog from "@bksLogger";
 import Split from "split.js";
+import { TransportFavoriteQuery } from "@/common/transport";
 
 const log = rawLog.scope("QueryEditHistory");
 
@@ -132,7 +136,6 @@ interface AuditGroup {
 
 interface Audit {
   time: string;
-  user: string;
   isCurrentVersion: boolean;
   queryAudit: IQueryAudit;
 }
@@ -189,8 +192,8 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["connectionType", "tables"]),
-    ...mapGetters(["dialectData", "isCloud"]),
-    dirty(): boolean {
+    ...mapGetters(["dialectData"]),
+    hasUnsavedChanges(): boolean {
       return this.unsavedText !== null;
     },
     currentText(): string {
@@ -215,6 +218,24 @@ export default Vue.extend({
       const mode = this.dialectData?.textEditorMode;
       return mode === "text/x-redis" ? "redis" : mode;
     },
+    canRestore() {
+      if (this.loadingList || this.restoring || !this.selectedAuditId) {
+        return false;
+      }
+
+      if (this.hasUnsavedChanges && this.selectedAuditId !== "unsaved") {
+        return true;
+      }
+
+      if (
+        this.selectedAuditId === "unsaved" ||
+        this.selectedAuditId === this.queryAudits[0].id
+      ) {
+        return false;
+      }
+
+      return true;
+    },
     audits(): Audit[] {
       return this.queryAudits.map((queryAudit: IQueryAudit, i: number) => ({
         queryAudit,
@@ -224,8 +245,7 @@ export default Vue.extend({
             ? new Date(queryAudit.createdAt * 1000)
             : queryAudit.createdAt
         ),
-        user: this.userLabel(queryAudit),
-        isCurrentVersion: !this.dirty && i === 0,
+        isCurrentVersion: !this.hasUnsavedChanges && i === 0,
       }));
     },
     groupedAudits(): AuditGroup[] {
@@ -310,18 +330,6 @@ export default Vue.extend({
       this.error = null;
       this.showDiff = true;
     },
-    isCurrentVersion(audit?: IQueryAudit): boolean {
-      // When the editor is dirty, no saved audit reflects what's in the
-      // editor, so restoring any of them is a meaningful action.
-      if (this.dirty || this.queryAudits.length === 0) {
-        return false;
-      }
-      const target = audit ?? this.selectedAudit;
-      if (!target) {
-        return false;
-      }
-      return target.id === this.queryAudits[0].id;
-    },
     formatTime(d: Date): string {
       const month = d.toLocaleString("en-US", { month: "long" });
       const day = d.getDate();
@@ -334,10 +342,6 @@ export default Vue.extend({
         return `${month} ${day}, ${time}`;
       }
       return `${month} ${day} ${d.getFullYear()}`;
-    },
-    userLabel(audit: IQueryAudit): string {
-      const u = audit.user || {};
-      return u.name || u.username || u.email || "Unknown";
     },
     async loadAudits(): Promise<void> {
       const queryId = this.queryId;
@@ -356,7 +360,7 @@ export default Vue.extend({
           this.previousAudit = null;
           this.selectedAuditId = null;
           this.selectedAudit = null;
-        } else if (this.dirty) {
+        } else if (this.hasUnsavedChanges) {
           await this.selectAudit("unsaved");
         } else {
           await this.selectAudit(queryAudits[0].id);
@@ -433,16 +437,24 @@ export default Vue.extend({
       if (!confirmed) {
         return;
       }
+
       this.restoring = true;
       this.error = null;
+
+      const latestAudit = this.queryAudits[0];
+
       try {
-        const restored: ISavedQuery = await this.$store.dispatch(
-          "data/queryAudits/restore",
-          { queryId, auditId }
-        );
-        this.$store.commit("data/queries/upsert", restored);
-        await this.loadAudits();
-        this.$emit("restore", restored);
+        if (this.hasUnsavedChanges && this.selectedAuditId === latestAudit.id) {
+          this.$emit("discardUnsavedChanges");
+        } else {
+          const restored: ISavedQuery = await this.$store.dispatch(
+            "data/queryAudits/restore",
+            { queryId, auditId }
+          );
+          this.$store.commit("data/queries/upsert", restored);
+          await this.loadAudits();
+          this.$emit("restore", restored);
+        }
       } catch (e) {
         log.error(e);
         this.error = e;

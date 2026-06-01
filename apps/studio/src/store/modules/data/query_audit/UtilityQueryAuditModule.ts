@@ -1,7 +1,10 @@
 import Vue from "vue";
 import { Module } from "vuex";
-import { State as RootState } from "../../../index";
-import { IQueryAudit, IQueryAuditDetail } from "@/common/interfaces/IQueryAudit";
+import { State as RootState } from "@/store";
+import {
+  TransportQueryAudit,
+  TransportQueryAuditDetail,
+} from "@/common/transport/TransportQueryAudit";
 import { TransportFavoriteQuery } from "@/common/transport";
 
 interface State {
@@ -16,7 +19,7 @@ export const UtilQueryAuditModule: Module<State, RootState> = {
   actions: {
     async load() {},
     async poll() {},
-    async list(_context, queryId: number): Promise<IQueryAudit[]> {
+    async list(_context, queryId: number): Promise<TransportQueryAudit[]> {
       return await Vue.prototype.$util.send("appdb/queryAudit/find", {
         options: {
           where: { favoriteQueryId: queryId },
@@ -27,7 +30,7 @@ export const UtilQueryAuditModule: Module<State, RootState> = {
     async get(
       _context,
       { queryId, auditId }: { queryId: number; auditId: number }
-    ): Promise<IQueryAuditDetail> {
+    ): Promise<TransportQueryAuditDetail> {
       return await Vue.prototype.$util.send("appdb/queryAudit/get", {
         queryId,
         auditId,

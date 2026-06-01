@@ -1,25 +1,8 @@
-export interface IQueryAudit {
-  id: number
-  revision: number
-  action: 'create' | 'update' | 'destroy'
-  createdAt: Date | number
-  user:
-    | {
-        source: "cloud"
-        id: number
-        name: string
-        email: string
-        username: string
-      }
-    | { source: "util" }
-}
+import {
+  TransportQueryAudit,
+  TransportQueryAuditDetail,
+} from "@/common/transport/TransportQueryAudit";
 
-export interface IQueryAuditValues {
-  title: string
-  text: string
-}
+export type IQueryAudit = TransportQueryAudit;
 
-export interface IQueryAuditDetail extends IQueryAudit {
-  previousAuditId: number | null
-  values: IQueryAuditValues
-}
+export type IQueryAuditDetail = TransportQueryAuditDetail;

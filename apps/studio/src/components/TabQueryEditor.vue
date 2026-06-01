@@ -343,6 +343,7 @@
       :unsaved-text="unsavedChanges ? unsavedText : null"
       @close="editHistoryOpen = false"
       @restore="handleEditHistoryRestore"
+      @discardUnsavedChanges="handleDiscardUnsavedChanges"
     />
 
     <!-- Super-Formatter Modal -->
@@ -1858,6 +1859,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.fullQuery = restored;
         this.unsavedText = restored.text;
         this.originalText = restored.text;
+        this.editHistoryOpen = false;
+      },
+      handleDiscardUnsavedChanges() {
+        this.unsavedText = this.originalText;
         this.editHistoryOpen = false;
       },
       getCommitModeVTooltip(options: {

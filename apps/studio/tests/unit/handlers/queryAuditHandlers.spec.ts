@@ -2,12 +2,13 @@ import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 import { AppDbHandlers } from '@/handlers/appDbHandlers'
 import { FavoriteQuery } from '@/common/appdb/models/favorite_query'
 import { QueryAudit } from '@/common/appdb/models/QueryAudit'
+import { TransportQueryAudit } from '@/common/transport/TransportQueryAudit'
 
 async function saveQuery(obj: any) {
   return await AppDbHandlers['appdb/query/save']({ obj, options: undefined })
 }
 
-async function listAudits(queryId: number) {
+async function listAudits(queryId: number): Promise<TransportQueryAudit[]> {
   return await AppDbHandlers['appdb/queryAudit/find']({
     options: { where: { favoriteQueryId: queryId }, order: { revision: 'DESC' } },
   })
@@ -33,6 +34,7 @@ describe('Query audit handlers', () => {
     expect(audits).toHaveLength(1)
     expect(audits[0].action).toBe('create')
     expect(audits[0].revision).toBe(1)
+    expect(audits[0].user).toStrictEqual({ source: "util" })
     expect(Number.isNaN(new Date(audits[0].createdAt).getTime())).toBe(false)
   })
 
