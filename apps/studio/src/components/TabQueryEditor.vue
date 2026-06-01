@@ -661,6 +661,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         ];
       },
       readOnly() {
+        if (this.tab.isLoading) {
+          return true;
+        }
         if (this.remoteDeleted) {
           return true;
         }
@@ -1931,11 +1934,18 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         secondaryWrite: secondaryWriteFunc
       }
 
-      if (this.tab.queryId) {
-        this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
-      } else if (this.tab.usedQueryId) {
-        this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
+      try {
+        this.$set(this.tab, 'isLoading', true);
+
+        if (this.tab.queryId) {
+          this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+        } else if (this.tab.usedQueryId) {
+          this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
+        }
+      } finally {
+        this.$set(this.tab, 'isLoading', false);
       }
+
       this.initializeQueries();
 
       if (this.shouldInitialize) {
